@@ -6,7 +6,23 @@
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>v
-        var test = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+
+        var asdasdasdasdasd = "asd";var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        var asdasdasdasdasd = "asd";
+        
             (function() {
                 const appearance = '{{ $appearance ?? "system" }}';
 
