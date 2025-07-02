@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
-        <script>
+        <script>v
+        var test = "asd";
             (function() {
                 const appearance = '{{ $appearance ?? "system" }}';
 
