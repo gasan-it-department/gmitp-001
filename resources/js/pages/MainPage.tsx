@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 
 {/* <img class="w-16 md:w-32 lg:w-48" src="..." /> */ }
 
-var title = "Gasan Municipal Government";
+var title = "Municipality of Gasan";
 
 export default function MainPage({ children }: { children: React.ReactNode }) {
 
