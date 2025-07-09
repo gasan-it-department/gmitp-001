@@ -1,5 +1,5 @@
 //compponets
-import Modal from '@/components/custom/Modal';
+
 import { Button } from '@/components/ui/button';
 
 //
@@ -34,7 +34,6 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
             </header>
 
             <main>{children}</main>
-            <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} />
         </div>
     );
 }
