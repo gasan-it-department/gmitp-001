@@ -2,16 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Domains\Auth\Controllers\UserController;
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+Route::get('/', fn() => Inertia::render('Classes/HomePage'))->name('homePage');
+Route::get('/privacy-policy', fn() => Inertia::render('Classes/PrivacyPolicy'))->name('privacyPolicy');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-});
+Route::get('/login', fn() => Inertia::render('Auth/Login'))->name('login');
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
