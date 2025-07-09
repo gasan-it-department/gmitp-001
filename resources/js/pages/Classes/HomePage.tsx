@@ -40,7 +40,7 @@ export default function HomePage() {
             </div>
 
             <div className="flex justify-center md:justify-end">
-                <Button className="ms-2 me-2 mt-3 mb-3" variant="outline">
+                <Button className="ms-2 me-2 mt-3 mb-3 lg:mr-8" variant="outline">
                     More News
                 </Button>
             </div>
@@ -52,7 +52,7 @@ export default function HomePage() {
             <div className='w-full flex flex-col justify-center'>
                 <div className='w-full flex justify-center'>
                     <Card
-                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px] md: min-w-[10px]">
+                        className="cursor-pointer p-2 flex flex-col m-5 min-w-[130px] md:min-w-[250px] lg:min-w-[300px]">
                         <CardContent className="flex flex-col items-center justify-center p-0">
                             <CableCar size={32} />
                             <h3 className="p-2 mt-3">Transport</h3>
@@ -60,7 +60,7 @@ export default function HomePage() {
                     </Card>
 
                     <Card
-                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px]">
+                        className="cursor-pointer p-2 flex flex-col m-5 min-w-[130px] md:min-w-[250px] lg:min-w-[300px]">
                         <CardContent className="flex flex-col items-center justify-center p-0">
                             <Binoculars size={32} />
                             <h3 className="p-2 mt-3">Tourism</h3>
@@ -70,7 +70,7 @@ export default function HomePage() {
 
                 <div className='w-full flex justify-center'>
                     <Card
-                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px]">
+                        className="cursor-pointer p-2 flex flex-col m-5 min-w-[130px] md:min-w-[250px] lg:min-w-[300px]">
                         <CardContent className="flex flex-col items-center justify-center p-0">
                             <Siren size={32} />
                             <h3 className="p-2 mt-3">Emergency</h3>
@@ -78,7 +78,7 @@ export default function HomePage() {
                     </Card>
 
                     <Card
-                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px]">
+                        className="cursor-pointer p-2 flex flex-col m-5 min-w-[130px] md:min-w-[250px] lg:min-w-[300px]">
                         <CardContent className="flex flex-col items-center justify-center p-0">
                             <ClipboardPlus size={32} />
                             <h3 className="p-2 mt-3">Medical</h3>

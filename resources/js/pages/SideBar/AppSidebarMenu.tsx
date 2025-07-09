@@ -8,7 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Briefcase, Receipt, Newspaper, ShieldCheck, Phone, Landmark, Home  } from 'lucide-react';
+import { Receipt, Newspaper, ShieldCheck, Phone, Landmark, Home  } from 'lucide-react';
 
 interface ClickEvent {
   itemClicked: (itemName: string) => void;
@@ -53,6 +53,7 @@ const items = [
 ];
 
 export default function AppSidebarMenu({ itemClicked }: ClickEvent) {
+  
   const handleItemClick = (id: string) => {
     itemClicked(id);
   };

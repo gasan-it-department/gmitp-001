@@ -55,8 +55,8 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
                                         className={`rounded-none border-b-2 ${selectedTab === tab.id
                                             ? 'border-black text-black'
                                             : 'border-transparent text-gray-600 hover:border-gray'
-                                            }`}
-                                    >
+                                            }`}>
+                                                
                                         {tab.label}
                                     </Button>
                                 ))}
