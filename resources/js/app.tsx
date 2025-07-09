@@ -3,9 +3,8 @@ import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import { SidebarProvider } from '@/components/ui/sidebar'; // Wrap here globally!
 import { BrowserRouter, Routes, Route } from "react-router";
-// import { initializeTheme } from './hooks/use-appearance';
-
 import './pages/MainPage';
 
 // import HomePage from '@/pages/MainPage';

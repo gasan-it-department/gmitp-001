@@ -1,12 +1,34 @@
 
 import { Link } from '@inertiajs/react';
-import { useState, useEffect } from "react";
 import MainPage from "../MainPage";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from '@/components/ui/button';
+import HomeLatestNewsCarousel from '../Utility/HomeLatestNewsCarousel';
+import { Card, CardContent } from "@/components/ui/card";
+import { Binoculars, CableCar, ClipboardPlus, Pill, Siren } from 'lucide-react';
+
+
+const newsCarauselItems = [
+    { id: 1, title: "News 1 Item", image: "/assets/news_banner_1.png" },
+    { id: 2, title: "News 2 Item", image: "/assets/news_banner_2.png" },
+    { id: 3, title: "News 3 Item", image: "/assets/news_banner_3.png" },
+];
+
+const videosCarauselItems = [
+    { id: 1, title: "Video 1 Item", image: "/images/item1.jpg" },
+    { id: 2, title: "Video 2 Item", image: "/images/item2.jpg" },
+    { id: 3, title: "Video 3 item", image: "/images/item3.jpg" },
+];
+
+const municipalProgramItems = [
+    { id: 1, title: "Program 1 Item", image: "/images/item1.jpg" },
+    { id: 2, title: "Program 2 Item", image: "/images/item2.jpg" },
+    { id: 3, title: "Program 3 Item", image: "/images/item3.jpg" },
+];
+
 
 export default function HomePage() {
     return (
-        <>
+        <div>
             <div>
                 <img
                     src="/assets/banner1.png"
@@ -14,13 +36,72 @@ export default function HomePage() {
                     className='w-full h-auto'
                 />
             </div>
-            {/* <div>
-                <img
-                    src="/assets/banner1.png"
-                    alt='Banner1'
-                    className='w-full h-auto'
-                />
-            </div> */}
+
+            <h3 className='p-4 mt-3 mb-3 font-bold text-[20px] flex w-full'>
+                LATEST NEWS
+            </h3>
+
+            <div className="w-full flex justify-center overflow-hidden">
+                <div className="max-w-5xl w-full">
+                    <HomeLatestNewsCarousel
+                        carouselItems={newsCarauselItems}
+                        itemClicked={(item) => {
+                            console.log("Clicked:", item);
+                        }}
+                    />
+                </div>
+            </div>
+
+            <div className="flex justify-center md:justify-end">
+                <Button className="ms-2 me-2 mt-3 mb-3" variant="outline">
+                    More News
+                </Button>
+            </div>
+
+            <div className='pt-5 pb-5' />
+
+            <h3 className='m-5 font-bold text-[20px]'>OTHER SERVICES</h3>
+
+            <div className='w-full flex flex-col justify-center'>
+                <div className='w-full flex justify-center'>
+                    <Card
+                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px] md: min-w-[10px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <CableCar size={32} />
+                            <h3 className="p-2 mt-3">Transport</h3>
+                        </CardContent>
+                    </Card>
+
+                    <Card
+                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <Binoculars size={32} />
+                            <h3 className="p-2 mt-3">Tourism</h3>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className='w-full flex justify-center'>
+                    <Card
+                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <Siren size={32} />
+                            <h3 className="p-2 mt-3">Emergency</h3>
+                        </CardContent>
+                    </Card>
+
+                    <Card
+                        className="cursor-pointer p-2 flex flex-col m-5 sd:min-w-[130px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <ClipboardPlus size={32} />
+                            <h3 className="p-2 mt-3">Medical</h3>
+                        </CardContent>
+                    </Card>
+                </div>
+
+
+            </div>
+
             <main className="p-5">
                 <aside className="mb-4">
                     <img
@@ -65,7 +146,7 @@ export default function HomePage() {
                     &copy; 2025 | All rights reserved
                 </footer>
             </main>
-        </>
+        </div>
     )
 }
 
