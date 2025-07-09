@@ -4,7 +4,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { SidebarProvider } from '@/components/ui/sidebar'; // Wrap here globally!
-import { BrowserRouter, Routes, Route } from "react-router";
+
 import './pages/MainPage';
 
 // import HomePage from '@/pages/MainPage';
@@ -15,19 +15,11 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const root = createRoot(el);
-        root.render(<App {...props} />);
-
-
-        // root.render(<BrowserRouter>
-        //     <Routes>
-        //         <Route path='/' element={<MainPage />} >
-        //             <Route index={true} element={<HomePage />} />
-        //             <Route path='PrivacyPolicy' element={<PrivacyPolicy />} />
-        //             {/* <Route path='services' element={<Services />} />
-        //             <Route path='department' element={<Department />} /> */}
-        //         </Route>
-        //     </Routes>
-        // </BrowserRouter>);
+        root.render(
+            <SidebarProvider defaultOpen={false}>
+                <App {...props} />
+            </SidebarProvider>
+        );
     },
     progress: {
         color: '#4B5563',

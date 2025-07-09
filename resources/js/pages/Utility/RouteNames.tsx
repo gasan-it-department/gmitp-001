@@ -1,9 +1,11 @@
 
 export enum RouteNames {
   Home = "homePage",
-  PrivacyPolicy = "privacyPolicy",
+  PrivacyPolicy = "privacyPolicyPage",
   Government = "governmentPage",
-  Services = "services",
-  ExecutiveOrders = "executiveOrders",
+  Services = "servicesPage",
+  ExecutiveOrders = "executiveOrdersPage",
   NewsAndEventsPage = "newsAndEventsPage",
+  TransparencyPage = "transparencyPage",
+  ContactUs = "contactUsPage"
 }

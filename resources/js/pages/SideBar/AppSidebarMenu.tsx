@@ -4,7 +4,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -43,12 +42,12 @@ const items = [
   },
   {
     title: 'Transparency',
-    id: "transparency",
+    id: RouteNames.TransparencyPage,
     icon: ShieldCheck,
   },
   {
     title: 'Contact Us',
-    id: "contact_us",
+    id: RouteNames.ContactUs,
     icon: Phone,
   },
 ];
