@@ -9,14 +9,10 @@ use Illuminate\Support\Facades\Hash;
 
 class UserService
 {
-   public function __construct(protected UserRepositoryInterface $userRepo)
-   {
-      $this->userRepo = $userRepo;
-   }
-
-   public function create(array $data)
-   {
-      return $this->userRepo->create($data);
+   protected UserRepositoryInterface $userRepo;
+   public function __construct(
+      protected UserRepositoryInterface $userRepository
+   ) {
    }
 
 }

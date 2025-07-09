@@ -1,94 +1,59 @@
-import Input from '@/components/Auth/Input';
-import TextLink from '@/components/ui/TextLink';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import AuthLayout from '@/layouts/AuthLayoutTemplate';
-import { useForm } from '@inertiajs/react';
-import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { Input } from '@/components/ui/input';
 
-type LoginForm = {
-    email: string;
-    password: string;
-    remember: boolean;
-};
-
-interface LoginProps {
-    status?: string;
-    canResetPassword: boolean;
-}
-
-export default function Login({ status, canResetPassword }: LoginProps) {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
-        email: '',
-        password: '',
-        remember: false,
-    });
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-        post(route('login'), {
-            onFinish: () => reset('password'),
-        });
-    };
-
-    const [showPassword, setShowPassword] = useState(false);
-
-    const togglePassword = () => {
-        setShowPassword((prev) => !prev);
-    };
-
+export default function LoginPage() {
     return (
-        <AuthLayout title="Log in to your account" description="Enter your User Name and password below to log in">
-            {/* <Head title="Log in" /> */}
-            <form className="">
-                <div className="group relative z-0 mb-5 w-full">
-                    <Input label="User Name" />
-                </div>
-
-                <div className="mt-9 mb-9" />
-
-                <div className="group relative z-0 mb-5 w-full">
-                    <Input label="Password" type={showPassword ? 'text' : 'password'} />
-
-                    <button
-                        type="button"
-                        onClick={togglePassword}
-                        className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-600 hover:text-gray-900 focus:outline-none dark:text-gray-300 dark:hover:text-white"
-                    >
-                        {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                    </button>
-                </div>
-
-                <div className="mt-9 mb-9" />
-
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <Switch>Hello</Switch>
-                        <label htmlFor="terms" className="ml-2 cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                            Remember me
-                        </label>
+        <section className="grid h-screen w-full bg-gray-50 dark:bg-gray-900">
+            <div className="m-auto mx-auto flex h-full w-full flex-col items-center justify-center px-6 py-8 md:h-screen lg:h-2/4 lg:w-1/3 lg:py-0">
+                <a href="#" className="mb-6 flex items-center text-2xl font-semibold text-gray-900 dark:text-white">
+                    Login
+                </a>
+                <div className="w-full rounded-lg bg-white shadow sm:max-w-md md:mt-0 xl:p-0 dark:border dark:border-gray-700 dark:bg-gray-800">
+                    <div className="space-y-4 p-6 sm:p-8 md:space-y-6">
+                        <h1 className="text-xl leading-tight font-bold tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                            Sign in to your account
+                        </h1>
+                        <form className="space-y-4 md:space-y-6" action="#">
+                            <div>
+                                <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                                    User Name
+                                </label>
+                                <Input />
+                            </div>
+                            <div>
+                                <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                                    Password
+                                </label>
+                                <Input />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-start">
+                                    <div className="flex h-5 items-center"></div>
+                                    <div className="ml-3 text-sm">
+                                        <label htmlFor="remember" className="text-gray-500 dark:text-gray-300">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                </div>
+                                <a href="#" className="text-primary-600 dark:text-primary-500 text-sm font-medium hover:underline">
+                                    Forgot password?
+                                </a>
+                            </div>
+                            <button
+                                type="submit"
+                                className="bg-primary-600 hover:bg-primary-700 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 w-full rounded-lg px-5 py-2.5 text-center text-sm font-medium text-white focus:ring-4 focus:outline-none"
+                            >
+                                Sign in
+                            </button>
+                            <p className="text-sm font-light text-gray-500 dark:text-gray-400">
+                                Don’t have an account yet?{' '}
+                                <a href="#" className="text-primary-600 dark:text-primary-500 font-medium hover:underline">
+                                    Sign up
+                                </a>
+                            </p>
+                        </form>
                     </div>
-                    <div className="flex justify-end">
-                        <a href="#" className="text-[12px] text-black hover:text-black hover:underline">
-                            Forgotten Password?
-                        </a>
-                    </div>
                 </div>
-
-                <Button type="submit" className="mt-10 w-full" tabIndex={4} disabled={processing}>
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    Log in
-                </Button>
-            </form>
-
-            <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <TextLink href={route('register')} tabIndex={5}>
-                    Sign up
-                </TextLink>
             </div>
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
-        </AuthLayout>
+        </section>
     );
 }
