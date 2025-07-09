@@ -1,5 +1,16 @@
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Link } from '@inertiajs/react';
+import { Binoculars, CableCar, ClipboardPlus, Siren } from 'lucide-react';
 import MainPage from '../MainPage';
+import HomeLatestNewsCarousel from '../Utility/HomeLatestNewsCarousel';
+import { RouteNames } from '../Utility/RouteNames';
+
+const newsCarauselItems = [
+    { id: 1, title: 'News 1 Item', image: '/assets/news_banner_1.png' },
+    { id: 2, title: 'News 2 Item', image: '/assets/news_banner_2.png' },
+    { id: 3, title: 'News 3 Item', image: '/assets/news_banner_3.png' },
+];
 
 export default function HomePage() {
     return (
@@ -7,13 +18,64 @@ export default function HomePage() {
             <div>
                 <img src="/assets/banner1.png" alt="Banner1" className="h-auto w-full" />
             </div>
-            {/* <div>
-                <img
-                    src="/assets/banner1.png"
-                    alt='Banner1'
-                    className='w-full h-auto'
-                />
-            </div> */}
+
+            <h3 className="mt-3 mb-3 flex w-full p-4 text-[20px] font-bold">LATEST NEWS</h3>
+
+            <div className="flex w-full justify-center overflow-hidden">
+                <div className="w-full max-w-5xl">
+                    <HomeLatestNewsCarousel
+                        carouselItems={newsCarauselItems}
+                        itemClicked={(item) => {
+                            console.log('Clicked:', item);
+                        }}
+                    />
+                </div>
+            </div>
+
+            <div className="flex justify-center md:justify-end">
+                <Button className="ms-2 me-2 mt-3 mb-3 lg:mr-8" variant="outline">
+                    More News
+                </Button>
+            </div>
+
+            <div className="pt-5 pb-5" />
+
+            <h3 className="m-5 text-[20px] font-bold">OTHER SERVICES</h3>
+
+            <div className="flex w-full flex-col justify-center">
+                <div className="flex w-full justify-center">
+                    <Card className="m-5 flex min-w-[130px] cursor-pointer flex-col p-2 md:min-w-[250px] lg:min-w-[300px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <CableCar size={32} />
+                            <h3 className="mt-3 p-2">Transport</h3>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="m-5 flex min-w-[130px] cursor-pointer flex-col p-2 md:min-w-[250px] lg:min-w-[300px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <Binoculars size={32} />
+                            <h3 className="mt-3 p-2">Tourism</h3>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="flex w-full justify-center">
+                    <Card className="m-5 flex min-w-[130px] cursor-pointer flex-col p-2 md:min-w-[250px] lg:min-w-[300px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <Siren size={32} />
+                            <h3 className="mt-3 p-2">Emergency</h3>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="m-5 flex min-w-[130px] cursor-pointer flex-col p-2 md:min-w-[250px] lg:min-w-[300px]">
+                        <CardContent className="flex flex-col items-center justify-center p-0">
+                            <ClipboardPlus size={32} />
+                            <h3 className="mt-3 p-2">Medical</h3>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
             <main className="p-5">
                 <aside className="mb-4">
                     <img src="/assets/bp_logo.png" alt="Bagong Pilipinas" className="mb-2 h-auto w-25" />
@@ -21,7 +83,7 @@ export default function HomePage() {
                 </aside>
 
                 <div className="mb-4">
-                    <Link href={route('privacyPolicy')} className="text-sm font-semibold hover:underline">
+                    <Link href={route(RouteNames.PrivacyPolicy)} className="text-sm font-semibold hover:underline">
                         Privacy Policy
                     </Link>
                 </div>

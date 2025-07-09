@@ -1,9 +1,9 @@
 import '../css/app.css';
 
+import { SidebarProvider } from '@/components/ui/sidebar'; // Wrap here globally!
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
-// import { initializeTheme } from './hooks/use-appearance';
 
 import './pages/MainPage';
 
@@ -15,7 +15,11 @@ createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const root = createRoot(el);
-        root.render(<App {...props} />);
+        root.render(
+            <SidebarProvider defaultOpen={false}>
+                <App {...props} />
+            </SidebarProvider>,
+        );
     },
     progress: {
         color: '#4B5563',

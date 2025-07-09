@@ -1,6 +1,6 @@
 import MainPage from "../MainPage";
 
-export default function PrivacyPolicy() {
+export default function PrivacyPolicyPage() {
     return (
         <>
             <h3 className="p-5 font-bold flex">
@@ -10,4 +10,4 @@ export default function PrivacyPolicy() {
     );
 }
 
-PrivacyPolicy.layout = (page: React.ReactNode) => <MainPage>{page}</MainPage>;
+PrivacyPolicyPage.layout = (page: React.ReactNode) => <MainPage>{page}</MainPage>;
