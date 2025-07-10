@@ -1,23 +1,23 @@
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
-import AppSidebarMenu from './SideBar/AppSidebarMenu';
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
+import { useState } from 'react';
+import AppSidebarMenu from './SideBar/AppSidebarMenu';
 import { RouteNames } from './Utility/RouteNames';
 
 export default function MainPage({ children }: { children: React.ReactNode }) {
-    const [headTitle, headerTitle] = useState("Gasan Municipality");
+    const [headTitle, headerTitle] = useState('Gasan Municipality');
     const { setOpenMobile } = useSidebar();
-    const [selectedTab, tabSelected] = useState("home");
+    const [selectedTab, tabSelected] = useState('home');
 
     const tabs = [
-        { id: RouteNames.Home, label: "Home" },
-        { id: RouteNames.Government, label: "Government" },
-        { id: RouteNames.Services, label: "Services" },
-        { id: RouteNames.ExecutiveOrders, label: "Executive Orders" },
-        { id: RouteNames.NewsAndEventsPage, label: "News and Events" },
-        { id: RouteNames.TransparencyPage, label: "Transparency" },
-        { id: RouteNames.ContactUs, label: "Contact Us" },
+        { id: RouteNames.Home, label: 'Home' },
+        { id: RouteNames.Government, label: 'Government' },
+        { id: RouteNames.Services, label: 'Services' },
+        { id: RouteNames.ExecutiveOrders, label: 'Executive Orders' },
+        { id: RouteNames.NewsAndEventsPage, label: 'News and Events' },
+        { id: RouteNames.TransparencyPage, label: 'Transparency' },
+        { id: RouteNames.ContactUs, label: 'Contact Us' },
     ];
 
     return (
@@ -26,23 +26,17 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
                 <div className="mx-auto flex items-center justify-between px-6 py-4">
                     <div className="flex w-full items-center gap-4">
                         {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setOpenMobile(true)}
-                            className="block lg:hidden"
-                        >
+                        <button onClick={() => setOpenMobile(true)} className="block lg:hidden">
                             <img src="/assets/menu_icon.png" alt="Menu Bar" className="h-5 w-5" />
                         </button>
 
-                        <div
-                            className="text-xl font-bold"
-                            style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}
-                        >
+                        <div className="text-xl font-bold" style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}>
                             {headTitle}
                         </div>
 
-                        <div className='ml-5'/>
+                        <div className="ml-5" />
 
-                        <div className="hidden lg:block overflow-x-auto whitespace-nowrap">
+                        <div className="hidden overflow-x-auto whitespace-nowrap lg:block">
                             <div className="flex space-x-4">
                                 {tabs.map((tab) => (
                                     <Button
@@ -52,18 +46,17 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
                                             router.visit(route(tab.id));
                                             tabSelected(tab.id);
                                         }}
-                                        className={`rounded-none border-b-2 ${selectedTab === tab.id
-                                            ? 'border-black text-black'
-                                            : 'border-transparent text-gray-600 hover:border-gray'
-                                            }`}>
-                                                
+                                        className={`rounded-none border-b-2 ${
+                                            selectedTab === tab.id ? 'border-black text-black' : 'hover:border-gray border-transparent text-gray-600'
+                                        }`}
+                                    >
                                         {tab.label}
                                     </Button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className='flex-grow'/>
+                        <div className="flex-grow" />
 
                         {/* <a className="hidden sm:block">
                             <Button onClick={() => isClassicDialogOpened(true)} variant="outline">
@@ -81,7 +74,8 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
                     console.log(`Clicked on ${itemId}`);
                     setOpenMobile(false);
                     router.visit(route(itemId));
-                }} />
+                }}
+            />
         </div>
     );
 }

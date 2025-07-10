@@ -1,9 +1,9 @@
 import '../css/app.css';
 
+import { SidebarProvider } from '@/components/ui/sidebar'; // Wrap here globally!
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
-import { SidebarProvider } from '@/components/ui/sidebar'; // Wrap here globally!
 
 import './pages/MainPage';
 
@@ -18,13 +18,10 @@ createInertiaApp({
         root.render(
             <SidebarProvider defaultOpen={false}>
                 <App {...props} />
-            </SidebarProvider>
+            </SidebarProvider>,
         );
     },
     progress: {
         color: '#4B5563',
     },
 });
-
-// This will set light / dark mode on load...
-// initializeTheme();
