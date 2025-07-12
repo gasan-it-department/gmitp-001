@@ -20,12 +20,15 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
         { id: RouteNames.ContactUs, label: 'Contact Us' },
     ];
 
+    function isMobileOrTablet() {
+        return window.innerWidth < 768;
+    }
+
     return (
         <div className="h-screen w-full">
             <header className="sticky top-0 z-50 bg-white text-gray-900 shadow-md dark:bg-gray-900 dark:text-white">
                 <div className="mx-auto flex items-center justify-between px-6 py-4">
                     <div className="flex w-full items-center gap-4">
-                        {/* Mobile Menu Button */}
                         <button onClick={() => setOpenMobile(true)} className="block lg:hidden">
                             <img src="/assets/menu_icon.png" alt="Menu Bar" className="h-5 w-5" />
                         </button>
@@ -46,9 +49,8 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
                                             router.visit(route(tab.id));
                                             tabSelected(tab.id);
                                         }}
-                                        className={`rounded-none border-b-2 ${
-                                            selectedTab === tab.id ? 'border-black text-black' : 'hover:border-gray border-transparent text-gray-600'
-                                        }`}
+                                        className={`rounded-none border-b-2 ${selectedTab === tab.id ? 'border-black text-black' : 'hover:border-gray border-transparent text-gray-600'
+                                            }`}
                                     >
                                         {tab.label}
                                     </Button>
@@ -58,11 +60,11 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
 
                         <div className="flex-grow" />
 
-                        {/* <a className="hidden sm:block">
-                            <Button onClick={() => isClassicDialogOpened(true)} variant="outline">
+                        <a className="hidden sm:block">
+                            <Button onClick={ () => router.visit(route(RouteNames.LogIn))} variant="outline">
                                 Log In
                             </Button>
-                        </a> */}
+                        </a>
                     </div>
                 </div>
             </header>
@@ -74,6 +76,42 @@ export default function MainPage({ children }: { children: React.ReactNode }) {
                     console.log(`Clicked on ${itemId}`);
                     setOpenMobile(false);
                     router.visit(route(itemId));
+                    if (isMobileOrTablet()) {
+                        console.log("Mobile detected.");
+                        switch (itemId) {
+                            case RouteNames.Home:
+                                headerTitle("Home");
+                                break;
+
+                            case RouteNames.PrivacyPolicy:
+                                headerTitle("Privacy Policy");
+                                break;
+
+                            case RouteNames.Government:
+                                headerTitle("Government");
+                                break;
+
+                            case RouteNames.Services:
+                                headerTitle("Services");
+                                break;
+
+                            case RouteNames.ExecutiveOrders:
+                                headerTitle("Executive Orders");
+                                break;
+
+                            case RouteNames.NewsAndEventsPage:
+                                headerTitle("News & Events");
+                                break;
+
+                            case RouteNames.TransparencyPage:
+                                headerTitle("Transparency");
+                                break;
+
+                            case RouteNames.ContactUs:
+                                headerTitle("Contact Us");
+                                break;
+                        }
+                    }
                 }}
             />
         </div>

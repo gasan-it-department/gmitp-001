@@ -7,5 +7,7 @@ export enum RouteNames {
   ExecutiveOrders = "executiveOrdersPage",
   NewsAndEventsPage = "newsAndEventsPage",
   TransparencyPage = "transparencyPage",
-  ContactUs = "contactUsPage"
+  ContactUs = "contactUsPage",
+  LogIn = "login",
+  Register = "register"
 }
