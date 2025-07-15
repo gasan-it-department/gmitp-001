@@ -5,7 +5,7 @@ namespace App\Domains\Users\Repositories;
 use App\Domains\Users\Interfaces\UserRepositoryInterface;
 use App\Domains\Users\Dtos\UserDto;
 use App\Domains\Users\Mappers\UserMapper;
-use App\Domains\Models\User;
+use App\Domains\Users\Models\User;
 
 
 class UserRepository implements UserRepositoryInterface
@@ -23,6 +23,7 @@ class UserRepository implements UserRepositoryInterface
 
     public function create(array $data)
     {
+
         return User::create($data);
     }
 
