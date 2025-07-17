@@ -10,15 +10,10 @@ class UserDto
 {
     public function __construct(
         public readonly ?int $id,
-        public readonly string $first_name,
-        public readonly string $last_name,
-        public readonly ?string $middle_name,
-        public readonly int $age,
-        public readonly string $gender,
         public readonly string $phone,
-        public readonly string $address,
-        public readonly string $password,
+        public readonly string $user_name,
         public readonly string $role,
+        public readonly string $password,
     ) {
     }
 

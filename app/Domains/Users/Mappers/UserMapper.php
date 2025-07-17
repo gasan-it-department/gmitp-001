@@ -14,13 +14,8 @@ class UserMapper
         return new UserDto(
 
             id: $user->id,
-            first_name: $user->first_name,
-            last_name: $user->last_name,
-            middle_name: $user->middle_name,
-            age: $user->age,
-            address: $user->address,
-            gender: $user->gender,
             phone: $user->phone,
+            user_name: $user->user_name,
             password: $user->password,
             role: $user->role,
 
