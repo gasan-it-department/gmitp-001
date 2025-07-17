@@ -11,13 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('first_name');
-            $table->string('last_name')->nullable();
-            $table->string('middle_name')->nullable();
-            $table->integer('age')->nullable();
-            $table->string('address')->nullable();
-            $table->string('gender')->nullable();
+            $table->uuid('id')->primary();
+            $table->string('user_name')->unique();
             $table->string('role')->default('user'); // Default role can be set t)
             $table->string('phone')->unique();
             $table->timestamp('phone_verified_at')->nullable();
@@ -27,7 +22,7 @@ return new class extends Migration {
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
+            $table->string('phone')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });

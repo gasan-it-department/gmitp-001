@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules;
+use App\Domains\Users\Models\User;
 use Inertia\Response;
 class RegisterUserController extends Controller
 {
@@ -37,15 +38,11 @@ class RegisterUserController extends Controller
     {
 
         $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'middle_name' => 'required|string|max:255',
-            'age' => 'required|integer|min:0|max:120',
-            'gender' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:15',
+            'user_name' => 'required|string|lowercase|max:255|unique:' . User::class,
+            'phone' => 'required|string|max:15||unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+
 
         $validated['password'] = Hash::make($validated['password']);
 

@@ -1,36 +1,27 @@
-import Input from '@/components/Auth/Input';
 import { Button } from '@/components/ui/button';
-import TextLink from '@/components/ui/TextLink';
+import InputError from '@/components/ui/input-errror';
+import Input from '@/components/ui/input-floating';
+import TextLink from '@/components/ui/text-link';
 import AuthLayout from '@/layouts/AuthLayoutTemplate';
 import { useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import React, { useState } from 'react';
 
 export default function RegisterPage() {
     type RegisterFormData = {
-        first_name: string;
-        last_name: string;
-        middle_name?: string;
-        age: string;
-        gender: string;
-        address: string;
+        user_name: string;
         phone: string;
         password: string;
         password_confirmation: string;
     };
 
     const { data, setData, post, processing, errors } = useForm<RegisterFormData>({
-        first_name: '',
-        last_name: '',
-        middle_name: '',
-        age: '',
-        gender: '',
-        address: '',
+        user_name: '',
         phone: '',
         password: '',
         password_confirmation: '',
     });
-
+    console.log(data);
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         post('/store-account');
@@ -46,65 +37,76 @@ export default function RegisterPage() {
         setShowPassword((prev: any) => !prev);
     };
 
+    const handleRegisterPhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+
+        const numericValue = value.replace(/\D/g, '');
+        if (numericValue === '' || /^0[0-9]*$/.test(numericValue)) {
+            setData('phone', numericValue);
+        }
+    };
+
     return (
         <AuthLayout title="Create an account" description="Enter your details below to create your account">
             {/* <Head title="Register" /> */}
-            <form className="flex flex-col gap-6">
-                <div className="grid gap-6">
+            <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+                <div className="grid gap-10">
                     <div className="grid gap-2">
-                        {/* <Label htmlFor="name">Name</Label> */}
                         <Input
                             label="Phone Number"
-                            id="name"
-                            type="text"
-                            required
-                            autoFocus
+                            name="phone"
+                            value={data.phone}
+                            onChange={handleRegisterPhoneInput}
+                            inputMode="numeric"
                             tabIndex={1}
-                            autoComplete="name"
                             disabled={processing}
-                            placeholder="Full name"
                         />
-                        {/* <InputError message={errors.name} className="mt-2" /> */}
+                        <InputError message={errors.phone} />
                     </div>
 
                     <div className="grid gap-2">
-                        {/* <Label htmlFor="email">Email address</Label> */}
                         <Input
                             label="User Name"
-                            id="email"
-                            type="email"
+                            name="user_name"
+                            type="text"
+                            value={data.user_name}
+                            onChange={(e) => setData('user_name', e.target.value)}
                             required
                             tabIndex={2}
-                            autoComplete="email"
                             disabled={processing}
-                            placeholder="email@example.com"
                         />
-                        {/* <InputError message={errors.email} /> */}
+                        <InputError message={errors.user_name} />
                     </div>
 
-                    <div className="grid gap-2">
-                        {/* <Label htmlFor="password">Password</Label> */}
+                    <div className="relative grid gap-2">
                         <Input
                             label="Password"
+                            name="password"
                             id="password"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             required
                             tabIndex={3}
                             autoComplete="new-password"
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             disabled={processing}
-                            placeholder="Password"
                         />
-                        {/* <InputError message={errors.password} /> */}
+                        <button
+                            type="button"
+                            onClick={togglePassword}
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-600 hover:text-gray-900 focus:outline-none dark:text-gray-300 dark:hover:text-white"
+                        >
+                            {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                        </button>
+
+                        <InputError message={errors.password} />
                     </div>
 
                     <div className="grid gap-2">
-                        {/* <Label htmlFor="password_confirmation">Confirm password</Label> */}
                         <Input
                             label="Confirm Password"
                             id="password_confirmation"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             required
                             tabIndex={4}
                             autoComplete="new-password"
@@ -113,7 +115,7 @@ export default function RegisterPage() {
                             disabled={processing}
                             placeholder="Confirm password"
                         />
-                        {/* <InputError message={errors.password_confirmation} /> */}
+                        <InputError message={errors.password_confirmation} />
                     </div>
 
                     <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
