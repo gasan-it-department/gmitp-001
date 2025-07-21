@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/card';
-import PublicLayout from '@/layouts/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/template/PublicLayoutTemplate';
 import { useEffect, useState } from 'react';
 
 export default function GovernmentPage() {

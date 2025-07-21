@@ -1,4 +1,4 @@
-import PublicLayout from '@/layouts/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/template/PublicLayoutTemplate';
 import { useState } from 'react';
 
 export default function BusinessPermitAndLicensing() {

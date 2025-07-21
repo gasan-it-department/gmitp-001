@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
-import InputError from '@/components/ui/input-errror';
+import InputError from '@/components/ui/input-error';
 import Input from '@/components/ui/input-floating';
 import TextLink from '@/components/ui/text-link';
-import AuthLayout from '@/layouts/AuthLayoutTemplate';
+import AuthLayout from '@/layouts/Auth/Template/AuthLayoutTemplate';
 import { useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import React, { useState } from 'react';
