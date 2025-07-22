@@ -1,10 +1,10 @@
-import CarouselComponent from '@/components/Public/Home/Carousel';
-import FeatrureSection from '@/components/Public/Home/FeatureSection';
-import HomeFooter from '@/components/Public/Home/Footer';
-import HeroBanner from '@/components/Public/Home/HeroBanner';
 import PublicLayout from '@/layouts/Public/template/PublicLayoutTemplate';
+import CarouselComponent from '@/pages/Public/Home/Components/Carousel';
+import FeatrureSection from '@/pages/Public/Home/Components/FeatureSection';
+import HomeFooter from '@/pages/Public/Home/Components/Footer';
+import HeroBanner from '@/pages/Public/Home/Components/HeroBanner';
 
-const HomePage = () => {
+export default function HomePage() {
     return (
         <PublicLayout title="Home" description="">
             <HeroBanner />
@@ -13,5 +13,4 @@ const HomePage = () => {
             <HomeFooter />
         </PublicLayout>
     );
-};
-export default HomePage;
+}

@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
                 <div className="text-center text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <TextLink href={route('login')} tabIndex={6}>
+                    <TextLink href={route('login.show')} tabIndex={6}>
                         Log in
                     </TextLink>
                 </div>

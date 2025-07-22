@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import Input from '@/components/ui/input-floating';
 import { Switch } from '@/components/ui/switch';
-import TextLink from '@/components/ui/text-link';
 import AuthLayout from '@/layouts/Auth/Template/AuthLayoutTemplate';
-import { useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
@@ -84,9 +83,9 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
             <div className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
-                <TextLink href={route('register')} tabIndex={5}>
+                <Link href={route('register.show')} tabIndex={5}>
                     Sign up
-                </TextLink>
+                </Link>
             </div>
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
         </AuthLayout>

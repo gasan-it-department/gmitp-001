@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const HeroBanner = () => {
+export default function HeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
 
     useEffect(() => {
@@ -77,5 +77,4 @@ const HeroBanner = () => {
             </div>
         </div>
     );
-};
-export default HeroBanner;
+}

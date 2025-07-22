@@ -25,8 +25,8 @@ class RegisterUserController extends Controller
             'title' => 'Register User',
             'description' => 'Create a new user account to access the system.',
             'breadcrumbs' => [
-                ['name' => 'Home', 'url' => route('homePage')],
-                ['name' => 'Register', 'url' => route('register')],
+                ['name' => 'Home', 'url' => route('home.show')],
+                ['name' => 'Register', 'url' => route('register.show')],
             ],
             // 'formAction' => route('registerUser'),
             // 'formMethod' => 'POST',

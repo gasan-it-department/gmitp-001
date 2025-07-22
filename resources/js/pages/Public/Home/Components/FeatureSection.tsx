@@ -1,4 +1,4 @@
-const FeatrureSection = () => {
+export default function FeatrureSection() {
     return (
         <section className="bg-white dark:bg-gray-900">
             <div className="mx-auto max-w-screen-xl px-4 py-8 sm:py-16 lg:px-6">
@@ -133,6 +133,4 @@ const FeatrureSection = () => {
             </div>
         </section>
     );
-};
-
-export default FeatrureSection;
+}

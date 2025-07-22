@@ -3,9 +3,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useInitials } from '@/hooks/use-initials';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LogIn, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import { HeaderNav } from '../pages/Public/Home/Components/HeaderNavigation';
 import GmitpLogo from './Gmitp-logo';
-import { HeaderNav } from './Public/HeaderNavigation';
 import { Input } from './ui/input';
 
 const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
@@ -73,10 +73,12 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             <Input type="search" placeholder="Search..." className="hidden rounded-3xl border border-gray-400 lg:flex" />
                         </div>
                         <div className="relative flex items-center space-x-1">
-                            <Button variant="ghost" className="border border-gray-400">
+                            <Link
+                                href={route('login.show')}
+                                className="text-bold rounded-2xl border border-gray-600 p-1 px-3 font-bold text-gray-500"
+                            >
                                 Login
-                                <LogIn />
-                            </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>

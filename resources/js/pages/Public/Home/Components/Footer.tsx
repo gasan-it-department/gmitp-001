@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const HomeFooter = () => {
+export default function HomeFooter() {
     return (
         <footer className="bg-white p-4 sm:p-6 dark:bg-gray-800">
             <div className="mx-auto max-w-screen-xl">
@@ -115,6 +115,4 @@ const HomeFooter = () => {
             </div>
         </footer>
     );
-};
-
-export default HomeFooter;
+}

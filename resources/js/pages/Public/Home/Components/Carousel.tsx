@@ -14,7 +14,7 @@ const newsCarouselItems = [
     { id: 6, title: 'News 3 Item', excerpt: 'This is a short summary for news 3', image: '/assets/news_banner_3.png' },
 ];
 // const plugin = React.useRef(Autoplay({ delay: 2100, stopOnInteraction: true }));
-const CarouselComponent = () => {
+export default function CarouselComponent() {
     return (
         <section>
             <div className="mx-auto max-w-md text-center">
@@ -64,6 +64,4 @@ const CarouselComponent = () => {
             </div>
         </section>
     );
-};
-
-export default CarouselComponent;
+}
