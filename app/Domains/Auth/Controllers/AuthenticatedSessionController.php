@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Controllers\Auth;
+namespace App\Domains\Auth\Controllers;
 
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;

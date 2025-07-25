@@ -1,4 +1,4 @@
-import PublicLayout from '@/layouts/Public/template/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 
 export default function Transparency() {
     return (

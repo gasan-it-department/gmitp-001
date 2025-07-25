@@ -1,4 +1,4 @@
-import PublicLayout from '@/layouts/Public/template/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import CarouselComponent from '@/pages/Public/Home/Components/Carousel';
 import FeatrureSection from '@/pages/Public/Home/Components/FeatureSection';
 import HomeFooter from '@/pages/Public/Home/Components/Footer';

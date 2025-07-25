@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import Input from '@/components/ui/input-floating';
 import { Switch } from '@/components/ui/switch';
-import AuthLayout from '@/layouts/Auth/Template/AuthLayoutTemplate';
+import AuthLayout from '@/layouts/Auth/wrapper/AuthLayoutTemplate';
 import { Link, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Public;
+namespace App\Domains\Public\Controllers;
 
 use Inertia\Inertia;
 
@@ -22,5 +22,15 @@ class PublicPagesController extends Controller
     public function showContactUsPage()
     {
         return Inertia::render('Public/ContactUs/ContactUsPage');
+    }
+
+    public function showNewsEventsPage()
+    {
+        return Inertia::render('Public/NewsAndEvents/NewsAndEventsPage');
+    }
+
+    public function showGovernmentPage()
+    {
+        return Inertia::render('Public/Government/GovernmentPage');
     }
 }

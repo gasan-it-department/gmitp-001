@@ -8,7 +8,7 @@ interface PublicLayoutProps {
     description: string;
 }
 
-export default function PublicLayout({ children, title, description }: PublicLayoutProps) {
+export default function PublicLayoutTemplate({ children, title, description }: PublicLayoutProps) {
     return (
         <LayoutShell variant="header">
             <LayoutHeader />

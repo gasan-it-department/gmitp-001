@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import PublicLayout from '@/layouts/Public/template/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { useState } from 'react';
 
 export default function BusinessPermitAndLicensing() {

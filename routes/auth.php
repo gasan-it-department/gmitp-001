@@ -2,8 +2,8 @@
 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\RegisterUserController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Domains\Auth\Controllers\RegisterUserController;
+use App\Domains\Auth\Controllers\AuthenticatedSessionController;
 
 Route::get('/register', [RegisterUserController::class, 'showRegisterUserPage'])->name('register.show');
 Route::get('/login', [AuthenticatedSessionController::class, 'showLoginPage'])->name('login.show');
