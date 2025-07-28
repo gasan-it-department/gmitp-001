@@ -1,13 +1,14 @@
-import { Button } from '@/components/ui/button';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+
 import { useEffect, useState } from 'react';
 
 export default function HeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
+    const [municipality, setMunicipality] = useState('Gasan');
 
     useEffect(() => {
         setTimeout(() => setFadeVisible(true), 500);
     }, []);
+
     return (
         <div className="relative overflow-hidden">
             {/* Background gradient accent */}
@@ -18,8 +19,8 @@ export default function HeroBanner() {
                 {/* Text column - takes 3/5 on desktop, full on mobile */}
                 <div className="absolute top-0 m-2 flex gap-3">
                     <div
-                        className="flex h-15 w-15 animate-bounce items-center justify-center rounded-full bg-contain bg-center bg-no-repeat md:mt-3 md:h-20 md:w-20 lg:mt-15 lg:h-24 lg:w-24"
-                        style={{ backgroundImage: "url('/assets/bp_logo.png')" }}
+                        className="flex h-15 w-15 items-center justify-center rounded-full bg-contain bg-center bg-no-repeat md:mt-3 md:h-20 md:w-20 lg:mt-15 lg:h-35 lg:w-35"
+                        style={{ backgroundImage: "url('/assets/gasan_logo.png')" }}
                     ></div>{' '}
                 </div>
                 <div className="mt-2 flex flex-col justify-center md:col-span-3 md:pr-6 xl:pr-12">
@@ -36,27 +37,14 @@ export default function HeroBanner() {
 
                         {/* Main heading with multi-line approach */}
                         <h1 className="transform scroll-m-20 text-4xl font-bold tracking-tight transition-all duration-1000 md:text-5xl lg:text-6xl">
-                            <span className="block">Gasan System</span>
-                            <span className="mt-1 block text-primary">Coming Soon</span>
+                            <span className="block">Welcome to</span>
+                            <span className="mt-1 block text-primary">{municipality}</span>
                         </h1>
 
                         {/* Description text */}
                         <p className="max-w-xl text-lg text-muted-foreground">
-                            Lorem Ipsum es simplemente el texto de relleno de las imprentas y archivos de texto. Lorem Ipsum ha sido el texto de
-                            relleno estándar de las industrias desde el año 1500, cuando un impresor (N. del T.
+                            An integrated platform designed to streamline local government services in {municipality}.
                         </p>
-
-                        <div className="flex flex-col gap-4 sm:flex-row">
-                            <Button size="lg" className="group">
-                                Lorem Ipsum
-                                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </Button>
-
-                            <Button variant="outline" size="lg" className="group">
-                                Lorem Ipsum
-                                <ExternalLink className="ml-2 h-4 w-4 opacity-70 transition-opacity group-hover:opacity-100" />
-                            </Button>
-                        </div>
                     </div>
                 </div>
 

@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 
 class PublicPagesController extends Controller
 {
+
+    public function showMainLandingPage()
+    {
+        return Inertia::render('Public/MainLandingPage/MainLandingPage');
+    }
+    
     public function showHomePage()
     {
         return Inertia::render('Public/Home/HomePage');

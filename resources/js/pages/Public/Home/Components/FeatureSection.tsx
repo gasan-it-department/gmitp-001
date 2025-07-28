@@ -1,37 +1,34 @@
+import { Button } from '@/components/ui/button';
+import { AlertOctagon, ArrowRight } from 'lucide-react';
+
 export default function FeatrureSection() {
     return (
         <section className="bg-white dark:bg-gray-900">
             <div className="mx-auto max-w-screen-xl px-4 py-8 sm:py-16 lg:px-6">
                 <div className="mb-8 max-w-screen-md lg:mb-16">
                     <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                        Designed for business teams like yours
+                        Discover Wonders in Gasan
                     </h2>
                     <p className="text-gray-500 sm:text-xl dark:text-gray-400">
-                        Here at Flowbite we focus on markets where technology, innovation, and capital can unlock long-term value and drive economic
-                        growth.
+                        Founded in 1609, Gasan is part of one of the oldest settlements in Marinduque 
+PeoPlaid
+. It serves as a cultural hub, particularly during Holy Week when residents participate in the iconic Moriones Festival, featuring devotees dressed as "Moryons" reenacting Biblical scenes.
                     </p>
                 </div>
                 <div className="space-y-8 md:grid md:grid-cols-2 md:gap-12 md:space-y-0 lg:grid-cols-3">
                     <div>
                         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
-                            <svg
-                                className="h-5 w-5 text-blue-600 lg:h-6 lg:w-6 dark:text-blue-300"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path
-                                    fill-rule="evenodd"
-                                    d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"
-                                    clip-rule="evenodd"
-                                ></path>
-                            </svg>
+                            <AlertOctagon  size={20} color='blue'/>
                         </div>
-                        <h3 className="mb-2 text-xl font-bold dark:text-white">Lorem Ipsum</h3>
+                        <h3 className="mb-2 text-xl font-bold dark:text-white">Complain</h3>
                         <p className="text-gray-500 dark:text-gray-400">
-                            Plan it, create it, launch it. Collaborate seamlessly with all the organization and hit your marketing goals every month
-                            with our marketing plan.
+                            Formally report concerns, issues, or violations related to public services, facilities, or community welfare for appropriate action and resolution by the local government.
                         </p>
+
+                        <Button className='mt-5' variant="outline">
+                            Create Complain
+                            <ArrowRight/>
+                        </Button>
                     </div>
                     <div>
                         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
@@ -92,7 +89,7 @@ export default function FeatrureSection() {
                             Audit-proof software built for critical financial operations like month-end close and quarterly budgeting.
                         </p>
                     </div>
-                    <div>
+                    {/* <div>
                         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
                             <svg
                                 className="h-5 w-5 text-blue-600 lg:h-6 lg:w-6 dark:text-blue-300"
@@ -107,8 +104,8 @@ export default function FeatrureSection() {
                         <p className="text-gray-500 dark:text-gray-400">
                             Craft beautiful, delightful experiences for both marketing and product with real cross-company collaboration.
                         </p>
-                    </div>
-                    <div>
+                    </div> */}
+                    {/* <div>
                         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
                             <svg
                                 className="h-5 w-5 text-blue-600 lg:h-6 lg:w-6 dark:text-blue-300"
@@ -128,7 +125,7 @@ export default function FeatrureSection() {
                             Keep your company’s lights on with customizable, iterative, and structured workflows built for all efficient teams and
                             individual.
                         </p>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </section>

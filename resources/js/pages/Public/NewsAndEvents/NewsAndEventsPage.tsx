@@ -68,13 +68,11 @@ export default function FeaturedArticleList() {
                             {/* Featured Article */}
                             <Card className="col-span-full flex flex-col overflow-hidden pt-0 lg:col-span-2">
                                 <div className="relative aspect-[16/9] w-full overflow-hidden">
-                                    <image
+                                    <img
                                         src={featuredPost.imageUrl}
                                         alt={featuredPost.title}
-                                        fill
                                         className="object-cover transition-transform hover:scale-105"
                                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 50vw"
-                                        priority
                                     />
                                 </div>
                                 <CardHeader className="flex-1">

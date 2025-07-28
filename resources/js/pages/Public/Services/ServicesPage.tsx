@@ -4,65 +4,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { Link } from '@inertiajs/react';
-import { ArrowRightIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { TouchEvent, useEffect, useRef, useState } from 'react';
+import { ArrowRightIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, LucideIcon } from 'lucide-react';
+import { ReactNode, TouchEvent, useEffect, useRef, useState } from 'react';
+import { Briefcase, Stethoscope, FileText, BriefcaseMedical } from 'lucide-react';
 
 type BlogPost = {
     id: number;
     title: string;
-    date: string;
-    imageUrl: string;
+    icon: ReactNode;
     excerpt: string;
 };
 
 const blogPosts: BlogPost[] = [
     {
         id: 1,
-        title: 'How Marketing Analytics is Reshaping Business Strategies',
-        date: 'April 18, 2023',
-        imageUrl:
-            'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80',
-        excerpt: 'Data-driven marketing is changing how companies make decisions. Learn how to leverage analytics for better results.',
+        title: 'Business Permit and Licensing Office (BPLO)',
+        icon: <Briefcase size={80} />,
+        excerpt: 'A government process that ensures businesses operate legally and comply with local regulations. It involves issuing permits, collecting fees, and monitoring business activities to promote safety, fair trade, and local economic development.',
     },
     {
         id: 2,
-        title: "The Rise of Video Marketing: Why You Can't Ignore It",
-        date: 'April 12, 2023',
-        imageUrl:
-            'https://images.unsplash.com/photo-1626785774573-4b799315345d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80',
-        excerpt: 'Video content has become an essential part of modern marketing strategies. Find out why and how to get started.',
+        title: "Health Certificate and Sanitary Permit",
+        icon: <Stethoscope size={80} />,
+        excerpt: 'Documents issued by the local health office to ensure public safety and hygiene. A Health Certificate confirms an individual is medically fit and free from communicable diseases, while a Sanitary Permit authorizes establishments to operate in compliance with health and sanitation standards.',
     },
     {
         id: 3,
-        title: 'Building Customer Loyalty Through Content Marketing',
-        date: 'April 5, 2023',
-        imageUrl:
-            'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80',
-        excerpt: 'Create content that not only attracts but retains customers. Strategies for building long-term relationships through your content.',
+        title: 'Local Civil Registry',
+        icon: <FileText size={80} />,
+        excerpt: 'Responsible for recording vital events such as births, marriages, deaths, and other civil status documents. It ensures the proper registration, issuance, and safekeeping of legal records for individuals.',
     },
     {
-        id: 4,
-        title: 'Social Media Trends That Will Dominate in 2023',
-        date: 'March 29, 2023',
-        imageUrl:
-            'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2074&q=80',
-        excerpt: 'Stay ahead of the curve with these emerging social media trends that will shape the digital landscape this year.',
-    },
-    {
-        id: 5,
-        title: 'Email Marketing Personalization: Going Beyond First Name',
-        date: 'March 22, 2023',
-        imageUrl:
-            'https://images.unsplash.com/photo-1596526131083-e8c633c948d2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80',
-        excerpt: "Advanced techniques for personalizing your email campaigns that go well beyond simply using a subscriber's name.",
-    },
-    {
-        id: 6,
-        title: 'Sustainable Marketing: Building Eco-Friendly Campaigns',
-        date: 'March 15, 2023',
-        imageUrl:
-            'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80',
-        excerpt: 'How to integrate sustainability into your marketing strategy and connect with environmentally conscious consumers.',
+        id: 3,
+        title: 'Medical Services',
+        icon: <BriefcaseMedical size={80} />,
+        excerpt: 'Provide health consultations, checkups, treatments, and preventive care to ensure the well-being of individuals and communities through accessible public healthcare programs.',
     },
 ];
 
@@ -201,7 +177,7 @@ export default function BlogSectionSlider() {
                             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Services</h2>
                             <p className="text-sm text-muted-foreground md:text-base"></p>
                         </div>
-                        <div className="flex hidden items-center space-x-2 sm:flex">
+                        <div className="hidden items-center space-x-2 sm:flex">
                             <Button variant="outline" size="icon" onClick={handlePrevious} disabled={currentIndex === 0} aria-label="Previous slide">
                                 <ChevronLeftIcon className="h-4 w-4" />
                             </Button>
@@ -223,24 +199,18 @@ export default function BlogSectionSlider() {
                             {blogPosts.map((post) => (
                                 <div key={post.id} className="carousel-item w-full flex-none snap-start px-2 sm:w-1/2 sm:px-4 lg:w-1/3">
                                     <Card className="flex h-full flex-col overflow-hidden p-0 shadow-sm transition-shadow hover:shadow-md">
-                                        <div className="relative h-40 overflow-hidden sm:h-48 md:h-52">
-                                            <image
-                                                src={post.imageUrl}
-                                                alt={post.title}
-                                                className="object-cover transition-transform duration-300 hover:scale-105"
-                                            />
+                                        <div className="relative h-40">
+                                            <div className='p-10'>
+                                                {post.icon}
+                                            </div>
                                         </div>
                                         <CardContent className="flex-grow">
-                                            <div className="mb-2 flex items-center text-xs text-muted-foreground sm:mb-3 sm:text-sm">
-                                                <CalendarIcon className="mr-1 h-3 w-3" />
-                                                <span>{post.date}</span>
-                                            </div>
                                             <h3 className="mb-2 line-clamp-2 text-base font-semibold sm:text-lg">{post.title}</h3>
                                             <p className="line-clamp-2 text-xs text-muted-foreground sm:line-clamp-3 sm:text-sm">{post.excerpt}</p>
                                         </CardContent>
                                         <CardFooter className="pb-6">
-                                            <Button variant="ghost" size="sm" className="w-full text-sm" asChild>
-                                                <Link href="#" className="flex items-center justify-center">
+                                            <Button variant="outline" size="sm" className="w-full text-sm p-5" asChild>
+                                                <Link href="" className="flex items-center justify-center">
                                                     Apply
                                                     <ArrowRightIcon className="ml-1 h-4 w-4" />
                                                 </Link>
