@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('user_name')->unique();
-            $table->string('role')->default('user'); // Default role can be set t)
+            $table->string('role')->default('client'); // Default role can be set t)
             $table->string('phone')->unique();
             $table->timestamp('phone_verified_at')->nullable();
             $table->string('password');

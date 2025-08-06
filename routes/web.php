@@ -11,3 +11,5 @@ Route::get('/business-permit', fn() => Inertia::render('Public/BusinessPermitAnd
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/public.php';
+require __DIR__ . '/admin.php';
+require __DIR__ . '/client.php';

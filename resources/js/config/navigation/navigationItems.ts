@@ -1,4 +1,4 @@
-import { LucideIcon, House, Phone, FolderKanban, Newspaper, Landmark, ShieldCheck } from "lucide-react";
+import { LucideIcon, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck } from "lucide-react";
 
 export type NavigationItem = {
   title: string;
@@ -21,11 +21,10 @@ export const useNavigation = (): NavigationItem[] => [
     title: "Services",
     href: "/services",
     icon: FolderKanban,
-  },
-  {
-    title: "Contact Us",
-    href: "/contact-us",
-    icon: Phone,
+  }, {
+    title: "Travel",
+    href: "/tourism",
+    icon: MapPinned,
   },
   {
     title: "News & Events",
@@ -41,6 +40,11 @@ export const useNavigation = (): NavigationItem[] => [
     title: "transparency",
     href: "/transparency",
     icon: ShieldCheck,
-  }
+  },
+  {
+    title: "Contact Us",
+    href: "/contact-us",
+    icon: Phone,
+  },
 
 ];
