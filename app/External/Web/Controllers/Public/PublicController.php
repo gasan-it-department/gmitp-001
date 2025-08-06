@@ -36,4 +36,16 @@ class PublicController extends Controller
     {
         return Inertia::render('Public/Government/GovernmentPage');
     }
+
+    public function showPrivacyPolicyPage(){
+        return Inertia::render('Public/PrivacyPolicy/PrivacyPolicyPage');
+    }
+
+    public function showMunicipalAdminPage(){
+        return Inertia::render('Admin/MunicipalAdmin/MunicipalAdminPage');
+    }
+
+    public function showActionCenterPage(){
+        return Inertia::render('Public/ActionCenter/ActionCenterPage');
+    }
 }

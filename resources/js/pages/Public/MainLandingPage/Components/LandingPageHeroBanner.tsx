@@ -1,6 +1,10 @@
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import { useEffect, useState } from 'react';
+import ActionCenterServices from './ActionCenterServices';
+import { router } from '@inertiajs/react';
 
 export default function LandingPageHeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
@@ -25,7 +29,7 @@ export default function LandingPageHeroBanner() {
             <div className="absolute -right-32 -bottom-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
 
             <div className="relative container mx-auto grid grid-cols-1 items-center gap-8 px-4 py-10 md:grid-cols-5 md:gap-12 md:py-15 lg:py-10 xl:gap-16 2xl:max-w-[1400px]">
-        
+
                 <div className="absolute top-0 m-2 flex gap-3">
                     <div
                         className="flex h-15 w-15 animate-bounce items-center justify-center rounded-full bg-contain bg-center bg-no-repeat md:mt-3 md:h-20 md:w-20 lg:mt-15 lg:h-24 lg:w-24"
@@ -37,19 +41,14 @@ export default function LandingPageHeroBanner() {
                         className={`transform space-y-6 transition-all duration-1000 md:space-y-8 ${fadeVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                             } `}
                     >
-                        {/* Label with dots */}
                         <div className="flex items-center space-x-3">
-                            {/* <span className="h-1.5 w-1.5 rounded-full bg-primary"></span> */}
-                            {/* <h2 className="text-sm font-semibold tracking-wider text-primary uppercase">Art Director & Visual Designer</h2> */}
+
                         </div>
 
-                        {/* Main heading with multi-line approach */}
                         <h1 className="transform scroll-m-20 text-4xl font-bold tracking-tight transition-all duration-1000 md:text-5xl lg:text-6xl">
                             <span className="block sm:text-[90px]">Welcome</span>
-                            {/* <span className="mt-1 block text-primary">Unified</span> */}
                         </h1>
 
-                        {/* Description text */}
                         <p className="max-w-xl text-lg text-muted-foreground">
                             streamline and unify services accross all municipalities
                         </p>
@@ -81,7 +80,7 @@ export default function LandingPageHeroBanner() {
                         {registeredMunicipalities.map((municipality) => (
                             <Card
                                 key={municipality.id}
-                                className="w-full sm:w-[20rem] flex-shrink-0 p-4 flex flex-col items-center text-center shadow hover:shadow-md transition bg-white rounded-xl"
+                                className="w-full sm:w-[20rem] flex-shrink-0 p-4 flex flex-col items-center text-center bg-white rounded-xl"
                             >
                                 <img
                                     src={municipality.logo}
@@ -90,13 +89,17 @@ export default function LandingPageHeroBanner() {
                                 />
                                 <h3 className="text-[25px] font-semibold">{municipality.name}</h3>
                                 <h2 className="text-lg text-[10px]">{municipality.id}</h2>
+                                <Button className='w-full cursor-pointer hover:shadow-md' onClick={() => {
+                                    router.visit(route('home.show'));
+                                }}>
+                                    View Municipal
+                                </Button>
                             </Card>
+
                         ))}
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

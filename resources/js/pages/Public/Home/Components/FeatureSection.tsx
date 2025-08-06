@@ -1,13 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { AlertOctagon, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
 
 export default function FeatrureSection() {
+    const [headerFeatureTitle, setHeaderFeatureTitle] = useState("Rediscover Wonders in Gasan");
+
     return (
         <section className="bg-white dark:bg-gray-900">
             <div className="mx-auto max-w-screen-xl px-4 py-8 sm:py-16 lg:px-6">
                 <div className="mb-8 max-w-screen-md lg:mb-16">
                     <h2 className="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                        Discover Wonders in Gasan
+                        Rediscover Gasan
                     </h2>
                     <p className="text-gray-500 sm:text-xl dark:text-gray-400">
                         Founded in 1609, Gasan is part of one of the oldest settlements in Marinduque 
@@ -20,15 +23,11 @@ PeoPlaid
                         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
                             <AlertOctagon  size={20} color='blue'/>
                         </div>
-                        <h3 className="mb-2 text-xl font-bold dark:text-white">Complain</h3>
+                        <h3 className="mb-2 text-xl font-bold dark:text-white">Lorem Ipsum</h3>
                         <p className="text-gray-500 dark:text-gray-400">
-                            Formally report concerns, issues, or violations related to public services, facilities, or community welfare for appropriate action and resolution by the local government.
+                            Lorem Ipsum Dolor Sit Amet
                         </p>
 
-                        <Button className='mt-5' variant="outline">
-                            Create Complain
-                            <ArrowRight/>
-                        </Button>
                     </div>
                     <div>
                         <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
