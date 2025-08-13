@@ -1,10 +1,7 @@
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import { useEffect, useState } from 'react';
-import ActionCenterServices from './ActionCenterServices';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 export default function LandingPageHeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
@@ -89,11 +86,12 @@ export default function LandingPageHeroBanner() {
                                 />
                                 <h3 className="text-[25px] font-semibold">{municipality.name}</h3>
                                 <h2 className="text-lg text-[10px]">{municipality.id}</h2>
-                                <Button className='w-full cursor-pointer hover:shadow-md' onClick={() => {
-                                    router.visit(route('home.show'));
-                                }}>
-                                    View Municipal
-                                </Button>
+                                <Link
+                                    href={route('home.show')}
+                                    className="inline-block w-full text-center bg-black text-white py-2 px-4 rounded hover:shadow-md"
+                                >
+                                    View
+                                </Link>
                             </Card>
 
                         ))}

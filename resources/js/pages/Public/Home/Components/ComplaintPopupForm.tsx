@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover
 import { CalendarIcon, ChevronDownIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import moment from "moment";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FormState {
   message: string;
@@ -62,9 +63,9 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent showCloseButton={false} className="
       w-full h-screen max-w-none rounded-none m-0 p-4 overflow-y-auto scrollbar-hide
-                sm:max-w-[500px] sm:h-auto sm:rounded-lg sm:m-auto lg:h-5/6">
+                sm:max-w-[700px] sm:h-auto sm:rounded-lg sm:m-auto lg:h-5/6">
         <DialogHeader>
-          <DialogTitle className="p-5">Client Feedback Form</DialogTitle>
+          <DialogTitle className="p-3 text-[21px] text-center">Client Feedback Form</DialogTitle>
         </DialogHeader>
         <form className="flex flex-col gap-6" onSubmit={(e) => {
           e.preventDefault();
@@ -107,7 +108,6 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
             </Popover>
           </div>
 
-          {/* Time In */}
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-1">
               Time In / Oras ng Pagdating:
@@ -124,7 +124,6 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
             </div>
           </div>
 
-          {/* Time Out */}
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-1">
               Time Out / Oras ng Pag-alis:
@@ -143,7 +142,6 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
             </div>
           </div>
 
-          {/* Purpose */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Purpose of Transaction / Layunin o pakay ng transaksyon:
@@ -157,7 +155,6 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
             />
           </div>
 
-          {/* Person/Department */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Person or Department transacted with / Taong nakipagtransaksyon:
@@ -171,21 +168,20 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
             />
           </div>
 
-          {/* Recommendation */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Recommendation / Suggestion / Desired Action from Office:
             </label>
-            <Input
+            <Textarea
               id="recommendation"
               value={recommendation}
               onChange={(e) => setRecommendation(e.target.value)}
               placeholder=" "
               className="placeholder-transparent w-full"
+              rows={4} // Optional: controls height
             />
           </div>
 
-          {/* Upload Files */}
           <div>
             <label className="block font-bold">Upload Photos or Videos</label>
             <span className="block text-xs mt-1 mb-2">
@@ -195,6 +191,7 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
             <input
               type="file"
               multiple
+              accept="image/*,video/*"
               onChange={handleFileChange}
               className="hidden"
               id="file-upload"
