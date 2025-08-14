@@ -15,7 +15,7 @@ class Role
         return new self(EnumRoles::fromString($role));
     }
 
-    public function value(): string
+    public function getValue(): string
     {
         return $this->value->value;
     }

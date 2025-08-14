@@ -2,14 +2,17 @@
 
 namespace App\Core\Users\Domains\ValueObjects;
 
-class Password
+use App\Core\Users\Domains\Exceptions\InvalidPasswordExceptions;
+final readonly class Password
 {
 
-    private string $value;
+    private const MIN_LENGTH = 8;
 
-    public function __construct(string $value)
-    {
-        $this->setValue($value);
+
+    public function __construct(
+        private string $value
+    ) {
+        $this->validate($value);
     }
 
     public function getValue(): string
@@ -17,8 +20,36 @@ class Password
         return $this->value;
     }
 
-    private function setValue(string $value): void
+    public function equals(Password $other): bool
     {
-        $this->value = $value;
+        return $this->value === $other->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->value;
+    }
+
+    private function validate(string $value): void
+    {
+        if (empty($value)) {
+            throw InvalidPasswordExceptions::empty();
+        }
+
+        if (strlen($value) < self::MIN_LENGTH) {
+            throw InvalidPasswordExceptions::tooShort(self::MIN_LENGTH);
+        }
+
+        if (str_contains($value, ' ')) {
+            throw InvalidPasswordExceptions::containsSpaces();
+        }
+
+        if (!preg_match('/[A-Z]/', $value)) {
+            throw InvalidPasswordExceptions::missingUppercase();
+        }
+
+        if (!preg_match('/\d/', $value)) {
+            throw InvalidPasswordExceptions::missingNumber();
+        }
     }
 }

@@ -5,7 +5,7 @@ namespace App\External\Web\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\External\Web\Request\Auth\CreateUserRequest;
 use Illuminate\Http\Request;
-use App\Core\Users\Application\Service\CreateUserService;
+use App\Core\Users\Application\Services\CreateUserService;
 use App\Core\Users\Application\Dto\CreateUserDto as Dto;
 
 class CreateUserController extends Controller

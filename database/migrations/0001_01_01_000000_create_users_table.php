@@ -11,10 +11,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id();
+            $table->uuid('uuid')->unique();
             $table->string('user_name')->unique();
             $table->string('role')->default('client'); // Default role can be set t)
             $table->string('phone')->unique();
+            $table->string('municipality')->nullable();
             $table->timestamp('phone_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
