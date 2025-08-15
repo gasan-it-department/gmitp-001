@@ -4,7 +4,9 @@ import { Link, usePage } from '@inertiajs/react';
 import GmitpLogo from './Gmitp-logo';
 import { HeaderNav } from './Public/HeaderNavigation';
 import { LeftNavigation } from './Public/LeftNavigation';
-import { Input } from './ui/input';
+import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
+import { useState } from 'react';
+import { Button } from './ui/button';
 
 const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
@@ -13,6 +15,7 @@ interface AppHeaderProps {
 }
 
 export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
+    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
@@ -26,8 +29,8 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <LeftNavigation />
                     </div>
 
-                    <Link href="/dashboard" prefetch className="flex items-center space-x-2">
-                        <GmitpLogo />
+                    <Link href="/home" prefetch className="flex items-center space-x-2">
+                        <GmitpLogo headerTitle='GASAN'/>
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -37,15 +40,16 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <div className="ml-auto flex items-center space-x-4">
                         <div>
-                            <Input type="search" placeholder="Search..." className="hidden rounded-3xl border border-gray-400 lg:flex" />
                         </div>
                         <div className="relative flex items-center space-x-1">
-                            <Link
-                                href={route('login.show')}
-                                className="text-bold rounded-2xl border border-gray-600 p-1 px-3 font-bold text-gray-500"
-                            >
+                            <Button
+                                onClick={() => {
+                                    setLogInSignUpDialogVisible(true)
+                                }}
+
+                                className="text-bold rounded-2xl border border-gray-600 p-1 px-3 font-bold text-white"                            >
                                 Login
-                            </Link>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -57,6 +61,8 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
                 </div>
             )}
+
+            <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)}/>
         </>
     );
 }
