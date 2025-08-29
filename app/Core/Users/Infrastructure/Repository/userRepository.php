@@ -3,7 +3,7 @@ namespace App\Core\Users\Infrastructure\Repository;
 use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
 use App\Core\Users\Infrastructure\Models\User as EloquentUser;
 use App\Core\Users\Domains\Aggregates\UserAggregate;
-use App\Core\Users\Domains\ValueObjects\{UserName, Phone, Password, Role};
+use App\Core\Users\Domains\ValueObjects\{UserName, Phone, Password, Uuid, Role};
 use App\Core\Users\Domains\Enum\EnumRoles;
 use App\Core\Users\Application\Interfaces\PasswordHasherInterface as PasswordHasher;
 
@@ -40,30 +40,36 @@ class UserRepository implements UserRepositoryInterface
 
     public function findById(string $id): ?UserAggregate
     {
+        $eloquentUser = EloquentUser::where('id', $id)->first();
 
+        return $eloquentUser ? $this->toDomainEntity($eloquentUser) : null;
     }
 
     public function findByPhone(string $phone): ?UserAggregate
     {
-
+        $eloquentUser = EloquentUser::where('phone', $phone)->first();
+        return $eloquentUser ? $this->toDomainEntity($eloquentUser) : null;
     }
-    public function findByUserName(string $userName): ?UserAggregate
+    public function findByUserName(string $user_name): ?UserAggregate
     {
-
+        $eloquentUser = EloquentUser::where('user_name', $user_name)->first();
+        return $eloquentUser ? $this->toDomainEntity($eloquentUser) : null;
     }
     public function findByUuid(string $uuid): ?UserAggregate
     {
-
+        $eloquentUser = EloquentUser::where('uuid', $uuid)->first();
+        return $eloquentUser ? $this->toDomainEntity($eloquentUser) : null;
     }
 
     private function toDomainEntity(EloquentUser $eloquentUser): UserAggregate
     {
+
         return UserAggregate::create(
-            uuid: $eloquentUser->uuid,
-            username: new Username($eloquentUser->username),
-            phoneNumber: new Phone($eloquentUser->phone),
-            password: new Password('dummy-password'), // We don't reconstruct actual password
-            id: $eloquentUser->id
+            new Uuid($eloquentUser->uuid),
+            new Phone($eloquentUser->phone),
+            new UserName($eloquentUser->user_name),
+            new Password('dummy-password'), // We don't reconstruct actual password
+            new Role(EnumRoles::from($eloquentUser->role)),
         );
     }
 }

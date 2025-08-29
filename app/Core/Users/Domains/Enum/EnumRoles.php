@@ -17,12 +17,12 @@ enum EnumRoles: string
             default => throw new \InvalidArgumentException("Invalid role value: $value"),
         };
     }
-    // public function label(): string
-    // {
-    //     return match ($this) {
-    //         self::CLIENT => 'Client',
-    //         self::ADMIN => 'Admin',
-    //         self::SUPER_ADMIN => 'Super Admin',
-    //     };
-    // }
+    public function label(): string
+    {
+        return match ($this) {
+            self::CLIENT => 'Client',
+            self::ADMIN => 'Admin',
+            self::SUPER_ADMIN => 'Super Admin',
+        };
+    }
 }

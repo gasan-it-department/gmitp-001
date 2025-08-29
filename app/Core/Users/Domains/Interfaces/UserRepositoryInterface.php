@@ -3,6 +3,8 @@
 namespace App\Core\Users\Domains\Interfaces;
 
 use App\Core\Users\Domains\Aggregates\UserAggregate;
+use App\Core\Users\Domains\ValueObjects\{Phone, Password, UserName, Role, Uuid};
+
 interface UserRepositoryInterface
 {
     public function save(UserAggregate $user): UserAggregate;

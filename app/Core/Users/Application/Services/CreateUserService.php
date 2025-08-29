@@ -30,7 +30,7 @@ class CreateUserService
     ) {
     }
 
-    public function registerUser(CreateUserDto $dto): void
+    public function create(CreateUserDto $dto): void
     {
         DB::transaction(function () use ($dto) {
 
@@ -43,7 +43,7 @@ class CreateUserService
             $this->ensureUserDoesNotExist($userName, $phone);
             $uuid = new Uuid($this->uuidGenerator->generate());
 
-            $user = UserAggregate::register(
+            $user = UserAggregate::create(
                 $uuid,
                 $phone,
                 $userName,
@@ -53,7 +53,7 @@ class CreateUserService
 
             $saveduser = $this->userRepository->save($user);
 
-            $this->authService->login($saveduser);
+            // $this->authService->login($saveduser);
 
             // return new UserCreatedDto(
             //     uuid: $savedUser->getUuid(),
@@ -67,13 +67,13 @@ class CreateUserService
 
     private function ensureUserDoesNotExist(UserName $userName, Phone $phone): void
     {
-        // if ($this->userRepository->findByUsername($userName) !== null) {
-        //     throw UserAlreadyExistExceptions::withUserName($userName->getValue());
-        // }
+        if ($this->userRepository->findByUsername($userName) !== null) {
+            throw UserAlreadyExistExceptions::withUserName($userName->getValue());
+        }
 
-        // if ($this->userRepository->findByPhone($phone) !== null) {
-        //     throw UserAlreadyExistExceptions::withPhone($phone->getValue());
-        // }
+        if ($this->userRepository->findByPhone($phone) !== null) {
+            throw UserAlreadyExistExceptions::withPhone($phone->getValue());
+        }
 
     }
 }

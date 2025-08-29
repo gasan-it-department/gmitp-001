@@ -17,7 +17,7 @@ class UserAggregate
     ) {
     }
 
-    public static function register(
+    public static function create(
         Uuid $uuid,
         Phone $phone,
         UserName $user_name,
@@ -78,5 +78,19 @@ class UserAggregate
         return $this->role->getValue();
     }
 
+    public function verifyPassword(string $password): bool
+    {
+        return $this->password->verify($password);
+    }
 
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'uuid' => $this->getUuid(),
+            'user_name' => $this->getUserName(),
+            'phone' => $this->getPhone(),
+            'role' => $this->getRole(),
+        ];
+    }
 }

@@ -1,6 +1,10 @@
 <?php
 
 namespace App\Core\Users\Application\Exceptions;
+use App\Core\Users\Domains\ValueObjects\{
+    UserName,
+    Phone,
+};
 use DomainException;
 
 

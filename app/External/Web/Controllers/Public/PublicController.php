@@ -11,7 +11,7 @@ class PublicController extends Controller
     {
         return Inertia::render('Public/MainLandingPage/MainLandingPage');
     }
-    
+
     public function showHomePage()
     {
         return Inertia::render('Public/Home/HomePage');
@@ -37,19 +37,23 @@ class PublicController extends Controller
         return Inertia::render('Public/Government/GovernmentPage');
     }
 
-    public function showPrivacyPolicyPage(){
+    public function showPrivacyPolicyPage()
+    {
         return Inertia::render('Public/PrivacyPolicy/PrivacyPolicyPage');
     }
 
-    public function showMunicipalAdminPage(){
+    public function showMunicipalAdminPage()
+    {
         return Inertia::render('Admin/MunicipalAdmin/MunicipalAdminPage');
     }
 
-    public function showActionCenterPage(){
+    public function showActionCenterPage()
+    {
         return Inertia::render('Public/ActionCenter/ActionCenterPage');
     }
 
-    public function showActionCenterRequestPage(){
+    public function showActionCenterRequestPage()
+    {
         return Inertia::render('Public/ActionCenter/Components/RequestList');
     }
 

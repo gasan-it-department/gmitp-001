@@ -1,93 +1,73 @@
 import { Button } from '@/components/ui/button';
-import Input from '@/components/ui/input-floating';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import AuthLayout from '@/layouts/Auth/wrapper/AuthLayoutTemplate';
-import { Link, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { useForm } from '@inertiajs/react';
 
-type LoginForm = {
-    email: string;
-    password: string;
-    remember: boolean;
-};
+export default function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
+    // const [user_name, setUsername] = useState('');
+    // const [password, setPassword] = useState('');
+    // const [isRemembered, setIsRemembered] = useState(false);
 
-interface LoginProps {
-    status?: string;
-    canResetPassword: boolean;
-}
-
-export default function Login({ status, canResetPassword }: LoginProps) {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
-        email: '',
+    const { data, setData, post, processing, errors } = useForm({
+        user_name: '',
         password: '',
-        remember: false,
+        is_remembered: false,
     });
 
-    const submit: FormEventHandler = (e) => {
+    function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        post(route('login'), {
-            onFinish: () => reset('password'),
-        });
-    };
-
-    const [showPassword, setShowPassword] = useState(false);
-
-    const togglePassword = () => {
-        setShowPassword((prev) => !prev);
-    };
+        post(route('login.store.laravel'));
+    }
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your User Name and password below to log in">
-            {/* <Head title="Log in" /> */}
-            <form className="">
-                <div className="group relative z-0 mb-5 w-full">
-                    <Input label="User Name" />
-                </div>
-
-                <div className="mt-9 mb-9" />
-
-                <div className="group relative z-0 mb-5 w-full">
-                    <Input label="Password" type={showPassword ? 'text' : 'password'} />
-
-                    <button
-                        type="button"
-                        onClick={togglePassword}
-                        className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-600 hover:text-gray-900 focus:outline-none dark:text-gray-300 dark:hover:text-white"
-                    >
-                        {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                    </button>
-                </div>
-
-                <div className="mt-9 mb-9" />
-
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <Switch>Hello</Switch>
-                        <label htmlFor="terms" className="ml-2 cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+        <div className="overflow-hidden p-1">
+            <form onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-6">
+                    <div className="grid gap-3">
+                        <Label htmlFor="phone" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+                            User Name
+                        </Label>
+                        <Input
+                            id="user_name"
+                            type="text"
+                            name="user_name"
+                            value={data.user_name}
+                            onChange={(e) => setData('user_name', e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="grid gap-3">
+                        <div className="flex items-center">
+                            <Label htmlFor="password" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+                                Password
+                            </Label>
+                            <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
+                                Forgot your password?
+                            </a>
+                        </div>
+                        <Input
+                            id="password"
+                            type="password"
+                            value={data.password}
+                            name="password"
+                            onChange={(e) => setData('password', e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <Switch id="is_remembered" name="is_remembered" checked={data.is_remembered} />
+                        <Label htmlFor="is_remembered" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
                             Remember me
-                        </label>
+                        </Label>
                     </div>
-                    <div className="flex justify-end">
-                        <a href="#" className="text-[12px] text-black hover:text-black hover:underline">
-                            Forgotten Password?
-                        </a>
-                    </div>
+                    <Button disabled={processing} type="submit" className="w-full">
+                        Login
+                    </Button>
+                    <div className="grid grid-cols-3 gap-4"></div>
                 </div>
-
-                <Button type="submit" className="mt-10 w-full" tabIndex={4} disabled={processing}>
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    Log in
-                </Button>
             </form>
-
-            <div className="text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href={route('register.show')} tabIndex={5}>
-                    Sign up
-                </Link>
-            </div>
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
-        </AuthLayout>
+            <div className="text-center text-xs text-balance text-muted-foreground *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary"></div>
+        </div>
     );
 }

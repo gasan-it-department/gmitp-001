@@ -37,6 +37,26 @@ return new class extends Migration {
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        Schema::create('login_attempts', function (Blueprint $table) {
+            $table->id();
+            $table->string('identifier')->index(); // username or email
+            $table->string('ip_address', 45); // IPv4 or IPv6
+            $table->boolean('successful')->default(false);
+            $table->text('user_agent')->nullable();
+            $table->timestamp('attempted_at');
+            $table->string('failure_reason')->nullable();
+            $table->timestamps();
+
+            // Indexes for performance
+            $table->index(['identifier', 'attempted_at']);
+            $table->index(['ip_address', 'attempted_at']);
+            $table->index(['successful', 'attempted_at']);
+        });
+
+
+
+
     }
 
     /**
@@ -47,5 +67,6 @@ return new class extends Migration {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('login_attempts');
     }
 };

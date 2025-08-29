@@ -8,7 +8,6 @@ namespace App\Core\Users\Application\Dto;
 class CreateUserDto
 {
     public function __construct(
-
         public readonly string $user_name,
         public readonly string $phone,
         public readonly string $password,

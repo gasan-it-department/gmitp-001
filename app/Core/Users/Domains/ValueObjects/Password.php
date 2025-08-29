@@ -20,9 +20,9 @@ final readonly class Password
         return $this->value;
     }
 
-    public function equals(Password $other): bool
+    public function verify(string $password): bool
     {
-        return $this->value === $other->value;
+        return password_verify($password, $this->value);
     }
 
     public function __toString(): string
@@ -40,16 +40,16 @@ final readonly class Password
             throw InvalidPasswordExceptions::tooShort(self::MIN_LENGTH);
         }
 
-        if (str_contains($value, ' ')) {
-            throw InvalidPasswordExceptions::containsSpaces();
-        }
+        // if (str_contains($value, ' ')) {
+        //     throw InvalidPasswordExceptions::containsSpaces();
+        // }
 
-        if (!preg_match('/[A-Z]/', $value)) {
-            throw InvalidPasswordExceptions::missingUppercase();
-        }
+        // if (!preg_match('/[A-Z]/', $value)) {
+        //     throw InvalidPasswordExceptions::missingUppercase();
+        // }
 
-        if (!preg_match('/\d/', $value)) {
-            throw InvalidPasswordExceptions::missingNumber();
-        }
+        // if (!preg_match('/\d/', $value)) {
+        //     throw InvalidPasswordExceptions::missingNumber();
+        // }
     }
 }
