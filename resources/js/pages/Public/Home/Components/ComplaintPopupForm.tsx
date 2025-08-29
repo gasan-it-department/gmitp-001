@@ -241,17 +241,17 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
               )}
             </ul>
 
-            <div className="mt-5 mb-5 flex gap-2">
+            <div className="mt-5 mb-5 flex gap-2 flex-row sm:justify-end">
               <Button
                 variant="outline"
-                className="w-full basis-1/2"
+                className="basis-1/2 sm:basis-auto sm:w-auto"
                 onClick={onClose}
               >
                 Cancel
               </Button>
 
               <Button
-                className="w-full basis-1/2"
+                className="basis-1/2 sm:basis-auto sm:w-auto"
                 onClick={() => {
                   let totalFileSize = 0;
                   files.files.forEach(file => {
@@ -277,7 +277,6 @@ export default function ComplaintPopupForm({ isOpen, onClose }: Props) {
                 Submit
               </Button>
             </div>
-
           </div>
         </form>
       </DialogContent>

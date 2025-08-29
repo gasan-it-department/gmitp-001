@@ -12,3 +12,5 @@ Route::get('/privacy-policy', [PublicController::class, 'showPrivacyPolicyPage']
 Route::get('/municipal-admin', [PublicController::class, 'showMunicipalAdminPage'])->name('municipal.admin.show');
 Route::get('/action-center', [PublicController::class, 'showActionCenterPage'])->name('action.center.show');
 Route::get('/action-center/request-list', [PublicController::class, 'showActionCenterRequestPage'])->name('action.center.request.list.show');
+Route::get('/my-account', [PublicController::class, 'showMyAccountPage'])->name('my.account.show');
+Route::get('/admin-action-center', [PublicController::class, 'showAdminActionCenterPage'])->name('admin.action.center.show');

@@ -52,4 +52,12 @@ class PublicController extends Controller
     public function showActionCenterRequestPage(){
         return Inertia::render('Public/ActionCenter/Components/RequestList');
     }
+
+    public function showMyAccountPage(){
+        return Inertia::render('Public/Account/UserAccount');
+    }
+
+    public function showAdminActionCenterPage(){
+        return Inertia::render('Admin/ActionCenter/AdminActionCenterPage');
+    }
 }
