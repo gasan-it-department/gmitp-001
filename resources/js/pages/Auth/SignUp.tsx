@@ -12,6 +12,7 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [errors, setErrors] = useState<Record<string, string[]>>({});
+
     const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -27,12 +28,13 @@ export default function RegisterPage() {
             setErrors({});
             // You can add logic here to handle success, like showing a message or redirecting.
         } catch (error: any) {
-            if (error.response && error.response.status === 422) {
+            if (error.response && error.response.status === 404) {
                 setErrors(error.response.data.errors || {});
             } else {
                 console.error('Registration failed:', error);
             }
             // Handle different types of errors (e.g., display validation messages from the backend)
+            setErrors(error.response.data.errors || {});
         }
     };
 
@@ -104,6 +106,7 @@ export default function RegisterPage() {
                         <Input
                             id="password_confirmation"
                             name="password_confirmation"
+                            type={showPassword ? 'text' : 'password'}
                             value={passwordConfirmation}
                             onChange={(e) => setPasswordConfirmation(e.target.value)}
                         />

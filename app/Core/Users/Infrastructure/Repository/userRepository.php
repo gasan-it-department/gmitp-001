@@ -65,11 +65,12 @@ class UserRepository implements UserRepositoryInterface
     {
 
         return UserAggregate::create(
-            new Uuid($eloquentUser->uuid),
-            new Phone($eloquentUser->phone),
-            new UserName($eloquentUser->user_name),
-            new Password('dummy-password'), // We don't reconstruct actual password
-            new Role(EnumRoles::from($eloquentUser->role)),
+            id: $eloquentUser->id,
+            uuid: new Uuid($eloquentUser->uuid),
+            phone: new Phone($eloquentUser->phone),
+            user_name: new UserName($eloquentUser->user_name),
+            password: new Password($eloquentUser->password),
+            role: new Role(EnumRoles::from($eloquentUser->role)),
         );
     }
 }

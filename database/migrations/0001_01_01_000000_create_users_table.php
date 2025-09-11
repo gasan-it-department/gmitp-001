@@ -37,7 +37,6 @@ return new class extends Migration {
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
-
         Schema::create('login_attempts', function (Blueprint $table) {
             $table->id();
             $table->string('identifier')->index(); // username or email

@@ -2,63 +2,65 @@
 
 namespace App\External\Api\Controllers\Auth;
 
-use App\Core\Auth\Application\Dto\LoginRequestDto;
+use App\Core\Auth\Dto\LoginRequestDto;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Core\Auth\Domain\Policies\AccountLockoutPolicy;
-use App\Core\Auth\Application\Services\{LoginUser, LogoutUser, RememberUser};
-use App\Core\Auth\Domain\Entities\LoginUserRequest;
+use App\Core\Auth\UseCase\LoginUser;
 use App\External\Api\Request\Auth\LoginRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use App\Core\Auth\Exceptions\InvalidCredentialsExceptions;
+use App\Core\Auth\Exceptions\InvalidPasswordException;
+use Illuminate\Validation\ValidationException;
+use App\Core\Auth\UseCase\LogoutUser;
 class AuthenticateUserController extends Controller
 {
     public function __construct(
         private LoginUser $loginUser,
+        private LogoutUser $logoutUser,
     ) {
     }
 
-    public function loginLaravel(LoginRequest $request)
+    public function login(LoginRequest $request)
     {
-        $validated = $request->validated();
-        if (Auth::attempt($validated)) {
-            $request->session()->regenerate();
+        try {
+            //convert the users input to dto to service
+            $loginDto = new LoginRequestDto(
+                $request->input('user_identifier'),
+                $request->input('password'),
+                $request->boolean('remember_me'),
+            );
+            //auth user
+            $result = $this->loginUser->execute($loginDto);
 
-            return redirect()->route('home.show')->with([
-                'message' => 'login successful',
+            return response()->json($result->toArray(), 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
             ]);
+        } catch (InvalidCredentialsExceptions $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        } catch (InvalidPasswordException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         }
-        return redirect()->back()->with([
-            'message' => 'invalid credentials'
-        ]);
     }
 
-    public function login(LoginRequest $request): JsonResponse
+    public function logout(Request $request)
     {
-        //convert the users input to dto to service
-        $loginDto = new LoginRequestDto(
-            $request->input('user_name'),
-            $request->input('password'),
-            $request->boolean('remember_me'),
-            $request->ip(),
-            $request->userAgent()
-        );
+        $this->logoutUser->execute();
 
-        //auth user
-        $result = $this->loginUser->execute($loginDto);
-        if (!$result->success) {
-            return response()->json($result->toArray());
-        }
+        return response()->json([
+            'message' => 'Successfully logged out'
+        ], 200);
 
-        return response()->json($result->toArray(), 401);
-    }
-
-    public function logout(Request $request): JsonResponse
-    {
-        $token = $request->bearerToken();
-        $success = $this->logoutUseCase->execute($token);
-
-        return response()->json(['success' => $success]);
     }
 
     public function refresh(Request $request): JsonResponse

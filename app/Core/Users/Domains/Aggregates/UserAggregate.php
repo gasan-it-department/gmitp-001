@@ -18,13 +18,14 @@ class UserAggregate
     }
 
     public static function create(
+        ?int $id,
         Uuid $uuid,
         Phone $phone,
         UserName $user_name,
         Password $password,
         Role $role,
     ): self {
-        return new self($uuid, $phone, $user_name, $password, $role);
+        return new self($uuid, $phone, $user_name, $password, $role, $id);
     }
 
     public function withUuid(Uuid $uuid): self
@@ -86,11 +87,10 @@ class UserAggregate
     public function toArray(): array
     {
         return [
-            'id' => $this->getId(),
             'uuid' => $this->getUuid(),
             'user_name' => $this->getUserName(),
-            'phone' => $this->getPhone(),
             'role' => $this->getRole(),
         ];
     }
+
 }

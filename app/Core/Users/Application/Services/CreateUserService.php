@@ -25,7 +25,6 @@ class CreateUserService
 {
     public function __construct(
         protected UserRepositoryInterface $userRepository,
-        protected AuthServiceInterface $authService,
         protected UuidServiceInterface $uuidGenerator
     ) {
     }
@@ -44,6 +43,7 @@ class CreateUserService
             $uuid = new Uuid($this->uuidGenerator->generate());
 
             $user = UserAggregate::create(
+                null,
                 $uuid,
                 $phone,
                 $userName,
@@ -74,7 +74,6 @@ class CreateUserService
         if ($this->userRepository->findByPhone($phone) !== null) {
             throw UserAlreadyExistExceptions::withPhone($phone->getValue());
         }
-
     }
 }
 

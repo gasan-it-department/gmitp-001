@@ -35,6 +35,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
 
             // Keep only the essential auth data
+            'app_name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
             ],
