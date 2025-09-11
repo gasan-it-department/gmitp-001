@@ -1,14 +1,28 @@
-import React, { useState } from "react";
-import { X, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 
 interface Props {
   onSearch: (value: string) => void;
-  searchBarHint: string
+  searchBarHint: string;
 }
 
 const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 600);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [query]);
+
+  useEffect(() => {
+    onSearch(debouncedQuery);
+  }, [debouncedQuery, onSearch]);
 
   const handleClear = () => {
     setQuery("");
@@ -20,10 +34,7 @@ const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
       <input
         type="text"
         value={query}
-        onChange={(e) => {
-            setQuery(e.target.value);
-            onSearch(e.target.value);
-        }}
+        onChange={(e) => setQuery(e.target.value)}
         placeholder={searchBarHint}
         className="flex-1 p-2 outline-none"
       />
@@ -35,7 +46,6 @@ const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
           <X size={18} />
         </button>
       )}
-      
     </div>
   );
 };

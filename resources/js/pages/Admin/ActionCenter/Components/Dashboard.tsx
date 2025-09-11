@@ -1,37 +1,44 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import Utility from '@/pages/Utility/Utility';
+import ViewDetailsDialog from "./ViewDetailsDialog";
 
-interface RequestData {
-    name: string,
-    title: string;
-    status: string;
-    dateApproved: string;
+interface ClientData {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    contactNumber: string;
+    service: string;
     transactionNumber: string;
+    dateApproved: string;
+    description: string;
+    province: string;
+    municipality: string;
+    barangay: string;
 }
-
 interface DashboardProps {
-    data: RequestData[];
+    data: ClientData[];
+    onViewDetailsEditButtonClicked: (clientData?: ClientData | null) => void;
+    onViewDetialsDeleteButtonClicked: () => void;
 }
 
-export default function Dashboard({ data }: DashboardProps) {
-    const [dashboardList, setDashboardList] = useState<RequestData[]>([]);
+export default function Dashboard({ data, onViewDetailsEditButtonClicked, onViewDetialsDeleteButtonClicked }: DashboardProps) {
+    const [dashboardList, setDashboardList] = useState<ClientData[]>([]);
+    const [isViewDetailsDialogShowing, setIsViewDetailsDialogShowing] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<ClientData | null>();
 
     useEffect(() => {
-        const sorted = [...data].sort((a, b) =>
-            a.name.localeCompare(b.name)
-        );
-        setDashboardList(sorted);
-    })
+        setDashboardList(data);
+    }, [data])
 
     return (
-        <div className="max-h-[570px] overflow-y-auto ">
+        <div className="max-h-[630px] overflow-y-auto ">
             <Table className="w-full relative">
                 <TableHeader className="sticky top-0 z-10 bg-white">
                     <TableRow>
                         <TableHead className="text-[12px] font-bold">Name</TableHead>
                         <TableHead className="text-[12px] font-bold">Request Date</TableHead>
-                        <TableHead className="text-[12px] font-bold">Title</TableHead>
+                        <TableHead className="text-[12px] font-bold">Service</TableHead>
                         <TableHead className="text-[12px] font-bold">Transaction ID</TableHead>
                         <TableHead className="text-[12px] font-bold">Due Date</TableHead>
                         <TableHead className="text-[12px] font-bold">Status</TableHead>
@@ -40,14 +47,22 @@ export default function Dashboard({ data }: DashboardProps) {
                 <TableBody className="relative overflow-y-auto mt-10">
                     {dashboardList.length > 0 ? (
                         dashboardList.map((item) => (
-                            <TableRow key={item.transactionNumber}>
-                                <TableCell className="text-[12px]">{item.name}</TableCell>
+                            <TableRow
+                                key={item.transactionNumber}
+                                onClick={() => {
+                                    console.log(`Transaction id: ${item.transactionNumber}`);
+                                    setIsViewDetailsDialogShowing(true);
+                                    setSelectedItem(item);
+                                }}
+                                className="cursor-pointer hover:bg-gray-100"
+                            >
+                                <TableCell className="text-[12px]">{item.firstName}</TableCell>
                                 <TableCell className="text-[12px]">
                                     {item.dateApproved === ""
                                         ? "Not yet approved"
                                         : Utility().formatToReadableDate(item.dateApproved)}
                                 </TableCell>
-                                <TableCell className="text-[12px]">{item.title}</TableCell>
+                                <TableCell className="text-[12px]">{item.service}</TableCell>
                                 <TableCell className="text-[12px]">{item.transactionNumber}</TableCell>
                                 <TableCell className="text-[12px]">
                                     {item.dateApproved === ""
@@ -56,14 +71,14 @@ export default function Dashboard({ data }: DashboardProps) {
                                 </TableCell>
                                 <TableCell>
                                     <span
-                                        className={`p-1 rounded-full text-[11px] font-medium ${item.status === "Active"
+                                        className={`p-1 rounded-full text-[11px] font-medium ${Utility().calculateTotalDays(item.dateApproved) >= 92
                                             ? "bg-green-100 text-green-700"
-                                            : item.status === "Pending"
-                                                ? "bg-yellow-100 text-yellow-700"
-                                                : "bg-red-100 text-red-700"
+                                            : "bg-red-100 text-red-700"
                                             }`}
                                     >
-                                        {item.status}
+                                        {Utility().calculateTotalDays(item.dateApproved) >= 92
+                                            ? "Eligible"
+                                            : "Not Eligible"}
                                     </span>
                                 </TableCell>
                             </TableRow>
@@ -77,6 +92,20 @@ export default function Dashboard({ data }: DashboardProps) {
                     )}
                 </TableBody>
             </Table>
+
+            <ViewDetailsDialog
+                isOpen={isViewDetailsDialogShowing}
+                onClose={() => setIsViewDetailsDialogShowing(false)}
+                details={selectedItem!}
+                onDeleteClicked={() => {
+                    console.log("Delete clicked");
+                    onViewDetialsDeleteButtonClicked();
+                }}
+                onEditClicked={() => {
+                    console.log("Edit clicked");
+                    onViewDetailsEditButtonClicked(selectedItem);
+                }}
+            />
         </div>
     );
 }

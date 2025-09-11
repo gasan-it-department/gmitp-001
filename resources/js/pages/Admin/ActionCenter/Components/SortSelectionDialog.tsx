@@ -2,15 +2,18 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useState } from "react";
 
 interface Props {
-    currentSortOption?: string;
+    currentSelected: string;
     isOpen: boolean;
     onClose: () => void;
+    selectedSortOption: (value: string) => void;
 }
 
 
-export default function SortSelectionDialog({ currentSortOption, isOpen, onClose }: Props) {
+export default function SortSelectionDialog({currentSelected, isOpen, onClose, selectedSortOption }: Props) {
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
@@ -29,7 +32,8 @@ export default function SortSelectionDialog({ currentSortOption, isOpen, onClose
                             e.preventDefault();
                         }}
                     >
-                        <RadioGroup defaultValue="financial" className="space-y-3">
+                        <RadioGroup defaultValue={currentSelected} className="space-y-3"
+                            onValueChange={selectedSortOption}>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem id="sort_name" value="sort_name" />
                                 <Label htmlFor="sort_name">By Name</Label>
@@ -41,7 +45,7 @@ export default function SortSelectionDialog({ currentSortOption, isOpen, onClose
                             </div>
 
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem id="sort_title" value="ambulance" />
+                                <RadioGroupItem id="sort_title" value="sort_title" />
                                 <Label htmlFor="sort_title">By Title</Label>
                             </div>
 
@@ -73,14 +77,14 @@ export default function SortSelectionDialog({ currentSortOption, isOpen, onClose
                         Cancel
                     </Button>
 
-                    <Button
+                    {/* <Button
                         className="basis-1/2 sm:basis-auto sm:w-auto"
                         onClick={() => {
-
+                            
                         }}
                     >
                         Sort
-                    </Button>
+                    </Button> */}
                 </div>
             </DialogContent>
         </Dialog>

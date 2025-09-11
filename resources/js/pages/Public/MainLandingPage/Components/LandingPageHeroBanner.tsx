@@ -11,11 +11,7 @@ export default function LandingPageHeroBanner() {
     }, []);
 
     const registeredMunicipalities = [
-        { id: 4900, name: 'Boac', logo: '/assets/gasan_logo.png' },
-        { id: 4901, name: 'Buenavista', logo: '/assets/gasan_logo.png' },
         { id: 4902, name: 'Gasan', logo: '/assets/gasan_logo.png' },
-        { id: 4903, name: 'Torrijos', logo: '/assets/gasan_logo.png' },
-        { id: 4904, name: 'Santa Cruz', logo: '/assets/gasan_logo.png' },
     ]
 
     registeredMunicipalities.sort((a, b) => a.id - b.id);

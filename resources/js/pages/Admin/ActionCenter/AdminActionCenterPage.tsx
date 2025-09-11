@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Home, Settings, Plus, SortAscIcon, LogsIcon, LogOut, ArrowLeftRight, List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import SearchBar from '@/pages/Utility/SearchBar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import AddNewRecordDialog from './Components/AddNewRecordDialog';
+import { Home, LogsIcon, LogOut, ArrowLeftRight } from 'lucide-react';
+import AddNewRecordDialog from './Components/AddEditRecordDialog';
 import SortSelectionDialog from './Components/SortSelectionDialog';
 import Dashboard from './Components/Dashboard';
 import ActivityLog from './Components/ActivityLog';
+import Utility from '@/pages/Utility/Utility';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import Header from './Components/Header';
+import AddEditRecordDialog from './Components/AddEditRecordDialog';
 
-interface RequestData {
-    name: string,
-    title: string;
-    status: string;
-    dateApproved: string;
+interface ClientData {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    contactNumber: string;
+    service: string;
     transactionNumber: string;
+    dateApproved: string;
+    description: string;
+    province: string;
+    municipality: string;
+    barangay: string;
 }
 
 interface LogsData {
@@ -25,39 +32,26 @@ interface LogsData {
 export default function AdminActionCenterPage() {
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
-    const [loadedRequestData, setLoadedRequestData] = useState<RequestData[]>([]);
+    const [loadedRequestData, setLoadedRequestData] = useState<ClientData[]>([]);
     const [filteringHolder, setFilteringHolder] = useState<any[]>([]);
     const [activeItem, setActiveItem] = useState("Dashboard");
     const [activityLogsList, setActivityLogsList] = useState<LogsData[]>([]);
+    const [currentSelectedSortOption, setCurrentSelectedSortOption] = useState("");
+    const [dialogTitle, setDialogTitle] = useState("");
+    const [dialogMessage, setDialogMessage] = useState("");
+    const [isClassicDialogShowing, setIsClassicDialogShowing] = useState(false);
+    const [editData, setEditData] = useState<ClientData | null>(null);
 
     const menuItems = [
         { label: "Dashboard", icon: <Home className="w-5 h-5" />, },
         { label: "Activity Logs", icon: <LogsIcon className="w-5 h-5" />, },
-        { label: "Settings", icon: <Settings className="w-5 h-5" />, },
         { label: "Transfers", icon: <ArrowLeftRight size={20} /> },
         { label: "Logout", icon: <LogOut className="w-5 h-5 text-red-400" />, },
     ];
 
     useEffect(() => {
         const dummy = [
-            { name: "Analiza", title: "Financial", status: "Pending", transactionNumber: "SF45GT4TW", dateApproved: "" },
-            { name: "Alona", title: "Financial", status: "Active", transactionNumber: "SFSF45RG", dateApproved: "1755824280" },
-            { name: "Paze", title: "Food Assistance", status: "Active", transactionNumber: "75H6RTH6H", dateApproved: "1755824280" },
-            { name: "Geric", title: "Financial", status: "Expired", transactionNumber: "TYJJYL675", dateApproved: "1755824280" },
-            { name: "Gondolf", title: "Ambulance", status: "Active", transactionNumber: "B-3085754XYD48", dateApproved: "1755824280" },
-            { name: "Rexar", title: "Financial", status: "Expired", transactionNumber: "B-3214XYD49", dateApproved: "1755824280" },
-            { name: "Ahri", title: "Financial", status: "Expired", transactionNumber: "H03354XYD50", dateApproved: "1755824280" },
-            { name: "Shadow", title: "Ambulance", status: "Active", transactionNumber: "B-3214XYD51", dateApproved: "1755824280" },
-            { name: "Maki", title: "Financial", status: "Active", transactionNumber: "B-3214XYD52", dateApproved: "1755824280" },
-            { name: "Bernadet", title: "Financial", status: "Expired", transactionNumber: "B-3214XYD53", dateApproved: "1755824280" },
-            { name: "Jake the dog", title: "Food Assistance", status: "Expired", transactionNumber: "B-3214XYD54", dateApproved: "1755824280" },
-            { name: "Fin the human", title: "Financial", status: "Expired", transactionNumber: "B-3214XYD55", dateApproved: "1755824280" },
-            { name: "Ice King", title: "Financial", status: "Active", transactionNumber: "B-3214XYD56", dateApproved: "1755824280" },
-            { name: "Beemo", title: "Ambulance", status: "Active", transactionNumber: "B-3214XYD57", dateApproved: "1755824280" },
-            { name: "Pricess Bubble Gum", title: "Financial", status: "Expired", transactionNumber: "B-3214XYD58", dateApproved: "1755824280" },
-            { name: "Donut", title: "Food Assistance", status: "Expired", transactionNumber: "B-3214XYD59", dateApproved: "1755824280" },
-            { name: "Marceline", title: "Financial", status: "Expired", transactionNumber: "B-3214XYD60", dateApproved: "1755824280" },
-            { name: "Bat", title: "Food Assistance", status: "Expired", transactionNumber: "B-3214XYD61", dateApproved: "1755824280" },
+            { firstName: "Analiza", lastName: "Otong", middleName: "Middle", contactNumber: "09953450732", service: "Financial", transactionNumber: "SF45GT4TW", dateApproved: "175585334", description: "Lorem ipsum dolor sit amet.", province: "Marinduque", municipality: "Gasan", barangay: "Bahi" }
         ];
 
         const logsData = [
@@ -70,17 +64,63 @@ export default function AdminActionCenterPage() {
         setFilteringHolder(dummy);
     }, []);
 
-    async function searchKeyword(keyword: string) {
-        if (keyword === null || keyword === "") {
-            setFilteringHolder(loadedRequestData);
-            return;
-        }
-        const filtered = loadedRequestData.filter((req) =>
-            req.transactionNumber.toLowerCase().includes(keyword.toLowerCase()) ||
-            req.title.toLowerCase().includes(keyword.toLowerCase())
-        );
+    async function sortList(sortOption: string) {
+        console.log(`Selected option: ${sortOption}`);
+        switch (sortOption) {
+            case "sort_status":
+                const sortedByStatus = [...filteringHolder].sort((a, b) => {
+                    const isEligibleA = Utility().calculateTotalDays(a.dateApproved) >= 92;
+                    const isEligibleB = Utility().calculateTotalDays(b.dateApproved) >= 92;
+                    if (isEligibleA && !isEligibleB) return -1;
+                    if (!isEligibleA && isEligibleB) return 1;
+                    return a.name.localeCompare(b.name);
+                });
+                setFilteringHolder(sortedByStatus);
+                break;
 
-        setFilteringHolder(filtered);
+            case "sort_due_date":
+                const sortByDueDate = [...filteringHolder].sort((a, b) => {
+                    const timeA = parseInt(a.dateApproved || "0", 10) + (160 * 24 * 60 * 60);
+                    const timeB = parseInt(b.dateApproved || "0", 10) + (160 * 24 * 60 * 60);
+                    return timeA - timeB;
+                });
+
+                setFilteringHolder(sortByDueDate);
+                break;
+
+            case "sort_transaction_id":
+                const sortByTransactionId = [...filteringHolder].sort((a, b) =>
+                    (a.transactionNumber || "").localeCompare(b.transactionNumber || "")
+                );
+                setFilteringHolder(sortByTransactionId);
+                break;
+
+            case "sort_title":
+                const sortByTitle = [...filteringHolder].sort((a, b) =>
+                    (a.title || "").localeCompare(b.title || "")
+                );
+                setFilteringHolder(sortByTitle);
+                break;
+            case "sort_request_date": {
+                const sortByDate = [...filteringHolder].sort((a, b) => {
+                    const timeA = a.dateApproved ? parseInt(a.dateApproved, 10) : 0;
+                    const timeB = b.dateApproved ? parseInt(b.dateApproved, 10) : 0;
+                    return timeB - timeA; // newest first
+                });
+                setFilteringHolder(sortByDate);
+                break;
+            }
+
+            case "sort_name": {
+                const sortByName = [...filteringHolder].sort((a, b) =>
+                    (a.name || "").localeCompare(b.name || "")
+                );
+                setFilteringHolder(sortByName);
+                break;
+            }
+        }
+
+        setIsSortSelectionDialogOpen(false);
     }
 
     return (
@@ -88,7 +128,6 @@ export default function AdminActionCenterPage() {
             <div className={`bg-primary text-white h-screen transition-all duration-300 w-64 shadow-lg`}>
                 <div className="flex items-center justify-between px-4 py-3">
                     <span className={`text-lg font-semibold transition-opacity duration-300 opacity-100`}>Action Center Admin</span>
-
                 </div>
                 <ul className="mt-6 space-y-2">
                     {menuItems.map((item) => (
@@ -96,14 +135,24 @@ export default function AdminActionCenterPage() {
                             key={item.label}
                             onClick={() => {
                                 switch (item.label) {
+                                    case "Logout":
+                                        setDialogTitle("Logout?");
+                                        setDialogMessage("Are you sure you want to logout?");
+                                        setIsClassicDialogShowing(true);
+                                        break;
+                                    case "Transfers":
+                                        setFilteringHolder(loadedRequestData);
+                                        setActiveItem(item.label);
+                                        break;
                                     case "Dashboard":
                                         setFilteringHolder(loadedRequestData);
+                                        setActiveItem(item.label);
                                         break;
                                     case "Activity Logs":
                                         setFilteringHolder(activityLogsList);
+                                        setActiveItem(item.label);
                                         break;
                                 }
-                                setActiveItem(item.label);
                             }}
                             className={`flex items-center gap-3 p-2 mr-3 ml-3 rounded-lg cursor-pointer transition-colors ${activeItem === item.label
                                 ? "bg-gray-700 text-white font-medium"
@@ -135,34 +184,26 @@ export default function AdminActionCenterPage() {
                         )
                     }
 
-                    <div className="flex flex-row items-center gap-2">
-                        <SearchBar onSearch={(e) => searchKeyword(e)} searchBarHint={'Search...'} />
+                    {
+                        activeItem === "Transfers" && (
+                            <div>
+                                <h2 className="text-2xl font-semibold">Transfers</h2>
+                                <h1 className="text-[14px]">Total transferred ({filteringHolder.length})</h1>
+                            </div>
+                        )
+                    }
 
-                        <div className='ml-2' />
-
-                        <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                                <Button className="bg-black text-white hover:bg-gray-800">
-                                    <List size={50} />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                {activeItem === "Dashboard" &&
-                                    <DropdownMenuItem onClick={() => {
-                                        setIsAddNewRecordDialogOpen(true);
-                                    }}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add New Record
-                                    </DropdownMenuItem>}
-                                <DropdownMenuItem onClick={() => {
-                                    setIsSortSelectionDialogOpen(true);
-                                }}>
-                                    <SortAscIcon className="mr-2 h-4 w-4" />
-                                    Sort By
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                    <Header activeItem={activeItem}
+                        onFilterButtonClicked={() => {
+                            setIsSortSelectionDialogOpen(true);
+                        }} onAddNewButtonClicked={() => {
+                            setEditData(null);
+                            setIsAddNewRecordDialogOpen(true);
+                        }} onExportButtonClicked={() => {
+                            console.log("Export button clicked.");
+                        }} onSearch={(value) => {
+                            console.log(`Search for ${value}`);
+                        }} />
                 </div>
 
                 <div className='mt-5 mb-5' />
@@ -170,7 +211,15 @@ export default function AdminActionCenterPage() {
                 <div className="w-full">
                     {
                         activeItem === "Dashboard" && (
-                            <Dashboard data={filteringHolder} />
+                            <Dashboard
+                                data={filteringHolder}
+                                onViewDetailsEditButtonClicked={(editData) => {
+                                    setEditData(editData ?? null);
+                                    setIsAddNewRecordDialogOpen(true);
+                                }}
+                                onViewDetialsDeleteButtonClicked={() => {
+
+                                }} />
                         )
                     }
 
@@ -180,8 +229,34 @@ export default function AdminActionCenterPage() {
                         )
                     }
 
-                    <AddNewRecordDialog isOpen={isAddNewRecordDialogOpen} onClose={() => setIsAddNewRecordDialogOpen(false)} />
-                    <SortSelectionDialog isOpen={isSortSelectionDialogOpen} onClose={() => setIsSortSelectionDialogOpen(false)} />
+                    <AddEditRecordDialog
+                        editData={editData}
+                        isOpen={isAddNewRecordDialogOpen}
+                        onClose={() => setIsAddNewRecordDialogOpen(false)} />
+
+                    <SortSelectionDialog
+                        currentSelected={currentSelectedSortOption}
+                        selectedSortOption={(selectedSortOption) => {
+                            sortList(selectedSortOption);
+                            setCurrentSelectedSortOption(selectedSortOption);
+                        }}
+                        isOpen={isSortSelectionDialogOpen}
+                        onClose={() => setIsSortSelectionDialogOpen(false)} />
+
+                    <ClassicDialog
+                        title={dialogTitle}
+                        message={dialogMessage}
+                        negativeButtonText='Cancel'
+                        positiveButtonText='Logout'
+                        onNegativeClick={() => {
+                            setIsClassicDialogShowing(false);
+                        }}
+                        onPositiveClick={() => {
+                            setIsClassicDialogShowing(false);
+                        }}
+                        open={isClassicDialogShowing}
+                        hideNegativeButton={false}
+                    />
                 </div>
             </div>
         </div>

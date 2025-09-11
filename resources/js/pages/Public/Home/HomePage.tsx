@@ -1,5 +1,4 @@
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import CarouselComponent from '@/pages/Public/Home/Components/Carousel';
 import FeatureSection from '@/pages/Public/Home/Components/FeatureSection';
 import HomeFooter from '@/pages/Public/Home/Components/Footer';
 import HeroBanner from '@/pages/Public/Home/Components/HeroBanner';
@@ -31,8 +30,6 @@ export default function HomePage() {
                     <ActionCenterUi />
                 </div>
             </div>
-
-            <CarouselComponent />
             <FeatureSection />
             <HomeFooter />
             <LoadingDialog open={isLoadingDialogVisible} />

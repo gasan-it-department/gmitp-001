@@ -19,7 +19,7 @@ export default function ActivityLog({data}: Data) {
     useEffect(() => {
         setActivityLogsList(data);
         console.log(data);
-    })
+    }, [data])
 
     return(
         <div className="max-h-[570px] overflow-y-auto ">
