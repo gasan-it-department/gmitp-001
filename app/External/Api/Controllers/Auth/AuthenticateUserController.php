@@ -32,7 +32,9 @@ class AuthenticateUserController extends Controller
             //auth user
             $result = $this->loginUser->execute($loginDto);
 
-            return response()->json($result->toArray(), 200);
+            //middleware handle the redirection
+
+            return response()->json([$result->toArray()], 200);
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -57,8 +59,10 @@ class AuthenticateUserController extends Controller
     {
         $this->logoutUser->execute();
 
+        $redirect = '/';
         return response()->json([
-            'message' => 'Successfully logged out'
+            'message' => 'Successfully logged out',
+            'redirect' => $redirect,
         ], 200);
 
     }

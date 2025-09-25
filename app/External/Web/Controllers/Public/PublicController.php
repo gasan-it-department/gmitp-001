@@ -4,7 +4,7 @@ namespace App\External\Web\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use inertia\Inertia;
-use App\Core\Users\Infrastructure\Models\User;
+
 class PublicController extends Controller
 {
 
@@ -15,10 +15,7 @@ class PublicController extends Controller
 
     public function showHomePage()
     {
-        $users = User::all();
-        return Inertia::render('Public/Home/HomePage', [
-            'users' => $users
-        ]);
+        return Inertia::render('Public/Home/HomePage');
     }
 
     public function showServicePage()
@@ -64,10 +61,5 @@ class PublicController extends Controller
     public function showMyAccountPage()
     {
         return Inertia::render('Public/Account/UserAccount');
-    }
-
-    public function showAdminActionCenterPage()
-    {
-        return Inertia::render('Admin/ActionCenter/AdminActionCenterPage');
     }
 }

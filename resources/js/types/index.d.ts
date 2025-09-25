@@ -3,6 +3,11 @@ import type { Config } from 'ziggy-js';
 
 export interface Auth {
     user: User;
+    roles: {
+        isClient: boolean;
+        isAdmin: boolean;
+        isSuperAdmin: boolean;
+    }
 }
 
 export interface BreadcrumbItem {
@@ -35,6 +40,9 @@ export interface User {
     uuid: number;
     user_name: string;
     phone: string;
+    roles: number;
+    role_name: 'client' | 'admin' | 'superadmin';
+    password: string;
     avatar?: string;
     created_at: string;
     updated_at: string;

@@ -6,8 +6,8 @@ import { LogOut } from 'lucide-react';
 export function LogoutDialog() {
     const handleLogout = async () => {
         try {
-            await axios.post('/logout'); // 🔐 Laravel logout route
-            // Optionally clear local auth state here
+            const response = await axios.post('/logout'); // 🔐 Laravel logout route
+            window.location.href = response.data.redirect;
         } catch (error) {
             console.error('Logout failed:', error);
         }

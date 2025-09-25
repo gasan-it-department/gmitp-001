@@ -48,6 +48,7 @@ class UserAggregate
             $this->user_name,
             $this->password,
             $this->role,
+            $id
         );
     }
 

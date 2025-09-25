@@ -12,7 +12,9 @@ Route::middleware('guest')->group(function () {
 
     //api
     Route::post('/store-account', [CreateUserController::class, 'createUser'])->name('user.store');
-    Route::post('/login', [AuthenticateUserController::class, 'login'])->name('login');
+    Route::post('/login', [AuthenticateUserController::class, 'login'])
+        ->name('login')
+        ->middleware('roleCheckRedirect');
 });
 
 Route::middleware('auth:sanctum')->group(function () {

@@ -1,4 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+Route::prefix('client')->group(function () {
+    //all get routes for clients goes here
+
+});

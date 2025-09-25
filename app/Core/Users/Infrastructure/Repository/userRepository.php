@@ -24,7 +24,6 @@ class UserRepository implements UserRepositoryInterface
                 'password' => $this->passwordHasher->hash($user->password->getValue()),
                 'role' => $user->role->getValue()
             ]);
-
             return $user->withId($eloquentUser->id);
         }
         $eloquentUser = EloquentUser::findOrFail($user->getId());

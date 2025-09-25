@@ -2,7 +2,6 @@ import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import FeatureSection from '@/pages/Public/Home/Components/FeatureSection';
 import HomeFooter from '@/pages/Public/Home/Components/Footer';
 import HeroBanner from '@/pages/Public/Home/Components/HeroBanner';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import { useEffect, useState } from 'react';
 import ActionCenterUi from './Components/ActionCenterUi';
 import ComplaintUi from './Components/ComplainUi';
@@ -32,7 +31,6 @@ export default function HomePage() {
             </div>
             <FeatureSection />
             <HomeFooter />
-            <LoadingDialog open={isLoadingDialogVisible} />
         </PublicLayout>
     );
 }

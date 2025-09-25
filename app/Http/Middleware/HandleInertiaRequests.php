@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Core\Users\Application\Services\UserRoleCheckerService;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -31,13 +32,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = request()->user();
+        $roleChecker = app(UserRoleCheckerService::class);
+
         return [
             ...parent::share($request),
 
             // Keep only the essential auth data
             'app_name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'roles' => [
+                    'isClient' => $user ? $roleChecker->isClient($user) : false,
+                    'isAdmin' => $user ? $roleChecker->isAdmin($user) : false,
+                    'isSuperAdmin' => $user ? $roleChecker->isSuperAdmin($user) : false,
+                ]
             ],
         ];
     }

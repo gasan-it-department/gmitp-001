@@ -2,17 +2,14 @@
 
 namespace App\Core\Users\Application\Services;
 
-use Illuminate\Support\Facades\Auth;
-
 use App\Core\Users\Application\Dto\CreateUserDto;
 use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
 use App\Core\Users\Domains\Aggregates\UserAggregate;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use App\Core\Users\Domains\Enum\EnumRoles;
-use App\Core\Users\Application\Interfaces\AuthServiceInterface;
 use App\Core\Users\Application\Interfaces\UuidServiceInterface;
 use App\Core\Users\Application\Exceptions\UserAlreadyExistExceptions;
+use App\Core\Auth\Interfaces\CookieSessionInterface;
 use App\Core\Users\Domains\ValueObjects\{
     UserName,
     Phone,
@@ -25,7 +22,9 @@ class CreateUserService
 {
     public function __construct(
         protected UserRepositoryInterface $userRepository,
-        protected UuidServiceInterface $uuidGenerator
+        protected UuidServiceInterface $uuidGenerator,
+        private CookieSessionInterface $cookieSessionService
+
     ) {
     }
 
@@ -53,15 +52,8 @@ class CreateUserService
 
             $saveduser = $this->userRepository->save($user);
 
-            // $this->authService->login($saveduser);
+            $this->cookieSessionService->createAuthenticatedSession($saveduser->getId());
 
-            // return new UserCreatedDto(
-            //     uuid: $savedUser->getUuid(),
-            //     id: $savedUser->getId(),
-            //     username: $savedUser->getUsername()->getValue(),
-            //     phone: $savedUser->getPhoneNumber()->getValue(),
-            //     authToken: $authToken
-            // );
         });
     }
 

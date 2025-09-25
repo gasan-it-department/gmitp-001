@@ -23,12 +23,13 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
 
     const onSubmit = async (data: FormData) => {
         try {
-            const res = await axios.post('/login', data, {
+            const response = await axios.post('/login', data, {
                 withCredentials: true,
             });
 
-            console.log('Login success:', res.data);
-            // TODO: store user info or redirect
+            if (response.data.redirect_to) {
+                window.location.href = response.data.redirect_to;
+            }
         } catch (error: any) {
             if (error.response?.data) {
                 const { errors: validationErrors, message } = error.response.data;

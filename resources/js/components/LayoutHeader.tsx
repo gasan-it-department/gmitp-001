@@ -8,7 +8,6 @@ import { HeaderNav } from './Public/HeaderNavigation';
 import { LeftNavigation } from './Public/LeftNavigation';
 import { UserDropdownMenu } from './Shared/UserDropDownMenu';
 import { Button } from './ui/button';
-const activeItemStyles = 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
