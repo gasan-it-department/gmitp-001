@@ -1,36 +1,32 @@
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import FeatureSection from '@/pages/Public/Home/Components/FeatureSection';
-import HomeFooter from '@/pages/Public/Home/Components/Footer';
-import HeroBanner from '@/pages/Public/Home/Components/HeroBanner';
-import { useEffect, useState } from 'react';
 import ActionCenterUi from './Components/ActionCenterUi';
-import ComplaintUi from './Components/ComplainUi';
+import FeedbackUi from './Components/FeedbackUi';
+import Carousel from './Components/Carousel';
+import InformationDashboard from './Components/InformationDashboard';
 
 export default function HomePage() {
-    const [isLoadingDialogVisible, setLoadingDialogVisible] = useState(true);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoadingDialogVisible(false);
-        }, 2000);
-
-        return () => clearTimeout(timer);
-    }, []);
-
     return (
         <PublicLayout title="Home" description="">
-            <HeroBanner />
-            <div className="flex w-full flex-col gap-4 md:flex-row">
-                <div className="flex-1">
-                    <ComplaintUi />
+            <div>
+                <Carousel />
+
+                <div className='h-5' />
+
+                <div className="flex w-full flex-col gap-4 md:flex-row p-2">
+                    <div className="flex-1 min-h-[200px]">
+                        <FeedbackUi />
+                    </div>
+
+                    <div className="flex-1 min-h-[200px]">
+                        <ActionCenterUi />
+                    </div>
                 </div>
 
-                <div className="flex-1">
-                    <ActionCenterUi />
-                </div>
+                <div className='h-8' />
+
+                <InformationDashboard />
             </div>
-            <FeatureSection />
-            <HomeFooter />
+
         </PublicLayout>
     );
 }

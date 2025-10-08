@@ -34,13 +34,8 @@ export default function CreateRequestDialog({ isOpen, selectedService, vehicleLi
     const [clientContactMumber, setClientContactNumber] = useState("");
     const [clientAddress, setClientAddress] = useState("");
     
-    // const [patientName, setPatientName] = useState("");
-    // const [patientAge, setPatientAge] = useState("");
-    // const [patientAddress, setPatientAddress] = useState("");
-    // const [isSameAsClient, setSameAsClient] = useState(false);
-    const [selectedVehicle, setSelectedVehicle] = useState("");
 
-    let totalFileSize = 0;
+    const [selectedVehicle, setSelectedVehicle] = useState("");
 
     // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     //     const selectedFiles = Array.from(e.target.files || []);

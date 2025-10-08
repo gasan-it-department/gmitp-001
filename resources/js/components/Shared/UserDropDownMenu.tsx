@@ -7,27 +7,78 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { type SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
-import { LogoutDialog } from '../Auth/LogoutDialog';
+import { router, usePage } from '@inertiajs/react';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { useState } from 'react';
+import axios from '@/lib/axios';
 
 export function UserDropdownMenu() {
     const { auth } = usePage<SharedData>().props;
+    const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const handleLogout = async () => {
+        try {
+            const response = await axios.post('/logout');
+            window.location.href = response.data.redirect;
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
+    console.log('User Avatar url:', auth.user.avatar);
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger className="hoverRed flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800">
-                <span className="text-base">Welcome!</span>
-                <span className="max-w-[6ch] truncate font-bold uppercase lg:max-w-[20ch]">{auth.user.user_name}</span>
-            </DropdownMenuTrigger>
+        <>
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                        <div className="hover:bg-gray-200 rounded-full p-1 transition-colors duration-200">
+                            <img
+                                src={auth.user?.avatarUrl === 'string' && auth.user?.avatarUrl
+                                    ? auth.user?.avatarUrl
+                                    : "https://www.gravatar.com/avatar/?d=mp"}
+                                alt="User Avatar"
+                                className="w-10 h-10 rounded-full"
+                            />
+                        </div>
+                    </div>
+                </DropdownMenuTrigger>
 
-            <DropdownMenuContent className="font-bold">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Logs</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <LogoutDialog />
-            </DropdownMenuContent>
-        </DropdownMenu>
+                <DropdownMenuContent className="font-bold">
+                    <DropdownMenuLabel className="text-[13px] italic p-1">
+                        {`Sophie Rhys Sadiwa Fabunan 12345678`.length > 16
+                            ? `Sophie Rhys Sadiwa Fabunan 12345678`.slice(0, 16) + "..."
+                            : `Sophie Rhys Sadiwa Fabunan 12345678`}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => {
+                        router.visit(route("my.account.show"));
+                    }}>Profile</DropdownMenuItem>
+
+                    {/* Log out opens dialog */}
+                    <DropdownMenuItem
+                        onClick={() => {
+                            setOpenLogoutDialog(true);
+                            setMenuOpen(false);
+                        }}
+                    >
+                        Log out
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Confirmation dialog */}
+            <ClassicDialog
+                title="Confirm Logout"
+                message="Are you sure you want to log out?"
+                open={openLogoutDialog}
+                hideNegativeButton={false}
+                positiveButtonText="Log out"
+                negativeButtonText="Cancel"
+                onPositiveClick={handleLogout}
+                onNegativeClick={() => setOpenLogoutDialog(false)}
+            />
+        </>
     );
 }

@@ -1,9 +1,15 @@
-import { Menu, UserIcon, LucideLogs, PlaneIcon, Landmark, Shield, PhoneIcon } from 'lucide-react';
+import { Menu, UserIcon, LucideLogs, PlaneIcon, Landmark, Shield, PhoneIcon, HomeIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { useState } from 'react';
+import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
+import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
 
 export function LeftNavigation() {
+    const { auth } = usePage<SharedData>().props;
+    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
 
     return (
         <Sheet>
@@ -17,39 +23,66 @@ export function LeftNavigation() {
                 <SheetHeader className="flex justify-start text-left">
                     {/* <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" /> */}
                 </SheetHeader>
-                <div className="flex h-full flex-1 flex-col space-y-4 p-4">
+                <div className="flex h-full flex-1 flex-col space-y-4 p-2">
                     <div className="flex h-full flex-col text-sm">
-                        <div className="flex flex-col space-y-4"></div>
+                        <div className="flex flex-col space-y-4" />
 
-                        <div className="flex flex-col space-y-2 overflow-y-auto">
-                            <span className="text-[13px] text-gray-700">Account</span>
-                            <SheetClose asChild>
-                                <a
-                                    key={"My Account"}
+                        {
+                            auth.user && (
+                                <div
+                                    className="flex flex-row items-center rounded-xl cursor-pointer select-none p-2 hover:bg-gray-100 active:bg-gray-200 transition duration-200 ease-in-out"
                                     onClick={() => {
                                         router.visit(route("my.account.show"));
                                     }}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
                                 >
-                                    <UserIcon size={25} />
-                                    <span className='p-1 font-bold'>My Account</span>
-                                </a>
-                            </SheetClose>
+                                    <Avatar className="h-16 w-16 flex-shrink-0">
+                                        <AvatarImage
+                                            className="rounded-full"
+                                            src={
+                                                typeof auth.user?.avatarUrl === "string" && auth.user?.avatarUrl
+                                                    ? auth.user?.avatarUrl
+                                                    : "https://www.gravatar.com/avatar/?d=mp"
+                                            }
+                                            alt="avatar preview"
+                                        />
+                                    </Avatar>
 
-                            <SheetClose asChild>
-                                <a
-                                    key={"Activity Log"}
-                                    onClick={() => console.log(`Clicked: Activity Log`)}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
-                                >
-                                    <LucideLogs size={25} />
-                                    <span className='p-1 font-bold'>Activity Log</span>
-                                </a>
-                            </SheetClose>
+                                    <div className="flex flex-col justify-center ml-2 min-w-0">
+                                        <span className="text-black font-bold text-[17px] line-clamp-2 break-words">
+                                            Sophie Rhys Sadiwa Fabunan 12345678
+                                        </span>
+                                    </div>
+                                </div>
+                            )
+                        }
 
+                        <div className="flex flex-col space-y-2 overflow-y-auto p-2">
                             <div className='mt-2 mb-2' />
+                            {
+                                !auth.user && (
+                                    <div className="flex w-full">
+                                        <Button className="w-full"
+                                            onClick={() => setLogInSignUpDialogVisible(true)}>
+                                            Sign In
+                                        </Button>
+
+                                        <div className="mt-2 mb-2" />
+                                    </div>
+                                )
+                            }
 
                             <span className="text-[13px] text-gray-700">Explore</span>
+                            <SheetClose asChild>
+                                <a
+                                    key={"Travel"}
+                                    onClick={() => router.visit(route("home.show"))}
+                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
+                                >
+                                    <HomeIcon size={25} />
+                                    <span className="p-1 font-bold">Home</span>
+                                </a>
+                            </SheetClose>
+
                             <SheetClose asChild>
                                 <a
                                     key={"Travel"}
@@ -110,6 +143,8 @@ export function LeftNavigation() {
                             })} */}
                         </div>
                     </div>
+
+                    <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)} />
                 </div>
             </SheetContent>
         </Sheet>

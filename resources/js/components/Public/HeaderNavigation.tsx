@@ -1,10 +1,28 @@
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/components/ui/navigation-menu';
+import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
 import { useNavigation } from '@/config/navigation/navigationItems';
 import { Link, usePage } from '@inertiajs/react';
 
+type ListItemProps = {
+    title: string;
+    href: string;
+    children: React.ReactNode;
+};
+
+function ListItem({ title, href, children }: ListItemProps) {
+    return (
+        <li>
+            <NavigationMenuLink asChild>
+                <Link href={href} className="block rounded p-3 hover:bg-muted">
+                    <div className="font-semibold">{title}</div>
+                    <div className="text-sm text-gray-500">{children}</div>
+                </Link>
+            </NavigationMenuLink>
+        </li>
+    );
+}
+
 export function HeaderNav() {
     const page = usePage();
-
     const navItems = useNavigation();
 
     return (
@@ -23,8 +41,26 @@ export function HeaderNav() {
                         {page.url === item.href && (
                             <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
                         )}{' '}
+
                     </NavigationMenuItem>
                 ))}
+
+                {/* <NavigationMenuItem>
+                    <NavigationMenuTrigger>Components</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                        <ul className="grid w-[400px] gap-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                            {components.map((component) => (
+                                <ListItem
+                                    key={component.title}
+                                    title={component.title}
+                                    href={component.href}
+                                >
+                                    {component.description}
+                                </ListItem>
+                            ))}
+                        </ul>
+                    </NavigationMenuContent>
+                </NavigationMenuItem> */}
             </NavigationMenuList>
         </NavigationMenu>
     );

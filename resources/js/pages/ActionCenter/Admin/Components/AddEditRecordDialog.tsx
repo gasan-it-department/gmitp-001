@@ -69,8 +69,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
     const handleFormSubmit = async (data: ClientData) => {
         try {
-            const response = await axios.post('/admin/requests', data);
-
+            await axios.post('/admin/requests', data);
             reset();
             onClose();
         } catch (error) {

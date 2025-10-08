@@ -5,6 +5,7 @@ import { useState } from 'react';
 // Import the LoginForm component
 import LoginForm from './Login';
 import SignUp from './SignUp';
+
 interface Props {
     isOpen: boolean;
     onClose: () => void;
@@ -15,7 +16,7 @@ export default function LogInSignUpDialog({ isOpen, onClose }: Props) {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent showCloseButton={true} className="flex w-full max-w-sm md:max-w-4xl lg:h-[600px]">
+            <DialogContent showCloseButton={true} className="flex w-[600px] max-w-sm md:max-w-4xl lg:h-[600px]">
                 <Tabs
                     defaultValue="login"
                     className="h-full w-full flex-1"
@@ -52,13 +53,6 @@ export default function LogInSignUpDialog({ isOpen, onClose }: Props) {
                         </TabsContent>
                     </div>
                 </Tabs>
-                <div className="relative m-1 hidden flex-1 rounded-2xl bg-muted md:block">
-                    {/* <img
-                        src="/placeholder.svg"
-                        alt="Image"
-                        className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-                    /> */}
-                </div>
             </DialogContent>
         </Dialog>
     );

@@ -16,6 +16,7 @@ interface ClientData {
     municipality: string;
     barangay: string;
 }
+
 interface DashboardProps {
     data: ClientData[];
     onViewDetailsEditButtonClicked: (clientData?: ClientData | null) => void;
@@ -29,7 +30,7 @@ export default function Dashboard({ data, onViewDetailsEditButtonClicked, onView
 
     useEffect(() => {
         setDashboardList(data);
-    }, [data]);
+    }, []);
 
     return (
         <div className="max-h-[630px] overflow-y-auto rounded-lg border">

@@ -27,9 +27,14 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <LeftNavigation />
                     </div>
 
-                    <Link href="/home" prefetch className="flex items-center space-x-2">
+                    <Link
+                        href="/home"
+                        prefetch
+                        className="flex items-center space-x-2 pointer-events-none md:pointer-events-auto"
+                    >
                         <GmitpLogo />
                     </Link>
+
 
                     {/* Desktop Navigation */}
                     <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
@@ -37,8 +42,7 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
 
                     <div className="ml-auto flex items-center space-x-4">
-                        <div></div>
-                        <div className="relative flex items-center space-x-1">
+                        <div className="relative hidden lg:flex items-center space-x-1">
                             {auth.user ? (
                                 <UserDropdownMenu />
                             ) : (
@@ -52,6 +56,7 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                 </Button>
                             )}
                         </div>
+
                     </div>
                 </div>
             </div>

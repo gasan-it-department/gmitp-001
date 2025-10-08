@@ -11,6 +11,17 @@ export type NavigationItem = {
   }[];
 };
 
+// export type NavigationItem = {
+//   title: string;
+//   href: string;
+//   icon?: LucideIcon;
+//   isActive?: boolean;
+//   children?: {
+//     label: string;
+//     href: string;
+//   }[];
+// };
+
 export const useNavigation = (): NavigationItem[] => [
   {
     title: "Home",
@@ -18,18 +29,9 @@ export const useNavigation = (): NavigationItem[] => [
     icon: House,
   },
   {
-    title: "Services",
-    href: "/services",
-    icon: FolderKanban,
-  }, {
     title: "Travel",
     href: "/tourism",
     icon: MapPinned,
-  },
-  {
-    title: "News & Events",
-    href: "/news-events",
-    icon: Newspaper,
   },
   {
     title: "Government",
@@ -37,7 +39,7 @@ export const useNavigation = (): NavigationItem[] => [
     icon: Landmark,
   },
   {
-    title: "transparency",
+    title: "Transparency",
     href: "/transparency",
     icon: ShieldCheck,
   },
@@ -46,5 +48,5 @@ export const useNavigation = (): NavigationItem[] => [
     href: "/contact-us",
     icon: Phone,
   },
-
+  
 ];
