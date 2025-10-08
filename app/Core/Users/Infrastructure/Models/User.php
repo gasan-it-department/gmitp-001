@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Core\ActionCenter\Infrastructures\Models\AssistanceRequest;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+    public $incrementing = false;
+    protected $keyType = 'string';
 
-    protected $keyType = 'int';
-    public $incrementing = true;
     protected static function boot()
     {
         parent::boot();
@@ -28,7 +29,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'uuid',
+        'id',
         'phone',
         'user_name',
         'role',
@@ -56,5 +57,10 @@ class User extends Authenticatable
         return [
             'phone_verified_at' => 'datetime',
         ];
+    }
+
+    public function assistanceRequests()
+    {
+        return $this->hasMany(AssistanceRequest::class, 'user_id');
     }
 }

@@ -8,7 +8,6 @@ final class Client
 
     public function __construct(
         private ClientId $id,
-        private string $uuid,
         private string $name,
         private int $age,
         private string $contactNumber,
@@ -20,11 +19,6 @@ final class Client
     public function getId(): ClientId
     {
         return $this->id;
-    }
-
-    public function getUuid(): string
-    {
-        return $this->uuid;
     }
 
     public function getName(): string

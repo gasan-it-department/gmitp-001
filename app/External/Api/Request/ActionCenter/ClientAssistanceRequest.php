@@ -32,6 +32,7 @@ class ClientAssistanceRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
             'suffix' => ['nullable', 'string', 'max:255'],
+            'birth_date' => ['required', 'date'],
             'contact_number' => ['required', 'string', 'min:10', 'max:15'],
             'province' => ['nullable', 'string', 'max:255'],
             'municipality' => ['nullable', 'string', 'max:255'],

@@ -4,11 +4,18 @@ namespace App\External\Api\Controllers\ActionCenter;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Core\ActionCenter\Applications\Dto\AssistanceRequestDto;
 use App\External\Api\Request\ActionCenter\ClientAssistanceRequest;
+use App\Core\ActionCenter\Applications\Services\CreateAssistanceRequest;
+use App\Core\ActionCenter\Infrastructures\Models\AssistanceRequest;
+use App\Core\ActionCenter\Infrastructures\Models\Beneficiary;
 
 class ActionCenterController extends Controller
 {
+
+    public function __construct(
+        private CreateAssistanceRequest $createAssistaceRequest,
+    ) {
+    }
 
 
     /**
@@ -20,18 +27,8 @@ class ActionCenterController extends Controller
         $validated = $request->validated();
 
         $user = request()->user();
-        dd($validated);
-        // $dto = new AssistanceRequestDto(
-        //     $validated['first_name'],
-        //     $validated['last_name'],
-        //     $validated['middle_name'],
-        //     $validated['suffix'],
-        //     $validated['contact_number'],
-        //     $validated['province'],
-        //     $validated['municipality'],
-        //     $validated['barangay'],
-        //     $validated['assistance_type'],
-        // );
+
+        $this->createAssistaceRequest->execute($validated, $user);
 
         return response()->json(['message' => 'request created'], 200);
     }
@@ -44,7 +41,12 @@ class ActionCenterController extends Controller
     {
         // Example: return all requests for the authenticated client
         // $requests = RequestModel::where('user_id', auth()->id())->get();
-        return response()->json(['message' => 'List of client requests']);
+        $request = AssistanceRequest::with('beneficiary')->get();
+
+        return response()->json([
+            'request' => $request,
+            'message' => 'List of client requests'
+        ]);
     }
 
 
@@ -87,4 +89,6 @@ class ActionCenterController extends Controller
 
         return response()->json(['message' => "Request {$id} deleted"]);
     }
+
+
 }

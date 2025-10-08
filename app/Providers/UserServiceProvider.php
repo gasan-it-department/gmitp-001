@@ -5,8 +5,6 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
 use App\Core\Users\Infrastructure\Repository\UserRepository;
-use App\Core\Users\Application\Interfaces\UuidServiceInterface;
-use App\Core\Users\Infrastructure\Services\UuidGeneratorService;
 use App\Core\Users\Application\Interfaces\PasswordHasherInterface;
 use App\Core\Users\Infrastructure\Services\PasswordHasherService;
 class UserServiceProvider extends ServiceProvider
@@ -19,11 +17,6 @@ class UserServiceProvider extends ServiceProvider
         $this->app->bind(
             UserRepositoryInterface::class,
             UserRepository::class
-        );
-
-        $this->app->bind(
-            UuidServiceInterface::class,
-            UuidGeneratorService::class
         );
 
         $this->app->bind(

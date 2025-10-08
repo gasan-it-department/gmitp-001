@@ -2,22 +2,30 @@
 
 namespace App\Core\ActionCenter\Domains\Enums;
 
-enum RequestStatus
+enum RequestStatus: string
 {
     case PENDING = 'pending';
+    case IN_REVIEW = 'in_review';
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
-    case COMPLETED = 'completed';
-    case CANCELLED = 'cancelled';
+    case WAITING = 'waiting';
+    case COMPLETED = 'completed'; // or Delivered/Disbursed
+    case CANCELLED = 'cancelled'; // cancelled by admin/office
+    case EXPIRED = 'expired';
+    case ARCHIVED = 'archived';
 
-    public function statusLabel(): string
+    public function label(): string
     {
         return match ($this) {
-            RequestStatus::PENDING => 'Pending',
-            RequestStatus::APPROVED => 'Approved',
-            RequestStatus::REJECTED => 'Rejected',
-            RequestStatus::COMPLETED => 'Completed',
-            RequestStatus::CANCELLED => 'Cancelled',
+            self::PENDING => 'Pending',
+            self::IN_REVIEW => 'In Review',
+            self::APPROVED => 'Approved',
+            self::REJECTED => 'Rejected',
+            self::WAITING => 'Waiting',
+            self::COMPLETED => 'Completed',
+            self::CANCELLED => 'Cancelled',
+            self::EXPIRED => 'Expired',
+            self::ARCHIVED => 'Archived',
         };
     }
 }

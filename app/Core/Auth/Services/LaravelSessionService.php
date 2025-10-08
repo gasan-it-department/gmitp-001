@@ -15,7 +15,7 @@ class LaravelSessionService implements \App\Core\Auth\Interfaces\CookieSessionIn
     public function __construct(private Request $request)
     {
     }
-    public function createAuthenticatedSession(int $userId, bool $rememberMe = false): array
+    public function createAuthenticatedSession(string $userId, bool $rememberMe = false): array
     {
         $user = User::findOrFail($userId);
 

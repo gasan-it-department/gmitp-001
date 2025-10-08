@@ -7,17 +7,11 @@ use App\Core\ActionCenter\Domains\Enums\AssistanceType;
 final class AssistanceRequest
 {
     public function __construct(
-        private string $uuid,
         private string $id,
         private Client $client,
         private AssistanceType $assistanceType,
 
     ) {
-    }
-
-    public function getUuid(): string
-    {
-        return $this->uuid;
     }
 
     public function getId(): string

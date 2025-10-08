@@ -10,37 +10,33 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        //change this to uuid
-        Schema::create('assistance_clients', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique(); // Separate UUID field
+        Schema::create('assistance_beneficiaries', function (Blueprint $table) {
+            $table->ulid('id')->primary();
             $table->timestamps();
-            $table->string('name');
-            $table->integer('age');
+            $table->string('first_name');
+            $table->string('middle_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->string('suffix')->nullable();
+            $table->date('birth_date');
             $table->string('contact_number');
-            $table->text('address');
+            $table->string('province');
+            $table->string('municipality');
+            $table->string('barangay');
         });
 
         Schema::create('assistance_requests', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
-            $table->timestamps();
-            $table->enum('assistance_type', ['financial', 'food', 'burial', 'medical', 'transportation']);
-            $table->unsignedBigInteger('client_id');
-            $table->enum('status', ['pending', 'approved', 'denied', 'completed'])->default('pending');
+            $table->ulid('id')->primary();
+            $table->foreignUlid('beneficiary_id')
+                ->constrained('assistance_beneficiaries')
+                ->onDelete('cascade');
+            $table->foreignUlid('user_id')
+                ->constrained('users')
+                ->onDelete('cascade');
+            $table->string('transaction_number')->unique();
+            $table->string('assistance_type');
+            $table->string('status')->default('pending');
             $table->text('description')->nullable();
-
-            $table->foreign('client_id')->references('id')->on('assistance_clients')->onDelete('cascade');
-        });
-
-        Schema::create('assistance_documents', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
             $table->timestamps();
-            $table->string('document_type');
-            $table->string('file_name');
-            $table->string('file_path');
-            $table->string('file_type');
         });
     }
 

@@ -37,12 +37,11 @@ export interface SharedData {
 }
 
 export interface User {
-    uuid: number;
+    id: string;
     user_name: string;
     phone: string;
     roles: number;
     role_name: 'client' | 'admin' | 'superadmin';
-    password: string;
     avatar?: string;
     created_at: string;
     updated_at: string;

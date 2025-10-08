@@ -1,3 +1,5 @@
+import { adminNavMain } from '@/features/navigation/admin/navigationItems';
+import { Link } from '@inertiajs/react';
 import { Minus, Plus } from 'lucide-react';
 import * as React from 'react';
 
@@ -15,89 +17,6 @@ import {
     SidebarMenuSubItem,
     SidebarRail,
 } from '@/components/ui/sidebar';
-
-// This is sample data.
-const data = {
-    navMain: [
-        {
-            title: 'Action Center',
-            url: '#',
-            items: [
-                {
-                    title: 'Dashboard',
-                    url: '#',
-                },
-                {
-                    title: 'Requests',
-                    url: '#',
-                },
-                {
-                    title: 'Activity Logs',
-                    url: '#',
-                },
-                {
-                    title: 'Transfers',
-                    url: '#',
-                },
-            ],
-        },
-        {
-            title: 'Travels',
-            url: '#',
-            items: [
-                {
-                    title: 'Routing',
-                    url: '#',
-                },
-                {
-                    title: 'Data Fetching',
-                    url: '#',
-                    isActive: true,
-                },
-                {
-                    title: 'Rendering',
-                    url: '#',
-                },
-                {
-                    title: 'Caching',
-                    url: '#',
-                },
-                {
-                    title: 'Styling',
-                    url: '#',
-                },
-                {
-                    title: 'Optimizing',
-                    url: '#',
-                },
-                {
-                    title: 'Configuring',
-                    url: '#',
-                },
-                {
-                    title: 'Testing',
-                    url: '#',
-                },
-                {
-                    title: 'Authentication',
-                    url: '#',
-                },
-                {
-                    title: 'Deploying',
-                    url: '#',
-                },
-                {
-                    title: 'Upgrading',
-                    url: '#',
-                },
-                {
-                    title: 'Examples',
-                    url: '#',
-                },
-            ],
-        },
-    ],
-};
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
@@ -122,7 +41,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarMenu>
-                        {data.navMain.map((item, index) => (
+                        {adminNavMain.map((item, index) => (
                             <Collapsible key={item.title} className="group/collapsible">
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
@@ -136,8 +55,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSub>
                                                 {item.items.map((item) => (
                                                     <SidebarMenuSubItem key={item.title}>
-                                                        <SidebarMenuSubButton asChild isActive={item.isActive}>
-                                                            <a href={item.url}>{item.title}</a>
+                                                        <SidebarMenuSubButton asChild>
+                                                            <Link href={item.url}>{item.title}</Link>
                                                         </SidebarMenuSubButton>
                                                     </SidebarMenuSubItem>
                                                 ))}

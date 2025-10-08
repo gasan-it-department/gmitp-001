@@ -1,5 +1,4 @@
-'use client';
-
+import { AddressDropdown } from '@/components/Shared/AddressDropdown';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,8 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import axios from '@/lib/axios';
-import { useEffect } from 'react';
+import moment from 'moment';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { DatePicker } from './DatePicker';
+
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
     isOpen: boolean;
@@ -23,6 +26,7 @@ interface ClientData {
     first_name: string;
     middle_name?: string;
     suffix?: string;
+    birth_date: string;
     contact_number: string;
     province: string;
     municipality: string;
@@ -40,17 +44,15 @@ const assistanceOptions = [
     'Housing Assistance',
 ];
 
-const mockProvinces = ['Metro Manila', 'Cebu', 'Davao', 'Iloilo', 'Baguio'];
-const mockMunicipalities = ['Quezon City', 'Manila', 'Makati', 'Taguig', 'Pasig'];
-const mockBarangays = ['Barangay 1', 'Barangay 2', 'Barangay 3', 'Barangay 4', 'Barangay 5'];
-
 export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmit }: Props) {
+    const queryClient = useQueryClient();
     const {
         register,
         handleSubmit,
         reset,
         setValue,
         watch,
+        setError,
         formState: { errors, isSubmitting },
     } = useForm<ClientData>({
         defaultValues: {
@@ -58,6 +60,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             last_name: '',
             middle_name: '',
             suffix: '',
+            birth_date: '',
             contact_number: '',
             province: '',
             municipality: '',
@@ -69,7 +72,16 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
     const handleFormSubmit = async (data: ClientData) => {
         try {
-            await axios.post('/admin/requests', data);
+            const response = await axios.post('/action-center/request', data);
+
+            if (response.status !== 200) {
+                setError('root', response.data);
+                throw new Error(response.data);
+            }
+            await queryClient.invalidateQueries({
+                queryKey: ['request-list'],
+                refetchType: 'active',
+            });
             reset();
             onClose();
         } catch (error) {
@@ -91,11 +103,25 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             reset();
         }
     }, [editData, setValue, reset]);
+    const handleAddressChange = (address: any) => {
+        if (!address) {
+            setValue('province', '');
+            setValue('municipality', '');
+            setValue('barangay', '');
+            return;
+        }
+
+        setValue('province', address.provinceCode);
+        setValue('municipality', address.municipalityCode);
+        setValue('barangay', address.barangayCode);
+    };
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Dialog open={isOpen} onOpenChange={(open) => onClose()} modal={true}>
             <DialogContent
-                showCloseButton={false}
+                showCloseButton={true}
+                onInteractOutside={(e) => e.preventDefault()}
                 className="scrollbar-hide m-0 flex h-screen w-full max-w-none flex-col rounded-none p-4 sm:m-auto sm:h-auto sm:max-w-[700px] sm:rounded-lg lg:h-5/6"
             >
                 <DialogHeader>
@@ -183,6 +209,25 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             placeholder="Jr., Sr., III, etc."
                                         />
                                     </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="birth_date" className="text-sm font-medium text-gray-700">
+                                            Birth Date
+                                        </Label>
+                                        <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
+
+                                        <DatePicker
+                                            value={selectedDate}
+                                            onChange={(date) => {
+                                                setSelectedDate(date);
+                                                setValue(
+                                                    'birth_date',
+                                                    date ? moment(date).format('YYYY-MM-DD') : '',
+                                                    { shouldValidate: true, shouldDirty: true }, // <-- important
+                                                );
+                                            }}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Contact Information */}
@@ -251,67 +296,8 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                 </div>
 
                                 {/* Location Fields */}
-                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                    {/* Province */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="province" className="text-sm font-medium text-gray-700">
-                                            Province *
-                                        </Label>
-                                        <Select value={watch('province')} onValueChange={(value) => setValue('province', value)}>
-                                            <SelectTrigger className="rounded-md border border-gray-300 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
-                                                <SelectValue placeholder="Select province" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {mockProvinces.map((province) => (
-                                                    <SelectItem key={province} value={province}>
-                                                        {province}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <input type="hidden" {...register('province', { required: 'Province is required' })} />
-                                    </div>
 
-                                    {/* Municipality */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="municipality" className="text-sm font-medium text-gray-700">
-                                            Municipality *
-                                        </Label>
-                                        <Select value={watch('municipality')} onValueChange={(value) => setValue('municipality', value)}>
-                                            <SelectTrigger className="rounded-md border border-gray-300 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
-                                                <SelectValue placeholder="Select municipality" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {mockMunicipalities.map((municipality) => (
-                                                    <SelectItem key={municipality} value={municipality}>
-                                                        {municipality}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <input type="hidden" {...register('municipality', { required: 'Municipality is required' })} />
-                                    </div>
-
-                                    {/* Barangay */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="barangay" className="text-sm font-medium text-gray-700">
-                                            Barangay *
-                                        </Label>
-                                        <Select value={watch('barangay')} onValueChange={(value) => setValue('barangay', value)}>
-                                            <SelectTrigger className="rounded-md border border-gray-300 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200">
-                                                <SelectValue placeholder="Select barangay" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {mockBarangays.map((barangay) => (
-                                                    <SelectItem key={barangay} value={barangay}>
-                                                        {barangay}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <input type="hidden" {...register('barangay', { required: 'Barangay is required' })} />
-                                    </div>
-                                </div>
+                                <AddressDropdown onAddressChange={handleAddressChange} />
 
                                 {/* Description */}
                                 <div className="space-y-2">

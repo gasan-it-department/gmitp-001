@@ -14,7 +14,7 @@ interface Props {
 export default function Header({ className, onAddNewButtonClicked, onExportButtonClicked, onFilterButtonClicked, onSearch }: Props) {
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
-            <h1 className="w-full justify-items-center text-3xl font-extrabold tracking-wide text-balance">Request List</h1>
+            {/* <h1 className="w-full justify-items-center text-3xl font-extrabold tracking-wide text-balance">Request List</h1> */}
             <SearchBar onSearch={onSearch ?? (() => {})} searchBarHint={'Search...'} />
 
             <div className="ml-2" />

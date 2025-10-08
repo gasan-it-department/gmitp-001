@@ -11,7 +11,6 @@ class ToEloquentUserMapper
         $eloquentUser = new EloquentUser();
 
         $eloquentUser->id = $user->id;
-        $eloquentUser->uuid = $user->uuid;
         $eloquentUser->user_name = $user->user_name;
         $eloquentUser->phone = $user->phone;
 

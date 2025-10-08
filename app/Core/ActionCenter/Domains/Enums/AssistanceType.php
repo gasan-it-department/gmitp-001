@@ -8,6 +8,7 @@ enum AssistanceType
     case FOOD = 'food';
     case BURIAL = 'burial';
     case MEDICAL = 'medical';
+    case TRASNSPORTATION = 'transportation';
 
     public function assistanceLabel(): string
     {
@@ -18,4 +19,6 @@ enum AssistanceType
             AssistanceType::MEDICAL => 'Medical Assistance',
         };
     }
+
+
 }

@@ -7,7 +7,7 @@ use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
 use App\Core\Users\Domains\Aggregates\UserAggregate;
 use Illuminate\Support\Facades\DB;
 use App\Core\Users\Domains\Enum\EnumRoles;
-use App\Core\Users\Application\Interfaces\UuidServiceInterface;
+use App\Shared\Contracts\IdGeneratorInterface;
 use App\Core\Users\Application\Exceptions\UserAlreadyExistExceptions;
 use App\Core\Auth\Interfaces\CookieSessionInterface;
 use App\Core\Users\Domains\ValueObjects\{
@@ -15,14 +15,13 @@ use App\Core\Users\Domains\ValueObjects\{
     Phone,
     Password,
     Role,
-    Uuid
 };
 
 class CreateUserService
 {
     public function __construct(
         protected UserRepositoryInterface $userRepository,
-        protected UuidServiceInterface $uuidGenerator,
+        protected IdGeneratorInterface $idGenerator,
         private CookieSessionInterface $cookieSessionService
 
     ) {
@@ -39,11 +38,10 @@ class CreateUserService
             $role = new Role(EnumRoles::fromString($dto->role ?? 'client'));
 
             $this->ensureUserDoesNotExist($userName, $phone);
-            $uuid = new Uuid($this->uuidGenerator->generate());
+            $id = $this->idGenerator->generate();
 
             $user = UserAggregate::create(
-                null,
-                $uuid,
+                $id,
                 $phone,
                 $userName,
                 $password,
@@ -51,7 +49,6 @@ class CreateUserService
             );
 
             $saveduser = $this->userRepository->save($user);
-
             $this->cookieSessionService->createAuthenticatedSession($saveduser->getId());
 
         });

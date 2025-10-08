@@ -7,7 +7,6 @@ class UserDto
 {
     public function __construct(
         public string $id,
-        public string $uuid,
         public string $userName,
         public string $phone,
         public string $role,
@@ -19,7 +18,6 @@ class UserDto
     {
         return new self(
             $user->getId(),
-            $user->getUuid(),
             $user->getUserName(),
             $user->getPhone(),
             $user->getRole(),
@@ -31,7 +29,6 @@ class UserDto
     {
         return [
             'id' => $this->id,
-            'uuid' => $this->uuid,
             'user_name' => $this->userName,
             'phone' => $this->phone,
             'role' => $this->role

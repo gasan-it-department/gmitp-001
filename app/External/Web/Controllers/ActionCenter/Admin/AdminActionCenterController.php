@@ -9,6 +9,6 @@ class AdminActionCenterController extends Controller
 {
     public function showAdminActionCenterPage()
     {
-        return Inertia::render('ActionCenter/Admin/RequestList/AdminActionCenterPage');
+        return Inertia::render('ActionCenter/Admin/RequestList/ActionCenterRequestList');
     }
 }

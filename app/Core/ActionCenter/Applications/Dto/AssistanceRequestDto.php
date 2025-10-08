@@ -2,18 +2,16 @@
 
 namespace App\Core\ActionCenter\Applications\Dto;
 
+
 class AssistanceRequestDto
 {
     public function __construct(
-        public readonly string $firstName,
-        public readonly string $lastName,
-        public readonly ?string $middleName,
-        public readonly ?string $suffix,
-        public readonly string $contactNumber,
-        public readonly string $province,
-        public readonly string $municipality,
-        public readonly string $barangay,
-        public readonly string $assistanceNeeded,
+        public readonly string $id,
+        public readonly string $transactionNumber,
+        public readonly string $assistanceType,
+        public readonly string $description,
+        public readonly string $status,
+        public readonly string $userId,
     ) {
     }
 

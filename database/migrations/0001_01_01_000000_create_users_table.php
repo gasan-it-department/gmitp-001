@@ -11,8 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
+            $table->ulid('id')->primary();
             $table->string('user_name')->unique();
             $table->string('role')->default('client'); // Default role can be set t)
             $table->string('phone')->unique();
@@ -37,6 +36,7 @@ return new class extends Migration {
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
         Schema::create('login_attempts', function (Blueprint $table) {
             $table->id();
             $table->string('identifier')->index(); // username or email

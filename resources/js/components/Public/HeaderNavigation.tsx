@@ -1,4 +1,4 @@
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
+import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/components/ui/navigation-menu';
 import { useNavigation } from '@/config/navigation/navigationItems';
 import { Link, usePage } from '@inertiajs/react';
 
@@ -41,7 +41,6 @@ export function HeaderNav() {
                         {page.url === item.href && (
                             <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
                         )}{' '}
-
                     </NavigationMenuItem>
                 ))}
 
