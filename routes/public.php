@@ -14,4 +14,5 @@ Route::get('/action-center', [PublicController::class, 'showActionCenterPage'])-
 Route::get('/action-center/request-list', [PublicController::class, 'showActionCenterRequestPage'])->name('action.center.request.list.show');
 Route::get('/my-account', [PublicController::class, 'showMyAccountPage'])->name('my.account.show');
 Route::get('/contact-us', [PublicController::class, 'showContactUsPage'])->name('contact.us.show');
+Route::get('/travel', [PublicController::class, 'showTravelPage'])->name('travel.page.show');
 // });

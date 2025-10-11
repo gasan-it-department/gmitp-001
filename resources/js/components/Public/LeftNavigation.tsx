@@ -18,135 +18,135 @@ export function LeftNavigation() {
                     <Menu className="h-5 w-5" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex h-full w-64 flex-col items-stretch justify-between bg-sidebar">
+
+            <SheetContent
+                side="left"
+                className="flex h-full w-64 flex-col justify-between bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-xl"
+            >
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <SheetHeader className="flex justify-start text-left">
-                    {/* <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" /> */}
+
+                {/* Header Section */}
+                <SheetHeader className="flex items-center justify-start px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    {/* Optional logo placeholder */}
+                    {/* <AppLogoIcon className="h-6 w-6 text-gray-900 dark:text-white" /> */}
+                    <h2 className="text-lg font-semibold">Menu</h2>
                 </SheetHeader>
-                <div className="flex h-full flex-1 flex-col space-y-4 p-2">
-                    <div className="flex h-full flex-col text-sm">
-                        <div className="flex flex-col space-y-4" />
 
-                        {
-                            auth.user && (
-                                <div
-                                    className="flex flex-row items-center rounded-xl cursor-pointer select-none p-2 hover:bg-gray-100 active:bg-gray-200 transition duration-200 ease-in-out"
-                                    onClick={() => {
-                                        router.visit(route("my.account.show"));
-                                    }}
-                                >
-                                    <Avatar className="h-16 w-16 flex-shrink-0">
-                                        <AvatarImage
-                                            className="rounded-full"
-                                            src={
-                                                typeof auth.user?.avatarUrl === "string" && auth.user?.avatarUrl
-                                                    ? auth.user?.avatarUrl
-                                                    : "https://www.gravatar.com/avatar/?d=mp"
-                                            }
-                                            alt="avatar preview"
-                                        />
-                                    </Avatar>
+                {/* Body */}
+                <div className="flex flex-col flex-1 overflow-y-auto">
+                    {/* User Info */}
+                    {auth.user && (
+                        <div
+                            onClick={() => router.visit(route("my.account.show"))}
+                            className="flex items-center p-3 m-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition duration-200 ease-in-out"
+                        >
+                            <Avatar className="h-14 w-14 flex-shrink-0">
+                                <AvatarImage
+                                    src={
+                                        typeof auth.user?.avatarUrl === "string" && auth.user?.avatarUrl
+                                            ? auth.user?.avatarUrl
+                                            : "https://www.gravatar.com/avatar/?d=mp"
+                                    }
+                                    alt="User avatar"
+                                    className="rounded-full"
+                                />
+                            </Avatar>
 
-                                    <div className="flex flex-col justify-center ml-2 min-w-0">
-                                        <span className="text-black font-bold text-[17px] line-clamp-2 break-words">
-                                            Sophie Rhys Sadiwa Fabunan 12345678
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        }
-
-                        <div className="flex flex-col space-y-2 overflow-y-auto p-2">
-                            <div className='mt-2 mb-2' />
-                            {
-                                !auth.user && (
-                                    <div className="flex w-full">
-                                        <Button className="w-full"
-                                            onClick={() => setLogInSignUpDialogVisible(true)}>
-                                            Sign In
-                                        </Button>
-
-                                        <div className="mt-2 mb-2" />
-                                    </div>
-                                )
-                            }
-
-                            <span className="text-[13px] text-gray-700">Explore</span>
-                            <SheetClose asChild>
-                                <a
-                                    key={"Travel"}
-                                    onClick={() => router.visit(route("home.show"))}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
-                                >
-                                    <HomeIcon size={25} />
-                                    <span className="p-1 font-bold">Home</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    key={"Travel"}
-                                    onClick={() => console.log(`Clicked: Travel`)}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
-                                >
-                                    <PlaneIcon size={25} />
-                                    <span className="p-1 font-bold">Travel</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    key={"Government"}
-                                    onClick={() => console.log(`Clicked: Government`)}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
-                                >
-                                    <Landmark size={25} />
-                                    <span className="p-1 font-bold">Government</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    key={"Activity Log"}
-                                    onClick={() => console.log(`Clicked: Transparency`)}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
-                                >
-                                    <Shield size={25} />
-                                    <span className="p-1 font-bold">Transparency</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    key={"Contact"}
-                                    onClick={() => console.log(`Clicked: Contact Us`)}
-                                    className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-black-800"
-                                >
-                                    <PhoneIcon size={25} />
-                                    <span className="p-1 font-bold">Contact Us</span>
-                                </a>
-                            </SheetClose>
-
-
-                            {/* {sidebarItem.map((item) => {
-                                const IconComp = item.icon;
-                                return (
-                                    <a
-                                        key={item.title}
-                                        onClick={() => console.log(`Clicked: ${item.id}`)}
-                                        className="flex cursor-pointer items-center space-x-2 font-medium p-2 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-blue-600"
-                                    >
-                                        {IconComp && <IconComp className="h-5 w-5" />}
-                                        <span>{item.title}</span>
-                                    </a>
-                                );
-                            })} */}
+                            <div className="ml-3 min-w-0">
+                                <span className="block text-[15px] font-bold text-gray-900 dark:text-white truncate">
+                                    {/* {auth.user?.name || "Unnamed User"} */} Sophie Rhys Sadiwa Fabunan
+                                </span>
+                                <span className="text-xs text-gray-600 dark:text-gray-400">
+                                    View Profile
+                                </span>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)} />
+                    {/* Sign In Button (If not logged in) */}
+                    {!auth.user && (
+                        <div className="px-3 pb-2">
+                            <Button
+                                className="w-full text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg"
+                                onClick={() => setLogInSignUpDialogVisible(true)}
+                            >
+                                Sign In
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Navigation Section */}
+                    <div className="px-3 mt-2">
+                        <span className="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wide mb-2 block">
+                            Explore
+                        </span>
+
+                        {/* Navigation Items */}
+                        <nav className="flex flex-col space-y-1">
+                            <SheetClose asChild>
+                                <a
+                                    onClick={() => router.visit(route("home.show"))}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                >
+                                    <HomeIcon size={20} />
+                                    <span className="text-sm font-medium">Home</span>
+                                </a>
+                            </SheetClose>
+
+                            <SheetClose asChild>
+                                <a
+                                    onClick={() => console.log(`Clicked: Travel`)}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                >
+                                    <PlaneIcon size={20} />
+                                    <span className="text-sm font-medium">Travel</span>
+                                </a>
+                            </SheetClose>
+
+                            <SheetClose asChild>
+                                <a
+                                    onClick={() => console.log(`Clicked: Government`)}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                >
+                                    <Landmark size={20} />
+                                    <span className="text-sm font-medium">Government</span>
+                                </a>
+                            </SheetClose>
+
+                            <SheetClose asChild>
+                                <a
+                                    onClick={() => console.log(`Clicked: Transparency`)}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                >
+                                    <Shield size={20} />
+                                    <span className="text-sm font-medium">Transparency</span>
+                                </a>
+                            </SheetClose>
+
+                            <SheetClose asChild>
+                                <a
+                                    onClick={() => console.log(`Clicked: Contact Us`)}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                >
+                                    <PhoneIcon size={20} />
+                                    <span className="text-sm font-medium">Contact Us</span>
+                                </a>
+                            </SheetClose>
+                        </nav>
+                    </div>
                 </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400">
+                    © {new Date().getFullYear()} YourApp. All rights reserved.
+                </div>
+
+                <LogInSignUpDialog
+                    isOpen={isLogInSignUpDialogVisible}
+                    onClose={() => setLogInSignUpDialogVisible(false)}
+                />
             </SheetContent>
         </Sheet>
+
     );
 }

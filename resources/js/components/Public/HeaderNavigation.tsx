@@ -2,24 +2,24 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 import { useNavigation } from '@/config/navigation/navigationItems';
 import { Link, usePage } from '@inertiajs/react';
 
-type ListItemProps = {
-    title: string;
-    href: string;
-    children: React.ReactNode;
-};
+// type ListItemProps = {
+//     title: string;
+//     href: string;
+//     children: React.ReactNode;
+// };
 
-function ListItem({ title, href, children }: ListItemProps) {
-    return (
-        <li>
-            <NavigationMenuLink asChild>
-                <Link href={href} className="block rounded p-3 hover:bg-muted">
-                    <div className="font-semibold">{title}</div>
-                    <div className="text-sm text-gray-500">{children}</div>
-                </Link>
-            </NavigationMenuLink>
-        </li>
-    );
-}
+// function ListItem({ title, href, children }: ListItemProps) {
+//     return (
+//         <li>
+//             <NavigationMenuLink asChild>
+//                 <Link href={href} className="block rounded p-3 hover:bg-muted">
+//                     <div className="font-semibold">{title}</div>
+//                     <div className="text-sm text-gray-500">{children}</div>
+//                 </Link>
+//             </NavigationMenuLink>
+//         </li>
+//     );
+// }
 
 export function HeaderNav() {
     const page = usePage();

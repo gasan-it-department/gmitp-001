@@ -13,11 +13,11 @@ export default function HomePage() {
                 <div className='h-5' />
 
                 <div className="flex w-full flex-col gap-4 md:flex-row p-2">
-                    <div className="flex-1 min-h-[200px]">
+                    <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
                         <FeedbackUi />
                     </div>
 
-                    <div className="flex-1 min-h-[200px]">
+                    <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
                         <ActionCenterUi />
                     </div>
                 </div>

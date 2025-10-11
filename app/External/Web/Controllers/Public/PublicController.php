@@ -62,4 +62,9 @@ class PublicController extends Controller
     {
         return Inertia::render('Public/Account/UserAccount');
     }
+
+    public function showTravelPage()
+    {
+        return Inertia::render('Public/Travels/TravelPage');
+    }
 }

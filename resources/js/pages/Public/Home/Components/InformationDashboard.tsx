@@ -1,12 +1,14 @@
 
 import EventsCalendarUi from "./EventsCalendarUi";
-import GeneralAnnouncement from "./GeneralAnnouncement";
+import GeneralAnnouncementUi from "./GeneralAnnouncementUi";
+import JobFairUi from "./JobFairUi";
 
 export default function InformationDashboard(){
     return(
         <section className="bg-white dark:bg-gray-900">
-            <div className="mx-auto py-8 sm:py-16 flex flex-col lg:flex-row">
-                <GeneralAnnouncement/>
+            <JobFairUi/>
+            <div className="mx-auto flex flex-col lg:flex-row">
+                <GeneralAnnouncementUi/>
                 <EventsCalendarUi/>
             </div>
         </section>

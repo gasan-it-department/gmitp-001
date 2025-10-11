@@ -1,0 +1,277 @@
+
+=============== NOV & DEC THEMED ==================
+{dashboardList.length > 0 ? (
+    dashboardList
+        .slice(0, 5)
+        .map((item) => {
+            const month = moment(parseInt(item.date, 10) * 1000).format("MM");
+
+            const isDecember = month === "12";
+            const isNovember = month === "11";
+
+            return (
+                <Card
+                    key={item.id}
+                    className={`relative overflow-hidden p-4 mb-4 rounded-xl shadow-md transition-all duration-300 ${
+                        isDecember
+                            ? "bg-gradient-to-br from-green-700 via-green-600 to-green-500"
+                            : isNovember
+                            ? "bg-gradient-to-br from-[#2e0233] via-[#3c063d] to-[#5e1a00]"
+                            : "bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900"
+                    }`}
+                >
+                    {/* Floating Ribbon */}
+                    <div
+                        className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm ${
+                            isDecember
+                                ? "bg-red-600 text-white"
+                                : isNovember
+                                ? "bg-orange-600 text-black"
+                                : "bg-gradient-to-r from-red-500 to-orange-500 text-white"
+                        }`}
+                    >
+                        {Utility().calculateArrivingDays(item.date)}
+                    </div>
+
+                    {/* Dot Timeline Marker */}
+                    <div
+                        className={`absolute left-[-10px] top-6 w-4 h-4 rounded-full border-2 border-white shadow-md ${
+                            isDecember
+                                ? "bg-red-600"
+                                : isNovember
+                                ? "bg-orange-500"
+                                : "bg-gradient-to-br from-red-500 to-orange-500 dark:border-gray-800"
+                        }`}
+                    ></div>
+
+                    {/* Date + Event Info */}
+                    <div className="flex items-center gap-3">
+                        {/* Date Box */}
+                        <div
+                            className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg font-semibold shadow-md border ${
+                                isDecember
+                                    ? "bg-green-800 text-white border-green-900"
+                                    : isNovember
+                                    ? "bg-gradient-to-br from-orange-700 to-black text-orange-200 border-orange-800"
+                                    : "bg-gradient-to-br from-red-400 to-orange-400 text-white border-red-300 dark:border-orange-800"
+                            }`}
+                        >
+                            <span className="text-xs uppercase leading-none">
+                                {moment(parseInt(item.date, 10) * 1000).format("MMM")}
+                            </span>
+                            <span className="text-lg font-bold leading-none">
+                                {moment(parseInt(item.date, 10) * 1000).format("DD")}
+                            </span>
+                        </div>
+
+                        {/* Text Content */}
+                        <div className="flex flex-col min-w-0 flex-grow">
+                            <span
+                                className={`text-sm font-semibold ${
+                                    isDecember
+                                        ? "text-red-100"
+                                        : isNovember
+                                        ? "text-orange-300"
+                                        : "text-red-700 dark:text-amber-400"
+                                }`}
+                            >
+                                {moment(parseInt(item.date, 10) * 1000).format("YYYY")}
+                            </span>
+                            <h3
+                                className={`text-base font-semibold truncate flex items-center gap-1 ${
+                                    isDecember
+                                        ? "text-white"
+                                        : isNovember
+                                        ? "text-orange-200"
+                                        : "text-red-900 dark:text-orange-100"
+                                }`}
+                            >
+                                {isDecember && "🎄"}
+                                {isNovember && "🎃"}
+                                {item.eventName}
+                            </h3>
+                        </div>
+                    </div>
+
+                    {/* Message */}
+                    <p
+                        className={`mt-2 text-sm line-clamp-2 ${
+                            isDecember
+                                ? "text-white/90"
+                                : isNovember
+                                ? "text-orange-100"
+                                : "text-orange-800 dark:text-orange-200"
+                        }`}
+                    >
+                        {item.eventDescription}
+                    </p>
+                </Card>
+            );
+        })
+) : (
+    <div className="p-4 text-center text-[12px] border rounded-lg text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
+        No matches found
+    </div>
+)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+=============== DEC THEMED ==================
+{dashboardList.length > 0 ? (
+                        dashboardList
+                            .slice(0, 5)
+                            .map((item) => {
+                                const month = moment(parseInt(item.date, 10) * 1000).format("MM");
+
+                                // Check if the event is in December
+                                const isDecember = month === "12";
+
+                                return (
+                                    <Card
+                                        key={item.id}
+                                        className={`relative overflow-hidden p-4 mb-4 rounded-xl shadow-md ${isDecember
+                                                ? "bg-gradient-to-br from-green-700 via-green-600 to-green-500"
+                                                : "bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900"
+                                            }`}
+                                    >
+                                        {/* Floating Ribbon */}
+                                        <div
+                                            className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm ${isDecember
+                                                    ? "bg-red-600 text-white"
+                                                    : "bg-gradient-to-r from-red-500 to-orange-500 text-white"
+                                                }`}
+                                        >
+                                            {Utility().calculateArrivingDays(item.date)}
+                                        </div>
+
+                                        {/* Dot Timeline Marker */}
+                                        <div
+                                            className={`absolute left-[-10px] top-6 w-4 h-4 rounded-full border-2 border-white shadow-md ${isDecember ? "bg-red-600" : "bg-gradient-to-br from-red-500 to-orange-500 dark:border-gray-800"
+                                                }`}
+                                        ></div>
+
+                                        {/* Date + Event Info */}
+                                        <div className="flex items-center gap-3">
+                                            {/* Date Box */}
+                                            <div
+                                                className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg font-semibold shadow-md border ${isDecember
+                                                        ? "bg-green-800 text-white border-green-900"
+                                                        : "bg-gradient-to-br from-red-400 to-orange-400 text-white border-red-300 dark:border-orange-800"
+                                                    }`}
+                                            >
+                                                <span className="text-xs uppercase leading-none">
+                                                    {moment(parseInt(item.date, 10) * 1000).format("MMM")}
+                                                </span>
+                                                <span className="text-lg font-bold leading-none">
+                                                    {moment(parseInt(item.date, 10) * 1000).format("DD")}
+                                                </span>
+                                            </div>
+
+                                            {/* Text Content */}
+                                            <div className="flex flex-col min-w-0 flex-grow">
+                                                <span
+                                                    className={`text-sm font-semibold ${isDecember ? "text-red-100" : "text-red-700 dark:text-amber-400"
+                                                        }`}
+                                                >
+                                                    {moment(parseInt(item.date, 10) * 1000).format("YYYY")}
+                                                </span>
+                                                <h3
+                                                    className={`text-base font-semibold truncate flex items-center gap-1 ${isDecember ? "text-white" : "text-red-900 dark:text-orange-100"
+                                                        }`}
+                                                >
+                                                    {isDecember && "🎄"} {item.eventName}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        {/* Message */}
+                                        <p
+                                            className={`mt-2 text-sm line-clamp-2 ${isDecember ? "text-white/90" : "text-orange-800 dark:text-orange-200"
+                                                }`}
+                                        >
+                                            {item.eventDescription}
+                                        </p>
+                                    </Card>
+                                );
+                            })
+                    ) : (
+                        <div className="p-4 text-center text-[12px] border rounded-lg text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
+                            No matches found
+                        </div>
+                    )}
+
+
+
+
+
+=============== NORMAL THEME ================
+{dashboardList.length > 0 ? (
+                        dashboardList
+                            .filter((item) => {
+                                const eventDate = moment(parseInt(item.date, 10) * 1000);
+                                const now = moment();
+                                const diffDays = eventDate.startOf("day").diff(now.startOf("day"), "days");
+                                return diffDays >= -2; // keep events that are not more than 2 days past
+                            })
+                            .slice(0, 5).map((item) => (
+                                <Card
+                                    key={item.id}
+                                    className="relative overflow-hidden p-4 mb-4 border-l-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900 hover:shadow-xl hover:scale-[1.01] transition-all duration-300"
+                                >
+                                    {/* Floating Ribbon */}
+                                    <div className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm">
+                                        {Utility().calculateArrivingDays(item.date)}
+                                    </div>
+
+                                    {/* Red dot timeline marker */}
+                                    <div className="absolute left-[-10px] top-6 w-4 h-4 bg-gradient-to-br from-red-500 to-orange-500 rounded-full border-2 border-white dark:border-gray-800 shadow-md"></div>
+
+                                    {/* Date Block + Event Info */}
+                                    <div className="flex items-center gap-3">
+                                        {/* Date Box */}
+                                        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-red-400 to-orange-400 text-white font-semibold shadow-md border border-red-300 dark:border-orange-800">
+                                            <span className="text-xs uppercase leading-none">
+                                                {moment(parseInt(item.date, 10) * 1000).format("MMM")}
+                                            </span>
+                                            <span className="text-lg font-bold leading-none">
+                                                {moment(parseInt(item.date, 10) * 1000).format("DD")}
+                                            </span>
+                                        </div>
+
+                                        {/* Text Content */}
+                                        <div className="flex flex-col min-w-0 flex-grow">
+                                            <span className="text-sm font-semibold text-red-700 dark:text-amber-400">
+                                                {moment(parseInt(item.date, 10) * 1000).format("YYYY")}
+                                            </span>
+                                            <h3 className="text-base font-semibold text-red-900 dark:text-orange-100 truncate">
+                                                {item.eventName}
+                                            </h3>
+                                        </div>
+                                    </div>
+
+                                    {/* Message */}
+                                    <p className="mt-2 text-sm text-orange-800 dark:text-orange-200 line-clamp-2">
+                                        {item.eventDescription}
+                                    </p>
+
+                                    {/* Timestamp
+                                <div className="mt-3 text-[11px] italic text-red-600 dark:text-orange-400">
+                                    Posted {moment(parseInt(item.date, 10)).fromNow()}
+                                </div> */}
+                                </Card>
+                            ))
+                    ) : (
+                        <div className="p-4 text-center text-[12px] border border-orange-200 rounded-lg text-red-500 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950 dark:to-orange-950 dark:text-orange-300">
+                            No matches found
+                        </div>
+                    )}

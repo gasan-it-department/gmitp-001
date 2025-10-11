@@ -26,8 +26,6 @@ export function UserDropdownMenu() {
         }
     };
 
-    console.log('User Avatar url:', auth.user.avatar);
-
     return (
         <>
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
@@ -52,9 +50,11 @@ export function UserDropdownMenu() {
                             : `Sophie Rhys Sadiwa Fabunan 12345678`}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {
-                        router.visit(route("my.account.show"));
-                    }}>Profile</DropdownMenuItem>
+                    {
+                        (auth.roles.isClient) && <DropdownMenuItem onClick={() => {
+                            router.visit(route("my.account.show"));
+                        }}>Profile</DropdownMenuItem>
+                    }
 
                     {/* Log out opens dialog */}
                     <DropdownMenuItem

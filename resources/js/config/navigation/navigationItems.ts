@@ -30,7 +30,7 @@ export const useNavigation = (): NavigationItem[] => [
   },
   {
     title: "Travel",
-    href: "/tourism",
+    href: "/travel",
     icon: MapPinned,
   },
   {
