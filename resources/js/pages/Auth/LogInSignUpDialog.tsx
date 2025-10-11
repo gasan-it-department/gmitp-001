@@ -16,7 +16,7 @@ export default function LogInSignUpDialog({ isOpen, onClose }: Props) {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent showCloseButton={true} className="flex w-[600px] max-w-sm md:max-w-4xl lg:h-[600px]">
+            <DialogContent showCloseButton={true} className="flex w-[600px] max-w-sm md:max-w-4xl">
                 <Tabs
                     defaultValue="login"
                     className="h-full w-full flex-1"

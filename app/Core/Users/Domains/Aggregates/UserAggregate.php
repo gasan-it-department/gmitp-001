@@ -9,6 +9,7 @@ class UserAggregate
 {
     public function __construct(
         public readonly string $id,
+        public readonly string $name,
         public readonly Phone $phone,
         public readonly UserName $user_name,
         public readonly Password $password,
@@ -18,18 +19,20 @@ class UserAggregate
 
     public static function create(
         string $id,
+        string $name,
         Phone $phone,
         UserName $user_name,
         Password $password,
         Role $role,
     ): self {
-        return new self($id, $phone, $user_name, $password, $role);
+        return new self($id, $name, $phone, $user_name, $password, $role);
     }
 
     public function withId(string $id): self
     {
         return new self(
             $id,
+            $this->name,
             $this->phone,
             $this->user_name,
             $this->password,
@@ -37,8 +40,10 @@ class UserAggregate
         );
     }
 
-    //add business rules here like changing phone and username//
-
+    public function getName()
+    {
+        return $this->name;
+    }
     public function getId(): string
     {
         return $this->id;
@@ -69,6 +74,7 @@ class UserAggregate
     {
         return [
             'id' => $this->id,
+            'name' => $this->name,
             'user_name' => $this->getUserName(),
             'role' => $this->getRole(),
         ];

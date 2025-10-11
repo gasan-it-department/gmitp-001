@@ -25,11 +25,12 @@ Route::prefix('action-center')->group(function () {
         Route::get('status-list', [ActionCenterStatusController::class, 'getStatusList'])
             ->name('admin.action-center.requests.status');
 
+        Route::post('/request/{assistanceId}/status', [ActionCenterStatusController::class, 'updateAssistanceStatus'])
+            ->name('update.status');
     });
 
     // Client
     Route::prefix('client')->middleware(['auth:sanctum'])->name('client.')->group(function () {
-
     });
 });
 

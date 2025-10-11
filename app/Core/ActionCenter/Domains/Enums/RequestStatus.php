@@ -9,8 +9,8 @@ enum RequestStatus: string
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
     case WAITING = 'waiting';
-    case COMPLETED = 'completed'; // or Delivered/Disbursed
-    case CANCELLED = 'cancelled'; // cancelled by admin/office
+    case COMPLETED = 'completed';
+    case CANCELLED = 'cancelled';
     case EXPIRED = 'expired';
     case ARCHIVED = 'archived';
 

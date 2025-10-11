@@ -137,10 +137,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                     {/* First Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="first_name" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="first_name" className="text-sm font-semibold text-gray-700">
                                             First Name *
                                         </Label>
                                         <Input
+                                            autoComplete="off"
                                             id="first_name"
                                             type="text"
                                             {...register('first_name', { required: 'First name is required' })}
@@ -160,10 +161,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                     {/* Last Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="last_name" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="last_name" className="text-sm font-semibold text-gray-700">
                                             Last Name *
                                         </Label>
                                         <Input
+                                            autoComplete="off"
                                             id="last_name"
                                             type="text"
                                             {...register('last_name', { required: 'Last name is required' })}
@@ -183,7 +185,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                     {/* Middle Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="middle_name" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="middle_name" className="text-sm font-semibold text-gray-700">
                                             Middle Name
                                         </Label>
                                         <Input
@@ -197,10 +199,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                     {/* Jr./Suffix */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="suffix" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="suffix" className="text-sm font-semibold text-gray-700">
                                             Jr./Suffix
                                         </Label>
                                         <Input
+                                            autoComplete="off"
                                             id="suffix"
                                             type="text"
                                             {...register('suffix')}
@@ -211,7 +214,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="birth_date" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="birth_date" className="text-sm font-semibold text-gray-700">
                                             Birth Date
                                         </Label>
                                         <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
@@ -234,10 +237,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                     {/* Contact Number */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="contact_number" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="contact_number" className="text-sm font-semibold text-gray-700">
                                             Contact Number *
                                         </Label>
                                         <Input
+                                            autoComplete="off"
                                             id="contact_number"
                                             type="tel"
                                             {...register('contact_number', {
@@ -264,7 +268,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                     {/* Assistance Needed */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="assistance_type" className="text-sm font-medium text-gray-700">
+                                        <Label htmlFor="assistance_type" className="text-sm font-semibold text-gray-700">
                                             Assistance Needed *
                                         </Label>
                                         <Select value={watch('assistance_type')} onValueChange={(value) => setValue('assistance_type', value)}>
@@ -301,10 +305,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                 {/* Description */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+                                    <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
                                         Description / Reason for Assistance *
                                     </Label>
                                     <Textarea
+                                        autoComplete="off"
                                         id="description"
                                         {...register('description', { required: 'Description is required' })}
                                         className={`min-h-[120px] rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${

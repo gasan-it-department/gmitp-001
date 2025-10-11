@@ -24,6 +24,9 @@ class CreateUserController extends Controller
     {
         try {
             $dto = new Dto(
+                first_name: $request->input('first_name'),
+                middle_name: $request->input('middle_name'),
+                last_name: $request->input('last_name'),
                 user_name: $request->input('user_name'),
                 phone: $request->input('phone'),
                 password: $request->input('password'),

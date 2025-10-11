@@ -102,13 +102,16 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
     return (
         <div className="">
             {/* Province */}
-            <div>
-                <Label htmlFor="province">Province</Label>
+            <div className="space-y-2">
+                <Label htmlFor="province" className="text-sm font-semibold text-gray-700">
+                    Province
+                </Label>
+
                 <Select value={selectedProvince} onValueChange={(val) => handleSelectChange(setSelectedProvince, 'provinceName', provinces, val)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="font-medium text-gray-600">
                         <SelectValue placeholder="Select a Province" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="text-gray- max-h-60 font-semibold">
                         {provinces.map((p) => (
                             <SelectItem key={p.code} value={p.code}>
                                 {p.name}
@@ -119,8 +122,10 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
             </div>
 
             {/* Municipality */}
-            <div>
-                <Label htmlFor="municipality">Municipality</Label>
+            <div className="space-y-2">
+                <Label htmlFor="municipality" className="text-sm font-medium text-gray-700">
+                    Municipality
+                </Label>
                 <Select
                     value={selectedMunicipality}
                     onValueChange={(val) => handleSelectChange(setSelectedMunicipality, 'municipalityName', municipalities, val)}
@@ -129,7 +134,7 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
                     <SelectTrigger>
                         <SelectValue placeholder={!selectedProvince ? 'Select a Province first' : 'Select a Municipality'} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-60 font-semibold text-gray-600">
                         {municipalities.map((m) => (
                             <SelectItem key={m.code} value={m.code}>
                                 {m.name}
@@ -141,7 +146,9 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
 
             {/* Barangay */}
             <div>
-                <Label htmlFor="barangay">Barangay</Label>
+                <Label htmlFor="municipality" className="text-sm font-medium text-gray-700">
+                    Barangay
+                </Label>
                 <Select
                     value={selectedBarangay}
                     onValueChange={(val) => handleSelectChange(setSelectedBarangay, 'barangayName', barangays, val)}
@@ -150,7 +157,7 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
                     <SelectTrigger>
                         <SelectValue placeholder={!selectedMunicipality ? 'Select a Municipality first' : 'Select a Barangay'} />
                     </SelectTrigger>
-                    <SelectContent className="max-h-60">
+                    <SelectContent className="text-gray- max-h-60 font-semibold">
                         {barangays.map((b) => (
                             <SelectItem key={b.code} value={b.code}>
                                 {b.name}

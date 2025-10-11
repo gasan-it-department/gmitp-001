@@ -1,3 +1,5 @@
+import type React from 'react';
+
 import InputError from '@/components/Input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +9,9 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 
 export default function RegisterPage() {
+    const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [userName, setUsername] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
@@ -18,6 +23,9 @@ export default function RegisterPage() {
 
         try {
             const userData = {
+                first_name: firstName,
+                middle_name: middleName,
+                last_name: lastName,
                 user_name: userName,
                 phone: phone,
                 password: password,
@@ -49,27 +57,75 @@ export default function RegisterPage() {
             {/* <Head title="Register" /> */}
             <form onSubmit={handleSignUp}>
                 <div className="flex flex-col gap-3">
-                    <div className="grid gap-3">
-                        <Label htmlFor="phone" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                            Phone
-                        </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-3">
+                            <Label htmlFor="first_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+                                First Name
+                            </Label>
+                            <Input
+                                id="first_name"
+                                type="text"
+                                name="first_name"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                required
+                            />
+                            {errors.first_name && <InputError message={errors.first_name[0]} />}
+                        </div>
 
-                        <Input
-                            id="phone"
-                            type="text"
-                            name="phone"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            placeholder="0900-000-0000"
-                            required
-                        />
+                        <div className="grid gap-3">
+                            <Label htmlFor="middle_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+                                Middle Name <span className="text-gray-500">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="middle_name"
+                                type="text"
+                                name="middle_name"
+                                value={middleName}
+                                onChange={(e) => setMiddleName(e.target.value)}
+                            />
+                            {errors.middle_name && <InputError message={errors.middle_name[0]} />}
+                        </div>
+                    </div>
 
-                        {errors.phone && <InputError message={errors.phone[0]} />}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-3">
+                            <Label htmlFor="last_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+                                Last Name
+                            </Label>
+                            <Input
+                                id="last_name"
+                                type="text"
+                                name="last_name"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                required
+                            />
+                            {errors.last_name && <InputError message={errors.last_name[0]} />}
+                        </div>
+
+                        <div className="grid gap-3">
+                            <Label htmlFor="phone" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
+                                Phone
+                            </Label>
+
+                            <Input
+                                id="phone"
+                                type="text"
+                                name="phone"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="0900-000-0000"
+                                required
+                            />
+
+                            {errors.phone && <InputError message={errors.phone[0]} />}
+                        </div>
                     </div>
 
                     <div className="grid gap-3">
                         <Label htmlFor="user_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                            User Name
+                            Username
                         </Label>
                         <Input id="user_name" type="text" name="user_name" value={userName} onChange={(e) => setUsername(e.target.value)} required />{' '}
                         {errors.user_name && <InputError message={errors.user_name[0]} />}
@@ -109,8 +165,9 @@ export default function RegisterPage() {
                             type={showPassword ? 'text' : 'password'}
                             value={passwordConfirmation}
                             onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            required
                         />
-                        {/* <InputError message={password_confirmation} /> */}
+                        {errors.password_confirmation && <InputError message={errors.password_confirmation[0]} />}
                     </div>
 
                     <Button type="submit" className="mt-2 w-full" tabIndex={5}>

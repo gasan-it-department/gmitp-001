@@ -1,5 +1,6 @@
+import { SpinnerCustom } from '@/components/SpinnerCustom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getRequest } from '@/Core/Statements/Data';
+import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import Utility from '@/pages/Utility/Utility';
@@ -20,20 +21,13 @@ export function AssistanceRequestTable() {
     const [isClassicDialogShowing, setIsClassicDialogShowing] = useState(false);
     const [editData, setEditData] = useState<Beneficiary | null>(null);
 
-    const { data, isFetching } = useQuery<{ request: AssistanceRequest[] }>({
+    // const { data, isFetching, error } = useAssistanceRequests();
+
+    const { data, isLoading, error } = useQuery<{ request: AssistanceRequest[] }>({
         queryKey: ['request-list'],
-        queryFn: getRequest,
+        queryFn: ActionCenterApi.getAllRequest,
         refetchOnWindowFocus: false,
     });
-
-    if (isFetching) {
-        return <div className="p-4 text-sm text-gray-500">Loading...</div>;
-    }
-
-    if (!data?.request?.length) {
-        return <div className="p-4 text-center text-sm text-gray-500">No data found.</div>;
-    }
-
     return (
         <div>
             <div className="my-5 flex items-center justify-between">
@@ -49,10 +43,9 @@ export function AssistanceRequestTable() {
                     onSearch={(query) => console.log('Searching for:', query)}
                 />
             </div>
-            <div className="h-[75vh] overflow-y-auto rounded-2xl border border-gray-200">
+            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200">
                 <Table className="w-full">
-                    {/* 2. FIX APPLIED: Added z-10 to ensure the header stacks above the rows */}
-                    <TableHeader className="z-10 bg-gray-50">
+                    <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow className="">
                             {/* The individual TableHead cells also need the background color for seamless stickiness */}
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Name</TableHead>
@@ -65,38 +58,62 @@ export function AssistanceRequestTable() {
                     </TableHeader>
 
                     <TableBody className="">
-                        {/* ... table rows (TableBody) ... */}
-                        {data.request.map((req) => (
-                            <TableRow
-                                key={req.id}
-                                className="cursor-pointer overflow-y-auto hover:bg-gray-50"
-                                onClick={() => setSelectedItem(req.beneficiary)}
-                            >
-                                <TableCell className="text-[12px}">
-                                    {req.beneficiary.first_name} {req.beneficiary.last_name}
-                                </TableCell>
-                                <TableCell className="text-[12px]">{Utility().formatToReadableDate(req.created_at)}</TableCell>
-                                <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
-                                <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
-                                <TableCell className="text-[12px]">
-                                    <span
-                                        className={`rounded-full px-2 py-1 text-[11px] font-medium ${
-                                            req.status === 'approved'
-                                                ? 'bg-green-100 text-green-700'
-                                                : req.status === 'rejected'
-                                                  ? 'bg-red-100 text-red-700'
-                                                  : 'bg-gray-100 text-gray-700'
-                                        }`}
-                                    >
-                                        {req.status}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="text-[12px]">
-                                    {/* Example: computed due date */}
-                                    {Utility().formatAndAddDays(req.created_at, 90)}
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-[75vh] text-center">
+                                    <div className="flex items-center justify-center">
+                                        <SpinnerCustom />
+                                    </div>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : error ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-64 text-center text-gray-500">
+                                    Failed to load data. Please try again.
+                                </TableCell>
+                            </TableRow>
+                        ) : data?.request.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-64 text-center text-gray-500">
+                                    <div className="flex flex-col items-center justify-center gap-2">
+                                        <p className="text-lg font-medium">No assistance requests found</p>
+                                        <p className="text-sm text-gray-400">Get started by adding a new request</p>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            data?.request.map((req) => (
+                                <TableRow
+                                    key={req.id}
+                                    className="cursor-pointer overflow-y-auto hover:bg-gray-50"
+                                    onClick={() => setSelectedItem(req.beneficiary)}
+                                >
+                                    <TableCell className="text-[12px] capitalize">
+                                        {req.beneficiary.first_name} {req.beneficiary.last_name}
+                                    </TableCell>
+                                    <TableCell className="text-[12px]">{Utility().formatToReadableDate(req.created_at)}</TableCell>
+                                    <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
+                                    <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
+                                    <TableCell className="text-[12px]">
+                                        <span
+                                            className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                                                req.status === 'approved'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : req.status === 'rejected'
+                                                      ? 'bg-red-100 text-red-700'
+                                                      : 'bg-gray-100 text-gray-700'
+                                            }`}
+                                        >
+                                            {req.status}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-[12px]">
+                                        {/* Example: computed due date */}
+                                        {Utility().formatAndAddDays(req.created_at, 90)}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
                 <SortSelectionDialog

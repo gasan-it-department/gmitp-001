@@ -46,7 +46,7 @@ class ActionCenterController extends Controller
         return response()->json([
             'request' => $request,
             'message' => 'List of client requests'
-        ]);
+        ], 200);
     }
 
 
@@ -60,7 +60,7 @@ class ActionCenterController extends Controller
         // Example: find request by ID
         // $requestModel = RequestModel::findOrFail($id);
 
-        return response()->json(['message' => "Showing request {$id}"]);
+        return response()->json(['message' => "Showing request {$id}"], 200);
     }
 
     /**
@@ -74,7 +74,7 @@ class ActionCenterController extends Controller
         // $requestModel = RequestModel::findOrFail($id);
         // $requestModel->update([...]);
 
-        return response()->json(['message' => "Request {$id} updated"]);
+        return response()->json(['message' => "Request {$id} updated"], 200);
     }
 
     /**
@@ -87,7 +87,7 @@ class ActionCenterController extends Controller
         // $requestModel = RequestModel::findOrFail($id);
         // $requestModel->delete();
 
-        return response()->json(['message' => "Request {$id} deleted"]);
+        return response()->json(['message' => "Request {$id} deleted"], 200);
     }
 
 

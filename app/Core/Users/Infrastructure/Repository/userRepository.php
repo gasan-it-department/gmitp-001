@@ -19,6 +19,7 @@ class UserRepository implements UserRepositoryInterface
 
         $eloquentUser = EloquentUser::create([
             'id' => $user->id,
+            'name' => $user->name,
             'user_name' => $user->user_name->getValue(),
             'phone' => $user->phone->getValue(),
             'password' => $this->passwordHasher->hash($user->password->getValue()),
@@ -51,6 +52,7 @@ class UserRepository implements UserRepositoryInterface
 
         return UserAggregate::create(
             id: $eloquentUser->id,
+            name: $eloquentUser->name,
             phone: new Phone($eloquentUser->phone),
             user_name: new UserName($eloquentUser->user_name),
             password: new Password($eloquentUser->password),
