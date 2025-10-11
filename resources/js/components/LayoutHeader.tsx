@@ -36,8 +36,6 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <HeaderNav />
                     </div>
                     <div className="ml-auto flex items-center space-x-4">
-                        <div>{auth.user.name}</div>
-
                         <div className="relative hidden items-center space-x-1 lg:flex">
                             {auth.user ? (
                                 <UserDropdownMenu />
