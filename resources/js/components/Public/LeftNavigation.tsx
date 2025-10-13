@@ -95,7 +95,9 @@ export function LeftNavigation() {
 
                             <SheetClose asChild>
                                 <a
-                                    onClick={() => console.log(`Clicked: Travel`)}
+                                    onClick={() => {
+                                        router.visit(route('travel.page.show'));
+                                    }}
                                     className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                                 >
                                     <PlaneIcon size={20} />

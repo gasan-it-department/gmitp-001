@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import React from "react";
 
 interface Props {
     destinationList: Destination[];
@@ -22,7 +21,13 @@ export function DestinationCard({ destinationList }: Props) {
                 {destinationList.map((dest) => (
                     <Card
                         key={dest.id}
-                        className="min-w-[250px] flex-shrink-0 overflow-hidden shadow-md hover:shadow-lg transition-transform duration-300 cursor-pointer hover:-translate-y-1"
+                        className="
+          w-[220px] sm:w-[250px] lg:w-[280px]
+          flex-shrink-0 overflow-hidden 
+          shadow-md hover:shadow-lg 
+          transition-transform duration-300 
+          cursor-pointer hover:-translate-y-1
+        "
                     >
                         <CardContent className="p-0">
                             <img
@@ -31,13 +36,18 @@ export function DestinationCard({ destinationList }: Props) {
                                 className="w-full h-40 object-cover"
                             />
                             <div className="p-3">
-                                <h3 className="text-base font-semibold mb-1">{dest.name}</h3>
-                                <p className="text-sm text-gray-600">{dest.description}</p>
+                                <h3 className="text-base font-semibold mb-1 truncate">
+                                    {dest.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                    {dest.description}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
             </div>
         </div>
+
     );
 }

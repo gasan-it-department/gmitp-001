@@ -274,3 +274,14 @@
         @apply font-medium;
     }
 }
+
+@font-face {
+    font-family: 'Baloo';
+    src: url('/resources/fonts/Baloo_2.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-baloo {
+    font-family: 'Baloo', cursive;
+}

@@ -6,9 +6,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const images = [
-    "assets/banner11.png",
-    "assets/banner11.png",
-    "assets/banner11.png",
+    "assets/banner_01.png",
 ];
 
 export default function Carousel() {
@@ -146,14 +144,22 @@ export default function Carousel() {
                     className="flex transition-transform duration-700 ease-in-out"
                     style={{ transform: `translateX(-${index * 100}%)` }}
                 >
-                    {images.map((src, i) => (
-                        <img
-                            key={i}
-                            src={src}
-                            alt={`Slide ${i}`}
-                            className="w-full flex-shrink-0 object-cover h-64 md:h-96 lg:h-[600px]"
-                        />
-                    ))}
+                    <div
+                        className="flex transition-transform duration-700 ease-in-out w-full h-full"
+                        style={{ transform: `translateX(-${index * 100}%)` }}
+                    >
+                        {images.map((src, i) => (
+                            <img
+                                key={i}
+                                src={src}
+                                alt={`Slide ${i}`}
+                                className="w-full h-full flex-shrink-0 object-fill"
+                            />
+                        ))}
+                    </div>
+
+
+
                 </div>
 
                 {/* Controls */}

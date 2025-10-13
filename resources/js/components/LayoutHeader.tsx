@@ -22,7 +22,7 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
         <>
             <div className="sticky top-0 z-50 w-full border-b border-sidebar-border/80 bg-white">
                 <div className="flex h-16 items-center justify-between px-4">
-                    {/* Mobile Menu */}
+                    
                     <div className="lg:hidden">
                         <LeftNavigation />
                     </div>
@@ -31,7 +31,6 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <GmitpLogo />
                     </Link>
 
-                    {/* Desktop Navigation */}
                     <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
                         <HeaderNav />
                     </div>
