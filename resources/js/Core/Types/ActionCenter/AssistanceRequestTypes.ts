@@ -32,3 +32,8 @@ export interface AssistanceStatus {
     value: string;
     label: string;
 }
+
+export interface AssistanceOptions {
+    value: string;
+    label: string;
+}

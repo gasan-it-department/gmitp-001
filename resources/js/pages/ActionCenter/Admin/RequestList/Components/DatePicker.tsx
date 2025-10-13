@@ -18,7 +18,7 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" id="date" className="w-48 justify-between font-normal">
+                <Button variant="outline" id="date" className="w-full justify-between font-medium text-gray-600">
                     {date ? moment(date).format('MMMM D, YYYY') : 'Select date'}
                     <ChevronDownIcon />
                 </Button>

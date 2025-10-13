@@ -2,6 +2,7 @@
 use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\ActionCenterStatusController;
+use App\External\Api\Controllers\ActionCenter\AssistanceTypeController;
 
 
 Route::prefix('action-center')->group(function () {
@@ -14,6 +15,9 @@ Route::prefix('action-center')->group(function () {
             'update' => 'admin.action-center.requests.update',
             'destroy' => 'admin.action-center.requests.destroy',
         ]);
+
+    Route::get('assistance-options', [AssistanceTypeController::class, 'assistanceTypesSelect'])
+        ->name('assistance.options');
 
 
     // Admin

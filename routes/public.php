@@ -2,7 +2,6 @@
 
 use App\External\Web\Controllers\Public\PublicController;
 
-// ctctt
 Route::get('/', [PublicController::class, 'showMainLandingPage'])->name('landingPage.show');
 Route::get('/services', [PublicController::class, 'showServicePage'])->name('services.show');
 Route::get('/news-events', [PublicController::class, 'showNewsEventsPage'])->name('news.events.show');
@@ -15,4 +14,5 @@ Route::get('/action-center/request-list', [PublicController::class, 'showActionC
 Route::get('/my-account', [PublicController::class, 'showMyAccountPage'])->name('my.account.show');
 Route::get('/contact-us', [PublicController::class, 'showContactUsPage'])->name('contact.us.show');
 Route::get('/travel', [PublicController::class, 'showTravelPage'])->name('travel.page.show');
-// });
+Route::get('/transparency', [PublicController::class, 'showTransparencyPage'])->name('transparency.show');
+Route::get('/executive-orders', [PublicController::class, 'showExecutiveOrdersPage'])->name('executive.order.show');

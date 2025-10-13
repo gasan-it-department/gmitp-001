@@ -35,14 +35,7 @@ interface ClientData {
     description: string;
 }
 
-const assistanceOptions = [
-    'Medical Assistance',
-    'Food Assistance',
-    'Transportation Assistance',
-    'Financial Assistance',
-    'Educational Assistance',
-    'Housing Assistance',
-];
+const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
 
 export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmit }: Props) {
     const queryClient = useQueryClient();
@@ -145,7 +138,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             id="first_name"
                                             type="text"
                                             {...register('first_name', { required: 'First name is required' })}
-                                            className={`rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                            className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
                                                 errors.first_name ? 'border-red-500' : 'border-gray-300'
                                             }`}
                                             aria-label="First Name"
@@ -161,7 +154,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                     {/* Last Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="last_name" className="text-sm font-semibold text-gray-700">
+                                        <Label htmlFor="last_name" className="text-sm font-bold text-gray-700">
                                             Last Name *
                                         </Label>
                                         <Input
@@ -169,7 +162,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             id="last_name"
                                             type="text"
                                             {...register('last_name', { required: 'Last name is required' })}
-                                            className={`rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                            className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
                                                 errors.last_name ? 'border-red-500' : 'border-gray-300'
                                             }`}
                                             aria-label="Last Name"
@@ -185,21 +178,21 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                     {/* Middle Name */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="middle_name" className="text-sm font-semibold text-gray-700">
+                                        <Label htmlFor="middle_name" className="text-sm font-bold text-gray-700">
                                             Middle Name
                                         </Label>
                                         <Input
                                             id="middle_name"
                                             type="text"
                                             {...register('middle_name')}
-                                            className="rounded-md border border-gray-300 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+                                            className="rounded-md border border-gray-300 font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
                                             aria-label="Middle Name"
                                         />
                                     </div>
 
                                     {/* Jr./Suffix */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="suffix" className="text-sm font-semibold text-gray-700">
+                                        <Label htmlFor="suffix" className="text-sm font-bold text-gray-700">
                                             Jr./Suffix
                                         </Label>
                                         <Input
@@ -207,37 +200,14 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             id="suffix"
                                             type="text"
                                             {...register('suffix')}
-                                            className="rounded-md border border-gray-300 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+                                            className="rounded-md border border-gray-300 font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
                                             aria-label="Jr. or Suffix"
                                             placeholder="Jr., Sr., III, etc."
                                         />
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="birth_date" className="text-sm font-semibold text-gray-700">
-                                            Birth Date
-                                        </Label>
-                                        <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
-
-                                        <DatePicker
-                                            value={selectedDate}
-                                            onChange={(date) => {
-                                                setSelectedDate(date);
-                                                setValue(
-                                                    'birth_date',
-                                                    date ? moment(date).format('YYYY-MM-DD') : '',
-                                                    { shouldValidate: true, shouldDirty: true }, // <-- important
-                                                );
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Contact Information */}
-                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                     {/* Contact Number */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="contact_number" className="text-sm font-semibold text-gray-700">
+                                        <Label htmlFor="contact_number" className="text-sm font-bold text-gray-700">
                                             Contact Number *
                                         </Label>
                                         <Input
@@ -251,7 +221,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                                     message: 'Please enter a valid phone number',
                                                 },
                                             })}
-                                            className={`rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                            className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
                                                 errors.contact_number ? 'border-red-500' : 'border-gray-300'
                                             }`}
                                             aria-label="Contact Number"
@@ -265,15 +235,42 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             </p>
                                         )}
                                     </div>
+                                </div>
+
+                                {/* Contact Information */}
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                    {/* BDAY */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="birth_date" className="text-sm font-bold text-gray-700">
+                                            Birth Date *
+                                        </Label>
+                                        <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
+                                        <DatePicker
+                                            value={selectedDate}
+                                            onChange={(date) => {
+                                                setSelectedDate(date);
+                                                setValue(
+                                                    'birth_date',
+                                                    date ? moment(date).format('YYYY-MM-DD') : '',
+                                                    { shouldValidate: true, shouldDirty: true }, // <-- important
+                                                );
+                                            }}
+                                        />
+                                        {errors.birth_date && (
+                                            <p className="text-sm text-red-600" role="alert">
+                                                {errors.birth_date.message}
+                                            </p>
+                                        )}
+                                    </div>
 
                                     {/* Assistance Needed */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="assistance_type" className="text-sm font-semibold text-gray-700">
+                                        <Label htmlFor="assistance_type" className="text-sm font-bold text-gray-700">
                                             Assistance Needed *
                                         </Label>
                                         <Select value={watch('assistance_type')} onValueChange={(value) => setValue('assistance_type', value)}>
                                             <SelectTrigger
-                                                className={`rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                                className={`rounded-md border font-medium text-gray-600 transition-colors ${
                                                     errors.assistance_type ? 'border-red-500' : 'border-gray-300'
                                                 }`}
                                                 aria-label="Assistance Needed"
@@ -282,7 +279,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             >
                                                 <SelectValue placeholder="Select assistance type" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="font-semibold text-gray-600">
                                                 {assistanceOptions.map((option) => (
                                                     <SelectItem key={option} value={option}>
                                                         {option}
@@ -305,14 +302,14 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                 {/* Description */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
+                                    <Label htmlFor="assistance_type" className="text-sm font-bold text-gray-700">
                                         Description / Reason for Assistance *
                                     </Label>
                                     <Textarea
                                         autoComplete="off"
                                         id="description"
-                                        {...register('description', { required: 'Description is required' })}
-                                        className={`min-h-[120px] rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                        {...register('description')}
+                                        className={`min-h-[120px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
                                             errors.description ? 'border-red-500' : 'border-gray-300'
                                         }`}
                                         aria-label="Description or Reason for Assistance"

@@ -1,61 +1,49 @@
-// components/ui/form-field.tsx
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { FieldError, useFormContext } from 'react-hook-form';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
-interface FormFieldProps {
-    id: string;
-    label: string;
-    as?: 'input' | 'textarea';
+interface InputFormProps {
+    label?: string;
+    name: string;
     type?: string;
-    value?: string;
-    onChange?: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
-    placeholder?: string;
     required?: boolean;
-    error?: string;
-    children?: React.ReactNode;
     className?: string;
+    autoComplete?: string;
 }
 
-export function FormField({
-    id,
-    label,
-    as = 'input',
-    type = 'text',
-    value,
-    onChange,
-    placeholder,
-    required,
-    error,
-    children,
-    className = '',
-}: FormFieldProps) {
-    // Choose which input component to render
-    const FieldComponent = as === 'textarea' ? Textarea : Input;
+export function FormInput({ name, label, type, required = false, className, autoComplete }: InputFormProps) {
+    const {
+        register,
+        formState: { errors },
+    } = useFormContext();
 
+    const fieldError = (errors[name] as FieldError)?.message;
     return (
-        <div className={`flex flex-col space-y-2 ${className}`}>
-            <Label htmlFor={id} className="text-sm font-medium text-gray-700">
-                {label}
-                {required && <span className="text-red-500">*</span>}
+        <div className="space-y-2">
+            <Label htmlFor={name} className="text-md font-bold text-gray-700">
+                {label} {required && '*'}
             </Label>
 
-            {/* If children is provided, render that instead */}
-            {children ? (
-                children
-            ) : (
-                <FieldComponent
-                    id={id}
-                    type={type}
-                    value={value}
-                    onChange={onChange}
-                    placeholder={placeholder}
-                    className="focus:ring-2 focus:ring-green-500"
-                />
+            <Input
+                id={name}
+                type={type}
+                autoComplete={autoComplete}
+                {...register(name, { required: `${label} is required` })}
+                className={cn(
+                    'rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200',
+                    fieldError ? 'border-red-500' : 'border-gray-300',
+                    className,
+                )}
+                aria-label={label}
+                aria-required={required}
+                aria-invalid={!!fieldError}
+            />
+            {fieldError && (
+                <p className="text-sm text-red-600" role="alert">
+                    {fieldError}
+                </p>
             )}
-
-            {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
     );
 }

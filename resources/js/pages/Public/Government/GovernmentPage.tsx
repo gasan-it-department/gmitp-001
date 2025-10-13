@@ -1,23 +1,7 @@
 import { Card } from '@/components/ui/card';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import { useEffect, useState } from 'react';
 
 export default function GovernmentPage() {
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setLoading(false), 5000);
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="flex h-64 items-center justify-center">
-                <p className="text-lg text-gray-500">Loading, please wait...</p>
-            </div>
-        );
-    }
-
     const members = [
         {
             name: 'Hon. James Marty Lim',

@@ -2,21 +2,22 @@
 
 namespace App\Core\ActionCenter\Domains\Enums;
 
-enum AssistanceType
+enum AssistanceType: string
 {
     case FINANCIAL = 'financial';
     case FOOD = 'food';
     case BURIAL = 'burial';
     case MEDICAL = 'medical';
-    case TRASNSPORTATION = 'transportation';
+    case TRANSPORTATION = 'transportation';
 
     public function assistanceLabel(): string
     {
         return match ($this) {
-            AssistanceType::FINANCIAL => 'Financial Assistance',
-            AssistanceType::FOOD => 'Food Assistance',
-            AssistanceType::BURIAL => 'Burial Assistance',
-            AssistanceType::MEDICAL => 'Medical Assistance',
+            self::FINANCIAL => 'Financial Assistance',
+            self::FOOD => 'Food Assistance',
+            self::BURIAL => 'Burial Assistance',
+            self::MEDICAL => 'Medical Assistance',
+            self::TRANSPORTATION => 'Transportation Assistance',
         };
     }
 

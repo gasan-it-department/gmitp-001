@@ -18,7 +18,8 @@ class ActionCenterStatusController extends Controller
     public function getStatusList(StatusList $statusService)
     {
         return response()->json([
-            'statuses' => $statusService->statusList()
+            'success' => true,
+            'data' => $statusService->statusList()
         ], 200);
     }
 

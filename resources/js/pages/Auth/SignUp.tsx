@@ -170,7 +170,7 @@ export default function RegisterPage() {
                         {errors.password_confirmation && <InputError message={errors.password_confirmation[0]} />}
                     </div>
 
-                    <Button type="submit" className="mt-2 w-full" tabIndex={5}>
+                    <Button type="submit" className="mt-2 w-full bg-gradient-to-r from-red-500 to-orange-500" tabIndex={5}>
                         Create account
                     </Button>
                 </div>

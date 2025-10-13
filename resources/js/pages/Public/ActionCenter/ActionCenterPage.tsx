@@ -1,145 +1,85 @@
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import { router } from '@inertiajs/react';
-import { ArrowRight, Banknote, Bus, Landmark, LucideIcon, Stethoscope, Utensils } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import CreateRequestDialog from './Components/CreateRequestDialog';
+import { Toaster } from '@/components/ui/sonner';
+import PublicLayout from '@/layouts/Public/PublicLayout';
+import { Heart } from 'lucide-react';
+import { ActionCenterForm } from './Components/ActionCenterForm';
 
-interface ActionCenterService {
-    id: number;
-    serviceName: string;
-    requirements: string[];
-    icon: LucideIcon;
-}
-
-interface VehicleList {
-    id: number;
-    vehicleName: string;
-    status: string;
-}
-
-export default function ActionCenterPage() {
-    const [isLoadingDialogVisible, setLoadingDialogVisible] = useState(true);
-    const [services, setServices] = useState<ActionCenterService[]>([]);
-    const [vehicles, setVehicles] = useState<VehicleList[]>([]);
-    const [isCreateRequestDialogVisible, setCreateRequestDialogVisible] = useState(false);
-    const [selectedService, setSelectedService] = useState<ActionCenterService | null>(null);
-
-    async function LoadMunicipalActionCenterServices() {
-        setLoadingDialogVisible(true);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        const actionCenterServices = [
-            {
-                id: 1,
-                serviceName: 'Financial',
-                icon: Banknote,
-                requirements: ['Copies of Certificate of Indigency', 'Copies of valid ID', 'Copies of funeral contract'],
-            },
-            {
-                id: 2,
-                serviceName: 'Medical',
-                icon: Stethoscope,
-                requirements: ['Copies of Certificate of Indigency', 'Copies of valid ID', 'Medical Certificate or Prescription'],
-            },
-            {
-                id: 3,
-                serviceName: 'Burial',
-                icon: Landmark,
-                requirements: ['Copies of Certificate of Indigency', 'Copies of valid ID', 'Death Certificate', 'Funeral Contract'],
-            },
-            {
-                id: 4,
-                serviceName: 'Food',
-                icon: Utensils,
-                requirements: ['Copies of Certificate of Indigency', 'Copies of valid ID'],
-            },
-            {
-                id: 5,
-                serviceName: 'Transport',
-                icon: Bus,
-                requirements: ['Copies of Certificate of Indigency', 'Copies of valid ID', 'Proof of Appointment or Travel Need'],
-            },
-        ];
-
-        const vehicleList = [
-            {
-                id: 1,
-                vehicleName: 'Ambulance',
-                status: 'available',
-            },
-            {
-                id: 2,
-                vehicleName: 'Rescue Vehicle',
-                status: 'available',
-            },
-        ];
-
-        setServices(actionCenterServices);
-        setVehicles(vehicleList);
-        setLoadingDialogVisible(false);
-    }
-
-    useEffect(() => {
-        LoadMunicipalActionCenterServices();
-    }, []);
-
-    function handleServiceClick(service: ActionCenterService) {
-        console.log('Clicked service:', service.serviceName);
-        setSelectedService(service);
-        setCreateRequestDialogVisible(true);
-    }
-
+export default function Home() {
     return (
         <PublicLayout title="Action Center" description="">
-            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <CreateRequestDialog
-                    isOpen={isCreateRequestDialogVisible}
-                    onClose={() => setCreateRequestDialogVisible(false)}
-                    selectedService={selectedService}
-                    vehicleList={vehicles}
-                />
-                {!isLoadingDialogVisible && (
-                    <>
-                        <div className="mb-8 text-center">
-                            <h2 className="text-3xl font-bold text-gray-800">Municipal Action Center Services</h2>
-                            <p className="mt-2 text-base text-gray-500">Select from the available services offered by the local government.</p>
-                        </div>
+            {/* Hero Section */}
+            <section className="container mx-auto px-4 py-16 md:py-24">
+                <div className="mx-auto max-w-4xl space-y-8 text-center">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground">
+                        <Heart className="h-4 w-4" />
+                        Community Support Services
+                    </div>
 
-                        <div className="mt-5 mb-5 flex w-full justify-end">
-                            <Button
-                                className="flex items-center justify-center gap-2 p-3 sm:w-fit"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    router.visit(route('action.center.request.list.show'));
-                                }}
-                            >
-                                View All Request
-                                <ArrowRight size={20} />
-                            </Button>
-                        </div>
+                    <h2 className="text-4xl leading-tight font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+                        We're Here to Help Our Community
+                    </h2>
 
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {services.map((service) => {
-                                const Icon = service.icon;
+                    <p className="mx-auto max-w-2xl text-lg leading-relaxed text-pretty text-muted-foreground md:text-xl">
+                        The Municipal Action Center provides essential assistance to residents in need. Whether you need food, medical, financial, or
+                        other support, we're here for you.
+                    </p>
 
-                                return (
-                                    <Card
-                                        key={service.id}
-                                        onClick={() => handleServiceClick(service)}
-                                        className="flex w-full cursor-pointer flex-col items-center rounded-xl bg-white p-6 text-center shadow transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-                                    >
-                                        <Icon className="mb-4 h-12 w-12 text-blue-600" />
-                                        <h3 className="text-lg font-semibold text-gray-800">{service.serviceName}</h3>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    </>
-                )}
-            </div>
+                    <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
+                        <ActionCenterForm />
+                    </div>
+                </div>
+            </section>
+
+            {/* Services Overview */}
+            <section className="container mx-auto border-t border-border px-4 py-16">
+                <div className="mx-auto max-w-5xl">
+                    <h3 className="mb-12 text-center text-2xl font-semibold text-foreground md:text-3xl">Available Assistance Programs</h3>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {[
+                            {
+                                title: 'Food Assistance',
+                                description: 'Access to nutritious meals and food supplies for families in need.',
+                                icon: '🍽️',
+                            },
+                            {
+                                title: 'Medical Assistance',
+                                description: 'Support for medical expenses, prescriptions, and healthcare needs.',
+                                icon: '🏥',
+                            },
+                            {
+                                title: 'Financial Assistance',
+                                description: 'Emergency financial aid for utilities, rent, and essential expenses.',
+                                icon: '💰',
+                            },
+                            {
+                                title: 'Burial Assistance',
+                                description: 'Compassionate support for funeral and burial expenses.',
+                                icon: '🕊️',
+                            },
+                            {
+                                title: 'Transportation Assistance',
+                                description: 'Help with transportation for medical appointments and essential travel.',
+                                icon: '🚗',
+                            },
+                            {
+                                title: 'Community Resources',
+                                description: 'Connections to additional local services and support programs.',
+                                icon: '🤝',
+                            },
+                        ].map((service, index) => (
+                            <div key={index} className="space-y-3 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md">
+                                <div className="text-4xl">{service.icon}</div>
+                                <h4 className="text-lg font-semibold text-foreground">{service.title}</h4>
+                                <p className="leading-relaxed text-muted-foreground">{service.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Footer */}
+
+            <Toaster />
         </PublicLayout>
     );
 }

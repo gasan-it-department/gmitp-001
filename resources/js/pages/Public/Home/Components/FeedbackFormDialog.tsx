@@ -1,266 +1,285 @@
+import { CheckCircle2, Upload, X } from 'lucide-react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
-import { ChevronDownIcon } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 
-interface Props {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit?: (data: ClientData) => void;
+interface FeedbackDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
 }
 
-interface ClientData {
-    last_name: string;
-    first_name: string;
-    middle_name?: string;
-    contact_number: string;
-    transacted_with?: string;
-    purpose?: string;
-    recommendation?: string;
+interface FormData {
+    feedbackTarget: 'employee' | 'office';
+    targetName: string;
+    feedbackMessage: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    evidenceFile: File | null;
 }
 
-export default function FeedbackFormDialog({ isOpen, onClose, onSubmit }: Props) {
-    const [isDatePickerOpened, setDatePickerOpened] = useState(false)
-    const [date, setDate] = useState<Date | undefined>(undefined)
+interface FormErrors {
+    targetName?: string;
+    feedbackMessage?: string;
+    fullName?: string;
+    email?: string;
+    phone?: string;
+}
 
-    const {
-        register,
-        handleSubmit,
-        reset,
-        setValue,
-        watch,
-        formState: { errors, isSubmitting },
-    } = useForm<ClientData>({});
+export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) {
+    const [formData, setFormData] = useState<FormData>({
+        feedbackTarget: 'employee',
+        targetName: '',
+        feedbackMessage: '',
+        fullName: '',
+        email: '',
+        phone: '',
+        evidenceFile: null,
+    });
 
-    const handleFormSubmit = async (data: ClientData) => {
-        try {
-            console.log('Form data to be submitted:', data);
-            reset();
-            onClose();
-        } catch (error) {
-            console.error('Error submitting form:', error);
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [fileName, setFileName] = useState<string>('');
+
+    const validateForm = (): boolean => {
+        const newErrors: FormErrors = {};
+        if (!formData.targetName.trim()) {
+            newErrors.targetName = `${formData.feedbackTarget === 'employee' ? 'Employee name' : 'Office/Department name'} is required`;
+        }
+        if (!formData.feedbackMessage.trim()) newErrors.feedbackMessage = 'Feedback message is required';
+        if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+        if (!formData.email.trim()) newErrors.email = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
+        if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+        else if (!/^\+?[\d\s\-()]+$/.test(formData.phone)) newErrors.phone = 'Please enter a valid phone number';
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!validateForm()) return;
+
+        console.log('Feedback Form Submission:', {
+            ...formData,
+            evidenceFile: formData.evidenceFile
+                ? {
+                      name: formData.evidenceFile.name,
+                      size: formData.evidenceFile.size,
+                      type: formData.evidenceFile.type,
+                  }
+                : null,
+        });
+
+        setIsSubmitted(true);
+        setTimeout(() => {
+            setIsSubmitted(false);
+            setFormData({
+                feedbackTarget: 'employee',
+                targetName: '',
+                feedbackMessage: '',
+                fullName: '',
+                email: '',
+                phone: '',
+                evidenceFile: null,
+            });
+            setFileName('');
+            setErrors({});
+            onOpenChange(false);
+        }, 3000);
+    };
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setFormData({ ...formData, evidenceFile: file });
+            setFileName(file.name);
         }
     };
 
-    const handleReset = () => {
-        reset();
-        onClose();
+    const removeFile = () => {
+        setFormData({ ...formData, evidenceFile: null });
+        setFileName('');
+    };
+
+    const handleInputChange = (field: keyof FormData, value: string | File | null) => {
+        setFormData({ ...formData, [field]: value });
+        if (errors[field as keyof FormErrors]) {
+            setErrors({ ...errors, [field]: undefined });
+        }
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent
-                showCloseButton={false}
-                className="w-full h-screen max-w-none rounded-none m-0 p-4 overflow-y-auto scrollbar-hide
-                     sm:max-w-[700px] sm:h-auto sm:rounded-lg sm:m-auto lg:h-5/6 flex flex-col"
-            >
-                <DialogHeader>
-                    <DialogTitle className="p-3 text-[21px] text-center">Client Feedback Form</DialogTitle>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-h-[90vh] w-3xl overflow-y-auto p-6 sm:p-8">
+                <DialogHeader className="mb-2">
+                    <DialogTitle className="text-2xl font-bold text-foreground">Citizen Feedback Form</DialogTitle>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto scrollbar-hide">
-                    <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-6 p-8">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Last Name:
-                                </label>
-                                <Input
-                                    {...register("last_name")}
-                                    className="placeholder-transparent w-full"
-                                />
-                            </div>
-
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    First Name:
-                                </label>
-                                <Input
-                                    {...register("first_name")}
-                                    className="placeholder-transparent w-full"
-                                />
-                            </div>
-
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Middle Name (optional):
-                                </label>
-                                <Input
-                                    {...register("middle_name")}
-                                    className="placeholder-transparent w-full"
-                                />
-                            </div>
+                {isSubmitted ? (
+                    <Alert className="bg-success/10 border-success/20 duration-300 animate-in fade-in-0 zoom-in-95">
+                        <CheckCircle2 className="text-success h-5 w-5" />
+                        <AlertDescription className="text-success font-medium">
+                            ✅ Feedback submitted successfully! Thank you for helping us improve.
+                        </AlertDescription>
+                    </Alert>
+                ) : (
+                    <form onSubmit={handleSubmit} className="mt-4 space-y-8">
+                        {/* Feedback Target */}
+                        <div className="space-y-3">
+                            <Label className="text-base font-semibold text-foreground">
+                                Feedback About <span className="text-destructive">*</span>
+                            </Label>
+                            <RadioGroup
+                                value={formData.feedbackTarget}
+                                onValueChange={(value) => handleInputChange('feedbackTarget', value)}
+                                className="flex gap-6"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="employee" id="employee" />
+                                    <Label htmlFor="employee" className="cursor-pointer font-normal">
+                                        Employee
+                                    </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="office" id="office" />
+                                    <Label htmlFor="office" className="cursor-pointer font-normal">
+                                        Office/Department
+                                    </Label>
+                                </div>
+                            </RadioGroup>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Contact number:
-                                </label>
-                                <Input
-                                    type="text"
-                                    inputMode="numeric"
-                                    {...register("contact_number", {
-                                        required: true,
-                                        pattern: {
-                                            value: /^[0-9]+$/,
-                                            message: "Numbers only, no decimals."
-                                        }
-                                    })}
-                                    placeholder=" "
-                                    className="placeholder-transparent w-full"
-                                />
-                            </div>
+                        {/* Target Name */}
+                        <div className="space-y-2">
+                            <Label htmlFor="targetName" className="font-semibold text-foreground">
+                                {formData.feedbackTarget === 'employee' ? 'Employee Name' : 'Office/Department Name'}{' '}
+                                <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                                id="targetName"
+                                value={formData.targetName}
+                                onChange={(e) => handleInputChange('targetName', e.target.value)}
+                                placeholder={formData.feedbackTarget === 'employee' ? 'Enter employee name' : 'Enter office or department name'}
+                                className={errors.targetName ? 'border-destructive' : ''}
+                            />
+                            {errors.targetName && <p className="text-sm text-destructive">{errors.targetName}</p>}
+                        </div>
 
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="date" className="px-1">
-                                    Date:
-                                </Label>
+                        {/* Feedback Message */}
+                        <div className="space-y-2">
+                            <Label htmlFor="feedbackMessage" className="font-semibold text-foreground">
+                                Feedback Message <span className="text-destructive">*</span>
+                            </Label>
+                            <Textarea
+                                id="feedbackMessage"
+                                value={formData.feedbackMessage}
+                                onChange={(e) => handleInputChange('feedbackMessage', e.target.value)}
+                                placeholder="Share your compliments, suggestions, or complaints..."
+                                rows={5}
+                                className={errors.feedbackMessage ? 'border-destructive' : ''}
+                            />
+                            {errors.feedbackMessage && <p className="text-sm text-destructive">{errors.feedbackMessage}</p>}
+                        </div>
 
-                                <Popover open={isDatePickerOpened} onOpenChange={setDatePickerOpened} modal={false}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            id="date"
-                                            className="w-48 justify-between font-normal"
-                                        >
-                                            {date ? date.toLocaleDateString() : "Select date"}
-                                            <ChevronDownIcon />
+                        {/* File Upload */}
+                        <div className="space-y-3">
+                            <Label className="font-semibold text-foreground">Upload Evidence (Optional)</Label>
+                            <p className="text-sm text-muted-foreground">
+                                You may upload images, screenshots, or documents to support your feedback.
+                            </p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => document.getElementById('evidence')?.click()}
+                                    className="sm:w-auto"
+                                >
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Choose File
+                                </Button>
+                                {fileName && (
+                                    <div className="flex flex-1 items-center gap-2 rounded-md bg-muted px-3 py-2">
+                                        <span className="truncate text-sm text-foreground">{fileName}</span>
+                                        <Button type="button" variant="ghost" size="sm" onClick={removeFile} className="h-6 w-6 p-0">
+                                            <X className="h-4 w-4" />
                                         </Button>
-                                    </PopoverTrigger>
-
-                                    <PopoverContent
-                                        className="w-auto overflow-visible p-0 z-[99999] fixed"
-                                        align="start"
-                                        sideOffset={5}
-                                        onPointerDownOutside={(e) => e.preventDefault()} // prevent accidental dismiss
-                                    >
-                                        <Calendar
-                                            mode="single"
-                                            selected={date}
-                                            captionLayout="dropdown"
-                                            onSelect={(selectedDate) => {
-                                                if (selectedDate) {
-                                                    setDate(selectedDate)
-                                                    // slight delay before closing so user sees the selected state
-                                                    setTimeout(() => setDatePickerOpened(false), 100)
-                                                }
-                                            }}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                    </div>
+                                )}
                             </div>
-
+                            <input id="evidence" type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileChange} className="hidden" />
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Persons/Department transacted with:
-                                </label>
-                                <Input
-                                    {...register("transacted_with")}
-                                    className="placeholder-transparent w-full"
-                                />
+                        {/* Personal Info */}
+                        <div className="space-y-5 border-t pt-6">
+                            <h3 className="text-lg font-semibold text-foreground">Your Information</h3>
+
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="fullName" className="font-semibold text-foreground">
+                                        Full Name <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="fullName"
+                                        value={formData.fullName}
+                                        onChange={(e) => handleInputChange('fullName', e.target.value)}
+                                        placeholder="Enter your full name"
+                                        className={errors.fullName ? 'border-destructive' : ''}
+                                    />
+                                    {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="email" className="font-semibold text-foreground">
+                                        Email Address <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                        placeholder="your.email@example.com"
+                                        className={errors.email ? 'border-destructive' : ''}
+                                    />
+                                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                                </div>
+
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label htmlFor="phone" className="font-semibold text-foreground">
+                                        Phone Number <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                                        placeholder="+63 912 345 6789"
+                                        className={errors.phone ? 'border-destructive' : ''}
+                                    />
+                                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Purpose of Transaction:
-                                </label>
-                                <Textarea
-                                    {...register("purpose")}
-                                    placeholder="Enter here"
-                                    className="placeholder-transparent w-full resize-y min-h-[80px] max-h-[300px]"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Recommendation/Suggestion/Desire Action from Office:
-                                </label>
-                                <Textarea
-                                    {...register("recommendation")}
-                                    placeholder="Enter here"
-                                    className="placeholder-transparent w-full resize-y min-h-[80px] max-h-[300px]"
-                                />
-                            </div>
+                        {/* Submit Buttons */}
+                        <div className="flex flex-col gap-4 pt-4 sm:flex-row">
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+                                Cancel
+                            </Button>
+                            <Button type="submit" className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90">
+                                Submit Feedback
+                            </Button>
                         </div>
                     </form>
-                </div>
-
-                <div className="sticky bottom-0 bg-white border-t pt-3 mt-4 flex gap-2 flex-row sm:justify-end">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="basis-1/2 sm:basis-auto sm:w-auto"
-                        onClick={() => {
-                            onClose();
-
-                        }}
-                    >
-                        Cancel
-                    </Button>
-
-                    <Button
-                        disabled={isSubmitting}
-                        variant="default"
-                        type="submit"
-                        className="basis-1/2 sm:basis-auto sm:w-auto"
-                        onClick={handleReset}
-                    >
-                        {isSubmitting ? 'Submitting...' : 'Submit Request'}
-                    </Button>
-                </div>
+                )}
             </DialogContent>
         </Dialog>
-
-        // <>
-        //     <Card className="p-5 m-1 h-full flex flex-col">
-        //         {/* Header */}
-        //         <div className="flex items-center">
-        //             <Star className="w-12 h-12 text-yellow-500 shrink-0" />
-        //             <span className="ml-4 font-bold text-lg sm:text-xl md:text-2xl">
-        //                 Feedback Form
-        //             </span>
-        //         </div>
-
-        //         {/* Description */}
-        //         <span className="block mt-3 mb-5 text-sm sm:text-base text-gray-600">
-        //             Share your thoughts, suggestions, or issues to help us improve our services and better serve you.
-        //         </span>
-
-        //         {/* Button wrapper pushed to bottom */}
-        //         <div className="mt-auto flex justify-end">
-        //             <Button
-        //                 className="p-3 flex items-center justify-center gap-2 w-full sm:w-auto"
-        //                 variant="outline"
-        //                 size="sm"
-        //                 onClick={() => setIsPopupOpen(true)}
-        //             >
-        //                 Create Feedback
-        //                 <ArrowRight size={20} />
-        //             </Button>
-        //         </div>
-        //     </Card>
-
-
-        //     <ComplaintPopupForm
-        //         isOpen={isPopupOpen}
-        //         onClose={() => setIsPopupOpen(false)}
-        //     />
-        // </>
     );
 }

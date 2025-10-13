@@ -1,4 +1,4 @@
-import { LucideIcon, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck } from "lucide-react";
+import { LucideIcon, Folders, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck } from "lucide-react";
 
 export type NavigationItem = {
   title: string;
@@ -48,5 +48,10 @@ export const useNavigation = (): NavigationItem[] => [
     href: "/contact-us",
     icon: Phone,
   },
-  
+  {
+    title: "Executive Orders",
+    href: "/executive-orders",
+    icon: Folders,
+  }
+
 ];

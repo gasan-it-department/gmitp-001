@@ -107,7 +107,7 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                         </div>
 
                         {/* SUBMIT BUTTON */}
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        <Button type="submit" className="w-full bg-gradient-to-r from-red-500 to-orange-500" disabled={isSubmitting}>
                             {isSubmitting ? 'Logging in...' : 'Log In'}
                         </Button>
                     </div>
