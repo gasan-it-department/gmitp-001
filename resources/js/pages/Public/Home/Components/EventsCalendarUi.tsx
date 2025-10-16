@@ -4,6 +4,7 @@ import Utility from '@/pages/Utility/Utility';
 import { motion } from 'framer-motion';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
+import { ViewEventDetails } from './ViewEventDetails';
 
 interface EventDataList {
     eventName: string;
@@ -15,6 +16,8 @@ interface EventDataList {
 export default function EventsCalendarUi() {
     const [seasonalTheme, setSeasonalTheme] = useState(true);
     const [dashboardList, setDashboardList] = useState<EventDataList[]>([]);
+    const [isEventDetailDialogShowing, setIsEventDialogShowing] = useState(false);
+    const [selectedEventData, setSelectedEventData] = useState<EventDataList | null>(null);
 
     const data: EventDataList[] = [
         {
@@ -61,7 +64,6 @@ export default function EventsCalendarUi() {
 
     return (
         <div className="mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
                 <div>
                     <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
@@ -73,7 +75,6 @@ export default function EventsCalendarUi() {
                 </div>
             </div>
 
-            {/* Events List (Column layout) */}
             <div className="flex flex-col gap-4 sm:gap-6">
                 {dashboardList.length > 0 ? (
                     dashboardList.map((item, index) => {
@@ -95,6 +96,10 @@ export default function EventsCalendarUi() {
                                 }}
                             >
                                 <Card
+                                    onClick={() => {
+                                        setSelectedEventData(item);
+                                        setIsEventDialogShowing(true);
+                                    }}
                                     className={`relative overflow-hidden p-5 rounded-xl shadow-md transition-all duration-300 ${isDecember
                                         ? 'bg-gradient-to-br from-green-700 via-green-600 to-green-500'
                                         : isNovember
@@ -102,7 +107,7 @@ export default function EventsCalendarUi() {
                                             : 'bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900'
                                         }`}
                                 >
-                                    {/* Floating Ribbon */}
+
                                     <div
                                         className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm ${isDecember
                                             ? 'bg-red-600 text-white'
@@ -114,9 +119,7 @@ export default function EventsCalendarUi() {
                                         {Utility().calculateArrivingDays(item.date)}
                                     </div>
 
-                                    {/* Date and Info */}
                                     <div className="flex items-center gap-3 sm:gap-4">
-                                        {/* Date Box */}
                                         <div
                                             className={`flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-semibold shadow-md border ${isDecember
                                                 ? 'bg-green-800 text-white border-green-900'
@@ -133,7 +136,6 @@ export default function EventsCalendarUi() {
                                             </span>
                                         </div>
 
-                                        {/* Event Text */}
                                         <div className="flex flex-col min-w-0 flex-grow">
                                             <span
                                                 className={`text-xs sm:text-sm font-semibold ${isDecember
@@ -158,7 +160,6 @@ export default function EventsCalendarUi() {
                                         </div>
                                     </div>
 
-                                    {/* Description */}
                                     <p
                                         className={`mt-3 text-sm sm:text-base line-clamp-3 ${isDecember
                                             ? 'text-white/90'
@@ -180,12 +181,16 @@ export default function EventsCalendarUi() {
                 )}
             </div>
 
-            {/* View More Button */}
             {dashboardList.length > 0 && (
                 <div className="w-full flex justify-end items-end mt-6">
                     <Button variant="outline">View More</Button>
                 </div>
             )}
+
+            <ViewEventDetails
+                isOpen={isEventDetailDialogShowing}
+                data={selectedEventData}
+                onClose={() => setIsEventDialogShowing(false)}/>
         </div>
 
     );

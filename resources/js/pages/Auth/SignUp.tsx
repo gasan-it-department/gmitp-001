@@ -1,5 +1,4 @@
 import type React from 'react';
-
 import InputError from '@/components/Input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import axios from '@/lib/axios';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import ClassicDialog from '../Utility/ClassicDialog';
 
 export default function RegisterPage() {
     const [firstName, setFirstName] = useState('');
@@ -17,10 +17,12 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [errors, setErrors] = useState<Record<string, string[]>>({});
+    const [classicDialogTitle, setClassicDialogTitle] = useState("");
+    const [classicDialogMessage, setClassicDialogMessage] = useState("");
+    const [isDialogShowing, setIsDialogShowing] = useState(false);
 
     const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
         try {
             const userData = {
                 first_name: firstName,
@@ -31,17 +33,23 @@ export default function RegisterPage() {
                 password: password,
                 password_confirmation: passwordConfirmation,
             };
+
             const response = await axios.post('/store-account', userData);
+            // if (response.data.redirect_to) {
+            //     window.location.href = response.data.redirect_to;
+            // }
 
             setErrors({});
-            // You can add logic here to handle success, like showing a message or redirecting.
         } catch (error: any) {
             if (error.response && error.response.status === 404) {
                 setErrors(error.response.data.errors || {});
             } else {
+                setClassicDialogTitle("Something went wrong");
+                setClassicDialogMessage(error);
+                setIsDialogShowing(true);
                 console.error('Registration failed:', error);
             }
-            // Handle different types of errors (e.g., display validation messages from the backend)
+
             setErrors(error.response.data.errors || {});
         }
     };
@@ -54,7 +62,6 @@ export default function RegisterPage() {
 
     return (
         <div className="p-1">
-            {/* <Head title="Register" /> */}
             <form onSubmit={handleSignUp}>
                 <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
@@ -142,7 +149,7 @@ export default function RegisterPage() {
                                 value={password}
                                 onChange={(event) => setPassword(event.target.value)}
                                 required
-                                className="pr-10" // This adds padding to the right for the icon
+                                className="pr-10"
                             />
                             <button
                                 type="button"
@@ -175,6 +182,16 @@ export default function RegisterPage() {
                     </Button>
                 </div>
             </form>
+
+            <ClassicDialog
+                title={classicDialogTitle}
+                message={classicDialogMessage}
+                positiveButtonText='Close'
+                onPositiveClick={() => {
+                    setIsDialogShowing(false);
+                }}
+                hideNegativeButton={true}
+                open={isDialogShowing} />
         </div>
     );
 }

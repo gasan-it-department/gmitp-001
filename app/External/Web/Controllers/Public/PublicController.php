@@ -77,4 +77,9 @@ class PublicController extends Controller
     {
         return Inertia::render('Public/ExecutiveOrder/ExevutiveOrdersPage');
     }
+
+    public function showAnnouncementsPage()
+    {
+        return Inertia::render('Public/Home/Components/GeneralAnnouncementList');
+    }
 }

@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 
 export default function GovernmentPage() {
@@ -50,39 +50,98 @@ Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor cong
         },
     ];
 
+    const mayor = members.find((m) => m.position === "Mayor");
+    const others = members.filter((m) => m.position !== "Mayor");
+    const viceMayor = others.find((m) => m.position === "Vice Mayor");
+    const councilors = others.filter((m) => m.position !== "Vice Mayor");
+
     return (
         <PublicLayout title="Government" description="">
-            <h3 className="mg:text-[10px] w-full p-5 text-[20px] font-bold">MUNICIPALITY OF GASAN, MARINDUQUE</h3>
+            <div className="min-h-screen w-full bg-gradient-to-b from-orange-50 to-white dark:from-zinc-900 dark:to-black">
+                <div className="mx-auto w-full max-w-7xl p-5 text-center">
+                    {/* Header */}
+                    <h2 className="text-[22px] font-bold tracking-wide text-gray-700 dark:text-gray-200">
+                        MUNICIPALITY OF GASAN, MARINDUQUE
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Official Local Government Unit Officials
+                    </p>
 
-            <div className="flex flex-col items-center lg:flex-row lg:items-start">
-                <Card className="m-5 p-2">
-                    <img src={members[0].image} className="h-40 w-40 object-cover lg:h-90 lg:w-90" alt="Mayor" />
-                </Card>
-
-                <div className="flex flex-1 flex-col p-5">
-                    <h3 className="p-3 text-[25px] font-bold text-black">{members[0].name}</h3>
-
-                    <p className="p-3 text-[15px] text-gray-500">{members[0].description}</p>
-                </div>
-            </div>
-
-            <div>
-                <h3 className="pt-10 pr-7 pl-7 text-[25px] font-bold text-black">COUNCILORS</h3>
-
-                <div className="grid grid-cols-1 lg:grid-cols-5">
-                    {members
-                        .filter((member) => member.position !== 'Mayor')
-                        .map((member, index) => (
-                            <Card key={index} className="m-5 w-auto p-2">
-                                <div className="flex flex-col items-center">
-                                    <img src={member.image} className="h-20 w-20 object-cover lg:h-40 lg:w-40" alt={member.name} />
-
-                                    <h3 className="mt-2 p-2 text-center font-semibold">{member.name}</h3>
-
-                                    <h3 className="p-2 text-center text-gray-600">{member.position}</h3>
-                                </div>
+                    {/* Mayor Section */}
+                    {mayor && (
+                        <div className="mt-10 flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
+                            <Card className="flex w-full max-w-[300px] flex-col items-center rounded-2xl border-2 border-orange-200 bg-white p-5 shadow-md transition hover:shadow-lg dark:border-orange-800 dark:bg-zinc-900">
+                                <img
+                                    src={mayor.image}
+                                    alt={mayor.name}
+                                    className="h-40 w-40 rounded-full object-cover ring-4 ring-orange-400 dark:ring-orange-700"
+                                />
+                                <h3 className="mt-4 text-lg font-bold text-gray-800 dark:text-gray-100">
+                                    {mayor.name}
+                                </h3>
+                                <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                                    {mayor.position}
+                                </p>
                             </Card>
-                        ))}
+
+                            <Card className="max-w-2xl border-none bg-transparent p-5 text-left">
+                                <CardContent className="text-gray-700 dark:text-gray-300">
+                                    {mayor.description}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* Vice Mayor Section */}
+                    {viceMayor && (
+                        <div className="mt-14">
+                            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+                                Vice Mayor
+                            </h3>
+                            <div className="mt-4 flex justify-center">
+                                <Card className="flex w-[220px] flex-col items-center rounded-xl border border-orange-200 bg-white p-4 shadow-md hover:shadow-lg dark:border-orange-800 dark:bg-zinc-900">
+                                    <img
+                                        src={viceMayor.image}
+                                        alt={viceMayor.name}
+                                        className="h-32 w-32 rounded-full object-cover ring-2 ring-orange-300 dark:ring-orange-700"
+                                    />
+                                    <h4 className="mt-3 font-semibold text-gray-800 dark:text-gray-100">
+                                        {viceMayor.name}
+                                    </h4>
+                                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                                        {viceMayor.position}
+                                    </p>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Councilors Section */}
+                    <div className="mt-16">
+                        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+                            Councilors
+                        </h3>
+                        <div className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
+                            {councilors.map((member, index) => (
+                                <Card
+                                    key={index}
+                                    className="flex flex-col items-center rounded-xl border border-orange-200 bg-white p-4 shadow-md hover:shadow-lg dark:border-orange-800 dark:bg-zinc-900"
+                                >
+                                    <img
+                                        src={member.image}
+                                        alt={member.name}
+                                        className="h-24 w-24 rounded-full object-cover ring-2 ring-orange-300 dark:ring-orange-700"
+                                    />
+                                    <h4 className="mt-3 font-semibold text-gray-800 dark:text-gray-100">
+                                        {member.name}
+                                    </h4>
+                                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                                        {member.position}
+                                    </p>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
         </PublicLayout>

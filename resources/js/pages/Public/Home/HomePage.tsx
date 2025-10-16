@@ -1,8 +1,9 @@
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import ActionCenterUi from './Components/ActionCenterUi';
-import FeedbackUi from './Components/FeedbackUi';
+import ActionCenterUi from './Components/ActionCenterForm/ActionCenterCard';
+import FeedbackUi from './Components/FeedbackForm/FeedbackFormCard';
 import Carousel from './Components/Carousel';
 import InformationDashboard from './Components/InformationDashboard';
+import Report from './Components/ReportForm/ReportFormCard';
 
 export default function HomePage() {
     return (
@@ -19,6 +20,10 @@ export default function HomePage() {
 
                     <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
                         <ActionCenterUi />
+                    </div>
+
+                    <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
+                        <Report />
                     </div>
                 </div>
 

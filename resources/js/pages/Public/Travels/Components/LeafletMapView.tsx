@@ -1,13 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
-// 🧭 Gesture handling plugin
 import "leaflet-gesture-handling";
 import "leaflet-gesture-handling/dist/leaflet-gesture-handling.css";
 
-// Register plugin
 L.Map.addInitHook("addHandler", "gestureHandling", (L as any).GestureHandling);
 
 export default function TouristMap({ destinationList }: any) {
@@ -39,6 +36,38 @@ export default function TouristMap({ destinationList }: any) {
             popupAnchor: [0, -140],
         });
     }
+
+    // // Custom user location marker icon
+    // const userIcon = L.icon({
+    //     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    //     iconSize: [25, 41],
+    //     iconAnchor: [12, 41],
+    // });
+
+    // // Watch user location
+    // useEffect(() => {
+    //     if (!navigator.geolocation) {
+    //         alert("Geolocation is not supported by your browser");
+    //         return;
+    //     }
+
+    //     const watchId = navigator.geolocation.watchPosition(
+    //         (pos) => {
+    //             const { latitude, longitude } = pos.coords;
+    //             setPosition([latitude, longitude]);
+    //         },
+    //         (err) => {
+    //             console.error("Error getting location:", err);
+    //         },
+    //         {
+    //             enableHighAccuracy: true,
+    //             timeout: 5000,
+    //             maximumAge: 10000,
+    //         }
+    //     );
+
+    //     return () => navigator.geolocation.clearWatch(watchId);
+    // }, []);
 
     return (
         <div className="flex flex-col p-4 sm:p-8 w-full">
@@ -81,7 +110,6 @@ export default function TouristMap({ destinationList }: any) {
                 </div>
             </div>
 
-            {/* Map */}
             <div className="relative w-full h-[400px] sm:h-[550px] md:h-[650px] z-10">
                 <MapContainer
                     center={[13.254117982609364, 121.86766968796603]}
@@ -120,6 +148,14 @@ export default function TouristMap({ destinationList }: any) {
                             </Popup>
                         </Marker>
                     ))}
+
+                    {/* User live location marker */}
+                    {/* {position && (
+                        <Marker position={position} icon={userIcon}>
+                            <Popup>You are here</Popup>
+                        </Marker>
+                    )} */}
+
                 </MapContainer>
             </div>
         </div>

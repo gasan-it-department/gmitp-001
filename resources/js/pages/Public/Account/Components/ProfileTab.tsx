@@ -5,13 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SharedData } from "@/types";
 import { usePage } from "@inertiajs/react";
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
 import axios from "@/lib/axios";
 
 export default function ProfileTab() {
-    const [userFullName, setUseFullName] = useState("");
+    const [userFirstName, setUserFirstName] = useState("");
+    const [userMiddleName, setUserMiddleName] = useState("");
+    const [userLastName, setUserLastName] = useState("");
     const [userName, setUserName] = useState("");
     const [userMobileNumber, setUserMobileNumber] = useState("");
     const [userAvatarURL, setUserAvatarURL] = useState<string | null>(null);
@@ -23,8 +25,10 @@ export default function ProfileTab() {
     const [classicDialogNegativeButtonText, setClassicDialogNegativeButtonText] = useState("Ok")
     const [currentAction, setCurrentAction] = useState<"remove-avatar" | "logout" | null>(null);
 
-    React.useEffect(() => {
-        setUseFullName("Sophie-Rhys");
+    useEffect(() => {
+        setUserFirstName("Sample First Name");
+        setUserMiddleName("Sample Middle Name");
+        setUserLastName("Sample Last Name");
         setUserName(auth.user?.user_name || "");
         setUserMobileNumber(auth.user?.phone || "");
         setUserAvatarURL(auth.user?.avatar || null);
@@ -39,7 +43,7 @@ export default function ProfileTab() {
     }
 
     function handleSave() {
-        console.log({ userFullName, userName, userMobileNumber, avatarPreview: userAvatarURL });
+        console.log({ userFirstName, userMiddleName, userLastName, userName, userMobileNumber, avatarPreview: userAvatarURL });
     }
 
     const handleLogout = async () => {
@@ -62,7 +66,6 @@ export default function ProfileTab() {
 
             <CardContent>
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-3 p-8">
-                    {/* Avatar Section */}
                     <div className="flex flex-col items-center gap-4 md:items-start md:col-span-1">
                         <div className="relative flex flex-col items-center">
                             <Avatar className="h-32 w-32 ring-2 ring-gray-200">
@@ -104,16 +107,37 @@ export default function ProfileTab() {
                         </p>
                     </div>
 
-                    {/* Input Fields */}
                     <div className="md:col-span-2">
                         <div className="grid gap-6">
                             <div>
-                                <Label htmlFor="full_name">Full Name</Label>
+                                <Label htmlFor="first_name">First Name</Label>
                                 <Input
-                                    id="full_name"
-                                    value={userFullName}
-                                    onChange={(e) => setUseFullName(e.target.value)}
-                                    placeholder="Your full name"
+                                    id="first_name"
+                                    value={userFirstName}
+                                    onChange={(e) => setUserFirstName(e.target.value)}
+                                    placeholder="First Name"
+                                    className="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="middle_name">Last Name</Label>
+                                <Input
+                                    id="middle_name"
+                                    value={userMiddleName}
+                                    onChange={(e) => setUserMiddleName(e.target.value)}
+                                    placeholder="Middle Name"
+                                    className="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="last_name">Middle Name</Label>
+                                <Input
+                                    id="last_name"
+                                    value={userLastName}
+                                    onChange={(e) => setUserLastName(e.target.value)}
+                                    placeholder="Last Name"
                                     className="mt-1"
                                 />
                             </div>

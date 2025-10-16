@@ -107,7 +107,9 @@ export function LeftNavigation() {
 
                             <SheetClose asChild>
                                 <a
-                                    onClick={() => console.log(`Clicked: Government`)}
+                                    onClick={() => {
+                                        router.visit(route("government.show"))
+                                    }}
                                     className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                                 >
                                     <Landmark size={20} />
@@ -117,7 +119,7 @@ export function LeftNavigation() {
 
                             <SheetClose asChild>
                                 <a
-                                    onClick={() => console.log(`Clicked: Transparency`)}
+                                    onClick={() => router.visit(route("transparency.show"))}
                                     className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                                 >
                                     <Shield size={20} />
@@ -127,11 +129,21 @@ export function LeftNavigation() {
 
                             <SheetClose asChild>
                                 <a
-                                    onClick={() => console.log(`Clicked: Contact Us`)}
+                                    onClick={() => router.visit(route("contact.us.show"))}
                                     className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                                 >
                                     <PhoneIcon size={20} />
                                     <span className="text-sm font-medium">Contact Us</span>
+                                </a>
+                            </SheetClose>
+
+                            <SheetClose asChild>
+                                <a
+                                    onClick={() => router.visit(route("executive.order.show"))}
+                                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                >
+                                    <PhoneIcon size={20} />
+                                    <span className="text-sm font-medium">Executive Orders</span>
                                 </a>
                             </SheetClose>
                         </nav>

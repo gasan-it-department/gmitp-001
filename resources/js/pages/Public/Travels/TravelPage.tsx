@@ -4,6 +4,7 @@ import LeaftfletMapView from "./Components/LeafletMapView";
 import { DestinationCard } from "./Components/DestinationsCard";
 import PromotionPage from "./Components/PromotionPage";
 import TravelHeader from "./Components/TravelHeader";
+import { Establishments } from "./Components/Establishments";
 
 type Destination = {
     id: number;
@@ -55,12 +56,13 @@ export default function TravelPage() {
 
     return (
         <div>
-            <TravelHeader/>
+            <TravelHeader />
             <PromotionPage />
             <LeaftfletMapView
                 destinationList={destinations} />
             <DestinationCard
                 destinationList={destinations} />
+            <Establishments />
         </div>
     );
 }

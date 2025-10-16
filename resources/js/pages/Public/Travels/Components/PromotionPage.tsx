@@ -2,10 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import TravelHeader from "./TravelHeader";
 
 export default function PromotionPage() {
-    const [scrolled, setScrolled] = useState(false);
+    const [, setScrolled] = useState(false);
     const ref = useRef(null);
     const { scrollYProgress } = useScroll({
         target: ref,
@@ -34,37 +33,45 @@ export default function PromotionPage() {
             >
                 <div className="absolute inset-0 bg-black/30" />
 
-                {/* STICKY TITLE SECTION */}
                 <div className="sticky top-[80px] transform text-center z-40 bg-transparent px-4">
-                    <motion.h1
-                        initial={{ opacity: 0, y: -40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                            duration: 1,
-                            ease: [0.25, 0.1, 0.25, 1],
-                        }}
-                        className="font-baloo text-white 
-                   text-[48px] sm:text-[80px] md:text-[120px] lg:text-[150px] xl:text-[180px] 
-                   font-bold tracking-wide leading-none drop-shadow-lg"
-                    >
-                        Travel
-                    </motion.h1>
+                    {/* Soft Golden–Blue Glow Behind Logo */}
+                    <div className="relative inline-block">
+                        <div className="absolute inset-0 blur-2xl opacity-40 bg-gradient-to-r from-yellow-300 via-orange-300 to-sky-400 rounded-full scale-125 animate-pulse"></div>
 
+                        <motion.img
+                            src="assets/dummy/tourism.png"
+                            alt="Tourism Logo"
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="relative w-[200px] sm:w-[260px] md:w-[320px] lg:w-[380px] xl:w-[420px] 
+             mx-auto drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)] 
+             filter saturate-125 brightness-110"
+                        />
+
+                    </div>
+
+                    {/* Tagline with Warm Ocean Gradient */}
                     <motion.h2
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{
-                            delay: 0.5,
+                            delay: 0.6,
                             duration: 0.8,
                             ease: "easeOut",
                         }}
                         className="text-white 
-                   text-[16px] sm:text-[20px] md:text-[24px] lg:text-[28px] xl:text-[32px] 
-                   font-medium tracking-wide mt-2 drop-shadow-md"
+      text-[16px] sm:text-[20px] md:text-[24px] lg:text-[28px] xl:text-[32px] 
+      font-medium tracking-wide mt-4 drop-shadow-[0_3px_6px_rgba(0,0,0,0.3)]"
                     >
-                        Embrace the beauty beyond the shore
+                        Embrace the{" "}
+                        <span className="text-transparent bg-gradient-to-r from-sky-400 via-emerald-400 to-yellow-400 bg-clip-text">
+                            beauty beyond the shore
+                        </span>
                     </motion.h2>
                 </div>
+
+
             </motion.div>
 
             <div className="px-6 sm:px-16 py-12 space-y-8 text-gray-800">

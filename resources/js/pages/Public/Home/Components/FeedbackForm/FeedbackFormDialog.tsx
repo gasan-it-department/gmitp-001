@@ -1,6 +1,5 @@
 import { CheckCircle2, Upload, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -118,7 +117,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] w-3xl overflow-y-auto p-6 sm:p-8">
+            <DialogContent className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
                 <DialogHeader className="mb-2">
                     <DialogTitle className="text-2xl font-bold text-foreground">Citizen Feedback Form</DialogTitle>
                 </DialogHeader>
@@ -140,7 +139,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                             <RadioGroup
                                 value={formData.feedbackTarget}
                                 onValueChange={(value) => handleInputChange('feedbackTarget', value)}
-                                className="flex gap-6"
+                                className="flex gap-6 pt-3 pb-3"
                             >
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="employee" id="employee" />
@@ -168,7 +167,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                                 value={formData.targetName}
                                 onChange={(e) => handleInputChange('targetName', e.target.value)}
                                 placeholder={formData.feedbackTarget === 'employee' ? 'Enter employee name' : 'Enter office or department name'}
-                                className={errors.targetName ? 'border-destructive' : ''}
+                                className={errors.targetName ? 'border-destructive pt-3' : ''}
                             />
                             {errors.targetName && <p className="text-sm text-destructive">{errors.targetName}</p>}
                         </div>
@@ -224,7 +223,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="fullName" className="font-semibold text-foreground">
-                                        Full Name <span className="text-destructive">*</span>
+                                        Full Name (Optional)
                                     </Label>
                                     <Input
                                         id="fullName"
@@ -238,7 +237,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
 
                                 <div className="space-y-2">
                                     <Label htmlFor="email" className="font-semibold text-foreground">
-                                        Email Address <span className="text-destructive">*</span>
+                                        Email Address (Optional)
                                     </Label>
                                     <Input
                                         id="email"
