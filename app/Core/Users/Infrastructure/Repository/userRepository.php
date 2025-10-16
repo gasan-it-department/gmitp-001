@@ -1,6 +1,9 @@
 <?php
 namespace App\Core\Users\Infrastructure\Repository;
 use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
+use App\Core\Users\Domains\ValueObjects\FirstName;
+use App\Core\Users\Domains\ValueObjects\LastName;
+use App\Core\Users\Domains\ValueObjects\MiddleName;
 use App\Core\Users\Infrastructure\Models\User as EloquentUser;
 use App\Core\Users\Domains\Aggregates\UserAggregate;
 use App\Core\Users\Domains\ValueObjects\{UserName, Phone, Password, Role};
@@ -16,17 +19,17 @@ class UserRepository implements UserRepositoryInterface
     }
     public function save(UserAggregate $user): UserAggregate
     {
-
         $eloquentUser = EloquentUser::create([
             'id' => $user->id,
-            'name' => $user->name,
+            'first_name' => $user->first_name->value(),
+            'middle_name' => $user->middle_name->value(),
+            'last_name' => $user->last_name->value(),
             'user_name' => $user->user_name->getValue(),
             'phone' => $user->phone->getValue(),
             'password' => $this->passwordHasher->hash($user->password->getValue()),
             'role' => $user->role->getValue()
         ]);
         return $user->withId($eloquentUser->id);
-
     }
 
     public function findById(string $id): ?UserAggregate
@@ -49,10 +52,11 @@ class UserRepository implements UserRepositoryInterface
 
     private function toDomainEntity(EloquentUser $eloquentUser): UserAggregate
     {
-
         return UserAggregate::create(
             id: $eloquentUser->id,
-            name: $eloquentUser->name,
+            first_name: new FirstName($eloquentUser->first_name),
+            last_name: new LastName($eloquentUser->last_name),
+            middle_name: new MiddleName($eloquentUser->middle_name),
             phone: new Phone($eloquentUser->phone),
             user_name: new UserName($eloquentUser->user_name),
             password: new Password($eloquentUser->password),

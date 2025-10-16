@@ -1,9 +1,16 @@
+import { LogInSignUpForm } from '@/components/LoginSignUpForm';
 import { Toaster } from '@/components/ui/sonner';
+import { Tooltip, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import PublicLayout from '@/layouts/Public/PublicLayout';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
+import { TooltipTrigger } from '@radix-ui/react-tooltip';
 import { Heart } from 'lucide-react';
 import { ActionCenterForm } from './Components/ActionCenterForm';
 
 export default function Home() {
+    const { auth } = usePage<SharedData>().props;
+
     return (
         <PublicLayout title="Action Center" description="">
             {/* Hero Section */}
@@ -22,9 +29,25 @@ export default function Home() {
                         The Municipal Action Center provides essential assistance to residents in need. Whether you need food, medical, financial, or
                         other support, we're here for you.
                     </p>
-
                     <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
-                        <ActionCenterForm />
+                        {auth.user ? (
+                            <ActionCenterForm />
+                        ) : (
+                            <>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <div className="w-50">
+                                                <LogInSignUpForm />
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                            <p>Please login before requesting for Assistance</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </>
+                        )}
                     </div>
                 </div>
             </section>
@@ -76,7 +99,6 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-
             {/* Footer */}
 
             <Toaster />

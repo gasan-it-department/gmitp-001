@@ -1,20 +1,17 @@
 import { useInitials } from '@/hooks/use-initials';
-import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
 import GmitpLogo from './Gmitp-logo';
+import { LogInSignUpForm } from './LoginSignUpForm';
 import { HeaderNav } from './Public/HeaderNavigation';
 import { LeftNavigation } from './Public/LeftNavigation';
 import { UserDropdownMenu } from './Shared/UserDropDownMenu';
-import { Button } from './ui/button';
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
 }
 
 export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
-    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const { auth } = usePage<SharedData>().props;
     const getInitials = useInitials();
 
@@ -22,7 +19,6 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
         <>
             <div className="sticky top-0 z-50 w-full border-b border-sidebar-border/80 bg-white">
                 <div className="flex h-16 items-center justify-between px-4">
-                    
                     <div className="lg:hidden">
                         <LeftNavigation />
                     </div>
@@ -35,20 +31,7 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <HeaderNav />
                     </div>
                     <div className="ml-auto flex items-center space-x-4">
-                        <div className="relative hidden items-center space-x-1 lg:flex">
-                            {auth.user ? (
-                                <UserDropdownMenu />
-                            ) : (
-                                <Button
-                                    onClick={() => {
-                                        setLogInSignUpDialogVisible(true);
-                                    }}
-                                    className="text-bold rounded-2xl border border-gray-600 p-1 px-3 font-bold text-white"
-                                >
-                                    Login
-                                </Button>
-                            )}
-                        </div>
+                        <div className="relative hidden items-center space-x-1 lg:flex">{auth.user ? <UserDropdownMenu /> : <LogInSignUpForm />}</div>
                     </div>
                 </div>
             </div>
@@ -59,8 +42,6 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
                 </div>
             )}
-
-            <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)} />
         </>
     );
 }

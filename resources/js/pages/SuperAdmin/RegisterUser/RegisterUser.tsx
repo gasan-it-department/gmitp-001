@@ -1,5 +1,3 @@
-'use client';
-
 import SuperAdminLayout from '@/layouts/App/AppLayout';
 import type React from 'react';
 
@@ -31,7 +29,7 @@ interface FormErrors {
     [key: string]: string;
 }
 
-const adminPermissions = ['User Management', 'Content Management', 'Analytics', 'Settings', 'Billing', 'Reports'];
+const adminPermissions = ['User Management', 'Action Center', 'Tourism', 'Reports', 'Transparency'];
 
 const clientGroups = ['Premium Clients', 'Standard Clients', 'Trial Clients', 'Enterprise Clients'];
 

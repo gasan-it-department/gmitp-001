@@ -4,9 +4,9 @@ use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use Illuminate\Support\Facades\Route;
 use App\External\Web\Controllers\SuperAdmin\DashboardController;
 
-Route::middleware(['web', 'superAdmin']) // ✅ applies web + super_admin middleware
-    ->prefix('super-admin')              // ✅ URL prefix
-    ->as('super_admin.')                 // ✅ route name prefix
+Route::middleware(['web', 'superAdmin'])
+    ->prefix('super-admin')
+    ->as('super_admin.')
     ->group(function () {
         // Super Admin Dashboard
         Route::get('/dashboard', [SuperAdminController::class, 'showDashboard'])

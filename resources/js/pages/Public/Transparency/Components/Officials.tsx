@@ -3,37 +3,37 @@ import { Mail, Phone, Users } from 'lucide-react';
 
 const officials = [
     {
-        name: 'Hon. [Mayor Name]',
+        name: 'Hon. JAMES MARTY L. LIM',
         position: 'Municipal Mayor',
         email: 'mayor@municipality.gov.ph',
         phone: '+63 XXX XXX XXXX',
     },
     {
-        name: 'Hon. [Vice Mayor Name]',
+        name: 'Hon. LIDANY A. LAO-BALDO',
         position: 'Vice Mayor',
         email: 'vicemayor@municipality.gov.ph',
         phone: '+63 XXX XXX XXXX',
     },
     {
-        name: '[Name]',
-        position: 'Municipal Administrator',
+        name: 'ROWENA 0. BISHOP',
+        position: 'Private Secretary',
         email: 'admin@municipality.gov.ph',
         phone: '+63 XXX XXX XXXX',
     },
     {
-        name: '[Name]',
+        name: '-:-',
         position: 'Municipal Treasurer',
         email: 'treasurer@municipality.gov.ph',
         phone: '+63 XXX XXX XXXX',
     },
     {
-        name: '[Name]',
+        name: '-:-',
         position: 'Municipal Accountant',
         email: 'accountant@municipality.gov.ph',
         phone: '+63 XXX XXX XXXX',
     },
     {
-        name: '[Name]',
+        name: '-:-',
         position: 'Municipal Planning & Development Officer',
         email: 'mpdo@municipality.gov.ph',
         phone: '+63 XXX XXX XXXX',

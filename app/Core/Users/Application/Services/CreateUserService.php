@@ -15,6 +15,9 @@ use App\Core\Users\Domains\ValueObjects\{
     Phone,
     Password,
     Role,
+    FirstName,
+    MiddleName,
+    LastName,
 };
 use Illuminate\Support\Str;
 
@@ -32,13 +35,9 @@ class CreateUserService
     public function create(CreateUserDto $dto): void
     {
         DB::transaction(function () use ($dto) {
-
-            $fullName = trim(collect([
-                $dto->first_name,
-                $dto->middle_name,
-                $dto->last_name,
-            ])->filter()->implode(' '));
-
+            $firstName = new FirstName($dto->first_name);
+            $middleName = new MiddleName($dto->middle_name);
+            $lastName = new LastName($dto->last_name);
             $phone = new Phone($dto->phone);
             $userName = new UserName($dto->user_name);
             $password = new Password($dto->password);
@@ -46,10 +45,11 @@ class CreateUserService
 
             $this->ensureUserDoesNotExist($userName, $phone);
             $id = $this->idGenerator->generate();
-
             $user = UserAggregate::create(
                 $id,
-                Str::lower($fullName),
+                $firstName,
+                $lastName,
+                $middleName,
                 $phone,
                 $userName,
                 $password,

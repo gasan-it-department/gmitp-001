@@ -23,7 +23,7 @@ class CreateUserRequest extends FormRequest
     {
         return [
             'first_name' => 'required|string|min:2|max:100',
-            'middle_name' => 'required|string|max:100',
+            'middle_name' => 'nullable|string|max:100',
             'last_name' => 'required|string|max:100',
             'user_name' => 'required|string|min:3|max:100||alpha_dash|unique:users,user_name',
             'phone' => 'required|string|max:15|min:10|unique:users,phone',

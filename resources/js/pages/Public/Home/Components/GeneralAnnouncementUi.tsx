@@ -1,22 +1,22 @@
-import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import Utility from "@/pages/Utility/Utility";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import { router } from "@inertiajs/react";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import Utility from '@/pages/Utility/Utility';
+import { router } from '@inertiajs/react';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface AnnouncementData {
-    title: string
-    message: string
-    date: string
-    id: string
+    title: string;
+    message: string;
+    date: string;
+    id: string;
 }
 
 export default function GeneralAnnouncement() {
     const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
-    const [classicDialogTitle, setClassicDialogTitle] = useState("");
-    const [classicDialogMessage, setClassicDialogMessage] = useState("");
+    const [classicDialogTitle, setClassicDialogTitle] = useState('');
+    const [classicDialogMessage, setClassicDialogMessage] = useState('');
     const [isClassicDialogShowing, setIsClassicDialogShowing] = useState(false);
 
     const data: AnnouncementData[] = [
@@ -24,21 +24,21 @@ export default function GeneralAnnouncement() {
             title: 'Suspension of Classes Due to Heavy Rainfall',
             message:
                 'All levels, both public and private, are hereby suspended today, October 10, 2025, due to continuous heavy rainfall and flooding in low-lying areas. Please stay indoors and keep safe.',
-            date: '1760056824',
+            date: '1760348080',
             id: 'TXN-001',
         },
         {
             title: 'Power Interruption Notice',
             message:
                 'Please be informed that there will be a scheduled power interruption on October 12, 2025, from 8:00 AM to 12:00 NN to give way to maintenance activities by the local electric cooperative. We apologize for the inconvenience.',
-            date: '1760056824',
+            date: '1760348080',
             id: 'TXN-002',
         },
         {
             title: 'Municipal Hall Maintenance Work',
             message:
                 'The Gasan Municipal Hall will be closed on October 14, 2025, for a one-day general cleaning and maintenance. Regular operations will resume on October 15, 2025. Thank you for your understanding.',
-            date: '1760056824',
+            date: '1760348080',
             id: 'TXN-003',
         },
         {
@@ -52,7 +52,7 @@ export default function GeneralAnnouncement() {
             title: 'Upcoming Blood Donation Drive',
             message:
                 'Join us for the Blood Donation Drive on October 20, 2025, at the Municipal Covered Court from 8:00 AM to 3:00 PM. Let’s save lives together!',
-            date: '1760056824',
+            date: '1760348080',
             id: 'TXN-005',
         },
     ];
@@ -61,7 +61,7 @@ export default function GeneralAnnouncement() {
         const now = Date.now();
         const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
-        const filtered = data.filter(item => {
+        const filtered = data.filter((item) => {
             const itemDate = parseInt(item.date) * 1000;
             return itemDate >= thirtyDaysAgo;
         });
@@ -70,88 +70,78 @@ export default function GeneralAnnouncement() {
     }, []);
 
     return (
-        <div className="w-full max-w-7xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-10 flex flex-col lg:flex-row gap-8">
-            <div className="flex-1 flex flex-col">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:flex-row lg:px-10">
+            <div className="flex flex-1 flex-col">
                 <div className="px-2 sm:px-4">
-                    <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        General Announcements
-                    </h2>
-                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
+                    <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">General Announcements</h2>
+                    <p className="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
                         Lorem ipsum dolor sit amet, consectetur adipiscing elit.
                     </p>
                 </div>
 
-                <div className="mt-4 sm:mt-6 flex-1 w-full bg-transparent">
+                <div className="mt-4 w-full flex-1 bg-transparent sm:mt-6">
                     {announcements.length > 0 ? (
                         <div className="flex flex-col space-y-4">
-                            {announcements
-                                .slice(0, 5)
-                                .map((item, index) => (
-                                    <motion.div
-                                        key={item.id}
-                                        onClick={() => {
-                                            setClassicDialogTitle(item.title);
-                                            setClassicDialogMessage(item.message);
-                                            setIsClassicDialogShowing(true);
-                                        }}
-                                        className="cursor-pointer active:scale-[0.98] transition-transform"
-                                        initial={{ opacity: 0, x: -80 }}
-                                        whileInView={{ opacity: 1, x: 0 }}
-                                        viewport={{ once: true, amount: 0.2 }}
-                                        transition={{
-                                            duration: 0.2,
-                                            delay: index * 0.1,
-                                            ease: [0.25, 0.1, 0.25, 1],
-                                        }}
-                                    >
-                                        <Card
-                                            className="relative overflow-hidden p-4 sm:p-5 border-l-4 border-red-500 
-                    bg-gradient-to-br from-red-50 via-orange-50 to-amber-100/70 
-                    dark:from-red-950 dark:via-orange-950 dark:to-amber-900 
-                    hover:shadow-xl hover:scale-[1.01] transition-all duration-300 rounded-xl"
-                                        >
-                                            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full uppercase shadow-sm">
-                                                {Utility().formatTimeAgo(item.date)}
+                            {announcements.slice(0, 5).map((item, index) => (
+                                <motion.div
+                                    key={item.id}
+                                    onClick={() => {
+                                        setClassicDialogTitle(item.title);
+                                        setClassicDialogMessage(item.message);
+                                        setIsClassicDialogShowing(true);
+                                    }}
+                                    className="cursor-pointer transition-transform active:scale-[0.98]"
+                                    initial={{ opacity: 0, x: -80 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true, amount: 0.2 }}
+                                    transition={{
+                                        duration: 0.2,
+                                        delay: index * 0.1,
+                                        ease: [0.25, 0.1, 0.25, 1],
+                                    }}
+                                >
+                                    <Card className="relative overflow-hidden rounded-xl border-l-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-amber-100/70 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl sm:p-5 dark:from-red-950 dark:via-orange-950 dark:to-amber-900">
+                                        <div className="absolute top-2 right-2 rounded-full bg-gradient-to-r from-red-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow-sm sm:top-3 sm:right-3 sm:text-xs">
+                                            {Utility().formatTimeAgo(item.date)}
+                                        </div>
+
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-orange-300 bg-gradient-to-br from-red-400 to-orange-400 shadow-md sm:h-12 sm:w-12">
+                                                <img
+                                                    src="assets/announcement.png"
+                                                    alt="Notice Icon"
+                                                    className="h-5 w-5 opacity-95 drop-shadow-[0_0_2px_rgba(255,255,255,0.6)] sm:h-6 sm:w-6"
+                                                />
                                             </div>
 
-                                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-lg 
-                      bg-gradient-to-br from-red-400 to-orange-400 border border-orange-300 
-                      shadow-md">
-                                                    <img
-                                                        src="assets/announcement.png"
-                                                        alt="Notice Icon"
-                                                        className="w-5 h-5 sm:w-6 sm:h-6 opacity-95 drop-shadow-[0_0_2px_rgba(255,255,255,0.6)]"
-                                                    />
-                                                </div>
-
-                                                <div className="flex flex-col min-w-0 flex-grow">
-                                                    <h3 className="text-base sm:text-lg font-semibold text-red-900 dark:text-orange-100 truncate">
-                                                        {item.title.length > 100 ? `${item.title.slice(0, 100)}…` : item.title}
-                                                    </h3>
-                                                    <p className="text-sm sm:text-[13px] text-orange-800 dark:text-orange-200 mt-1 leading-snug line-clamp-2">
-                                                        {item.message.length > 100 ? `${item.message.slice(0, 100)}…` : item.message}
-                                                    </p>
-                                                </div>
+                                            <div className="flex min-w-0 flex-grow flex-col">
+                                                <h3 className="truncate text-base font-semibold text-red-900 sm:text-lg dark:text-orange-100">
+                                                    {item.title.length > 100 ? `${item.title.slice(0, 100)}…` : item.title}
+                                                </h3>
+                                                <p className="mt-1 line-clamp-2 text-sm leading-snug text-orange-800 sm:text-[13px] dark:text-orange-200">
+                                                    {item.message.length > 100 ? `${item.message.slice(0, 100)}…` : item.message}
+                                                </p>
                                             </div>
-                                        </Card>
-                                    </motion.div>
-                                ))}
+                                        </div>
+                                    </Card>
+                                </motion.div>
+                            ))}
                         </div>
                     ) : (
-                        <div className="p-4 text-center text-[12px] sm:text-sm border border-orange-200 rounded-lg text-red-500 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950 dark:to-orange-950 dark:text-orange-300">
+                        <div className="rounded-lg border border-orange-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 text-center text-[12px] text-red-500 sm:text-sm dark:from-red-950 dark:to-orange-950 dark:text-orange-300">
                             No announcement yet
                         </div>
                     )}
 
                     {announcements.length > 0 && (
-                        <div className="w-full flex justify-end mt-6">
+                        <div className="mt-6 flex w-full justify-end">
                             <Button
                                 variant="outline"
                                 className="text-sm sm:text-base"
                                 onClick={() => {
-                                    router.visit(route("announcements.list.show"));
-                                }}>
+                                    router.visit(route('announcements.list.show'));
+                                }}
+                            >
                                 View More
                             </Button>
                         </div>
@@ -165,7 +155,8 @@ export default function GeneralAnnouncement() {
                     onPositiveClick={() => {
                         setIsClassicDialogShowing(false);
                     }}
-                    open={isClassicDialogShowing} />
+                    open={isClassicDialogShowing}
+                />
             </div>
         </div>
     );

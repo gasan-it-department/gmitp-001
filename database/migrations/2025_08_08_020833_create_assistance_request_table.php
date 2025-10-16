@@ -32,6 +32,8 @@ return new class extends Migration {
             $table->foreignUlid('user_id')
                 ->constrained('users')
                 ->onDelete('cascade');
+
+            $table->decimal('amount')->nullable();
             $table->string('transaction_number')->unique();
             $table->string('assistance_type');
             $table->string('status')->default('pending');

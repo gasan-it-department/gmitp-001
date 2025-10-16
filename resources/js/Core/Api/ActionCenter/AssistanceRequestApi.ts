@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AssistanceRequestResponse, AssistanceStatus, AssistanceOptions } from "@/Core/Types/ActionCenter/AssistanceRequestTypes";
+import type { AssistanceRequestResponse, AssistanceStatus, AssistanceOption, AssistanceOptionsResponse } from "@/Core/Types/ActionCenter/AssistanceRequestTypes";
 
 const REQUESTS_URL = "/action-center/request"; //getting all the request
 const STATUS_URL = "/action-center/admin/status-list"; //getting all statuses
@@ -16,8 +16,8 @@ export const ActionCenterApi = {
         return data;
     },
 
-    async getAllAssitanceOptions(): Promise<AssistanceOptions> {
-        const { data } = await axios.get<AssistanceOptions>(ASSISTANCE_URL);
+    async getAllAssitanceOptions(): Promise<AssistanceOptionsResponse> {
+        const { data } = await axios.get<AssistanceOptionsResponse>(ASSISTANCE_URL);
         return data
     }
 };

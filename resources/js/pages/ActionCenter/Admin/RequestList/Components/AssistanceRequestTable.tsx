@@ -1,4 +1,5 @@
 import { SpinnerCustom } from '@/components/SpinnerCustom';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
@@ -9,6 +10,7 @@ import { useState } from 'react';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import SortSelectionDialog from './SortSelectionDialog';
+import ViewDetailsDialog from './ViewDetailsDialog';
 
 export function AssistanceRequestTable() {
     const [selectedItem, setSelectedItem] = useState<Beneficiary | null>(null);
@@ -83,35 +85,46 @@ export function AssistanceRequestTable() {
                             </TableRow>
                         ) : (
                             data?.request.map((req) => (
-                                <TableRow
-                                    key={req.id}
-                                    className="cursor-pointer overflow-y-auto hover:bg-gray-50"
-                                    onClick={() => setSelectedItem(req.beneficiary)}
-                                >
-                                    <TableCell className="text-[12px] capitalize">
-                                        {req.beneficiary.first_name} {req.beneficiary.last_name}
-                                    </TableCell>
-                                    <TableCell className="text-[12px]">{Utility().formatToReadableDate(req.created_at)}</TableCell>
-                                    <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
-                                    <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
-                                    <TableCell className="text-[12px]">
-                                        <span
-                                            className={`rounded-full px-2 py-1 text-[11px] font-medium ${
-                                                req.status === 'approved'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : req.status === 'rejected'
-                                                      ? 'bg-red-100 text-red-700'
-                                                      : 'bg-gray-100 text-gray-700'
-                                            }`}
+                                <ContextMenu key={req.id}>
+                                    <ContextMenuTrigger asChild>
+                                        <TableRow
+                                            key={req.id}
+                                            className="cursor-pointer overflow-y-auto hover:bg-gray-50"
+                                            onClick={() => setSelectedItem(req.beneficiary)}
                                         >
-                                            {req.status}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-[12px]">
-                                        {/* Example: computed due date */}
-                                        {Utility().formatAndAddDays(req.created_at, 90)}
-                                    </TableCell>
-                                </TableRow>
+                                            <TableCell className="text-[12px] capitalize">
+                                                {req.beneficiary.first_name} {req.beneficiary.last_name}
+                                            </TableCell>
+                                            <TableCell className="text-[12px]">{Utility().formatToReadableDate(req.created_at)}</TableCell>
+                                            <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
+                                            <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
+                                            <TableCell className="text-[12px]">
+                                                <span
+                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                                                        req.status === 'approved'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : req.status === 'rejected'
+                                                              ? 'bg-red-100 text-red-700'
+                                                              : 'bg-gray-100 text-gray-700'
+                                                    }`}
+                                                >
+                                                    {req.status}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-[12px]">
+                                                {/* Example: computed due date */}
+                                                {Utility().formatAndAddDays(req.created_at, 90)}
+                                            </TableCell>
+                                        </TableRow>
+                                    </ContextMenuTrigger>
+
+                                    <ContextMenuContent className="w-48">
+                                        <ContextMenuItem>View</ContextMenuItem>
+                                        <ContextMenuItem>Edit</ContextMenuItem>
+                                        <ContextMenuSeparator />
+                                        <ContextMenuItem className="text-red-500 focus:text-red-500">Delete</ContextMenuItem>
+                                    </ContextMenuContent>
+                                </ContextMenu>
                             ))
                         )}
                     </TableBody>
@@ -141,7 +154,7 @@ export function AssistanceRequestTable() {
                     hideNegativeButton={false}
                 />
                 {/* Example: View Details Dialog placeholder */}
-                {/* {selectedItem && <ViewDetailsDialog isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} details={selectedItem} />} */}
+                {selectedItem && <ViewDetailsDialog isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} details={selectedItem} />}
             </div>
         </div>
     );

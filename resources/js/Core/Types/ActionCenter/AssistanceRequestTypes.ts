@@ -33,7 +33,12 @@ export interface AssistanceStatus {
     label: string;
 }
 
-export interface AssistanceOptions {
+export interface AssistanceOption {
     value: string;
     label: string;
+}
+
+export interface AssistanceOptionsResponse {
+    success: boolean;
+    data: AssistanceOption[];
 }
