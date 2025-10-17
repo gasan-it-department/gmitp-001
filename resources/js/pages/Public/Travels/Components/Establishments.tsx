@@ -76,7 +76,7 @@ export function Establishments() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.6)_0%,transparent_70%)] pointer-events-none" />
 
             <h2 className="text-4xl font-extrabold mb-10 text-gray-900 text-center drop-shadow-sm tracking-tight">
-                🏝️ Explore Exciting Establishments
+                Explore Exciting Establishments
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">

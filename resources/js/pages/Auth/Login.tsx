@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import axios from '@/lib/axios';
+import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 type FormData = {
@@ -13,6 +15,7 @@ type FormData = {
 };
 
 export default function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
+    const [showPassword, setShowPassword] = useState(false);
     const {
         register,
         handleSubmit,
@@ -52,6 +55,11 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
             }
         }
     };
+
+    const togglePassword = () => {
+        setShowPassword((prev: any) => !prev);
+    };
+
     return (
         <div className="overflow-hidden p-1">
             {/* Show error alert if any field has errors */}
@@ -85,11 +93,22 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                                 <Label htmlFor="password" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
                                     Password
                                 </Label>
+
                                 <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
                                     Forgot your password?
                                 </a>
                             </div>
-                            <Input id="password" type="password" {...register('password', { required: 'Password is required' })} />
+
+                            <div className="relative">
+                                <Input id="password" type={showPassword ? 'text' : 'password'} {...register('password', { required: 'Password is required' })} />
+                                <button
+                                    type="button"
+                                    onClick={togglePassword}
+                                    className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-600 hover:text-gray-900 focus:outline-none dark:text-gray-300 dark:hover:text-white"
+                                >
+                                    {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                                </button>
+                            </div>
                             {errors.password && <p className="text-sm font-medium text-red-500">{errors.password.message}</p>}
                         </div>
 

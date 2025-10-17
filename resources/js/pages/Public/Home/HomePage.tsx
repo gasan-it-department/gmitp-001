@@ -13,19 +13,21 @@ export default function HomePage() {
 
                 <div className='h-5' />
 
-                <div className="flex w-full flex-col gap-4 md:flex-row p-2">
-                    <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
+                <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="flex-1">
                         <FeedbackUi />
                     </div>
 
-                    <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
+                    <div className="flex-1">
                         <ActionCenterUi />
                     </div>
 
-                    <div className="flex-1 min-h-[200px] lg:ml-5 lg:mr-5">
+                    <div className="flex-1">
                         <Report />
                     </div>
                 </div>
+
+
 
                 <div className='h-8' />
 
