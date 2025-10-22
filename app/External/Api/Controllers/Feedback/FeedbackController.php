@@ -4,8 +4,8 @@ namespace App\External\Api\Controllers\Feedback;
 
 use App\Http\Controllers\Controller;
 use App\External\Api\Request\Feedback\FeedbackRequest;
-use App\Core\Feedback\Applications\Dto\CreateFeedbackDto;
-use App\Core\Feedback\Applications\Services\CreateFeedback;
+use App\Core\Feedback\Dto\CreateFeedbackDto;
+use App\Core\Feedback\Services\CreateFeedback;
 
 class FeedbackController extends Controller
 {
@@ -18,19 +18,17 @@ class FeedbackController extends Controller
     {
         $dto = new CreateFeedbackDto(
             userId: $request->user()?->id,
-            contactNumber: $request->validated('contact_number'),
-            email: $request->validated('email'),
-            name: $request->validated('name'),
-            subject: $request->validated('subject'),
-            subjectType: $request->validated('subject_type'),
-            departmentId: $request->validated('department_id'),
+            senderName: $request->validated('senderName'),
+            employeeName: $request->validated('employeeName'),
+            subjectType: $request->validated('subjectType'),
+            departmentId: $request->validated('departmentId'),
             rating: $request->validated('rating'),
             message: $request->validated('message'),
-            isAnonymous: (bool) $request->validated('is_anonymous'),
+            isAnonymous: (bool) $request->validated('isAnonymous'),
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
         );
-
+        dd($dto);
         $this->feedbackService->execute($dto);
     }
 

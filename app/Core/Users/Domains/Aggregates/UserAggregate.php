@@ -89,7 +89,9 @@ class UserAggregate
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'first_name' => $this->getFirstName(),
+            'last_name' => $this->getLastName(),
+            'middle_name' => $this->getMiddleName(),
             'user_name' => $this->getUserName(),
             'role' => $this->getRole(),
         ];

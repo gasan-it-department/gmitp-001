@@ -11,5 +11,4 @@ interface UserRepositoryInterface
     public function findById(string $id): ?UserAggregate;
     public function findByPhone(string $phone): ?UserAggregate;
     public function findByUserName(string $userName): ?UserAggregate;
-
 }

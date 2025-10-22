@@ -1,8 +1,13 @@
 <?php
+use Inertia\Inertia;
 
 // use Illuminate\Support\Facades\Route;
 // use Inertia\Inertia;
 // use Illuminate\Http\Request;
+Route::get('feedback-form-testing', function () {
+    return Inertia::render('Feedback/FeedbackFormTrial');
+});
+
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/public.php';

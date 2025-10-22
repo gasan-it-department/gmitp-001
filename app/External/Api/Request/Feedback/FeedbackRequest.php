@@ -22,15 +22,13 @@ class FeedbackRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'contact_number' => 'nullable|string|min:10|max:15',
-            'email' => 'nullable|email|max:255',
-            'name' => 'nullable|string|max:255',
-            'subject' => 'required|string|max:255',
-            'subject_type' => 'required|string|in:department,individual',
-            'department_id' => 'nullable|exists:departments,id|required_if:subject_type,department',
-            'rating' => 'nullable|integer|min:1|max:5',
-            'message' => 'required|string|max:5000',
-            'is_anonymous' => 'boolean',
+            'senderName' => 'nullable|string|max:255',
+            'employeeName' => 'nullable|string|max:255',
+            'subjectType' => 'required|string|in:department,employee',
+            'departmentId' => 'nullable',
+            'rating' => 'nullable|integer|max:5',
+            'message' => 'required|string|max:255',
+            'isAnonymous' => 'boolean',
         ];
     }
 
@@ -41,3 +39,4 @@ class FeedbackRequest extends FormRequest
         ]);
     }
 }
+// 'departmentId' => 'nullable|exists:departments,id|required_if:subject_type,department',

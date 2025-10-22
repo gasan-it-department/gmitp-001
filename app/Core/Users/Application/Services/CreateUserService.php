@@ -19,9 +19,6 @@ use App\Core\Users\Domains\ValueObjects\{
     MiddleName,
     LastName,
 };
-use Illuminate\Support\Str;
-
-
 class CreateUserService
 {
     public function __construct(
@@ -55,7 +52,6 @@ class CreateUserService
                 $password,
                 $role
             );
-
             $saveduser = $this->userRepository->save($user);
             $this->cookieSessionService->createAuthenticatedSession($saveduser->getId());
 

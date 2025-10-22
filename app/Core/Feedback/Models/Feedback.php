@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Core\Feedback\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,10 +9,8 @@ class Feedback extends Model
     protected $fillable = [
         'id',
         'user_id',
-        'contact_number',
-        'email',
-        'name',
-        'subject',
+        'sender_name',
+        'employee_name',
         'subject_type',
         'department_id',
         'rating',

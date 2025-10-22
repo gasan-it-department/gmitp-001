@@ -12,17 +12,18 @@ return new class extends Migration {
     {
         Schema::create('citizen_feedback', function (Blueprint $table) {
             $table->ulid('id')->primary();
-
             //information
+            $table->boolean('is_anonymous')->default(false);
             $table->text('message');
+            $table->foreignUlid('department_id')->nullable();
+            $table->string('sender_name');
             $table->string('attachment_path')->nullable();
-            $table->string('subject');
+            $table->string('employee_name');
             $table->string('subject_type')->nullable();
             $table->unsignedBigInteger('rating')->nullable();
             $table->string('name')->nullable();
             $table->ipAddress('ip_address')->nullable();
             $table->text('user_agent')->nullable();
-            $table->boolean('is_anonymous')->default(false);
 
             $table->timestamps();
         });
