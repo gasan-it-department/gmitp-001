@@ -47,9 +47,7 @@ export function UserDropdownMenu() {
 
                 <DropdownMenuContent className="font-bold">
                     <DropdownMenuLabel className="p-1 text-[13px] italic">
-                        {`Sophie Rhys Sadiwa Fabunan 12345678`.length > 16
-                            ? `Sophie Rhys Sadiwa Fabunan 12345678`.slice(0, 16) + '...'
-                            : `Sophie Rhys Sadiwa Fabunan 12345678`}
+                        {auth.user?.first_name} {auth.user?.last_name}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {auth.roles?.isAdmin && (

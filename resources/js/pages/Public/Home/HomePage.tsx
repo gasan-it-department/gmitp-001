@@ -27,8 +27,6 @@ export default function HomePage() {
                     </div>
                 </div>
 
-
-
                 <div className='h-8' />
 
                 <InformationDashboard />

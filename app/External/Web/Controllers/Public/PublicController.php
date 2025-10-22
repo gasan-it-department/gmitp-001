@@ -82,4 +82,9 @@ class PublicController extends Controller
     {
         return Inertia::render('Public/Home/Components/GeneralAnnouncementList');
     }
+
+    public function showWeddingPage()
+    {
+        return Inertia::render('Public/Wedding/WeddingPage');
+    }
 }

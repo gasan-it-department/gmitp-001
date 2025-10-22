@@ -14,7 +14,11 @@ type FormData = {
     remember_me: boolean;
 };
 
-export default function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
+interface LoginFormProps {
+    onLoggedIn: (redirectionLink: string) => void;
+}
+
+export default function LoginForm( {onLoggedIn}: LoginFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const {
         register,
@@ -30,9 +34,7 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
                 withCredentials: true,
             });
 
-            if (response.data.redirect_to) {
-                window.location.href = response.data.redirect_to;
-            }
+            onLoggedIn(response.data.redirect_to);
         } catch (error: any) {
             if (error.response?.data) {
                 const { errors: validationErrors, message } = error.response.data;
@@ -62,13 +64,6 @@ export default function LoginForm({ className, ...props }: React.ComponentProps<
 
     return (
         <div className="overflow-hidden p-1">
-            {/* Show error alert if any field has errors */}
-            {Object.keys(errors).length > 0 && (
-                <Alert variant="destructive" className="absolute top-10 left-1/2 z-20 mb-4 w-full max-w-md -translate-x-1/2 transform bg-white">
-                    Please check the form fields and try again.
-                </Alert>
-            )}
-
             <form onSubmit={handleSubmit(onSubmit)}>
                 <fieldset disabled={isSubmitting}>
                     <div className="flex flex-col gap-6">

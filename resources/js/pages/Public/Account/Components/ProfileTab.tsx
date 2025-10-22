@@ -113,7 +113,7 @@ export default function ProfileTab() {
                                 <Label htmlFor="first_name">First Name</Label>
                                 <Input
                                     id="first_name"
-                                    value={userFirstName}
+                                    value={auth.user?.first_name || ""}
                                     onChange={(e) => setUserFirstName(e.target.value)}
                                     placeholder="First Name"
                                     className="mt-1"
@@ -124,7 +124,7 @@ export default function ProfileTab() {
                                 <Label htmlFor="middle_name">Last Name</Label>
                                 <Input
                                     id="middle_name"
-                                    value={userMiddleName}
+                                    value={auth.user?.middle_name || ""}
                                     onChange={(e) => setUserMiddleName(e.target.value)}
                                     placeholder="Middle Name"
                                     className="mt-1"
@@ -135,7 +135,7 @@ export default function ProfileTab() {
                                 <Label htmlFor="last_name">Middle Name</Label>
                                 <Input
                                     id="last_name"
-                                    value={userLastName}
+                                    value={auth.user?.last_name || ""}
                                     onChange={(e) => setUserLastName(e.target.value)}
                                     placeholder="Last Name"
                                     className="mt-1"
@@ -158,7 +158,7 @@ export default function ProfileTab() {
                                 <Label htmlFor="mobile_number">Mobile Number</Label>
                                 <Input
                                     id="mobile_number"
-                                    value={userMobileNumber}
+                                    value={auth.user?.phone || "+63"}
                                     onChange={(e) => setUserMobileNumber(e.target.value)}
                                     placeholder="09XXXXXXXXX"
                                     className="mt-1"

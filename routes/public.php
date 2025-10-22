@@ -17,3 +17,4 @@ Route::get('/travel', [PublicController::class, 'showTravelPage'])->name('travel
 Route::get('/transparency', [PublicController::class, 'showTransparencyPage'])->name('transparency.show');
 Route::get('/executive-orders', [PublicController::class, 'showExecutiveOrdersPage'])->name('executive.order.show');
 Route::get('/announcements', [PublicController::class, 'showAnnouncementsPage'])->name('announcements.list.show');
+Route::get('/schedule-wedding', [PublicController::class, 'showWeddingPage'])->name('schedule.wedding.show');

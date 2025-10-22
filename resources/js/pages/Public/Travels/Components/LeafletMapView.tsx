@@ -5,11 +5,13 @@ import L from "leaflet";
 import "leaflet-gesture-handling";
 import "leaflet-gesture-handling/dist/leaflet-gesture-handling.css";
 
+// Enable gesture handling in Leaflet globally
 L.Map.addInitHook("addHandler", "gestureHandling", (L as any).GestureHandling);
 
 export default function TouristMap({ destinationList }: any) {
     const [mapType, setMapType] = useState<"satellite" | "street">("street");
     const [selectedFind, setSelectedFind] = useState("");
+    const mapRef = useRef<L.Map | null>(null);
 
     const mapTypes = {
         satellite:
@@ -17,57 +19,31 @@ export default function TouristMap({ destinationList }: any) {
         street: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     };
 
+    useEffect(() => {
+        if (mapRef.current && (mapRef.current as any).gestureHandling) {
+            (mapRef.current as any).gestureHandling.enable();
+        }
+    }, []);
+
     function createTouristIcon(image: string, name: string) {
         return L.divIcon({
             className: "custom-tourist-popup-icon",
             html: `
-                <div class="popup-marker">
-                    <div class="popup-card">
-                        <img src="${image}" alt="${name}" class="popup-image" />
-                        <div class="popup-info">
-                            <h4 class="popup-title">${name}</h4>
-                        </div>
-                    </div>
-                    <div class="popup-pointer"></div>
-                </div>
-            `,
+          <div class="popup-marker">
+              <div class="popup-card">
+                  <img src="${image}" alt="${name}" class="popup-image" />
+                  <div class="popup-info">
+                      <h4 class="popup-title">${name}</h4>
+                  </div>
+              </div>
+              <div class="popup-pointer"></div>
+          </div>
+      `,
             iconSize: [160, 140],
             iconAnchor: [80, 140],
             popupAnchor: [0, -140],
         });
     }
-
-    // // Custom user location marker icon
-    // const userIcon = L.icon({
-    //     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    //     iconSize: [25, 41],
-    //     iconAnchor: [12, 41],
-    // });
-
-    // // Watch user location
-    // useEffect(() => {
-    //     if (!navigator.geolocation) {
-    //         alert("Geolocation is not supported by your browser");
-    //         return;
-    //     }
-
-    //     const watchId = navigator.geolocation.watchPosition(
-    //         (pos) => {
-    //             const { latitude, longitude } = pos.coords;
-    //             setPosition([latitude, longitude]);
-    //         },
-    //         (err) => {
-    //             console.error("Error getting location:", err);
-    //         },
-    //         {
-    //             enableHighAccuracy: true,
-    //             timeout: 5000,
-    //             maximumAge: 10000,
-    //         }
-    //     );
-
-    //     return () => navigator.geolocation.clearWatch(watchId);
-    // }, []);
 
     return (
         <div className="flex flex-col p-4 sm:p-8 w-full">
@@ -110,19 +86,27 @@ export default function TouristMap({ destinationList }: any) {
                 </div>
             </div>
 
+            {/* Map */}
             <div className="relative w-full h-[400px] sm:h-[550px] md:h-[650px] z-10">
                 <MapContainer
+                    ref={mapRef as any} // safely assign the ref to access Leaflet Map later
                     center={[13.254117982609364, 121.86766968796603]}
                     zoom={13}
-                    scrollWheelZoom={true}
+                    scrollWheelZoom={false}
                     className="w-full h-full rounded-[10px] shadow-lg"
                     maxZoom={18}
                     minZoom={11}
                     maxBounds={[
-                        [12.90, 121.40],
-                        [13.70, 122.35],
+                        [12.9, 121.4],
+                        [13.7, 122.35],
                     ]}
                     maxBoundsViscosity={0.7}
+                    whenReady={() => {
+                        const mapInstance = mapRef.current;
+                        if (mapInstance && (mapInstance as any).gestureHandling) {
+                            (mapInstance as any).gestureHandling.enable();
+                        }
+                    }}
                 >
                     <TileLayer
                         attribution='&copy; <a href="https://www.esri.com/">Esri</a> & OpenStreetMap contributors'
@@ -148,15 +132,8 @@ export default function TouristMap({ destinationList }: any) {
                             </Popup>
                         </Marker>
                     ))}
-
-                    {/* User live location marker */}
-                    {/* {position && (
-                        <Marker position={position} icon={userIcon}>
-                            <Popup>You are here</Popup>
-                        </Marker>
-                    )} */}
-
                 </MapContainer>
+
             </div>
         </div>
     );

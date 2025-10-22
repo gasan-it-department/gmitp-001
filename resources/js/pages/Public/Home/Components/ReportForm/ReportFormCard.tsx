@@ -22,19 +22,16 @@ export default function ReportIssueCard() {
                 {/* Header + Description */}
                 <div className="flex items-center gap-4">
                     <div
-                        className="p-3 items-center justify-center
-          rounded-2xl bg-gradient-to-br from-red-500 to-orange-500
-          text-white shadow-lg
-        "
+                        className="p-3 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-lg"
                     >
                         <AlertTriangle className="h-8 w-8" />
                     </div>
 
                     <div>
                         <h2 className="text-2xl font-bold text-red-800 dark:text-orange-100">
-                            Feedback Form
+                            Report Community Issue
                         </h2>
-                        <p className="text-sm text-orange-800/80 dark:text-orange-200/80">
+                        <p className="text-sm text-orange-800/80 dark:text-orange-200/80 italic">
                             We value your thoughts! Share your feedback to help us improve our services.
                         </p>
                     </div>
@@ -55,7 +52,7 @@ export default function ReportIssueCard() {
                         "
                         onClick={() => setIsReportDialogShown(true)}
                     >
-                        View Services
+                        Submit Report
                         <ArrowRight size={18} className="sm:size-5" />
                     </Button>
                 </div>

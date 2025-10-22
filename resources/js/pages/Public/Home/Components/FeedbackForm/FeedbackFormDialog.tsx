@@ -1,137 +1,133 @@
-import { CheckCircle2, Upload, X } from 'lucide-react';
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import {
+    AlertTriangle,
+    CheckCircle2,
+    FileIcon,
+    Upload,
+    X,
+} from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import StarRating from './StarRatingBar';
-import { Select } from '@radix-ui/react-select';
-import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 interface FeedbackDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-interface FormData {
+interface FeedbackFormValues {
     feedbackTarget: 'employee' | 'office';
     targetName: string;
     feedbackMessage: string;
-    fullName: string;
-    evidenceFile: File | null;
-    rating?: number;
-}
-
-interface FormErrors {
-    targetName?: string;
-    feedbackMessage?: string;
     fullName?: string;
-    email?: string;
-    phone?: string;
+    rating?: number;
 }
 
 type DepartmentsData = {
     id: number;
     name: string;
-}
+};
 
 export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) {
-    const [formData, setFormData] = useState<FormData>({
-        feedbackTarget: 'employee',
-        targetName: '',
-        feedbackMessage: '',
-        fullName: '',
-        evidenceFile: null,
-        rating: 5
+    const {
+        register,
+        handleSubmit,
+        watch,
+        control,
+        reset,
+        setValue,
+        clearErrors,
+        formState: { errors },
+    } = useForm<FeedbackFormValues>({
+        defaultValues: {
+            feedbackTarget: 'employee',
+            targetName: '',
+            feedbackMessage: '',
+            fullName: '',
+            rating: 5,
+        },
+        mode: "onSubmit"
     });
 
-    const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [fileName, setFileName] = useState<string>('');
+    const [files, setFiles] = useState<File[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const feedbackTarget = watch('feedbackTarget');
+    const targetName = watch('targetName');
 
-    const validateForm = (): boolean => {
-        const newErrors: FormErrors = {};
-        if (!formData.targetName.trim()) {
-            newErrors.targetName = `${formData.feedbackTarget === 'employee' ? 'Employee name' : 'Office/Department name'} is required`;
+    const dummy_departments: DepartmentsData[] = [
+        { id: 1, name: 'Office of the Mayor' },
+        { id: 2, name: 'Office of the Vice Mayor' },
+        { id: 3, name: 'Business Permits and Licensing Office (BPLO)' },
+        { id: 4, name: 'City Planning and Development Office (CPDO)' },
+        { id: 5, name: 'Engineering Office' },
+    ];
+
+    const MAX_FILES = 5;
+    const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+
+    // 🔹 Reset and clear errors when switching feedback target
+    useEffect(() => {
+        setValue('targetName', '');
+        clearErrors('targetName');
+    }, [feedbackTarget, setValue, clearErrors]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) return;
+        const newFiles = Array.from(e.target.files);
+        const combined = [...files, ...newFiles].slice(0, MAX_FILES);
+
+        const totalSize = combined.reduce((acc, file) => acc + file.size, 0);
+        if (totalSize > MAX_TOTAL_SIZE) {
+            setError('Total file size exceeds 50MB limit.');
+            return;
         }
-        if (!formData.feedbackMessage.trim()) newErrors.feedbackMessage = 'Feedback message is required';
-        // if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-        // if (!formData.email.trim()) newErrors.email = 'Email is required';
-        // else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
-        // // if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-        // else if (!/^\+?[\d\s\-()]+$/.test(formData.phone)) newErrors.phone = 'Please enter a valid phone number';
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        setError(null);
+        setFiles(combined);
     };
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!validateForm()) return;
+    const removeFile = (index: number) => {
+        setFiles(files.filter((_, i) => i !== index));
+    };
 
-        console.log('Feedback Form Submission:', {
-            ...formData,
-            evidenceFile: formData.evidenceFile
-                ? {
-                    name: formData.evidenceFile.name,
-                    size: formData.evidenceFile.size,
-                    type: formData.evidenceFile.type,
-                }
-                : null,
-        });
+    const onSubmit = (data: FeedbackFormValues) => {
+        console.log('Feedback submission:', { ...data, files });
 
         setIsSubmitted(true);
         setTimeout(() => {
             setIsSubmitted(false);
-            setFormData({
-                feedbackTarget: 'employee',
-                targetName: '',
-                feedbackMessage: '',
-                fullName: '',
-                evidenceFile: null,
-            });
-            setFileName('');
-            setErrors({});
+            reset();
+            setFiles([]);
+            setError(null);
             onOpenChange(false);
         }, 3000);
     };
 
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setFormData({ ...formData, evidenceFile: file });
-            setFileName(file.name);
-        }
-    };
-
-    const removeFile = () => {
-        setFormData({ ...formData, evidenceFile: null });
-        setFileName('');
-    };
-
-    const handleInputChange = (field: keyof FormData, value: string | File | null) => {
-        setFormData({ ...formData, [field]: value });
-        if (errors[field as keyof FormErrors]) {
-            setErrors({ ...errors, [field]: undefined });
-        }
-    };
-
-    const dummy_departments: DepartmentsData[] = [
-        { id: 1, name: "Office of the Mayor" },
-        { id: 2, name: "Office of the Vice Mayor" },
-        { id: 3, name: "Business Permits and Licensing Office (BPLO)" },
-        { id: 4, name: "City Planning and Development Office (CPDO)" },
-        { id: 5, name: "Engineering Office" },
-    ];
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
+            <DialogContent showCloseButton={false} className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
                 <DialogHeader className="mb-2">
-                    <DialogTitle className="text-2xl font-bold text-foreground">Citizen Feedback Form</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-foreground">
+                        Citizen Feedback Form
+                    </DialogTitle>
                 </DialogHeader>
 
                 {isSubmitted ? (
@@ -142,128 +138,126 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                         </AlertDescription>
                     </Alert>
                 ) : (
-                    <form onSubmit={handleSubmit} className="mt-4 space-y-8">
+                    <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-8">
                         {/* Feedback Target */}
                         <div className="space-y-3">
                             <Label className="text-base font-semibold text-foreground">
                                 Feedback About <span className="text-destructive">*</span>
                             </Label>
-                            <RadioGroup
-                                value={formData.feedbackTarget}
-                                onValueChange={(value) => {
-                                    handleInputChange('feedbackTarget', value)
-                                }}
-                                className="flex gap-6 pt-3 pb-3"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="employee" id="employee" />
-                                    <Label htmlFor="employee" className="cursor-pointer font-normal">
-                                        Employee
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="office" id="office" />
-                                    <Label htmlFor="office" className="cursor-pointer font-normal">
-                                        Office/Department
-                                    </Label>
-                                </div>
-                            </RadioGroup>
+                            <Controller
+                                control={control}
+                                name="feedbackTarget"
+                                render={({ field }) => (
+                                    <RadioGroup
+                                        value={field.value}
+                                        onValueChange={field.onChange}
+                                        className="flex gap-6 pt-3 pb-3"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="employee" id="employee" />
+                                            <Label htmlFor="employee" className="cursor-pointer font-normal">
+                                                Employee
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="office" id="office" />
+                                            <Label htmlFor="office" className="cursor-pointer font-normal">
+                                                Office/Department
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                )}
+                            />
                         </div>
 
+                        {/* Full Name */}
                         <div className="space-y-2">
                             <Label htmlFor="fullName" className="font-semibold text-foreground">
                                 Full Name (Optional)
                             </Label>
                             <Input
                                 id="fullName"
-                                value={formData.fullName}
-                                onChange={(e) => handleInputChange('fullName', e.target.value)}
                                 placeholder="Enter your full name"
-                                className={errors.fullName ? 'border-destructive' : ''}
+                                {...register('fullName')}
                             />
-                            {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
                         </div>
 
                         {/* Target Name */}
-                        {
-                            (formData.feedbackTarget === 'office') ? (
-                                <div className='flex flex-col space-y-2'>
-                                    <Label htmlFor="targetDepartment" className="font-semibold text-foreground">
-                                        Select Department
-                                        <span className="text-destructive">*</span>
-                                    </Label>
-
-                                    <Select
-                                        value={formData.targetName}
-                                        onValueChange={(value) => handleInputChange("targetName", value)}
-                                    >
-                                        <SelectTrigger
-                                            id="targetDepartment"
-                                            className={`w-full text-sm transition-all duration-200 ${errors.targetName
-                                                    ? "border-destructive ring-destructive"
-                                                    : "border-input dark:border-gray-700"
-                                                } focus:ring-2 focus:ring-orange-500`}
+                        {feedbackTarget === 'office' ? (
+                            <div className="space-y-2">
+                                <Label className="font-semibold text-foreground">
+                                    Select Department <span className="text-destructive">*</span>
+                                </Label>
+                                <Controller
+                                    control={control}
+                                    name="targetName"
+                                    rules={{ required: 'Department is required' }}
+                                    render={({ field }) => (
+                                        <Select
+                                            value={field.value}
+                                            onValueChange={(value) => {
+                                                field.onChange(value);
+                                                setValue("targetName", value);
+                                                clearErrors('targetName');
+                                                console.log("Selected department:", value);
+                                            }}
+                                            disabled={feedbackTarget !== 'office'}
                                         >
-                                            <SelectValue placeholder="-- Select Department --" />
-                                        </SelectTrigger>
+                                            <SelectTrigger
+                                                className={`w-full text-sm ${errors.targetName ? 'border-destructive' : ''}`}
+                                            >
+                                                <SelectValue placeholder="-- Select Department --" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {dummy_departments.map((dept) => (
+                                                    <SelectItem key={dept.id} value={dept.name}>
+                                                        {dept.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.targetName && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.targetName.message}
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label htmlFor="targetName" className="font-semibold text-foreground">
+                                    Employee Name <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                    id="targetName"
+                                    placeholder="Enter employee name"
+                                    {...register('targetName', {
+                                        required:
+                                            feedbackTarget === 'employee'
+                                                ? 'Employee name is required'
+                                                : false,
+                                    })}
+                                    className={errors.targetName ? 'border-destructive' : ''}
+                                />
+                                {errors.targetName && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.targetName.message}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
-                                        <SelectContent>
-                                            {dummy_departments.map((dept) => (
-                                                <SelectItem key={dept.id} value={dept.name}>
-                                                    {dept.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            ) :
-                                (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="targetName" className="font-semibold text-foreground">
-                                            {formData.feedbackTarget === 'employee' ? 'Employee Name' : 'Office/Department Name'}{' '}
-                                            <span className="text-destructive">*</span>
-                                        </Label>
-                                        <Input
-                                            id="targetName"
-                                            value={formData.targetName}
-                                            onChange={(e) => handleInputChange('targetName', e.target.value)}
-                                            placeholder={formData.feedbackTarget === 'employee' ? 'Enter employee name' : 'Enter office or department name'}
-                                            className={errors.targetName ? 'border-destructive pt-3' : ''}
-                                        />
-                                        {errors.targetName && <p className="text-sm text-destructive">{errors.targetName}</p>}
-                                    </div>
-                                )
-                        }
-
-                        {/* RATING BAR */}
-                        {
-                            (formData.feedbackTarget === "office" && formData.targetName !== "") &&
-                            <StarRating
-                                value={formData.rating}
-                                onChange={function (rating: number): void {
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        rating: rating
-                                    }));
-
-                                    console.log('Selected rating:', rating);
-                                }} />
-                        }
-
-                        {/* <div className="space-y-2">
-                            <Label htmlFor="targetName" className="font-semibold text-foreground">
-                                {formData.feedbackTarget === 'employee' ? 'Employee Name' : 'Office/Department Name'}{' '}
-                                <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                                id="targetName"
-                                value={formData.targetName}
-                                onChange={(e) => handleInputChange('targetName', e.target.value)}
-                                placeholder={formData.feedbackTarget === 'employee' ? 'Enter employee name' : 'Enter office or department name'}
-                                className={errors.targetName ? 'border-destructive pt-3' : ''}
+                        {/* Rating */}
+                        {feedbackTarget === 'office' && targetName && (
+                            <Controller
+                                control={control}
+                                name="rating"
+                                render={({ field }) => (
+                                    <StarRating value={field.value} onChange={field.onChange} />
+                                )}
                             />
-                            {errors.targetName && <p className="text-sm text-destructive">{errors.targetName}</p>}
-                        </div> */}
+                        )}
 
                         {/* Feedback Message */}
                         <div className="space-y-2">
@@ -272,100 +266,102 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                             </Label>
                             <Textarea
                                 id="feedbackMessage"
-                                value={formData.feedbackMessage}
-                                onChange={(e) => handleInputChange('feedbackMessage', e.target.value)}
-                                placeholder="Share your compliments, suggestions, or complaints..."
                                 rows={5}
+                                placeholder="Share your compliments, suggestions, or complaints..."
+                                {...register('feedbackMessage', {
+                                    required: 'Feedback message is required',
+                                })}
                                 className={errors.feedbackMessage ? 'border-destructive' : ''}
                             />
-                            {errors.feedbackMessage && <p className="text-sm text-destructive">{errors.feedbackMessage}</p>}
+                            {errors.feedbackMessage && (
+                                <p className="text-sm text-destructive">
+                                    {errors.feedbackMessage.message}
+                                </p>
+                            )}
                         </div>
 
                         {/* File Upload */}
                         <div className="space-y-3">
-                            <Label className="font-semibold text-foreground">Upload Evidence (Optional)</Label>
+                            <Label className="font-semibold text-foreground">
+                                Upload Evidence (Optional)
+                            </Label>
                             <p className="text-sm text-muted-foreground">
-                                You may upload images, screenshots, or documents to support your feedback.
+                                You may upload up to <span className="font-semibold">5 files</span> — total size
+                                must not exceed <span className="font-semibold">50MB</span>.
                             </p>
+
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => document.getElementById('evidence')?.click()}
                                     className="sm:w-auto"
+                                    disabled={files.length >= MAX_FILES}
                                 >
                                     <Upload className="mr-2 h-4 w-4" />
-                                    Choose File
+                                    {files.length >= MAX_FILES ? 'Max Files Reached' : 'Choose Files'}
                                 </Button>
-                                {fileName && (
-                                    <div className="flex flex-1 items-center gap-2 rounded-md bg-muted px-3 py-2">
-                                        <span className="truncate text-sm text-foreground">{fileName}</span>
-                                        <Button type="button" variant="ghost" size="sm" onClick={removeFile} className="h-6 w-6 p-0">
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+
+                                <input
+                                    id="evidence"
+                                    type="file"
+                                    multiple
+                                    accept="image/*,video/*,.pdf,.doc,.docx"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
                             </div>
-                            <input id="evidence" type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileChange} className="hidden" />
+
+                            {error && (
+                                <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-2 rounded-md">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    {error}
+                                </div>
+                            )}
+
+                            {files.length > 0 && (
+                                <div className="mt-2 space-y-2">
+                                    {files.map((file, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm text-foreground"
+                                        >
+                                            <div className="flex items-center gap-2 truncate">
+                                                <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                                <span className="truncate">{file.name}</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    ({(file.size / (1024 * 1024)).toFixed(1)} MB)
+                                                </span>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeFile(index)}
+                                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Personal Info */}
-                        {/* <div className="space-y-5 border-t pt-6">
-                            <h3 className="text-lg font-semibold text-foreground">Your Information</h3>
-
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="fullName" className="font-semibold text-foreground">
-                                        Full Name (Optional)
-                                    </Label>
-                                    <Input
-                                        id="fullName"
-                                        value={formData.fullName}
-                                        onChange={(e) => handleInputChange('fullName', e.target.value)}
-                                        placeholder="Enter your full name"
-                                        className={errors.fullName ? 'border-destructive' : ''}
-                                    />
-                                    {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="email" className="font-semibold text-foreground">
-                                        Email Address (Optional)
-                                    </Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => handleInputChange('email', e.target.value)}
-                                        placeholder="your.email@example.com"
-                                        className={errors.email ? 'border-destructive' : ''}
-                                    />
-                                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-                                </div>
-
-                                <div className="space-y-2 sm:col-span-2">
-                                    <Label htmlFor="phone" className="font-semibold text-foreground">
-                                        Phone Number
-                                    </Label>
-                                    <Input
-                                        id="phone"
-                                        type="tel"
-                                        value={formData.phone}
-                                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                                        placeholder="+63 912 345 6789"
-                                        className={errors.phone ? 'border-destructive' : ''}
-                                    />
-                                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
-                                </div>
-                            </div>
-                        </div> */}
-
                         {/* Submit Buttons */}
-                        <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+                        <div className="flex gap-4 pt-4 flex-row">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                                className="flex-1"
+                            >
                                 Cancel
                             </Button>
-                            <Button type="submit" className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90">
+                            <Button
+                                type="submit"
+                                className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
+                            >
                                 Submit Feedback
                             </Button>
                         </div>

@@ -76,7 +76,7 @@ export function Establishments() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.6)_0%,transparent_70%)] pointer-events-none" />
 
             <h2 className="text-4xl font-extrabold mb-10 text-gray-900 text-center drop-shadow-sm tracking-tight">
-                Explore Exciting Establishments
+                Establishments
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -116,7 +116,7 @@ export function Establishments() {
 
                                 <div className="mt-5">
                                     <button className="w-full bg-gradient-to-r from-red-500 via-orange-500 to-amber-400 text-white text-sm font-semibold py-2.5 rounded-xl shadow-md hover:shadow-lg hover:from-amber-400 hover:via-orange-500 hover:to-red-500 hover:scale-[1.03] active:scale-95 transition-all duration-300">
-                                        🎠 View Attraction
+                                        View Details
                                     </button>
                                 </div>
                             </CardContent>

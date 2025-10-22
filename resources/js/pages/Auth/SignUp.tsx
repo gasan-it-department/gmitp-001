@@ -1,197 +1,254 @@
-import type React from 'react';
-import InputError from '@/components/Input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import axios from '@/lib/axios';
-import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
-import ClassicDialog from '../Utility/ClassicDialog';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import axios from "@/lib/axios";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
+import InputError from "@/components/Input-error";
+import ClassicDialog from "../Utility/ClassicDialog";
 
-export default function RegisterPage() {
-    const [firstName, setFirstName] = useState('');
-    const [middleName, setMiddleName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [userName, setUsername] = useState('');
-    const [phone, setPhone] = useState('');
-    const [password, setPassword] = useState('');
-    const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const [errors, setErrors] = useState<Record<string, string[]>>({});
-    const [classicDialogTitle, setClassicDialogTitle] = useState("");
-    const [classicDialogMessage, setClassicDialogMessage] = useState("");
-    const [isDialogShowing, setIsDialogShowing] = useState(false);
+interface RegisterFormValues {
+    first_name: string;
+    middle_name?: string;
+    last_name: string;
+    phone: string;
+    user_name: string;
+    password: string;
+    password_confirmation: string;
+}
 
-    const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+interface RegisterPageProps {
+    onSignedIn: () => void;
+}
+
+export default function RegisterPage({ onSignedIn }: RegisterPageProps) {
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+        reset,
+    } = useForm<RegisterFormValues>({
+        defaultValues: {
+            first_name: "",
+            middle_name: "",
+            last_name: "",
+            phone: "",
+            user_name: "",
+            password: "",
+            password_confirmation: "",
+        },
+    });
+
+    const [isSigningIn, setIsSigningIn] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [classicDialog, setClassicDialog] = useState({
+        isDialogShowing: false,
+        isNegativeButtonHidden: false,
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
+    });
+
+    const togglePassword = () => setShowPassword((prev) => !prev);
+
+    const onSubmit = async (data: RegisterFormValues) => {
         try {
-            const userData = {
-                first_name: firstName,
-                middle_name: middleName,
-                last_name: lastName,
-                user_name: userName,
-                phone: phone,
-                password: password,
-                password_confirmation: passwordConfirmation,
-            };
+            setIsSigningIn(true);
+            const response = await axios.post("/store-account", data);
 
-            const response = await axios.post('/store-account', userData);
-            // if (response.data.redirect_to) {
-            //     window.location.href = response.data.redirect_to;
-            // }
-
-            setErrors({});
-        } catch (error: any) {
-            if (error.response && error.response.status === 404) {
-                setErrors(error.response.data.errors || {});
-            } else {
-                setClassicDialogTitle("Something went wrong");
-                setClassicDialogMessage(error);
-                setIsDialogShowing(true);
-                console.error('Registration failed:', error);
+            if (response.data.errors) {
+                setClassicDialog((prev) => ({
+                    ...prev,
+                    title: "Validation Error",
+                    message: JSON.stringify(response.data.errors, null, 2),
+                    isDialogShowing: true,
+                }));
+                setIsSigningIn(false);
+                return;
             }
 
-            setErrors(error.response.data.errors || {});
+            console.log("Registration successful", response.data);
+            onSignedIn();
+            reset();
+        } catch (error: any) {
+            setIsSigningIn(false);
+            const backendMessage =
+                error.response?.data?.message ||
+                error.response?.data?.errors ||
+                error.message ||
+                "An unexpected error occurred during registration.";
+
+            setClassicDialog((prev) => ({
+                ...prev,
+                title: "Oops! Something went wrong.",
+                positiveButtonText: "OK",
+                isNegativeButtonHidden: true,
+                message: JSON.stringify(backendMessage, null, 2),
+                isDialogShowing: true,
+            }));
         }
-    };
-
-    const [showPassword, setShowPassword] = useState(false);
-
-    const togglePassword = () => {
-        setShowPassword((prev: any) => !prev);
     };
 
     return (
         <div className="p-1">
-            <form onSubmit={handleSignUp}>
-                <div className="flex flex-col gap-3">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-3">
-                            <Label htmlFor="first_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                                First Name
-                            </Label>
-                            <Input
-                                id="first_name"
-                                type="text"
-                                name="first_name"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                required
-                            />
-                            {errors.first_name && <InputError message={errors.first_name[0]} />}
-                        </div>
-
-                        <div className="grid gap-3">
-                            <Label htmlFor="middle_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                                Middle Name <span className="text-gray-500">(Optional)</span>
-                            </Label>
-                            <Input
-                                id="middle_name"
-                                type="text"
-                                name="middle_name"
-                                value={middleName}
-                                onChange={(e) => setMiddleName(e.target.value)}
-                            />
-                            {errors.middle_name && <InputError message={errors.middle_name[0]} />}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-3">
-                            <Label htmlFor="last_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                                Last Name
-                            </Label>
-                            <Input
-                                id="last_name"
-                                type="text"
-                                name="last_name"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                required
-                            />
-                            {errors.last_name && <InputError message={errors.last_name[0]} />}
-                        </div>
-
-                        <div className="grid gap-3">
-                            <Label htmlFor="phone" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                                Phone
-                            </Label>
-
-                            <Input
-                                id="phone"
-                                type="text"
-                                name="phone"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="0900-000-0000"
-                                required
-                            />
-
-                            {errors.phone && <InputError message={errors.phone[0]} />}
-                        </div>
-                    </div>
-
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                    {/* First Name */}
                     <div className="grid gap-3">
-                        <Label htmlFor="user_name" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                            Username
-                        </Label>
-                        <Input id="user_name" type="text" name="user_name" value={userName} onChange={(e) => setUsername(e.target.value)} required />{' '}
-                        {errors.user_name && <InputError message={errors.user_name[0]} />}
-                    </div>
-                    <div className="grid gap-3">
-                        <Label htmlFor="password" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                            Password
-                        </Label>
-                        <div className="relative">
-                            <Input
-                                id="password"
-                                name="password"
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(event) => setPassword(event.target.value)}
-                                required
-                                className="pr-10"
-                            />
-                            <button
-                                type="button"
-                                onClick={togglePassword}
-                                className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-600 hover:text-gray-900 focus:outline-none dark:text-gray-300 dark:hover:text-white"
-                            >
-                                {showPassword ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
-                            </button>
-                        </div>
-                        {errors.password && <InputError message={errors.password[0]} />}
-                    </div>
-
-                    <div className="grid gap-3">
-                        <Label htmlFor="password_confirmation" className="cursor-pointer text-sm text-gray-900 dark:text-gray-300">
-                            Confirm Password
+                        <Label htmlFor="first_name">
+                            First Name <span className="text-destructive">*</span>
                         </Label>
                         <Input
-                            id="password_confirmation"
-                            name="password_confirmation"
-                            type={showPassword ? 'text' : 'password'}
-                            value={passwordConfirmation}
-                            onChange={(e) => setPasswordConfirmation(e.target.value)}
-                            required
+                            id="first_name"
+                            {...register("first_name", { required: "First name is required." })}
+                            className={errors.first_name ? "border-destructive" : ""}
                         />
-                        {errors.password_confirmation && <InputError message={errors.password_confirmation[0]} />}
+                        {errors.first_name && (
+                            <InputError message={errors.first_name.message} />
+                        )}
                     </div>
 
-                    <Button type="submit" className="mt-2 w-full bg-gradient-to-r from-red-500 to-orange-500" tabIndex={5}>
-                        Create account
-                    </Button>
+                    {/* Middle Name (Optional) */}
+                    <div className="grid gap-3">
+                        <Label htmlFor="middle_name">
+                            Middle Name <span className="text-gray-500">(Optional)</span>
+                        </Label>
+                        <Input
+                            id="middle_name"
+                            {...register("middle_name")}
+                            className={errors.middle_name ? "border-destructive" : ""}
+                        />
+                        {errors.middle_name && (
+                            <InputError message={errors.middle_name.message} />
+                        )}
+                    </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Last Name */}
+                    <div className="grid gap-3">
+                        <Label htmlFor="last_name">
+                            Last Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                            id="last_name"
+                            {...register("last_name", { required: "Last name is required." })}
+                            className={errors.last_name ? "border-destructive" : ""}
+                        />
+                        {errors.last_name && (
+                            <InputError message={errors.last_name.message} />
+                        )}
+                    </div>
+
+                    {/* Phone (Required) */}
+                    <div className="grid gap-3">
+                        <Label htmlFor="phone">
+                            Phone <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                            id="phone"
+                            placeholder="0900-000-0000"
+                            {...register("phone", {
+                                required: "Phone number is required.",
+                                pattern: {
+                                    value: /^(\+?\d{10,13})$/,
+                                    message: "Invalid phone number format.",
+                                },
+                            })}
+                            className={errors.phone ? "border-destructive" : ""}
+                        />
+                        {errors.phone && <InputError message={errors.phone.message} />}
+                    </div>
+                </div>
+
+                {/* Username */}
+                <div className="grid gap-3">
+                    <Label htmlFor="user_name">
+                        Username <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                        id="user_name"
+                        {...register("user_name", { required: "Username is required." })}
+                        className={errors.user_name ? "border-destructive" : ""}
+                    />
+                    {errors.user_name && <InputError message={errors.user_name.message} />}
+                </div>
+
+                {/* Password */}
+                <div className="grid gap-3">
+                    <Label htmlFor="password">
+                        Password <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            {...register("password", {
+                                required: "Password is required.",
+                                minLength: {
+                                    value: 8,
+                                    message: "Password must be at least 8 characters.",
+                                },
+                            })}
+                            className={`pr-10 ${errors.password ? "border-destructive" : ""}`}
+                        />
+                        <button
+                            type="button"
+                            onClick={togglePassword}
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-600 dark:text-gray-300"
+                        >
+                            {showPassword ? (
+                                <Eye className="h-5 w-5" />
+                            ) : (
+                                <EyeOff className="h-5 w-5" />
+                            )}
+                        </button>
+                    </div>
+                    {errors.password && <InputError message={errors.password.message} />}
+                </div>
+
+                {/* Confirm Password */}
+                <div className="grid gap-3">
+                    <Label htmlFor="password_confirmation">
+                        Confirm Password <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                        id="password_confirmation"
+                        type={showPassword ? "text" : "password"}
+                        {...register("password_confirmation", {
+                            required: "Please confirm your password.",
+                            validate: (value) =>
+                                value === watch("password") || "Passwords do not match.",
+                        })}
+                        className={errors.password_confirmation ? "border-destructive" : ""}
+                    />
+                    {errors.password_confirmation && (
+                        <InputError message={errors.password_confirmation.message} />
+                    )}
+                </div>
+
+                <Button
+                    disabled={isSigningIn}
+                    type="submit"
+                    className="mt-2 w-full bg-gradient-to-r from-red-500 to-orange-500"
+                >
+                    {isSigningIn ? "Please wait..." : "Create Account"}
+                </Button>
             </form>
 
             <ClassicDialog
-                title={classicDialogTitle}
-                message={classicDialogMessage}
-                positiveButtonText='Close'
-                onPositiveClick={() => {
-                    setIsDialogShowing(false);
-                }}
-                hideNegativeButton={true}
-                open={isDialogShowing} />
+                title={classicDialog.title}
+                message={classicDialog.message}
+                positiveButtonText={classicDialog.positiveButtonText}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                open={classicDialog.isDialogShowing}
+                onPositiveClick={() =>
+                    setClassicDialog((prev) => ({ ...prev, isDialogShowing: false }))
+                }
+            />
         </div>
     );
 }

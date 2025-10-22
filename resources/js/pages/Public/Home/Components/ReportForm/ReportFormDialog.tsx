@@ -10,9 +10,29 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, X, CheckCircle2, MapPin, AlertTriangle } from "lucide-react";
+import {
+  Upload,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+  FileIcon,
+} from "lucide-react";
 import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
+import MapCoordinates from "./MapCoordinates";
+import { Progress } from "@/components/ui/progress";
+
+interface ReportFormValues {
+  issueType: string;
+  location: string;
+  description: string;
+  fullName?: string;
+  phone: string;
+  latitude?: string;
+  longitude?: string;
+  files: File[];
+}
 
 interface ReportFormDialogProps {
   open: boolean;
@@ -21,95 +41,109 @@ interface ReportFormDialogProps {
 
 export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [fileName, setFileName] = useState("");
-  const [formData, setFormData] = useState({
-    issueType: "",
-    location: "",
-    description: "",
-    fullName: "",
-    phone: "",
-    latitude: "",
-    longitude: "",
-  });
-
-  const [errors, setErrors] = useState<{
-    longitude?: any;
-    latitude?: any;
-    issueType?: string;
-    location?: string;
-    description?: string;
-    phone?: string;
-  }>({});
-
+  const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
   const [classicDialog, setClassicDialog] = useState({
     title: "",
     message: "",
     positiveButtonTitle: "",
     negativeButtonTitle: "",
     isShowing: false,
-    hideNegativeButton: false
+    hideNegativeButton: false,
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    clearErrors,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm<ReportFormValues>({
+    defaultValues: {
+      issueType: "",
+      location: "",
+      description: "",
+      fullName: "",
+      phone: "",
+      latitude: "",
+      longitude: "",
+      files: [],
+    },
+    mode: "onSubmit"
   });
 
-  const handleInputChange = (field: string, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
+  const files = watch("files");
+  const MAX_FILES = 5;
+  const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files[0]) setFileName(files[0].name);
+    if (!e.target.files) return;
+    const newFiles = Array.from(e.target.files);
+    const combined = [...files, ...newFiles].slice(0, MAX_FILES);
+
+    const totalSize = combined.reduce((acc, file) => acc + file.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE) {
+      setError("Total file size exceeds 50MB limit.");
+      return;
+    }
+    setError(null);
+    setValue("files", combined);
   };
 
-  const removeFile = () => setFileName("");
+  const removeFile = (index: number) => {
+    const updatedFiles = files.filter((_, i) => i !== index);
+    setValue("files", updatedFiles);
+  };
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
-    try {
-      e.preventDefault();
-      const newErrors: {
-        issueType?: string;
-        location?: string;
-        description?: string;
-        phone?: string;
-      } = {};
-
-      if (!formData.issueType) newErrors.issueType = "Please select an issue type.";
-      if (!formData.location) newErrors.location = "Location is required.";
-      if (!formData.description) newErrors.description = "Description is required.";
-      if (!formData.phone) newErrors.phone = "Phone number is required.";
-
-      setErrors(newErrors);
-      if (Object.keys(newErrors).length === 0) {
-        setIsSubmitted(true);
-        setTimeout(() => {
-          setIsSubmitted(false);
-          onOpenChange(false);
-        }, 3000);
-      }
-    } catch (error) {
-      setClassicDialog(prev => ({
-        ...prev,
-        title: "Oops! Something went wrong!",
-        message:
-          error instanceof Error
-            ? error.message
-            : String(error),
-        hideNegativeButton: true,
-        positiveButtonTitle: "Close",
-        isShowing: true,
-      }));
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      setIsGettingCoordinates(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setValue("latitude", String(position.coords.latitude));
+          setValue("longitude", String(position.coords.longitude));
+          setIsGettingCoordinates(false);
+        },
+        (error) => {
+          setClassicDialog((prev) => ({
+            ...prev,
+            title: "Permission Denied",
+            message: "Unable to get coordinates. Please allow Location permission.",
+            hideNegativeButton: true,
+            positiveButtonTitle: "Close",
+            isShowing: true,
+          }));
+          console.error(error);
+          setIsGettingCoordinates(false);
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+      setIsGettingCoordinates(false);
     }
+  };
+
+  const onSubmit = (data: ReportFormValues) => {
+    console.log("Report Submitted:", data);
+    setIsSubmitted(true);
+    setTimeout(() => {
+      setIsSubmitted(false);
+      reset();
+      setError(null);
+      onOpenChange(false);
+    }, 3000);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
-        <DialogHeader className="mb-2 flex flex-col items-start">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-7 w-7 text-orange-500" />
-            <DialogTitle className="text-2xl font-bold text-foreground">
-              Report Local Issue
-            </DialogTitle>
-          </div>
+      <DialogContent showCloseButton={false} className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            Report Local Issue
+          </DialogTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             Help your community by reporting damaged roads, broken streetlights, or other local concerns.
           </p>
@@ -123,235 +157,194 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
             </AlertDescription>
           </Alert>
         ) : (
-          <form onSubmit={handleSubmit} className="mt-4 space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-8">
             {/* Issue Type */}
             <div className="space-y-3">
-              <Label className="text-base font-semibold text-foreground">
+              <Label className="font-semibold">
                 Type of Issue <span className="text-destructive">*</span>
               </Label>
-              <RadioGroup
-                value={formData.issueType}
-                onValueChange={(value) => handleInputChange("issueType", value)}
-                className="flex flex-wrap gap-4 pt-2"
-              >
-                {["Road Damage", "Streetlight", "Garbage", "Water Leak", "Others"].map(
-                  (issue) => (
-                    <div key={issue} className="flex items-center space-x-2">
-                      <RadioGroupItem value={issue.toLowerCase()} id={issue} />
-                      <Label htmlFor={issue} className="cursor-pointer font-normal">
-                        {issue}
-                      </Label>
-                    </div>
-                  )
+              <Controller
+                control={control}
+                name="issueType"
+                rules={{ required: "Please select an issue type." }}
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      clearErrors("issueType");
+                    }}
+                    className="flex flex-wrap gap-4 pt-2"
+                  >
+                    {["Road Damage", "Streetlight", "Garbage", "Water Leak", "Others"].map(
+                      (issue) => (
+                        <div key={issue} className="flex items-center space-x-2">
+                          <RadioGroupItem value={issue.toLowerCase()} id={issue} />
+                          <Label htmlFor={issue} className="cursor-pointer font-normal">
+                            {issue}
+                          </Label>
+                        </div>
+                      )
+                    )}
+                  </RadioGroup>
                 )}
-              </RadioGroup>
+              />
               {errors.issueType && (
-                <p className="text-sm text-destructive">{errors.issueType}</p>
+                <p className="text-sm text-destructive">{errors.issueType.message}</p>
               )}
             </div>
 
             {/* Location */}
-            <div className="space-y-2">
-              <div className="space-y-2">
-                <Label htmlFor="location" className="font-semibold text-foreground">
-                  Location <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
-                  placeholder="e.g., Barangay Poblacion, near the municipal hall"
-                  className={errors.location ? "border-destructive" : ""}
-                />
-                {errors.location && (
-                  <p className="text-sm text-destructive">{errors.location}</p>
-                )}
+            <div className="space-y-3">
+              <Label htmlFor="location" className="font-semibold">
+                Location <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="location"
+                placeholder="e.g., Barangay Poblacion, near the municipal hall"
+                {...register("location", { required: "Location is required." })}
+                className={errors.location ? "border-destructive" : ""}
+              />
+              {errors.location && (
+                <p className="text-sm text-destructive">{errors.location.message}</p>
+              )}
 
-                {/* GPS Coordinates Section */}
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="latitude" className="text-sm font-medium text-foreground">
-                      GPS Latitude
-                    </Label>
-                    <Input
-                      id="latitude"
-                      type="number"
-                      step="any"
-                      value={formData.latitude}
-                      onChange={(e) => handleInputChange("latitude", e.target.value)}
-                      placeholder="e.g., 13.3265"
-                      className={errors.latitude ? "border-destructive" : ""}
-                      readOnly
-                    />
-                    {errors.latitude && (
-                      <p className="text-sm text-destructive">{errors.latitude}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="longitude" className="text-sm font-medium text-foreground">
-                      GPS Longitude
-                    </Label>
-                    <Input
-                      id="longitude"
-                      type="number"
-                      step="any"
-                      value={formData.longitude}
-                      onChange={(e) => handleInputChange("longitude", e.target.value)}
-                      placeholder="e.g., 121.8677"
-                      className={errors.longitude ? "border-destructive" : ""}
-                      readOnly
-                    />
-                    {errors.longitude && (
-                      <p className="text-sm text-destructive">{errors.longitude}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Button to Get GPS */}
-                <div className="pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={() => {
-                      if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                          (position) => {
-                            handleInputChange("latitude", position.coords.latitude);
-                            handleInputChange("longitude", position.coords.longitude);
-                            console.log("Latitude:" + position.coords.latitude);
-                            console.log("Longitudde:" + position.coords.longitude);
-                          },
-                          (error) => {
-                            setClassicDialog(prev => ({
-                              ...prev,
-                              title: "Permission Denied",
-                              message: "Unable to get coordinates. Please allow Location permission.",
-                              hideNegativeButton: true,
-                              positiveButtonTitle: "Close",
-                              isShowing: true
-                            }));
-                            console.error(error);
-                          }
-                        );
-                      } else {
-                        alert("Geolocation is not supported by this browser.");
-                      }
-                    }}
-                  >
-                    Get GPS Coordinates
-                  </Button>
-                </div>
+              <div className="grid sm:grid-cols-2 gap-3 pt-3">
+                <Input type="text" placeholder="Latitude" {...register("latitude")} readOnly />
+                <Input type="text" placeholder="Longitude" {...register("longitude")} readOnly />
               </div>
 
+              {watch("latitude") && watch("longitude") && (
+                <div className="relative mt-3 h-64 w-full z-10 overflow-hidden rounded-xl border">
+                  <MapCoordinates
+                    latitude={Number(watch("latitude"))}
+                    longitude={Number(watch("longitude"))}
+                  />
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2"
+                onClick={handleGetLocation}
+                disabled={isGettingCoordinates}
+              >
+                {isGettingCoordinates ? "Getting coordinates..." : "Get GPS Coordinates"}
+              </Button>
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="font-semibold text-foreground">
+              <Label htmlFor="description" className="font-semibold">
                 Description <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                placeholder="Describe the issue in detail..."
                 rows={5}
+                placeholder="Describe the issue in detail..."
+                {...register("description", { required: "Description is required." })}
                 className={errors.description ? "border-destructive" : ""}
               />
               {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
+                <p className="text-sm text-destructive">{errors.description.message}</p>
               )}
             </div>
 
-            {/* File Upload */}
+            {/* File Upload (Feedback-style) */}
             <div className="space-y-3">
-              <Label className="font-semibold text-foreground">
-                Upload Photo
-              </Label>
+              <Label className="font-semibold text-foreground">Upload Photos or Videos (Optional)</Label>
               <p className="text-sm text-muted-foreground">
-                You may attach a photo showing the issue to help us identify it quickly.
+                You may upload up to <span className="font-semibold">5 files</span> — total size must not exceed{" "}
+                <span className="font-semibold">50MB</span>.
               </p>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => document.getElementById("evidence")?.click()}
                   className="sm:w-auto"
+                  disabled={files.length >= MAX_FILES}
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  Choose File
+                  {files.length >= MAX_FILES ? "Max Files Reached" : "Choose Files"}
                 </Button>
-                {fileName && (
-                  <div className="flex flex-1 items-center gap-2 rounded-md bg-muted px-3 py-2">
-                    <span className="truncate text-sm text-foreground">{fileName}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={removeFile}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+
+                <input
+                  id="evidence"
+                  type="file"
+                  multiple
+                  accept="image/*,video/*,.pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </div>
-              <input
-                id="evidence"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+
+              {error && (
+                <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-2 rounded-md">
+                  <AlertTriangle className="h-4 w-4" />
+                  {error}
+                </div>
+              )}
+
+              {files.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm text-foreground"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <FileIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{file.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({(file.size / (1024 * 1024)).toFixed(1)} MB)
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Personal Info */}
             <div className="space-y-5 border-t pt-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                Your Information
-              </h3>
+              <h3 className="text-lg font-semibold">Your Information</h3>
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="fullName" className="font-semibold text-foreground">
                     Full Name (Optional)
                   </Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange("fullName", e.target.value)}
-                    placeholder="Enter your full name"
-                  />
+                  <Input id="fullName" placeholder="Full name (optional)" {...register("fullName")} />
                 </div>
 
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="phone" className="font-semibold text-foreground">
-                    Phone Number <span className="text-destructive">*</span>
+                <div>
+                  <Label htmlFor="tel" className="font-semibold text-foreground">
+                    Contact Number (Optional)
                   </Label>
                   <Input
-                    id="phone"
+                    id="tel"
                     type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
                     placeholder="+63 912 345 6789"
-                    className={errors.phone ? "border-destructive" : ""}
+                    {...register("phone")}
                   />
-                  {errors.phone && (
-                    <p className="text-sm text-destructive">{errors.phone}</p>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1"
-              >
+            {/* Buttons */}
+            <div className="flex flex-row gap-4 pt-4">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button
@@ -361,28 +354,19 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
                 Submit Report
               </Button>
             </div>
-
-            <ClassicDialog
-              title={classicDialog.title}
-              message={classicDialog.message}
-              positiveButtonText={classicDialog.positiveButtonTitle}
-              negativeButtonText={classicDialog.negativeButtonTitle}
-              hideNegativeButton={classicDialog.hideNegativeButton}
-              onPositiveClick={() => {
-                setClassicDialog(prev => ({
-                  ...prev,
-                  isShowing: false
-                }));
-              }}
-              onNegativeClick={() => {
-                setClassicDialog(prev => ({
-                  ...prev,
-                  isShowing: false
-                }));
-              }}
-              open={classicDialog.isShowing} />
           </form>
         )}
+
+        <ClassicDialog
+          title={classicDialog.title}
+          message={classicDialog.message}
+          positiveButtonText={classicDialog.positiveButtonTitle}
+          negativeButtonText={classicDialog.negativeButtonTitle}
+          hideNegativeButton={classicDialog.hideNegativeButton}
+          onPositiveClick={() => setClassicDialog((prev) => ({ ...prev, isShowing: false }))}
+          onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isShowing: false }))}
+          open={classicDialog.isShowing}
+        />
       </DialogContent>
     </Dialog>
   );

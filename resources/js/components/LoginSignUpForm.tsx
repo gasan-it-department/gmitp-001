@@ -1,6 +1,9 @@
 import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import { useState } from 'react';
 import { Button } from './ui/button';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { toast } from 'sonner';
+import { router } from '@inertiajs/react';
 
 export function LogInSignUpForm() {
     const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
@@ -15,7 +18,18 @@ export function LogInSignUpForm() {
             >
                 Login
             </Button>
-            <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)} />
+            <ToastProvider />
+            <LogInSignUpDialog
+                onSignedIn={() => {
+                    toast("Account successfully created");
+                    window.location.reload();
+                }}
+                onLoggedIn={(redirectionLink) => {
+                    toast("Successfully Logged In");
+                    window.location.href = redirectionLink;
+                }}
+                isOpen={isLogInSignUpDialogVisible}
+                onClose={() => setLogInSignUpDialogVisible(false)} />
         </div>
     );
 }
