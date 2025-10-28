@@ -1,24 +1,46 @@
 <?php
 
 namespace App\Core\Feedback\Repositories;
+
 use App\Core\Feedback\Models\Feedback;
+use App\Core\Feedback\Models\FeedbackFiles;
 use App\Core\Feedback\Dto\CreateFeedbackDto;
+use App\Core\Feedback\Dto\CreateFeedbackFilesDto;
+
 class FeedbackRepositories
 {
-    public function save(CreateFeedbackDto $dto): void
+    public function save(CreateFeedbackDto $dto, $feedbackId, $isAnonymous): Feedback
     {
-        $feedback = Feedback::create([
-            'id' => $dto->id,
+        return Feedback::create([
+            'id' => $feedbackId,
             'user_id' => $dto->userId,
             'sender_name' => $dto->senderName,
             'employee_name' => $dto->employeeName,
-            'subject_type' => $dto->subjectType,
+            'feedback_target' => $dto->feedbackTarget,
             'department_id' => $dto->departmentId,
             'rating' => $dto->rating,
             'message' => $dto->message,
-            'is_anonymous' => $dto->isAnonymous,
+            'is_anonymous' => $isAnonymous,
             'ip_address' => $dto->ipAddress,
             'user_agent' => $dto->userAgent,
         ]);
     }
+
+    public function saveFile(CreateFeedbackFilesDto $dto): FeedbackFiles
+    {
+        $feedbackFiles = FeedbackFiles::create(
+            [
+                'id' => $dto->id,
+                'feedback_id' => $dto->feedbackId,
+                'file_path' => $dto->cloudinaryId,
+                'mime_type' => $dto->mimeType,
+                'file_size' => $dto->fileSize,
+                'file_url' => $dto->secureUrl,
+                'original_name' => $dto->originalName,
+                'file_type' => $dto->fileType,
+            ]
+        );
+        return $feedbackFiles;
+    }
+
 }

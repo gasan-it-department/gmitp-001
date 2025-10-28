@@ -1,32 +1,16 @@
-import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import {
-    AlertTriangle,
-    CheckCircle2,
-    FileIcon,
-    Upload,
-    X,
-} from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import axios from 'axios';
+import { AlertTriangle, CheckCircle2, FileIcon, Upload, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import StarRating from './StarRatingBar';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 
 interface FeedbackDialogProps {
     open: boolean;
@@ -34,10 +18,11 @@ interface FeedbackDialogProps {
 }
 
 interface FeedbackFormValues {
-    feedbackTarget: 'employee' | 'office';
-    targetName: string;
-    feedbackMessage: string;
-    fullName?: string;
+    feedback_target: 'employee' | 'department';
+    department_id?: string;
+    employee_name: string;
+    feedback_message: string;
+    sender_name?: string;
     rating?: number;
 }
 
@@ -58,20 +43,22 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
         formState: { errors },
     } = useForm<FeedbackFormValues>({
         defaultValues: {
-            feedbackTarget: 'employee',
-            targetName: '',
-            feedbackMessage: '',
-            fullName: '',
+            feedback_target: 'employee',
+            department_id: '',
+            employee_name: '',
+            feedback_message: '',
+            sender_name: '',
             rating: 5,
         },
-        mode: "onSubmit"
+        mode: 'onSubmit',
     });
 
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const feedbackTarget = watch('feedbackTarget');
-    const targetName = watch('targetName');
+    const feedback_target = watch('feedback_target');
+    const department_id = watch('department_id');
 
     const dummy_departments: DepartmentsData[] = [
         { id: 1, name: 'Office of the Mayor' },
@@ -84,11 +71,14 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
     const MAX_FILES = 5;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
 
-    // 🔹 Reset and clear errors when switching feedback target
+    // Reset fields and clear errors when switching feedback target
     useEffect(() => {
-        setValue('targetName', '');
-        clearErrors('targetName');
-    }, [feedbackTarget, setValue, clearErrors]);
+        setValue('employee_name', '');
+        setValue('department_id', '');
+        setValue('rating', feedback_target === 'department' ? 5 : undefined);
+        clearErrors('employee_name');
+        clearErrors('department_id');
+    }, [feedback_target, setValue, clearErrors]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
@@ -108,26 +98,68 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
         setFiles(files.filter((_, i) => i !== index));
     };
 
-    const onSubmit = (data: FeedbackFormValues) => {
-        console.log('Feedback submission:', { ...data, files });
+    const onSubmit = async (data: FeedbackFormValues) => {
+        setIsSubmitting(true);
+        setError(null);
 
-        setIsSubmitted(true);
-        setTimeout(() => {
-            setIsSubmitted(false);
-            reset();
-            setFiles([]);
-            setError(null);
-            onOpenChange(false);
-        }, 3000);
+        try {
+            // Prepare payload based on feedback_target
+            const payload: any = {
+                feedback_target: data.feedback_target,
+                feedback_message: data.feedback_message,
+                sender_name: data.sender_name || null,
+                feedback_files: files, // Axios will handle file conversion
+            };
+
+            // Include department_id and rating only if feedback is about department
+            if (data.feedback_target === 'department') {
+                payload.department_id = data.department_id;
+                payload.rating = data.rating || null;
+            } else {
+                // Include employee_name only if feedback is about employee
+                payload.employee_name = data.employee_name;
+            }
+
+            console.log('Payload:', payload);
+
+            // Make API call to Laravel backend using axios
+            const response = await axios.post('/feedback', payload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            console.log('Feedback submitted successfully:', response.data);
+
+            // Show success message
+            setIsSubmitted(true);
+
+            // Reset form after delay
+            setTimeout(() => {
+                setIsSubmitted(false);
+                reset();
+                setFiles([]);
+                setError(null);
+                onOpenChange(false);
+            }, 3000);
+        } catch (err) {
+            console.error('Error submitting feedback:', err);
+            if (axios.isAxiosError(err)) {
+                const errorMessage = err.response?.data?.message || 'Failed to submit feedback. Please try again.';
+                setError(errorMessage);
+            } else {
+                setError('An unexpected error occurred. Please try again.');
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent showCloseButton={false} className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
+            <DialogContent showCloseButton={false} className="max-h-[90vh] w-full overflow-y-auto p-6 sm:max-w-3xl sm:p-8">
                 <DialogHeader className="mb-2">
-                    <DialogTitle className="text-2xl font-bold text-foreground">
-                        Citizen Feedback Form
-                    </DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-foreground">Citizen Feedback Form</DialogTitle>
                 </DialogHeader>
 
                 {isSubmitted ? (
@@ -146,13 +178,9 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                             </Label>
                             <Controller
                                 control={control}
-                                name="feedbackTarget"
+                                name="feedback_target"
                                 render={({ field }) => (
-                                    <RadioGroup
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        className="flex gap-6 pt-3 pb-3"
-                                    >
+                                    <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-6 pt-3 pb-3">
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="employee" id="employee" />
                                             <Label htmlFor="employee" className="cursor-pointer font-normal">
@@ -160,8 +188,8 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="office" id="office" />
-                                            <Label htmlFor="office" className="cursor-pointer font-normal">
+                                            <RadioGroupItem value="department" id="department" />
+                                            <Label htmlFor="department" className="cursor-pointer font-normal">
                                                 Office/Department
                                             </Label>
                                         </div>
@@ -172,45 +200,38 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
 
                         {/* Full Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="fullName" className="font-semibold text-foreground">
+                            <Label htmlFor="sender_name" className="font-semibold text-foreground">
                                 Full Name (Optional)
                             </Label>
-                            <Input
-                                id="fullName"
-                                placeholder="Enter your full name"
-                                {...register('fullName')}
-                            />
+                            <Input id="sender_name" placeholder="Enter your full name" {...register('sender_name')} />
                         </div>
 
-                        {/* Target Name */}
-                        {feedbackTarget === 'office' ? (
+                        {/* Target Name - Department or Employee */}
+                        {feedback_target === 'department' ? (
                             <div className="space-y-2">
                                 <Label className="font-semibold text-foreground">
                                     Select Department <span className="text-destructive">*</span>
                                 </Label>
                                 <Controller
                                     control={control}
-                                    name="targetName"
+                                    name="department_id"
                                     rules={{ required: 'Department is required' }}
                                     render={({ field }) => (
                                         <Select
                                             value={field.value}
                                             onValueChange={(value) => {
                                                 field.onChange(value);
-                                                setValue("targetName", value);
-                                                clearErrors('targetName');
-                                                console.log("Selected department:", value);
+                                                setValue('department_id', value);
+                                                clearErrors('department_id');
                                             }}
-                                            disabled={feedbackTarget !== 'office'}
+                                            disabled={feedback_target !== 'department'}
                                         >
-                                            <SelectTrigger
-                                                className={`w-full text-sm ${errors.targetName ? 'border-destructive' : ''}`}
-                                            >
+                                            <SelectTrigger className={`w-full text-sm ${errors.department_id ? 'border-destructive' : ''}`}>
                                                 <SelectValue placeholder="-- Select Department --" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {dummy_departments.map((dept) => (
-                                                    <SelectItem key={dept.id} value={dept.name}>
+                                                    <SelectItem key={dept.id} value={dept.id.toString()}>
                                                         {dept.name}
                                                     </SelectItem>
                                                 ))}
@@ -218,76 +239,57 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                                         </Select>
                                     )}
                                 />
-                                {errors.targetName && (
-                                    <p className="text-sm text-destructive">
-                                        {errors.targetName.message}
-                                    </p>
-                                )}
+                                {errors.department_id && <p className="text-sm text-destructive">{errors.department_id.message}</p>}
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <Label htmlFor="targetName" className="font-semibold text-foreground">
+                                <Label htmlFor="employee_name" className="font-semibold text-foreground">
                                     Employee Name <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
-                                    id="targetName"
+                                    id="employee_name"
                                     placeholder="Enter employee name"
-                                    {...register('targetName', {
-                                        required:
-                                            feedbackTarget === 'employee'
-                                                ? 'Employee name is required'
-                                                : false,
+                                    {...register('employee_name', {
+                                        required: feedback_target === 'employee' ? 'Employee name is required' : false,
                                     })}
-                                    className={errors.targetName ? 'border-destructive' : ''}
+                                    className={errors.employee_name ? 'border-destructive' : ''}
                                 />
-                                {errors.targetName && (
-                                    <p className="text-sm text-destructive">
-                                        {errors.targetName.message}
-                                    </p>
-                                )}
+                                {errors.employee_name && <p className="text-sm text-destructive">{errors.employee_name.message}</p>}
                             </div>
                         )}
 
-                        {/* Rating */}
-                        {feedbackTarget === 'office' && targetName && (
+                        {/* Rating - Only show for department feedback */}
+                        {feedback_target === 'department' && department_id && (
                             <Controller
                                 control={control}
                                 name="rating"
-                                render={({ field }) => (
-                                    <StarRating value={field.value} onChange={field.onChange} />
-                                )}
+                                render={({ field }) => <StarRating value={field.value} onChange={field.onChange} />}
                             />
                         )}
 
                         {/* Feedback Message */}
                         <div className="space-y-2">
-                            <Label htmlFor="feedbackMessage" className="font-semibold text-foreground">
+                            <Label htmlFor="feedback_message" className="font-semibold text-foreground">
                                 Feedback Message <span className="text-destructive">*</span>
                             </Label>
                             <Textarea
-                                id="feedbackMessage"
+                                id="feedback_message"
                                 rows={5}
                                 placeholder="Share your compliments, suggestions, or complaints..."
-                                {...register('feedbackMessage', {
+                                {...register('feedback_message', {
                                     required: 'Feedback message is required',
                                 })}
-                                className={errors.feedbackMessage ? 'border-destructive' : ''}
+                                className={errors.feedback_message ? 'border-destructive' : ''}
                             />
-                            {errors.feedbackMessage && (
-                                <p className="text-sm text-destructive">
-                                    {errors.feedbackMessage.message}
-                                </p>
-                            )}
+                            {errors.feedback_message && <p className="text-sm text-destructive">{errors.feedback_message.message}</p>}
                         </div>
 
                         {/* File Upload */}
                         <div className="space-y-3">
-                            <Label className="font-semibold text-foreground">
-                                Upload Evidence (Optional)
-                            </Label>
+                            <Label className="font-semibold text-foreground">Upload Evidence (Optional)</Label>
                             <p className="text-sm text-muted-foreground">
-                                You may upload up to <span className="font-semibold">5 files</span> — total size
-                                must not exceed <span className="font-semibold">50MB</span>.
+                                You may upload up to <span className="font-semibold">5 files</span> — total size must not exceed{' '}
+                                <span className="font-semibold">50MB</span>.
                             </p>
 
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -313,7 +315,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                             </div>
 
                             {error && (
-                                <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-2 rounded-md">
+                                <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">
                                     <AlertTriangle className="h-4 w-4" />
                                     {error}
                                 </div>
@@ -329,9 +331,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                                             <div className="flex items-center gap-2 truncate">
                                                 <FileIcon className="h-4 w-4 text-muted-foreground" />
                                                 <span className="truncate">{file.name}</span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    ({(file.size / (1024 * 1024)).toFixed(1)} MB)
-                                                </span>
+                                                <span className="text-xs text-muted-foreground">({(file.size / (1024 * 1024)).toFixed(1)} MB)</span>
                                             </div>
                                             <Button
                                                 type="button"
@@ -349,20 +349,16 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                         </div>
 
                         {/* Submit Buttons */}
-                        <div className="flex gap-4 pt-4 flex-row">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => onOpenChange(false)}
-                                className="flex-1"
-                            >
+                        <div className="flex flex-row gap-4 pt-4">
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={isSubmitting}>
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
                                 className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
+                                disabled={isSubmitting}
                             >
-                                Submit Feedback
+                                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                             </Button>
                         </div>
                     </form>

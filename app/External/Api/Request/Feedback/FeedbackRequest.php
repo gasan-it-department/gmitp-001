@@ -22,21 +22,27 @@ class FeedbackRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'senderName' => 'nullable|string|max:255',
-            'employeeName' => 'nullable|string|max:255',
-            'subjectType' => 'required|string|in:department,employee',
-            'departmentId' => 'nullable',
+            'sender_name' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^[A-Za-z\s]+$/'
+            ],
+            'employee_name' => [
+                'nullable',
+                'string',
+                'max:255',
+                'regex:/^[A-Za-z\s]+$/'
+            ],
+            'feedback_target' => 'required|string|in:department,employee',
+            'department_id' => 'nullable',
             'rating' => 'nullable|integer|max:5',
-            'message' => 'required|string|max:255',
-            'isAnonymous' => 'boolean',
+            'feedback_message' => 'required|string|max:255',
+            'feedback_files' => 'nullable|array|max:5',
+            'feedback_files.*' => 'file|mimetypes:image/jpeg,image/png,video/mp4,video/avi,video/mpeg|max:51200',
         ];
+
     }
 
-    public function prepareForValidation(): void
-    {
-        $this->merge([
-            'is_anonymous' => filter_var($this->is_anonymous, FILTER_VALIDATE_BOOLEAN),
-        ]);
-    }
 }
 // 'departmentId' => 'nullable|exists:departments,id|required_if:subject_type,department',

@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Feedback extends Model
 {
+
+    protected $table = 'citizen_feedback';
     protected $fillable = [
         'id',
         'user_id',
         'sender_name',
         'employee_name',
-        'subject_type',
+        'feedback_target',
         'department_id',
         'rating',
         'message',
@@ -19,5 +21,12 @@ class Feedback extends Model
         'ip_address',
         'user_agent',
     ];
+    public $incrementing = false; // because you use ULIDs
+    protected $keyType = 'string';
+
+    public function attachments()
+    {
+        return $this->hasMany(FeedbackFiles::class);
+    }
 }
 

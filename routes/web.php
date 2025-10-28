@@ -16,4 +16,6 @@ require __DIR__ . '/admin.php';
 require __DIR__ . '/actionCenter/action_center.php';
 require __DIR__ . '/superAdmin.php';
 require __DIR__ . '/Feedback.php';
+require __DIR__ . '/BulletinBoard.php';
+
 
