@@ -31,9 +31,7 @@ export default function ReportIssueCard() {
                         <h2 className="text-2xl font-bold text-red-800 dark:text-orange-100">
                             Report Community Issue
                         </h2>
-                        <p className="text-sm text-orange-800/80 dark:text-orange-200/80 italic">
-                            We value your thoughts! Share your feedback to help us improve our services.
-                        </p>
+                        <p className="text-sm text-orange-800/80 dark:text-orange-200/80 italic"> Help keep our community safe and clean — report damaged roads, broken street lights, garbage, and other local issues. </p>
                     </div>
                 </div>
 

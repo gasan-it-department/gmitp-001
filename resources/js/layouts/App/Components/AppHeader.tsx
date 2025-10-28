@@ -10,9 +10,9 @@ export function AppHeader() {
                 <CircleUser className="h-5 w-5" />
             </SidebarTrigger>
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <div className="flex flex-1 justify-end">
+            {/* <div className="flex flex-1 justify-end">
                 <UserDropdownMenu />
-            </div>
+            </div> */}
         </header>
     );
 }

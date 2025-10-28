@@ -31,7 +31,7 @@ class CreateAssistanceRequest
             $isAdmin = $this->roleCheckerService->isAdmin($user);
 
             $status = $isAdmin
-                ? RequestStatus::IN_REVIEW->value
+                ? RequestStatus::APPROVED->value
                 : RequestStatus::PENDING->value;
 
             $userId = $user->id;
@@ -60,6 +60,7 @@ class CreateAssistanceRequest
                 $data['municipality'],
                 $data['barangay'],
             );
+            
             $this->assistanceRepository->save($request, $beneficiary);
             DB::commit();//if successful
 

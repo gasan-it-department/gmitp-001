@@ -9,6 +9,6 @@ class AdminDasboardController extends Controller
 {
     public function showAdminDashboard()
     {
-        return Inertia::render('Admin/Dashboard/AdminDashboard');
+        return Inertia::render('ActionCenter/Admin/Dashboard/AdminDashboard');
     }
 }

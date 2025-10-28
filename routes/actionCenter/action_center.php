@@ -4,7 +4,6 @@ use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\ActionCenterStatusController;
 use App\External\Api\Controllers\ActionCenter\AssistanceTypeController;
 
-
 Route::prefix('action-center')->group(function () {
     //shared 
     Route::resource('request', ActionCenterController::class)

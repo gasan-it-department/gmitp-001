@@ -1,6 +1,6 @@
 import SuperAdminLayout from '@/layouts/App/AppLayout';
-import { AdminSchedule } from './Components/Schedule';
-import { SummaryCards } from './Components/SummaryCard';
+import { AdminSchedule } from '../../../Admin/Dashboard/Components/Schedule';
+import { SummaryCards } from '../../../Admin/Dashboard/Components/SummaryCard';
 
 export default function SuperAdminDashboard() {
     return (
@@ -10,8 +10,7 @@ export default function SuperAdminDashboard() {
                     <main className="flex-1 space-y-6 p-6">
                         {/* Welcome Section */}
                         <div className="mb-8">
-                            <h1 className="mb-2 text-3xl font-bold text-foreground">Welcome back, Admin</h1>
-                            <p className="text-muted-foreground">Here's what's happening with your team today.</p>
+                            <h1 className="mb-2 text-3xl font-bold text-foreground">Welcome back,</h1>
                         </div>
 
                         {/* Summary Cards */}

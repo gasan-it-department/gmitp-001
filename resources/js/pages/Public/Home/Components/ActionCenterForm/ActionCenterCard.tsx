@@ -31,9 +31,7 @@ export default function ActionCenterUi() {
                         <h2 className="text-2xl font-bold text-orange-800 dark:text-orange-100">
                             Action Center
                         </h2>
-                        <p className="text-sm text-orange-800/80 dark:text-orange-200/80 italic">
-                            Access key tools and actions to manage your account, track progress, and stay organized.
-                        </p>
+                        <p className="text-sm text-orange-800/80 dark:text-orange-200/80 italic"> Get the support you need — access assistance programs for food, financial aid, burial services, and more. </p>
                     </div>
                 </div>
 

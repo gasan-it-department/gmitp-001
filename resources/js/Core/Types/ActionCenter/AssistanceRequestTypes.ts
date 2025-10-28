@@ -11,6 +11,9 @@ export interface AssistanceRequest {
 }
 
 export interface Beneficiary {
+    assistance_type: string;
+    source: string;
+    description: string;
     id: string;
     first_name: string;
     last_name: string;

@@ -74,6 +74,8 @@ export default function Utility() {
         return `${Math.abs(diffDays)} days ago`;
     }
 
+    
+
 
     return { generateUniqueId, formatToReadableDate, formatAndAddDays, calculateTotalDays, formatTimeAgo, calculateArrivingDays };
 }

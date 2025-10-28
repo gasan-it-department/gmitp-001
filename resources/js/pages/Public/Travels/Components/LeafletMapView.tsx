@@ -5,7 +5,6 @@ import L from "leaflet";
 import "leaflet-gesture-handling";
 import "leaflet-gesture-handling/dist/leaflet-gesture-handling.css";
 
-// Enable gesture handling in Leaflet globally
 L.Map.addInitHook("addHandler", "gestureHandling", (L as any).GestureHandling);
 
 export default function TouristMap({ destinationList }: any) {
@@ -89,7 +88,7 @@ export default function TouristMap({ destinationList }: any) {
             {/* Map */}
             <div className="relative w-full h-[400px] sm:h-[550px] md:h-[650px] z-10">
                 <MapContainer
-                    ref={mapRef as any} // safely assign the ref to access Leaflet Map later
+                    ref={mapRef as any}
                     center={[13.254117982609364, 121.86766968796603]}
                     zoom={13}
                     scrollWheelZoom={false}

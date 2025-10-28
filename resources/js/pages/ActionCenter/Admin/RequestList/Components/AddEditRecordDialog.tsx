@@ -11,34 +11,33 @@ import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { DatePicker } from './DatePicker';
-
 import { useQueryClient } from '@tanstack/react-query';
+import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 
 interface Props {
     isOpen: boolean;
-    editData?: ClientData | null;
+    editData?: AssistanceRequest | null;
     onClose: () => void;
-    onSubmit?: (data: ClientData) => void;
+    onSubmit?: (data: AssistanceRequest) => void;
 }
 
-interface ClientData {
-    last_name: string;
-    first_name: string;
-    middle_name?: string;
-    suffix?: string;
-    birth_date: string;
-    contact_number: string;
-    province: string;
-    municipality: string;
-    barangay: string;
-    assistance_type: string;
-    description: string;
-}
-
-const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
+const assistanceOptions = [
+    'Medical Assistance',
+    'Food Assistance',
+    'Transportation Assistance',
+    'Financial Assistance',
+    'Burial Assistance',
+];
 
 export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmit }: Props) {
     const queryClient = useQueryClient();
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    const [assistanceType, setAssistanceType] = useState("");
+    const [geoData, setGeoData] = useState({
+        editProvince: "",
+        editMunicipality: "",
+        editBarangay: ""
+    });
     const {
         register,
         handleSubmit,
@@ -47,7 +46,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
         watch,
         setError,
         formState: { errors, isSubmitting },
-    } = useForm<ClientData>({
+    } = useForm<Beneficiary>({
         defaultValues: {
             first_name: '',
             last_name: '',
@@ -59,11 +58,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             municipality: '',
             barangay: '',
             assistance_type: '',
+            source: 'direct',
             description: '',
         },
     });
-
-    const handleFormSubmit = async (data: ClientData) => {
+    const handleFormSubmit = async (data: Beneficiary) => {
         try {
             const response = await axios.post('/action-center/request', data);
 
@@ -71,10 +70,12 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                 setError('root', response.data);
                 throw new Error(response.data);
             }
+
             await queryClient.invalidateQueries({
                 queryKey: ['request-list'],
                 refetchType: 'active',
             });
+
             reset();
             onClose();
         } catch (error) {
@@ -88,14 +89,36 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
     };
 
     useEffect(() => {
-        if (editData) {
-            Object.keys(editData).forEach((key) => {
-                setValue(key as keyof ClientData, editData[key as keyof ClientData]);
-            });
+        if (editData != null) {
+            console.log("Edit Mode");
+            console.log("SD", editData);
+            const date = moment(editData.beneficiary.birth_date, 'YYYY-MM-DD').toDate();
+            setValue("first_name", editData.beneficiary.first_name);
+            setValue("last_name", editData.beneficiary.last_name);
+            setValue("middle_name", editData.beneficiary.middle_name);
+            setValue("suffix", editData.beneficiary.suffix);
+            setValue("contact_number", editData.beneficiary.contact_number);
+            setSelectedDate(date);
+            setValue("description", editData.description);
+            setAssistanceType(editData.assistance_type);
+            setGeoData((prev) => ({
+                ...prev,
+                editProvince: editData.beneficiary.province,
+                editMunicipality: editData.beneficiary.municipality,
+                editBarangay: editData.beneficiary.barangay
+            }));
         } else {
+            setAssistanceType(watch('assistance_type'));
+            setSelectedDate(undefined);
             reset();
+            setGeoData({
+                editProvince: "",
+                editMunicipality: "",
+                editBarangay: ""
+            });
         }
-    }, [editData, setValue, reset]);
+    }, [isOpen]);
+
     const handleAddressChange = (address: any) => {
         if (!address) {
             setValue('province', '');
@@ -108,245 +131,228 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
         setValue('municipality', address.municipalityCode);
         setValue('barangay', address.barangayCode);
     };
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => onClose()} modal={true}>
+        <Dialog open={isOpen} onOpenChange={onClose} modal>
             <DialogContent
-                showCloseButton={true}
+                showCloseButton
                 onInteractOutside={(e) => e.preventDefault()}
-                className="scrollbar-hide m-0 flex h-screen w-full max-w-none flex-col rounded-none p-4 sm:m-auto sm:h-auto sm:max-w-[700px] sm:rounded-lg lg:h-5/6"
+                className="scrollbar-hide m-0 flex h-screen w-full max-w-none flex-col rounded-none bg-gradient-to-b from-white via-orange-50 to-rose-50 p-4 shadow-xl sm:m-auto sm:h-auto sm:max-w-[720px] sm:rounded-2xl lg:h-[90vh]"
             >
-                <DialogHeader>
-                    <DialogTitle className="p-3 text-center text-[21px]">{editData ? 'Edit Record' : 'Add New Record'}</DialogTitle>
+                {/* Header */}
+                <DialogHeader className="text-center pb-3 border-b border-orange-100">
+                    <DialogTitle className="text-2xl font-bold text-gray-800">
+                        {editData ? 'Edit Record' : 'Add New Record'}
+                    </DialogTitle>
+                    <p className="text-sm text-gray-500">
+                        Please fill in the required information carefully.
+                    </p>
                 </DialogHeader>
 
-                {/* Scrollable form area */}
-                <div className="scrollbar-hide flex-1 overflow-y-auto">
-                    <Card className="rounded-lg bg-white shadow-lg">
-                        <CardContent className="p-6">
-                            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-                                {/* Personal Information Section */}
-                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                    {/* First Name */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="first_name" className="text-sm font-semibold text-gray-700">
-                                            First Name *
-                                        </Label>
-                                        <Input
-                                            autoComplete="off"
+                {/* Scrollable form section */}
+                <div className="scrollbar-hide flex-1 overflow-y-auto mt-3">
+                    <Card className="border-0 bg-white/90 shadow-md rounded-xl">
+                        <CardContent className="p-6 space-y-8">
+                            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
+                                {/* Personal Info */}
+                                <section>
+                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                        Personal Information
+                                    </h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <FormField
+                                            label="First Name *"
                                             id="first_name"
-                                            type="text"
-                                            {...register('first_name', { required: 'First name is required' })}
-                                            className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                                errors.first_name ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                            aria-label="First Name"
-                                            aria-required="true"
-                                            aria-invalid={!!errors.first_name}
+                                            register={register}
+                                            name="first_name"
+                                            requiredMsg="First name is required"
+                                            errors={errors}
                                         />
-                                        {errors.first_name && (
-                                            <p className="text-sm text-red-600" role="alert">
-                                                {errors.first_name.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Last Name */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="last_name" className="text-sm font-bold text-gray-700">
-                                            Last Name *
-                                        </Label>
-                                        <Input
-                                            autoComplete="off"
+                                        <FormField
+                                            label="Last Name *"
                                             id="last_name"
-                                            type="text"
-                                            {...register('last_name', { required: 'Last name is required' })}
-                                            className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                                errors.last_name ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                            aria-label="Last Name"
-                                            aria-required="true"
-                                            aria-invalid={!!errors.last_name}
+                                            register={register}
+                                            name="last_name"
+                                            requiredMsg="Last name is required"
+                                            errors={errors}
                                         />
-                                        {errors.last_name && (
-                                            <p className="text-sm text-red-600" role="alert">
-                                                {errors.last_name.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Middle Name */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="middle_name" className="text-sm font-bold text-gray-700">
-                                            Middle Name
-                                        </Label>
-                                        <Input
+                                        <FormField
+                                            label="Middle Name"
                                             id="middle_name"
-                                            type="text"
-                                            {...register('middle_name')}
-                                            className="rounded-md border border-gray-300 font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
-                                            aria-label="Middle Name"
+                                            register={register}
+                                            name="middle_name"
+                                            errors={errors}
                                         />
-                                    </div>
-
-                                    {/* Jr./Suffix */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="suffix" className="text-sm font-bold text-gray-700">
-                                            Jr./Suffix
-                                        </Label>
-                                        <Input
-                                            autoComplete="off"
+                                        <FormField
+                                            label="Jr./Suffix"
                                             id="suffix"
-                                            type="text"
-                                            {...register('suffix')}
-                                            className="rounded-md border border-gray-300 font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
-                                            aria-label="Jr. or Suffix"
+                                            register={register}
+                                            name="suffix"
                                             placeholder="Jr., Sr., III, etc."
+                                            errors={errors}
                                         />
-                                    </div>
-                                    {/* Contact Number */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="contact_number" className="text-sm font-bold text-gray-700">
-                                            Contact Number *
-                                        </Label>
-                                        <Input
-                                            autoComplete="off"
+                                        <FormField
+                                            label="Contact Number *"
                                             id="contact_number"
+                                            register={register}
+                                            name="contact_number"
                                             type="tel"
-                                            {...register('contact_number', {
-                                                required: 'Contact number is required',
-                                                pattern: {
-                                                    value: /^[\d\s\-$$$$+]+$/,
-                                                    message: 'Please enter a valid phone number',
-                                                },
-                                            })}
-                                            className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                                errors.contact_number ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                            aria-label="Contact Number"
-                                            aria-required="true"
-                                            aria-invalid={!!errors.contact_number}
-                                            placeholder="(555) 123-4567"
+                                            requiredMsg="Contact number is required"
+                                            errors={errors}
                                         />
-                                        {errors.contact_number && (
-                                            <p className="text-sm text-red-600" role="alert">
-                                                {errors.contact_number.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
 
-                                {/* Contact Information */}
-                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                    {/* BDAY */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="birth_date" className="text-sm font-bold text-gray-700">
-                                            Birth Date *
-                                        </Label>
-                                        <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
-                                        <DatePicker
-                                            value={selectedDate}
-                                            onChange={(date) => {
-                                                setSelectedDate(date);
-                                                setValue(
-                                                    'birth_date',
-                                                    date ? moment(date).format('YYYY-MM-DD') : '',
-                                                    { shouldValidate: true, shouldDirty: true }, // <-- important
-                                                );
-                                            }}
-                                        />
-                                        {errors.birth_date && (
-                                            <p className="text-sm text-red-600" role="alert">
-                                                {errors.birth_date.message}
-                                            </p>
-                                        )}
+                                        {/* Birth Date */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="birth_date" className="text-sm font-semibold text-gray-700">
+                                                Birth Date *
+                                            </Label>
+                                            <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
+                                            <DatePicker
+                                                value={selectedDate}
+                                                onChange={(date) => {
+                                                    setSelectedDate(date);
+                                                    setValue(
+                                                        'birth_date',
+                                                        date ? moment(date).format('YYYY-MM-DD') : '',
+                                                        { shouldValidate: true, shouldDirty: true },
+                                                    );
+                                                }}
+                                            />
+                                            {errors.birth_date && (
+                                                <p className="text-sm text-red-600" role="alert">
+                                                    {errors.birth_date.message}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
+                                </section>
 
-                                    {/* Assistance Needed */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="assistance_type" className="text-sm font-bold text-gray-700">
-                                            Assistance Needed *
-                                        </Label>
-                                        <Select value={watch('assistance_type')} onValueChange={(value) => setValue('assistance_type', value)}>
-                                            <SelectTrigger
-                                                className={`rounded-md border font-medium text-gray-600 transition-colors ${
-                                                    errors.assistance_type ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                                aria-label="Assistance Needed"
-                                                aria-required="true"
-                                                aria-invalid={!!errors.assistance_type}
+                                {/* Assistance Section */}
+                                <section>
+                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                        Assistance Information
+                                    </h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="assistance_type" className="text-sm font-semibold text-gray-700">
+                                                Assistance Needed *
+                                            </Label>
+                                            <Select
+                                                value={assistanceType}
+                                                onValueChange={(value) => {
+                                                    setAssistanceType(value);
+                                                    setValue('assistance_type', value);
+                                                }}
                                             >
-                                                <SelectValue placeholder="Select assistance type" />
-                                            </SelectTrigger>
-                                            <SelectContent className="font-semibold text-gray-600">
-                                                {assistanceOptions.map((option) => (
-                                                    <SelectItem key={option} value={option}>
-                                                        {option}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <input type="hidden" {...register('assistance_type', { required: 'Please select assistance type' })} />
-                                        {errors.assistance_type && (
-                                            <p className="text-sm text-red-600" role="alert">
-                                                {errors.assistance_type.message}
-                                            </p>
-                                        )}
+                                                <SelectTrigger
+                                                    className={`rounded-md border font-medium text-gray-600 transition-colors ${errors.assistance_type ? 'border-red-500' : 'border-gray-300'}`}
+                                                >
+                                                    <SelectValue placeholder="Select assistance type" />
+                                                </SelectTrigger>
+                                                <SelectContent className="font-medium text-gray-700">
+                                                    {assistanceOptions.map((option) => (
+                                                        <SelectItem key={option} value={option}>
+                                                            {option}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <input
+                                                type="hidden"
+                                                {...register('assistance_type', { required: 'Please select assistance type' })}
+                                            />
+                                            {errors.assistance_type && (
+                                                <p className="text-sm text-red-600" role="alert">
+                                                    {errors.assistance_type.message}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                </section>
 
-                                {/* Location Fields */}
+                                {/* Address Section */}
+                                <section>
+                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                        Address Details
+                                    </h3>
 
-                                <AddressDropdown onAddressChange={handleAddressChange} />
+                                    <AddressDropdown
+                                        onAddressChange={handleAddressChange}
+                                        editProvince={geoData.editProvince}
+                                        editMunicipality={geoData.editMunicipality}
+                                        editBarangay={geoData.editBarangay} />
+                                </section>
 
                                 {/* Description */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="assistance_type" className="text-sm font-bold text-gray-700">
-                                        Description / Reason for Assistance *
-                                    </Label>
-                                    <Textarea
-                                        autoComplete="off"
-                                        id="description"
-                                        {...register('description')}
-                                        className={`min-h-[120px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                            errors.description ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                        aria-label="Description or Reason for Assistance"
-                                        aria-required="true"
-                                        aria-invalid={!!errors.description}
-                                        placeholder="Please provide detailed information about the assistance needed, including any relevant circumstances or urgency..."
-                                    />
-                                    {errors.description && (
-                                        <p className="text-sm text-red-600" role="alert">
-                                            {errors.description.message}
-                                        </p>
-                                    )}
-                                </div>
+                                <section>
+                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                        Description / Reason
+                                    </h3>
+                                    <div className="space-y-2">
+                                        <Textarea
+                                            autoComplete="off"
+                                            id="description"
+                                            {...register('description', { required: 'Description is required' })}
+                                            className={`min-h-[120px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+                                            placeholder="Provide details about the assistance needed..."
+                                        />
+                                        {errors.description && (
+                                            <p className="text-sm text-red-600" role="alert">
+                                                {errors.description.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                </section>
 
-                                {/* Action Buttons */}
-                                <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-                                    <Button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 px-6 py-2 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {isSubmitting ? 'Submitting...' : editData ? 'Update Record' : 'Submit Request'}
-                                    </Button>
+                                {/* Buttons */}
+                                <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:justify-end">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={handleReset}
-                                        className="flex-1 rounded-md border-gray-300 bg-transparent px-6 py-2 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 sm:flex-none"
+                                        className="flex-1 sm:flex-none rounded-md border-gray-300 text-gray-700 hover:bg-gray-100"
                                     >
                                         Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="flex-1 sm:flex-none rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-50"
+                                    >
+                                        {isSubmitting ? 'Submitting...' : editData ? 'Update Record' : 'Submit Request'}
                                     </Button>
                                 </div>
                             </form>
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* <ClassicDialog {...classicDialog} /> */}
             </DialogContent>
         </Dialog>
+    );
+}
+
+/* 🔹 Helper for form inputs */
+function FormField({ label, id, register, name, requiredMsg, type = 'text', placeholder, errors }: any) {
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={id} className="text-sm font-semibold text-gray-700">
+                {label}
+            </Label>
+            <Input
+                id={id}
+                type={type}
+                autoComplete="off"
+                placeholder={placeholder}
+                {...register(name, requiredMsg ? { required: requiredMsg } : {})}
+                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors[name] ? 'border-red-500' : 'border-gray-300'}`}
+            />
+            {errors[name] && (
+                <p className="text-sm text-red-600" role="alert">
+                    {errors[name].message}
+                </p>
+            )}
+        </div>
     );
 }

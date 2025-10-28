@@ -74,72 +74,25 @@ export function LeftNavigation() {
 
                     {/* Navigation Section */}
                     <div className="mt-2 px-3">
-                        <span className="mb-2 block text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Explore</span>
+                        <span className="mb-2 block text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                            Explore
+                        </span>
 
                         <nav className="flex flex-col space-y-1">
-                            <SheetClose asChild>
-                                <a
-                                    onClick={() => router.visit(route('home.show'))}
-                                    className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <HomeIcon size={20} />
-                                    <span className="text-sm font-medium">Home</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    onClick={() => {
-                                        router.visit(route('travel.page.show'));
-                                    }}
-                                    className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <PlaneIcon size={20} />
-                                    <span className="text-sm font-medium">Travel</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    onClick={() => {
-                                        router.visit(route('government.show'));
-                                    }}
-                                    className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <Landmark size={20} />
-                                    <span className="text-sm font-medium">Government</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    onClick={() => console.log(`Clicked: Transparency`)}
-                                    className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <Shield size={20} />
-                                    <span className="text-sm font-medium">Transparency</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    onClick={() => console.log(`Clicked: Contact Us`)}
-                                    className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <PhoneIcon size={20} />
-                                    <span className="text-sm font-medium">Contact Us</span>
-                                </a>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <a
-                                    onClick={() => router.visit(route('executive.order.show'))}
-                                    className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <PhoneIcon size={20} />
-                                    <span className="text-sm font-medium">Executive Orders</span>
-                                </a>
-                            </SheetClose>
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <SheetClose asChild key={item.title}>
+                                        <a
+                                            onClick={() => router.visit(item.href)}
+                                            className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        >
+                                            {Icon ? <Icon size={20} /> : <HomeIcon size={20} />}
+                                            <span className="text-sm font-medium">{item.title}</span>
+                                        </a>
+                                    </SheetClose>
+                                );
+                            })}
                         </nav>
                     </div>
                 </div>
@@ -152,3 +105,4 @@ export function LeftNavigation() {
         </Sheet>
     );
 }
+

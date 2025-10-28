@@ -14,12 +14,20 @@ type AddressData = {
 };
 
 interface AddressDropdownProps {
+    editProvince: string;
+    editMunicipality: string;
+    editBarangay: string;
     onAddressChange: (address: AddressData | null) => void;
 }
 
 const PROVINCES: LocationItem[] = [{ code: '174000000', name: 'Marinduque' }];
 
-export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
+export function AddressDropdown({
+    onAddressChange,
+    editProvince,
+    editMunicipality,
+    editBarangay,
+}: AddressDropdownProps) {
     const BASE = 'https://psgc.gitlab.io/api';
 
     const [provinces] = useState<LocationItem[]>(PROVINCES);
@@ -36,43 +44,90 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
         barangayName: '',
     });
 
-    // --- Fetch municipalities when province changes ---
     useEffect(() => {
-        setMunicipalities([]);
-        setBarangays([]);
-        setSelectedMunicipality('');
-        setSelectedBarangay('');
-        setSelectedNames((prev) => ({ ...prev, municipalityName: '', barangayName: '' }));
-
-        if (selectedProvince) {
-            fetch(`${BASE}/provinces/${selectedProvince}/municipalities/`)
-                .then((res) => res.json())
-                .then((data: LocationItem[]) => setMunicipalities(data))
-                .catch((err) => {
-                    console.error('Error fetching municipalities:', err);
-                    setMunicipalities([]);
-                });
+        if(editProvince === ""){
+            return;
         }
-    }, [selectedProvince]);
+        const loadNames = async () => {
+            try {
+                let provinceName = '';
+                let municipalityName = '';
+                let barangayName = '';
 
-    // --- Fetch barangays when municipality changes ---
-    useEffect(() => {
-        setBarangays([]);
-        setSelectedBarangay('');
-        setSelectedNames((prev) => ({ ...prev, barangayName: '' }));
+                // 🏛️ Province
+                if (editProvince) {
+                    const res = await fetch(`${BASE}/provinces/${editProvince}/`);
+                    if (!res.ok) throw new Error('Failed to fetch province');
+                    const data = await res.json();
+                    provinceName = data.name;
+                    console.log("Province name:", provinceName);
+                }
 
-        if (selectedMunicipality) {
-            fetch(`${BASE}/municipalities/${selectedMunicipality}/barangays/`)
-                .then((res) => res.json())
-                .then((data: LocationItem[]) => setBarangays(data))
-                .catch((err) => {
-                    console.error('Error fetching barangays:', err);
-                    setBarangays([]);
+                // 🏙️ Municipality
+                if (editMunicipality) {
+                    const res = await fetch(`${BASE}/municipalities/${editMunicipality}/`);
+                    if (!res.ok) throw new Error('Failed to fetch municipality');
+                    const data = await res.json();
+                    municipalityName = data.name;
+                    console.log("Municipality name:", municipalityName);
+                }
+
+                // 🏘️ Barangay
+                if (editBarangay) {
+                    const res = await fetch(`${BASE}/barangays/${editBarangay}/`);
+                    if (!res.ok) throw new Error('Failed to fetch barangay');
+                    const data = await res.json();
+                    barangayName = data.name;
+                    console.log("Barangay name:", barangayName);
+                }
+
+                // ✅ Update names state
+                setSelectedNames({
+                    provinceName,
+                    municipalityName,
+                    barangayName,
                 });
-        }
-    }, [selectedMunicipality]);
+            } catch (err) {
+                console.error("❌ Error loading address names:", err);
+            }
+        };
 
-    // --- Propagate changes to parent ---
+        loadNames();
+    }, [editProvince, editMunicipality, editBarangay]);
+
+    // --- Handle user selection changes ---
+    const handleSelectChange = useCallback(
+        async (
+            setter: React.Dispatch<React.SetStateAction<string>>,
+            nameKey: keyof typeof selectedNames,
+            options: LocationItem[],
+            value: string,
+        ) => {
+            const name = options.find((o) => o.code === value)?.name || '';
+            setter(value);
+            setSelectedNames((prev) => ({ ...prev, [nameKey]: name }));
+
+            // Handle dependent fetches
+            if (nameKey === 'provinceName') {
+                setSelectedMunicipality('');
+                setSelectedBarangay('');
+                setBarangays([]);
+                const res = await fetch(`${BASE}/provinces/${value}/municipalities/`);
+                const data: LocationItem[] = await res.json();
+                setMunicipalities(data);
+            }
+
+            if (nameKey === 'municipalityName') {
+                setSelectedBarangay('');
+                const res = await fetch(`${BASE}/municipalities/${value}/barangays/`);
+                const data: LocationItem[] = await res.json();
+                setBarangays(data);
+            }
+        },
+        [],
+    );
+
+    // --- Propagate final selection to parent ---
     useEffect(() => {
         if (selectedProvince && selectedMunicipality && selectedBarangay) {
             onAddressChange({
@@ -83,33 +138,27 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
                 municipalityName: selectedNames.municipalityName,
                 barangayName: selectedNames.barangayName,
             });
-        } else {
-            onAddressChange(null);
         }
     }, [selectedProvince, selectedMunicipality, selectedBarangay, selectedNames, onAddressChange]);
 
-    // --- Handle select changes ---
-    const handleSelectChange = useCallback(
-        (setter: React.Dispatch<React.SetStateAction<string>>, nameKey: keyof typeof selectedNames, options: LocationItem[], value: string) => {
-            const name = options.find((o) => o.code === value)?.name || '';
-
-            setter(value);
-            setSelectedNames((prev) => ({ ...prev, [nameKey]: name }));
-        },
-        [],
-    );
-
     return (
-        <div className="">
+        <div className="space-y-3">
             {/* Province */}
             <div className="space-y-2">
                 <Label htmlFor="province" className="text-sm font-semibold text-gray-700">
                     Province
                 </Label>
-
-                <Select value={selectedProvince} onValueChange={(val) => handleSelectChange(setSelectedProvince, 'provinceName', provinces, val)}>
+                <Select
+                    value={selectedProvince}
+                    onValueChange={(val) =>
+                        handleSelectChange(setSelectedProvince, 'provinceName', provinces, val)
+                    }
+                    disabled={false} // Province is always enabled
+                >
                     <SelectTrigger className="font-medium text-gray-600">
-                        <SelectValue placeholder="Select a Province" />
+                        <SelectValue
+                            placeholder={selectedNames.provinceName || 'Select a Province'}
+                        />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 font-semibold text-gray-600">
                         {provinces.map((p) => (
@@ -128,11 +177,22 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
                 </Label>
                 <Select
                     value={selectedMunicipality}
-                    onValueChange={(val) => handleSelectChange(setSelectedMunicipality, 'municipalityName', municipalities, val)}
-                    disabled={!selectedProvince || municipalities.length === 0}
+                    onValueChange={(val) =>
+                        handleSelectChange(setSelectedMunicipality, 'municipalityName', municipalities, val)
+                    }
+                    disabled={
+                        // Disable when adding and no province selected
+                        (!editProvince && editMunicipality === "" && editBarangay === "" && selectedProvince === "") ||
+                        municipalities.length === 0
+                    }
                 >
                     <SelectTrigger className="font-medium text-gray-600">
-                        <SelectValue placeholder={!selectedProvince ? 'Select a Province first' : 'Select a Municipality'} />
+                        <SelectValue
+                            placeholder={
+                                selectedNames.municipalityName ||
+                                (!selectedProvince ? 'Select a Province first' : 'Select a Municipality')
+                            }
+                        />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 font-semibold text-gray-600">
                         {municipalities.map((m) => (
@@ -145,17 +205,28 @@ export function AddressDropdown({ onAddressChange }: AddressDropdownProps) {
             </div>
 
             {/* Barangay */}
-            <div>
-                <Label htmlFor="municipality" className="text-sm font-semibold text-gray-700">
+            <div className="space-y-2">
+                <Label htmlFor="barangay" className="text-sm font-semibold text-gray-700">
                     Barangay
                 </Label>
                 <Select
                     value={selectedBarangay}
-                    onValueChange={(val) => handleSelectChange(setSelectedBarangay, 'barangayName', barangays, val)}
-                    disabled={!selectedMunicipality}
+                    onValueChange={(val) =>
+                        handleSelectChange(setSelectedBarangay, 'barangayName', barangays, val)
+                    }
+                    disabled={
+                        // Disable when adding and no municipality selected
+                        (editProvince !== "" && editMunicipality !== "" && editBarangay !== "" && selectedMunicipality !== "") ||
+                        barangays.length === 0
+                    }
                 >
                     <SelectTrigger className="font-medium text-gray-600">
-                        <SelectValue placeholder={!selectedMunicipality ? 'Select a Municipality first' : 'Select a Barangay'} />
+                        <SelectValue
+                            placeholder={
+                                selectedNames.barangayName ||
+                                (!selectedMunicipality ? 'Select a Municipality first' : 'Select a Barangay')
+                            }
+                        />
                     </SelectTrigger>
                     <SelectContent className="max-h-60 font-semibold text-gray-600">
                         {barangays.map((b) => (

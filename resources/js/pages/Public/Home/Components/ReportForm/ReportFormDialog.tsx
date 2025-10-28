@@ -275,7 +275,7 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
                   id="evidence"
                   type="file"
                   multiple
-                  accept="image/*,video/*,.pdf,.doc,.docx"
+                  accept="image/*,video/*,"
                   onChange={handleFileChange}
                   className="hidden"
                 />

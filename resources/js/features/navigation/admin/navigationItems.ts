@@ -1,19 +1,28 @@
 export const adminNavMain = [
     {
         title: "Action Center",
-        url: "#",
         items: [
             { title: "Dashboard", url: "/admin/dashboard" },
             { title: "Requests", url: "/action-center/admin/request-list" },
-            { title: "Activity Logs", url: "/admin/logs" },
-            { title: "Transfers", url: "/admin/transfers", isActive: true },
+            // { title: "Activity Logs", url: "/admin/logs" },
+            // { title: "Transfers", url: "/admin/transfers", isActive: true },
         ],
     },
+
     {
-        title: "Travels",
+        title: "Tourism",
         url: "#",
         items: [
             { title: "Routing", url: "/admin/travels/routing" },
+        ],
+    },
+
+    {
+        title: "Bulletin",
+        url: "#",
+        items: [
+            { title: "Announcement", url: "/announcement-form" },
+            { title: "Events", url: "/events-form" },
         ],
     },
 ];

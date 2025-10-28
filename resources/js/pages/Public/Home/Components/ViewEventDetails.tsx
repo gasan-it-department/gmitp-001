@@ -87,7 +87,8 @@ export function ViewEventDetails({ isOpen, data, onClose }: Props) {
 
                 {/* Footer */}
                 <AlertDialogFooter className="mt-6 flex justify-end">
-                    <AlertDialogCancel
+
+                    <AlertDialogAction
                         onClick={onClose}
                         className="
               px-6 py-2.5 text-base font-medium
@@ -99,7 +100,7 @@ export function ViewEventDetails({ isOpen, data, onClose }: Props) {
             "
                     >
                         Close
-                    </AlertDialogCancel>
+                    </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
