@@ -22,7 +22,7 @@ export default function Utility() {
             return 'Invalid date format';
         }
 
-        return date.format('MMM DD, YYYY hh:mm:ss A');
+        return date.format('MMM DD, YYYY hh:mm A');
     }
 
     // function formatAndAddDays(epochTime: string | undefined, additionalDays: number = 0) {

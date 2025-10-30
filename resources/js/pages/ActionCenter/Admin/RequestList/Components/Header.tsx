@@ -15,7 +15,10 @@ export default function Header({ className, onAddNewButtonClicked, onExportButto
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             {/* <h1 className="w-full justify-items-center text-3xl font-extrabold tracking-wide text-balance">Request List</h1> */}
-            <SearchBar onSearch={onSearch ?? (() => {})} searchBarHint={'Search...'} />
+            <SearchBar onSearch={(keyword) => {
+                console.log("Searching for " + keyword);
+                onSearch?.(keyword);
+            }} searchBarHint={'Search...'} />
 
             <div className="ml-2" />
 

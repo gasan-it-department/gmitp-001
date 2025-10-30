@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { DatePicker } from './DatePicker';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import { setDate } from 'date-fns';
 
 interface Props {
     isOpen: boolean;
@@ -63,23 +64,29 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
         },
     });
     const handleFormSubmit = async (data: Beneficiary) => {
-        try {
-            const response = await axios.post('/action-center/request', data);
+        if (editData == null) {
+            console.log("Not in edit mode. Adding it as new.");
+            try {
+                const response = await axios.post('/action-center/request', data);
 
-            if (response.status !== 200) {
-                setError('root', response.data);
-                throw new Error(response.data);
+                if (response.status !== 200) {
+                    setError('root', response.data);
+                    throw new Error(response.data);
+                }
+
+                await queryClient.invalidateQueries({
+                    queryKey: ['request-list'],
+                    refetchType: 'active',
+                });
+
+                reset();
+                onClose();
+            } catch (error) {
+                console.error('Error submitting form:', error);
             }
-
-            await queryClient.invalidateQueries({
-                queryKey: ['request-list'],
-                refetchType: 'active',
-            });
-
-            reset();
-            onClose();
-        } catch (error) {
-            console.error('Error submitting form:', error);
+        } else {
+            console.log("Update the data.");
+            console.log(data);
         }
     };
 
@@ -93,6 +100,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             console.log("Edit Mode");
             console.log("SD", editData);
             const date = moment(editData.beneficiary.birth_date, 'YYYY-MM-DD').toDate();
+            setSelectedDate(date);
             setValue("first_name", editData.beneficiary.first_name);
             setValue("last_name", editData.beneficiary.last_name);
             setValue("middle_name", editData.beneficiary.middle_name);
@@ -100,6 +108,11 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             setValue("contact_number", editData.beneficiary.contact_number);
             setSelectedDate(date);
             setValue("description", editData.description);
+            setValue('assistance_type', editData.assistance_type);
+            setValue("birth_date", editData.beneficiary.birth_date);
+            setValue("province", editData.beneficiary.province);
+            setValue("municipality", editData.beneficiary.municipality);
+            setValue("barangay", editData.beneficiary.barangay);
             setAssistanceType(editData.assistance_type);
             setGeoData((prev) => ({
                 ...prev,
@@ -108,7 +121,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                 editBarangay: editData.beneficiary.barangay
             }));
         } else {
-            setAssistanceType(watch('assistance_type'));
+            setAssistanceType("");
             setSelectedDate(undefined);
             reset();
             setGeoData({
@@ -137,7 +150,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             <DialogContent
                 showCloseButton
                 onInteractOutside={(e) => e.preventDefault()}
-                className="scrollbar-hide m-0 flex h-screen w-full max-w-none flex-col rounded-none bg-gradient-to-b from-white via-orange-50 to-rose-50 p-4 shadow-xl sm:m-auto sm:h-auto sm:max-w-[720px] sm:rounded-2xl lg:h-[90vh]"
+                className="scrollbar-hide m-0 flex h-auto w-full max-w-none flex-col rounded-none bg-gradient-to-b from-white via-orange-50 to-rose-50 p-4 shadow-xl sm:m-auto sm:h-auto sm:max-w-[720px] sm:rounded-2xl lg:h-[90vh]"
             >
                 {/* Header */}
                 <DialogHeader className="text-center pb-3 border-b border-orange-100">

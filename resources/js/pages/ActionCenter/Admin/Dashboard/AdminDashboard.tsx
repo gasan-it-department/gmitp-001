@@ -15,7 +15,7 @@ export default function SuperAdminDashboard() {
 
                         {/* Summary Cards */}
                         <SummaryCards />
-                        <AdminSchedule />
+                        {/* <AdminSchedule /> */}
                     </main>
                 </div>
             </div>
