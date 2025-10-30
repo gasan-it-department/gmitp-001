@@ -49,7 +49,8 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::dropIfExists('feedback_files');
         Schema::dropIfExists('citizen_feedback');
-        Schema::dropIfExists('feedback_attachments');
+
     }
 };

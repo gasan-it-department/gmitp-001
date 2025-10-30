@@ -21,7 +21,7 @@ export const adminNavMain = [
         title: "Bulletin",
         url: "#",
         items: [
-            { title: "Announcement", url: "/announcement-form" },
+            { title: "Announcement", url: "/bulletin-board/announcement/admin" },
             { title: "Events", url: "/events-form" },
         ],
     },

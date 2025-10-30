@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->foreignUlid('user_id')
                 ->constrained()
                 ->onDelete('cascade');
+            $table->boolean('is_published')->default(false);
+            $table->softDeletes();
 
             $table->timestamps();
         });
@@ -26,9 +28,11 @@ return new class extends Migration {
             $table->ulid('id')->primary();
 
             $table->string('title');
-            $table->string('message');
+            $table->text('message');
             $table->timestamp('event_date_time');
             $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->boolean('is_published')->default(false);
+            $table->softDeletes();
 
             $table->timestamps();
         });

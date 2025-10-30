@@ -7,7 +7,6 @@ axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.withCredentials = true;
 
 if (token) {
-    console.log(token);
     axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
 }
 

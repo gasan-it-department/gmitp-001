@@ -87,4 +87,5 @@ class PublicController extends Controller
     {
         return Inertia::render('Public/Wedding/WeddingPage');
     }
+
 }

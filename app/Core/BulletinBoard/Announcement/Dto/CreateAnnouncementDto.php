@@ -7,8 +7,7 @@ final class CreateAnnouncementDto
     public function __construct(
         public readonly string $title,
         public readonly string $message,
-        public readonly ?string $id = null,
-
+        public readonly string $userId,
     ) {
     }
 }

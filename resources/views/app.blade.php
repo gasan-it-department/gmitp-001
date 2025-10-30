@@ -8,7 +8,7 @@
 
     {{-- Detect system theme --}}
     <script>
-        (function () {
+        (function() {
             const appearance = '{{ $appearance ?? 'system' }}';
             if (appearance === 'system') {
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -25,6 +25,7 @@
         html {
             background-color: oklch(1 0 0);
         }
+
         html.dark {
             background-color: oklch(0.145 0 0);
         }
@@ -35,13 +36,15 @@
     {{-- ✅ FAVICONS --}}
     <link rel="icon" type="image/png" href="{{ asset('assets/logo_gasan.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
-    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    {{-- <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
     <meta name="theme-color" content="#f97316" />
 
     {{-- ✅ Fonts --}}
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Poppins:wght@300;400;500&display=swap"
+        rel="stylesheet">
 
     @routes
     @viteReactRefresh

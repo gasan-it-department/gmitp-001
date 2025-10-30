@@ -24,8 +24,7 @@ class EventRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:1000'],
-            'event_date' => ['required', 'date', 'after_or_equal:today'],
-            'event_time' => ['required', 'date_format:H:i'],
+            'event_date_time' => ['required', 'date', 'after_or_equal:today'],
         ];
     }
 
@@ -34,10 +33,8 @@ class EventRequest extends FormRequest
         return [
             'title.required' => 'The event title is required.',
             'message.required' => 'Please enter a message for the event.',
-            'event_date.required' => 'An event date is required.',
-            'event_date.after_or_equal' => 'The event date cannot be in the past.',
-            'event_time.required' => 'The event time is required.',
-            'event_time.date_format' => 'The event time must be in HH:MM format (24-hour).',
+            'event_date_time.required' => 'An event date is required.',
+            'event_date_time.after_or_equal' => 'The event date cannot be in the past.',
         ];
     }
 }

@@ -3,26 +3,60 @@
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\BulletinBoard\AnnouncementController;
 use App\External\Api\Controllers\BulletinBoard\EventController;
+use App\External\Web\Controllers\BulletinBoard\Admin\AnnouncementAdminController;
+use App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController;
 
 Route::prefix('bulletin-board')
     ->as('bulletin-board.')
     ->group(function () {
 
+        // PUBLIC ANNOUNCEMENTS
         Route::prefix('announcement')
             ->as('announcement.')
+            ->controller(AnnouncementController::class)
             ->group(function () {
-                Route::get('/', [AnnouncementController::class, 'index'])->name('index');
-                Route::post('/', [AnnouncementController::class, 'store'])->name('store');
-                Route::get('{id}', [AnnouncementController::class, 'show'])->name('show');
-                Route::put('{id}', [AnnouncementController::class, 'update'])->name('update');
-                Route::delete('{id}', [AnnouncementController::class, 'destroy'])->name('destroy');
-            });
+            Route::get('/', 'index')->name('index');
+            Route::get('{id}', 'show')->whereNumber('id')->name('show');
+        });
+
+        // ADMIN DASHBOARD (web page)
+        Route::middleware('admin')
+            ->prefix('announcement/admin')
+            ->as('announcement.admin.')
+            ->controller(AnnouncementAdminController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+        });
+
+        // ADMIN API ROUTES (data actions)
+        Route::middleware('admin')
+            ->prefix('announcement')
+            ->as('announcement.')
+            ->controller(AnnouncementController::class)
+            ->group(function () {
+
+            Route::post('/', 'store')->name('store');
+            Route::patch('/{$id}/publish/', 'publish')->name('publish');
+
+        });
+
+        // EVENTS (admin pages)
+        Route::middleware('admin')
+            ->prefix('events/admin')
+            ->as('events.admin.')
+            ->controller(EventAdminController::class)
+            ->group(function () {
+
+            Route::get('/', 'index')->name('index');
+
+        });
 
         Route::prefix('events')
             ->as('events.')
             ->controller(EventController::class)
             ->group(function () {
-                Route::post('/', 'store')->name('store');
-            });
 
+                Route::post('/', 'store')->name('store');
+
+            });
     });
