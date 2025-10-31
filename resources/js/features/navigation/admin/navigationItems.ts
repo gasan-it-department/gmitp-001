@@ -22,7 +22,7 @@ export const adminNavMain = [
         url: "#",
         items: [
             { title: "Announcement", url: "/bulletin-board/announcement/admin" },
-            { title: "Events", url: "/events-form" },
+            { title: "Events", url: "/bulletin-board/events/admin" },
         ],
     },
 ];
