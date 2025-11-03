@@ -7,7 +7,7 @@ use App\Core\ActionCenter\Applications\Dto\AssistanceRequestDto;
 use App\Core\ActionCenter\Applications\Dto\BeneficiaryDto;
 use App\Core\Users\Application\Services\UserRoleCheckerService;
 use App\Core\ActionCenter\Applications\Services\TransactionNumberGenerator;
-use App\Shared\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
 
 use Illuminate\Support\Facades\DB;

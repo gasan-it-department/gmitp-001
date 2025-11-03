@@ -78,9 +78,9 @@ class AnnouncementController
 
     public function publish($id)
     {
-        try {
-            $this->publishService->execute($id);
-        } catch (\Exception $e) {
-        }
+        // try {
+        //     $this->publishService->execute($id);
+        // } catch (\Exception $e) {
+        // }
     }
 }

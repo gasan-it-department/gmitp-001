@@ -4,8 +4,6 @@ namespace App\Core\Feedback\Actions;
 
 // use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Core\Feedback\Repositories\FeedbackRepositories;
-use App\Core\Feedback\Models\Feedback;
-use App\Core\Feedback\Models\FeedbackFiles;
 use Cloudinary\Cloudinary;
 use Illuminate\Http\UploadedFile;
 use App\Core\Feedback\Dto\CreateFeedbackFilesDto;

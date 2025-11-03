@@ -7,7 +7,7 @@ use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
 use App\Core\Users\Domains\Aggregates\UserAggregate;
 use Illuminate\Support\Facades\DB;
 use App\Core\Users\Domains\Enum\EnumRoles;
-use App\Shared\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\Users\Application\Exceptions\UserAlreadyExistExceptions;
 use App\Core\Auth\Interfaces\CookieSessionInterface;
 use App\Core\Users\Domains\ValueObjects\{

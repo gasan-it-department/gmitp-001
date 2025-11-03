@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Shared\Contracts;
+namespace App\Shared\IdGenerator\Contracts;
 
 /**
  * Contract for any service responsible for generating unique identifiers.

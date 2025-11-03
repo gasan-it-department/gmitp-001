@@ -20,7 +20,6 @@ class EventController extends Controller
             $eventDateAndTime = new \DateTimeImmutable(
                 $validated['event_date'] . ' ' . $validated['event_time']
             );
-
             $userId = $request->user()->id;
 
             $dto = new CreateEventDto(

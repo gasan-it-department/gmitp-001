@@ -6,7 +6,7 @@ use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 use App\Core\BulletinBoard\Announcement\Models\Announcement;
 use Illuminate\Support\Facades\DB;
-use App\Shared\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
 class CreateAnnouncementService
 {

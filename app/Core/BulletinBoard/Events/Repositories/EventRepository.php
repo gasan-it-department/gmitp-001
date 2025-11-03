@@ -17,5 +17,4 @@ class EventRepository
             'user_id' => $dto->userId,
         ]);
     }
-
 }

@@ -10,7 +10,7 @@ class PublishAnnouncementService
     ) {
     }
 
-    public function execute(string $id)
+    public function eexecute(string $id)
     {
         $announcement = $this->announcementRepository->findById($id);
 

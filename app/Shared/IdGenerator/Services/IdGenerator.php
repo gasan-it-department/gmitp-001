@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Shared\Services;
+namespace App\Shared\IdGenerator\Services;
 
 use Illuminate\Support\Str;
-use App\Shared\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 class IdGenerator implements IdGeneratorInterface
 {
     public function generate(): string

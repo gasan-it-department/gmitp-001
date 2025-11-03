@@ -3,7 +3,7 @@ namespace App\Core\Feedback\Services;
 
 use App\Core\Feedback\Dto\CreateFeedbackDto;
 use App\Core\Feedback\Models\Feedback;
-use App\Shared\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\Feedback\Repositories\FeedbackRepositories;
 use App\Core\Feedback\Actions\FileUploader;
 use Illuminate\Support\Facades\DB;

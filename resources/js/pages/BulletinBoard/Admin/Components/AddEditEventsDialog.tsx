@@ -1,125 +1,121 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { format } from "date-fns";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+
+type EventFormData = {
+    title: string;
+    message: string;
+    event_date: string;
+    event_time: string;
+};
 
 export default function AddEditEventsDialog() {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [combinedDate, setCombinedDate] = useState<Date | undefined>();
+    const [open, setOpen] = useState(false);
 
-  const handleSave = () => {
-    const fullDate = new Date(`${date}T${time}`);
-    console.log("📅 Event Saved:", {
-      title,
-      message,
-      date: format(fullDate, "yyyy-MM-dd HH:mm"),
+    const {
+        register,
+        handleSubmit,
+        watch,
+        reset,
+        formState: { errors, isValid },
+    } = useForm<EventFormData>({
+        mode: 'onChange', // validate as user types
+        defaultValues: {
+            title: '',
+            message: '',
+            event_date: '',
+            event_time: '',
+        },
     });
 
-    // reset
-    setOpen(false);
-    setTitle("");
-    setMessage("");
-    setDate("");
-    setTime("");
-    setCombinedDate(undefined);
-  };
+    const event_date = watch('event_date');
+    const event_time = watch('event_time');
 
-  const handleDateTimeChange = (newDate: string, newTime: string) => {
-    if (newDate && newTime) {
-      setCombinedDate(new Date(`${newDate}T${newTime}`));
-    }
-  };
+    const [combinedDate, setCombinedDate] = useState<Date | undefined>();
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default">Add Event</Button>
-      </DialogTrigger>
+    useEffect(() => {
+        if (event_date && event_time) {
+            setCombinedDate(new Date(`${event_date}T${event_time}`));
+        } else {
+            setCombinedDate(undefined);
+        }
+    }, [event_date, event_time]);
 
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add Event</DialogTitle>
-        </DialogHeader>
+    const onSubmit = async (data: EventFormData) => {
+        if (!combinedDate) return;
 
-        <div className="space-y-4 py-2">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              placeholder="Enter event title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
+        try {
+            console.log('📅 Event Saved:', {
+                ...data,
+            });
+            const response = await axios.post('/bulletin-board/events', data);
+            reset();
+            setOpen(false);
+        } catch (error) {
+            console.log('error event upload');
+        }
+    };
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="message">Description</Label>
-            <Textarea
-              id="message"
-              placeholder="Enter event description"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-            />
-          </div>
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="default">Add Event</Button>
+            </DialogTrigger>
 
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <Input
-              type="date"
-              id="date"
-              value={date}
-              onChange={(e) => {
-                setDate(e.target.value);
-                handleDateTimeChange(e.target.value, time);
-              }}
-            />
-          </div>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Add Event</DialogTitle>
+                </DialogHeader>
 
-          {/* Time */}
-          <div className="space-y-2">
-            <Label htmlFor="time">Time</Label>
-            <Input
-              type="time"
-              id="time"
-              value={time}
-              onChange={(e) => {
-                setTime(e.target.value);
-                handleDateTimeChange(date, e.target.value);
-              }}
-            />
-          </div>
-        </div>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+                    {/* Title */}
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Title</Label>
+                        <Input id="title" placeholder="Enter event title" {...register('title', { required: 'Title is required' })} />
+                        {errors.title && <p className="text-sm text-red-500">{errors.title.message}</p>}
+                    </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!title || !message || !date || !time}
-          >
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+                    {/* Description */}
+                    <div className="space-y-2">
+                        <Label htmlFor="message">Description</Label>
+                        <Textarea
+                            id="message"
+                            placeholder="Enter event description"
+                            rows={4}
+                            {...register('message', { required: 'Description is required' })}
+                        />
+                        {errors.message && <p className="text-sm text-red-500">{errors.message.message}</p>}
+                    </div>
+
+                    {/* Date */}
+                    <div className="space-y-2">
+                        <Label htmlFor="event_date">Date</Label>
+                        <Input type="date" id="event_date" {...register('event_date', { required: 'Date is required' })} />
+                        {errors.event_date && <p className="text-sm text-red-500">{errors.event_date.message}</p>}
+                    </div>
+
+                    {/* Time */}
+                    <div className="space-y-2">
+                        <Label htmlFor="event_time">Time</Label>
+                        <Input type="time" id="event_time" {...register('event_time', { required: 'Time is required' })} />
+                        {errors.event_time && <p className="text-sm text-red-500">{errors.event_time.message}</p>}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" type="button" onClick={() => setOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={!isValid}>
+                            Save
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
 }

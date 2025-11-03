@@ -4,8 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-use App\Shared\Contracts\IdGeneratorInterface;
-use App\Shared\Services\IdGenerator;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Services\IdGenerator;
 class SharedServiceProvider extends ServiceProvider
 {
     /**

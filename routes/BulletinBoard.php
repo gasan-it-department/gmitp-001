@@ -37,7 +37,6 @@ Route::prefix('bulletin-board')
 
             Route::post('/', 'store')->name('store');
             Route::patch('/{$id}/publish/', 'publish')->name('publish');
-
         });
 
         // EVENTS (admin pages)
@@ -51,7 +50,8 @@ Route::prefix('bulletin-board')
 
         });
 
-        Route::prefix('events')
+        Route::middleware('admin')
+            ->prefix('events')
             ->as('events.')
             ->controller(EventController::class)
             ->group(function () {

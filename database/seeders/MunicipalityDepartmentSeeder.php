@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\MunicipalityDepartment;
+use App\Shared\Models\MunicipalityDepartment;
 use Illuminate\Support\Str;
 
 class MunicipalityDepartmentSeeder extends Seeder

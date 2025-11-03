@@ -3,7 +3,7 @@
 namespace App\Core\BulletinBoard\Events\Services;
 
 use App\Core\BulletinBoard\Events\Dto\CreateEventDto;
-use App\Shared\Contracts\IdGeneratorInterface;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\BulletinBoard\Events\Repositories\EventRepository;
 
 class CreateEventService
