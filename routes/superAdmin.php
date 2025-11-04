@@ -15,4 +15,7 @@ Route::middleware(['web', 'superAdmin'])
         Route::get('/create-user', [SuperAdminController::class, 'showCreateUsers'])
             ->name('create-user');
 
+        Route::get('/municipality', [SuperAdminController::class, 'showMunicipalityPage'])
+            ->name('municipality');
+
     });

@@ -1,5 +1,4 @@
-import { AdminSidebar } from '@/components/Admin/AdminSidebar';
-import { SuperAdminSidebar } from '@/components/SuperAdmin/SuperAdminSidebar';
+import { AppSidebar } from '@/layouts/App/Components/AppSidebar';
 import { AppContent } from '@/layouts/App/Components/AppContent';
 import { AppHeader } from '@/layouts/App/Components/AppHeader';
 import { AppShell } from '@/layouts/App/Components/AppShell';
@@ -10,10 +9,9 @@ import { PropsWithChildren } from 'react';
 export default function BaseLayout({ children }: PropsWithChildren) {
     const { auth } = usePage<SharedData>().props;
 
-    const sidebar = auth.roles.isAdmin ? <AdminSidebar /> : <SuperAdminSidebar />;
     return (
         <AppShell>
-            {sidebar}
+            <AppSidebar />
             <AppContent>
                 <AppHeader />
                 {children}

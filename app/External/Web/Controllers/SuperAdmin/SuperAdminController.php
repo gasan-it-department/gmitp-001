@@ -17,4 +17,9 @@ class SuperAdminController extends Controller
     {
         return Inertia::render('SuperAdmin/RegisterUser/RegisterUser');
     }
+
+    public function showMunicipalityPage()
+    {
+        return Inertia::render('SuperAdmin/Municipality/MunicipalityPage');
+    }
 }
