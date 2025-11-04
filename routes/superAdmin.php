@@ -2,7 +2,6 @@
 
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use Illuminate\Support\Facades\Route;
-use App\External\Web\Controllers\SuperAdmin\DashboardController;
 
 Route::middleware(['web', 'superAdmin'])
     ->prefix('super-admin')
@@ -17,5 +16,4 @@ Route::middleware(['web', 'superAdmin'])
 
         Route::get('/municipality', [SuperAdminController::class, 'showMunicipalityPage'])
             ->name('municipality');
-
     });

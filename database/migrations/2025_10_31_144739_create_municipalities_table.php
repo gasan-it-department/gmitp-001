@@ -13,9 +13,11 @@ return new class extends Migration {
         Schema::create('municipalities', function (Blueprint $table) {
             $table->ulid('id')->primary();
 
-            $table->string('name');
+            $table->string('name')->unique();
             $table->string('code')->unique();
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(false);
+            $table->string('region_code')->unique();
+            $table->string('zip_code')->unique()->nullable();
             $table->softDeletes();
 
             $table->timestamps();

@@ -1,10 +1,9 @@
-import SuperAdminLayout from '@/layouts/App/AppLayout';
-import { AdminSchedule } from '../../../Admin/Dashboard/Components/Schedule';
+import AdminLayout from '@/layouts/App/AppLayout';
 import { SummaryCards } from '../../../Admin/Dashboard/Components/SummaryCard';
 
-export default function SuperAdminDashboard() {
+export default function AdminDashboard() {
     return (
-        <SuperAdminLayout>
+        <AdminLayout>
             <div className="min-h-screen bg-background">
                 <div className="flex">
                     <main className="flex-1 space-y-6 p-6">
@@ -19,6 +18,6 @@ export default function SuperAdminDashboard() {
                     </main>
                 </div>
             </div>
-        </SuperAdminLayout>
+        </AdminLayout>
     );
 }
