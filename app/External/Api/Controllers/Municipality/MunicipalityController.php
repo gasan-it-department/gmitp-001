@@ -30,11 +30,12 @@ class MunicipalityController
                 isActive: $municipalityData['is_active'] ?? false,
             );
 
-            $this->addMunicipalityService->execute($dto);
+        $municipality = $this->addMunicipalityService->execute($dto);
 
             return response()->json([
                 'success' => true,
                 'message' => 'municipality added successfully',
+                'data' => $municipality
             ], 201);
         } catch (MunicipalityValidationException $e) {
             return response()->json([

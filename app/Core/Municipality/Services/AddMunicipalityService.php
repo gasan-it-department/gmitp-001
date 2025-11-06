@@ -6,6 +6,7 @@ use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\Municipality\Dto\AddMunicipalityDto;
 use App\Core\Municipality\Repositories\MunicipalityRepository;
 use App\Core\Municipality\Rules\MunicipalityValidator;
+use App\Core\Municipality\Models\Municipality;
 ;
 class AddMunicipalityService
 {
@@ -17,12 +18,12 @@ class AddMunicipalityService
     }
 
 
-    public function execute(AddMunicipalityDto $dto): void
+    public function execute(AddMunicipalityDto $dto): Municipality
     {
         $this->municipalityValidator->validate($dto);
 
         $municipalityId = $this->idGenerator->generate();
 
-        $this->municipalityRepository->save($dto, $municipalityId);
+        return $this->municipalityRepository->save($dto, $municipalityId);
     }
 }

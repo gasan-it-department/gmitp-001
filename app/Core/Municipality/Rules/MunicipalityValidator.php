@@ -25,14 +25,19 @@ class MunicipalityValidator
             $errors[] = 'Code is required';
         }
 
+        if ($this->municipalityRepository->findByName($dto->name)) {
+            $errors[] = 'Municipality is already exist.';
+        }
+
+        if ($this->municipalityRepository->findByName($dto->zipCode)) {
+            $errors[] = 'Municipality zip code is already exist.';
+        }
+
         if ($this->municipalityRepository->findByCode($dto->code)) {
-            $errors[] = 'Code must be unique';
+            $errors[] = 'Municipal code is already exist.';
         }
         if (!is_bool($dto->isActive)) {
             $errors[] = 'isActive must be a boolean';
-        }
-        if ($this->municipalityRepository->findByName($dto->name)) {
-            $errors[] = 'Name must be unique';
         }
 
         if (!empty($errors)) {

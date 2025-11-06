@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class MunicipalityRepository
 {
-    public function save(AddMunicipalityDto $dto, string $municipalityId): void
+    public function save(AddMunicipalityDto $dto, string $municipalityId): Municipality
     {
-        Municipality::create([
+        return Municipality::create([
             'id' => $municipalityId,
             'name' => $dto->name,
             'municipal_code' => $dto->code,
