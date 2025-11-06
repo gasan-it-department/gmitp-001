@@ -23,7 +23,7 @@ export default function LandingPageHeroBanner() {
                     <div
                         className="flex h-15 w-15 animate-bounce items-center justify-center rounded-full bg-contain bg-center bg-no-repeat md:mt-3 md:h-20 md:w-20 lg:mt-15 lg:h-24 lg:w-24"
                         style={{ backgroundImage: "url('/assets/bp_logo.png')" }}
-                    ></div>{' '}
+                    ></div>
                 </div>
                 <div className="mt-2 flex flex-col justify-center md:col-span-3 md:pr-6 xl:pr-12">
                     <div

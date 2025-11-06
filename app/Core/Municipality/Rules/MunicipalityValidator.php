@@ -9,7 +9,9 @@ use App\Core\Municipality\Exceptions\MunicipalityValidationException;
 
 class MunicipalityValidator
 {
-    public function __construct(protected MunicipalityRepository $municipalityRepository) {}
+    public function __construct(protected MunicipalityRepository $municipalityRepository)
+    {
+    }
 
     public function validate(AddMunicipalityDto $dto)
     {
@@ -18,17 +20,13 @@ class MunicipalityValidator
         if (empty($dto->name)) {
             $errors[] = 'Name is required';
         }
+
         if (empty($dto->code)) {
             $errors[] = 'Code is required';
         }
-        if (empty($dto->regionCode)) {
-            $errors[] = 'Region code is required';
-        }
+
         if ($this->municipalityRepository->findByCode($dto->code)) {
             $errors[] = 'Code must be unique';
-        }
-        if ($this->municipalityRepository->findByRegionCode($dto->regionCode)) {
-            $errors[] = 'Region code must be unique';
         }
         if (!is_bool($dto->isActive)) {
             $errors[] = 'isActive must be a boolean';
@@ -36,6 +34,7 @@ class MunicipalityValidator
         if ($this->municipalityRepository->findByName($dto->name)) {
             $errors[] = 'Name must be unique';
         }
+
         if (!empty($errors)) {
             throw new MunicipalityValidationException($errors);
         }

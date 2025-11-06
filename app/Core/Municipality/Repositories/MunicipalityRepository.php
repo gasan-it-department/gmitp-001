@@ -4,17 +4,17 @@ namespace App\Core\Municipality\Repositories;
 
 use App\Core\Municipality\Dto\AddMunicipalityDto;
 use App\Core\Municipality\Models\Municipality;
+use Illuminate\Database\Eloquent\Collection;
 
 class MunicipalityRepository
 {
-    public function save(AddMunicipalityDto $dto, string $municipalityId): Municipality
+    public function save(AddMunicipalityDto $dto, string $municipalityId): void
     {
-        return Municipality::create([
+        Municipality::create([
             'id' => $municipalityId,
             'name' => $dto->name,
-            'code' => $dto->code,
+            'municipal_code' => $dto->code,
             'is_active' => $dto->isActive,
-            'region_code' => $dto->regionCode,
             'zip_code' => $dto->zipCode,
         ]);
     }
@@ -27,13 +27,7 @@ class MunicipalityRepository
 
     public function findByCode(string $code): ?Municipality
     {
-        return Municipality::where('code', $code)
-            ->first();
-    }
-
-    public function findByRegionCode(string $regionCode): ?Municipality
-    {
-        return Municipality::where('region_code', $regionCode)
+        return Municipality::where('municipal_code', $code)
             ->first();
     }
 
@@ -46,5 +40,10 @@ class MunicipalityRepository
     {
         return Municipality::where('zip_code', $zipCode)
             ->first();
+    }
+
+    public function getAll(): Collection
+    {
+        return Municipality::all();
     }
 }

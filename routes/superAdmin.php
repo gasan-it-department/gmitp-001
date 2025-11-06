@@ -2,6 +2,8 @@
 
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use Illuminate\Support\Facades\Route;
+use App\External\Api\Controllers\Municipality\MunicipalityController;
+
 
 Route::middleware(['web', 'superAdmin'])
     ->prefix('super-admin')
@@ -16,4 +18,10 @@ Route::middleware(['web', 'superAdmin'])
 
         Route::get('/municipality', [SuperAdminController::class, 'showMunicipalityPage'])
             ->name('municipality');
+
+        Route::post('/municipality-add', [MunicipalityController::class, 'store'])
+            ->name('municipality.add');
+
+        Route::get('/municipalities-list', [MunicipalityController::class, 'index'])
+            ->name('municipality.index');
     });
