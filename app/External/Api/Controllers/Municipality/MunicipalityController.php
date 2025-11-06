@@ -7,7 +7,7 @@ use App\External\Api\Request\Municipality\MunicipalityRequest;
 use App\Core\Municipality\Services\AddMunicipalityService;
 use App\Core\Municipality\Services\GetAllMunicipalities;
 use App\Core\Municipality\Dto\AddMunicipalityDto;
-use Request;
+use App\Core\Municipality\Models\Municipality;
 
 class MunicipalityController
 {
@@ -63,13 +63,40 @@ class MunicipalityController
         }
     }
 
-    public function update()
+    public function update(MunicipalityRequest $request, $id)
     {
+        try {
+            $validatedData = $request->validated();
+            $municipality = Municipality::findOrFail($id);
+            $municipality->update([
+                'name' => $validatedData['name'],
+                'code' => $validatedData['municipal_code'],
+                'zip_code' => $validatedData['zip_code'],
+                'is_active' => $validatedData['is_active'] ?? false,
+            ]);
 
-    }
-
-    public function changeStatus($id)
-    {
-
+            return response()->json([
+                'success' => true,
+                'message' => 'Municipality updated successfully!',
+                'data' => $municipality,
+            ], 200);
+        } catch (MunicipalityValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed during update.',
+                'errors' => $e->getErrors(),
+            ], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Municipality not found.',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update municipality.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

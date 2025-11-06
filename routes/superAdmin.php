@@ -24,4 +24,8 @@ Route::middleware(['web', 'superAdmin'])
 
         Route::get('/municipalities-list', [MunicipalityController::class, 'index'])
             ->name('municipality.index');
+
+        Route::put('/municipality-update/{id}', [MunicipalityController::class, 'update'])
+            ->name('municipality.update');
+
     });

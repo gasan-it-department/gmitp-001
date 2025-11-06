@@ -4,7 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { MunicipalityDataType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import axios, { type AxiosError } from 'axios';
+import { da } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { type SubmitHandler, useForm } from 'react-hook-form';
 
@@ -13,16 +15,9 @@ interface Municipality {
     municipal_code: string;
 }
 
-interface MunicipalityFormData {
-    name: string;
-    zip_code: string;
-    municipal_code: string;
-    is_active: boolean;
-}
-
 interface AddEditMunicipalityProps {
     isOpen: boolean;
-    editData?: MunicipalityFormData | null;
+    editData?: MunicipalityDataType | null;
     onClose: () => void;
 }
 
@@ -68,7 +63,7 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData }:
         setValue,
         formState: { errors, isSubmitting },
         setError,
-    } = useForm<MunicipalityFormData>({
+    } = useForm<MunicipalityDataType>({
         defaultValues: {
             name: '',
             zip_code: '',
@@ -90,17 +85,20 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData }:
         }
     }, [selectedMunicipality, municipalities, setValue, editData]);
 
-    const onSubmit: SubmitHandler<MunicipalityFormData> = async (data) => {
+    const onSubmit: SubmitHandler<MunicipalityDataType> = async (data) => {
         setServerError(null);
 
         try {
             if (editData) {
                 // Update existing municipality
-                // await axios.put(`/municipality/${editData.id}`, data);
+                console.log("Updating municipality:", data);
+                console.log("Municipal code: ", editData.id);
+                await axios.put(`/super-admin/municipality-update/${editData.id}`, data);
             } else {
                 // Create new municipality
                 await axios.post('/super-admin/municipality-add', data);
             }
+
 
             reset();
             onClose();
@@ -110,7 +108,7 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData }:
                 const backendErrors = err.response.data.errors;
                 Object.entries(backendErrors).forEach(([field, messages]) => {
                     if (Array.isArray(messages)) {
-                        setError(field as keyof MunicipalityFormData, {
+                        setError(field as keyof MunicipalityDataType, {
                             type: 'server',
                             message: messages[0],
                         });
@@ -145,7 +143,7 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData }:
             <DialogContent className="max-h-[90vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl sm:max-w-md">
                 <DialogHeader className="border-b border-orange-100 pb-3 text-center">
                     <DialogTitle className="text-2xl font-bold text-gray-800">
-                        {editData === null ? 'Add Municipality' : 'Edit Municipality'}
+                        {editData == null ? 'Add Municipality' : 'Edit Municipality'}
                     </DialogTitle>
                     <p className="text-sm text-gray-500">Fill out the municipality details below.</p>
                 </DialogHeader>
@@ -155,7 +153,7 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData }:
                         {/* Municipality Name */}
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
-                                Municipality Name * {editData && <span className="text-xs text-gray-500">(read-only)</span>}
+                                Municipality Name<span className="text-red-500">*</span>
                             </Label>
                             {editData ? (
                                 <div className="rounded-md border border-gray-300 bg-gray-100 px-3 py-2 font-medium text-gray-600">
@@ -188,9 +186,10 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData }:
 
                         {/* Zip Code (user-editable) */}
                         <div className="space-y-2">
-                            <Label htmlFor="zip_code" className="text-sm font-semibold text-gray-700">
-                                Zip Code * <span className="text-xs text-gray-500">(user input)</span>
+                            <Label htmlFor="zip_code" className="flex items-center gap-1">
+                                Zip Code <span className="text-red-500">*</span>
                             </Label>
+
                             <Input
                                 id="zip_code"
                                 placeholder="Enter zip code"

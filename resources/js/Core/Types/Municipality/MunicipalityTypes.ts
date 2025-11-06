@@ -1,8 +1,7 @@
-export interface Municipality {
-    id: string;
+export interface MunicipalityDataType {
     name: string;
-    code: string;
-    region?: string;
-    zipCode?: string;
-    province?: string;
+    zip_code: string;
+    municipal_code: string;
+    is_active: boolean;
+    id: string
 }
