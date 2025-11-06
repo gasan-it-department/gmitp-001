@@ -13,7 +13,7 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { SharedData } from '@/types';
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, List, Megaphone, Settings, Users, Map, LogOut } from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, List, Megaphone, Settings, Users, Map, LogOut, User, Building } from 'lucide-react';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -21,7 +21,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const AdminSidebarItems = [
         {
-            title: 'Action Center',
+            title: 'ACTION CENTER',
             icon: ClipboardList,
             items: [
                 { title: 'Dashboard', url: '/admin/dashboard', icon: LayoutDashboard },
@@ -29,49 +29,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ],
         },
         {
-            title: 'Tourism',
-            icon: Map,
-            items: [{ title: 'Routing', url: '/admin/travels/routing', icon: Map }],
-        },
-        {
-            title: 'Bulletin',
-            icon: Megaphone,
+            title: 'PUBLIC INFORMATION',
+            icon: FileText,
             items: [
                 { title: 'Announcement', url: '/bulletin-board/announcement/admin', icon: Megaphone },
                 { title: 'Events', url: '/bulletin-board/events/admin', icon: CalendarDays },
             ],
+        },
+        {
+            title: 'TOURISM',
+            icon: Map,
+            items: [{ title: 'Routing', url: '/admin/travels/routing', icon: Map }],
         },
     ];
 
     const SuperAdminSidebarItems = [
         {
-            title: 'Users',
+            title: 'USERS',
             icon: Users,
             items: [
-                { title: 'Dashboard', url: '/super-admin/dashboard', icon: LayoutDashboard },
-                { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
+                { title: 'Administrators', url: '/super-admin/dashboard', icon: User},
+                // { title: 'Dashboard', url: '/super-admin/dashboard', icon: LayoutDashboard },
+                // { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
             ],
         },
         {
-            title: 'Municipalities',
-            icon: List,
-            items: [{ title: 'List', url: '/super-admin/municipality', icon: Map }],
+            title: 'LOCAL GOVERNMENTS',
+            icon: Building,
+            items: [{ title: 'Municipalities', url: '/super-admin/municipality', icon: Map }],
         },
         {
-            title: 'Reports',
-            icon: FileText,
-            items: [
-                { title: 'Announcement', url: '/bulletin-board/announcement/admin', icon: Megaphone },
-                { title: 'Events', url: '/bulletin-board/events/admin', icon: CalendarDays },
-            ],
-        },
-        {
-            title: 'Logs',
+            title: 'LOGS',
             icon: FileText,
             items: [{ title: 'Audit Logs', url: '/admin/logs', icon: FileText }],
         },
         {
-            title: 'Settings',
+            title: 'SETTINGS',
             icon: Settings,
             items: [{ title: 'System Settings', url: '/admin/settings', icon: Settings }],
         },

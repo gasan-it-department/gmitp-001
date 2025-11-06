@@ -1,5 +1,6 @@
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/components/ui/navigation-menu';
 import { useNavigation } from '@/config/navigation/navigationItems';
+import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 
 // type ListItemProps = {
@@ -24,6 +25,7 @@ import { Link, usePage } from '@inertiajs/react';
 export function HeaderNav() {
     const page = usePage();
     const navItems = useNavigation();
+    const { auth } = usePage<SharedData>().props;
 
     return (
         <NavigationMenu className="flex h-full items-stretch">

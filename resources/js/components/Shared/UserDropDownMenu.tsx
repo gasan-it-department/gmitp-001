@@ -56,9 +56,21 @@ export function UserDropdownMenu() {
                                 router.visit(route('admin.dashboard.show'));
                             }}
                         >
-                            Dashboard
+                            Admin Panel
                         </DropdownMenuItem>
                     )}
+
+                    {
+                        auth.roles?.isSuperAdmin && (
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    router.visit(route('super_admin.dashboard'));
+                                }}
+                            >
+                                S-Admin Panel
+                            </DropdownMenuItem>
+                        )
+                    }
 
                     <DropdownMenuItem
                         onClick={() => {
