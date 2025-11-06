@@ -3,4 +3,6 @@ export interface MunicipalityDataType {
     name: string;
     code: string;
     is_active?: boolean;
+    zip_code: string;
+    municipal_code: string;
 }
