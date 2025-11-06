@@ -3,6 +3,7 @@
 namespace App\External\Api\Controllers\Municipality;
 
 use App\Core\Municipality\Exceptions\MunicipalityValidationException;
+use App\External\Api\Resources\Municipality\MunicipalityResource;
 use App\External\Api\Request\Municipality\MunicipalityRequest;
 use App\Core\Municipality\Services\AddMunicipalityService;
 use App\Core\Municipality\Services\GetAllMunicipalities;
@@ -57,7 +58,7 @@ class MunicipalityController
 
             return response()->json([
                 'success' => true,
-                'data' => $municipalities,
+                'data' => MunicipalityResource::collection($municipalities),
             ], 200);
         } catch (\Exception $e) {
         }

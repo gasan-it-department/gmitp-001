@@ -1,6 +1,5 @@
-import { Card } from '@/components/ui/card';
-import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { MunicipalityCard } from './MunicipalityCard';
 
 export default function LandingPageHeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
@@ -17,7 +16,6 @@ export default function LandingPageHeroBanner() {
         <div className="relative overflow-hidden">
             <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
             <div className="absolute -right-32 -bottom-32 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-
             <div className="relative container mx-auto grid grid-cols-1 items-center gap-8 px-4 py-10 md:grid-cols-5 md:gap-12 md:py-15 lg:py-10 xl:gap-16 2xl:max-w-[1400px]">
                 <div className="absolute top-0 m-2 flex gap-3">
                     <div
@@ -56,30 +54,8 @@ export default function LandingPageHeroBanner() {
                     <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full border border-primary/10 bg-background/50 backdrop-blur-sm"></div>
                 </div>
             </div>
-            <div className="mt-10 w-full p-5">
-                <h2 className="mb-2 px-4 text-[25px] font-bold">Municipalities</h2>
-
-                <div className="px-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-                        {registeredMunicipalities.map((municipality) => (
-                            <Card
-                                key={municipality.id}
-                                className="flex w-full flex-shrink-0 flex-col items-center rounded-xl bg-white p-4 text-center sm:w-[20rem]"
-                            >
-                                <img src={municipality.logo} alt={`${municipality.name} logo`} className="mb-3 h-30 w-30 object-contain" />
-                                <h3 className="text-[25px] font-semibold">{municipality.name}</h3>
-                                <h2 className="text-lg text-[10px]">{municipality.id}</h2>
-                                <Link
-                                    href={route('home.show')}
-                                    className="inline-block w-full rounded bg-black px-4 py-2 text-center text-white hover:shadow-md"
-                                >
-                                    View
-                                </Link>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            </div>
+            {/* this is the municipalities card display */}
+            <MunicipalityCard />
         </div>
     );
 }
