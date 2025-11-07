@@ -1,15 +1,15 @@
 import axios from 'axios';
 
-import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 
 interface GetMunicipalitiesResponse {
     success: boolean;
-    data: Municipality[];
+    data: MunicipalityType[];
     message?: string;
 }
 
 export const getMunicipalities = async () => {
-    const response = await axios.get<GetMunicipalitiesResponse>('/super-admin/municipalities-list');
+    const response = await axios.get<GetMunicipalitiesResponse>('/municipality');
 
     return response.data.data;
 }

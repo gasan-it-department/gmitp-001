@@ -46,4 +46,10 @@ class MunicipalityRepository
     {
         return Municipality::all();
     }
+
+    public function getActiveStatus(): Collection
+    {
+        return Municipality::where('is_active', true)
+            ->get();
+    }
 }

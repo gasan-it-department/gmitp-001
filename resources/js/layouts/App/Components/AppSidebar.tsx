@@ -1,5 +1,3 @@
-import { Link, usePage, router } from '@inertiajs/react';
-import * as React from 'react';
 import {
     Sidebar,
     SidebarContent,
@@ -13,7 +11,9 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { SharedData } from '@/types';
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, List, Megaphone, Settings, Users, Map, LogOut, User, Building } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Building, CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Megaphone, Settings, User, Users } from 'lucide-react';
+import * as React from 'react';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -48,7 +48,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'USERS',
             icon: Users,
             items: [
-                { title: 'Administrators', url: '/super-admin/dashboard', icon: User},
+                { title: 'Administrators', url: '/super-admin/dashboard', icon: User },
                 // { title: 'Dashboard', url: '/super-admin/dashboard', icon: LayoutDashboard },
                 // { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
             ],
@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {
             title: 'LOCAL GOVERNMENTS',
             icon: Building,
-            items: [{ title: 'Municipalities', url: '/super-admin/municipality', icon: Map }],
+            items: [{ title: 'Municipalities', url: '/municipality/super-admin', icon: Map }],
         },
         {
             title: 'LOGS',
@@ -74,19 +74,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const handleLogout = () => router.post('/logout');
 
     return (
-        <Sidebar
-            {...props}
-            className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm"
-        >
+        <Sidebar {...props} className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm">
             {/* HEADER */}
             <SidebarHeader className="border-b border-gray-100 pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            asChild
-                            className="w-full rounded-xl pt-8 pb-8 hover:bg-orange-50 transition-colors"
-                        >
+                        <SidebarMenuButton size="lg" asChild className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-orange-50">
                             <a href="#" className="flex items-center gap-3">
                                 <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md">
                                     <span className="text-lg font-semibold">
@@ -99,11 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         {auth.user?.first_name} {auth.user?.last_name}
                                     </span>
                                     <span className="mt-1 mb-1 text-xs text-gray-500">
-                                        {userRole?.isAdmin
-                                            ? 'Administrator'
-                                            : userRole?.isSuperAdmin
-                                                ? 'Super-Admin'
-                                                : 'User'}
+                                        {userRole?.isAdmin ? 'Administrator' : userRole?.isSuperAdmin ? 'Super-Admin' : 'User'}
                                     </span>
                                 </div>
                             </a>
@@ -119,13 +108,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {filteredNav.map((group) => (
                             <SidebarMenuItem key={group.title}>
                                 {/* SECTION TITLE */}
-                                <div className="flex items-center gap-2 px-3 mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                                     <group.icon size={14} className="text-orange-500" />
                                     {group.title}
                                 </div>
 
                                 {/* SUBMENU ITEMS with improved hover effect */}
-                                <SidebarMenuSub className="space-y-1 pl-4 border-l border-gray-100">
+                                <SidebarMenuSub className="space-y-1 border-l border-gray-100 pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
                                         const isActive = url === sub.url;
@@ -134,20 +123,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out
-                                                        ${isActive
-                                                            ? 'bg-orange-100 text-orange-700 shadow-sm border-l-4 border-orange-500'
-                                                            : 'text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-white hover:text-orange-700 hover:shadow-sm hover:translate-x-[2px]'
-                                                        }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
+                                                        isActive
+                                                            ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
+                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-50 hover:to-white hover:text-orange-700 hover:shadow-sm'
+                                                    }`}
                                                 >
-                                                    <Link href={sub.url} className="flex items-center gap-2 w-full">
+                                                    <Link href={sub.url} className="flex w-full items-center gap-2">
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out 
-                                                                ${isActive
-                                                                    ? 'stroke-orange-600 text-orange-600 scale-110'
+                                                            className={`transition-all duration-200 ease-out ${
+                                                                isActive
+                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
                                                                     : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                                }`}
+                                                            }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </Link>
@@ -166,7 +155,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <div className="mt-auto border-t border-gray-100 py-3">
                 <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-orange-500 hover:to-red-500 hover:text-white transition-all"
+                    className="flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-gray-700 transition-all hover:bg-gradient-to-r hover:from-orange-500 hover:to-red-500 hover:text-white"
                 >
                     <LogOut size={16} />
                     <span>Logout</span>

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { MunicipalityDataType } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import axios, { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -16,20 +16,15 @@ interface Municipality {
 
 interface AddEditMunicipalityProps {
     isOpen: boolean;
-    editData?: MunicipalityDataType | null;
+    editData?: MunicipalityType | null;
     onClose: () => void;
-    onSuccess?: (newData: MunicipalityDataType, isEdit: boolean) => void;
+    onSuccess?: (newData: MunicipalityType, isEdit: boolean) => void;
 }
 
 const BASE = 'https://psgc.gitlab.io/api';
 const provinceCode = '174000000';
 
-export default function AddEditMunicipalityDialog({
-    isOpen,
-    onClose,
-    editData,
-    onSuccess,
-}: AddEditMunicipalityProps) {
+export default function AddEditMunicipalityDialog({ isOpen, onClose, editData, onSuccess }: AddEditMunicipalityProps) {
     const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
     const [loadingMunicipalities, setLoadingMunicipalities] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
@@ -43,7 +38,7 @@ export default function AddEditMunicipalityDialog({
         clearErrors,
         formState: { errors, isSubmitting },
         setError,
-    } = useForm<MunicipalityDataType>({
+    } = useForm<MunicipalityType>({
         defaultValues: {
             name: '',
             zip_code: '',
@@ -124,22 +119,22 @@ export default function AddEditMunicipalityDialog({
         }
         clearErrors();
         setServerError(null);
-        console.log("ID", editData?.id);
+        console.log('ID', editData?.id);
     }, [isOpen]);
 
     // 🟠 Submit handler
-    const onSubmit: SubmitHandler<MunicipalityDataType> = async (data) => {
+    const onSubmit: SubmitHandler<MunicipalityType> = async (data) => {
         setServerError(null);
         clearErrors();
 
         try {
             let response;
             if (editData) {
-                response = await axios.put(`/super-admin/municipality-update/${editData.id}`, data);
+                response = await axios.put(`/municipality/super-admin/update/${editData.id}`, data);
                 onSuccess?.(response.data.data, true);
             } else {
                 response = await axios.post('/super-admin/municipality-add', data);
-                console.log("Add id: ", response.data.id);
+                console.log('Add id: ', response.data.id);
                 onSuccess?.(response.data.data, false);
             }
 
@@ -170,9 +165,7 @@ export default function AddEditMunicipalityDialog({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-h-[90vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl sm:max-w-md">
                 <DialogHeader className="border-b border-orange-100 pb-3 text-center">
-                    <DialogTitle className="text-2xl font-bold text-gray-800">
-                        {editData ? 'Edit Municipality' : 'Add Municipality'}
-                    </DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-gray-800">{editData ? 'Edit Municipality' : 'Add Municipality'}</DialogTitle>
                     <p className="text-sm text-gray-500">Fill out the municipality details below.</p>
                 </DialogHeader>
 
@@ -199,12 +192,11 @@ export default function AddEditMunicipalityDialog({
                                         disabled={loadingMunicipalities}
                                     >
                                         <SelectTrigger
-                                            className={`w-full rounded-md border font-medium text-gray-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.name ? 'border-red-500' : 'border-gray-300'
-                                                }`}
+                                            className={`w-full rounded-md border font-medium text-gray-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                                errors.name ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         >
-                                            <SelectValue
-                                                placeholder={loadingMunicipalities ? 'Loading...' : 'Select municipality'}
-                                            />
+                                            <SelectValue placeholder={loadingMunicipalities ? 'Loading...' : 'Select municipality'} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {municipalities.map((m) => (
@@ -214,19 +206,14 @@ export default function AddEditMunicipalityDialog({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.name && (
-                                        <p className="text-xs text-red-600 mt-1">{errors.name.message}</p>
-                                    )}
+                                    {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
                                 </>
                             )}
                         </div>
 
                         {/* Zip Code */}
                         <div className="space-y-1">
-                            <Label
-                                htmlFor="zip_code"
-                                className="flex items-center gap-1 text-sm font-semibold text-gray-700"
-                            >
+                            <Label htmlFor="zip_code" className="flex items-center gap-1 text-sm font-semibold text-gray-700">
                                 Zip Code <span className="text-red-500">*</span>
                             </Label>
                             <Input
@@ -234,12 +221,11 @@ export default function AddEditMunicipalityDialog({
                                 placeholder="Enter zip code"
                                 {...register('zip_code', { required: 'Zip code is required' })}
                                 onChange={() => clearErrors('zip_code')}
-                                className={`rounded-md border bg-white font-medium text-gray-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.zip_code ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`rounded-md border bg-white font-medium text-gray-600 focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                    errors.zip_code ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             />
-                            {errors.zip_code && (
-                                <p className="text-xs text-red-600 mt-1">{errors.zip_code.message}</p>
-                            )}
+                            {errors.zip_code && <p className="mt-1 text-xs text-red-600">{errors.zip_code.message}</p>}
                         </div>
 
                         {/* Municipal Code (read-only) */}
@@ -250,10 +236,7 @@ export default function AddEditMunicipalityDialog({
                             <div className="rounded-md border border-gray-300 bg-gray-100 px-3 py-2 font-medium text-gray-600">
                                 {watch('municipal_code') || '-'}
                             </div>
-                            <input
-                                type="hidden"
-                                {...register('municipal_code', { required: 'Code is required' })}
-                            />
+                            <input type="hidden" {...register('municipal_code', { required: 'Code is required' })} />
                         </div>
 
                         {/* Active Toggle */}
@@ -261,17 +244,11 @@ export default function AddEditMunicipalityDialog({
                             <Label htmlFor="is_active" className="pr-3 text-sm font-semibold text-gray-700">
                                 Active
                             </Label>
-                            <Switch
-                                id="is_active"
-                                checked={isActive}
-                                onCheckedChange={(checked) => setValue('is_active', checked)}
-                            />
+                            <Switch id="is_active" checked={isActive} onCheckedChange={(checked) => setValue('is_active', checked)} />
                         </div>
 
                         {/* Server Error */}
-                        {serverError && (
-                            <p className="text-center text-sm text-red-600">{serverError}</p>
-                        )}
+                        {serverError && <p className="text-center text-sm text-red-600">{serverError}</p>}
 
                         {/* Footer Buttons */}
                         <DialogFooter className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
@@ -293,13 +270,7 @@ export default function AddEditMunicipalityDialog({
                                 disabled={isSubmitting}
                                 className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:opacity-50 sm:flex-none"
                             >
-                                {isSubmitting
-                                    ? editData
-                                        ? 'Updating...'
-                                        : 'Saving...'
-                                    : editData
-                                        ? 'Update'
-                                        : 'Save'}
+                                {isSubmitting ? (editData ? 'Updating...' : 'Saving...') : editData ? 'Update' : 'Save'}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -1,4 +1,4 @@
-export interface MunicipalityDataType {
+export interface MunicipalityType {
     id: string;
     name: string;
     zip_code: string;

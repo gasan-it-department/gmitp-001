@@ -4,8 +4,10 @@ namespace App\External\Api\Controllers\Municipality;
 
 use App\Core\Municipality\Exceptions\MunicipalityValidationException;
 use App\External\Api\Resources\Municipality\MunicipalityResource;
+use App\Core\Users\Application\Services\UserRoleCheckerService;
 use App\External\Api\Request\Municipality\MunicipalityRequest;
 use App\Core\Municipality\Services\AddMunicipalityService;
+use App\Core\Municipality\Services\GetActiveMunicipality;
 use App\Core\Municipality\Services\GetAllMunicipalities;
 use App\Core\Municipality\Dto\AddMunicipalityDto;
 use App\Core\Municipality\Models\Municipality;
@@ -15,6 +17,8 @@ class MunicipalityController
     public function __construct(
         private AddMunicipalityService $addMunicipalityService,
         private GetAllMunicipalities $getAllMunicipalities,
+        private GetActiveMunicipality $getActiveMunicipality,
+        private UserRoleCheckerService $roleCheckerService,
     ) {
     }
 
@@ -52,9 +56,11 @@ class MunicipalityController
         }
     }
 
+    //for super admin view
     public function index()
     {
         try {
+
             $municipalities = $this->getAllMunicipalities->execute();
 
             return response()->json([
@@ -62,6 +68,28 @@ class MunicipalityController
                 'data' => MunicipalityResource::collection($municipalities),
             ], 200);
         } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'failed to fetch municipalities',
+            ], 500);
+        }
+    }
+
+    //fetch active municipalities for non-super admin users
+    public function indexActiveMunicipalities()
+    {
+        try {
+            $municipalities = $this->getActiveMunicipality->execute();
+
+            return response()->json([
+                'success' => true,
+                'data' => MunicipalityResource::collection($municipalities),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'failed to fetch active municipalities',
+            ], 500);
         }
     }
 
