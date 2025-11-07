@@ -5,6 +5,7 @@ import AddEditEventsDialog from "./AddEditEventsDialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { EventFormData } from "@/Core/Types/BulletinBoard/Events";
+import ClassicDialog from "@/pages/Utility/ClassicDialog";
 
 export default function EventPageTable() {
     const [events, setEvents] = useState<EventFormData[]>([
@@ -95,12 +96,26 @@ export default function EventPageTable() {
         }
     };
 
-    // 🗑️ Delete Event
     const handleDelete = (id: string) => {
-        if (confirm("Are you sure you want to delete this event?")) {
-            setEvents((prev) => prev.filter((e) => e.id !== id));
-        }
+        setClassicDialog((prev) => ({
+            ...prev,
+            isOpen: true,
+            title: "Confirm",
+            message: "Are you sure you want to delete this event?",
+            positiveButtonText: "Delete",
+            negativeButtonText: "Cancel",
+            isNegativeButtonHidden: false
+        }));
     };
+
+    const [classicDialog, setClassicDialog] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
+        isNegativeButtonHidden: false
+    });
 
     return (
         <div>
@@ -197,6 +212,27 @@ export default function EventPageTable() {
                 isOpen={addEventDialog.isOpen}
                 editData={addEventDialog.editData}
                 onClose={() => setAddEventDialog({ isOpen: false, editData: null })}
+            />
+
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                open={classicDialog.isOpen}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false
+                    }));
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false
+                    }));
+                }}
             />
         </div>
     );

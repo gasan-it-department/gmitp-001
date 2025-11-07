@@ -52,9 +52,6 @@ export default function MunicipalityPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Municipalities</h1>
                 <MunicipalityHeader
-                    onSearch={() => {}}
-                    onFilterButtonClicked={() => {}}
-                    onExportButtonClicked={() => {}}
                     onAddNewButtonClicked={() =>
                         setAddEditDialog((prev) => ({
                             ...prev,

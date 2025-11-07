@@ -9,7 +9,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import axios, { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
@@ -19,12 +18,14 @@ interface AddEditAnnouncementProps {
     isOpen: boolean;
     editData?: AnnouncementFormData | null;
     onClose: () => void;
+    onSuccess: (data: AnnouncementFormData, isEdit: boolean) => void; // ✅ new prop
 }
 
 export default function AddEditAnnouncementDialog({
     isOpen,
     onClose,
     editData,
+    onSuccess,
 }: AddEditAnnouncementProps) {
     const {
         register,
@@ -46,17 +47,24 @@ export default function AddEditAnnouncementDialog({
         const payload = {
             title: data.title,
             message: data.message,
-            is_published: data.is_published
+            is_published: data.is_published,
         };
 
         try {
-            if (editData) {
-                // Update existing announcement
-                // await axios.put(`/bulletin-board/announcement/${editData.id}`, data);
-            } else {
-                // Create new announcement
-                await axios.post('/bulletin-board/announcement', payload);
+            let response;
 
+            if (editData) {
+                // ✅ Update existing
+                response = await axios.put(`/bulletin-board/announcement/${editData.id}`, payload);
+                if (response.data.success) {
+                    onSuccess(response.data.data, true);
+                }
+            } else {
+                // ✅ Create new
+                response = await axios.post('/bulletin-board/announcement', payload);
+                if (response.data.success) {
+                    onSuccess(response.data.data, false);
+                }
             }
 
             reset();
@@ -96,7 +104,7 @@ export default function AddEditAnnouncementDialog({
         }
     }, [editData, reset]);
 
-    const isPublished = watch('is_published');
+    // const isPublished = watch('is_published');
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -146,21 +154,7 @@ export default function AddEditAnnouncementDialog({
                             )}
                         </div>
 
-                        {/* Publish Toggle */}
-                        {/* <div className="flex items-center border-t border-orange-100 pt-4">
-                            <Label htmlFor="is_published" className="text-sm font-semibold text-gray-700 pr-3">
-                                Published
-                            </Label>
-                            <Switch
-                                id="is_published"
-                                checked={isPublished}
-                                onCheckedChange={(checked) =>
-                                    setValue('is_published', checked)
-                                }
-                            />
-                        </div> */}
-
-                        {/* General server error */}
+                        {/* Server error */}
                         {serverError && (
                             <p className="text-center text-sm text-red-600">{serverError}</p>
                         )}
@@ -170,7 +164,7 @@ export default function AddEditAnnouncementDialog({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => onClose()}
+                                onClick={onClose}
                                 className="flex-1 sm:flex-none rounded-md border-gray-300 text-gray-700 hover:bg-gray-100"
                             >
                                 Cancel

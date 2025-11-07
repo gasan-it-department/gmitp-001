@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import axios from '@/lib/axios';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import Utility from '@/pages/Utility/Utility';
 import { router } from '@inertiajs/react';
@@ -14,60 +15,25 @@ interface AnnouncementData {
 }
 
 export default function GeneralAnnouncement() {
-    const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
     const [classicDialogTitle, setClassicDialogTitle] = useState('');
     const [classicDialogMessage, setClassicDialogMessage] = useState('');
     const [isClassicDialogShowing, setIsClassicDialogShowing] = useState(false);
-
-    const data: AnnouncementData[] = [
-        {
-            title: 'Suspension of Classes Due to Heavy Rainfall',
-            message:
-                'All levels, both public and private, are hereby suspended today, October 10, 2025, due to continuous heavy rainfall and flooding in low-lying areas. Please stay indoors and keep safe.',
-            date: '1760348080',
-            id: 'TXN-001',
-        },
-        {
-            title: 'Power Interruption Notice',
-            message:
-                'Please be informed that there will be a scheduled power interruption on October 12, 2025, from 8:00 AM to 12:00 NN to give way to maintenance activities by the local electric cooperative. We apologize for the inconvenience.',
-            date: '1760348080',
-            id: 'TXN-002',
-        },
-        {
-            title: 'Municipal Hall Maintenance Work',
-            message:
-                'The Gasan Municipal Hall will be closed on October 14, 2025, for a one-day general cleaning and maintenance. Regular operations will resume on October 15, 2025. Thank you for your understanding.',
-            date: '1760348080',
-            id: 'TXN-003',
-        },
-        {
-            title: 'Public Advisory on Water Supply',
-            message:
-                'The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs.The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs.  The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs.  The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs.The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs. The Gasan Water District has announced a temporary water service interruption on October 11, 2025, from 10:00 PM to 5:00 AM the following day due to line flushing. Consumers are advised to store enough water for their needs.',
-            date: '1760056824',
-            id: 'TXN-004',
-        },
-        {
-            title: 'Upcoming Blood Donation Drive',
-            message:
-                'Join us for the Blood Donation Drive on October 20, 2025, at the Municipal Covered Court from 8:00 AM to 3:00 PM. Let’s save lives together!',
-            date: '1760348080',
-            id: 'TXN-005',
-        },
-    ];
+    const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
 
     useEffect(() => {
-        const now = Date.now();
-        const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-
-        const filtered = data.filter((item) => {
-            const itemDate = parseInt(item.date) * 1000;
-            return itemDate >= thirtyDaysAgo;
-        });
-
-        setAnnouncements(filtered);
+        loadAnnouncement();
     }, []);
+
+    async function loadAnnouncement() {
+        try {
+            const response = await axios.get("/bulletin-board/announcement");
+            if (response.data.success) {
+                setAnnouncementList(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching announcements:", error);
+        }
+    }
 
     return (
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:flex-row lg:px-10">
@@ -80,9 +46,9 @@ export default function GeneralAnnouncement() {
                 </div>
 
                 <div className="mt-4 w-full flex-1 bg-transparent sm:mt-6">
-                    {announcements.length > 0 ? (
+                    {announcementList.length > 0 ? (
                         <div className="flex flex-col space-y-4">
-                            {announcements.slice(0, 5).map((item, index) => (
+                            {announcementList.slice(0, 5).map((item, index) => (
                                 <motion.div
                                     key={item.id}
                                     onClick={() => {
@@ -133,7 +99,7 @@ export default function GeneralAnnouncement() {
                         </div>
                     )}
 
-                    {announcements.length > 0 && (
+                    {announcementList.length > 0 && (
                         <div className="mt-6 flex w-full justify-end">
                             <Button
                                 variant="outline"

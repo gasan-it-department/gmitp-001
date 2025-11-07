@@ -1,16 +1,19 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import BulletinHeader from "./BulletinHeader";
 import AddEditAnnouncementDialog from "./AddEditAnnouncementDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import { CheckCircle2, XCircle, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import { useQuery } from "@tanstack/react-query";
 import { usePage } from "@inertiajs/react";
+import axios from "@/lib/axios";
+import Utility from "@/pages/Utility/Utility";
+import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 
 export default function AnnouncementPageTable() {
-
+    const [announcementList, setAnnouncementList] = useState<AnnouncementFormData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { announcement } = usePage().props;
     console.log("AAAA", announcement);
     const [addEditDialog, setAddEditDialog] = useState<{
@@ -30,44 +33,6 @@ export default function AnnouncementPageTable() {
         payload: ""
     });
 
-    const dummy: AnnouncementFormData[] = [
-        {
-            title: "System Maintenance Scheduled on November 2",
-            message: "Our servers will undergo scheduled maintenance on November 2 from 12:00 AM to 4:00 AM. Please save your work beforehand to avoid interruptions.",
-            id: "A001",
-            date_posted: "2025-10-31",
-            is_published: false
-        },
-        {
-            title: "New Policy Update: Data Privacy Guidelines",
-            message: "We have updated our data privacy policy to enhance protection of user information. Please review the full document in your account settings.",
-            id: "A002",
-            date_posted: "2025-10-30",
-            is_published: false
-        },
-        {
-            title: "Office Closure for All Saints’ Day",
-            message: "In observance of All Saints’ Day, our offices will be closed on November 1. Regular operations will resume on November 2.",
-            id: "A003",
-            date_posted: "2025-10-29",
-            is_published: false
-        },
-        {
-            title: "New Feature: Announcement Board",
-            message: "We’re excited to introduce the Announcement Board feature! Stay updated with the latest organizational news, system changes, and upcoming events.",
-            id: "A004",
-            date_posted: "2025-10-28",
-            is_published: true
-        },
-        {
-            title: "Important Security Notice",
-            message: "We’ve detected phishing attempts targeting staff emails. Do not click on suspicious links and report any unusual messages to IT support immediately.",
-            id: "A008",
-            date_posted: "2025-10-24",
-            is_published: true
-        }
-    ];
-
     const renderStatusBadge = (isPublished?: boolean) => {
         const published = !!isPublished;
         return published ? (
@@ -83,10 +48,45 @@ export default function AnnouncementPageTable() {
         );
     };
 
-    const handleDelete = (id: string) => {
-        console.log("Delete id: ", id);
+    const handleDelete = async (id: string) => {
+        try {
+            const response = await axios.delete(`/bulletin-board/announcement/${id}`);
+            if (response.data.success) {
+                setAnnouncementList((prev) => prev.filter((item) => item.id !== id));
+            } else {
+                console.error(response.data.message || "Failed to delete announcement");
+            }
+        } catch (error) {
+            console.error("Error deleting announcement:", error);
+        }
     };
 
+    useEffect(() => {
+        loadAnnouncement();
+    }, []);
+
+    async function loadAnnouncement() {
+        try {
+            const response = await axios.get("/bulletin-board/announcement");
+            if (response.data.success) {
+                setAnnouncementList(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching announcements:", error);
+        }
+    }
+
+    const handleSuccess = (data: AnnouncementFormData, isEdit: boolean) => {
+        if (isEdit) {
+            // Update existing
+            setAnnouncementList((prev) =>
+                prev.map((item) => (item.id === data.id ? data : item))
+            );
+        } else {
+            // Add new
+            setAnnouncementList((prev) => [data, ...prev]);
+        }
+    }
 
     return (
         <div>
@@ -120,72 +120,78 @@ export default function AnnouncementPageTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {
+                        {announcementList.length === 0 ? (
+                            <AddminEmptyListItem 
+                            title="No Announcement yet."
+                            message="Announcement you add will appear here."/>
+                        ) : (
+                            announcementList.map((item, index) => (
+                                <TableRow
+                                    key={index}
+                                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                >
+                                    <TableCell className="text-[12px] font-medium">{item.title}</TableCell>
+                                    <TableCell className="text-[12px] max-w-[300px] p-5 overflow-hidden">
+                                        <span
+                                            className="block overflow-hidden text-ellipsis"
+                                            style={{
+                                                display: '-webkit-box',
+                                                WebkitBoxOrient: 'vertical',
+                                                WebkitLineClamp: 3,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'normal',
+                                                lineHeight: '1.4em',
+                                                maxHeight: '4.2em',
+                                            }}
+                                        >
+                                            {item.message}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-[12px]">
+                                        {Utility().formatToReadableDate(item.created_at) || '—'}
+                                    </TableCell>
+                                    <TableCell className="text-[12px]">
+                                        {renderStatusBadge(item.is_published)}
+                                    </TableCell>
 
-                        }
-
-                        {dummy.map((item, index) => (
-                            <TableRow
-                                key={index}
-                                className="hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                                <TableCell className="text-[12px] font-medium">{item.title}</TableCell>
-                                <TableCell className="text-[12px] max-w-[300px] p-5 overflow-hidden">
-                                    <span
-                                        className="block overflow-hidden text-ellipsis"
-                                        style={{
-                                            display: '-webkit-box',
-                                            WebkitBoxOrient: 'vertical',
-                                            WebkitLineClamp: 3,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'normal',
-                                            lineHeight: '1.4em',
-                                            maxHeight: '4.2em',
-                                        }}
-                                    >
-                                        {item.message}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="text-[12px]">{item.date_posted || "—"}</TableCell>
-                                <TableCell className="text-[12px]">{renderStatusBadge(item.is_published)}</TableCell>
-
-                                {/* ACTION BUTTONS */}
-                                <TableCell className="flex gap-2 justify-center">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                            setAddEditDialog({
-                                                isOpened: true,
-                                                editData: item,
-                                            })
-                                        }
-                                        className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                                    >
-                                        <Pencil size={14} />
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                            setClassicDialog((prev) => ({
-                                                ...prev,
-                                                isOpen: true,
-                                                title: "Confirm",
-                                                message: "Are you sure you want to delete this announcement?",
-                                                positiveButtonText: "Delete",
-                                                negativeButtonText: "Cancel",
-                                                payload: item.id
-                                            }));
-                                        }}
-                                        className="text-red-600 border-red-200 hover:bg-red-50"
-                                    >
-                                        <Trash2 size={14} />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                                    {/* ACTION BUTTONS */}
+                                    <TableCell className="flex gap-2 justify-center">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setAddEditDialog({
+                                                    isOpened: true,
+                                                    editData: item,
+                                                })
+                                            }
+                                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                        >
+                                            <Pencil size={14} />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setClassicDialog((prev) => ({
+                                                    ...prev,
+                                                    isOpen: true,
+                                                    title: 'Confirm',
+                                                    message: 'Are you sure you want to delete this announcement?',
+                                                    positiveButtonText: 'Delete',
+                                                    negativeButtonText: 'Cancel',
+                                                    payload: item.id,
+                                                }));
+                                            }}
+                                            className="text-red-600 border-red-200 hover:bg-red-50"
+                                        >
+                                            <Trash2 size={14} />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </div>
@@ -194,13 +200,11 @@ export default function AnnouncementPageTable() {
             <AddEditAnnouncementDialog
                 editData={addEditDialog.editData}
                 isOpen={addEditDialog.isOpened}
-                onClose={() =>
-                    setAddEditDialog({
-                        isOpened: false,
-                        editData: null,
-                    })
-                }
-            />
+                onClose={() => setAddEditDialog({
+                    isOpened: false,
+                    editData: null,
+                })}
+                onSuccess={handleSuccess} />
 
             <ClassicDialog
                 title={classicDialog.title}

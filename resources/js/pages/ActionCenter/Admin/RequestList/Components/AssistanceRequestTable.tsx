@@ -8,7 +8,6 @@ import { useState, useMemo } from 'react';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import SortSelectionDialog from './SortSelectionDialog';
-import ViewDetailsDialog from './ViewDetailsDialog';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -18,6 +17,8 @@ import {
 } from '@/components/ui/context-menu';
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { Button } from '@/components/ui/button';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export function AssistanceRequestTable() {
     const [selectedItem, setSelectedItem] = useState<AssistanceRequest | null>(null);
@@ -27,14 +28,24 @@ export function AssistanceRequestTable() {
     const [currentSelectedSortOption, setCurrentSelectedSortOption] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
-    const [classicDialog, setClassicDialog] = useState({
+    const [classicDialog, setClassicDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        positiveButtonText: string;
+        negativeButtonText: string;
+        isNegativeButtonHidden: boolean;
+        action: string;
+        payload: string;
+    }>({
         isOpen: false,
         title: "",
         message: "",
         positiveButtonText: "Ok",
         negativeButtonText: "Cancel",
         isNegativeButtonHidden: true,
-        action: ""
+        action: "",
+        payload: "",
     });
 
     const { data, isLoading, error } = useQuery<{ request: AssistanceRequest[] }>({
@@ -43,11 +54,6 @@ export function AssistanceRequestTable() {
         refetchOnWindowFocus: false,
     });
 
-    function handleDeleteRequest(requestId: string) {
-        console.log('Deleting request with ID:', requestId);
-    }
-
-    // ✅ Combine search + filter + sort logic
     const filteredRequests = useMemo(() => {
         if (!data?.request) return [];
 
@@ -98,6 +104,14 @@ export function AssistanceRequestTable() {
         return results;
     }, [data, searchQuery, selectedStatus, currentSelectedSortOption]);
 
+    const handleDeleteRequest = async (requestId: string) => {
+        try {
+            console.log("Deleting: ", requestId);
+        } catch (error) {
+            console.error("Error deleting request:", error);
+        }
+    };
+
     return (
         <div>
             {/* HEADER */}
@@ -138,6 +152,7 @@ export function AssistanceRequestTable() {
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Transaction Number</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Status</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Due Date</TableHead>
+                            <TableHead className="bg-gray-50 text-[12px] font-bold">Action</TableHead>
                         </TableRow>
                     </TableHeader>
 
@@ -172,7 +187,6 @@ export function AssistanceRequestTable() {
                                 <ContextMenu key={req.id}>
                                     <ContextMenuTrigger asChild>
                                         <TableRow
-                                            onClick={() => setSelectedItem(req)}
                                             className="hover:bg-gray-50 cursor-pointer transition-colors"
                                         >
                                             <TableCell className="text-[12px]">{index + 1}</TableCell>
@@ -214,6 +228,41 @@ export function AssistanceRequestTable() {
 
                                             <TableCell className="text-[12px]">
                                                 {Utility().formatAndAddDays(req.created_at, 90)}
+                                            </TableCell>
+
+                                            {/* ACTION BUTTONS */}
+                                            <TableCell className="flex gap-2 justify-center">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setEditingData(req);
+                                                        setIsAddNewRecordDialogOpen(true);
+                                                    }}
+                                                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                                >
+                                                    <Pencil size={14} />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setClassicDialog((prev) => ({
+                                                            ...prev,
+                                                            isOpen: true,
+                                                            title: "Delete Record",
+                                                            message: "Are you sure you want to delete this record? This cannot be undone.",
+                                                            positiveButtonText: "Delete",
+                                                            negativeButtonText: "Cancel",
+                                                            isNegativeButtonHidden: false,
+                                                            action: "delete_record",
+                                                            payload: req.id
+                                                        }));
+                                                    }}
+                                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     </ContextMenuTrigger>
@@ -259,22 +308,6 @@ export function AssistanceRequestTable() {
                 onClose={() => setIsAddNewRecordDialogOpen(false)}
             />
 
-            {selectedItem && (
-                <ViewDetailsDialog
-                    onEditClicked={(editData) => {
-                        setEditingData(editData);
-                        setIsAddNewRecordDialogOpen(true);
-                    }}
-                    onDeleteClicked={(requestedId) => {
-                        handleDeleteRequest(requestedId);
-                        console.log('Delete clicked.');
-                    }}
-                    isOpen={!!selectedItem}
-                    onClose={() => setSelectedItem(null)}
-                    details={selectedItem}
-                />
-            )}
-
             <ClassicDialog
                 title={classicDialog.title}
                 message={classicDialog.message}
@@ -283,16 +316,20 @@ export function AssistanceRequestTable() {
                 negativeButtonText={classicDialog.negativeButtonText}
                 open={classicDialog.isOpen}
                 onPositiveClick={() => {
-                    switch(classicDialog.action){
+                    switch (classicDialog.action) {
+                        case "delete_record":
+                            handleDeleteRequest(classicDialog.payload);
+                            break;
                         case "file_export":
                             ToExcel(filteredRequests, `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`)
-                        break;
+                            break;
                     }
 
                     setClassicDialog((prev) => ({
                         ...prev,
                         isOpen: false,
-                        action: ""
+                        action: "",
+                        payload: ""
                     }));
                 }}
 
@@ -300,7 +337,8 @@ export function AssistanceRequestTable() {
                     setClassicDialog((prev) => ({
                         ...prev,
                         isOpen: false,
-                        action: ""
+                        action: "",
+                        payload: ""
                     }));
 
                 }} />

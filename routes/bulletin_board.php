@@ -35,8 +35,11 @@ Route::prefix('bulletin-board')
             ->controller(AnnouncementController::class)
             ->group(function () {
 
+            Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
+            Route::put('/{id}', 'update')->name('update');
             Route::patch('/{$id}/publish/', 'publish')->name('publish');
+            Route::delete('/{id}', 'destroy')->name('destroy');
         });
 
         // EVENTS (admin pages)

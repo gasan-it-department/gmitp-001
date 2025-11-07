@@ -11,18 +11,30 @@ export default function Utility() {
     //     }
     //     return moment(parseInt(epochTime, 10) * 1000).format('MMM DD, YYYY hh:mm:ss A');
     // }
-    function formatToReadableDate(dateTimeString: string | undefined): string {
-        if (!dateTimeString) {
-            return 'Unknown date';
+    function formatToReadableDate(dateTime: string | number | undefined): string {
+        if (!dateTime) {
+            return "Unknown date";
         }
 
-        const date = moment(dateTimeString);
+        let dateMoment;
 
-        if (!date.isValid()) {
-            return 'Invalid date format';
+        // Handle numeric epoch (either seconds or milliseconds)
+        if (!isNaN(Number(dateTime))) {
+            const epoch = Number(dateTime);
+            dateMoment = epoch > 9999999999
+                ? moment(epoch) // milliseconds
+                : moment.unix(epoch); // seconds
+        }
+        // Otherwise, assume ISO or readable date string
+        else {
+            dateMoment = moment(dateTime);
         }
 
-        return date.format('MMM DD, YYYY hh:mm A');
+        if (!dateMoment.isValid()) {
+            return "Invalid date format";
+        }
+
+        return dateMoment.format("MMM DD, YYYY hh:mm A");
     }
 
     // function formatAndAddDays(epochTime: string | undefined, additionalDays: number = 0) {
@@ -57,9 +69,24 @@ export default function Utility() {
         return Math.floor(diffMs / (1000 * 60 * 60 * 24));
     }
 
-    function formatTimeAgo(epochTime: string) {
-        const epochNumber = parseInt(epochTime, 10);
-        return moment.unix(epochNumber).fromNow();
+    function formatTimeAgo(time: string | number) {
+        let dateMoment;
+
+        // If it's a number or numeric string (epoch timestamp)
+        if (!isNaN(Number(time))) {
+            const epochNumber = Number(time);
+            // Detect if in seconds or milliseconds
+            dateMoment = epochNumber > 9999999999
+                ? moment(epochNumber) // milliseconds
+                : moment.unix(epochNumber); // seconds
+        }
+        // Otherwise, assume ISO or standard date string
+        else {
+            dateMoment = moment(time);
+        }
+
+        if (!dateMoment.isValid()) return "Invalid date";
+        return dateMoment.fromNow();
     }
 
     function calculateArrivingDays(epochTime: string | number): string {
@@ -74,7 +101,7 @@ export default function Utility() {
         return `${Math.abs(diffDays)} days ago`;
     }
 
-    
+
 
 
     return { generateUniqueId, formatToReadableDate, formatAndAddDays, calculateTotalDays, formatTimeAgo, calculateArrivingDays };

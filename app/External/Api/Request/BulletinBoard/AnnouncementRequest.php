@@ -33,7 +33,7 @@ class AnnouncementRequest extends FormRequest
                 'required',
                 'string',
                 'min:5',
-                'max:255',
+                'max:5000',
             ],
         ];
     }

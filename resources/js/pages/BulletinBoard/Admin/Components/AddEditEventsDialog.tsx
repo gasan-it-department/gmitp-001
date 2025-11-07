@@ -66,6 +66,7 @@ export default function AddEditEventsDialog({
         try {
             if (editData) {
                 // await axios.put(`/bulletin-board/events/${editData.id}`, data);
+                console.log("New Data", data);
             } else {
                 await axios.post('/bulletin-board/events', data);
             }

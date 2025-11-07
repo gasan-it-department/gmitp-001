@@ -144,7 +144,7 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData, o
             const err = error as AxiosError<any>;
             const data = err.response?.data;
 
-            // 🟠 Map server errors to specific fields
+            // 🟠 Handle custom validation errors array
             if (data?.errors && Array.isArray(data.errors)) {
                 data.errors.forEach((msg: string) => {
                     if (msg.toLowerCase().includes('municipality')) {
@@ -155,9 +155,37 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData, o
                         setError('municipal_code', { type: 'server', message: msg });
                     }
                 });
-            } else {
-                setServerError('Something went wrong. Please try again.');
+                return;
             }
+
+            // // 🟠 Handle SQL unique constraint errors (e.g., zip code already exists)
+            // if (typeof data?.error === 'string') {
+            //     const errorMsg = data.error.toLowerCase();
+
+            //     if (errorMsg.includes('zip_code')) {
+            //         setError('zip_code', {
+            //             type: 'server',
+            //             message: 'Zip code already exists.',
+            //         });
+            //     } else if (errorMsg.includes('municipality')) {
+            //         setError('name', {
+            //             type: 'server',
+            //             message: 'Municipality already exists.',
+            //         });
+            //     } else if (errorMsg.includes('municipal_code')) {
+            //         setError('municipal_code', {
+            //             type: 'server',
+            //             message: 'Municipal code already exists.',
+            //         });
+            //     } else {
+            //         setServerError('A database error occurred. Please try again.');
+            //     }
+
+            //     return;
+            // }
+
+            // // 🟠 Fallback error message
+            // setServerError('Something went wrong. Please try again.');
         }
     };
 
