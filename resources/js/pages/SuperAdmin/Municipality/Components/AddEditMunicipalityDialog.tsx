@@ -133,7 +133,7 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData, o
                 response = await axios.put(`/municipality/super-admin/update/${editData.id}`, data);
                 onSuccess?.(response.data.data, true);
             } else {
-                response = await axios.post('/super-admin/municipality-add', data);
+                response = await axios.post('/municipality/super-admin/add', data);
                 console.log('Add id: ', response.data.id);
                 onSuccess?.(response.data.data, false);
             }

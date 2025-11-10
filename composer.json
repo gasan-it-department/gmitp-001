@@ -17,6 +17,7 @@
         "laravel/passport": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "laravel/wayfinder": "^0.1.12",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {

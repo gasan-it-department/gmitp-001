@@ -2,7 +2,6 @@
 
 namespace App\Core\Municipality\Rules;
 
-use App\Core\Municipality\Dto\AddMunicipalityDto;
 use App\Core\Municipality\Repositories\MunicipalityRepository;
 
 use App\Core\Municipality\Exceptions\MunicipalityValidationException;
@@ -13,7 +12,7 @@ class MunicipalityValidator
     {
     }
 
-    public function validate(AddMunicipalityDto $dto)
+    public function validate(object $dto)
     {
         $errors = [];
 
@@ -25,15 +24,17 @@ class MunicipalityValidator
             $errors[] = 'Code is required';
         }
 
-        if ($this->municipalityRepository->findByName($dto->name)) {
+        $ignoreId = property_exists($dto, 'id') ? $dto->id : null;
+
+        if ($this->municipalityRepository->findByName($dto->name, $ignoreId)) {
             $errors[] = 'Municipality is already exist.';
         }
 
-        if ($this->municipalityRepository->findByName($dto->zipCode)) {
+        if ($this->municipalityRepository->findByZipCode($dto->zipCode, $ignoreId)) {
             $errors[] = 'Municipality zip code is already exist.';
         }
 
-        if ($this->municipalityRepository->findByCode($dto->code)) {
+        if ($this->municipalityRepository->findByCode($dto->code, $ignoreId)) {
             $errors[] = 'Municipal code is already exist.';
         }
         if (!is_bool($dto->isActive)) {

@@ -9,9 +9,10 @@ use App\External\Api\Request\Municipality\MunicipalityRequest;
 use App\Core\Municipality\Services\AddMunicipalityService;
 use App\Core\Municipality\Services\GetActiveMunicipality;
 use App\Core\Municipality\Services\GetAllMunicipalities;
+use App\Core\Municipality\Dto\UpdateMunicipalityDto;
 use App\Core\Municipality\Dto\AddMunicipalityDto;
 use App\Core\Municipality\Models\Municipality;
-
+use App\Core\Municipality\Services\UpdateMunicipality;
 class MunicipalityController
 {
     public function __construct(
@@ -19,6 +20,7 @@ class MunicipalityController
         private GetAllMunicipalities $getAllMunicipalities,
         private GetActiveMunicipality $getActiveMunicipality,
         private UserRoleCheckerService $roleCheckerService,
+        private UpdateMunicipality $updateMunicipality,
     ) {
     }
 
@@ -34,7 +36,7 @@ class MunicipalityController
                 isActive: $municipalityData['is_active'] ?? false,
             );
 
-        $municipality = $this->addMunicipalityService->execute($dto);
+            $municipality = $this->addMunicipalityService->execute($dto);
 
             return response()->json([
                 'success' => true,
@@ -96,14 +98,18 @@ class MunicipalityController
     public function update(MunicipalityRequest $request, $id)
     {
         try {
+
             $validatedData = $request->validated();
-            $municipality = Municipality::findOrFail($id);
-            $municipality->update([
-                'name' => $validatedData['name'],
-                'code' => $validatedData['municipal_code'],
-                'zip_code' => $validatedData['zip_code'],
-                'is_active' => $validatedData['is_active'] ?? false,
-            ]);
+
+            $dto = new UpdateMunicipalityDto(
+                $id,
+                $validatedData['name'],
+                $validatedData['municipal_code'],
+                $validatedData['zip_code'],
+                $validatedData['is_active'],
+            );
+
+            $municipality = $this->updateMunicipality->execute($dto);
 
             return response()->json([
                 'success' => true,

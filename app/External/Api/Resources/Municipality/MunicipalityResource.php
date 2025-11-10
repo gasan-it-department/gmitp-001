@@ -21,6 +21,7 @@ class MunicipalityResource extends JsonResource
         $data = [
             'id' => $this->id,
             'name' => $this->name,
+            'slug' => $this->slug,
             'zip_code' => $this->zip_code,
             'municipal_code' => $this->municipal_code,
         ];
