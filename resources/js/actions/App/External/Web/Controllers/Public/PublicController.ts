@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
  * @see app/External/Web/Controllers/Public/PublicController.php:11
@@ -42,6 +42,41 @@ showMainLandingPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:11
+ * @route '/'
+ */
+    const showMainLandingPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showMainLandingPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:11
+ * @route '/'
+ */
+        showMainLandingPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMainLandingPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:11
+ * @route '/'
+ */
+        showMainLandingPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMainLandingPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showMainLandingPage.form = showMainLandingPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showServicePage
  * @see app/External/Web/Controllers/Public/PublicController.php:21
@@ -85,6 +120,41 @@ showServicePage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:21
+ * @route '/services'
+ */
+    const showServicePageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showServicePage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:21
+ * @route '/services'
+ */
+        showServicePageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showServicePage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:21
+ * @route '/services'
+ */
+        showServicePageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showServicePage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showServicePage.form = showServicePageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showNewsEventsPage
  * @see app/External/Web/Controllers/Public/PublicController.php:31
@@ -128,6 +198,41 @@ showNewsEventsPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showNewsEventsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:31
+ * @route '/news-events'
+ */
+    const showNewsEventsPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showNewsEventsPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showNewsEventsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:31
+ * @route '/news-events'
+ */
+        showNewsEventsPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showNewsEventsPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showNewsEventsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:31
+ * @route '/news-events'
+ */
+        showNewsEventsPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showNewsEventsPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showNewsEventsPage.form = showNewsEventsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
  * @see app/External/Web/Controllers/Public/PublicController.php:36
@@ -171,6 +276,41 @@ showGovernmentPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/government'
+ */
+    const showGovernmentPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showGovernmentPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/government'
+ */
+        showGovernmentPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showGovernmentPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/government'
+ */
+        showGovernmentPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showGovernmentPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showGovernmentPage.form = showGovernmentPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
@@ -214,6 +354,41 @@ showHomePage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showHomePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:16
+ * @route '/home'
+ */
+    const showHomePageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showHomePage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showHomePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:16
+ * @route '/home'
+ */
+        showHomePageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showHomePage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showHomePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:16
+ * @route '/home'
+ */
+        showHomePageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showHomePage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showHomePage.form = showHomePageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
  * @see app/External/Web/Controllers/Public/PublicController.php:41
@@ -257,6 +432,41 @@ showPrivacyPolicyPage.head = (options?: RouteQueryOptions): RouteDefinition<'hea
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
+ * @route '/privacy-policy'
+ */
+    const showPrivacyPolicyPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showPrivacyPolicyPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
+ * @route '/privacy-policy'
+ */
+        showPrivacyPolicyPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showPrivacyPolicyPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
+ * @route '/privacy-policy'
+ */
+        showPrivacyPolicyPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showPrivacyPolicyPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showPrivacyPolicyPage.form = showPrivacyPolicyPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
  * @see app/External/Web/Controllers/Public/PublicController.php:46
@@ -300,6 +510,41 @@ showMunicipalAdminPage.head = (options?: RouteQueryOptions): RouteDefinition<'he
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
+ * @route '/municipal-admin'
+ */
+    const showMunicipalAdminPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showMunicipalAdminPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
+ * @route '/municipal-admin'
+ */
+        showMunicipalAdminPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMunicipalAdminPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
+ * @route '/municipal-admin'
+ */
+        showMunicipalAdminPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMunicipalAdminPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showMunicipalAdminPage.form = showMunicipalAdminPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
  * @see app/External/Web/Controllers/Public/PublicController.php:51
@@ -343,6 +588,41 @@ showActionCenterPage.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
+ * @route '/action-center'
+ */
+    const showActionCenterPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showActionCenterPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
+ * @route '/action-center'
+ */
+        showActionCenterPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
+ * @route '/action-center'
+ */
+        showActionCenterPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showActionCenterPage.form = showActionCenterPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
  * @see app/External/Web/Controllers/Public/PublicController.php:56
@@ -386,6 +666,41 @@ showActionCenterRequestPage.head = (options?: RouteQueryOptions): RouteDefinitio
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
+ * @route '/action-center/request-list'
+ */
+    const showActionCenterRequestPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showActionCenterRequestPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
+ * @route '/action-center/request-list'
+ */
+        showActionCenterRequestPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterRequestPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
+ * @route '/action-center/request-list'
+ */
+        showActionCenterRequestPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterRequestPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showActionCenterRequestPage.form = showActionCenterRequestPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
  * @see app/External/Web/Controllers/Public/PublicController.php:61
@@ -429,6 +744,41 @@ showMyAccountPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
+ * @route '/my-account'
+ */
+    const showMyAccountPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showMyAccountPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
+ * @route '/my-account'
+ */
+        showMyAccountPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMyAccountPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
+ * @route '/my-account'
+ */
+        showMyAccountPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMyAccountPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showMyAccountPage.form = showMyAccountPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
  * @see app/External/Web/Controllers/Public/PublicController.php:26
@@ -472,6 +822,41 @@ showContactUsPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
+ * @route '/contact-us'
+ */
+    const showContactUsPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showContactUsPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
+ * @route '/contact-us'
+ */
+        showContactUsPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showContactUsPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
+ * @route '/contact-us'
+ */
+        showContactUsPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showContactUsPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showContactUsPage.form = showContactUsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
  * @see app/External/Web/Controllers/Public/PublicController.php:66
@@ -515,6 +900,41 @@ showTravelPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
+ * @route '/travel'
+ */
+    const showTravelPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showTravelPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
+ * @route '/travel'
+ */
+        showTravelPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTravelPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
+ * @route '/travel'
+ */
+        showTravelPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTravelPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showTravelPage.form = showTravelPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
  * @see app/External/Web/Controllers/Public/PublicController.php:71
@@ -558,6 +978,41 @@ showTransparencyPage.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
+ * @route '/transparency'
+ */
+    const showTransparencyPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showTransparencyPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
+ * @route '/transparency'
+ */
+        showTransparencyPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTransparencyPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
+ * @route '/transparency'
+ */
+        showTransparencyPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTransparencyPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showTransparencyPage.form = showTransparencyPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
  * @see app/External/Web/Controllers/Public/PublicController.php:76
@@ -601,6 +1056,41 @@ showExecutiveOrdersPage.head = (options?: RouteQueryOptions): RouteDefinition<'h
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
+ * @route '/executive-orders'
+ */
+    const showExecutiveOrdersPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showExecutiveOrdersPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
+ * @route '/executive-orders'
+ */
+        showExecutiveOrdersPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showExecutiveOrdersPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
+ * @route '/executive-orders'
+ */
+        showExecutiveOrdersPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showExecutiveOrdersPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showExecutiveOrdersPage.form = showExecutiveOrdersPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
  * @see app/External/Web/Controllers/Public/PublicController.php:81
@@ -644,6 +1134,41 @@ showAnnouncementsPage.head = (options?: RouteQueryOptions): RouteDefinition<'hea
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
+ * @route '/announcements'
+ */
+    const showAnnouncementsPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showAnnouncementsPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
+ * @route '/announcements'
+ */
+        showAnnouncementsPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showAnnouncementsPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
+ * @route '/announcements'
+ */
+        showAnnouncementsPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showAnnouncementsPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showAnnouncementsPage.form = showAnnouncementsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
  * @see app/External/Web/Controllers/Public/PublicController.php:86
@@ -686,6 +1211,42 @@ showWeddingPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     url: showWeddingPage.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
+ * @route '/schedule-wedding'
+ */
+    const showWeddingPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showWeddingPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
+ * @route '/schedule-wedding'
+ */
+        showWeddingPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showWeddingPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
+ * @route '/schedule-wedding'
+ */
+        showWeddingPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showWeddingPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showWeddingPage.form = showWeddingPageForm
 const PublicController = { showMainLandingPage, showServicePage, showNewsEventsPage, showGovernmentPage, showHomePage, showPrivacyPolicyPage, showMunicipalAdminPage, showActionCenterPage, showActionCenterRequestPage, showMyAccountPage, showContactUsPage, showTravelPage, showTransparencyPage, showExecutiveOrdersPage, showAnnouncementsPage, showWeddingPage }
 
 export default PublicController

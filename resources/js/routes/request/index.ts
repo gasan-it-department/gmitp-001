@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::create
  * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
@@ -42,6 +42,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::create
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/action-center/request/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::create
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/action-center/request/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::create
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/action-center/request/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::edit
  * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
@@ -103,6 +138,42 @@ edit.head = (args: { request: string | number } | [request: string | number ] | 
     url: edit.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::edit
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/action-center/request/{request}/edit'
+ */
+    const editForm = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::edit
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/action-center/request/{request}/edit'
+ */
+        editForm.get = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::edit
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/action-center/request/{request}/edit'
+ */
+        editForm.head = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 const request = {
     create: Object.assign(create, create),
 edit: Object.assign(edit, edit),

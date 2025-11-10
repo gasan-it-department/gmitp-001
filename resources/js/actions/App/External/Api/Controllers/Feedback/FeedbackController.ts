@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::index
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::index
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
+ * @route '/feedback'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::index
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
+ * @route '/feedback'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::index
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
+ * @route '/feedback'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::store
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
@@ -76,6 +111,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::store
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
+ * @route '/feedback'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::store
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
+ * @route '/feedback'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::show
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
@@ -138,6 +194,41 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     method: 'head',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::show
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
+ * @route '/feedback/{id}'
+ */
+    const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::show
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
+ * @route '/feedback/{id}'
+ */
+        showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::show
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
+ * @route '/feedback/{id}'
+ */
+        showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::update
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
@@ -191,6 +282,37 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
     method: 'put',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::update
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
+ * @route '/feedback/{id}'
+ */
+    const updateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::update
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
+ * @route '/feedback/{id}'
+ */
+        updateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::destroy
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
@@ -243,6 +365,38 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
     url: destroy.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::destroy
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
+ * @route '/feedback/{id}'
+ */
+    const destroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::destroy
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
+ * @route '/feedback/{id}'
+ */
+        destroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 const FeedbackController = { index, store, show, update, destroy }
 
 export default FeedbackController

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../wayfinder'
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
@@ -33,6 +33,27 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
+ * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
+ * @route '/login'
+ */
+    const loginForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: login.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
+ * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
+ * @route '/login'
+ */
+        loginForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: login.url(options),
+            method: 'post',
+        })
+    
+    login.form = loginForm
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
@@ -67,6 +88,27 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
+ * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
+ * @route '/logout'
+ */
+    const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: logout.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
+ * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
+ * @route '/logout'
+ */
+        logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: logout.url(options),
+            method: 'post',
+        })
+    
+    logout.form = logoutForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
@@ -110,6 +152,41 @@ feedbackindex.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     method: 'head',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
+ * @route '/feedback'
+ */
+    const feedbackindexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: feedbackindex.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
+ * @route '/feedback'
+ */
+        feedbackindexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: feedbackindex.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
+ * @route '/feedback'
+ */
+        feedbackindexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: feedbackindex.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    feedbackindex.form = feedbackindexForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
@@ -144,6 +221,27 @@ feedbackstore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
     method: 'post',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
+ * @route '/feedback'
+ */
+    const feedbackstoreForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: feedbackstore.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
+ * @route '/feedback'
+ */
+        feedbackstoreForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: feedbackstore.url(options),
+            method: 'post',
+        })
+    
+    feedbackstore.form = feedbackstoreForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
@@ -206,6 +304,41 @@ feedbackshow.head = (args: { id: string | number } | [id: string | number ] | st
     method: 'head',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
+ * @route '/feedback/{id}'
+ */
+    const feedbackshowForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: feedbackshow.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
+ * @route '/feedback/{id}'
+ */
+        feedbackshowForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: feedbackshow.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
+ * @route '/feedback/{id}'
+ */
+        feedbackshowForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: feedbackshow.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    feedbackshow.form = feedbackshowForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
@@ -259,6 +392,37 @@ feedbackupdate.put = (args: { id: string | number } | [id: string | number ] | s
     method: 'put',
 })
 
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
+ * @route '/feedback/{id}'
+ */
+    const feedbackupdateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: feedbackupdate.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
+ * @route '/feedback/{id}'
+ */
+        feedbackupdateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: feedbackupdate.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    feedbackupdate.form = feedbackupdateForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
@@ -311,3 +475,35 @@ feedbackdestroy.delete = (args: { id: string | number } | [id: string | number ]
     url: feedbackdestroy.url(args, options),
     method: 'delete',
 })
+
+    /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
+ * @route '/feedback/{id}'
+ */
+    const feedbackdestroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: feedbackdestroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
+ * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
+ * @route '/feedback/{id}'
+ */
+        feedbackdestroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: feedbackdestroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    feedbackdestroy.form = feedbackdestroyForm

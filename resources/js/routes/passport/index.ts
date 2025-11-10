@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 import token0f65b5 from './token'
 import authorizations from './authorizations'
 import deviceD55896 from './device'
@@ -36,6 +36,27 @@ token.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \Laravel\Passport\Http\Controllers\AccessTokenController::token
+ * @see vendor/laravel/passport/src/Http/Controllers/AccessTokenController.php:25
+ * @route '/oauth/token'
+ */
+    const tokenForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: token.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\AccessTokenController::token
+ * @see vendor/laravel/passport/src/Http/Controllers/AccessTokenController.php:25
+ * @route '/oauth/token'
+ */
+        tokenForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: token.url(options),
+            method: 'post',
+        })
+    
+    token.form = tokenForm
 /**
 * @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
@@ -78,6 +99,42 @@ device.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: device.url(options),
     method: 'head',
 })
+
+    /**
+* @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
+ * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
+ * @route '/oauth/device'
+ */
+    const deviceForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: device.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
+ * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
+ * @route '/oauth/device'
+ */
+        deviceForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: device.url(options),
+            method: 'get',
+        })
+            /**
+* @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
+ * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
+ * @route '/oauth/device'
+ */
+        deviceForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: device.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    device.form = deviceForm
 const passport = {
     token: Object.assign(token, token0f65b5),
 authorizations: Object.assign(authorizations, authorizations),

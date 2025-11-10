@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\AuthorizationController::authorize
  * @see vendor/laravel/passport/src/Http/Controllers/AuthorizationController.php:41
@@ -42,6 +42,41 @@ authorize.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \Laravel\Passport\Http\Controllers\AuthorizationController::authorize
+ * @see vendor/laravel/passport/src/Http/Controllers/AuthorizationController.php:41
+ * @route '/oauth/authorize'
+ */
+    const authorizeForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: authorize.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\AuthorizationController::authorize
+ * @see vendor/laravel/passport/src/Http/Controllers/AuthorizationController.php:41
+ * @route '/oauth/authorize'
+ */
+        authorizeForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: authorize.url(options),
+            method: 'get',
+        })
+            /**
+* @see \Laravel\Passport\Http\Controllers\AuthorizationController::authorize
+ * @see vendor/laravel/passport/src/Http/Controllers/AuthorizationController.php:41
+ * @route '/oauth/authorize'
+ */
+        authorizeForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: authorize.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    authorize.form = authorizeForm
 /**
 * @see \Laravel\Passport\Http\Controllers\ApproveAuthorizationController::approve
  * @see vendor/laravel/passport/src/Http/Controllers/ApproveAuthorizationController.php:25
@@ -76,6 +111,27 @@ approve.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \Laravel\Passport\Http\Controllers\ApproveAuthorizationController::approve
+ * @see vendor/laravel/passport/src/Http/Controllers/ApproveAuthorizationController.php:25
+ * @route '/oauth/authorize'
+ */
+    const approveForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: approve.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\ApproveAuthorizationController::approve
+ * @see vendor/laravel/passport/src/Http/Controllers/ApproveAuthorizationController.php:25
+ * @route '/oauth/authorize'
+ */
+        approveForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: approve.url(options),
+            method: 'post',
+        })
+    
+    approve.form = approveForm
 /**
 * @see \Laravel\Passport\Http\Controllers\DenyAuthorizationController::deny
  * @see vendor/laravel/passport/src/Http/Controllers/DenyAuthorizationController.php:25
@@ -109,6 +165,38 @@ deny.delete = (options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: deny.url(options),
     method: 'delete',
 })
+
+    /**
+* @see \Laravel\Passport\Http\Controllers\DenyAuthorizationController::deny
+ * @see vendor/laravel/passport/src/Http/Controllers/DenyAuthorizationController.php:25
+ * @route '/oauth/authorize'
+ */
+    const denyForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: deny.url({
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\DenyAuthorizationController::deny
+ * @see vendor/laravel/passport/src/Http/Controllers/DenyAuthorizationController.php:25
+ * @route '/oauth/authorize'
+ */
+        denyForm.delete = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: deny.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    deny.form = denyForm
 const authorizations = {
     authorize: Object.assign(authorize, authorize),
 approve: Object.assign(approve, approve),

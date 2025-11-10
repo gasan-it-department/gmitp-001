@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
  * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:26
@@ -51,6 +51,28 @@ status.post = (args: { assistanceId: string | number } | [assistanceId: string |
     url: status.url(args, options),
     method: 'post',
 })
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:26
+ * @route '/action-center/admin/request/{assistanceId}/status'
+ */
+    const statusForm = (args: { assistanceId: string | number } | [assistanceId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: status.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:26
+ * @route '/action-center/admin/request/{assistanceId}/status'
+ */
+        statusForm.post = (args: { assistanceId: string | number } | [assistanceId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: status.url(args, options),
+            method: 'post',
+        })
+    
+    status.form = statusForm
 const update = {
     status: Object.assign(status, status),
 }

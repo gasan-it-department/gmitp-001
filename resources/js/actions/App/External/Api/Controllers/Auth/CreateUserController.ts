@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\Auth\CreateUserController::createUser
  * @see app/External/Api/Controllers/Auth/CreateUserController.php:23
@@ -32,6 +32,28 @@ createUser.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: createUser.url(options),
     method: 'post',
 })
+
+    /**
+* @see \App\External\Api\Controllers\Auth\CreateUserController::createUser
+ * @see app/External/Api/Controllers/Auth/CreateUserController.php:23
+ * @route '/store-account'
+ */
+    const createUserForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: createUser.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\Auth\CreateUserController::createUser
+ * @see app/External/Api/Controllers/Auth/CreateUserController.php:23
+ * @route '/store-account'
+ */
+        createUserForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: createUser.url(options),
+            method: 'post',
+        })
+    
+    createUser.form = createUserForm
 const CreateUserController = { createUser }
 
 export default CreateUserController
