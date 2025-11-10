@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { getMunicipalities } from '@/Core/Api/Municipality/MunicipalityApi';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { show as home } from '@/routes/home';
 import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
@@ -75,7 +76,7 @@ export function MunicipalityCard() {
 
                             {/* 🔗 CTA */}
                             <Link
-                                // href={home({ slug: municipality.slug })}
+                                href={home({ slug: municipality.slug })}
                                 className="mt-5 inline-block w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:from-orange-600 hover:to-red-600 hover:shadow-lg focus:ring-2 focus:ring-orange-300 focus:ring-offset-2"
                             >
                                 View Details

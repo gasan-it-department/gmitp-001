@@ -6,7 +6,7 @@ Route::get('/', [PublicController::class, 'showMainLandingPage'])->name('landing
 Route::get('/services', [PublicController::class, 'showServicePage'])->name('services.show');
 Route::get('/news-events', [PublicController::class, 'showNewsEventsPage'])->name('news.events.show');
 Route::get('/government', [PublicController::class, 'showGovernmentPage'])->name('government.show');
-Route::get('/home', [PublicController::class, 'showHomePage'])->name('home.show');
+Route::get('/{slug}/home', [PublicController::class, 'showHomePage'])->name('home.show');
 Route::get('/privacy-policy', [PublicController::class, 'showPrivacyPolicyPage'])->name('privacy.policy.show');
 Route::get('/municipal-admin', [PublicController::class, 'showMunicipalAdminPage'])->name('municipal.admin.show');
 Route::get('/action-center', [PublicController::class, 'showActionCenterPage'])->name('action.center.show');

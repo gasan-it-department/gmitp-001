@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
  * @see app/External/Web/Controllers/Public/PublicController.php:11
@@ -314,72 +314,91 @@ showGovernmentPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'>
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-export const showHomePage = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: showHomePage.url(options),
+export const showHomePage = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: showHomePage.url(args, options),
     method: 'get',
 })
 
 showHomePage.definition = {
     methods: ["get","head"],
-    url: '/home',
+    url: '/{slug}/home',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-showHomePage.url = (options?: RouteQueryOptions) => {
-    return showHomePage.definition.url + queryParams(options)
+showHomePage.url = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { slug: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    slug: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        slug: args.slug,
+                }
+
+    return showHomePage.definition.url
+            .replace('{slug}', parsedArgs.slug.toString())
+            .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-showHomePage.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: showHomePage.url(options),
+showHomePage.get = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: showHomePage.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-showHomePage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: showHomePage.url(options),
+showHomePage.head = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: showHomePage.url(args, options),
     method: 'head',
 })
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-    const showHomePageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showHomePage.url(options),
+    const showHomePageForm = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showHomePage.url(args, options),
         method: 'get',
     })
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-        showHomePageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showHomePage.url(options),
+        showHomePageForm.get = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showHomePage.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/home'
+ * @route '/{slug}/home'
  */
-        showHomePageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showHomePage.url({
+        showHomePageForm.head = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showHomePage.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
