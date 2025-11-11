@@ -2,61 +2,61 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-export const show = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const show = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
 
 show.definition = {
     methods: ["get","head"],
-    url: '/{slug}/home',
+    url: '/{municipality}/home',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-show.url = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions) => {
+show.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
-        args = { slug: args }
+        args = { municipality: args }
     }
 
     
     if (Array.isArray(args)) {
         args = {
-                    slug: args[0],
+                    municipality: args[0],
                 }
     }
 
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        slug: args.slug,
+                        municipality: args.municipality,
                 }
 
     return show.definition.url
-            .replace('{slug}', parsedArgs.slug.toString())
+            .replace('{municipality}', parsedArgs.municipality.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-show.get = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-show.head = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
@@ -64,9 +64,9 @@ show.head = (args: { slug: string | number } | [slug: string | number ] | string
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-    const showForm = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const showForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
         method: 'get',
     })
@@ -74,18 +74,18 @@ show.head = (args: { slug: string | number } | [slug: string | number ] | string
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-        showForm.get = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::show
  * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{slug}/home'
+ * @route '/{municipality}/home'
  */
-        showForm.head = (args: { slug: string | number } | [slug: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',

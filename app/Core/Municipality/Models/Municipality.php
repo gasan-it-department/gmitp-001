@@ -3,6 +3,7 @@
 namespace App\Core\Municipality\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Route;
 
 class Municipality extends Model
 {
@@ -20,4 +21,10 @@ class Municipality extends Model
         'is_active',
         'zip_code',
     ];
+
+    // public function boot()
+    // {
+    //     parent::boot();
+    //     Route::model('municipality', Municipality::class);
+    // }
 }

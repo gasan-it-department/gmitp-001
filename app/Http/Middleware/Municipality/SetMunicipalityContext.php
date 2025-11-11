@@ -5,6 +5,7 @@ namespace App\Http\Middleware\Municipality;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Core\Municipality\Services\MunicipalityContextService;
 
 class SetMunicipalityContext
 {
@@ -13,8 +14,46 @@ class SetMunicipalityContext
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
+
+    public function __construct(
+        protected MunicipalityContextService $municipalityContextService,
+    ) {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
+        $slug = $request->route('municipality');
+
+        if (!is_string($slug) || empty($slug)) {
+            abort(404, 'Invalid url'); // now actually fires
+        }
+
+        $municipality = $this->municipalityContextService->execute($slug);
+
+        if (!$municipality) {
+            abort(404, 'Invalid url'); // now actually fires
+        }
+
+        $this->setContext($municipality);
+
         return $next($request);
+    }
+
+    public function setContext(object $municipality)
+    {
+        session(['municipal_id' => $municipality->id]);
+        app()->instance('municipal_id', $municipality->id);
+        app()->instance('currentMunicipality', $municipality);
+
+        \Inertia\Inertia::share([
+            'id' => $municipality->id,
+            'name' => $municipality->name,
+            'slug' => $municipality->slug,
+        ]);
+    }
+
+    public function guardUserMunicipality()
+    {
+        //develop for later for admin user checking 
     }
 }

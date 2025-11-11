@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\Municipality\SetMunicipalityContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superAdmin' => SuperAdminGuardMiddleware::class,
             'client' => ClientGuardMiddleware::class,
             'roleCheckRedirect' => RoleCheckRedirect::class,
+            'municipalityContext' => SetMunicipalityContext::class,
         ]);
     })
     ->withExceptions(using: function (Exceptions $exceptions) {
