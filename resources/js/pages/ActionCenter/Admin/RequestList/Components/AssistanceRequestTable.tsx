@@ -19,15 +19,22 @@ import { ToExcel } from '@/pages/Utility/ToExcel';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { toast } from 'sonner';
+import axios from '@/lib/axios';
+import { useQueryClient } from '@tanstack/react-query';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
 
 export function AssistanceRequestTable() {
-    const [selectedItem, setSelectedItem] = useState<AssistanceRequest | null>(null);
+    const queryClient = useQueryClient();
     const [editingData, setEditingData] = useState<AssistanceRequest | null>(null);
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
     const [currentSelectedSortOption, setCurrentSelectedSortOption] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
+    const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
     const [classicDialog, setClassicDialog] = useState<{
         isOpen: boolean;
         title: string;
@@ -106,11 +113,21 @@ export function AssistanceRequestTable() {
 
     const handleDeleteRequest = async (requestId: string) => {
         try {
-            console.log("Deleting: ", requestId);
-        } catch (error) {
+            setIsLoadingDialogVisible(true);
+            await axios.delete(`/action-center/request/${requestId}`);
+
+            // Refresh the request list
+            queryClient.invalidateQueries({ queryKey: ['request-list'] });
+
+            setIsLoadingDialogVisible(false);
+            toast.success("Record deleted successfully!");
+        } catch (error: any) {
+            setIsLoadingDialogVisible(false);
             console.error("Error deleting request:", error);
+            toast.error(error.response?.data?.message || "Failed to delete record.");
         }
     };
+
 
     return (
         <div>
@@ -124,6 +141,10 @@ export function AssistanceRequestTable() {
                         setIsAddNewRecordDialogOpen(true);
                     }}
                     onExportButtonClicked={() => {
+                        if (filteredRequests.length === 0) {
+                            toast("No data to export");
+                            return;
+                        }
                         setClassicDialog((prev) => ({
                             ...prev,
                             title: "Export File",
@@ -159,7 +180,7 @@ export function AssistanceRequestTable() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-[75vh] text-center">
+                                <TableCell colSpan={8} className="h-[75vh] text-center">
                                     <div className="flex items-center justify-center">
                                         <SpinnerCustom />
                                     </div>
@@ -167,21 +188,15 @@ export function AssistanceRequestTable() {
                             </TableRow>
                         ) : error ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-64 text-center text-gray-500">
+                                <TableCell colSpan={8} className="h-64 text-center text-gray-500">
                                     Failed to load data. Please try again.
                                 </TableCell>
                             </TableRow>
                         ) : filteredRequests.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-64 text-center text-gray-500">
-                                    <div className="flex flex-col items-center justify-center gap-2">
-                                        <p className="text-lg font-medium">No matching requests found</p>
-                                        <p className="text-sm text-gray-400">
-                                            Try a different search term or clear filters
-                                        </p>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                            <AdminEmptyListItem
+                                colSpan={8}
+                                title="No records yet."
+                                message="Action center records will show here." />
                         ) : (
                             filteredRequests.map((req, index) => (
                                 <ContextMenu key={req.id}>
@@ -269,9 +284,9 @@ export function AssistanceRequestTable() {
 
                                     {/* Right-click menu */}
                                     <ContextMenuContent className="w-44">
-                                        <ContextMenuItem inset onClick={() => setSelectedItem(req)}>
+                                        {/* <ContextMenuItem inset onClick={() => setSelectedItem(req)}>
                                             View Details
-                                        </ContextMenuItem>
+                                        </ContextMenuItem> */}
                                         <ContextMenuItem inset onClick={() => setEditingData(req)}>
                                             Edit
                                         </ContextMenuItem>
@@ -289,6 +304,7 @@ export function AssistanceRequestTable() {
                         )}
                     </TableBody>
                 </Table>
+                <ToastProvider />
             </div>
 
             {/* DIALOGS */}
@@ -342,6 +358,10 @@ export function AssistanceRequestTable() {
                     }));
 
                 }} />
+
+            <LoadingDialog
+                title='Loading, please wait...'
+                isOpen={isLoadingDialogVisible} />
         </div>
     );
 }

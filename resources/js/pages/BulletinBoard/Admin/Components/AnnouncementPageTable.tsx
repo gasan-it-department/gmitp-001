@@ -6,16 +6,19 @@ import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAn
 import { CheckCircle2, XCircle, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import { usePage } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import Utility from "@/pages/Utility/Utility";
 import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
+import PaginationView from "@/pages/Utility/PaginationView";
+import LoadingDialog from "@/pages/Utility/LoadingDialog";
 
 export default function AnnouncementPageTable() {
     const [announcementList, setAnnouncementList] = useState<AnnouncementFormData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const { announcement } = usePage().props;
-    console.log("AAAA", announcement);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+    const totalPages = Math.ceil(announcementList.length / itemsPerPage);
+    const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
+
     const [addEditDialog, setAddEditDialog] = useState<{
         isOpened: boolean;
         editData: AnnouncementFormData | null;
@@ -23,6 +26,7 @@ export default function AnnouncementPageTable() {
         isOpened: false,
         editData: null,
     });
+
     const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
         title: "",
@@ -33,33 +37,45 @@ export default function AnnouncementPageTable() {
         payload: ""
     });
 
-    const renderStatusBadge = (isPublished?: boolean) => {
-        const published = !!isPublished;
-        return published ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2.5 py-1 text-[11px] font-semibold">
-                <CheckCircle2 size={13} className="text-green-600" />
-                Published
-            </span>
-        ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-[11px] font-semibold">
-                <XCircle size={13} className="text-gray-500" />
-                Unpublished
-            </span>
-        );
-    };
+    // const renderStatusBadge = (isPublished?: boolean) => {
+    //     const published = !!isPublished;
+    //     return published ? (
+    //         <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2.5 py-1 text-[11px] font-semibold">
+    //             <CheckCircle2 size={13} className="text-green-600" />
+    //             Published
+    //         </span>
+    //     ) : (
+    //         <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-600 px-2.5 py-1 text-[11px] font-semibold">
+    //             <XCircle size={13} className="text-gray-500" />
+    //             Unpublished
+    //         </span>
+    //     );
+    // };
 
     const handleDelete = async (id: string) => {
         try {
+            setIsLoadingDialogVisible(true);
             const response = await axios.delete(`/bulletin-board/announcement/${id}`);
             if (response.data.success) {
-                setAnnouncementList((prev) => prev.filter((item) => item.id !== id));
+                setAnnouncementList((prev) => {
+                    const updated = prev.filter((item) => item.id !== id);
+                    if ((currentPage - 1) * itemsPerPage >= updated.length && currentPage > 1) {
+                        setCurrentPage(currentPage - 1);
+                    }
+
+                    return updated;
+                });
+                setIsLoadingDialogVisible(false);
             } else {
                 console.error(response.data.message || "Failed to delete announcement");
             }
+            setIsLoadingDialogVisible(false);
         } catch (error) {
+            setIsLoadingDialogVisible(false);
             console.error("Error deleting announcement:", error);
         }
     };
+
 
     useEffect(() => {
         loadAnnouncement();
@@ -78,15 +94,20 @@ export default function AnnouncementPageTable() {
 
     const handleSuccess = (data: AnnouncementFormData, isEdit: boolean) => {
         if (isEdit) {
-            // Update existing
             setAnnouncementList((prev) =>
                 prev.map((item) => (item.id === data.id ? data : item))
             );
         } else {
-            // Add new
             setAnnouncementList((prev) => [data, ...prev]);
         }
-    }
+    };
+
+    const handlePageChange = (page: number, totalPages: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
 
     return (
         <div>
@@ -111,101 +132,124 @@ export default function AnnouncementPageTable() {
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
+                            <TableHead className="text-[12px] font-bold">No.</TableHead>
                             <TableHead className="text-[12px] font-bold">Title</TableHead>
                             <TableHead className="text-[12px] font-bold">Message</TableHead>
                             <TableHead className="text-[12px] font-bold">Date Posted</TableHead>
-                            <TableHead className="text-[12px] font-bold">Status</TableHead>
+                            {/* <TableHead className="text-[12px] font-bold">Status</TableHead> */}
                             <TableHead className="text-[12px] font-bold text-center w-[90px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
                         {announcementList.length === 0 ? (
-                            <AddminEmptyListItem 
-                            title="No Announcement yet."
-                            message="Announcement you add will appear here."/>
+                            <AddminEmptyListItem
+                                title="No Announcement yet."
+                                message="Announcement you add will appear here."
+                            />
                         ) : (
-                            announcementList.map((item, index) => (
-                                <TableRow
-                                    key={index}
-                                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                                >
-                                    <TableCell className="text-[12px] font-medium">{item.title}</TableCell>
-                                    <TableCell className="text-[12px] max-w-[300px] p-5 overflow-hidden">
-                                        <span
-                                            className="block overflow-hidden text-ellipsis"
-                                            style={{
-                                                display: '-webkit-box',
-                                                WebkitBoxOrient: 'vertical',
-                                                WebkitLineClamp: 3,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'normal',
-                                                lineHeight: '1.4em',
-                                                maxHeight: '4.2em',
-                                            }}
-                                        >
-                                            {item.message}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-[12px]">
-                                        {Utility().formatToReadableDate(item.created_at) || '—'}
-                                    </TableCell>
-                                    <TableCell className="text-[12px]">
-                                        {renderStatusBadge(item.is_published)}
-                                    </TableCell>
+                            announcementList
+                                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                                .map((item, index) => (
+                                    <TableRow
+                                        key={index}
+                                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                    >
+                                        <TableCell className="text-[12px] font-medium">{(index + 1)}</TableCell>
+                                        <TableCell className="text-[12px] font-medium">{item.title}</TableCell>
+                                        <TableCell className="text-[12px] max-w-[300px] p-5 overflow-hidden">
+                                            <span
+                                                className="block overflow-hidden text-ellipsis"
+                                                style={{
+                                                    display: '-webkit-box',
+                                                    WebkitBoxOrient: 'vertical',
+                                                    WebkitLineClamp: 3,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'normal',
+                                                    lineHeight: '1.4em',
+                                                    maxHeight: '4.2em',
+                                                }}
+                                            >
+                                                {item.message}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-[12px]">
+                                            {Utility().formatToReadableDate(item.created_at) || '—'}
+                                        </TableCell>
+                                        {/* <TableCell className="text-[12px]">
+                                            {renderStatusBadge(item.is_published)}
+                                        </TableCell> */}
 
-                                    {/* ACTION BUTTONS */}
-                                    <TableCell className="flex gap-2 justify-center">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() =>
-                                                setAddEditDialog({
-                                                    isOpened: true,
-                                                    editData: item,
-                                                })
-                                            }
-                                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                                        >
-                                            <Pencil size={14} />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                                setClassicDialog((prev) => ({
-                                                    ...prev,
-                                                    isOpen: true,
-                                                    title: 'Confirm',
-                                                    message: 'Are you sure you want to delete this announcement?',
-                                                    positiveButtonText: 'Delete',
-                                                    negativeButtonText: 'Cancel',
-                                                    payload: item.id,
-                                                }));
-                                            }}
-                                            className="text-red-600 border-red-200 hover:bg-red-50"
-                                        >
-                                            <Trash2 size={14} />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                        {/* ACTION BUTTONS */}
+                                        <TableCell className="flex gap-2 justify-center">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setAddEditDialog({
+                                                        isOpened: true,
+                                                        editData: item,
+                                                    })
+                                                }
+                                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                            >
+                                                <Pencil size={14} />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setClassicDialog((prev) => ({
+                                                        ...prev,
+                                                        isOpen: true,
+                                                        title: 'Confirm',
+                                                        message: 'Are you sure you want to delete this announcement?',
+                                                        positiveButtonText: 'Delete',
+                                                        negativeButtonText: 'Cancel',
+                                                        payload: item.id,
+                                                    }));
+                                                }}
+                                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                         )}
                     </TableBody>
                 </Table>
             </div>
 
+            {/* PAGINATION */}
+            {announcementList.length > itemsPerPage && (
+                <div className="mt-6">
+                    <PaginationView
+                        maxVisible={4}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={announcementList.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            )}
+
             {/* ADD/EDIT DIALOG */}
             <AddEditAnnouncementDialog
                 editData={addEditDialog.editData}
                 isOpen={addEditDialog.isOpened}
-                onClose={() => setAddEditDialog({
-                    isOpened: false,
-                    editData: null,
-                })}
-                onSuccess={handleSuccess} />
+                onClose={() =>
+                    setAddEditDialog({
+                        isOpened: false,
+                        editData: null,
+                    })
+                }
+                onSuccess={handleSuccess}
+            />
 
+            {/* CONFIRMATION DIALOG */}
             <ClassicDialog
                 title={classicDialog.title}
                 message={classicDialog.message}
@@ -225,7 +269,12 @@ export default function AnnouncementPageTable() {
                         ...prev,
                         isOpen: false,
                     }));
-                }} />
+                }}
+            />
+
+            <LoadingDialog
+                title="Loading, please wait..."
+                isOpen={isLoadingDialogVisible} />
         </div>
     );
 }

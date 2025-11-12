@@ -70,24 +70,44 @@ export default function Utility() {
     }
 
     function formatTimeAgo(time: string | number) {
-        let dateMoment;
-
-        // If it's a number or numeric string (epoch timestamp)
-        if (!isNaN(Number(time))) {
-            const epochNumber = Number(time);
-            // Detect if in seconds or milliseconds
-            dateMoment = epochNumber > 9999999999
-                ? moment(epochNumber) // milliseconds
-                : moment.unix(epochNumber); // seconds
+        const now = new Date().getTime();
+        let date: Date;
+        if (typeof time === "number") {
+            date = new Date(time);
+        } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(time)) {
+            // Parse "YYYY-MM-DD HH:mm:ss"
+            const [datePart, timePart] = time.split(" ");
+            const [year, month, day] = datePart.split("-").map(Number);
+            const [hour, min, sec] = timePart.split(":").map(Number);
+            date = new Date(year, month - 1, day, hour, min, sec);
+        } else {
+            date = new Date(time);
         }
-        // Otherwise, assume ISO or standard date string
-        else {
-            dateMoment = moment(time);
+        if (isNaN(date.getTime())) return "Invalid date";
+        const seconds = Math.floor((now - date.getTime()) / 1000);
+        if (seconds < 60) return "Just now";
+        if (seconds < 3600) {
+            const mins = Math.floor(seconds / 60);
+            return mins === 1 ? "1 min ago" : `${mins} mins ago`;
         }
-
-        if (!dateMoment.isValid()) return "Invalid date";
-        return dateMoment.fromNow();
+        if (seconds < 86400) {
+            const hours = Math.floor(seconds / 3600);
+            return hours === 1 ? "1 hr ago" : `${hours} hrs ago`;
+        }
+        if (seconds < 2592000) {
+            const days = Math.floor(seconds / 86400);
+            return days === 1 ? "1 day ago" : `${days} days ago`;
+        }
+        if (seconds < 31536000) {
+            const months = Math.floor(seconds / 2592000);
+            return months === 1 ? "1 mon ago" : `${months} mons ago`;
+        } else {
+            const years = Math.floor(seconds / 31536000);
+            return years === 1 ? "1 year ago" : `${years} years ago`;
+        }
     }
+
+
 
     function calculateArrivingDays(epochTime: string | number): string {
         const eventDate = moment(parseInt(epochTime as string, 10) * 1000);

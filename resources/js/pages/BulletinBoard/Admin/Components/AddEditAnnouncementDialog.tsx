@@ -52,15 +52,12 @@ export default function AddEditAnnouncementDialog({
 
         try {
             let response;
-
             if (editData) {
-                // ✅ Update existing
                 response = await axios.put(`/bulletin-board/announcement/${editData.id}`, payload);
                 if (response.data.success) {
                     onSuccess(response.data.data, true);
                 }
             } else {
-                // ✅ Create new
                 response = await axios.post('/bulletin-board/announcement', payload);
                 if (response.data.success) {
                     onSuccess(response.data.data, false);
@@ -104,7 +101,17 @@ export default function AddEditAnnouncementDialog({
         }
     }, [editData, reset]);
 
-    // const isPublished = watch('is_published');
+    useEffect(() => {
+        if (isOpen) {
+            if (editData === null) {
+                reset({
+                    title: '',
+                    message: '',
+                    is_published: true,
+                });
+            }
+        }
+    }, [isOpen]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

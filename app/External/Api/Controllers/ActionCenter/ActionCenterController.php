@@ -7,13 +7,16 @@ use Illuminate\Http\Request;
 use App\External\Api\Request\ActionCenter\ClientAssistanceRequest;
 use App\Core\ActionCenter\Applications\Services\CreateAssistanceRequest;
 use App\Core\ActionCenter\Infrastructures\Models\AssistanceRequest;
-use App\Core\ActionCenter\Infrastructures\Models\Beneficiary;
+use App\Core\ActionCenter\Applications\Services\UpdateAssistanceRequest;
+use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
 
 class ActionCenterController extends Controller
 {
 
     public function __construct(
         private CreateAssistanceRequest $createAssistaceRequest,
+        private UpdateAssistanceRequest $updateAssistanceRequest,
+        protected AssistanceRequestRepositories $assistanceRepository
     ) {
     }
 
@@ -67,15 +70,44 @@ class ActionCenterController extends Controller
      * Update a specific client request.
      * PUT/PATCH /client/action-center/requests/{id}
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
-        // Example: validate and update
-        // $validated = $request->validate([...]);
-        // $requestModel = RequestModel::findOrFail($id);
-        // $requestModel->update([...]);
+        $validated = $request->validate([
+            'assistance_type' => 'sometimes|string',
+            'description' => 'sometimes|string',
+            'status' => 'sometimes|string|in:PENDING,APPROVED,REJECTED',
+            'first_name' => 'sometimes|string',
+            'last_name' => 'sometimes|string',
+            'middle_name' => 'nullable|string',
+            'suffix' => 'nullable|string',
+            'birth_date' => 'sometimes|date',
+            'contact_number' => 'sometimes|string',
+            'province' => 'sometimes|string',
+            'municipality' => 'sometimes|string',
+            'barangay' => 'sometimes|string',
+        ]);
 
-        return response()->json(['message' => "Request {$id} updated"], 200);
+        $user = $request->user();
+
+        $this->updateAssistanceRequest->execute($id, $validated, $user);
+
+        // Now this works because $assistanceRepository exists
+        $updatedRequest = $this->assistanceRepository->findOrFail($id);
+
+        return response()->json([
+            'message' => "Request {$id} updated successfully",
+            'request' => $updatedRequest,
+        ], 200);
     }
+
+    public function deleteRequest($id)
+    {
+        $request = AssistanceRequest::findOrFail($id);
+        $request->delete();
+        return response()->json(['message' => 'Deleted successfully'], 200);
+    }
+
+
 
     /**
      * Delete a specific client request.
@@ -83,12 +115,22 @@ class ActionCenterController extends Controller
      */
     public function destroy($id)
     {
-        // Example: find and delete
-        // $requestModel = RequestModel::findOrFail($id);
-        // $requestModel->delete();
+        try {
+            // Find the assistance request
+            $request = AssistanceRequest::findOrFail($id);
 
-        return response()->json(['message' => "Request {$id} deleted"], 200);
+            // Delete the related beneficiary first
+            $request->beneficiary()->delete();
+
+            // Delete the request itself
+            $request->delete();
+
+            return response()->json(['message' => 'Record deleted successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete record.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
-
 }

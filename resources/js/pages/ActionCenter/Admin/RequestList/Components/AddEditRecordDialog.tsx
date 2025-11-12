@@ -14,6 +14,8 @@ import { DatePicker } from './DatePicker';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import { setDate } from 'date-fns';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { toast } from 'sonner';
 
 interface Props {
     isOpen: boolean;
@@ -64,9 +66,9 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
         },
     });
     const handleFormSubmit = async (data: Beneficiary) => {
-        if (editData == null) {
-            console.log("Not in edit mode. Adding it as new.");
-            try {
+        try {
+            if (editData == null) {
+                // Create new request
                 const response = await axios.post('/action-center/request', data);
 
                 if (response.status !== 200) {
@@ -79,16 +81,33 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                     refetchType: 'active',
                 });
 
+                toast.success("Successfully added");
                 reset();
                 onClose();
-            } catch (error) {
-                console.error('Error submitting form:', error);
+            } else {
+                // Update existing request
+                const response = await axios.put(`/action-center/request/${editData.id}`, data);
+
+                if (response.status !== 200) {
+                    setError('root', response.data);
+                    throw new Error(response.data);
+                }
+
+                await queryClient.invalidateQueries({
+                    queryKey: ['request-list'],
+                    refetchType: 'active',
+                });
+
+                toast.success("Successfully updated");
+                reset();
+                onClose();
             }
-        } else {
-            console.log("Update the data.");
-            console.log(data);
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            toast.error("An error occurred. Try again later.");
         }
     };
+
 
     const handleReset = () => {
         reset();
@@ -294,6 +313,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                         editProvince={geoData.editProvince}
                                         editMunicipality={geoData.editMunicipality}
                                         editBarangay={geoData.editBarangay} />
+                                        
                                 </section>
 
                                 {/* Description */}
@@ -332,12 +352,14 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                         disabled={isSubmitting}
                                         className="flex-1 sm:flex-none rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-50"
                                     >
-                                        {isSubmitting ? 'Submitting...' : editData ? 'Update Record' : 'Submit Request'}
+                                        {isSubmitting ? 'Submitting...' : editData ? 'Update Record' : 'Add Record'}
                                     </Button>
                                 </div>
                             </form>
                         </CardContent>
                     </Card>
+
+                    <ToastProvider/>
                 </div>
 
                 {/* <ClassicDialog {...classicDialog} /> */}

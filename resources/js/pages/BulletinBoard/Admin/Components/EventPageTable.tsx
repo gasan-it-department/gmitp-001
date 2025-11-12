@@ -6,39 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { EventFormData } from "@/Core/Types/BulletinBoard/Events";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
+import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 
 export default function EventPageTable() {
     const [events, setEvents] = useState<EventFormData[]>([
-        {
-            id: "E001",
-            title: "Municipal Sports Festival 2025",
-            description: "A week-long celebration featuring various sports competitions among local barangays.",
-            event_date: "2025-11-15",
-        },
-        {
-            id: "E002",
-            title: "Cultural Heritage Parade",
-            description: "A colorful parade showcasing traditional costumes, music, and dances from our municipality.",
-            event_date: "2025-10-25",
-        },
-        {
-            id: "E003",
-            title: "Coastal Cleanup Drive",
-            description: "Join the community effort to clean our beaches and promote environmental awareness.",
-            event_date: "2025-11-06",
-        },
-        {
-            id: "E004",
-            title: "Christmas Tree Lighting Ceremony",
-            description: "Kick off the holiday season with music, lights, and community fun in front of the municipal hall.",
-            event_date: "2025-12-01",
-        },
-        {
-            id: "E005",
-            title: "Public Health Awareness Seminar",
-            description: "A free educational seminar on preventive health care and nutrition led by local health experts.",
-            event_date: "2025-10-30",
-        },
+
     ]);
 
     const [addEventDialog, setAddEventDialog] = useState<{
@@ -146,63 +118,73 @@ export default function EventPageTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {events.map((item) => {
-                            const status = getEventStatus(item.event_date);
-                            return (
-                                <TableRow
-                                    key={item.id}
-                                    className="hover:bg-gray-50 transition-colors"
-                                >
-                                    <TableCell className="text-[13px] font-medium">
-                                        {item.title}
-                                    </TableCell>
-                                    <TableCell className="text-[12px] max-w-[300px]">
-                                        <span
-                                            className="block overflow-hidden text-ellipsis"
-                                            style={{
-                                                display: "-webkit-box",
-                                                WebkitBoxOrient: "vertical",
-                                                WebkitLineClamp: 3,
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "normal",
-                                                lineHeight: "1.4em",
-                                                maxHeight: "4.2em",
-                                            }}
-                                        >
-                                            {item.description}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>{formatDate(item.event_date)}</TableCell>
-                                    <TableCell className="text-[12px]">
-                                        {getStatusBadge(status)}
-                                    </TableCell>
-                                    <TableCell className="flex gap-2 justify-center">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() =>
-                                                setAddEventDialog({
-                                                    isOpen: true,
-                                                    editData: item,
-                                                })
-                                            }
-                                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                                        >
-                                            <Pencil size={14} />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => handleDelete(item.id)}
-                                            className="text-red-600 border-red-200 hover:bg-red-50"
-                                        >
-                                            <Trash2 size={14} />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
+                        {events.length === 0 ? (
+                            <AddminEmptyListItem
+                                title="No Events yet."
+                                message="Events you created will appear here." />
+                        ) : (
+                            events.map((item) => {
+                                const status = getEventStatus(item.event_date);
+                                return (
+                                    <TableRow
+                                        key={item.id}
+                                        className="hover:bg-gray-50 transition-colors"
+                                    >
+                                        <TableCell className="text-[13px] font-medium">
+                                            {item.title}
+                                        </TableCell>
+
+                                        <TableCell className="text-[12px] max-w-[300px]">
+                                            <span
+                                                className="block overflow-hidden text-ellipsis"
+                                                style={{
+                                                    display: "-webkit-box",
+                                                    WebkitBoxOrient: "vertical",
+                                                    WebkitLineClamp: 3,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "normal",
+                                                    lineHeight: "1.4em",
+                                                    maxHeight: "4.2em",
+                                                }}
+                                            >
+                                                {item.description}
+                                            </span>
+                                        </TableCell>
+
+                                        <TableCell>{formatDate(item.event_date)}</TableCell>
+
+                                        <TableCell className="text-[12px]">
+                                            {getStatusBadge(status)}
+                                        </TableCell>
+
+                                        <TableCell className="flex gap-2 justify-center">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setAddEventDialog({
+                                                        isOpen: true,
+                                                        editData: item,
+                                                    })
+                                                }
+                                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                            >
+                                                <Pencil size={14} />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleDelete(item.id)}
+                                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        )}
                     </TableBody>
                 </Table>
             </div>

@@ -6,19 +6,20 @@ import Utility from '@/pages/Utility/Utility';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-
-interface AnnouncementData {
-    title: string;
-    message: string;
-    date: string;
-    id: string;
-}
+import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
 
 export default function GeneralAnnouncement() {
-    const [classicDialogTitle, setClassicDialogTitle] = useState('');
-    const [classicDialogMessage, setClassicDialogMessage] = useState('');
     const [isClassicDialogShowing, setIsClassicDialogShowing] = useState(false);
-    const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
+    const [announcementList, setAnnouncementList] = useState<AnnouncementFormData[]>([]);
+    const [announcementDetailsDialog, setAnnouncementDetailsDialog] = useState<{
+        isOpen: boolean;
+        data: AnnouncementFormData | null;
+    }>({
+        isOpen: false,
+        data: null,
+    });
+
 
     useEffect(() => {
         loadAnnouncement();
@@ -52,9 +53,11 @@ export default function GeneralAnnouncement() {
                                 <motion.div
                                     key={item.id}
                                     onClick={() => {
-                                        setClassicDialogTitle(item.title);
-                                        setClassicDialogMessage(item.message);
-                                        setIsClassicDialogShowing(true);
+                                        setAnnouncementDetailsDialog((prev) => ({
+                                            ...prev,
+                                            isOpen: true,
+                                            data: item
+                                        }));
                                     }}
                                     className="cursor-pointer transition-transform active:scale-[0.98]"
                                     initial={{ opacity: 0, x: -80 }}
@@ -68,7 +71,7 @@ export default function GeneralAnnouncement() {
                                 >
                                     <Card className="relative overflow-hidden rounded-xl border-l-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-amber-100/70 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl sm:p-5 dark:from-red-950 dark:via-orange-950 dark:to-amber-900">
                                         <div className="absolute top-2 right-2 rounded-full bg-gradient-to-r from-red-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow-sm sm:top-3 sm:right-3 sm:text-xs">
-                                            {Utility().formatTimeAgo(item.date)}
+                                            {Utility().formatTimeAgo(item.created_at)}
                                         </div>
 
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -113,16 +116,17 @@ export default function GeneralAnnouncement() {
                         </div>
                     )}
                 </div>
-                <ClassicDialog
-                    title={classicDialogTitle}
-                    message={classicDialogMessage}
-                    positiveButtonText="Close"
-                    hideNegativeButton={true}
-                    onPositiveClick={() => {
-                        setIsClassicDialogShowing(false);
-                    }}
-                    open={isClassicDialogShowing}
-                />
+
+                <ViewAnnouncementDetails
+                    isOpen={announcementDetailsDialog.isOpen}
+                    data={announcementDetailsDialog.data}
+                    onClose={function (): void {
+                        setAnnouncementDetailsDialog((prev) => ({
+                            ...prev,
+                            isOpen: false,
+                            data: null
+                        }));
+                    }} />
             </div>
         </div>
     );

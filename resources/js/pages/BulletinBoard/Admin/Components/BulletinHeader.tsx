@@ -22,14 +22,14 @@ export default function BulletinHeader({ className, onAddNewButtonClicked, onExp
 
             <div className="ml-2" />
 
-            <Button
+            {/* <Button
                 onClick={onExportButtonClicked}
                 variant="outline"
                 className="flex items-center gap-2 rounded-lg border-gray-300 text-gray-700 shadow-sm hover:bg-gray-100"
             >
                 <UploadIcon className="h-4 w-4" />
                 Export
-            </Button>
+            </Button> */}
 
             <Button
                 onClick={onFilterButtonClicked}

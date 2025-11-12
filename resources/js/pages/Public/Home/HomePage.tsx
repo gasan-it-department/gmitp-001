@@ -13,7 +13,7 @@ export default function HomePage() {
 
                 <div className='h-5' />
 
-                <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex flex-col lg:flex-row gap-4 lg:pl-8 lg:pr-8">
                     <div className="flex-1">
                         <FeedbackUi />
                     </div>

@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::index
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:40
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:43
  * @route '/action-center/request'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:25
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:28
  * @route '/action-center/request'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ store.definition = {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:25
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:28
  * @route '/action-center/request'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:25
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:28
  * @route '/action-center/request'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:25
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:28
  * @route '/action-center/request'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:25
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:28
  * @route '/action-center/request'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -134,7 +134,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
 export const show = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +149,7 @@ show.definition = {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
 show.url = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -177,7 +177,7 @@ show.url = (args: { request: string | number } | [request: string | number ] | s
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
 show.get = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -186,7 +186,7 @@ show.get = (args: { request: string | number } | [request: string | number ] | s
 })
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
 show.head = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -196,7 +196,7 @@ show.head = (args: { request: string | number } | [request: string | number ] | 
 
     /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
     const showForm = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -206,7 +206,7 @@ show.head = (args: { request: string | number } | [request: string | number ] | 
 
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
         showForm.get = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -215,7 +215,7 @@ show.head = (args: { request: string | number } | [request: string | number ] | 
         })
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::show
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:58
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:61
  * @route '/action-center/request/{request}'
  */
         showForm.head = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -231,7 +231,7 @@ show.head = (args: { request: string | number } | [request: string | number ] | 
     show.form = showForm
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
 export const update = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -246,7 +246,7 @@ update.definition = {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
 update.url = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -274,7 +274,7 @@ update.url = (args: { request: string | number } | [request: string | number ] |
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
 update.put = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -283,7 +283,7 @@ update.put = (args: { request: string | number } | [request: string | number ] |
 })
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
 update.patch = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -293,7 +293,7 @@ update.patch = (args: { request: string | number } | [request: string | number ]
 
     /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
     const updateForm = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -308,7 +308,7 @@ update.patch = (args: { request: string | number } | [request: string | number ]
 
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
         updateForm.put = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -322,7 +322,7 @@ update.patch = (args: { request: string | number } | [request: string | number ]
         })
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:70
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:73
  * @route '/action-center/request/{request}'
  */
         updateForm.patch = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -338,7 +338,7 @@ update.patch = (args: { request: string | number } | [request: string | number ]
     update.form = updateForm
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:84
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:116
  * @route '/action-center/request/{request}'
  */
 export const destroy = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -353,7 +353,7 @@ destroy.definition = {
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:84
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:116
  * @route '/action-center/request/{request}'
  */
 destroy.url = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -381,7 +381,7 @@ destroy.url = (args: { request: string | number } | [request: string | number ] 
 
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:84
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:116
  * @route '/action-center/request/{request}'
  */
 destroy.delete = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -391,7 +391,7 @@ destroy.delete = (args: { request: string | number } | [request: string | number
 
     /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:84
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:116
  * @route '/action-center/request/{request}'
  */
     const destroyForm = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -406,7 +406,7 @@ destroy.delete = (args: { request: string | number } | [request: string | number
 
             /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
- * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:84
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:116
  * @route '/action-center/request/{request}'
  */
         destroyForm.delete = (args: { request: string | number } | [request: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

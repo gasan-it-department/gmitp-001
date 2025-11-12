@@ -129,27 +129,29 @@ export function AddressDropdown({
             setter(value);
             setSelectedNames((prev) => ({ ...prev, [nameKey]: name }));
 
-            if (editProvince === "" && editMunicipality === "" && editBarangay === "") {
-                if (nameKey === "provinceName") {
-                    // reset children
-                    setSelectedMunicipality("");
-                    setSelectedBarangay("");
-                    setBarangays([]);
-                    const res = await fetch(`${BASE}/provinces/${value}/municipalities/`);
-                    const data: LocationItem[] = await res.json();
-                    setMunicipalities(data);
-                }
-
-                if (nameKey === "municipalityName") {
-                    setSelectedBarangay("");
-                    const res = await fetch(`${BASE}/municipalities/${value}/barangays/`);
-                    const data: LocationItem[] = await res.json();
-                    setBarangays(data);
-                }
+            if (nameKey === "provinceName") {
+                // reset municipality & barangay
+                setSelectedMunicipality("");
+                setSelectedBarangay("");
+                setBarangays([]);
+                const res = await fetch(`${BASE}/provinces/${value}/municipalities/`);
+                const data: LocationItem[] = await res.json();
+                setMunicipalities(data);
             }
+
+            if (nameKey === "municipalityName") {
+                // reset barangay
+                setSelectedBarangay("");
+                const res = await fetch(`${BASE}/municipalities/${value}/barangays/`);
+                const data: LocationItem[] = await res.json();
+                setBarangays(data);
+            }
+
+            // No need to check editProvince/editMunicipality/editBarangay
         },
         []
     );
+
 
     // 🔹 Notify parent when address fully selected
     useEffect(() => {
