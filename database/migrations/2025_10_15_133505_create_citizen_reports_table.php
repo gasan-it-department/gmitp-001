@@ -20,6 +20,10 @@ return new class extends Migration {
             $table->string('street')->nullable();
             $table->string('file_path');
 
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->timestamp('resolved_at')->nullable();
             $table->timestamps();
         });

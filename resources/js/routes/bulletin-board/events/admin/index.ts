@@ -1,73 +1,92 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
+export const index = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(args, options),
     method: 'get',
 })
 
 index.definition = {
     methods: ["get","head"],
-    url: '/bulletin-board/events/admin',
+    url: '/{municipality}/bulletin-board/events/admin',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-index.url = (options?: RouteQueryOptions) => {
-    return index.definition.url + queryParams(options)
+index.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { municipality: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    municipality: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        municipality: args.municipality,
+                }
+
+    return index.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
+            .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
+index.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: index.url(options),
+index.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: index.url(args, options),
     method: 'head',
 })
 
     /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
+    const indexForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(args, options),
         method: 'get',
     })
 
             /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
+        indexForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin'
  */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
+        indexForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),

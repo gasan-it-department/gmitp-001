@@ -1,6 +1,2 @@
-import center from './center'
-const action = {
-    center: Object.assign(center, center),
-}
-
-export default action
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'

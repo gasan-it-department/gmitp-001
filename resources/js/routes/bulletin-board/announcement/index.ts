@@ -3,72 +3,91 @@ import admin from './admin'
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
+export const index = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(args, options),
     method: 'get',
 })
 
 index.definition = {
     methods: ["get","head"],
-    url: '/bulletin-board/announcement',
+    url: '/{municipality}/bulletin-board/announcement',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-index.url = (options?: RouteQueryOptions) => {
-    return index.definition.url + queryParams(options)
+index.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { municipality: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    municipality: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        municipality: args.municipality,
+                }
+
+    return index.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
+            .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: index.url(options),
+index.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: index.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: index.url(options),
+index.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: index.url(args, options),
     method: 'head',
 })
 
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
+    const indexForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(args, options),
         method: 'get',
     })
 
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
+        indexForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:49
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
+        indexForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -81,42 +100,40 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-export const show = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const show = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
 
 show.definition = {
     methods: ["get","head"],
-    url: '/bulletin-board/announcement/{id}',
+    url: '/{municipality}/bulletin-board/announcement/{id}',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-show.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { id: args }
-    }
-
-    
+show.url = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
-                    id: args[0],
+                    municipality: args[0],
+                    id: args[1],
                 }
     }
 
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        id: args.id,
+                        municipality: args.municipality,
+                                id: args.id,
                 }
 
     return show.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
             .replace('{id}', parsedArgs.id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
@@ -124,18 +141,18 @@ show.url = (args: { id: string | number } | [id: string | number ] | string | nu
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-show.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show.get = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-show.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show.head = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
@@ -143,9 +160,9 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-    const showForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const showForm = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
         method: 'get',
     })
@@ -153,18 +170,18 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-        showForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.get = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
             method: 'get',
         })
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-        showForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.head = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
@@ -178,54 +195,73 @@ show.head = (args: { id: string | number } | [id: string | number ] | string | n
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::store
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:21
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
+export const store = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(args, options),
     method: 'post',
 })
 
 store.definition = {
     methods: ["post"],
-    url: '/bulletin-board/announcement',
+    url: '/{municipality}/bulletin-board/announcement',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::store
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:21
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-store.url = (options?: RouteQueryOptions) => {
-    return store.definition.url + queryParams(options)
+store.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { municipality: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    municipality: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        municipality: args.municipality,
+                }
+
+    return store.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
+            .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::store
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:21
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
+store.post = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(args, options),
     method: 'post',
 })
 
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::store
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:21
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
+    const storeForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(args, options),
         method: 'post',
     })
 
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::store
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:21
- * @route '/bulletin-board/announcement'
+ * @route '/{municipality}/bulletin-board/announcement'
  */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
+        storeForm.post = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(args, options),
             method: 'post',
         })
     
@@ -233,42 +269,40 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::update
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:72
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-export const update = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const update = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
 
 update.definition = {
     methods: ["put"],
-    url: '/bulletin-board/announcement/{id}',
+    url: '/{municipality}/bulletin-board/announcement/{id}',
 } satisfies RouteDefinition<["put"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::update
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:72
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-update.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { id: args }
-    }
-
-    
+update.url = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
-                    id: args[0],
+                    municipality: args[0],
+                    id: args[1],
                 }
     }
 
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        id: args.id,
+                        municipality: args.municipality,
+                                id: args.id,
                 }
 
     return update.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
             .replace('{id}', parsedArgs.id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
@@ -276,9 +310,9 @@ update.url = (args: { id: string | number } | [id: string | number ] | string | 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::update
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:72
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-update.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+update.put = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
@@ -286,9 +320,9 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::update
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:72
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-    const updateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const updateForm = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: update.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -301,9 +335,9 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::update
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:72
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-        updateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        updateForm.put = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: update.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -317,42 +351,40 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::publish
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:141
- * @route '/bulletin-board/announcement/{$id}/publish'
+ * @route '/{municipality}/bulletin-board/announcement/{$id}/publish'
  */
-export const publish = (args: { $id: string | number } | [$id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
+export const publish = (args: { municipality: string | number, $id: string | number } | [municipality: string | number, $id: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
     url: publish.url(args, options),
     method: 'patch',
 })
 
 publish.definition = {
     methods: ["patch"],
-    url: '/bulletin-board/announcement/{$id}/publish',
+    url: '/{municipality}/bulletin-board/announcement/{$id}/publish',
 } satisfies RouteDefinition<["patch"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::publish
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:141
- * @route '/bulletin-board/announcement/{$id}/publish'
+ * @route '/{municipality}/bulletin-board/announcement/{$id}/publish'
  */
-publish.url = (args: { $id: string | number } | [$id: string | number ] | string | number, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { $id: args }
-    }
-
-    
+publish.url = (args: { municipality: string | number, $id: string | number } | [municipality: string | number, $id: string | number ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
-                    $id: args[0],
+                    municipality: args[0],
+                    $id: args[1],
                 }
     }
 
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        $id: args.$id,
+                        municipality: args.municipality,
+                                $id: args.$id,
                 }
 
     return publish.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
             .replace('{$id}', parsedArgs.$id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
@@ -360,9 +392,9 @@ publish.url = (args: { $id: string | number } | [$id: string | number ] | string
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::publish
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:141
- * @route '/bulletin-board/announcement/{$id}/publish'
+ * @route '/{municipality}/bulletin-board/announcement/{$id}/publish'
  */
-publish.patch = (args: { $id: string | number } | [$id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
+publish.patch = (args: { municipality: string | number, $id: string | number } | [municipality: string | number, $id: string | number ], options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
     url: publish.url(args, options),
     method: 'patch',
 })
@@ -370,9 +402,9 @@ publish.patch = (args: { $id: string | number } | [$id: string | number ] | stri
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::publish
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:141
- * @route '/bulletin-board/announcement/{$id}/publish'
+ * @route '/{municipality}/bulletin-board/announcement/{$id}/publish'
  */
-    const publishForm = (args: { $id: string | number } | [$id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const publishForm = (args: { municipality: string | number, $id: string | number } | [municipality: string | number, $id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: publish.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PATCH',
@@ -385,9 +417,9 @@ publish.patch = (args: { $id: string | number } | [$id: string | number ] | stri
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::publish
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:141
- * @route '/bulletin-board/announcement/{$id}/publish'
+ * @route '/{municipality}/bulletin-board/announcement/{$id}/publish'
  */
-        publishForm.patch = (args: { $id: string | number } | [$id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        publishForm.patch = (args: { municipality: string | number, $id: string | number } | [municipality: string | number, $id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: publish.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PATCH',
@@ -401,42 +433,40 @@ publish.patch = (args: { $id: string | number } | [$id: string | number ] | stri
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::destroy
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:107
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-export const destroy = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+export const destroy = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
 
 destroy.definition = {
     methods: ["delete"],
-    url: '/bulletin-board/announcement/{id}',
+    url: '/{municipality}/bulletin-board/announcement/{id}',
 } satisfies RouteDefinition<["delete"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::destroy
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:107
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-destroy.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { id: args }
-    }
-
-    
+destroy.url = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
-                    id: args[0],
+                    municipality: args[0],
+                    id: args[1],
                 }
     }
 
     args = applyUrlDefaults(args)
 
     const parsedArgs = {
-                        id: args.id,
+                        municipality: args.municipality,
+                                id: args.id,
                 }
 
     return destroy.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
             .replace('{id}', parsedArgs.id.toString())
             .replace(/\/+$/, '') + queryParams(options)
 }
@@ -444,9 +474,9 @@ destroy.url = (args: { id: string | number } | [id: string | number ] | string |
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::destroy
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:107
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-destroy.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+destroy.delete = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -454,9 +484,9 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::destroy
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:107
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-    const destroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const destroyForm = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: destroy.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'DELETE',
@@ -469,9 +499,9 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::destroy
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:107
- * @route '/bulletin-board/announcement/{id}'
+ * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
-        destroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        destroyForm.delete = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: destroy.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'DELETE',

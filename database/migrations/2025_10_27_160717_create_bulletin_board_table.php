@@ -15,9 +15,15 @@ return new class extends Migration {
 
             $table->string('title');
             $table->text('message');
+
             $table->foreignUlid('user_id')
                 ->constrained()
-                ->onDelete('cascade');
+                ->restrictOnDelete();
+
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->boolean('is_published')->default(false);
             $table->softDeletes();
 
@@ -30,12 +36,21 @@ return new class extends Migration {
             $table->string('title');
             $table->text('message');
             $table->timestamp('event_date_time');
-            $table->foreignUlid('user_id')->constrained('users')->cascadeOnDelete();
+
+            $table->foreignUlid('user_id')
+                ->constrained('users')
+                ->restrictOnDelete();
+
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->boolean('is_published')->default(false);
             $table->softDeletes();
 
             $table->timestamps();
         });
+
     }
 
     /**

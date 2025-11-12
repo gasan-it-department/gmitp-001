@@ -6,7 +6,8 @@ use App\External\Api\Controllers\BulletinBoard\EventController;
 use App\External\Web\Controllers\BulletinBoard\Admin\AnnouncementAdminController;
 use App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController;
 
-Route::prefix('bulletin-board')
+Route::prefix('{municipality}/bulletin-board')
+    ->middleware('municipalityContext')
     ->as('bulletin-board.')
     ->group(function () {
 
@@ -25,6 +26,7 @@ Route::prefix('bulletin-board')
             ->as('announcement.admin.')
             ->controller(AnnouncementAdminController::class)
             ->group(function () {
+
             Route::get('/', 'index')->name('index');
         });
 

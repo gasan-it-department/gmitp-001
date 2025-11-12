@@ -1,198 +1,5 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-export const showServicePage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: showServicePage.url(args, options),
-    method: 'get',
-})
-
-showServicePage.definition = {
-    methods: ["get","head"],
-    url: '/{municipality}/services',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-showServicePage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { municipality: args }
-    }
-
-    
-    if (Array.isArray(args)) {
-        args = {
-                    municipality: args[0],
-                }
-    }
-
-    args = applyUrlDefaults(args)
-
-    const parsedArgs = {
-                        municipality: args.municipality,
-                }
-
-    return showServicePage.definition.url
-            .replace('{municipality}', parsedArgs.municipality.toString())
-            .replace(/\/+$/, '') + queryParams(options)
-}
-
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-showServicePage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: showServicePage.url(args, options),
-    method: 'get',
-})
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-showServicePage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: showServicePage.url(args, options),
-    method: 'head',
-})
-
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-    const showServicePageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showServicePage.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-        showServicePageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showServicePage.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::showServicePage
- * @see app/External/Web/Controllers/Public/PublicController.php:22
- * @route '/{municipality}/services'
- */
-        showServicePageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showServicePage.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showServicePage.form = showServicePageForm
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-export const showGovernmentPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: showGovernmentPage.url(args, options),
-    method: 'get',
-})
-
-showGovernmentPage.definition = {
-    methods: ["get","head"],
-    url: '/{municipality}/government',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-showGovernmentPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
-    if (typeof args === 'string' || typeof args === 'number') {
-        args = { municipality: args }
-    }
-
-    
-    if (Array.isArray(args)) {
-        args = {
-                    municipality: args[0],
-                }
-    }
-
-    args = applyUrlDefaults(args)
-
-    const parsedArgs = {
-                        municipality: args.municipality,
-                }
-
-    return showGovernmentPage.definition.url
-            .replace('{municipality}', parsedArgs.municipality.toString())
-            .replace(/\/+$/, '') + queryParams(options)
-}
-
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-showGovernmentPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: showGovernmentPage.url(args, options),
-    method: 'get',
-})
-/**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-showGovernmentPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: showGovernmentPage.url(args, options),
-    method: 'head',
-})
-
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-    const showGovernmentPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showGovernmentPage.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-        showGovernmentPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showGovernmentPage.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
- * @see app/External/Web/Controllers/Public/PublicController.php:37
- * @route '/{municipality}/government'
- */
-        showGovernmentPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showGovernmentPage.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showGovernmentPage.form = showGovernmentPageForm
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
@@ -292,7 +99,7 @@ showHomePage.head = (args: { municipality: string | number } | [municipality: st
     showHomePage.form = showHomePageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
 export const showPrivacyPolicyPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -307,7 +114,7 @@ showPrivacyPolicyPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
 showPrivacyPolicyPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -335,7 +142,7 @@ showPrivacyPolicyPage.url = (args: { municipality: string | number } | [municipa
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
 showPrivacyPolicyPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -344,7 +151,7 @@ showPrivacyPolicyPage.get = (args: { municipality: string | number } | [municipa
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
 showPrivacyPolicyPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -354,7 +161,7 @@ showPrivacyPolicyPage.head = (args: { municipality: string | number } | [municip
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
     const showPrivacyPolicyPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -364,7 +171,7 @@ showPrivacyPolicyPage.head = (args: { municipality: string | number } | [municip
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
         showPrivacyPolicyPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -373,7 +180,7 @@ showPrivacyPolicyPage.head = (args: { municipality: string | number } | [municip
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:42
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
  * @route '/{municipality}/privacy-policy'
  */
         showPrivacyPolicyPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -388,8 +195,105 @@ showPrivacyPolicyPage.head = (args: { municipality: string | number } | [municip
     
     showPrivacyPolicyPage.form = showPrivacyPolicyPageForm
 /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+export const showGovernmentPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: showGovernmentPage.url(args, options),
+    method: 'get',
+})
+
+showGovernmentPage.definition = {
+    methods: ["get","head"],
+    url: '/{municipality}/government',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+showGovernmentPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { municipality: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    municipality: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        municipality: args.municipality,
+                }
+
+    return showGovernmentPage.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+showGovernmentPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: showGovernmentPage.url(args, options),
+    method: 'get',
+})
+/**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+showGovernmentPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: showGovernmentPage.url(args, options),
+    method: 'head',
+})
+
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+    const showGovernmentPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showGovernmentPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+        showGovernmentPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showGovernmentPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+        showGovernmentPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showGovernmentPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showGovernmentPage.form = showGovernmentPageForm
+/**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
 export const showMunicipalAdminPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -404,7 +308,7 @@ showMunicipalAdminPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
 showMunicipalAdminPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -432,7 +336,7 @@ showMunicipalAdminPage.url = (args: { municipality: string | number } | [municip
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
 showMunicipalAdminPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -441,7 +345,7 @@ showMunicipalAdminPage.get = (args: { municipality: string | number } | [municip
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
 showMunicipalAdminPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -451,7 +355,7 @@ showMunicipalAdminPage.head = (args: { municipality: string | number } | [munici
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
     const showMunicipalAdminPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -461,7 +365,7 @@ showMunicipalAdminPage.head = (args: { municipality: string | number } | [munici
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
         showMunicipalAdminPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -470,7 +374,7 @@ showMunicipalAdminPage.head = (args: { municipality: string | number } | [munici
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
- * @see app/External/Web/Controllers/Public/PublicController.php:47
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
  * @route '/{municipality}/municipal-admin'
  */
         showMunicipalAdminPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -486,7 +390,7 @@ showMunicipalAdminPage.head = (args: { municipality: string | number } | [munici
     showMunicipalAdminPage.form = showMunicipalAdminPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
 export const showActionCenterPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -501,7 +405,7 @@ showActionCenterPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
 showActionCenterPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -529,7 +433,7 @@ showActionCenterPage.url = (args: { municipality: string | number } | [municipal
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
 showActionCenterPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -538,7 +442,7 @@ showActionCenterPage.get = (args: { municipality: string | number } | [municipal
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
 showActionCenterPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -548,7 +452,7 @@ showActionCenterPage.head = (args: { municipality: string | number } | [municipa
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
     const showActionCenterPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -558,7 +462,7 @@ showActionCenterPage.head = (args: { municipality: string | number } | [municipa
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
         showActionCenterPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -567,7 +471,7 @@ showActionCenterPage.head = (args: { municipality: string | number } | [municipa
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
- * @see app/External/Web/Controllers/Public/PublicController.php:52
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
  * @route '/{municipality}/action-center'
  */
         showActionCenterPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -583,7 +487,7 @@ showActionCenterPage.head = (args: { municipality: string | number } | [municipa
     showActionCenterPage.form = showActionCenterPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
 export const showActionCenterRequestPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -598,7 +502,7 @@ showActionCenterRequestPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
 showActionCenterRequestPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -626,7 +530,7 @@ showActionCenterRequestPage.url = (args: { municipality: string | number } | [mu
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
 showActionCenterRequestPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -635,7 +539,7 @@ showActionCenterRequestPage.get = (args: { municipality: string | number } | [mu
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
 showActionCenterRequestPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -645,7 +549,7 @@ showActionCenterRequestPage.head = (args: { municipality: string | number } | [m
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
     const showActionCenterRequestPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -655,7 +559,7 @@ showActionCenterRequestPage.head = (args: { municipality: string | number } | [m
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
         showActionCenterRequestPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -664,7 +568,7 @@ showActionCenterRequestPage.head = (args: { municipality: string | number } | [m
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
- * @see app/External/Web/Controllers/Public/PublicController.php:57
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
  * @route '/{municipality}/action-center/request-list'
  */
         showActionCenterRequestPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -680,7 +584,7 @@ showActionCenterRequestPage.head = (args: { municipality: string | number } | [m
     showActionCenterRequestPage.form = showActionCenterRequestPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
 export const showMyAccountPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -695,7 +599,7 @@ showMyAccountPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
 showMyAccountPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -723,7 +627,7 @@ showMyAccountPage.url = (args: { municipality: string | number } | [municipality
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
 showMyAccountPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -732,7 +636,7 @@ showMyAccountPage.get = (args: { municipality: string | number } | [municipality
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
 showMyAccountPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -742,7 +646,7 @@ showMyAccountPage.head = (args: { municipality: string | number } | [municipalit
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
     const showMyAccountPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -752,7 +656,7 @@ showMyAccountPage.head = (args: { municipality: string | number } | [municipalit
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
         showMyAccountPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -761,7 +665,7 @@ showMyAccountPage.head = (args: { municipality: string | number } | [municipalit
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
- * @see app/External/Web/Controllers/Public/PublicController.php:62
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
  * @route '/{municipality}/my-account'
  */
         showMyAccountPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -777,7 +681,7 @@ showMyAccountPage.head = (args: { municipality: string | number } | [municipalit
     showMyAccountPage.form = showMyAccountPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
 export const showContactUsPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -792,7 +696,7 @@ showContactUsPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
 showContactUsPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -820,7 +724,7 @@ showContactUsPage.url = (args: { municipality: string | number } | [municipality
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
 showContactUsPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -829,7 +733,7 @@ showContactUsPage.get = (args: { municipality: string | number } | [municipality
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
 showContactUsPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -839,7 +743,7 @@ showContactUsPage.head = (args: { municipality: string | number } | [municipalit
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
     const showContactUsPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -849,7 +753,7 @@ showContactUsPage.head = (args: { municipality: string | number } | [municipalit
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
         showContactUsPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -858,7 +762,7 @@ showContactUsPage.head = (args: { municipality: string | number } | [municipalit
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:27
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
  * @route '/{municipality}/contact-us'
  */
         showContactUsPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -874,7 +778,7 @@ showContactUsPage.head = (args: { municipality: string | number } | [municipalit
     showContactUsPage.form = showContactUsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
 export const showTravelPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -889,7 +793,7 @@ showTravelPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
 showTravelPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -917,7 +821,7 @@ showTravelPage.url = (args: { municipality: string | number } | [municipality: s
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
 showTravelPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -926,7 +830,7 @@ showTravelPage.get = (args: { municipality: string | number } | [municipality: s
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
 showTravelPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -936,7 +840,7 @@ showTravelPage.head = (args: { municipality: string | number } | [municipality: 
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
     const showTravelPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -946,7 +850,7 @@ showTravelPage.head = (args: { municipality: string | number } | [municipality: 
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
         showTravelPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -955,7 +859,7 @@ showTravelPage.head = (args: { municipality: string | number } | [municipality: 
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
- * @see app/External/Web/Controllers/Public/PublicController.php:67
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
  * @route '/{municipality}/travel'
  */
         showTravelPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -971,7 +875,7 @@ showTravelPage.head = (args: { municipality: string | number } | [municipality: 
     showTravelPage.form = showTravelPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
 export const showTransparencyPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -986,7 +890,7 @@ showTransparencyPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
 showTransparencyPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1014,7 +918,7 @@ showTransparencyPage.url = (args: { municipality: string | number } | [municipal
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
 showTransparencyPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1023,7 +927,7 @@ showTransparencyPage.get = (args: { municipality: string | number } | [municipal
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
 showTransparencyPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1033,7 +937,7 @@ showTransparencyPage.head = (args: { municipality: string | number } | [municipa
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
     const showTransparencyPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1043,7 +947,7 @@ showTransparencyPage.head = (args: { municipality: string | number } | [municipa
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
         showTransparencyPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1052,7 +956,7 @@ showTransparencyPage.head = (args: { municipality: string | number } | [municipa
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
- * @see app/External/Web/Controllers/Public/PublicController.php:72
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
  * @route '/{municipality}/transparency'
  */
         showTransparencyPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1068,7 +972,7 @@ showTransparencyPage.head = (args: { municipality: string | number } | [municipa
     showTransparencyPage.form = showTransparencyPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
 export const showExecutiveOrdersPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1083,7 +987,7 @@ showExecutiveOrdersPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
 showExecutiveOrdersPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1111,7 +1015,7 @@ showExecutiveOrdersPage.url = (args: { municipality: string | number } | [munici
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
 showExecutiveOrdersPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1120,7 +1024,7 @@ showExecutiveOrdersPage.get = (args: { municipality: string | number } | [munici
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
 showExecutiveOrdersPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1130,7 +1034,7 @@ showExecutiveOrdersPage.head = (args: { municipality: string | number } | [munic
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
     const showExecutiveOrdersPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1140,7 +1044,7 @@ showExecutiveOrdersPage.head = (args: { municipality: string | number } | [munic
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
         showExecutiveOrdersPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1149,7 +1053,7 @@ showExecutiveOrdersPage.head = (args: { municipality: string | number } | [munic
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
- * @see app/External/Web/Controllers/Public/PublicController.php:77
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
  * @route '/{municipality}/executive-orders'
  */
         showExecutiveOrdersPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1165,7 +1069,7 @@ showExecutiveOrdersPage.head = (args: { municipality: string | number } | [munic
     showExecutiveOrdersPage.form = showExecutiveOrdersPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
 export const showAnnouncementsPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1180,7 +1084,7 @@ showAnnouncementsPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
 showAnnouncementsPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1208,7 +1112,7 @@ showAnnouncementsPage.url = (args: { municipality: string | number } | [municipa
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
 showAnnouncementsPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1217,7 +1121,7 @@ showAnnouncementsPage.get = (args: { municipality: string | number } | [municipa
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
 showAnnouncementsPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1227,7 +1131,7 @@ showAnnouncementsPage.head = (args: { municipality: string | number } | [municip
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
     const showAnnouncementsPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1237,7 +1141,7 @@ showAnnouncementsPage.head = (args: { municipality: string | number } | [municip
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
         showAnnouncementsPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1246,7 +1150,7 @@ showAnnouncementsPage.head = (args: { municipality: string | number } | [municip
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
- * @see app/External/Web/Controllers/Public/PublicController.php:82
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
  * @route '/{municipality}/announcements'
  */
         showAnnouncementsPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1262,7 +1166,7 @@ showAnnouncementsPage.head = (args: { municipality: string | number } | [municip
     showAnnouncementsPage.form = showAnnouncementsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
 export const showWeddingPage = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1277,7 +1181,7 @@ showWeddingPage.definition = {
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
 showWeddingPage.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1305,7 +1209,7 @@ showWeddingPage.url = (args: { municipality: string | number } | [municipality: 
 
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
 showWeddingPage.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1314,7 +1218,7 @@ showWeddingPage.get = (args: { municipality: string | number } | [municipality: 
 })
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
 showWeddingPage.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1324,7 +1228,7 @@ showWeddingPage.head = (args: { municipality: string | number } | [municipality:
 
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
     const showWeddingPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1334,7 +1238,7 @@ showWeddingPage.head = (args: { municipality: string | number } | [municipality:
 
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
         showWeddingPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1343,7 +1247,7 @@ showWeddingPage.head = (args: { municipality: string | number } | [municipality:
         })
             /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
- * @see app/External/Web/Controllers/Public/PublicController.php:87
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
  * @route '/{municipality}/schedule-wedding'
  */
         showWeddingPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1435,6 +1339,6 @@ showMainLandingPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'
         })
     
     showMainLandingPage.form = showMainLandingPageForm
-const PublicController = { showServicePage, showGovernmentPage, showHomePage, showPrivacyPolicyPage, showMunicipalAdminPage, showActionCenterPage, showActionCenterRequestPage, showMyAccountPage, showContactUsPage, showTravelPage, showTransparencyPage, showExecutiveOrdersPage, showAnnouncementsPage, showWeddingPage, showMainLandingPage }
+const PublicController = { showHomePage, showPrivacyPolicyPage, showGovernmentPage, showMunicipalAdminPage, showActionCenterPage, showActionCenterRequestPage, showMyAccountPage, showContactUsPage, showTravelPage, showTransparencyPage, showExecutiveOrdersPage, showAnnouncementsPage, showWeddingPage, showMainLandingPage }
 
 export default PublicController

@@ -20,8 +20,11 @@ class CreateAnnouncementService
         return DB::transaction(function () use ($dto) {
 
             $announcementId = $this->idGenerator->generate();
+            $municipalId = app('municipal_id');
 
-            $announcement = $this->announcementRepository->save($dto, $announcementId);
+            dd($municipalId);
+
+            $announcement = $this->announcementRepository->save($dto, $announcementId, $municipalId);
 
             return $announcement;
         });

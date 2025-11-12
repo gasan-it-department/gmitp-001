@@ -16,6 +16,7 @@ class Announcement extends Model
         'id',
         'user_id',
         'title',
+        'municipal_id',
         'message',
     ];
 }

@@ -14,7 +14,7 @@ export type NavigationItem = {
 export const useNavigation = (): NavigationItem[] => [
   {
     title: "Home",
-    href: "/home",
+    href: "",
     icon: House,
   },
   {

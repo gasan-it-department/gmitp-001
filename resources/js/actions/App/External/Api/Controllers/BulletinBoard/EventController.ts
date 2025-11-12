@@ -1,55 +1,74 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::store
  * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/bulletin-board/events'
+ * @route '/{municipality}/bulletin-board/events'
  */
-export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
+export const store = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(args, options),
     method: 'post',
 })
 
 store.definition = {
     methods: ["post"],
-    url: '/bulletin-board/events',
+    url: '/{municipality}/bulletin-board/events',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::store
  * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/bulletin-board/events'
+ * @route '/{municipality}/bulletin-board/events'
  */
-store.url = (options?: RouteQueryOptions) => {
-    return store.definition.url + queryParams(options)
+store.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { municipality: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    municipality: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        municipality: args.municipality,
+                }
+
+    return store.definition.url
+            .replace('{municipality}', parsedArgs.municipality.toString())
+            .replace(/\/+$/, '') + queryParams(options)
 }
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::store
  * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/bulletin-board/events'
+ * @route '/{municipality}/bulletin-board/events'
  */
-store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
+store.post = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(args, options),
     method: 'post',
 })
 
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::store
  * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/bulletin-board/events'
+ * @route '/{municipality}/bulletin-board/events'
  */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
+    const storeForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(args, options),
         method: 'post',
     })
 
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::store
  * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/bulletin-board/events'
+ * @route '/{municipality}/bulletin-board/events'
  */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
+        storeForm.post = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(args, options),
             method: 'post',
         })
     

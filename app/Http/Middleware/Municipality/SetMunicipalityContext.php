@@ -46,9 +46,12 @@ class SetMunicipalityContext
         app()->instance('currentMunicipality', $municipality);
 
         \Inertia\Inertia::share([
-            'id' => $municipality->id,
-            'name' => $municipality->name,
-            'slug' => $municipality->slug,
+            'currentMunicipality' => fn() => [
+                'id' => $municipality->id,
+                'name' => $municipality->name,
+                'slug' => $municipality->slug,
+                'zip_code' => $municipality->zip_code,
+            ],
         ]);
     }
 

@@ -12,7 +12,6 @@ return new class extends Migration {
     {
         Schema::create('assistance_beneficiaries', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->timestamps();
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name')->nullable();
@@ -22,16 +21,24 @@ return new class extends Migration {
             $table->string('province');
             $table->string('municipality');
             $table->string('barangay');
+            $table->timestamps();
         });
 
         Schema::create('assistance_requests', function (Blueprint $table) {
             $table->ulid('id')->primary();
+
             $table->foreignUlid('beneficiary_id')
                 ->constrained('assistance_beneficiaries')
                 ->onDelete('cascade');
+
             $table->foreignUlid('user_id')
+                ->nullable()
                 ->constrained('users')
-                ->onDelete('cascade');
+                ->nullOnDelete();
+
+            $table->foreignUlid('municipality_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
 
             $table->decimal('amount')->nullable();
             $table->string('transaction_number')->unique();

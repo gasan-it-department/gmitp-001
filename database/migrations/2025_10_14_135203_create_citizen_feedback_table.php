@@ -17,6 +17,11 @@ return new class extends Migration {
             $table->foreignUlid('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->text('message');
             $table->foreignUlid('department_id')->nullable();
+
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->string('sender_name')->nullable();
             $table->string('employee_name')->nullable();
             $table->string('feedback_target')->nullable();

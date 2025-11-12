@@ -1,67 +1,39 @@
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/components/ui/navigation-menu';
-import { useNavigation } from '@/config/navigation/navigationItems';
-import { SharedData } from '@/types';
+import { NavigationItem, useNavigation } from '@/config/navigation/navigationItems';
 import { Link, usePage } from '@inertiajs/react';
 
-// type ListItemProps = {
-//     title: string;
-//     href: string;
-//     children: React.ReactNode;
-// };
-
-// function ListItem({ title, href, children }: ListItemProps) {
-//     return (
-//         <li>
-//             <NavigationMenuLink asChild>
-//                 <Link href={href} className="block rounded p-3 hover:bg-muted">
-//                     <div className="font-semibold">{title}</div>
-//                     <div className="text-sm text-gray-500">{children}</div>
-//                 </Link>
-//             </NavigationMenuLink>
-//         </li>
-//     );
-// }
+type Municipality = {
+    id: string;
+    name: string;
+    slug: string;
+    zip_code: string;
+};
 
 export function HeaderNav() {
-    const page = usePage();
+    // Step 1: assert unknown, Step 2: assert your type
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+
     const navItems = useNavigation();
-    const { auth } = usePage<SharedData>().props;
 
     return (
         <NavigationMenu className="flex h-full items-stretch">
             <NavigationMenuList className="flex h-full items-stretch space-x-2">
-                {navItems.map((item) => (
-                    <NavigationMenuItem key={item.title} className="relative flex h-full items-center">
-                        <NavigationMenuLink asChild>
-                            <div>
-                                <Link href={item.href} className="text-md flex items-center gap-1 rounded font-semibold text-gray-600 hover:bg-muted">
-                                    {item.icon && <item.icon />}
-                                    {item.title}
-                                </Link>
-                            </div>
-                        </NavigationMenuLink>
-                        {page.url === item.href && (
-                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
-                        )}{' '}
-                    </NavigationMenuItem>
-                ))}
+                {navItems.map((item: NavigationItem) => {
+                    const href = typeof item.route === 'function' ? item.route({ municipality: currentMunicipality.slug }).url : item.route;
 
-                {/* <NavigationMenuItem>
-                    <NavigationMenuTrigger>Components</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                        <ul className="grid w-[400px] gap-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                            {components.map((component) => (
-                                <ListItem
-                                    key={component.title}
-                                    title={component.title}
-                                    href={component.href}
-                                >
-                                    {component.description}
-                                </ListItem>
-                            ))}
-                        </ul>
-                    </NavigationMenuContent>
-                </NavigationMenuItem> */}
+                    return (
+                        <NavigationMenuItem key={item.title} className="relative flex h-full items-center">
+                            <NavigationMenuLink asChild>
+                                <div>
+                                    <Link href={href} className="text-md flex items-center gap-1 rounded font-semibold text-gray-600 hover:bg-muted">
+                                        {item.icon && <item.icon />}
+                                        {item.title}
+                                    </Link>
+                                </div>
+                            </NavigationMenuLink>
+                        </NavigationMenuItem>
+                    );
+                })}
             </NavigationMenuList>
         </NavigationMenu>
     );

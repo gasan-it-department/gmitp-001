@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { getMunicipalities } from '@/Core/Api/Municipality/MunicipalityApi';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { show as home } from '@/routes/home';
+import { home } from '@/routes';
 import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
@@ -12,7 +12,6 @@ export function MunicipalityCard() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    console.log(typeof route);
     useEffect(() => {
         async function fetchMunicipalities() {
             try {

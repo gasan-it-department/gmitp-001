@@ -9,13 +9,14 @@ use App\Core\BulletinBoard\Announcement\Dto\AnnouncementFilterDto;
 
 class AnnouncementRepository implements AnnouncementRepositoryInterface
 {
-    public function save(CreateAnnouncementDto $dto, $announcementId): Announcement
+    public function save(CreateAnnouncementDto $dto, string $announcementId, string $municipalId): Announcement
     {
         $announcement = Announcement::create([
             'id' => $announcementId,
             'title' => $dto->title,
             'message' => $dto->message,
             'user_id' => $dto->userId,
+            'municipal_id' => $municipalId,
         ]);
 
         return $announcement;

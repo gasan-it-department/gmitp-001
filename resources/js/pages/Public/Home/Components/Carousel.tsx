@@ -1,13 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import * as React from 'react';
 
-const images = [
-    "assets/banner_01.png",
-];
+const images = ['/assets/banner_01.png'];
 
 export default function Carousel() {
     const [index, setIndex] = React.useState(0);
@@ -88,37 +86,31 @@ export default function Carousel() {
     return (
         <div>
             {showNotice && (
-                <Card className="relative p-4 border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-400 rounded-xl shadow-sm ml-3 mr-3 mt-3 mb-3 transition-all">
+                <Card className="relative mt-3 mr-3 mb-3 ml-3 rounded-xl border-l-4 border-orange-500 bg-orange-50 p-4 shadow-sm transition-all dark:border-orange-400 dark:bg-orange-900/20">
                     {/* Close Button */}
                     <button
                         onClick={() => setShowNotice(false)}
-                        className="absolute top-2 right-2 text-orange-700 dark:text-orange-300 hover:text-orange-900 dark:hover:text-orange-100 transition"
+                        className="absolute top-2 right-2 text-orange-700 transition hover:text-orange-900 dark:text-orange-300 dark:hover:text-orange-100"
                         aria-label="Close Notice"
                     >
-                        <X className="w-4 h-4" />
+                        <X className="h-4 w-4" />
                     </button>
 
                     <div className="flex items-start gap-3">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0"
+                            className="mt-0.5 h-5 w-5 flex-shrink-0 text-orange-600 dark:text-orange-400"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                             strokeWidth={2}
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
 
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">
-                                Notice of System Maintenance
-                            </span>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                            <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">Notice of System Maintenance</span>
+                            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
                                 Please be advised that maintenance will occur tonight from 2:00 AM to 4:00 AM.
                             </p>
                         </div>
@@ -127,7 +119,7 @@ export default function Carousel() {
             )}
 
             <div
-                className="relative w-full overflow-hidden select-none cursor-grab"
+                className="relative w-full cursor-grab overflow-hidden select-none"
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
@@ -138,59 +130,36 @@ export default function Carousel() {
             >
                 {/* Notice Card */}
 
-
                 {/* Slides */}
-                <div
-                    className="flex transition-transform duration-700 ease-in-out"
-                    style={{ transform: `translateX(-${index * 100}%)` }}
-                >
+                <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${index * 100}%)` }}>
                     <div
-                        className="flex transition-transform duration-700 ease-in-out w-full h-full"
+                        className="flex h-full w-full transition-transform duration-700 ease-in-out"
                         style={{ transform: `translateX(-${index * 100}%)` }}
                     >
                         {images.map((src, i) => (
-                            <img
-                                key={i}
-                                src={src}
-                                alt={`Slide ${i}`}
-                                className="w-full h-full flex-shrink-0 object-fill"
-                            />
+                            <img key={i} src={src} alt={`Slide ${i}`} className="h-full w-full flex-shrink-0 object-fill" />
                         ))}
                     </div>
-
-
-
                 </div>
 
                 {/* Controls */}
                 <div className="absolute inset-0 flex items-center justify-between p-4">
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={prev}
-                        className="bg-black/40 hover:bg-black/60 text-white border-none"
-                    >
+                    <Button variant="secondary" size="icon" onClick={prev} className="border-none bg-black/40 text-white hover:bg-black/60">
                         <ChevronLeft className="h-6 w-6" />
                     </Button>
 
-                    <Button
-                        variant="secondary"
-                        size="icon"
-                        onClick={next}
-                        className="bg-black/40 hover:bg-black/60 text-white border-none"
-                    >
+                    <Button variant="secondary" size="icon" onClick={next} className="border-none bg-black/40 text-white hover:bg-black/60">
                         <ChevronRight className="h-6 w-6" />
                     </Button>
                 </div>
 
                 {/* Dot Indicators */}
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+                <div className="absolute right-0 bottom-4 left-0 flex justify-center space-x-2">
                     {images.map((_, i) => (
                         <button
                             key={i}
                             onClick={() => setIndex(i)}
-                            className={`h-3 w-3 rounded-full transition-all ${i === index ? "bg-white scale-125" : "bg-white/40"
-                                }`}
+                            className={`h-3 w-3 rounded-full transition-all ${i === index ? 'scale-125 bg-white' : 'bg-white/40'}`}
                         />
                     ))}
                 </div>

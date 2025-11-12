@@ -1,8 +1,10 @@
 import { LucideIcon, Folders, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck, Heart } from "lucide-react";
+import { travel, home, landing, government, transparency } from '@/routes';
+import municipality from "@/routes/municipality";
 
 export type NavigationItem = {
   title: string;
-  href: string;
+  route: ((args: { municipality: string | number }) => { url: string; method: string }) | string;
   icon?: LucideIcon;
   isActive?: boolean;
   children?: {
@@ -11,52 +13,36 @@ export type NavigationItem = {
   }[];
 };
 
-// export type NavigationItem = {
-//   title: string;
-//   href: string;
-//   icon?: LucideIcon;
-//   isActive?: boolean;
-//   children?: {
-//     label: string;
-//     href: string;
-//   }[];
-// };
-
+// Returns a static array of nav items, route may be a Wayfinder function
 export const useNavigation = (): NavigationItem[] => [
   {
     title: "Home",
-    href: "/home",
+    route: home,
     icon: House,
   },
   {
     title: "Travel",
-    href: "/travel",
+    route: travel,
     icon: MapPinned,
   },
   {
     title: "Government",
-    href: "/government",
+    route: government,
     icon: Landmark,
   },
   {
     title: "Transparency",
-    href: "/transparency",
+    route: transparency,
     icon: ShieldCheck,
   },
   {
     title: "Executive Orders",
-    href: "/executive-orders",
+    route: "#", // static route
     icon: Folders,
   },
   {
-    title: "Civil Wedding",
-    href: "/schedule-wedding",
-    icon: Heart,
-  },
-  {
     title: "Contact Us",
-    href: "/contact-us",
+    route: "#", // static route
     icon: Phone,
   },
-
 ];
