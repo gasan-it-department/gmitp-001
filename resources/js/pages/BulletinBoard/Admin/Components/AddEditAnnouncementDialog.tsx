@@ -1,15 +1,11 @@
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import type { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import axios, { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -18,15 +14,13 @@ interface AddEditAnnouncementProps {
     isOpen: boolean;
     editData?: AnnouncementFormData | null;
     onClose: () => void;
-    onSuccess: (data: AnnouncementFormData, isEdit: boolean) => void; // ✅ new prop
+    onSuccess: (data: AnnouncementFormData, isEdit: boolean) => void;
 }
 
-export default function AddEditAnnouncementDialog({
-    isOpen,
-    onClose,
-    editData,
-    onSuccess,
-}: AddEditAnnouncementProps) {
+export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, onSuccess }: AddEditAnnouncementProps) {
+    const { currentMunicipality } = useMunicipality();
+    const municipalSlug = currentMunicipality.slug;
+
     const {
         register,
         handleSubmit,
@@ -58,7 +52,7 @@ export default function AddEditAnnouncementDialog({
                     onSuccess(response.data.data, true);
                 }
             } else {
-                response = await axios.post('/bulletin-board/announcement', payload);
+                response = await AnnouncementApi.storeAnnouncement(payload, municipalSlug);
                 if (response.data.success) {
                     onSuccess(response.data.data, false);
                 }
@@ -115,17 +109,15 @@ export default function AddEditAnnouncementDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl border-0 rounded-2xl">
-                <DialogHeader className="text-center pb-3 border-b border-orange-100">
+            <DialogContent className="max-h-[90vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl sm:max-w-md">
+                <DialogHeader className="border-b border-orange-100 pb-3 text-center">
                     <DialogTitle className="text-2xl font-bold text-gray-800">
                         {editData === null ? 'Post Announcement' : 'Edit Announcement'}
                     </DialogTitle>
-                    <p className="text-sm text-gray-500">
-                        Fill out the details for your announcement.
-                    </p>
+                    <p className="text-sm text-gray-500">Fill out the details for your announcement.</p>
                 </DialogHeader>
 
-                <div className="overflow-y-auto max-h-[60vh] px-1 pr-2 custom-scrollbar">
+                <div className="custom-scrollbar max-h-[60vh] overflow-y-auto px-1 pr-2">
                     <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-6">
                         {/* Title Field */}
                         <div className="space-y-2">
@@ -136,12 +128,11 @@ export default function AddEditAnnouncementDialog({
                                 id="title"
                                 placeholder="Enter announcement title"
                                 {...register('title', { required: 'Title is required' })}
-                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.title ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                    errors.title ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             />
-                            {errors.title && (
-                                <p className="text-sm text-red-600">{errors.title.message}</p>
-                            )}
+                            {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
                         </div>
 
                         {/* Message Field */}
@@ -153,41 +144,32 @@ export default function AddEditAnnouncementDialog({
                                 id="message"
                                 placeholder="Enter your announcement message"
                                 {...register('message', { required: 'Message is required' })}
-                                className={`min-h-[150px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.message ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`min-h-[150px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                    errors.message ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             />
-                            {errors.message && (
-                                <p className="text-sm text-red-600">{errors.message.message}</p>
-                            )}
+                            {errors.message && <p className="text-sm text-red-600">{errors.message.message}</p>}
                         </div>
 
                         {/* Server error */}
-                        {serverError && (
-                            <p className="text-center text-sm text-red-600">{serverError}</p>
-                        )}
+                        {serverError && <p className="text-center text-sm text-red-600">{serverError}</p>}
 
                         {/* Footer Buttons */}
-                        <DialogFooter className="pt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        <DialogFooter className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={onClose}
-                                className="flex-1 sm:flex-none rounded-md border-gray-300 text-gray-700 hover:bg-gray-100"
+                                className="flex-1 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 sm:flex-none"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex-1 sm:flex-none rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-50"
+                                className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:opacity-50 sm:flex-none"
                             >
-                                {isSubmitting
-                                    ? editData
-                                        ? 'Updating...'
-                                        : 'Saving...'
-                                    : editData
-                                        ? 'Update'
-                                        : 'Save'}
+                                {isSubmitting ? (editData ? 'Updating...' : 'Saving...') : editData ? 'Update' : 'Save'}
                             </Button>
                         </DialogFooter>
                     </form>

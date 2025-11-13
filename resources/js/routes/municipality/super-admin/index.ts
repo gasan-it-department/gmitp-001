@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::page
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
@@ -42,41 +42,6 @@ page.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::page
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
- * @route '/municipality/super-admin'
- */
-    const pageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: page.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::page
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
- * @route '/municipality/super-admin'
- */
-        pageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: page.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::page
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
- * @route '/municipality/super-admin'
- */
-        pageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: page.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    page.form = pageForm
 /**
 * @see \App\External\Api\Controllers\Municipality\MunicipalityController::add
  * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:27
@@ -111,27 +76,6 @@ add.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::add
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:27
- * @route '/municipality/super-admin/add'
- */
-    const addForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: add.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::add
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:27
- * @route '/municipality/super-admin/add'
- */
-        addForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: add.url(options),
-            method: 'post',
-        })
-    
-    add.form = addForm
 /**
 * @see \App\External\Api\Controllers\Municipality\MunicipalityController::index
  * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:62
@@ -175,41 +119,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::index
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:62
- * @route '/municipality/super-admin/list'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::index
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:62
- * @route '/municipality/super-admin/list'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::index
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:62
- * @route '/municipality/super-admin/list'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\External\Api\Controllers\Municipality\MunicipalityController::update
  * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:98
@@ -262,38 +171,6 @@ update.put = (args: { id: string | number } | [id: string | number ] | string | 
     url: update.url(args, options),
     method: 'put',
 })
-
-    /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::update
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:98
- * @route '/municipality/super-admin/update/{id}'
- */
-    const updateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Municipality\MunicipalityController::update
- * @see app/External/Api/Controllers/Municipality/MunicipalityController.php:98
- * @route '/municipality/super-admin/update/{id}'
- */
-        updateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 const superAdmin = {
     page: Object.assign(page, page),
 add: Object.assign(add, add),

@@ -6,8 +6,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import axios from '@/lib/axios';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import admin from '@/routes/admin';
+import superAdmin from '@/routes/superAdmin';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -16,6 +19,7 @@ export function UserDropdownMenu() {
     const { auth } = usePage<SharedData>().props;
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const { currentMunicipality } = useMunicipality();
 
     const handleLogout = async () => {
         try {
@@ -53,24 +57,22 @@ export function UserDropdownMenu() {
                     {auth.roles?.isAdmin && (
                         <DropdownMenuItem
                             onClick={() => {
-                                router.visit(route('admin.dashboard.show'));
+                                router.visit(admin.dashboard.url({ municipality: currentMunicipality.slug }));
                             }}
                         >
                             Admin Panel
                         </DropdownMenuItem>
                     )}
 
-                    {
-                        auth.roles?.isSuperAdmin && (
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    router.visit(route('super_admin.dashboard'));
-                                }}
-                            >
-                                S-Admin Panel
-                            </DropdownMenuItem>
-                        )
-                    }
+                    {auth.roles?.isSuperAdmin && (
+                        <DropdownMenuItem
+                            onClick={() => {
+                                router.visit(superAdmin.dashboard.url());
+                            }}
+                        >
+                            S-Admin Panel
+                        </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuItem
                         onClick={() => {

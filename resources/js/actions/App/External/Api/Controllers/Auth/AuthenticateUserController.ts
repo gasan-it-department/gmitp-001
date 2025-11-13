@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
@@ -33,27 +33,6 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
- * @route '/login'
- */
-    const loginForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: login.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
- * @route '/login'
- */
-        loginForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: login.url(options),
-            method: 'post',
-        })
-    
-    login.form = loginForm
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
@@ -87,28 +66,6 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: logout.url(options),
     method: 'post',
 })
-
-    /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
- * @route '/logout'
- */
-    const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: logout.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
- * @route '/logout'
- */
-        logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: logout.url(options),
-            method: 'post',
-        })
-    
-    logout.form = logoutForm
 const AuthenticateUserController = { login, logout }
 
 export default AuthenticateUserController

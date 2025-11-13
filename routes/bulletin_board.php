@@ -22,26 +22,13 @@ Route::prefix('{municipality}/bulletin-board')
 
         // ADMIN DASHBOARD (web page)
         Route::middleware('admin')
-            ->prefix('announcement/admin')
+            ->prefix('announcement')
             ->as('announcement.admin.')
             ->controller(AnnouncementAdminController::class)
             ->group(function () {
 
-            Route::get('/', 'index')->name('index');
-        });
+            Route::get('/admin', 'index')->name('index');
 
-        // ADMIN API ROUTES (data actions)
-        Route::middleware('admin')
-            ->prefix('announcement')
-            ->as('announcement.')
-            ->controller(AnnouncementController::class)
-            ->group(function () {
-
-            Route::get('/', 'index')->name('index');
-            Route::post('/', 'store')->name('store');
-            Route::put('/{id}', 'update')->name('update');
-            Route::patch('/{$id}/publish/', 'publish')->name('publish');
-            Route::delete('/{id}', 'destroy')->name('destroy');
         });
 
         // EVENTS (admin pages)
@@ -64,4 +51,18 @@ Route::prefix('{municipality}/bulletin-board')
                 Route::post('/', 'store')->name('store');
 
             });
+    });
+
+Route::prefix('api/announcement')
+    ->middleware(['auth', 'admin', 'municipalityContext'])
+    ->as('announcement.')
+    ->controller(AnnouncementController::class)
+    ->group(function () {
+
+        Route::get('/', 'fetch')->name('fetch');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{id}', 'update')->name('update');
+        Route::patch('/{id}/publish', 'publish')->name('publish');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+
     });

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../wayfinder'
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
@@ -33,27 +33,6 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
- * @route '/login'
- */
-    const loginForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: login.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
- * @route '/login'
- */
-        loginForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: login.url(options),
-            method: 'post',
-        })
-    
-    login.form = loginForm
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
@@ -88,27 +67,6 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
- * @route '/logout'
- */
-    const logoutForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: logout.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
- * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
- * @route '/logout'
- */
-        logoutForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: logout.url(options),
-            method: 'post',
-        })
-    
-    logout.form = logoutForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::home
  * @see app/External/Web/Controllers/Public/PublicController.php:16
@@ -171,41 +129,6 @@ home.head = (args: { municipality: string | number } | [municipality: string | n
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::home
- * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{municipality}/home'
- */
-    const homeForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: home.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::home
- * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{municipality}/home'
- */
-        homeForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: home.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::home
- * @see app/External/Web/Controllers/Public/PublicController.php:16
- * @route '/{municipality}/home'
- */
-        homeForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: home.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    home.form = homeForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::privacy
  * @see app/External/Web/Controllers/Public/PublicController.php:41
@@ -268,41 +191,6 @@ privacy.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::privacy
- * @see app/External/Web/Controllers/Public/PublicController.php:41
- * @route '/{municipality}/privacy-policy'
- */
-    const privacyForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: privacy.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::privacy
- * @see app/External/Web/Controllers/Public/PublicController.php:41
- * @route '/{municipality}/privacy-policy'
- */
-        privacyForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: privacy.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::privacy
- * @see app/External/Web/Controllers/Public/PublicController.php:41
- * @route '/{municipality}/privacy-policy'
- */
-        privacyForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: privacy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    privacy.form = privacyForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::government
  * @see app/External/Web/Controllers/Public/PublicController.php:36
@@ -365,41 +253,6 @@ government.head = (args: { municipality: string | number } | [municipality: stri
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::government
- * @see app/External/Web/Controllers/Public/PublicController.php:36
- * @route '/{municipality}/government'
- */
-    const governmentForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: government.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::government
- * @see app/External/Web/Controllers/Public/PublicController.php:36
- * @route '/{municipality}/government'
- */
-        governmentForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: government.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::government
- * @see app/External/Web/Controllers/Public/PublicController.php:36
- * @route '/{municipality}/government'
- */
-        governmentForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: government.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    government.form = governmentForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::admin
  * @see app/External/Web/Controllers/Public/PublicController.php:46
@@ -462,41 +315,6 @@ admin.head = (args: { municipality: string | number } | [municipality: string | 
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::admin
- * @see app/External/Web/Controllers/Public/PublicController.php:46
- * @route '/{municipality}/municipal-admin'
- */
-    const adminForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: admin.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::admin
- * @see app/External/Web/Controllers/Public/PublicController.php:46
- * @route '/{municipality}/municipal-admin'
- */
-        adminForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: admin.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::admin
- * @see app/External/Web/Controllers/Public/PublicController.php:46
- * @route '/{municipality}/municipal-admin'
- */
-        adminForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: admin.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    admin.form = adminForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::requests
  * @see app/External/Web/Controllers/Public/PublicController.php:56
@@ -559,41 +377,6 @@ requests.head = (args: { municipality: string | number } | [municipality: string
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::requests
- * @see app/External/Web/Controllers/Public/PublicController.php:56
- * @route '/{municipality}/action-center/request-list'
- */
-    const requestsForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: requests.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::requests
- * @see app/External/Web/Controllers/Public/PublicController.php:56
- * @route '/{municipality}/action-center/request-list'
- */
-        requestsForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: requests.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::requests
- * @see app/External/Web/Controllers/Public/PublicController.php:56
- * @route '/{municipality}/action-center/request-list'
- */
-        requestsForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: requests.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    requests.form = requestsForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::account
  * @see app/External/Web/Controllers/Public/PublicController.php:61
@@ -656,41 +439,6 @@ account.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::account
- * @see app/External/Web/Controllers/Public/PublicController.php:61
- * @route '/{municipality}/my-account'
- */
-    const accountForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: account.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::account
- * @see app/External/Web/Controllers/Public/PublicController.php:61
- * @route '/{municipality}/my-account'
- */
-        accountForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: account.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::account
- * @see app/External/Web/Controllers/Public/PublicController.php:61
- * @route '/{municipality}/my-account'
- */
-        accountForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: account.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    account.form = accountForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::contact
  * @see app/External/Web/Controllers/Public/PublicController.php:26
@@ -753,41 +501,6 @@ contact.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::contact
- * @see app/External/Web/Controllers/Public/PublicController.php:26
- * @route '/{municipality}/contact-us'
- */
-    const contactForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: contact.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::contact
- * @see app/External/Web/Controllers/Public/PublicController.php:26
- * @route '/{municipality}/contact-us'
- */
-        contactForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: contact.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::contact
- * @see app/External/Web/Controllers/Public/PublicController.php:26
- * @route '/{municipality}/contact-us'
- */
-        contactForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: contact.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    contact.form = contactForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::travel
  * @see app/External/Web/Controllers/Public/PublicController.php:66
@@ -850,41 +563,6 @@ travel.head = (args: { municipality: string | number } | [municipality: string |
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::travel
- * @see app/External/Web/Controllers/Public/PublicController.php:66
- * @route '/{municipality}/travel'
- */
-    const travelForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: travel.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::travel
- * @see app/External/Web/Controllers/Public/PublicController.php:66
- * @route '/{municipality}/travel'
- */
-        travelForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: travel.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::travel
- * @see app/External/Web/Controllers/Public/PublicController.php:66
- * @route '/{municipality}/travel'
- */
-        travelForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: travel.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    travel.form = travelForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::transparency
  * @see app/External/Web/Controllers/Public/PublicController.php:71
@@ -947,41 +625,6 @@ transparency.head = (args: { municipality: string | number } | [municipality: st
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::transparency
- * @see app/External/Web/Controllers/Public/PublicController.php:71
- * @route '/{municipality}/transparency'
- */
-    const transparencyForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: transparency.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::transparency
- * @see app/External/Web/Controllers/Public/PublicController.php:71
- * @route '/{municipality}/transparency'
- */
-        transparencyForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: transparency.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::transparency
- * @see app/External/Web/Controllers/Public/PublicController.php:71
- * @route '/{municipality}/transparency'
- */
-        transparencyForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: transparency.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    transparency.form = transparencyForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::orders
  * @see app/External/Web/Controllers/Public/PublicController.php:76
@@ -1044,41 +687,6 @@ orders.head = (args: { municipality: string | number } | [municipality: string |
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::orders
- * @see app/External/Web/Controllers/Public/PublicController.php:76
- * @route '/{municipality}/executive-orders'
- */
-    const ordersForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: orders.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::orders
- * @see app/External/Web/Controllers/Public/PublicController.php:76
- * @route '/{municipality}/executive-orders'
- */
-        ordersForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: orders.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::orders
- * @see app/External/Web/Controllers/Public/PublicController.php:76
- * @route '/{municipality}/executive-orders'
- */
-        ordersForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: orders.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    orders.form = ordersForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::announcements
  * @see app/External/Web/Controllers/Public/PublicController.php:81
@@ -1141,41 +749,6 @@ announcements.head = (args: { municipality: string | number } | [municipality: s
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::announcements
- * @see app/External/Web/Controllers/Public/PublicController.php:81
- * @route '/{municipality}/announcements'
- */
-    const announcementsForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: announcements.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::announcements
- * @see app/External/Web/Controllers/Public/PublicController.php:81
- * @route '/{municipality}/announcements'
- */
-        announcementsForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: announcements.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::announcements
- * @see app/External/Web/Controllers/Public/PublicController.php:81
- * @route '/{municipality}/announcements'
- */
-        announcementsForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: announcements.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    announcements.form = announcementsForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::wedding
  * @see app/External/Web/Controllers/Public/PublicController.php:86
@@ -1238,41 +811,6 @@ wedding.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::wedding
- * @see app/External/Web/Controllers/Public/PublicController.php:86
- * @route '/{municipality}/schedule-wedding'
- */
-    const weddingForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: wedding.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::wedding
- * @see app/External/Web/Controllers/Public/PublicController.php:86
- * @route '/{municipality}/schedule-wedding'
- */
-        weddingForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: wedding.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::wedding
- * @see app/External/Web/Controllers/Public/PublicController.php:86
- * @route '/{municipality}/schedule-wedding'
- */
-        weddingForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: wedding.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    wedding.form = weddingForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::landing
  * @see app/External/Web/Controllers/Public/PublicController.php:11
@@ -1316,41 +854,6 @@ landing.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::landing
- * @see app/External/Web/Controllers/Public/PublicController.php:11
- * @route '/'
- */
-    const landingForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: landing.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::landing
- * @see app/External/Web/Controllers/Public/PublicController.php:11
- * @route '/'
- */
-        landingForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: landing.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::landing
- * @see app/External/Web/Controllers/Public/PublicController.php:11
- * @route '/'
- */
-        landingForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: landing.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    landing.form = landingForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
@@ -1394,41 +897,6 @@ feedbackindex.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     method: 'head',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
- * @route '/feedback'
- */
-    const feedbackindexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: feedbackindex.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
- * @route '/feedback'
- */
-        feedbackindexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: feedbackindex.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
- * @route '/feedback'
- */
-        feedbackindexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: feedbackindex.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    feedbackindex.form = feedbackindexForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
@@ -1463,27 +931,6 @@ feedbackstore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
     method: 'post',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
- * @route '/feedback'
- */
-    const feedbackstoreForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: feedbackstore.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
- * @route '/feedback'
- */
-        feedbackstoreForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: feedbackstore.url(options),
-            method: 'post',
-        })
-    
-    feedbackstore.form = feedbackstoreForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
@@ -1546,41 +993,6 @@ feedbackshow.head = (args: { id: string | number } | [id: string | number ] | st
     method: 'head',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
- * @route '/feedback/{id}'
- */
-    const feedbackshowForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: feedbackshow.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
- * @route '/feedback/{id}'
- */
-        feedbackshowForm.get = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: feedbackshow.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
- * @route '/feedback/{id}'
- */
-        feedbackshowForm.head = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: feedbackshow.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    feedbackshow.form = feedbackshowForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
@@ -1634,37 +1046,6 @@ feedbackupdate.put = (args: { id: string | number } | [id: string | number ] | s
     method: 'put',
 })
 
-    /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
- * @route '/feedback/{id}'
- */
-    const feedbackupdateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: feedbackupdate.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
- * @route '/feedback/{id}'
- */
-        feedbackupdateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: feedbackupdate.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    feedbackupdate.form = feedbackupdateForm
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
@@ -1717,35 +1098,3 @@ feedbackdestroy.delete = (args: { id: string | number } | [id: string | number ]
     url: feedbackdestroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
- * @route '/feedback/{id}'
- */
-    const feedbackdestroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: feedbackdestroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
- * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
- * @route '/feedback/{id}'
- */
-        feedbackdestroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: feedbackdestroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    feedbackdestroy.form = feedbackdestroyForm

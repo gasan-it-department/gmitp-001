@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 import admin from './admin'
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::store
@@ -52,28 +52,6 @@ store.post = (args: { municipality: string | number } | [municipality: string | 
     url: store.url(args, options),
     method: 'post',
 })
-
-    /**
-* @see \App\External\Api\Controllers\BulletinBoard\EventController::store
- * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/{municipality}/bulletin-board/events'
- */
-    const storeForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(args, options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\BulletinBoard\EventController::store
- * @see app/External/Api/Controllers/BulletinBoard/EventController.php:15
- * @route '/{municipality}/bulletin-board/events'
- */
-        storeForm.post = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(args, options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 const events = {
     admin: Object.assign(admin, admin),
 store: Object.assign(store, store),

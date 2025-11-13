@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\Auth\AuthController::showRegisterUserPage
  * @see app/External/Web/Controllers/Auth/AuthController.php:15
@@ -42,41 +42,6 @@ showRegisterUserPage.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\Auth\AuthController::showRegisterUserPage
- * @see app/External/Web/Controllers/Auth/AuthController.php:15
- * @route '/register'
- */
-    const showRegisterUserPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showRegisterUserPage.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Auth\AuthController::showRegisterUserPage
- * @see app/External/Web/Controllers/Auth/AuthController.php:15
- * @route '/register'
- */
-        showRegisterUserPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showRegisterUserPage.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Auth\AuthController::showRegisterUserPage
- * @see app/External/Web/Controllers/Auth/AuthController.php:15
- * @route '/register'
- */
-        showRegisterUserPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showRegisterUserPage.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showRegisterUserPage.form = showRegisterUserPageForm
 /**
 * @see \App\External\Web\Controllers\Auth\AuthController::showLoginPage
  * @see app/External/Web/Controllers/Auth/AuthController.php:10
@@ -119,42 +84,6 @@ showLoginPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     url: showLoginPage.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\External\Web\Controllers\Auth\AuthController::showLoginPage
- * @see app/External/Web/Controllers/Auth/AuthController.php:10
- * @route '/login'
- */
-    const showLoginPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showLoginPage.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Auth\AuthController::showLoginPage
- * @see app/External/Web/Controllers/Auth/AuthController.php:10
- * @route '/login'
- */
-        showLoginPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showLoginPage.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Auth\AuthController::showLoginPage
- * @see app/External/Web/Controllers/Auth/AuthController.php:10
- * @route '/login'
- */
-        showLoginPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showLoginPage.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showLoginPage.form = showLoginPageForm
 const AuthController = { showRegisterUserPage, showLoginPage }
 
 export default AuthController

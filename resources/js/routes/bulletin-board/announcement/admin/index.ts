@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\AnnouncementAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/AnnouncementAdminController.php:10
@@ -60,42 +60,6 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
     url: index.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\AnnouncementAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/AnnouncementAdminController.php:10
- * @route '/{municipality}/bulletin-board/announcement/admin'
- */
-    const indexForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\AnnouncementAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/AnnouncementAdminController.php:10
- * @route '/{municipality}/bulletin-board/announcement/admin'
- */
-        indexForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\AnnouncementAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/AnnouncementAdminController.php:10
- * @route '/{municipality}/bulletin-board/announcement/admin'
- */
-        indexForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 const admin = {
     index: Object.assign(index, index),
 }

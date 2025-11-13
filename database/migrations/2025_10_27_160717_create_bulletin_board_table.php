@@ -26,8 +26,9 @@ return new class extends Migration {
 
             $table->boolean('is_published')->default(false);
             $table->softDeletes();
-
             $table->timestamps();
+
+            $table->index('municipal_id');
         });
 
         Schema::create('events', function (Blueprint $table) {

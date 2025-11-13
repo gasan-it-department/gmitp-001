@@ -22,8 +22,6 @@ class CreateAnnouncementService
             $announcementId = $this->idGenerator->generate();
             $municipalId = app('municipal_id');
 
-            dd($municipalId);
-
             $announcement = $this->announcementRepository->save($dto, $announcementId, $municipalId);
 
             return $announcement;

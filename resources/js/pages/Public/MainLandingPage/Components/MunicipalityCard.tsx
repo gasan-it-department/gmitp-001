@@ -72,7 +72,6 @@ export function MunicipalityCard() {
                             <p className="mt-1 text-sm text-gray-500">
                                 Zip Code: <span className="font-medium">{municipality.zip_code || '—'}</span>
                             </p>
-
                             {/* 🔗 CTA */}
                             <Link
                                 href={home({ municipality: municipality.slug })}

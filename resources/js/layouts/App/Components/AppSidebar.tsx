@@ -10,21 +10,24 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+// import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import admin from '@/routes/bulletin-board/announcement/admin';
 import { SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Building, CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Megaphone, Settings, User, Users } from 'lucide-react';
 import * as React from 'react';
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
+    const { currentMunicipality } = useMunicipality();
 
     const AdminSidebarItems = [
         {
             title: 'ACTION CENTER',
             icon: ClipboardList,
             items: [
-                { title: 'Dashboard', url: '/admin/dashboard', icon: LayoutDashboard },
+                { title: 'Dashboard', url: admin.index.url({ municipality: currentMunicipality.slug }), icon: LayoutDashboard },
                 { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
             ],
         },
@@ -32,7 +35,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: 'PUBLIC INFORMATION',
             icon: FileText,
             items: [
-                { title: 'Announcement', url: '/bulletin-board/announcement/admin', icon: Megaphone },
+                { title: 'Announcement', url: admin.index.url({ municipality: currentMunicipality.slug }), icon: Megaphone },
                 { title: 'Events', url: '/bulletin-board/events/admin', icon: CalendarDays },
             ],
         },

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('superAdmin')
     ->prefix('super-admin')
-    ->as('super.admin.')
+    ->as('superAdmin.')
     ->group(function () {
         Route::get('/dashboard', [SuperAdminController::class, 'showDashboard'])
             ->name('dashboard');

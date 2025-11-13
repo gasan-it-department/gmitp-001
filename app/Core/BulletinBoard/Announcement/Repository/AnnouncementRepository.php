@@ -6,6 +6,7 @@ use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
 use App\Core\BulletinBoard\Announcement\Interfaces\AnnouncementRepositoryInterface;
 use App\Core\BulletinBoard\Announcement\Models\Announcement;
 use App\Core\BulletinBoard\Announcement\Dto\AnnouncementFilterDto;
+use Illuminate\Database\Eloquent\Collection;
 
 class AnnouncementRepository implements AnnouncementRepositoryInterface
 {
@@ -32,6 +33,13 @@ class AnnouncementRepository implements AnnouncementRepositoryInterface
         Announcement::where('id', $id)->update([
             'is_published' => $isPublish
         ]);
+    }
+
+    public function getAll(string $municipalId): Collection
+    {
+        $announcements = Announcement::where('municipal_id', $municipalId)->get();
+
+        return $announcements;
     }
 
     public function getFiltered(AnnouncementFilterDto $dto): Announcement

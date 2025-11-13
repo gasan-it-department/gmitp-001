@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\DeviceCodeController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceCodeController.php:25
@@ -32,26 +32,4 @@ DeviceCodeController.post = (options?: RouteQueryOptions): RouteDefinition<'post
     url: DeviceCodeController.url(options),
     method: 'post',
 })
-
-    /**
-* @see \Laravel\Passport\Http\Controllers\DeviceCodeController::__invoke
- * @see vendor/laravel/passport/src/Http/Controllers/DeviceCodeController.php:25
- * @route '/oauth/device/code'
- */
-    const DeviceCodeControllerForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: DeviceCodeController.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \Laravel\Passport\Http\Controllers\DeviceCodeController::__invoke
- * @see vendor/laravel/passport/src/Http/Controllers/DeviceCodeController.php:25
- * @route '/oauth/device/code'
- */
-        DeviceCodeControllerForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: DeviceCodeController.url(options),
-            method: 'post',
-        })
-    
-    DeviceCodeController.form = DeviceCodeControllerForm
 export default DeviceCodeController

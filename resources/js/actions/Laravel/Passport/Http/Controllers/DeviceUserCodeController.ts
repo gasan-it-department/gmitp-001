@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
@@ -41,40 +41,4 @@ DeviceUserCodeController.head = (options?: RouteQueryOptions): RouteDefinition<'
     url: DeviceUserCodeController.url(options),
     method: 'head',
 })
-
-    /**
-* @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
- * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
- * @route '/oauth/device'
- */
-    const DeviceUserCodeControllerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: DeviceUserCodeController.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
- * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
- * @route '/oauth/device'
- */
-        DeviceUserCodeControllerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: DeviceUserCodeController.url(options),
-            method: 'get',
-        })
-            /**
-* @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
- * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
- * @route '/oauth/device'
- */
-        DeviceUserCodeControllerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: DeviceUserCodeController.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    DeviceUserCodeController.form = DeviceUserCodeControllerForm
 export default DeviceUserCodeController

@@ -12,8 +12,9 @@ class GetAnnouncementService
     ) {
     }
 
-    public function execute(AnnouncementFilterDto $dto)
+    public function execute()
     {
-        return $this->announcementRepository->getFiltered($dto);
+        $municipalId = app('municipal_id');
+        return $this->announcementRepository->getAll($municipalId);
     }
 }

@@ -1,5 +1,5 @@
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import GmitpLogo from './Gmitp-logo';
 import { LogInSignUpForm } from './LoginSignUpForm';
 import { HeaderNav } from './Public/HeaderNavigation';
@@ -21,9 +21,9 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <LeftNavigation />
                     </div>
 
-                    <Link href="/home" prefetch className="pointer-events-none flex items-center space-x-2 md:pointer-events-auto">
+                    <div className="pointer-events-none flex items-center space-x-2 md:pointer-events-auto">
                         <GmitpLogo />
-                    </Link>
+                    </div>
 
                     <div className="ml-6 hidden h-full items-center space-x-6 min-[1210px]:flex">
                         <HeaderNav />

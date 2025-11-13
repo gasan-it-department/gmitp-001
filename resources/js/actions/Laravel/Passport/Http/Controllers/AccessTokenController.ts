@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\AccessTokenController::issueToken
  * @see vendor/laravel/passport/src/Http/Controllers/AccessTokenController.php:25
@@ -32,28 +32,6 @@ issueToken.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: issueToken.url(options),
     method: 'post',
 })
-
-    /**
-* @see \Laravel\Passport\Http\Controllers\AccessTokenController::issueToken
- * @see vendor/laravel/passport/src/Http/Controllers/AccessTokenController.php:25
- * @route '/oauth/token'
- */
-    const issueTokenForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: issueToken.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \Laravel\Passport\Http\Controllers\AccessTokenController::issueToken
- * @see vendor/laravel/passport/src/Http/Controllers/AccessTokenController.php:25
- * @route '/oauth/token'
- */
-        issueTokenForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: issueToken.url(options),
-            method: 'post',
-        })
-    
-    issueToken.form = issueTokenForm
 const AccessTokenController = { issueToken }
 
 export default AccessTokenController

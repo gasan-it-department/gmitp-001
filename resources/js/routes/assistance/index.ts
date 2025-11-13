@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\ActionCenter\AssistanceTypeController::options
  * @see app/External/Api/Controllers/ActionCenter/AssistanceTypeController.php:16
@@ -41,42 +41,6 @@ options.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: options.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\External\Api\Controllers\ActionCenter\AssistanceTypeController::options
- * @see app/External/Api/Controllers/ActionCenter/AssistanceTypeController.php:16
- * @route '/action-center/assistance-options'
- */
-    const optionsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: options.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Api\Controllers\ActionCenter\AssistanceTypeController::options
- * @see app/External/Api/Controllers/ActionCenter/AssistanceTypeController.php:16
- * @route '/action-center/assistance-options'
- */
-        optionsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: options.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Api\Controllers\ActionCenter\AssistanceTypeController::options
- * @see app/External/Api/Controllers/ActionCenter/AssistanceTypeController.php:16
- * @route '/action-center/assistance-options'
- */
-        optionsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: options.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    options.form = optionsForm
 const assistance = {
     options: Object.assign(options, options),
 }

@@ -22,7 +22,7 @@ class SetMunicipalityContext
 
     public function handle(Request $request, Closure $next): Response
     {
-        $slug = $request->route('municipality');
+        $slug = $request->route('municipality') ?? $request->header('X-Municipality-Slug');
 
         if (!is_string($slug) || empty($slug)) {
             abort(404, 'Invalid url'); // now actually fires

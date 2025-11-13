@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::showAdminActionCenterPage
  * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
@@ -41,42 +41,6 @@ showAdminActionCenterPage.head = (options?: RouteQueryOptions): RouteDefinition<
     url: showAdminActionCenterPage.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::showAdminActionCenterPage
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
- */
-    const showAdminActionCenterPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showAdminActionCenterPage.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::showAdminActionCenterPage
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
- */
-        showAdminActionCenterPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showAdminActionCenterPage.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::showAdminActionCenterPage
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
- */
-        showAdminActionCenterPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showAdminActionCenterPage.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showAdminActionCenterPage.form = showAdminActionCenterPageForm
 const AdminActionCenterController = { showAdminActionCenterPage }
 
 export default AdminActionCenterController

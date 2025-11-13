@@ -8,6 +8,8 @@ use App\External\Api\Request\BulletinBoard\AnnouncementRequest;
 use App\Core\BulletinBoard\Announcement\Services\PublishAnnouncementService;
 use App\Core\BulletinBoard\Announcement\Services\UpdateAnnouncementService;
 use App\Core\BulletinBoard\Announcement\Models\Announcement;
+use App\Core\BulletinBoard\Announcement\Services\GetAnnouncementService;
+use App\External\Api\Resources\BulletinBoard\AnnouncementResource;
 
 class AnnouncementController
 {
@@ -15,6 +17,7 @@ class AnnouncementController
         protected CreateAnnouncementService $announcementService,
         protected PublishAnnouncementService $publishService,
         protected UpdateAnnouncementService $updateService,
+        protected GetAnnouncementService $getAnnouncementService,
     ) {
     }
 
@@ -23,7 +26,6 @@ class AnnouncementController
         try {
 
             $validated = $request->validated();
-
             $userId = $request->user()->id;
 
             $dto = new CreateAnnouncementDto(
@@ -31,7 +33,6 @@ class AnnouncementController
                 message: $validated['message'],
                 userId: $userId
             );
-
             $announcement = $this->announcementService->execute($dto);
 
             return response()->json([
@@ -46,14 +47,14 @@ class AnnouncementController
         }
     }
 
-    public function index()
+    public function fetch()
     {
         try {
-            $announcements = Announcement::orderBy('created_at', 'desc')->get();
+            $announcements = $this->getAnnouncementService->execute();
 
             return response()->json([
                 'success' => true,
-                'data' => $announcements,
+                'data' => AnnouncementResource::collection($announcements),
             ]);
         } catch (\Exception $e) {
             return response()->json([

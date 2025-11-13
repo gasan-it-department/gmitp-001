@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showMunicipalityPage
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
@@ -42,41 +42,6 @@ showMunicipalityPage.head = (options?: RouteQueryOptions): RouteDefinition<'head
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showMunicipalityPage
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
- * @route '/municipality/super-admin'
- */
-    const showMunicipalityPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showMunicipalityPage.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showMunicipalityPage
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
- * @route '/municipality/super-admin'
- */
-        showMunicipalityPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showMunicipalityPage.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showMunicipalityPage
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
- * @route '/municipality/super-admin'
- */
-        showMunicipalityPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showMunicipalityPage.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showMunicipalityPage.form = showMunicipalityPageForm
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showDashboard
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:11
@@ -120,41 +85,6 @@ showDashboard.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     method: 'head',
 })
 
-    /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showDashboard
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:11
- * @route '/super-admin/dashboard'
- */
-    const showDashboardForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showDashboard.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showDashboard
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:11
- * @route '/super-admin/dashboard'
- */
-        showDashboardForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showDashboard.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showDashboard
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:11
- * @route '/super-admin/dashboard'
- */
-        showDashboardForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showDashboard.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showDashboard.form = showDashboardForm
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showCreateUsers
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
@@ -197,42 +127,6 @@ showCreateUsers.head = (options?: RouteQueryOptions): RouteDefinition<'head'> =>
     url: showCreateUsers.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showCreateUsers
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
- * @route '/super-admin/create-user'
- */
-    const showCreateUsersForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: showCreateUsers.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showCreateUsers
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
- * @route '/super-admin/create-user'
- */
-        showCreateUsersForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showCreateUsers.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showCreateUsers
- * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
- * @route '/super-admin/create-user'
- */
-        showCreateUsersForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: showCreateUsers.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    showCreateUsers.form = showCreateUsersForm
 const SuperAdminController = { showMunicipalityPage, showDashboard, showCreateUsers }
 
 export default SuperAdminController

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::center
  * @see app/External/Web/Controllers/Public/PublicController.php:51
@@ -60,42 +60,6 @@ center.head = (args: { municipality: string | number } | [municipality: string |
     url: center.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\External\Web\Controllers\Public\PublicController::center
- * @see app/External/Web/Controllers/Public/PublicController.php:51
- * @route '/{municipality}/action-center'
- */
-    const centerForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: center.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::center
- * @see app/External/Web/Controllers/Public/PublicController.php:51
- * @route '/{municipality}/action-center'
- */
-        centerForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: center.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\External\Web\Controllers\Public\PublicController::center
- * @see app/External/Web/Controllers/Public/PublicController.php:51
- * @route '/{municipality}/action-center'
- */
-        centerForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: center.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    center.form = centerForm
 const action = {
     center: Object.assign(center, center),
 }

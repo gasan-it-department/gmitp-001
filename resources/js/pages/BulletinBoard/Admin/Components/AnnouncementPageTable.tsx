@@ -1,16 +1,18 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import BulletinHeader from "./BulletinHeader";
-import AddEditAnnouncementDialog from "./AddEditAnnouncementDialog";
-import { useEffect, useState } from "react";
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
-import { CheckCircle2, XCircle, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import axios from "@/lib/axios";
-import Utility from "@/pages/Utility/Utility";
-import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import PaginationView from "@/pages/Utility/PaginationView";
-import LoadingDialog from "@/pages/Utility/LoadingDialog";
+import axios from '@/lib/axios';
+import AddminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import PaginationView from '@/pages/Utility/PaginationView';
+import Utility from '@/pages/Utility/Utility';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import AddEditAnnouncementDialog from './AddEditAnnouncementDialog';
+import BulletinHeader from './BulletinHeader';
 
 export default function AnnouncementPageTable() {
     const [announcementList, setAnnouncementList] = useState<AnnouncementFormData[]>([]);
@@ -18,6 +20,7 @@ export default function AnnouncementPageTable() {
     const itemsPerPage = 10;
     const totalPages = Math.ceil(announcementList.length / itemsPerPage);
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
+    const { currentMunicipality } = useMunicipality();
 
     const [addEditDialog, setAddEditDialog] = useState<{
         isOpened: boolean;
@@ -29,12 +32,12 @@ export default function AnnouncementPageTable() {
 
     const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
-        title: "",
-        message: "",
-        positiveButtonText: "Ok",
-        negativeButtonText: "Cancel",
+        title: '',
+        message: '',
+        positiveButtonText: 'Ok',
+        negativeButtonText: 'Cancel',
         isNegativeButtonHidded: false,
-        payload: ""
+        payload: '',
     });
 
     // const renderStatusBadge = (isPublished?: boolean) => {
@@ -67,15 +70,14 @@ export default function AnnouncementPageTable() {
                 });
                 setIsLoadingDialogVisible(false);
             } else {
-                console.error(response.data.message || "Failed to delete announcement");
+                console.error(response.data.message || 'Failed to delete announcement');
             }
             setIsLoadingDialogVisible(false);
         } catch (error) {
             setIsLoadingDialogVisible(false);
-            console.error("Error deleting announcement:", error);
+            console.error('Error deleting announcement:', error);
         }
     };
-
 
     useEffect(() => {
         loadAnnouncement();
@@ -83,20 +85,19 @@ export default function AnnouncementPageTable() {
 
     async function loadAnnouncement() {
         try {
-            const response = await axios.get("/bulletin-board/announcement");
-            if (response.data.success) {
-                setAnnouncementList(response.data.data);
-            }
+            const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug);
+            console.log(response);
+            // if (response.data.success) {
+            //     setAnnouncementList(response.data.data);
+            // }
         } catch (error) {
-            console.error("Error fetching announcements:", error);
+            console.error('Error fetching announcements:', error);
         }
     }
 
     const handleSuccess = (data: AnnouncementFormData, isEdit: boolean) => {
         if (isEdit) {
-            setAnnouncementList((prev) =>
-                prev.map((item) => (item.id === data.id ? data : item))
-            );
+            setAnnouncementList((prev) => prev.map((item) => (item.id === data.id ? data : item)));
         } else {
             setAnnouncementList((prev) => [data, ...prev]);
         }
@@ -105,7 +106,7 @@ export default function AnnouncementPageTable() {
     const handlePageChange = (page: number, totalPages: number) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
@@ -115,9 +116,9 @@ export default function AnnouncementPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Announcement List</h1>
                 <BulletinHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
-                    onExportButtonClicked={() => { }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {}}
+                    onExportButtonClicked={() => {}}
                     onAddNewButtonClicked={() => {
                         setAddEditDialog({
                             isOpened: true,
@@ -137,86 +138,76 @@ export default function AnnouncementPageTable() {
                             <TableHead className="text-[12px] font-bold">Message</TableHead>
                             <TableHead className="text-[12px] font-bold">Date Posted</TableHead>
                             {/* <TableHead className="text-[12px] font-bold">Status</TableHead> */}
-                            <TableHead className="text-[12px] font-bold text-center w-[90px]">Actions</TableHead>
+                            <TableHead className="w-[90px] text-center text-[12px] font-bold">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
                         {announcementList.length === 0 ? (
-                            <AddminEmptyListItem
-                                title="No Announcement yet."
-                                message="Announcement you add will appear here."
-                            />
+                            <AddminEmptyListItem title="No Announcement yet." message="Announcement you add will appear here." />
                         ) : (
-                            announcementList
-                                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                                .map((item, index) => (
-                                    <TableRow
-                                        key={index}
-                                        className="hover:bg-gray-50 transition-colors cursor-pointer"
-                                    >
-                                        <TableCell className="text-[12px] font-medium">{(index + 1)}</TableCell>
-                                        <TableCell className="text-[12px] font-medium">{item.title}</TableCell>
-                                        <TableCell className="text-[12px] max-w-[300px] p-5 overflow-hidden">
-                                            <span
-                                                className="block overflow-hidden text-ellipsis"
-                                                style={{
-                                                    display: '-webkit-box',
-                                                    WebkitBoxOrient: 'vertical',
-                                                    WebkitLineClamp: 3,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'normal',
-                                                    lineHeight: '1.4em',
-                                                    maxHeight: '4.2em',
-                                                }}
-                                            >
-                                                {item.message}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-[12px]">
-                                            {Utility().formatToReadableDate(item.created_at) || '—'}
-                                        </TableCell>
-                                        {/* <TableCell className="text-[12px]">
+                            announcementList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item, index) => (
+                                <TableRow key={index} className="cursor-pointer transition-colors hover:bg-gray-50">
+                                    <TableCell className="text-[12px] font-medium">{index + 1}</TableCell>
+                                    <TableCell className="text-[12px] font-medium">{item.title}</TableCell>
+                                    <TableCell className="max-w-[300px] overflow-hidden p-5 text-[12px]">
+                                        <span
+                                            className="block overflow-hidden text-ellipsis"
+                                            style={{
+                                                display: '-webkit-box',
+                                                WebkitBoxOrient: 'vertical',
+                                                WebkitLineClamp: 3,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'normal',
+                                                lineHeight: '1.4em',
+                                                maxHeight: '4.2em',
+                                            }}
+                                        >
+                                            {item.message}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-[12px]">{Utility().formatToReadableDate(item.created_at) || '—'}</TableCell>
+                                    {/* <TableCell className="text-[12px]">
                                             {renderStatusBadge(item.is_published)}
                                         </TableCell> */}
 
-                                        {/* ACTION BUTTONS */}
-                                        <TableCell className="flex gap-2 justify-center">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setAddEditDialog({
-                                                        isOpened: true,
-                                                        editData: item,
-                                                    })
-                                                }
-                                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                                            >
-                                                <Pencil size={14} />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setClassicDialog((prev) => ({
-                                                        ...prev,
-                                                        isOpen: true,
-                                                        title: 'Confirm',
-                                                        message: 'Are you sure you want to delete this announcement?',
-                                                        positiveButtonText: 'Delete',
-                                                        negativeButtonText: 'Cancel',
-                                                        payload: item.id,
-                                                    }));
-                                                }}
-                                                className="text-red-600 border-red-200 hover:bg-red-50"
-                                            >
-                                                <Trash2 size={14} />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                    {/* ACTION BUTTONS */}
+                                    <TableCell className="flex justify-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setAddEditDialog({
+                                                    isOpened: true,
+                                                    editData: item,
+                                                })
+                                            }
+                                            className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                        >
+                                            <Pencil size={14} />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setClassicDialog((prev) => ({
+                                                    ...prev,
+                                                    isOpen: true,
+                                                    title: 'Confirm',
+                                                    message: 'Are you sure you want to delete this announcement?',
+                                                    positiveButtonText: 'Delete',
+                                                    negativeButtonText: 'Cancel',
+                                                    payload: item.id,
+                                                }));
+                                            }}
+                                            className="border-red-200 text-red-600 hover:bg-red-50"
+                                        >
+                                            <Trash2 size={14} />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
                         )}
                     </TableBody>
                 </Table>
@@ -272,9 +263,7 @@ export default function AnnouncementPageTable() {
                 }}
             />
 
-            <LoadingDialog
-                title="Loading, please wait..."
-                isOpen={isLoadingDialogVisible} />
+            <LoadingDialog title="Loading, please wait..." isOpen={isLoadingDialogVisible} />
         </div>
     );
 }
