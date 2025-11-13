@@ -1,5 +1,4 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\Admin\AdminDasboardController::show
  * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10

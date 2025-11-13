@@ -1,5 +1,6 @@
 import { landing } from '@/routes';
 import { Link, usePage } from '@inertiajs/react';
+
 type Municipality = {
     id: string;
     name: string;
@@ -9,8 +10,6 @@ type Municipality = {
 
 const GmitpLogo = () => {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-
-    console.log(currentMunicipality);
     // const formattedName = app_name.replace(/_/g, ' ').replace(/-/g, ' ');
 
     return (

@@ -37,6 +37,32 @@ export default function Utility() {
         return dateMoment.format("MMM DD, YYYY hh:mm A");
     }
 
+    function formatToReadableDateNoTime(dateTime: string | number | undefined): string {
+        if (!dateTime) {
+            return "Unknown date";
+        }
+
+        let dateMoment;
+
+        // Handle numeric epoch (either seconds or milliseconds)
+        if (!isNaN(Number(dateTime))) {
+            const epoch = Number(dateTime);
+            dateMoment = epoch > 9999999999
+                ? moment(epoch) // milliseconds
+                : moment.unix(epoch); // seconds
+        }
+        // Otherwise, assume ISO or readable date string
+        else {
+            dateMoment = moment(dateTime);
+        }
+
+        if (!dateMoment.isValid()) {
+            return "Invalid date format";
+        }
+
+        return dateMoment.format("MMM DD, YYYY");
+    }
+
     // function formatAndAddDays(epochTime: string | undefined, additionalDays: number = 0) {
     //     if (epochTime == null) {
     //         return 'Unknown date';
@@ -47,18 +73,41 @@ export default function Utility() {
     //         .format('MMM DD, YYYY hh:mm A');
     // }
     function formatAndAddDays(dateTimeString: string | undefined, additionalDays: number = 0): string {
-        if (!dateTimeString) {
-            return 'Unknown date';
+        if (!dateTimeString) return "Unknown date";
+
+        let dateMoment: moment.Moment;
+
+        if (!isNaN(Number(dateTimeString))) {
+            const epoch = Number(dateTimeString);
+            dateMoment = epoch > 9999999999
+                ? moment(epoch)
+                : moment.unix(epoch);
+        } else {
+            dateMoment = moment.parseZone(dateTimeString).local();
         }
 
-        const date = moment(dateTimeString);
+        if (!dateMoment.isValid()) return `Invalid date: ${dateTimeString}`;
 
-        if (!date.isValid()) {
-            return `Invalid date: ${dateTimeString}`;
+        return dateMoment.add((additionalDays + 2), 'days').format("MMM DD, YYYY");
+    }
+
+    function formatAndAddDaysNoTime(dateTimeString: string | undefined, additionalDays: number = 0): string {
+        if (!dateTimeString) return "Unknown date";
+
+        let dateMoment: moment.Moment;
+
+        if (!isNaN(Number(dateTimeString))) {
+            const epoch = Number(dateTimeString);
+            dateMoment = epoch > 9999999999
+                ? moment(epoch)
+                : moment.unix(epoch);
+        } else {
+            dateMoment = moment.parseZone(dateTimeString).local();
         }
 
-        // 4. Add the specified number of days and format the output
-        return date.add(additionalDays, 'days').format('MMM DD, YYYY hh:mm A');
+        if (!dateMoment.isValid()) return `Invalid date: ${dateTimeString}`;
+
+        return dateMoment.add((additionalDays + 2), 'days').format("MMM DD, YYYY");
     }
 
     function calculateTotalDays(dateApproved: string) {
@@ -124,5 +173,14 @@ export default function Utility() {
 
 
 
-    return { generateUniqueId, formatToReadableDate, formatAndAddDays, calculateTotalDays, formatTimeAgo, calculateArrivingDays };
+    return {
+        generateUniqueId,
+        formatToReadableDate,
+        formatAndAddDays,
+        calculateTotalDays,
+        formatTimeAgo,
+        calculateArrivingDays,
+        formatToReadableDateNoTime,
+        formatAndAddDaysNoTime
+    };
 }

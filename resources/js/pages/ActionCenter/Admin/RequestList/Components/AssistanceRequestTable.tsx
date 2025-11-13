@@ -18,13 +18,14 @@ import {
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Printer, Trash2 } from 'lucide-react';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { toast } from 'sonner';
 import axios from '@/lib/axios';
 import { useQueryClient } from '@tanstack/react-query';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import PrintView from './PrintView';
 
 export function AssistanceRequestTable() {
     const queryClient = useQueryClient();
@@ -35,6 +36,14 @@ export function AssistanceRequestTable() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
+    const [printDialogState, setPrintDialogState] = useState<{
+        isVisible: boolean;
+        request: AssistanceRequest | null;
+    }>({
+        isVisible: false,
+        request: null,
+    });
+
     const [classicDialog, setClassicDialog] = useState<{
         isOpen: boolean;
         title: string;
@@ -66,7 +75,7 @@ export function AssistanceRequestTable() {
 
         const query = searchQuery.toLowerCase().trim();
 
-        // --- Filter by search ---
+        // --- Filter by search and status ---
         let results = data.request.filter((req) => {
             const fullName = `${req.beneficiary.first_name} ${req.beneficiary.last_name}`.toLowerCase();
             const matchesSearch =
@@ -76,11 +85,10 @@ export function AssistanceRequestTable() {
                 req.transaction_number?.toLowerCase().includes(query);
 
             const matchesStatus = selectedStatus === 'all' || req.status === selectedStatus;
-
             return matchesSearch && matchesStatus;
         });
 
-        // --- ✅ Sort results based on currentSelectedSortOption ---
+        // --- Sort results ---
         if (currentSelectedSortOption) {
             results = [...results].sort((a, b) => {
                 switch (currentSelectedSortOption) {
@@ -90,22 +98,28 @@ export function AssistanceRequestTable() {
                         return nameA.localeCompare(nameB);
                     }
                     case 'sort_request_date':
-                        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                        // ✅ Show newest first
+                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                     case 'sort_due_date':
                         return (
-                            new Date(Utility().formatAndAddDays(a.created_at, 90)).getTime() -
-                            new Date(Utility().formatAndAddDays(b.created_at, 90)).getTime()
+                            new Date(Utility().formatAndAddDays(b.created_at, 90)).getTime() -
+                            new Date(Utility().formatAndAddDays(a.created_at, 90)).getTime()
                         );
                     case 'sort_transaction_id':
-                        return (a.transaction_number || '').localeCompare(b.transaction_number || '');
+                        return (b.transaction_number || '').localeCompare(a.transaction_number || '');
                     case 'sort_status':
                         return (a.status || '').localeCompare(b.status || '');
-                    case 'sort_title': // assuming assistance_type = title
+                    case 'sort_title':
                         return (a.assistance_type || '').localeCompare(b.assistance_type || '');
                     default:
                         return 0;
                 }
             });
+        } else {
+            // ✅ Default sort: newest request first
+            results = [...results].sort(
+                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
         }
 
         return results;
@@ -127,13 +141,11 @@ export function AssistanceRequestTable() {
             toast.error(error.response?.data?.message || "Failed to delete record.");
         }
     };
-
-
     return (
         <div>
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight text-balance">Request List</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-balance">Request Records</h1>
                 <Header
                     className="flex justify-end"
                     onAddNewButtonClicked={() => {
@@ -211,7 +223,7 @@ export function AssistanceRequestTable() {
                                             </TableCell>
 
                                             <TableCell className="text-[12px]">
-                                                {Utility().formatToReadableDate(req.created_at)}
+                                                {Utility().formatToReadableDateNoTime(req.created_at)}
                                             </TableCell>
 
                                             <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
@@ -242,11 +254,12 @@ export function AssistanceRequestTable() {
                                             </TableCell>
 
                                             <TableCell className="text-[12px]">
-                                                {Utility().formatAndAddDays(req.created_at, 90)}
+                                                {Utility().formatAndAddDaysNoTime(req.created_at, 90)}
                                             </TableCell>
 
                                             {/* ACTION BUTTONS */}
-                                            <TableCell className="flex gap-2 justify-center">
+                                            <TableCell className="flex gap-2">
+                                                {/* EDIT BUTTON */}
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -258,6 +271,24 @@ export function AssistanceRequestTable() {
                                                 >
                                                     <Pencil size={14} />
                                                 </Button>
+
+                                                {/* PRINT BUTTON */}
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setPrintDialogState((prev) => ({
+                                                            ...prev,
+                                                            isVisible: true,
+                                                            request: req
+                                                        }))
+                                                    }}
+                                                    className="text-green-600 border-green-200 hover:bg-green-50"
+                                                >
+                                                    <Printer size={14} />
+                                                </Button>
+
+                                                {/* DELETE BUTTON */}
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -271,7 +302,7 @@ export function AssistanceRequestTable() {
                                                             negativeButtonText: "Cancel",
                                                             isNegativeButtonHidden: false,
                                                             action: "delete_record",
-                                                            payload: req.id
+                                                            payload: req.id,
                                                         }));
                                                     }}
                                                     className="text-red-600 border-red-200 hover:bg-red-50"
@@ -362,6 +393,17 @@ export function AssistanceRequestTable() {
             <LoadingDialog
                 title='Loading, please wait...'
                 isOpen={isLoadingDialogVisible} />
+
+            <PrintView
+                isOpen={printDialogState.isVisible}
+                onClose={() => {
+                    setPrintDialogState((prev) => ({
+                        ...prev,
+                        isVisible: false,
+                        request: null
+                    }))
+                }}
+                data={printDialogState.request} />
         </div>
     );
 }

@@ -1,5 +1,4 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showMunicipalityPage
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21
