@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
+=======
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::dashboard
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:11
@@ -84,6 +88,45 @@ createUser.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: createUser.url(options),
     method: 'head',
 })
+<<<<<<< HEAD
+=======
+
+    /**
+* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::createUser
+ * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
+ * @route '/super-admin/create-user'
+ */
+    const createUserForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: createUser.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::createUser
+ * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
+ * @route '/super-admin/create-user'
+ */
+        createUserForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: createUser.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::createUser
+ * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:16
+ * @route '/super-admin/create-user'
+ */
+        createUserForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: createUser.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    createUser.form = createUserForm
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 const superAdmin = {
     dashboard: Object.assign(dashboard, dashboard),
 createUser: Object.assign(createUser, createUser),

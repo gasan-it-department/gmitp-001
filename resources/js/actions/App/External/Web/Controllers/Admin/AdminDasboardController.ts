@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
+=======
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Admin\AdminDasboardController::showAdminDashboard
  * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
@@ -60,6 +64,45 @@ showAdminDashboard.head = (args: { municipality: string | number } | [municipali
     url: showAdminDashboard.url(args, options),
     method: 'head',
 })
+<<<<<<< HEAD
+=======
+
+    /**
+* @see \App\External\Web\Controllers\Admin\AdminDasboardController::showAdminDashboard
+ * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
+ * @route '/{municipality}/admin/dashboard'
+ */
+    const showAdminDashboardForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showAdminDashboard.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Admin\AdminDasboardController::showAdminDashboard
+ * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
+ * @route '/{municipality}/admin/dashboard'
+ */
+        showAdminDashboardForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showAdminDashboard.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Admin\AdminDasboardController::showAdminDashboard
+ * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
+ * @route '/{municipality}/admin/dashboard'
+ */
+        showAdminDashboardForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showAdminDashboard.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showAdminDashboard.form = showAdminDashboardForm
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 const AdminDasboardController = { showAdminDashboard }
 
 export default AdminDasboardController

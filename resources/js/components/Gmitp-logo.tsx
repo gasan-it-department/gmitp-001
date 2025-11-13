@@ -10,7 +10,10 @@ type Municipality = {
 
 const GmitpLogo = () => {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+<<<<<<< HEAD
     // const formattedName = app_name.replace(/_/g, ' ').replace(/-/g, ' ');
+=======
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 
     return (
         <div className="flex flex-row items-center">

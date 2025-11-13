@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../../wayfinder'
+=======
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../../wayfinder'
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\SuperAdmin\SuperAdminController::showMunicipalityPage
  * @see app/External/Web/Controllers/SuperAdmin/SuperAdminController.php:21

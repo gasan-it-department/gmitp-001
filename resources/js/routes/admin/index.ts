@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
+=======
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Admin\AdminDasboardController::dashboard
  * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
@@ -60,6 +64,45 @@ dashboard.head = (args: { municipality: string | number } | [municipality: strin
     url: dashboard.url(args, options),
     method: 'head',
 })
+<<<<<<< HEAD
+=======
+
+    /**
+* @see \App\External\Web\Controllers\Admin\AdminDasboardController::dashboard
+ * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
+ * @route '/{municipality}/admin/dashboard'
+ */
+    const dashboardForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: dashboard.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Admin\AdminDasboardController::dashboard
+ * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
+ * @route '/{municipality}/admin/dashboard'
+ */
+        dashboardForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: dashboard.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Admin\AdminDasboardController::dashboard
+ * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
+ * @route '/{municipality}/admin/dashboard'
+ */
+        dashboardForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: dashboard.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    dashboard.form = dashboardForm
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 const admin = {
     dashboard: Object.assign(dashboard, dashboard),
 }

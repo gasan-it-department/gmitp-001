@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
+=======
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 import requests from './requests'
 import update from './update'
 /**
@@ -43,6 +47,45 @@ show.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(options),
     method: 'head',
 })
+<<<<<<< HEAD
+=======
+
+    /**
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/action-center/admin/request-list'
+ */
+    const showForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/action-center/admin/request-list'
+ */
+        showForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/action-center/admin/request-list'
+ */
+        showForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 const actionCenter = {
     show: Object.assign(show, show),
 requests: Object.assign(requests, requests),

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
+=======
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+>>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \Laravel\Passport\Http\Controllers\TransientTokenController::refresh
  * @see vendor/laravel/passport/src/Http/Controllers/TransientTokenController.php:22
