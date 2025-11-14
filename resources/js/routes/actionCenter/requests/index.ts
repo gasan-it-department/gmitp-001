@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
  * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
@@ -45,6 +41,42 @@ status.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: status.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
+ * @route '/action-center/admin/status-list'
+ */
+    const statusForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: status.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
+ * @route '/action-center/admin/status-list'
+ */
+        statusForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: status.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::status
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
+ * @route '/action-center/admin/status-list'
+ */
+        statusForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: status.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    status.form = statusForm
 const requests = {
     status: Object.assign(status, status),
 }

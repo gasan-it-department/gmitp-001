@@ -1,34 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Megaphone } from "lucide-react";
 import PublicLayout from "@/layouts/Public/wrapper/PublicLayoutTemplate";
 import Utility from "@/pages/Utility/Utility";
 import PaginationView from "@/pages/Utility/PaginationView";
-import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
-
-const announcements: AnnouncementFormData[] = Array.from({ length: 100 }, (_, i) => {
-    const id = (i + 1).toString();
-    const day = ((i % 30) + 1).toString().padStart(2, "0");
-    const month = ((Math.floor(i / 30) % 12) + 1).toString().padStart(2, "0");
-    const year = 2025 + Math.floor(i / 360);
-
-    return {
-        id,
-        title: `Announcement #${i + 1}`,
-        message: `This is the message for announcement #${i + 1}. Keep updated with our community activities!`,
-        created_at: `${year}-${month}-${day}T08:00:00Z`,
-        is_published: true,
-    };
-});
-
+import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import { AnnouncementApi } from "@/Core/Api/BulletinBoard/AnnouncementApi";
+import { useMunicipality } from "@/Core/Context/MunicipalityContext";
 
 export default function GeneralAnnouncementList() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 6;
-
-    const totalPages = Math.ceil(announcements.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentItems = announcements.slice(startIndex, startIndex + itemsPerPage);
+    const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
+    const { currentMunicipality } = useMunicipality();
 
     const handlePageChange = (page: number, totalPages: number) => {
         console.log("Current page: ", page);
@@ -38,6 +22,23 @@ export default function GeneralAnnouncementList() {
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
+
+    useEffect(() => {
+        loadAnnouncement();
+    }, []);
+
+    async function loadAnnouncement() {
+        try {
+            const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug);
+            if (response.success) {
+                setAnnouncementList(response.data);
+            } else {
+                
+            }
+        } catch (error: any) {
+            
+        }
+    }
 
     return (
         <PublicLayout title="Announcements" description="">
@@ -54,7 +55,7 @@ export default function GeneralAnnouncementList() {
 
                 {/* Announcement Cards */}
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {currentItems.map((item) => (
+                    {announcementList.map((item) => (
                         <Card
                             key={item.id}
                             className="group relative overflow-hidden border-none shadow-lg hover:shadow-xl transition-all duration-300
@@ -90,16 +91,16 @@ export default function GeneralAnnouncementList() {
                     ))}
                 </div>
 
-                {/* Pagination */}
+                {/* Pagination
                 <div className="flex flex-wrap justify-center items-center gap-2 mt-10">
                     <PaginationView
                         maxVisible={3}
                         currentPage={currentPage}
                         totalPages={totalPages}
-                        onPageChange={handlePageChange} 
-                        totalItems={currentItems.length} 
-                        itemsPerPage={5}                    />
-                </div>
+                        onPageChange={handlePageChange}
+                        totalItems={currentItems.length}
+                        itemsPerPage={5} />
+                </div> */}
             </section>
         </PublicLayout>
     );

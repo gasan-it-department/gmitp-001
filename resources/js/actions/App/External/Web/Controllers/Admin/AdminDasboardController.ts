@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Admin\AdminDasboardController::showAdminDashboard
  * @see app/External/Web/Controllers/Admin/AdminDasboardController.php:10
@@ -64,8 +60,6 @@ showAdminDashboard.head = (args: { municipality: string | number } | [municipali
     url: showAdminDashboard.url(args, options),
     method: 'head',
 })
-<<<<<<< HEAD
-=======
 
     /**
 * @see \App\External\Web\Controllers\Admin\AdminDasboardController::showAdminDashboard
@@ -102,7 +96,6 @@ showAdminDashboard.head = (args: { municipality: string | number } | [municipali
         })
     
     showAdminDashboard.form = showAdminDashboardForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 const AdminDasboardController = { showAdminDashboard }
 
 export default AdminDasboardController

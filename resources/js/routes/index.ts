@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
@@ -37,8 +33,6 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::login
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:23
@@ -60,7 +54,6 @@ login.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
         })
     
     login.form = loginForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
@@ -95,8 +88,6 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\Auth\AuthenticateUserController::logout
  * @see app/External/Api/Controllers/Auth/AuthenticateUserController.php:58
@@ -118,7 +109,6 @@ logout.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
         })
     
     logout.form = logoutForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::home
  * @see app/External/Web/Controllers/Public/PublicController.php:16
@@ -181,8 +171,6 @@ home.head = (args: { municipality: string | number } | [municipality: string | n
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::home
  * @see app/External/Web/Controllers/Public/PublicController.php:16
@@ -218,7 +206,6 @@ home.head = (args: { municipality: string | number } | [municipality: string | n
         })
     
     home.form = homeForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::privacy
  * @see app/External/Web/Controllers/Public/PublicController.php:41
@@ -281,8 +268,6 @@ privacy.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::privacy
  * @see app/External/Web/Controllers/Public/PublicController.php:41
@@ -318,7 +303,6 @@ privacy.head = (args: { municipality: string | number } | [municipality: string 
         })
     
     privacy.form = privacyForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::government
  * @see app/External/Web/Controllers/Public/PublicController.php:36
@@ -381,8 +365,6 @@ government.head = (args: { municipality: string | number } | [municipality: stri
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::government
  * @see app/External/Web/Controllers/Public/PublicController.php:36
@@ -418,7 +400,6 @@ government.head = (args: { municipality: string | number } | [municipality: stri
         })
     
     government.form = governmentForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::admin
  * @see app/External/Web/Controllers/Public/PublicController.php:46
@@ -481,8 +462,6 @@ admin.head = (args: { municipality: string | number } | [municipality: string | 
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::admin
  * @see app/External/Web/Controllers/Public/PublicController.php:46
@@ -518,7 +497,6 @@ admin.head = (args: { municipality: string | number } | [municipality: string | 
         })
     
     admin.form = adminForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::requests
  * @see app/External/Web/Controllers/Public/PublicController.php:56
@@ -581,8 +559,6 @@ requests.head = (args: { municipality: string | number } | [municipality: string
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::requests
  * @see app/External/Web/Controllers/Public/PublicController.php:56
@@ -618,7 +594,6 @@ requests.head = (args: { municipality: string | number } | [municipality: string
         })
     
     requests.form = requestsForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::account
  * @see app/External/Web/Controllers/Public/PublicController.php:61
@@ -681,8 +656,6 @@ account.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::account
  * @see app/External/Web/Controllers/Public/PublicController.php:61
@@ -718,7 +691,6 @@ account.head = (args: { municipality: string | number } | [municipality: string 
         })
     
     account.form = accountForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::contact
  * @see app/External/Web/Controllers/Public/PublicController.php:26
@@ -781,8 +753,6 @@ contact.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::contact
  * @see app/External/Web/Controllers/Public/PublicController.php:26
@@ -818,7 +788,6 @@ contact.head = (args: { municipality: string | number } | [municipality: string 
         })
     
     contact.form = contactForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::travel
  * @see app/External/Web/Controllers/Public/PublicController.php:66
@@ -881,8 +850,6 @@ travel.head = (args: { municipality: string | number } | [municipality: string |
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::travel
  * @see app/External/Web/Controllers/Public/PublicController.php:66
@@ -918,7 +885,6 @@ travel.head = (args: { municipality: string | number } | [municipality: string |
         })
     
     travel.form = travelForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::transparency
  * @see app/External/Web/Controllers/Public/PublicController.php:71
@@ -981,8 +947,6 @@ transparency.head = (args: { municipality: string | number } | [municipality: st
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::transparency
  * @see app/External/Web/Controllers/Public/PublicController.php:71
@@ -1018,7 +982,6 @@ transparency.head = (args: { municipality: string | number } | [municipality: st
         })
     
     transparency.form = transparencyForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::orders
  * @see app/External/Web/Controllers/Public/PublicController.php:76
@@ -1081,8 +1044,6 @@ orders.head = (args: { municipality: string | number } | [municipality: string |
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::orders
  * @see app/External/Web/Controllers/Public/PublicController.php:76
@@ -1118,7 +1079,6 @@ orders.head = (args: { municipality: string | number } | [municipality: string |
         })
     
     orders.form = ordersForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::announcements
  * @see app/External/Web/Controllers/Public/PublicController.php:81
@@ -1181,8 +1141,6 @@ announcements.head = (args: { municipality: string | number } | [municipality: s
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::announcements
  * @see app/External/Web/Controllers/Public/PublicController.php:81
@@ -1218,7 +1176,6 @@ announcements.head = (args: { municipality: string | number } | [municipality: s
         })
     
     announcements.form = announcementsForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::wedding
  * @see app/External/Web/Controllers/Public/PublicController.php:86
@@ -1281,8 +1238,6 @@ wedding.head = (args: { municipality: string | number } | [municipality: string 
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::wedding
  * @see app/External/Web/Controllers/Public/PublicController.php:86
@@ -1318,7 +1273,6 @@ wedding.head = (args: { municipality: string | number } | [municipality: string 
         })
     
     wedding.form = weddingForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::landing
  * @see app/External/Web/Controllers/Public/PublicController.php:11
@@ -1362,8 +1316,6 @@ landing.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Web\Controllers\Public\PublicController::landing
  * @see app/External/Web/Controllers/Public/PublicController.php:11
@@ -1399,7 +1351,6 @@ landing.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     landing.form = landingForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
@@ -1443,8 +1394,6 @@ feedbackindex.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackindex
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:58
@@ -1480,7 +1429,6 @@ feedbackindex.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
         })
     
     feedbackindex.form = feedbackindexForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
@@ -1515,8 +1463,6 @@ feedbackstore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
     method: 'post',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackstore
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:18
@@ -1538,7 +1484,6 @@ feedbackstore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
         })
     
     feedbackstore.form = feedbackstoreForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
@@ -1601,8 +1546,6 @@ feedbackshow.head = (args: { id: string | number } | [id: string | number ] | st
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackshow
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:63
@@ -1638,7 +1581,6 @@ feedbackshow.head = (args: { id: string | number } | [id: string | number ] | st
         })
     
     feedbackshow.form = feedbackshowForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
@@ -1692,8 +1634,6 @@ feedbackupdate.put = (args: { id: string | number } | [id: string | number ] | s
     method: 'put',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackupdate
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:68
@@ -1725,7 +1665,6 @@ feedbackupdate.put = (args: { id: string | number } | [id: string | number ] | s
         })
     
     feedbackupdate.form = feedbackupdateForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\Feedback\FeedbackController::feedbackdestroy
  * @see app/External/Api/Controllers/Feedback/FeedbackController.php:0
@@ -1777,9 +1716,6 @@ feedbackdestroy.url = (args: { id: string | number } | [id: string | number ] | 
 feedbackdestroy.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: feedbackdestroy.url(args, options),
     method: 'delete',
-<<<<<<< HEAD
-})
-=======
 })
 
     /**
@@ -1813,4 +1749,3 @@ feedbackdestroy.delete = (args: { id: string | number } | [id: string | number ]
         })
     
     feedbackdestroy.form = feedbackdestroyForm
->>>>>>> 674e707 (fixed the announcement division for municipality)

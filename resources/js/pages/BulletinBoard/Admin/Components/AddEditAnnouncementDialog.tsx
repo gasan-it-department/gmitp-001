@@ -5,16 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import type { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import type { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import axios, { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 
 interface AddEditAnnouncementProps {
     isOpen: boolean;
-    editData?: AnnouncementFormData | null;
+    editData?: AnnouncementData | null;
     onClose: () => void;
-    onSuccess: (data: AnnouncementFormData, isEdit: boolean) => void;
+    onSuccess: (data: AnnouncementData, isEdit: boolean) => void;
 }
 
 export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, onSuccess }: AddEditAnnouncementProps) {
@@ -25,17 +25,15 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
         register,
         handleSubmit,
         reset,
-        watch,
-        setValue,
         formState: { errors, isSubmitting },
         setError,
-    } = useForm<AnnouncementFormData>({
+    } = useForm<AnnouncementData>({
         defaultValues: { title: '', message: '', is_published: false },
     });
 
     const [serverError, setServerError] = useState<string | null>(null);
 
-    const onSubmit: SubmitHandler<AnnouncementFormData> = async (data) => {
+    const onSubmit: SubmitHandler<AnnouncementData> = async (data) => {
         setServerError(null);
 
         const payload = {
@@ -47,14 +45,14 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
         try {
             let response;
             if (editData) {
-                response = await axios.put(`/bulletin-board/announcement/${editData.id}`, payload);
-                if (response.data.success) {
-                    onSuccess(response.data.data, true);
-                }
+                // response = await axios.put(`/bulletin-board/announcement/${editData.id}`, payload);
+                // if (response.success) {
+                //     onSuccess(response.data, true);
+                // }
             } else {
                 response = await AnnouncementApi.storeAnnouncement(payload, municipalSlug);
-                if (response.data.success) {
-                    onSuccess(response.data.data, false);
+                if (response.success) {
+                    onSuccess(response.data, false);
                 }
             }
 
@@ -67,7 +65,7 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
 
                 Object.entries(backendErrors).forEach(([field, messages]) => {
                     if (Array.isArray(messages)) {
-                        setError(field as keyof AnnouncementFormData, {
+                        setError(field as keyof AnnouncementData, {
                             type: 'server',
                             message: messages[0],
                         });

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { AnnouncementFormData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import axios from '@/lib/axios';
 import AddminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
@@ -15,16 +15,15 @@ import AddEditAnnouncementDialog from './AddEditAnnouncementDialog';
 import BulletinHeader from './BulletinHeader';
 
 export default function AnnouncementPageTable() {
-    const [announcementList, setAnnouncementList] = useState<AnnouncementFormData[]>([]);
+    const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
     const totalPages = Math.ceil(announcementList.length / itemsPerPage);
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
     const { currentMunicipality } = useMunicipality();
-
     const [addEditDialog, setAddEditDialog] = useState<{
         isOpened: boolean;
-        editData: AnnouncementFormData | null;
+        editData: AnnouncementData | null;
     }>({
         isOpened: false,
         editData: null,
@@ -36,7 +35,7 @@ export default function AnnouncementPageTable() {
         message: '',
         positiveButtonText: 'Ok',
         negativeButtonText: 'Cancel',
-        isNegativeButtonHidded: false,
+        isNegativeButtonHidden: false,
         payload: '',
     });
 
@@ -73,9 +72,16 @@ export default function AnnouncementPageTable() {
                 console.error(response.data.message || 'Failed to delete announcement');
             }
             setIsLoadingDialogVisible(false);
-        } catch (error) {
+        } catch (error: any) {
             setIsLoadingDialogVisible(false);
-            console.error('Error deleting announcement:', error);
+            setClassicDialog((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: "An error occurred.",
+                message: error,
+                positiveButtonText: "Close",
+                isNegativeButtonHidden: true,
+            }));
         }
     };
 
@@ -85,17 +91,39 @@ export default function AnnouncementPageTable() {
 
     async function loadAnnouncement() {
         try {
+            setIsLoadingDialogVisible(true);
             const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug);
-            console.log(response);
-            // if (response.data.success) {
-            //     setAnnouncementList(response.data.data);
-            // }
-        } catch (error) {
+            setIsLoadingDialogVisible(false);
+            if (response.success) {
+                const sorted = [...response.data].sort((a, b) => {
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                });
+                setAnnouncementList(sorted);
+            } else {
+                setClassicDialog((prev) => ({
+                    ...prev,
+                    isOpen: true,
+                    title: "An error occurred!",
+                    message: "Failed to load announcement. Please check your Internet connection and try again.",
+                    positiveButtonText: "Close",
+                    isNegativeButtonHidden: true,
+                }));
+            }
+        } catch (error: any) {
+            setIsLoadingDialogVisible(false);
             console.error('Error fetching announcements:', error);
+            setClassicDialog((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: "An error occurred!",
+                message: error,
+                positiveButtonText: "Close",
+                isNegativeButtonHidden: true,
+            }));
         }
     }
 
-    const handleSuccess = (data: AnnouncementFormData, isEdit: boolean) => {
+    const handleSuccess = (data: AnnouncementData, isEdit: boolean) => {
         if (isEdit) {
             setAnnouncementList((prev) => prev.map((item) => (item.id === data.id ? data : item)));
         } else {
@@ -116,9 +144,9 @@ export default function AnnouncementPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Announcement List</h1>
                 <BulletinHeader
-                    onSearch={() => {}}
-                    onFilterButtonClicked={() => {}}
-                    onExportButtonClicked={() => {}}
+                    onSearch={() => { }}
+                    onFilterButtonClicked={() => { }}
+                    onExportButtonClicked={() => { }}
                     onAddNewButtonClicked={() => {
                         setAddEditDialog({
                             isOpened: true,
@@ -244,7 +272,7 @@ export default function AnnouncementPageTable() {
             <ClassicDialog
                 title={classicDialog.title}
                 message={classicDialog.message}
-                hideNegativeButton={classicDialog.isNegativeButtonHidded}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
                 positiveButtonText={classicDialog.positiveButtonText}
                 negativeButtonText={classicDialog.negativeButtonText}
                 open={classicDialog.isOpen}

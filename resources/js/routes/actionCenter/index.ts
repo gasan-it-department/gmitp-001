@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 import requests from './requests'
 import update from './update'
 /**
@@ -47,8 +43,6 @@ show.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(options),
     method: 'head',
 })
-<<<<<<< HEAD
-=======
 
     /**
 * @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
@@ -85,7 +79,6 @@ show.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     show.form = showForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 const actionCenter = {
     show: Object.assign(show, show),
 requests: Object.assign(requests, requests),

@@ -1,12 +1,8 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 import admin from './admin'
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
-<<<<<<< HEAD
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
-=======
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
->>>>>>> 674e707 (fixed the announcement division for municipality)
  * @route '/{municipality}/bulletin-board/announcement'
  */
 export const index = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -21,11 +17,7 @@ index.definition = {
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
-<<<<<<< HEAD
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
-=======
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
->>>>>>> 674e707 (fixed the announcement division for municipality)
  * @route '/{municipality}/bulletin-board/announcement'
  */
 index.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -53,11 +45,7 @@ index.url = (args: { municipality: string | number } | [municipality: string | n
 
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
-<<<<<<< HEAD
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
-=======
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
->>>>>>> 674e707 (fixed the announcement division for municipality)
  * @route '/{municipality}/bulletin-board/announcement'
  */
 index.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -66,11 +54,7 @@ index.get = (args: { municipality: string | number } | [municipality: string | n
 })
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
-<<<<<<< HEAD
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
-=======
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
->>>>>>> 674e707 (fixed the announcement division for municipality)
  * @route '/{municipality}/bulletin-board/announcement'
  */
 index.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -78,11 +62,9 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
+ * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
  * @route '/{municipality}/bulletin-board/announcement'
  */
     const indexForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -92,7 +74,7 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
 
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
+ * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
  * @route '/{municipality}/bulletin-board/announcement'
  */
         indexForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -101,7 +83,7 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
         })
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::index
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:48
+ * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:0
  * @route '/{municipality}/bulletin-board/announcement'
  */
         indexForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -115,7 +97,6 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
         })
     
     index.form = indexForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
  * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:68
@@ -175,12 +156,10 @@ show.head = (args: { municipality: string | number, id: string | number } | [mun
     url: show.url(args, options),
     method: 'head',
 })
-<<<<<<< HEAD
-=======
 
     /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
+ * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:68
  * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
     const showForm = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -190,7 +169,7 @@ show.head = (args: { municipality: string | number, id: string | number } | [mun
 
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
+ * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:68
  * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
         showForm.get = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -199,7 +178,7 @@ show.head = (args: { municipality: string | number, id: string | number } | [mun
         })
             /**
 * @see \App\External\Api\Controllers\BulletinBoard\AnnouncementController::show
- * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:67
+ * @see app/External/Api/Controllers/BulletinBoard/AnnouncementController.php:68
  * @route '/{municipality}/bulletin-board/announcement/{id}'
  */
         showForm.head = (args: { municipality: string | number, id: string | number } | [municipality: string | number, id: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -213,7 +192,6 @@ show.head = (args: { municipality: string | number, id: string | number } | [mun
         })
     
     show.form = showForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 const announcement = {
     index: Object.assign(index, index),
 show: Object.assign(show, show),

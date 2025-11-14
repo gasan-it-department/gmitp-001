@@ -1,17 +1,24 @@
 import { useNavigation } from '@/config/navigation/navigationItems';
 import { type SharedData } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
-import { HomeIcon, Landmark, Menu, PhoneIcon, PlaneIcon, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { HomeIcon, Menu } from 'lucide-react';
 import { LogInSignUpForm } from '../LoginSignUpForm';
 import { Button } from '../ui/button';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
+import { account } from '@/routes/';
+
+type Municipality = {
+    id: string;
+    name: string;
+    slug: string;
+    zip_code: string;
+};
 
 export function LeftNavigation() {
     const navItems = useNavigation();
     const { auth } = usePage<SharedData>().props;
-    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     return (
         <Sheet>
@@ -38,31 +45,33 @@ export function LeftNavigation() {
                 <div className="flex flex-1 flex-col overflow-y-auto">
                     {/* User Info */}
                     {auth?.user && (
-                        <div
-                            onClick={() => router.visit(route('my.account.show'))}
-                            className="m-3 flex cursor-pointer items-center rounded-xl p-3 transition duration-200 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                            <Avatar className="h-14 w-14 flex-shrink-0">
-                                <AvatarImage
-                                    src={
-                                        typeof auth.user?.avatarUrl === 'string' && auth.user?.avatarUrl
-                                            ? auth.user.avatarUrl
-                                            : 'https://www.gravatar.com/avatar/?d=mp'
-                                    }
-                                    alt="User avatar"
-                                    className="rounded-full"
-                                />
-                            </Avatar>
+                        <Link
+                            href={account.url({ municipality: currentMunicipality.slug })}>
+                            <div
+                                className="m-3 flex cursor-pointer items-center rounded-xl p-3 transition duration-200 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800"
+                            >
+                                <Avatar className="h-14 w-14 flex-shrink-0">
+                                    <AvatarImage
+                                        src={
+                                            typeof auth.user?.avatarUrl === 'string' && auth.user?.avatarUrl
+                                                ? auth.user.avatarUrl
+                                                : 'https://www.gravatar.com/avatar/?d=mp'
+                                        }
+                                        alt="User avatar"
+                                        className="rounded-full"
+                                    />
+                                </Avatar>
 
-                            <div className="ml-3 min-w-0">
-                                <span className="block truncate p-0.5 text-[15px] font-bold text-gray-900 dark:text-white">
-                                    {auth.user?.first_name} {auth.user?.last_name}
-                                </span>
-                                <div className="flex flex-col">
-                                    <span className="p-0.5 text-xs text-gray-600 dark:text-gray-400">{auth.user?.phone}</span>
+                                <div className="ml-3 min-w-0">
+                                    <span className="block truncate p-0.5 text-[15px] font-bold text-gray-900 dark:text-white">
+                                        {auth.user?.first_name} {auth.user?.last_name}
+                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="p-0.5 text-xs text-gray-600 dark:text-gray-400">{auth.user?.phone}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     )}
 
                     {/* Sign In Button */}
@@ -81,10 +90,11 @@ export function LeftNavigation() {
                         <nav className="flex flex-col space-y-1">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
+                                const href = typeof item.route === 'function' ? item.route({ municipality: currentMunicipality.slug }).url : item.route;
                                 return (
                                     <SheetClose asChild key={item.title}>
                                         <a
-                                            onClick={() => router.visit(item.href)}
+                                            onClick={() => router.visit(href)}
                                             className="flex items-center gap-2 rounded-lg p-2 transition hover:bg-gray-100 dark:hover:bg-gray-800"
                                         >
                                             {Icon ? <Icon size={20} /> : <HomeIcon size={20} />}

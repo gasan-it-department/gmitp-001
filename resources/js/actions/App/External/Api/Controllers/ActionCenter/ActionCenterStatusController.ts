@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::getStatusList
  * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
@@ -42,6 +42,41 @@ getStatusList.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => (
     method: 'head',
 })
 
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::getStatusList
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
+ * @route '/action-center/admin/status-list'
+ */
+    const getStatusListForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: getStatusList.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::getStatusList
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
+ * @route '/action-center/admin/status-list'
+ */
+        getStatusListForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: getStatusList.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::getStatusList
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:18
+ * @route '/action-center/admin/status-list'
+ */
+        getStatusListForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: getStatusList.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    getStatusList.form = getStatusListForm
 /**
 * @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::updateAssistanceStatus
  * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:26
@@ -94,6 +129,28 @@ updateAssistanceStatus.post = (args: { assistanceId: string | number } | [assist
     url: updateAssistanceStatus.url(args, options),
     method: 'post',
 })
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::updateAssistanceStatus
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:26
+ * @route '/action-center/admin/request/{assistanceId}/status'
+ */
+    const updateAssistanceStatusForm = (args: { assistanceId: string | number } | [assistanceId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: updateAssistanceStatus.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterStatusController::updateAssistanceStatus
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterStatusController.php:26
+ * @route '/action-center/admin/request/{assistanceId}/status'
+ */
+        updateAssistanceStatusForm.post = (args: { assistanceId: string | number } | [assistanceId: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: updateAssistanceStatus.url(args, options),
+            method: 'post',
+        })
+    
+    updateAssistanceStatus.form = updateAssistanceStatusForm
 const ActionCenterStatusController = { getStatusList, updateAssistanceStatus }
 
 export default ActionCenterStatusController

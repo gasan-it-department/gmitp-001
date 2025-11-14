@@ -39,7 +39,7 @@ export default function PromotionPage() {
                         <div className="absolute inset-0 blur-2xl opacity-40 bg-gradient-to-r from-yellow-300 via-orange-300 to-sky-400 rounded-full scale-125 animate-pulse"></div>
 
                         <motion.img
-                            src="assets/dummy/tourism.png"
+                            src="/assets/dummy/tourism.png"
                             alt="Tourism Logo"
                             initial={{ opacity: 0, scale: 0.85 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -84,9 +84,9 @@ export default function PromotionPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 px-4 sm:px-8">
                     {[
-                        { name: "Araw ng Gasan", img: "assets/araw_ng_gasan.jpg" },
-                        { name: "Gasang Gasang Easter Sunday", img: "assets/gasang_gasang.jpg" },
-                        { name: "Putong", img: "assets/putong.jpg" },
+                        { name: "Araw ng Gasan", img: "/assets/araw_ng_gasan.jpg" },
+                        { name: "Gasang Gasang Easter Sunday", img: "/assets/gasang_gasang.jpg" },
+                        { name: "Putong", img: "/assets/putong.jpg" },
                     ].map((dest, i) => (
                         <Card
                             key={i}

@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CalendarDays, Megaphone } from "lucide-react";
 import Utility from "@/pages/Utility/Utility";
-import { AnnouncementFormData } from "@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes";
+import { AnnouncementData } from "@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes";
 
 type Props = {
     isOpen: boolean;
-    data: AnnouncementFormData | null;
+    data: AnnouncementData | null;
     onClose: () => void;
 };
 
@@ -34,20 +34,31 @@ export function ViewAnnouncementDetails({ isOpen, data, onClose }: Props) {
             >
                 {/* Header Section */}
                 <AlertDialogHeader className="space-y-3">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-md">
+                    <div className="flex items-start gap-3 w-full min-w-0">
+
+                        {/* ICON */}
+                        <div className="p-3 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-md shrink-0">
                             <Megaphone className="w-5 h-5 text-white" />
                         </div>
 
-                        <AlertDialogTitle
-                            className="
-                text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-500 
-                dark:from-red-400 dark:to-orange-300
-                bg-clip-text text-transparent tracking-tight
-              "
-                        >
-                            {data.title || "Untitled Announcement"}
-                        </AlertDialogTitle>
+                        {/* TITLE WRAPPER */}
+                        <div className="flex-1 min-w-0">
+                            <AlertDialogTitle
+                                className="
+          text-left text-xl sm:text-2xl font-bold
+          bg-gradient-to-r from-red-600 to-orange-500 
+          dark:from-red-400 dark:to-orange-300
+          bg-clip-text text-transparent tracking-tight
+          line-clamp-3
+          overflow-hidden
+          break-words
+          leading-tight
+          w-full
+        "
+                            >
+                                {data.title || "Untitled Announcement"}
+                            </AlertDialogTitle>
+                        </div>
                     </div>
 
                     {/* Date Info */}

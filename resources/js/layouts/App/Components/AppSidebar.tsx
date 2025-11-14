@@ -10,25 +10,82 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-// import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import admin from '@/routes/bulletin-board/announcement/admin';
+import { home } from '@/routes';
 import { SharedData } from '@/types';
-import { Link, router, usePage } from '@inertiajs/react';
-import { Building, CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Megaphone, Settings, User, Users } from 'lucide-react';
+import { router, usePage, Link } from '@inertiajs/react';
+import {
+    Building,
+    CalendarDays,
+    ClipboardList,
+    FileText,
+    FileWarning,
+    LayoutDashboard,
+    LogOut,
+    Map,
+    Megaphone,
+    MessagesSquare,
+    Settings,
+    User,
+    Users,
+} from 'lucide-react';
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
+    const [classicDialog, setClassicDialog] = React.useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        positiveButtonText: "Ok",
+        negativeButtonText: "Cancel",
+        isNegativeButtonHidden: true,
+        action: ""
+    });
+    const cachedUrl = typeof window !== 'undefined'
+        ? localStorage.getItem('activeSidebarUrl') || String(url)
+        : String(url);
+
+    const isRouteActive = (pattern: string) => {
+        if (!pattern) return false;
+        return (
+            cachedUrl === pattern ||
+            cachedUrl.startsWith(pattern + "/") ||
+            cachedUrl.startsWith(pattern + "?") ||
+            cachedUrl.includes(pattern)
+        );
+    };
+
+    const handleLinkClick = (linkUrl: string) => {
+        localStorage.setItem('activeSidebarUrl', linkUrl);
+        router.visit(linkUrl);
+    };
+
+    const handleExitAdminClick = () => {
+        setClassicDialog((prev) => ({
+            ...prev,
+            isOpen: true,
+            title: "Exit admin panel",
+            message: "Are you sure you want to exit the admin panel?",
+            positiveButtonText: "Exit",
+            negativeButtonText: "Cancel",
+            isNegativeButtonHidden: false,
+            action: "exit"
+        }));
+    }
 
     const AdminSidebarItems = [
         {
             title: 'ACTION CENTER',
             icon: ClipboardList,
             items: [
-                { title: 'Dashboard', url: admin.index.url({ municipality: currentMunicipality.slug }), icon: LayoutDashboard },
-                { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
+                { title: 'Dashboard', url: '', icon: LayoutDashboard },
+                { title: 'Requests', url: '', icon: FileText },
             ],
         },
         {
@@ -37,6 +94,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             items: [
                 { title: 'Announcement', url: admin.index.url({ municipality: currentMunicipality.slug }), icon: Megaphone },
                 { title: 'Events', url: '/bulletin-board/events/admin', icon: CalendarDays },
+                { title: 'Feedbacks', url: '', icon: MessagesSquare },
+                { title: 'Community Reports', url: '', icon: FileWarning },
             ],
         },
         {
@@ -50,11 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {
             title: 'USERS',
             icon: Users,
-            items: [
-                { title: 'Administrators', url: '/super-admin/dashboard', icon: User },
-                // { title: 'Dashboard', url: '/super-admin/dashboard', icon: LayoutDashboard },
-                // { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
-            ],
+            items: [{ title: 'Administrators', url: '/super-admin/dashboard', icon: User }],
         },
         {
             title: 'LOCAL GOVERNMENTS',
@@ -74,10 +129,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ];
 
     const filteredNav = userRole?.isAdmin ? AdminSidebarItems : SuperAdminSidebarItems;
-    const handleLogout = () => router.post('/logout');
+
+    const handleLogout = () => {
+        localStorage.removeItem('activeSidebarUrl');
+        router.visit(route(home.url({ municipality: currentMunicipality.slug })));
+    };
 
     return (
         <Sidebar {...props} className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm">
+
             {/* HEADER */}
             <SidebarHeader className="border-b border-gray-100 pb-3">
                 <SidebarMenu>
@@ -110,39 +170,41 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenu className="space-y-5">
                         {filteredNav.map((group) => (
                             <SidebarMenuItem key={group.title}>
+
                                 {/* SECTION TITLE */}
                                 <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                                     <group.icon size={14} className="text-orange-500" />
                                     {group.title}
                                 </div>
 
-                                {/* SUBMENU ITEMS with improved hover effect */}
+                                {/* SUBMENU */}
                                 <SidebarMenuSub className="space-y-1 border-l border-gray-100 pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
-                                        const isActive = url === sub.url;
+                                        const isActive = isRouteActive(sub.url);
 
                                         return (
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
-                                                        isActive
-                                                            ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
-                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-50 hover:to-white hover:text-orange-700 hover:shadow-sm'
-                                                    }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
+                                                        ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
+                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                        }`}
                                                 >
-                                                    <Link href={sub.url} className="flex w-full items-center gap-2">
+                                                    <a
+                                                        onClick={() => handleLinkClick(sub.url)}
+                                                        className="flex w-full items-center gap-2 cursor-pointer"
+                                                    >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${
-                                                                isActive
-                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                            }`}
+                                                            className={`transition-all duration-200 ease-out ${isActive
+                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                                }`}
                                                         />
                                                         <span>{sub.title}</span>
-                                                    </Link>
+                                                    </a>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
                                         );
@@ -155,15 +217,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarContent>
 
             {/* FOOTER */}
-            <div className="mt-auto border-t border-gray-100 py-3">
-                <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-gray-700 transition-all hover:bg-gradient-to-r hover:from-orange-500 hover:to-red-500 hover:text-white"
+            <div className="mt-auto border-t border-gray-100 py-3 px-3">
+                <Button
+                    variant="default"
+                    onClick={handleExitAdminClick}
+                    className="w-full flex items-center gap-3 justify-start rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg"
                 >
-                    <LogOut size={16} />
-                    <span>Logout</span>
-                </button>
+                    <LogOut size={18} className="flex-shrink-0" />
+                    <span className="font-medium">Exit Admin</span>
+                </Button>
             </div>
+
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                open={classicDialog.isOpen}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false
+                    }));
+
+                    switch (classicDialog.action) {
+                        case "exit":
+                            router.visit(home.url({ municipality: currentMunicipality.slug }))
+                            break;
+                    }
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false
+                    }));
+                }}
+            />
         </Sidebar>
     );
 }

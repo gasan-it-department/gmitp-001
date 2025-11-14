@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showHomePage
  * @see app/External/Web/Controllers/Public/PublicController.php:16
@@ -65,6 +61,41 @@ showHomePage.head = (args: { municipality: string | number } | [municipality: st
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showHomePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:16
+ * @route '/{municipality}/home'
+ */
+    const showHomePageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showHomePage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showHomePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:16
+ * @route '/{municipality}/home'
+ */
+        showHomePageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showHomePage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showHomePage
+ * @see app/External/Web/Controllers/Public/PublicController.php:16
+ * @route '/{municipality}/home'
+ */
+        showHomePageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showHomePage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showHomePage.form = showHomePageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
  * @see app/External/Web/Controllers/Public/PublicController.php:41
@@ -127,6 +158,41 @@ showPrivacyPolicyPage.head = (args: { municipality: string | number } | [municip
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
+ * @route '/{municipality}/privacy-policy'
+ */
+    const showPrivacyPolicyPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showPrivacyPolicyPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
+ * @route '/{municipality}/privacy-policy'
+ */
+        showPrivacyPolicyPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showPrivacyPolicyPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showPrivacyPolicyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:41
+ * @route '/{municipality}/privacy-policy'
+ */
+        showPrivacyPolicyPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showPrivacyPolicyPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showPrivacyPolicyPage.form = showPrivacyPolicyPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
  * @see app/External/Web/Controllers/Public/PublicController.php:36
@@ -189,6 +255,41 @@ showGovernmentPage.head = (args: { municipality: string | number } | [municipali
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+    const showGovernmentPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showGovernmentPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+        showGovernmentPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showGovernmentPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showGovernmentPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:36
+ * @route '/{municipality}/government'
+ */
+        showGovernmentPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showGovernmentPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showGovernmentPage.form = showGovernmentPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
  * @see app/External/Web/Controllers/Public/PublicController.php:46
@@ -251,6 +352,41 @@ showMunicipalAdminPage.head = (args: { municipality: string | number } | [munici
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
+ * @route '/{municipality}/municipal-admin'
+ */
+    const showMunicipalAdminPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showMunicipalAdminPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
+ * @route '/{municipality}/municipal-admin'
+ */
+        showMunicipalAdminPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMunicipalAdminPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMunicipalAdminPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:46
+ * @route '/{municipality}/municipal-admin'
+ */
+        showMunicipalAdminPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMunicipalAdminPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showMunicipalAdminPage.form = showMunicipalAdminPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
  * @see app/External/Web/Controllers/Public/PublicController.php:51
@@ -313,6 +449,41 @@ showActionCenterPage.head = (args: { municipality: string | number } | [municipa
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
+ * @route '/{municipality}/action-center'
+ */
+    const showActionCenterPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showActionCenterPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
+ * @route '/{municipality}/action-center'
+ */
+        showActionCenterPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:51
+ * @route '/{municipality}/action-center'
+ */
+        showActionCenterPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showActionCenterPage.form = showActionCenterPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
  * @see app/External/Web/Controllers/Public/PublicController.php:56
@@ -375,6 +546,41 @@ showActionCenterRequestPage.head = (args: { municipality: string | number } | [m
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
+ * @route '/{municipality}/action-center/request-list'
+ */
+    const showActionCenterRequestPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showActionCenterRequestPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
+ * @route '/{municipality}/action-center/request-list'
+ */
+        showActionCenterRequestPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterRequestPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showActionCenterRequestPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:56
+ * @route '/{municipality}/action-center/request-list'
+ */
+        showActionCenterRequestPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showActionCenterRequestPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showActionCenterRequestPage.form = showActionCenterRequestPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
  * @see app/External/Web/Controllers/Public/PublicController.php:61
@@ -437,6 +643,41 @@ showMyAccountPage.head = (args: { municipality: string | number } | [municipalit
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
+ * @route '/{municipality}/my-account'
+ */
+    const showMyAccountPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showMyAccountPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
+ * @route '/{municipality}/my-account'
+ */
+        showMyAccountPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMyAccountPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMyAccountPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:61
+ * @route '/{municipality}/my-account'
+ */
+        showMyAccountPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMyAccountPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showMyAccountPage.form = showMyAccountPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
  * @see app/External/Web/Controllers/Public/PublicController.php:26
@@ -499,6 +740,41 @@ showContactUsPage.head = (args: { municipality: string | number } | [municipalit
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
+ * @route '/{municipality}/contact-us'
+ */
+    const showContactUsPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showContactUsPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
+ * @route '/{municipality}/contact-us'
+ */
+        showContactUsPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showContactUsPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showContactUsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:26
+ * @route '/{municipality}/contact-us'
+ */
+        showContactUsPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showContactUsPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showContactUsPage.form = showContactUsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
  * @see app/External/Web/Controllers/Public/PublicController.php:66
@@ -561,6 +837,41 @@ showTravelPage.head = (args: { municipality: string | number } | [municipality: 
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
+ * @route '/{municipality}/travel'
+ */
+    const showTravelPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showTravelPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
+ * @route '/{municipality}/travel'
+ */
+        showTravelPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTravelPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTravelPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:66
+ * @route '/{municipality}/travel'
+ */
+        showTravelPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTravelPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showTravelPage.form = showTravelPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
  * @see app/External/Web/Controllers/Public/PublicController.php:71
@@ -623,6 +934,41 @@ showTransparencyPage.head = (args: { municipality: string | number } | [municipa
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
+ * @route '/{municipality}/transparency'
+ */
+    const showTransparencyPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showTransparencyPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
+ * @route '/{municipality}/transparency'
+ */
+        showTransparencyPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTransparencyPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showTransparencyPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:71
+ * @route '/{municipality}/transparency'
+ */
+        showTransparencyPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showTransparencyPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showTransparencyPage.form = showTransparencyPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
  * @see app/External/Web/Controllers/Public/PublicController.php:76
@@ -685,6 +1031,41 @@ showExecutiveOrdersPage.head = (args: { municipality: string | number } | [munic
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
+ * @route '/{municipality}/executive-orders'
+ */
+    const showExecutiveOrdersPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showExecutiveOrdersPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
+ * @route '/{municipality}/executive-orders'
+ */
+        showExecutiveOrdersPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showExecutiveOrdersPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showExecutiveOrdersPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:76
+ * @route '/{municipality}/executive-orders'
+ */
+        showExecutiveOrdersPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showExecutiveOrdersPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showExecutiveOrdersPage.form = showExecutiveOrdersPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
  * @see app/External/Web/Controllers/Public/PublicController.php:81
@@ -747,6 +1128,41 @@ showAnnouncementsPage.head = (args: { municipality: string | number } | [municip
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
+ * @route '/{municipality}/announcements'
+ */
+    const showAnnouncementsPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showAnnouncementsPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
+ * @route '/{municipality}/announcements'
+ */
+        showAnnouncementsPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showAnnouncementsPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showAnnouncementsPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:81
+ * @route '/{municipality}/announcements'
+ */
+        showAnnouncementsPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showAnnouncementsPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showAnnouncementsPage.form = showAnnouncementsPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
  * @see app/External/Web/Controllers/Public/PublicController.php:86
@@ -809,6 +1225,41 @@ showWeddingPage.head = (args: { municipality: string | number } | [municipality:
     method: 'head',
 })
 
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
+ * @route '/{municipality}/schedule-wedding'
+ */
+    const showWeddingPageForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showWeddingPage.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
+ * @route '/{municipality}/schedule-wedding'
+ */
+        showWeddingPageForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showWeddingPage.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showWeddingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:86
+ * @route '/{municipality}/schedule-wedding'
+ */
+        showWeddingPageForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showWeddingPage.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showWeddingPage.form = showWeddingPageForm
 /**
 * @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
  * @see app/External/Web/Controllers/Public/PublicController.php:11
@@ -851,6 +1302,42 @@ showMainLandingPage.head = (options?: RouteQueryOptions): RouteDefinition<'head'
     url: showMainLandingPage.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:11
+ * @route '/'
+ */
+    const showMainLandingPageForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: showMainLandingPage.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:11
+ * @route '/'
+ */
+        showMainLandingPageForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMainLandingPage.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Web\Controllers\Public\PublicController::showMainLandingPage
+ * @see app/External/Web/Controllers/Public/PublicController.php:11
+ * @route '/'
+ */
+        showMainLandingPageForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: showMainLandingPage.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    showMainLandingPage.form = showMainLandingPageForm
 const PublicController = { showHomePage, showPrivacyPolicyPage, showGovernmentPage, showMunicipalAdminPage, showActionCenterPage, showActionCenterRequestPage, showMyAccountPage, showContactUsPage, showTravelPage, showTransparencyPage, showExecutiveOrdersPage, showAnnouncementsPage, showWeddingPage, showMainLandingPage }
 
 export default PublicController

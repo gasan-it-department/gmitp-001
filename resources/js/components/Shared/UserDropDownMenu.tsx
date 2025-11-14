@@ -11,6 +11,7 @@ import axios from '@/lib/axios';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import admin from '@/routes/admin';
 import superAdmin from '@/routes/superAdmin';
+import { account } from '@/routes';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -76,7 +77,7 @@ export function UserDropdownMenu() {
 
                     <DropdownMenuItem
                         onClick={() => {
-                            router.visit(route('my.account.show'));
+                            router.visit(account.url({ municipality: currentMunicipality.slug }));
                         }}
                     >
                         Profile

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\DeviceAuthorizationController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceAuthorizationController.php:31
@@ -41,4 +41,40 @@ DeviceAuthorizationController.head = (options?: RouteQueryOptions): RouteDefinit
     url: DeviceAuthorizationController.url(options),
     method: 'head',
 })
+
+    /**
+* @see \Laravel\Passport\Http\Controllers\DeviceAuthorizationController::__invoke
+ * @see vendor/laravel/passport/src/Http/Controllers/DeviceAuthorizationController.php:31
+ * @route '/oauth/device/authorize'
+ */
+    const DeviceAuthorizationControllerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: DeviceAuthorizationController.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\DeviceAuthorizationController::__invoke
+ * @see vendor/laravel/passport/src/Http/Controllers/DeviceAuthorizationController.php:31
+ * @route '/oauth/device/authorize'
+ */
+        DeviceAuthorizationControllerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: DeviceAuthorizationController.url(options),
+            method: 'get',
+        })
+            /**
+* @see \Laravel\Passport\Http\Controllers\DeviceAuthorizationController::__invoke
+ * @see vendor/laravel/passport/src/Http/Controllers/DeviceAuthorizationController.php:31
+ * @route '/oauth/device/authorize'
+ */
+        DeviceAuthorizationControllerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: DeviceAuthorizationController.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    DeviceAuthorizationController.form = DeviceAuthorizationControllerForm
 export default DeviceAuthorizationController

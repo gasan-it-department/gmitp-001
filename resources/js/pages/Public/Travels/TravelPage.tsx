@@ -1,5 +1,3 @@
-import PublicLayout from "@/layouts/Public/PublicLayout";
-import { TravelBanner } from "./Components/TravelBanner";
 import LeaftfletMapView from "./Components/LeafletMapView";
 import { DestinationCard } from "./Components/DestinationsCard";
 import PromotionPage from "./Components/PromotionPage";

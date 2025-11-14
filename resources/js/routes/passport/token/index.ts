@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \Laravel\Passport\Http\Controllers\TransientTokenController::refresh
  * @see vendor/laravel/passport/src/Http/Controllers/TransientTokenController.php:22
@@ -36,6 +32,28 @@ refresh.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: refresh.url(options),
     method: 'post',
 })
+
+    /**
+* @see \Laravel\Passport\Http\Controllers\TransientTokenController::refresh
+ * @see vendor/laravel/passport/src/Http/Controllers/TransientTokenController.php:22
+ * @route '/oauth/token/refresh'
+ */
+    const refreshForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: refresh.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \Laravel\Passport\Http\Controllers\TransientTokenController::refresh
+ * @see vendor/laravel/passport/src/Http/Controllers/TransientTokenController.php:22
+ * @route '/oauth/token/refresh'
+ */
+        refreshForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: refresh.url(options),
+            method: 'post',
+        })
+    
+    refresh.form = refreshForm
 const token = {
     refresh: Object.assign(refresh, refresh),
 }

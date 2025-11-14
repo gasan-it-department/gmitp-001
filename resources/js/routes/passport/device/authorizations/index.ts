@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../wayfinder'
-=======
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \Laravel\Passport\Http\Controllers\DeviceAuthorizationController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceAuthorizationController.php:31
@@ -46,8 +42,6 @@ authorize.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \Laravel\Passport\Http\Controllers\DeviceAuthorizationController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceAuthorizationController.php:31
@@ -83,7 +77,6 @@ authorize.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     authorize.form = authorizeForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \Laravel\Passport\Http\Controllers\ApproveDeviceAuthorizationController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/ApproveDeviceAuthorizationController.php:24
@@ -118,8 +111,6 @@ approve.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-<<<<<<< HEAD
-=======
     /**
 * @see \Laravel\Passport\Http\Controllers\ApproveDeviceAuthorizationController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/ApproveDeviceAuthorizationController.php:24
@@ -141,7 +132,6 @@ approve.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
         })
     
     approve.form = approveForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 /**
 * @see \Laravel\Passport\Http\Controllers\DenyDeviceAuthorizationController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DenyDeviceAuthorizationController.php:24
@@ -175,8 +165,6 @@ deny.delete = (options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: deny.url(options),
     method: 'delete',
 })
-<<<<<<< HEAD
-=======
 
     /**
 * @see \Laravel\Passport\Http\Controllers\DenyDeviceAuthorizationController::__invoke
@@ -209,7 +197,6 @@ deny.delete = (options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
         })
     
     deny.form = denyForm
->>>>>>> 674e707 (fixed the announcement division for municipality)
 const authorizations = {
     authorize: Object.assign(authorize, authorize),
 approve: Object.assign(approve, approve),
