@@ -1,8 +1,8 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
 export const index = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(args, options),
@@ -11,13 +11,13 @@ export const index = (args: { municipality: string | number } | [municipality: s
 
 index.definition = {
     methods: ["get","head"],
-    url: '/{municipality}/bulletin-board/events/admin/admin',
+    url: '/{municipality}/action-center/admin',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
 index.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -43,18 +43,18 @@ index.url = (args: { municipality: string | number } | [municipality: string | n
 }
 
 /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
 index.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(args, options),
     method: 'get',
 })
 /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
 index.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(args, options),
@@ -62,9 +62,9 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
 })
 
     /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
     const indexForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: index.url(args, options),
@@ -72,18 +72,18 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
     })
 
             /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
         indexForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: index.url(args, options),
             method: 'get',
         })
             /**
-* @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
- * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin/admin'
+* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::index
+ * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
+ * @route '/{municipality}/action-center/admin'
  */
         indexForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: index.url(args, {
@@ -96,6 +96,8 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
         })
     
     index.form = indexForm
-const EventAdminController = { index }
+const admin = {
+    index: Object.assign(index, index),
+}
 
-export default EventAdminController
+export default admin

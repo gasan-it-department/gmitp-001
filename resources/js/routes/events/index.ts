@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\External\Api\Controllers\BulletinBoard\EventController::fetch
  * @see app/External/Api/Controllers/BulletinBoard/EventController.php:48
@@ -300,6 +300,11 @@ destroy.delete = (args: { id: string | number } | [id: string | number ] | strin
         })
     
     destroy.form = destroyForm
-const EventController = { fetch, store, update, destroy }
+const events = {
+    fetch: Object.assign(fetch, fetch),
+store: Object.assign(store, store),
+update: Object.assign(update, update),
+destroy: Object.assign(destroy, destroy),
+}
 
-export default EventController
+export default events

@@ -8,11 +8,13 @@ export const AnnouncementApi = {
         const { url, method } = bulletinBoard.AnnouncementController.store();
 
         const { data } = await axios({
-            url, method, data: form,
+            url,
+            method,
+            data: form,
             headers: {
                 'X-Municipality-Slug': municipalSlug
             },
-        })
+        });
 
         return data;
     },
@@ -27,7 +29,6 @@ export const AnnouncementApi = {
 
             }
         })
-        console.log(data);
         return data;
     }
 }

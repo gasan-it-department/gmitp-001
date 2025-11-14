@@ -7,7 +7,7 @@ use inertia\Inertia;
 
 class AdminActionCenterController extends Controller
 {
-    public function showAdminActionCenterPage()
+    public function index()
     {
         return Inertia::render('ActionCenter/Admin/RequestList/ActionCenterRequestList');
     }

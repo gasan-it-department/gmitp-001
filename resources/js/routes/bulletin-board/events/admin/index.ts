@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
 export const index = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(args, options),
@@ -11,13 +11,13 @@ export const index = (args: { municipality: string | number } | [municipality: s
 
 index.definition = {
     methods: ["get","head"],
-    url: '/{municipality}/bulletin-board/events/admin',
+    url: '/{municipality}/bulletin-board/events/admin/admin',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
 index.url = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -45,7 +45,7 @@ index.url = (args: { municipality: string | number } | [municipality: string | n
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
 index.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(args, options),
@@ -54,7 +54,7 @@ index.get = (args: { municipality: string | number } | [municipality: string | n
 /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
 index.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(args, options),
@@ -64,7 +64,7 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
     /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
     const indexForm = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: index.url(args, options),
@@ -74,7 +74,7 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
             /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
         indexForm.get = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: index.url(args, options),
@@ -83,7 +83,7 @@ index.head = (args: { municipality: string | number } | [municipality: string | 
             /**
 * @see \App\External\Web\Controllers\BulletinBoard\Admin\EventAdminController::index
  * @see app/External/Web/Controllers/BulletinBoard/Admin/EventAdminController.php:10
- * @route '/{municipality}/bulletin-board/events/admin'
+ * @route '/{municipality}/bulletin-board/events/admin/admin'
  */
         indexForm.head = (args: { municipality: string | number } | [municipality: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: index.url(args, {

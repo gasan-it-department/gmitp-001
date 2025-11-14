@@ -1,33 +1,28 @@
 import { SpinnerCustom } from '@/components/SpinnerCustom';
+import { Button } from '@/components/ui/button';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import axios from '@/lib/axios';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
-import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil, Printer, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
-import SortSelectionDialog from './SortSelectionDialog';
-import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuSeparator,
-    ContextMenuTrigger,
-} from '@/components/ui/context-menu';
-import { ToExcel } from '@/pages/Utility/ToExcel';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { Button } from '@/components/ui/button';
-import { Pencil, Printer, Trash2 } from 'lucide-react';
-import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
-import ToastProvider from '@/pages/Utility/ToastShower';
-import { toast } from 'sonner';
-import axios from '@/lib/axios';
-import { useQueryClient } from '@tanstack/react-query';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PrintView from './PrintView';
+import SortSelectionDialog from './SortSelectionDialog';
 
 export function AssistanceRequestTable() {
+    const { currentMunicipality } = useMunicipality();
     const queryClient = useQueryClient();
     const [editingData, setEditingData] = useState<AssistanceRequest | null>(null);
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
@@ -55,18 +50,18 @@ export function AssistanceRequestTable() {
         payload: string;
     }>({
         isOpen: false,
-        title: "",
-        message: "",
-        positiveButtonText: "Ok",
-        negativeButtonText: "Cancel",
+        title: '',
+        message: '',
+        positiveButtonText: 'Ok',
+        negativeButtonText: 'Cancel',
         isNegativeButtonHidden: true,
-        action: "",
-        payload: "",
+        action: '',
+        payload: '',
     });
 
     const { data, isLoading, error } = useQuery<{ request: AssistanceRequest[] }>({
         queryKey: ['request-list'],
-        queryFn: ActionCenterApi.getAllRequest,
+        queryFn: () => ActionCenterApi.getAllRequest(currentMunicipality.slug),
         refetchOnWindowFocus: false,
     });
 
@@ -117,9 +112,7 @@ export function AssistanceRequestTable() {
             });
         } else {
             // ✅ Default sort: newest request first
-            results = [...results].sort(
-                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
+            results = [...results].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         }
 
         return results;
@@ -134,11 +127,11 @@ export function AssistanceRequestTable() {
             queryClient.invalidateQueries({ queryKey: ['request-list'] });
 
             setIsLoadingDialogVisible(false);
-            toast.success("Record deleted successfully!");
+            toast.success('Record deleted successfully!');
         } catch (error: any) {
             setIsLoadingDialogVisible(false);
-            console.error("Error deleting request:", error);
-            toast.error(error.response?.data?.message || "Failed to delete record.");
+            console.error('Error deleting request:', error);
+            toast.error(error.response?.data?.message || 'Failed to delete record.');
         }
     };
     return (
@@ -154,18 +147,18 @@ export function AssistanceRequestTable() {
                     }}
                     onExportButtonClicked={() => {
                         if (filteredRequests.length === 0) {
-                            toast("No data to export");
+                            toast('No data to export');
                             return;
                         }
                         setClassicDialog((prev) => ({
                             ...prev,
-                            title: "Export File",
-                            message: "Are you sure you want to export the list as .xlsx",
-                            positiveButtonText: "Export",
-                            negativeButtonText: "Cancel",
+                            title: 'Export File',
+                            message: 'Are you sure you want to export the list as .xlsx',
+                            positiveButtonText: 'Export',
+                            negativeButtonText: 'Cancel',
                             isNegativeButtonHidden: false,
-                            action: "file_export",
-                            isOpen: true
+                            action: 'file_export',
+                            isOpen: true,
                         }));
                     }}
                     onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
@@ -205,26 +198,19 @@ export function AssistanceRequestTable() {
                                 </TableCell>
                             </TableRow>
                         ) : filteredRequests.length === 0 ? (
-                            <AdminEmptyListItem
-                                colSpan={8}
-                                title="No records yet."
-                                message="Action center records will show here." />
+                            <AdminEmptyListItem colSpan={8} title="No records yet." message="Action center records will show here." />
                         ) : (
                             filteredRequests.map((req, index) => (
                                 <ContextMenu key={req.id}>
                                     <ContextMenuTrigger asChild>
-                                        <TableRow
-                                            className="hover:bg-gray-50 cursor-pointer transition-colors"
-                                        >
+                                        <TableRow className="cursor-pointer transition-colors hover:bg-gray-50">
                                             <TableCell className="text-[12px]">{index + 1}</TableCell>
 
                                             <TableCell className="text-[12px] capitalize">
                                                 {req.beneficiary.first_name} {req.beneficiary.last_name}
                                             </TableCell>
 
-                                            <TableCell className="text-[12px]">
-                                                {Utility().formatToReadableDateNoTime(req.created_at)}
-                                            </TableCell>
+                                            <TableCell className="text-[12px]">{Utility().formatToReadableDateNoTime(req.created_at)}</TableCell>
 
                                             <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
 
@@ -232,30 +218,29 @@ export function AssistanceRequestTable() {
 
                                             <TableCell className="text-[12px]">
                                                 <span
-                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${req.status === 'approved'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : req.status === 'rejected'
-                                                            ? 'bg-red-100 text-red-700'
-                                                            : req.status === 'in_review'
+                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                                                        req.status === 'approved'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : req.status === 'rejected'
+                                                              ? 'bg-red-100 text-red-700'
+                                                              : req.status === 'in_review'
                                                                 ? 'bg-blue-100 text-blue-700'
                                                                 : req.status === 'completed'
-                                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                                    : 'bg-yellow-100 text-yellow-700'
-                                                        }`}
+                                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                                  : 'bg-yellow-100 text-yellow-700'
+                                                    }`}
                                                 >
-                                                    {({
+                                                    {{
                                                         pending: 'Pending',
                                                         in_review: 'In Review',
                                                         approved: 'Approved',
                                                         rejected: 'Rejected',
                                                         completed: 'Completed',
-                                                    }[req.status] || 'Unknown')}
+                                                    }[req.status] || 'Unknown'}
                                                 </span>
                                             </TableCell>
 
-                                            <TableCell className="text-[12px]">
-                                                {Utility().formatAndAddDaysNoTime(req.created_at, 90)}
-                                            </TableCell>
+                                            <TableCell className="text-[12px]">{Utility().formatAndAddDaysNoTime(req.created_at, 90)}</TableCell>
 
                                             {/* ACTION BUTTONS */}
                                             <TableCell className="flex gap-2">
@@ -267,7 +252,7 @@ export function AssistanceRequestTable() {
                                                         setEditingData(req);
                                                         setIsAddNewRecordDialogOpen(true);
                                                     }}
-                                                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
                                                 >
                                                     <Pencil size={14} />
                                                 </Button>
@@ -280,10 +265,10 @@ export function AssistanceRequestTable() {
                                                         setPrintDialogState((prev) => ({
                                                             ...prev,
                                                             isVisible: true,
-                                                            request: req
-                                                        }))
+                                                            request: req,
+                                                        }));
                                                     }}
-                                                    className="text-green-600 border-green-200 hover:bg-green-50"
+                                                    className="border-green-200 text-green-600 hover:bg-green-50"
                                                 >
                                                     <Printer size={14} />
                                                 </Button>
@@ -296,16 +281,16 @@ export function AssistanceRequestTable() {
                                                         setClassicDialog((prev) => ({
                                                             ...prev,
                                                             isOpen: true,
-                                                            title: "Delete Record",
-                                                            message: "Are you sure you want to delete this record? This cannot be undone.",
-                                                            positiveButtonText: "Delete",
-                                                            negativeButtonText: "Cancel",
+                                                            title: 'Delete Record',
+                                                            message: 'Are you sure you want to delete this record? This cannot be undone.',
+                                                            positiveButtonText: 'Delete',
+                                                            negativeButtonText: 'Cancel',
                                                             isNegativeButtonHidden: false,
-                                                            action: "delete_record",
+                                                            action: 'delete_record',
                                                             payload: req.id,
                                                         }));
                                                     }}
-                                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                                    className="border-red-200 text-red-600 hover:bg-red-50"
                                                 >
                                                     <Trash2 size={14} />
                                                 </Button>
@@ -325,7 +310,7 @@ export function AssistanceRequestTable() {
                                         <ContextMenuItem
                                             inset
                                             onClick={() => handleDeleteRequest(req.id)}
-                                            className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
                                         >
                                             Delete
                                         </ContextMenuItem>
@@ -349,11 +334,7 @@ export function AssistanceRequestTable() {
                 onClose={() => setIsSortSelectionDialogOpen(false)}
             />
 
-            <AddEditRecordDialog
-                editData={editingData}
-                isOpen={isAddNewRecordDialogOpen}
-                onClose={() => setIsAddNewRecordDialogOpen(false)}
-            />
+            <AddEditRecordDialog editData={editingData} isOpen={isAddNewRecordDialogOpen} onClose={() => setIsAddNewRecordDialogOpen(false)} />
 
             <ClassicDialog
                 title={classicDialog.title}
@@ -364,35 +345,32 @@ export function AssistanceRequestTable() {
                 open={classicDialog.isOpen}
                 onPositiveClick={() => {
                     switch (classicDialog.action) {
-                        case "delete_record":
+                        case 'delete_record':
                             handleDeleteRequest(classicDialog.payload);
                             break;
-                        case "file_export":
-                            ToExcel(filteredRequests, `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`)
+                        case 'file_export':
+                            ToExcel(filteredRequests, `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`);
                             break;
                     }
 
                     setClassicDialog((prev) => ({
                         ...prev,
                         isOpen: false,
-                        action: "",
-                        payload: ""
+                        action: '',
+                        payload: '',
                     }));
                 }}
-
                 onNegativeClick={() => {
                     setClassicDialog((prev) => ({
                         ...prev,
                         isOpen: false,
-                        action: "",
-                        payload: ""
+                        action: '',
+                        payload: '',
                     }));
+                }}
+            />
 
-                }} />
-
-            <LoadingDialog
-                title='Loading, please wait...'
-                isOpen={isLoadingDialogVisible} />
+            <LoadingDialog title="Loading, please wait..." isOpen={isLoadingDialogVisible} />
 
             <PrintView
                 isOpen={printDialogState.isVisible}
@@ -400,10 +378,11 @@ export function AssistanceRequestTable() {
                     setPrintDialogState((prev) => ({
                         ...prev,
                         isVisible: false,
-                        request: null
-                    }))
+                        request: null,
+                    }));
                 }}
-                data={printDialogState.request} />
+                data={printDialogState.request}
+            />
         </div>
     );
 }

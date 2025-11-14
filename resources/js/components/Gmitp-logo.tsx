@@ -10,6 +10,7 @@ type Municipality = {
 
 const GmitpLogo = () => {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+
     return (
         <div className="flex flex-row items-center">
             <img src="/assets/logo_gasan.png" alt="GMITP Logo" className="h-10 w-auto" />

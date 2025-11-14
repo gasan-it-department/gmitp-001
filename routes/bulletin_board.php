@@ -17,7 +17,6 @@ Route::prefix('{municipality}/bulletin-board')
             ->controller(AnnouncementController::class)
             ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('{id}', 'show')->whereNumber('id')->name('show');
         });
 
         // ADMIN DASHBOARD (web page)
@@ -38,22 +37,13 @@ Route::prefix('{municipality}/bulletin-board')
             ->controller(EventAdminController::class)
             ->group(function () {
 
-            Route::get('/', 'index')->name('index');
+            Route::get('/admin', 'index')->name('index');
 
         });
-
-        Route::middleware('admin')
-            ->prefix('events')
-            ->as('events.')
-            ->controller(EventController::class)
-            ->group(function () {
-
-                Route::post('/', 'store')->name('store');
-
-            });
     });
 
-Route::prefix('api/announcement')
+//eg. https://api/announcement/
+Route::prefix('api/announcement/')
     ->middleware(['auth', 'admin', 'municipalityContext'])
     ->as('announcement.')
     ->controller(AnnouncementController::class)
@@ -66,3 +56,23 @@ Route::prefix('api/announcement')
         Route::delete('/{id}', 'destroy')->name('destroy');
 
     });
+
+//eg. https://api/events/
+Route::prefix('/api/events')
+    ->middleware('municipalityContext')
+    ->name('events.')
+    ->controller(EventController::class)
+    ->group(function () {
+
+        Route::middleware(['auth:sanctum', 'admin'])
+            ->group(function () {
+
+                Route::get('/', 'fetch')->name("fetch");
+                Route::post('/', 'store')->name("store");
+                Route::put('/{id}', 'update')->name("update");
+                Route::delete('/{id}', 'destroy')->name('destroy');
+
+            });
+
+    });
+

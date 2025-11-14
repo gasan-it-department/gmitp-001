@@ -16,7 +16,8 @@ class Events extends Model
         'id',
         'user_id',
         'title',
-        'message',
-        'event_date_time'
+        'description',
+        'municipal_id',
+        'event_date'
     ];
 }

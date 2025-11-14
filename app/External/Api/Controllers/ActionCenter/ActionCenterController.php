@@ -21,10 +21,6 @@ class ActionCenterController extends Controller
     }
 
 
-    /**
-     * Store a new client request.
-     * POST /client/action-center/requests
-     */
     public function store(ClientAssistanceRequest $request)
     {
         $validated = $request->validated();
@@ -36,28 +32,15 @@ class ActionCenterController extends Controller
         return response()->json(['message' => 'request created'], 200);
     }
 
-    /**
-     * Display a list of all client requests.
-     * GET /client/action-center/requests
-     */
-    public function index()
+    public function fetch()
     {
-        // Example: return all requests for the authenticated client
-        // $requests = RequestModel::where('user_id', auth()->id())->get();
-        $request = AssistanceRequest::with('beneficiary')->get();
+        try {
+            // $assistance = $this
+        } catch (error) {
 
-        return response()->json([
-            'request' => $request,
-            'message' => 'List of client requests'
-        ], 200);
+        }
     }
 
-
-
-    /**
-     * Show a specific client request.
-     * GET /client/action-center/requests/{id}
-     */
     public function show($id)
     {
         // Example: find request by ID
@@ -66,10 +49,6 @@ class ActionCenterController extends Controller
         return response()->json(['message' => "Showing request {$id}"], 200);
     }
 
-    /**
-     * Update a specific client request.
-     * PUT/PATCH /client/action-center/requests/{id}
-     */
     public function update(Request $request, string $id)
     {
         $validated = $request->validate([
@@ -107,12 +86,6 @@ class ActionCenterController extends Controller
         return response()->json(['message' => 'Deleted successfully'], 200);
     }
 
-
-
-    /**
-     * Delete a specific client request.
-     * DELETE /client/action-center/requests/{id}
-     */
     public function destroy($id)
     {
         try {

@@ -4,17 +4,26 @@ namespace App\Core\BulletinBoard\Events\Repositories;
 
 use App\Core\BulletinBoard\Events\Models\Events;
 use App\Core\BulletinBoard\Events\Dto\CreateEventDto;
+use Illuminate\Database\Eloquent\Collection;
 
 class EventRepository
 {
-    public function save(CreateEventDto $dto, string $eventId): void
+    public function save(CreateEventDto $dto, string $eventId, string $municipalId): void
     {
         Events::create([
             'id' => $eventId,
             'title' => $dto->title,
-            'message' => $dto->message,
-            'event_date_time' => $dto->eventDateAndTime,
+            'description' => $dto->description,
+            'municipal_id' => $municipalId,
+            'event_date' => $dto->eventDate,
             'user_id' => $dto->userId,
         ]);
+    }
+
+    public function getAllByMunicipalId(string $municipalId): Collection
+    {
+        $events = Events::where('municipal_id', $municipalId)->get();
+
+        return $events;
     }
 }

@@ -35,8 +35,8 @@ return new class extends Migration {
             $table->ulid('id')->primary();
 
             $table->string('title');
-            $table->text('message');
-            $table->timestamp('event_date_time');
+            $table->text('description');
+            $table->timestamp('event_date');
 
             $table->foreignUlid('user_id')
                 ->constrained('users')

@@ -15,8 +15,10 @@ class CreateEventService
     }
     public function execute(CreateEventDto $dto)
     {
+        $municipalId = app('municipal_id');
+
         $eventId = $this->idGenerator->generate();
 
-        $this->eventRepository->save($dto, $eventId);
+        $this->eventRepository->save($dto, $eventId, $municipalId);
     }
 }

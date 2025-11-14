@@ -6,8 +6,8 @@ class CreateEventDto
 {
     public function __construct(
         public readonly string $title,
-        public readonly string $message,
-        public readonly \DateTimeImmutable $eventDateAndTime,
+        public readonly string $description,
+        public readonly \DateTimeImmutable $eventDate,
         public readonly string $userId,
     ) {
     }

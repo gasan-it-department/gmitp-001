@@ -6,43 +6,60 @@ use App\External\Api\Controllers\ActionCenter\ActionCenterStatusController;
 use App\External\Api\Controllers\ActionCenter\AssistanceTypeController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('action-center')->group(function () {
+Route::prefix('{municipality}/action-center')
+    ->middleware(['auth:sanctum', 'municipalityContext'])
+    ->name('actionCenter.')
+    ->group(function () {
 
-    // Shared resource routes for assistance requests (admin only)
-    Route::resource('request', ActionCenterController::class)
-        ->only(['index', 'store', 'show', 'update', 'destroy'])
-        ->names([
-            'index' => 'action-center.requests.index',
-            'store' => 'action-center.requests.store',
-            'show' => 'action-center.requests.show',
-            'update' => 'action-center.requests.update',
-            'destroy' => 'action-center.requests.destroy',
-        ])
-        ->middleware(['auth:sanctum', 'admin']);
 
-    // Delete route (explicitly using DELETE method)
-    Route::delete('request/{request}', [ActionCenterController::class, 'destroy'])
-        ->name('action-center.requests.destroy')
-        ->middleware(['auth:sanctum', 'admin']);
+        //eg. https://gasan-4905/action-center/admin
+        Route::prefix('/admin')
+            ->middleware(['admin'])
+            ->name('admin.')
+            ->group(function () {
 
-    // Assistance type options
-    Route::get('assistance-options', [AssistanceTypeController::class, 'assistanceTypesSelect'])
-        ->name('assistance.options');
+            Route::get('/', [AdminActionCenterController::class, 'index'])
+                ->name('index');
+        });
 
-    // Admin-specific routes
-    Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->name('actionCenter.')->group(function () {
-        Route::get('/request-list', [AdminActionCenterController::class, 'showAdminActionCenterPage'])
-            ->name('show');
+        //eg. https://gasan-4905/action-center/beneficiary
+        // Route::get('/', [ClientActionCenterController::class, 'index'])->name('index'); uncomment later for client view for action center
+    
 
-        Route::get('status-list', [ActionCenterStatusController::class, 'getStatusList'])
-            ->name('requests.status');
 
-        Route::post('/request/{assistanceId}/status', [ActionCenterStatusController::class, 'updateAssistanceStatus'])
-            ->name('update.status');
     });
 
-    // Client-specific routes
-    Route::prefix('client')->middleware(['auth:sanctum'])->name('client.')->group(function () {
-        // Add client-specific routes here
+//eg. https://api/action-center
+Route::prefix('/api/action-center')
+    ->middleware('municipalityContext')
+    ->name('actionCenter.')
+    ->controller(ActionCenterController::class)
+    ->group(function () {
+
+        Route::middleware(['auth:sanctum', 'admin', 'municipalityContext'])
+            ->group(function () {
+
+                Route::get('/', 'fetch')->name('fetch');
+
+            });
+
+        Route::middleware(['auth:sanctum'])
+            ->group(function () {
+
+                Route::get('/mine', 'fetchMine')->name('mine');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{id}', 'update')->name('update');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+
+                // Route::get('status-list', [ActionCenterStatusController::class, 'getStatusList'])
+                //     ->name('status');
+                // Route::get('assistance-options', [AssistanceTypeController::class, 'assistanceTypesSelect'])
+                //     ->name('assistance.options');
+            });
+
     });
-});
+
+
+
+
+

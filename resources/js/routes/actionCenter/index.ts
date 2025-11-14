@@ -1,75 +1,74 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
-import requests from './requests'
-import update from './update'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
+import admin from './admin'
 /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-export const show = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: show.url(options),
+export const fetch = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: fetch.url(options),
     method: 'get',
 })
 
-show.definition = {
+fetch.definition = {
     methods: ["get","head"],
-    url: '/action-center/admin/request-list',
+    url: '/api/action-center',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-show.url = (options?: RouteQueryOptions) => {
-    return show.definition.url + queryParams(options)
+fetch.url = (options?: RouteQueryOptions) => {
+    return fetch.definition.url + queryParams(options)
 }
 
 /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-show.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: show.url(options),
+fetch.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: fetch.url(options),
     method: 'get',
 })
 /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-show.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: show.url(options),
+fetch.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: fetch.url(options),
     method: 'head',
 })
 
     /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-    const showForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(options),
+    const fetchForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: fetch.url(options),
         method: 'get',
     })
 
             /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-        showForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(options),
+        fetchForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: fetch.url(options),
             method: 'get',
         })
             /**
-* @see \App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController::show
- * @see app/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php:10
- * @route '/action-center/admin/request-list'
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::fetch
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:35
+ * @route '/api/action-center'
  */
-        showForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url({
+        fetchForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: fetch.url({
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -78,11 +77,315 @@ show.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
     
-    show.form = showForm
+    fetch.form = fetchForm
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+export const mine = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: mine.url(options),
+    method: 'get',
+})
+
+mine.definition = {
+    methods: ["get","head"],
+    url: '/api/action-center/mine',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+mine.url = (options?: RouteQueryOptions) => {
+    return mine.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+mine.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: mine.url(options),
+    method: 'get',
+})
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+mine.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: mine.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+    const mineForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: mine.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+        mineForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: mine.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::mine
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:0
+ * @route '/api/action-center/mine'
+ */
+        mineForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: mine.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    mine.form = mineForm
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:24
+ * @route '/api/action-center'
+ */
+export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+store.definition = {
+    methods: ["post"],
+    url: '/api/action-center',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:24
+ * @route '/api/action-center'
+ */
+store.url = (options?: RouteQueryOptions) => {
+    return store.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:24
+ * @route '/api/action-center'
+ */
+store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:24
+ * @route '/api/action-center'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::store
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:24
+ * @route '/api/action-center'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:52
+ * @route '/api/action-center/{id}'
+ */
+export const update = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: update.url(args, options),
+    method: 'put',
+})
+
+update.definition = {
+    methods: ["put"],
+    url: '/api/action-center/{id}',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:52
+ * @route '/api/action-center/{id}'
+ */
+update.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return update.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:52
+ * @route '/api/action-center/{id}'
+ */
+update.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: update.url(args, options),
+    method: 'put',
+})
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:52
+ * @route '/api/action-center/{id}'
+ */
+    const updateForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::update
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:52
+ * @route '/api/action-center/{id}'
+ */
+        updateForm.put = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:89
+ * @route '/api/action-center/{id}'
+ */
+export const destroy = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroy.url(args, options),
+    method: 'delete',
+})
+
+destroy.definition = {
+    methods: ["delete"],
+    url: '/api/action-center/{id}',
+} satisfies RouteDefinition<["delete"]>
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:89
+ * @route '/api/action-center/{id}'
+ */
+destroy.url = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { id: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    id: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        id: args.id,
+                }
+
+    return destroy.definition.url
+            .replace('{id}', parsedArgs.id.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:89
+ * @route '/api/action-center/{id}'
+ */
+destroy.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+    url: destroy.url(args, options),
+    method: 'delete',
+})
+
+    /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:89
+ * @route '/api/action-center/{id}'
+ */
+    const destroyForm = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\External\Api\Controllers\ActionCenter\ActionCenterController::destroy
+ * @see app/External/Api/Controllers/ActionCenter/ActionCenterController.php:89
+ * @route '/api/action-center/{id}'
+ */
+        destroyForm.delete = (args: { id: string | number } | [id: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 const actionCenter = {
-    show: Object.assign(show, show),
-requests: Object.assign(requests, requests),
+    admin: Object.assign(admin, admin),
+fetch: Object.assign(fetch, fetch),
+mine: Object.assign(mine, mine),
+store: Object.assign(store, store),
 update: Object.assign(update, update),
+destroy: Object.assign(destroy, destroy),
 }
 
 export default actionCenter
