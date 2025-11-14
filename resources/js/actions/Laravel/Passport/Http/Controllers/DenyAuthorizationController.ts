@@ -1,4 +1,5 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\DenyAuthorizationController::deny
  * @see vendor/laravel/passport/src/Http/Controllers/DenyAuthorizationController.php:25

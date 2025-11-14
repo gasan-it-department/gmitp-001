@@ -3,16 +3,24 @@ import BulletinHeader from "./BulletinHeader";
 import { CalendarDays, CheckCircle2, Clock, XCircle, Pencil, Trash2 } from "lucide-react";
 import AddEditEventsDialog from "./AddEditEventsDialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventFormData } from "@/Core/Types/BulletinBoard/Events";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
 import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
+import { EventsApi } from "@/Core/Api/BulletinBoard/EventsApi";
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+
+interface EventDataList {
+    id: string;
+    title: string;
+    description: string;
+    event_date: string;
+    created_at: string
+}
 
 export default function EventPageTable() {
-    const [events, setEvents] = useState<EventFormData[]>([
-
-    ]);
-
+    const [isLoading, setIsLoading] = useState(false);
+    const [eventList, setEventList] = useState<EventDataList[]>([]);
     const [addEventDialog, setAddEventDialog] = useState<{
         isOpen: boolean;
         editData: EventFormData | null;
@@ -20,8 +28,6 @@ export default function EventPageTable() {
         isOpen: false,
         editData: null,
     });
-
-    // 🧮 Determine event status
     const getEventStatus = (eventDate: string): "Upcoming" | "Ongoing" | "Completed" => {
         const today = new Date();
         const event = new Date(eventDate);
@@ -31,8 +37,6 @@ export default function EventPageTable() {
         if (event > today) return "Upcoming";
         return "Completed";
     };
-
-    // 📅 Format date
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
         return date.toLocaleDateString("en-US", {
@@ -42,7 +46,6 @@ export default function EventPageTable() {
         });
     };
 
-    // 🎨 Status badge
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "Upcoming":
@@ -89,6 +92,46 @@ export default function EventPageTable() {
         isNegativeButtonHidden: false
     });
 
+    const { currentMunicipality } = useMunicipality();
+
+    useEffect(() => {
+        loadEvents();
+    }, []);
+
+    async function loadEvents() {
+        try {
+            setIsLoading(true);
+            const response = await EventsApi.fetch(currentMunicipality.slug);
+            setIsLoading(false);
+            if (response.success) {
+                const sorted = [...response.data].sort((a, b) => {
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                });
+                setEventList(sorted);
+            } else {
+                // setClassicDialog((prev) => ({
+                //     ...prev,
+                //     isOpen: true,
+                //     title: "An error occurred!",
+                //     message: "Failed to load announcement. Please check your Internet connection and try again.",
+                //     positiveButtonText: "Close",
+                //     isNegativeButtonHidden: true,
+                // }));
+            }
+        } catch (error: any) {
+            setIsLoading(false);
+            // console.error('Error fetching announcements:', error);
+            // setClassicDialog((prev) => ({
+            //     ...prev,
+            //     isOpen: true,
+            //     title: "An error occurred!",
+            //     message: error,
+            //     positiveButtonText: "Close",
+            //     isNegativeButtonHidden: true,
+            // }));
+        }
+    }
+
     return (
         <div>
             {/* HEADER */}
@@ -118,13 +161,13 @@ export default function EventPageTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {events.length === 0 ? (
+                        {eventList.length === 0 ? (
                             <AddminEmptyListItem
                                 title="No Events yet."
                                 message="Events you created will appear here." />
                         ) : (
-                            events.map((item) => {
-                                const status = getEventStatus(item.event_date);
+                            eventList.map((item) => {
+                                const status = getEventStatus(item.created_at);
                                 return (
                                     <TableRow
                                         key={item.id}
@@ -162,11 +205,13 @@ export default function EventPageTable() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() =>
-                                                    setAddEventDialog({
-                                                        isOpen: true,
-                                                        editData: item,
-                                                    })
+                                                onClick={() => {
+                                                    
+                                                }
+                                                    // setAddEventDialog({
+                                                    //     isOpen: true,
+                                                    //     editData: item,
+                                                    // })
                                                 }
                                                 className="text-blue-600 border-blue-200 hover:bg-blue-50"
                                             >

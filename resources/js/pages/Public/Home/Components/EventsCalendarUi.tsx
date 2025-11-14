@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { ViewEventDetails } from './ViewEventDetails';
+import { EventsApi } from '@/Core/Api/BulletinBoard/EventsApi';
+import municipality from '@/routes/municipality';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 
 interface EventDataList {
     eventName: string;
@@ -18,49 +21,46 @@ export default function EventsCalendarUi() {
     const [dashboardList, setDashboardList] = useState<EventDataList[]>([]);
     const [isEventDetailDialogShowing, setIsEventDialogShowing] = useState(false);
     const [selectedEventData, setSelectedEventData] = useState<EventDataList | null>(null);
-
-    const data: EventDataList[] = [
-        {
-            id: 'TXN-001',
-            eventName: 'Municipal Clean-Up Drive',
-            eventDescription:
-                'Join us this coming October 12, 2025, for the annual Clean-Up Drive. Volunteers will gather at the Municipal Hall at 6:00 AM before heading to assigned cleanup zones. Let’s work together for a cleaner and greener Gasan!',
-            date: '1759813952', // October 12, 2025
-        },
-        {
-            id: 'TXN-002',
-            eventName: 'Halloween Night Celebration',
-            eventDescription:
-                'Dress up and join the Halloween Night Celebration at the Town Plaza on October 31, 2025, 7:00 PM onwards. Enjoy fun activities, costume contests, food stalls, and live performances!',
-            date: '1762492292', // October 31, 2025
-        },
-        {
-            id: 'TXN-003',
-            eventName: 'All Saints’ Day Candle Lighting Ceremony',
-            eventDescription:
-                'A solemn candle lighting event will be held at the municipal cemetery on November 1, 2025, to honor our dearly departed. Residents are invited to participate and observe proper decorum.',
-            date: '1762588692', // November 1, 2025
-        },
-        {
-            id: 'TXN-004',
-            eventName: 'Christmas Tree Lighting Ceremony',
-            eventDescription:
-                'Celebrate the spirit of Christmas as we light up the town’s Christmas tree at the Municipal Hall on December 5, 2025, at 6:00 PM. Enjoy performances, food booths, and holiday music!',
-            date: '1764919200', // December 5, 2025
-        },
-        {
-            id: 'TXN-005',
-            eventName: 'New Year’s Countdown Celebration',
-            eventDescription:
-                'Join us for the grand New Year’s Countdown at the Town Plaza on December 31, 2025. Witness fireworks, live bands, and welcome 2026 with joy and unity!',
-            date: '1767116400', // December 31, 2025
-        },
-    ];
-
+    const [iseLoading, setIsLoading] = useState(false);
+    const { currentMunicipality } = useMunicipality();
 
     useEffect(() => {
-        setDashboardList(data);
+        loadEvents();
     }, []);
+
+    async function loadEvents() {
+        try {
+            setIsLoading(true);
+            const response = await EventsApi.fetch(currentMunicipality.slug);
+            setIsLoading(false);
+            if (response.success) {
+                const sorted = [...response.data].sort((a, b) => {
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                });
+                setDashboardList(sorted);
+            } else {
+                // setClassicDialog((prev) => ({
+                //     ...prev,
+                //     isOpen: true,
+                //     title: "An error occurred!",
+                //     message: "Failed to load announcement. Please check your Internet connection and try again.",
+                //     positiveButtonText: "Close",
+                //     isNegativeButtonHidden: true,
+                // }));
+            }
+        } catch (error: any) {
+            setIsLoading(false);
+            // console.error('Error fetching announcements:', error);
+            // setClassicDialog((prev) => ({
+            //     ...prev,
+            //     isOpen: true,
+            //     title: "An error occurred!",
+            //     message: error,
+            //     positiveButtonText: "Close",
+            //     isNegativeButtonHidden: true,
+            // }));
+        }
+    }
 
     return (
         <div className="mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
@@ -190,7 +190,7 @@ export default function EventsCalendarUi() {
             <ViewEventDetails
                 isOpen={isEventDetailDialogShowing}
                 data={selectedEventData}
-                onClose={() => setIsEventDialogShowing(false)}/>
+                onClose={() => setIsEventDialogShowing(false)} />
         </div>
 
     );
