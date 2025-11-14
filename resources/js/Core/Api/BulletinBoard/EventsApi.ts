@@ -20,7 +20,6 @@ export const EventsApi = {
     async fetch(municipalSlug: string) {
 
         const { url, method } = bulletinBoard.EventController.fetch();
-        console.log(url, method);
         const { data } = await axios({
             url,
             method,

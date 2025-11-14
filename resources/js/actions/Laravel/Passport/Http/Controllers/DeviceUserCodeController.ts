@@ -1,5 +1,4 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \Laravel\Passport\Http\Controllers\DeviceUserCodeController::__invoke
  * @see vendor/laravel/passport/src/Http/Controllers/DeviceUserCodeController.php:14
