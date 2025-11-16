@@ -5,7 +5,7 @@ namespace App\Core\ActionCenter\Applications\Services;
 use App\Core\ActionCenter\Domains\Enums\RequestStatus;
 use App\Core\ActionCenter\Applications\Dto\AssistanceRequestDto;
 use App\Core\ActionCenter\Applications\Dto\BeneficiaryDto;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
+use App\Core\Users\Services\UserRoleCheckerService;
 use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +14,8 @@ class UpdateAssistanceRequest
     public function __construct(
         protected UserRoleCheckerService $roleCheckerService,
         protected AssistanceRequestRepositories $assistanceRepository
-    ) {}
+    ) {
+    }
 
     /**
      * Update an existing assistance request and its beneficiary.
@@ -37,8 +38,8 @@ class UpdateAssistanceRequest
             // Determine new status
             $status = $data['status'] ?? (
                 $isAdmin
-                    ? RequestStatus::APPROVED->value
-                    : $existing->status
+                ? RequestStatus::APPROVED->value
+                : $existing->status
             );
 
             // Prepare updated request DTO

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Core\Users\Infrastructure\Services;
+namespace App\Core\Users\Services;
 
-use App\Core\Users\Application\Interfaces\PasswordHasherInterface;
+use App\Core\Users\Interfaces\PasswordHasherInterface;
 use Illuminate\Support\Facades\Hash;
 
 final readonly class PasswordHasherService implements PasswordHasherInterface

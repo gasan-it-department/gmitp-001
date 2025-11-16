@@ -2,11 +2,13 @@
 
 namespace App\External\Api\Controllers\Auth;
 
+use App\Core\Users\Dto\RegisterUserDto;
+use App\Core\Users\Repository\UserRepository;
+use App\Core\Users\UseCases\RegisterUserUseCase;
 use App\Http\Controllers\Controller;
 use App\External\Api\Request\Auth\CreateUserRequest;
 use Illuminate\Http\Request;
-use App\Core\Users\Application\Services\CreateUserService;
-use App\Core\Users\Application\Dto\CreateUserDto as Dto;
+
 use App\Core\Users\Domains\Exceptions\InvalidUserInputException;
 
 
@@ -14,7 +16,7 @@ class CreateUserController extends Controller
 {
 
     public function __construct(
-        private CreateUserService $userService
+        private RegisterUserUseCase $registerUserCase,
     ) {
     }
 
@@ -23,27 +25,32 @@ class CreateUserController extends Controller
     public function createUser(CreateUserRequest $request)
     {
         try {
-            $dto = new Dto(
-                first_name: $request->input('first_name'),
-                middle_name: $request->input('middle_name'),
-                last_name: $request->input('last_name'),
-                user_name: $request->input('user_name'),
-                phone: $request->input('phone'),
-                password: $request->input('password'),
-                role: $request->input('role')
+            $validated = $request->validated();
+
+            $dto = new RegisterUserDto(
+                firstName: $validated['first_name'],
+                middleName: $validated['middle_name'],
+                lastName: $validated['last_name'],
+                userName: $validated['user_name'],
+                phone: $validated['user_name'],
+                password: $validated['password'],
             );
 
-            $this->userService->create($dto);
+            $this->registerUserCase->execute($dto);
 
             return response()->json(['message' => 'User created successfully']);
+
         } catch (InvalidUserInputException $event) {
+
             return response()->json(
+
                 [
+                    'message' => 'failed registry',
                     'errors' => [
                         $event->getField() => [$event->getMessage()]
                     ]
                 ],
-                422
+                200
             );
         }
     }

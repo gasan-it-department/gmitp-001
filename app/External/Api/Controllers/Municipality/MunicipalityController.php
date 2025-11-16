@@ -4,7 +4,7 @@ namespace App\External\Api\Controllers\Municipality;
 
 use App\Core\Municipality\Exceptions\MunicipalityValidationException;
 use App\External\Api\Resources\Municipality\MunicipalityResource;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
+use App\Core\Users\Services\UserRoleCheckerService;
 use App\External\Api\Request\Municipality\MunicipalityRequest;
 use App\Core\Municipality\Services\AddMunicipalityService;
 use App\Core\Municipality\Services\GetActiveMunicipality;
@@ -82,7 +82,6 @@ class MunicipalityController
     {
         try {
             $municipalities = $this->getActiveMunicipality->execute();
-
             return response()->json([
                 'success' => true,
                 'data' => MunicipalityResource::collection($municipalities),
@@ -91,7 +90,7 @@ class MunicipalityController
             return response()->json([
                 'success' => false,
                 'message' => 'failed to fetch active municipalities',
-            ], 500);
+            ], 200);
         }
     }
 

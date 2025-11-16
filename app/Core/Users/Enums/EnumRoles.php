@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Core\Users\Domains\Enum;
+namespace App\Core\Users\Enums;
 
 enum EnumRoles: string
 {
     case CLIENT = '0';
+
     case ADMIN = '1';
+
     case SUPER_ADMIN = '2';
 
     public static function fromString(string $value): self
@@ -17,6 +19,7 @@ enum EnumRoles: string
             default => throw new \InvalidArgumentException("Invalid role value: $value"),
         };
     }
+
     public function label(): string
     {
         return match ($this) {

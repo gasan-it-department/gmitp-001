@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Core\Users\Infrastructure\Models\User;
 use Illuminate\Support\Facades\Auth;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
+use App\Core\Users\Services\UserRoleCheckerService;
 
 class RoleCheckRedirect
 {

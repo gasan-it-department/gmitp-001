@@ -2,10 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
-
+use Illuminate\Http\Request;
+use App\Core\Users\Services\UserRoleCheckerService;
 class HandleInertiaRequests extends Middleware
 {
     /**

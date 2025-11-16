@@ -5,7 +5,7 @@ namespace App\Core\ActionCenter\Applications\Services;
 use App\Core\ActionCenter\Domains\Enums\RequestStatus;
 use App\Core\ActionCenter\Applications\Dto\AssistanceRequestDto;
 use App\Core\ActionCenter\Applications\Dto\BeneficiaryDto;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
+use App\Core\Users\Services\UserRoleCheckerService;
 use App\Core\ActionCenter\Applications\Services\TransactionNumberGenerator;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
@@ -60,7 +60,7 @@ class CreateAssistanceRequest
                 $data['municipality'],
                 $data['barangay'],
             );
-            
+
             $this->assistanceRepository->save($request, $beneficiary);
             DB::commit();//if successful
 

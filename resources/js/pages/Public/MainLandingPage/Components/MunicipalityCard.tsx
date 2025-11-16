@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/card';
-import { getMunicipalities } from '@/Core/Api/Municipality/MunicipalityApi';
+import { MunicipalitiesApi } from '@/Core/Api/Municipality/MunicipalityApi';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { home } from '@/routes';
 import { Link } from '@inertiajs/react';
@@ -11,12 +11,12 @@ export function MunicipalityCard() {
     const [municipalities, setMunicipalities] = useState<MunicipalityType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
     useEffect(() => {
         async function fetchMunicipalities() {
             try {
-                const data = await getMunicipalities();
-                setMunicipalities(data);
+                const data = await MunicipalitiesApi.getMunicipalities();
+                console.log(data.data);
+                setMunicipalities(data.data);
             } catch (err) {
                 console.error('Error fetching municipalities:', err);
                 setError('Failed to load municipalities.');

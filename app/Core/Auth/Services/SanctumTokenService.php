@@ -2,7 +2,7 @@
 
 namespace app\Core\Auth\Services;
 
-use App\Core\Users\Infrastructure\Models\User;
+use App\Core\Users\Models\User;
 use App\Core\Auth\Interfaces\TokenServiceInterface;
 
 

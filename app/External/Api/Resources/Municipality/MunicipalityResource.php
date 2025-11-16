@@ -4,7 +4,7 @@ namespace App\External\Api\Resources\Municipality;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
+use App\Core\Users\Services\UserRoleCheckerService;
 class MunicipalityResource extends JsonResource
 {
     /**

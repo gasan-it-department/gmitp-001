@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Core\Users\Application\Services;
+namespace App\Core\Users\Services;
 
-use App\Core\Users\Domains\Enum\EnumRoles as Role;
-use App\Core\Users\Infrastructure\Models\User;
+use App\Core\Users\Enums\EnumRoles as Role;
+use App\Core\Users\Models\User;
 
 class UserRoleCheckerService
 {

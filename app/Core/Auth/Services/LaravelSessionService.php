@@ -1,10 +1,11 @@
 <?php
 
 namespace App\Core\Auth\Services;
-use App\Core\Users\Infrastructure\Models\User;
+
+use Illuminate\Http\Request;
+use App\Core\Users\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Http\Request;
 
 
 class LaravelSessionService implements \App\Core\Auth\Interfaces\CookieSessionInterface
@@ -20,6 +21,7 @@ class LaravelSessionService implements \App\Core\Auth\Interfaces\CookieSessionIn
         $user = User::findOrFail($userId);
 
         Auth::login($user, $rememberMe);
+
         $this->regenerateSession();
 
         $expiresIn = $rememberMe

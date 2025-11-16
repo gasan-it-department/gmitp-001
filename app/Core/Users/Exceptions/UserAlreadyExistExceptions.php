@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\Users\Application\Exceptions;
+namespace App\Core\Users\Exceptions;
 use App\Core\Users\Domains\ValueObjects\{
     UserName,
     Phone,

@@ -3,10 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Core\Users\Domains\Interfaces\UserRepositoryInterface;
-use App\Core\Users\Infrastructure\Repository\UserRepository;
-use App\Core\Users\Application\Interfaces\PasswordHasherInterface;
-use App\Core\Users\Infrastructure\Services\PasswordHasherService;
+use App\Core\Users\Interfaces\PasswordHasherInterface;
+use App\Core\Users\Services\PasswordHasherService;
 class UserServiceProvider extends ServiceProvider
 {
     /**
@@ -14,11 +12,6 @@ class UserServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(
-            UserRepositoryInterface::class,
-            UserRepository::class
-        );
-
         $this->app->bind(
             PasswordHasherInterface::class,
             PasswordHasherService::class

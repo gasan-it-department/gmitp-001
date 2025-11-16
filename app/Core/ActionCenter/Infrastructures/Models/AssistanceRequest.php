@@ -4,7 +4,7 @@ namespace App\Core\ActionCenter\Infrastructures\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Core\Users\Infrastructure\Models\User;
+use App\Core\Users\Models\User;
 class AssistanceRequest extends Model
 {
     use HasFactory;
