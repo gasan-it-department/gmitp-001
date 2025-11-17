@@ -1,7 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import axios from '@/lib/axios';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import Utility from '@/pages/Utility/Utility';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
@@ -11,11 +9,21 @@ import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 
 export default function GeneralAnnouncement() {
     const { currentMunicipality } = useMunicipality();
     const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [classicDialog, setClassicDialog] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        positiveButtonText: '',
+        negativeButtonText: '',
+        isNegativeButtonHidden: false,
+        action: ""
+    });
     const [announcementDetailsDialog, setAnnouncementDetailsDialog] = useState<{
         isOpen: boolean;
         data: AnnouncementData | null;
@@ -38,27 +46,29 @@ export default function GeneralAnnouncement() {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 });
                 setAnnouncementList(sorted);
+
             } else {
-                // setClassicDialog((prev) => ({
-                //     ...prev,
-                //     isOpen: true,
-                //     title: "An error occurred!",
-                //     message: "Failed to load announcement. Please check your Internet connection and try again.",
-                //     positiveButtonText: "Close",
-                //     isNegativeButtonHidden: true,
-                // }));
+                setClassicDialog((prev) => ({
+                    ...prev,
+                    isOpen: true,
+                    title: "An error occurred!",
+                    message: "Failed to load announcement. Please check your Internet connection and try again.",
+                    positiveButtonText: "Close",
+                    isNegativeButtonHidden: true,
+                }));
             }
+            throw ("THIS IS A TEST ERROR MESSAGE");
         } catch (error: any) {
             setIsLoading(false);
-            // console.error('Error fetching announcements:', error);
-            // setClassicDialog((prev) => ({
-            //     ...prev,
-            //     isOpen: true,
-            //     title: "An error occurred!",
-            //     message: error,
-            //     positiveButtonText: "Close",
-            //     isNegativeButtonHidden: true,
-            // }));
+            console.error('Error fetching announcements:', error);
+            setClassicDialog((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: "An error occurred!",
+                message: error,
+                positiveButtonText: "Close",
+                isNegativeButtonHidden: true,
+            }));
         }
     }
 
@@ -151,7 +161,6 @@ export default function GeneralAnnouncement() {
                             )}
                         </>
                     )}
-
                 </div>
 
                 <ViewAnnouncementDetails
@@ -162,6 +171,26 @@ export default function GeneralAnnouncement() {
                             ...prev,
                             isOpen: false,
                             data: null
+                        }));
+                    }} />
+
+                <ClassicDialog
+                    title={classicDialog.title}
+                    message={classicDialog.message}
+                    positiveButtonText={classicDialog.positiveButtonText}
+                    negativeButtonText={classicDialog.negativeButtonText}
+                    hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                    open={false}
+                    onPositiveClick={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: false
+                        }));
+                    }}
+                    onNegativeClick={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: false
                         }));
                     }} />
             </div>

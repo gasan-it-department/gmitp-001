@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import BulletinHeader from "./BulletinHeader";
-import { CalendarDays, CheckCircle2, Clock, XCircle, Pencil, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, Pencil, Trash2 } from "lucide-react";
 import AddEditEventsDialog from "./AddEditEventsDialog";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import ClassicDialog from "@/pages/Utility/ClassicDialog";
 import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 import { EventsApi } from "@/Core/Api/BulletinBoard/EventsApi";
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import LoadingDialog from "@/pages/Utility/LoadingDialog";
 
 interface EventDataList {
     id: string;
@@ -206,7 +207,7 @@ export default function EventPageTable() {
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => {
-                                                    
+
                                                 }
                                                     // setAddEventDialog({
                                                     //     isOpen: true,
@@ -261,6 +262,9 @@ export default function EventPageTable() {
                     }));
                 }}
             />
+
+            <LoadingDialog
+                isOpen={isLoading} />
         </div>
     );
 }

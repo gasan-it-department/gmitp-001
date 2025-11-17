@@ -41,7 +41,7 @@ export default function ClassicDialog({
     <Dialog open={open}>
       <DialogContent
         showCloseButton={false}
-        onInteractOutside={(e) => e.preventDefault()} // prevent closing outside click
+        onInteractOutside={(e) => e.preventDefault()}
         className="
           max-w-lg w-[90vw] p-6 rounded-2xl border
           shadow-2xl bg-white dark:bg-neutral-900

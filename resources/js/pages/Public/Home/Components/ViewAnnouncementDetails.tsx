@@ -1,15 +1,16 @@
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { CalendarDays, Megaphone } from "lucide-react";
 import Utility from "@/pages/Utility/Utility";
 import { AnnouncementData } from "@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes";
+import { useEffect } from "react";
 
 type Props = {
     isOpen: boolean;
@@ -19,49 +20,41 @@ type Props = {
 
 export function ViewAnnouncementDetails({ isOpen, data, onClose }: Props) {
     if (!data) return null;
-
     return (
-        <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <AlertDialogContent
+        <Dialog open={isOpen}>
+            <DialogContent
+                showCloseButton={false}
+                onInteractOutside={(e) => e.preventDefault()}
                 className="
-          max-w-2xl w-[90vw]
-          p-6 rounded-2xl border
-          shadow-2xl 
-          bg-gradient-to-br from-orange-50 via-red-50 to-white
-          dark:from-[#1a0a0a] dark:via-[#2a0f00] dark:to-neutral-900
+          max-w-2xl w-[90vw] p-6 rounded-2xl border
+          shadow-2xl bg-gradient-to-br from-orange-50 via-red-50 to-white
+          dark:bg-neutral-900 dark:from-[#1a0a0a] dark:via-[#2a0f00] dark:to-neutral-900
           transition-all duration-300
         "
             >
-                {/* Header Section */}
-                <AlertDialogHeader className="space-y-3">
+                {/* Header */}
+                <DialogHeader className="space-y-3">
                     <div className="flex items-start gap-3 w-full min-w-0">
-
-                        {/* ICON */}
+                        {/* Icon */}
                         <div className="p-3 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-md shrink-0">
                             <Megaphone className="w-5 h-5 text-white" />
                         </div>
 
-                        {/* TITLE WRAPPER */}
+                        {/* Title */}
                         <div className="flex-1 min-w-0">
-                            <AlertDialogTitle
-                                className="
-          text-left text-xl sm:text-2xl font-bold
-          bg-gradient-to-r from-red-600 to-orange-500 
-          dark:from-red-400 dark:to-orange-300
-          bg-clip-text text-transparent tracking-tight
-          line-clamp-3
-          overflow-hidden
-          break-words
-          leading-tight
-          w-full
-        "
-                            >
+                            <DialogTitle className="
+                text-left text-xl sm:text-2xl font-bold
+                bg-gradient-to-r from-red-600 to-orange-500
+                dark:from-red-400 dark:to-orange-300
+                bg-clip-text text-transparent tracking-tight
+                line-clamp-3 overflow-hidden break-words leading-tight
+              ">
                                 {data.title || "Untitled Announcement"}
-                            </AlertDialogTitle>
+                            </DialogTitle>
                         </div>
                     </div>
 
-                    {/* Date Info */}
+                    {/* Date */}
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <CalendarDays className="w-4 h-4 text-orange-500 dark:text-orange-300" />
                         <span>{Utility().formatToReadableDate(data.created_at)}</span>
@@ -71,41 +64,37 @@ export function ViewAnnouncementDetails({ isOpen, data, onClose }: Props) {
                         </span>
                     </div>
 
-                    {/* Divider */}
                     <div className="h-[1px] bg-gradient-to-r from-orange-400 to-red-400 dark:from-orange-700 dark:to-red-700 mt-3 mb-2" />
-                </AlertDialogHeader>
+                </DialogHeader>
 
-                {/* Message Section */}
-                <AlertDialogDescription
-                    className="
-            mt-2 text-gray-800 dark:text-gray-200
-            leading-relaxed whitespace-pre-line 
-            max-h-[60vh] overflow-y-auto pr-3
-            scrollbar-thin 
-            scrollbar-thumb-orange-400 dark:scrollbar-thumb-orange-700
-            scrollbar-track-transparent
-          "
-                >
+                {/* Message */}
+                <DialogDescription className="
+          mt-2 text-gray-800 dark:text-gray-200
+          leading-relaxed whitespace-pre-line
+          max-h-[60vh] overflow-y-auto pr-3
+          scrollbar-thin scrollbar-thumb-orange-400 dark:scrollbar-thumb-orange-700
+          scrollbar-track-transparent
+        ">
                     {data.message || "No message provided for this announcement."}
-                </AlertDialogDescription>
+                </DialogDescription>
 
                 {/* Footer */}
-                <AlertDialogFooter className="mt-6 flex justify-end">
-                    <AlertDialogAction
+                <DialogFooter className="mt-6 flex justify-end">
+                    <Button
                         onClick={onClose}
                         className="
               px-6 py-2.5 text-base font-medium
               rounded-lg transition-all duration-200
-              bg-gradient-to-r from-red-600 to-orange-500 
+              bg-gradient-to-r from-red-600 to-orange-500
               hover:from-red-700 hover:to-orange-600
               text-white shadow-md
               focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 dark:focus:ring-offset-neutral-900
             "
                     >
                         Close
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

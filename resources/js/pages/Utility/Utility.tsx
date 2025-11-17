@@ -156,10 +156,18 @@ export default function Utility() {
         }
     }
 
+    function calculateArrivingDays(dateInput: string | number): string {
+        let eventDate: moment.Moment;
 
+        if (typeof dateInput === "number" || /^\d+$/.test(dateInput)) {
+            // Numeric epoch (seconds or milliseconds)
+            const epoch = Number(dateInput);
+            eventDate = epoch > 9999999999 ? moment(epoch) : moment.unix(epoch); // ms vs s
+        } else {
+            // Parse date string
+            eventDate = moment(dateInput, "YYYY-MM-DD HH:mm:ss");
+        }
 
-    function calculateArrivingDays(epochTime: string | number): string {
-        const eventDate = moment(parseInt(epochTime as string, 10) * 1000);
         const now = moment();
         const diffDays = eventDate.startOf("day").diff(now.startOf("day"), "days");
 
@@ -169,9 +177,6 @@ export default function Utility() {
         if (diffDays === -1) return "Yesterday";
         return `${Math.abs(diffDays)} days ago`;
     }
-
-
-
 
     return {
         generateUniqueId,

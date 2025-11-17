@@ -21,11 +21,11 @@ export function LogInSignUpForm() {
             <ToastProvider />
             <LogInSignUpDialog
                 onSignedIn={() => {
-                    toast("Account successfully created");
+                    toast.success("Account successfully created");
                     window.location.reload();
                 }}
                 onLoggedIn={(redirectionLink) => {
-                    toast("Successfully Logged In");
+                    toast.success("Successfully Logged In");
                     window.location.href = redirectionLink;
                 }}
                 isOpen={isLogInSignUpDialogVisible}
