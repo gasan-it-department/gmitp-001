@@ -20,6 +20,7 @@ class AnnouncementRepository
             'message' => $dto->message,
             'user_id' => $dto->userId,
             'municipal_id' => $municipalId,
+            'is_published' => $dto->isPublish,
         ]);
 
         return $announcement;

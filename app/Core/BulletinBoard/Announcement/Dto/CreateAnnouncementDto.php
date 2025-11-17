@@ -8,6 +8,7 @@ final class CreateAnnouncementDto
         public readonly string $title,
         public readonly string $message,
         public readonly string $userId,
+        public readonly bool $isPublish,
     ) {
     }
 }

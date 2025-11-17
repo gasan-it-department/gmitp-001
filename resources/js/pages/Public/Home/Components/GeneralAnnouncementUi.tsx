@@ -56,7 +56,6 @@ export default function GeneralAnnouncement() {
                     isNegativeButtonHidden: true,
                 }));
             }
-            throw 'THIS IS A TEST ERROR MESSAGE';
         } catch (error: any) {
             setIsLoading(false);
             console.error('Error fetching announcements:', error);

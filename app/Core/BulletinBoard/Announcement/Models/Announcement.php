@@ -18,5 +18,6 @@ class Announcement extends Model
         'title',
         'municipal_id',
         'message',
+        'is_published',
     ];
 }

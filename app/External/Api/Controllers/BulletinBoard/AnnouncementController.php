@@ -36,7 +36,8 @@ class AnnouncementController
             $dto = new CreateAnnouncementDto(
                 title: $validated['title'],
                 message: $validated['message'],
-                userId: $userId
+                userId: $userId,
+                isPublish: true,
             );
 
             $announcement = $this->announcementService->execute($dto);
