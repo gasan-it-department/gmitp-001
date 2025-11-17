@@ -32,6 +32,7 @@ class EventController extends Controller
                 description: $validated['description'],
                 eventDate: $eventDate,
                 userId: $userId,
+                isPublish: true,
             );
 
             $this->eventService->execute($dto);

@@ -19,6 +19,7 @@ class EventRepository
             'municipal_id' => $municipalId,
             'event_date' => $dto->eventDate,
             'user_id' => $dto->userId,
+            'is_published' => $dto->isPublish,
         ]);
     }
 

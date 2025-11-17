@@ -9,6 +9,7 @@ class CreateEventDto
         public readonly string $description,
         public readonly \DateTimeImmutable $eventDate,
         public readonly string $userId,
+        public readonly bool $isPublish,
     ) {
     }
 }

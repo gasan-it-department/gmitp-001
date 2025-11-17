@@ -18,6 +18,7 @@ class Events extends Model
         'title',
         'description',
         'municipal_id',
-        'event_date'
+        'event_date',
+        'is_published'
     ];
 }
