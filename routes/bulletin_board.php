@@ -16,7 +16,7 @@ Route::prefix('{municipality}/bulletin-board')
             ->as('announcement.')
             ->controller(AnnouncementController::class)
             ->group(function () {
-            Route::get('/', 'index')->name('index');
+            Route::get('/', 'index')->name('page');
         });
 
         // ADMIN DASHBOARD (web page)
@@ -26,7 +26,7 @@ Route::prefix('{municipality}/bulletin-board')
             ->controller(AnnouncementAdminController::class)
             ->group(function () {
 
-            Route::get('/admin', 'index')->name('index');
+            Route::get('/admin', 'index')->name('page');
 
         });
 
@@ -44,17 +44,21 @@ Route::prefix('{municipality}/bulletin-board')
 
 //eg. https://api/announcement/
 Route::prefix('api/announcement/')
-    ->middleware(['auth', 'admin', 'municipalityContext'])
+    ->middleware(['municipalityContext'])
     ->as('announcement.')
     ->controller(AnnouncementController::class)
     ->group(function () {
 
-        Route::get('/', 'fetch')->name('fetch');
-        Route::post('/', 'store')->name('store');
-        Route::put('/{id}', 'update')->name('update');
-        Route::patch('/{id}/publish', 'publish')->name('publish');
-        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::middleware(['admin', 'auth:sanctum'])
+            ->group(function () {
+                Route::get('/', 'fetch')->name('fetch');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{id}', 'update')->name('update');
+                Route::patch('/{id}/publish', 'publish')->name('publish');
+                Route::delete('/{id}', 'destroy')->name('destroy');
+            });
 
+        Route::get('/published', 'getPublished')->name('fetchPublished');
     });
 
 //eg. https://api/events/
@@ -73,6 +77,8 @@ Route::prefix('/api/events')
                 Route::delete('/{id}', 'destroy')->name('destroy');
 
             });
+
+        Route::get('/', 'getPublished')->name('fetchPublish');
 
     });
 

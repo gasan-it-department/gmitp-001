@@ -28,7 +28,22 @@ export const AnnouncementApi = {
                 'X-Municipality-Slug': municipalSlug
 
             }
-        })
+        });
         return data;
+    },
+
+    async getPublishedAnnouncements(municipalSlug: string) {
+        const { url, method } = bulletinBoard.AnnouncementController.getPublished();
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
+
     }
 }

@@ -20,10 +20,22 @@ class EventRepository
         ]);
     }
 
+    //for admin usage 
     public function getAllByMunicipalId(string $municipalId): Collection
     {
         $events = Events::where('municipal_id', $municipalId)->get();
 
         return $events;
+    }
+
+    public function getPublished(string $municipalId, $isPublished)
+    {
+
+        $events = Events::where('municipal_id', $municipalId)
+            ->where('is_published', $isPublished)
+            ->get();
+
+        return $events;
+
     }
 }

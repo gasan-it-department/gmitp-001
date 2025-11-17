@@ -12,4 +12,6 @@ interface AnnouncementRepositoryInterface
     public function findById(string $id): Announcement;
     public function updateStatus($id, bool $isPublish): void;
     public function getFiltered(AnnouncementFilterDto $dto): Announcement;
+    public function getPublished(string $municipalId, bool $isPublish): Collection;
+
 }

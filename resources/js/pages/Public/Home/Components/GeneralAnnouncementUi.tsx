@@ -1,15 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
 import Utility from '@/pages/Utility/Utility';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
 
 export default function GeneralAnnouncement() {
     const { currentMunicipality } = useMunicipality();
@@ -39,8 +38,9 @@ export default function GeneralAnnouncement() {
     async function loadAnnouncement() {
         try {
             setIsLoading(true);
-            const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug);
+            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             setIsLoading(false);
+
             if (response.success) {
                 const sorted = [...response.data].sort((a, b) => {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -71,7 +71,6 @@ export default function GeneralAnnouncement() {
             }));
         }
     }
-
     return (
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:flex-row lg:px-10">
             <div className="flex flex-1 flex-col">
@@ -84,7 +83,7 @@ export default function GeneralAnnouncement() {
 
                 <div className="mt-4 w-full flex-1 bg-transparent sm:mt-6">
                     {isLoading ? (
-                        <div className="w-full flex items-center justify-center py-4">
+                        <div className="flex w-full items-center justify-center py-4">
                             <LoadingSpinner />
                         </div>
                     ) : (
@@ -170,8 +169,10 @@ export default function GeneralAnnouncement() {
                         setAnnouncementDetailsDialog((prev) => ({
                             ...prev,
                             isOpen: false,
-                            data: null
+                            data: null,
                         }));
+                    }}
+                />
                     }} />
 
                 <ClassicDialog
