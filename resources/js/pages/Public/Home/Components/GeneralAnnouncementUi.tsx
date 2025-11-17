@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
 import Utility from '@/pages/Utility/Utility';
 import { router } from '@inertiajs/react';
@@ -21,7 +22,7 @@ export default function GeneralAnnouncement() {
         positiveButtonText: '',
         negativeButtonText: '',
         isNegativeButtonHidden: false,
-        action: ""
+        action: '',
     });
     const [announcementDetailsDialog, setAnnouncementDetailsDialog] = useState<{
         isOpen: boolean;
@@ -40,37 +41,36 @@ export default function GeneralAnnouncement() {
             setIsLoading(true);
             const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             setIsLoading(false);
-
             if (response.success) {
                 const sorted = [...response.data].sort((a, b) => {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 });
                 setAnnouncementList(sorted);
-
             } else {
                 setClassicDialog((prev) => ({
                     ...prev,
                     isOpen: true,
-                    title: "An error occurred!",
-                    message: "Failed to load announcement. Please check your Internet connection and try again.",
-                    positiveButtonText: "Close",
+                    title: 'An error occurred!',
+                    message: 'Failed to load announcement. Please check your Internet connection and try again.',
+                    positiveButtonText: 'Close',
                     isNegativeButtonHidden: true,
                 }));
             }
-            throw ("THIS IS A TEST ERROR MESSAGE");
+            throw 'THIS IS A TEST ERROR MESSAGE';
         } catch (error: any) {
             setIsLoading(false);
             console.error('Error fetching announcements:', error);
             setClassicDialog((prev) => ({
                 ...prev,
                 isOpen: true,
-                title: "An error occurred!",
+                title: 'An error occurred!',
                 message: error,
-                positiveButtonText: "Close",
+                positiveButtonText: 'Close',
                 isNegativeButtonHidden: true,
             }));
         }
     }
+
     return (
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:flex-row lg:px-10">
             <div className="flex flex-1 flex-col">
@@ -173,7 +173,6 @@ export default function GeneralAnnouncement() {
                         }));
                     }}
                 />
-                    }} />
 
                 <ClassicDialog
                     title={classicDialog.title}
@@ -185,15 +184,16 @@ export default function GeneralAnnouncement() {
                     onPositiveClick={() => {
                         setClassicDialog((prev) => ({
                             ...prev,
-                            isOpen: false
+                            isOpen: false,
                         }));
                     }}
                     onNegativeClick={() => {
                         setClassicDialog((prev) => ({
                             ...prev,
-                            isOpen: false
+                            isOpen: false,
                         }));
-                    }} />
+                    }}
+                />
             </div>
         </div>
     );

@@ -18,9 +18,22 @@ import actionCenter from '@/routes/actionCenter';
 import bulletinBoard from '@/routes/bulletin-board';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { Building, CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Megaphone, MessageCircleIcon, Settings, User, Users, UsersIcon } from 'lucide-react';
+import {
+    Building,
+    CalendarDays,
+    ClipboardList,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    Map,
+    Megaphone,
+    MessageCircleIcon,
+    Settings,
+    User,
+    Users,
+    UsersIcon,
+} from 'lucide-react';
 import * as React from 'react';
-import { home } from '@/routes';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -80,11 +93,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     icon: Megaphone,
                 },
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
-                { title: 'Feedbacks', url: "", icon: MessageCircleIcon },
-                { title: 'Comunity Reports', url: "", icon: UsersIcon },
+                { title: 'Feedbacks', url: '', icon: MessageCircleIcon },
+                { title: 'Comunity Reports', url: '', icon: UsersIcon },
             ],
         },
-        
+
         {
             title: 'TOURISM',
             icon: Map,
