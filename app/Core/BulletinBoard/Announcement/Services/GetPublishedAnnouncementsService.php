@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 
-class GetPublishedAnnouncements
+class GetPublishedAnnouncementsService
 {
     public function __construct(
         private AnnouncementRepository $repo,

@@ -2,9 +2,11 @@
 
 namespace App\Core\BulletinBoard\Events\Repositories;
 
+use App\Core\BulletinBoard\Events\Dto\EventsQueryDto;
 use App\Core\BulletinBoard\Events\Models\Events;
 use App\Core\BulletinBoard\Events\Dto\CreateEventDto;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class EventRepository
 {
@@ -28,14 +30,13 @@ class EventRepository
         return $events;
     }
 
-    public function getPublished(string $municipalId, $isPublished)
+    public function getPublished(string $municipalId, bool $isPublished, EventsQueryDto $dto): LengthAwarePaginator
     {
 
-        $events = Events::where('municipal_id', $municipalId)
+        return Events::where('municipal_id', $municipalId)
             ->where('is_published', $isPublished)
-            ->get();
-
-        return $events;
+            ->orderBy($dto->orderBy, $dto->direction)
+            ->paginate($dto->perPage);
 
     }
 }

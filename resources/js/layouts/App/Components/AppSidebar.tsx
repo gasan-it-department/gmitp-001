@@ -60,6 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }));
     };
 
+    console.log(currentMunicipality.slug);
     const AdminSidebarItems = [
         {
             title: 'ACTION CENTER',
@@ -165,7 +166,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 <SidebarMenuSub className="space-y-1 border-l border-gray-100 pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
-                                        const isActive = isRouteActive(sub.url);
+                                        const isActive = isRouteActive(sub.title);
 
                                         return (
                                             <SidebarMenuSubItem key={sub.title}>

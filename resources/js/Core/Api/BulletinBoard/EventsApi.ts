@@ -20,6 +20,7 @@ export const EventsApi = {
     async fetch(municipalSlug: string) {
 
         const { url, method } = bulletinBoard.EventController.fetch();
+
         const { data } = await axios({
             url,
             method,
@@ -27,6 +28,22 @@ export const EventsApi = {
                 'X-Municipality-Slug': municipalSlug
             }
         });
+
+        return data;
+    },
+
+    async getPublished(municipalSlug: string) {
+
+        const { url, method } = bulletinBoard.EventController.getPublished();
+
+        const { data } = await axios({
+            method,
+            url,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        })
+
 
         return data;
     }

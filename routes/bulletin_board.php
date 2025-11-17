@@ -26,13 +26,13 @@ Route::prefix('{municipality}/bulletin-board')
             ->controller(AnnouncementAdminController::class)
             ->group(function () {
 
-            Route::get('/admin', 'index')->name('page');
+            Route::get('/admin', 'index')->name('index');
 
         });
 
         // EVENTS (admin pages)
         Route::middleware('admin')
-            ->prefix('events/admin')
+            ->prefix('events')
             ->as('events.admin.')
             ->controller(EventAdminController::class)
             ->group(function () {
@@ -78,7 +78,7 @@ Route::prefix('/api/events')
 
             });
 
-        Route::get('/', 'getPublished')->name('fetchPublish');
+        Route::get('/published', 'getPublished')->name('fetchPublish');
 
     });
 

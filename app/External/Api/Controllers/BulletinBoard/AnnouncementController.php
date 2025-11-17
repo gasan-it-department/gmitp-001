@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Controllers\BulletinBoard;
 
+use App\Core\BulletinBoard\Announcement\Services\GetPublishedAnnouncementsService;
 use Illuminate\Http\Request;
 use App\Core\BulletinBoard\Announcement\Models\Announcement;
 use App\External\Api\Request\BulletinBoard\AnnouncementRequest;
@@ -10,7 +11,6 @@ use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
 use App\External\Api\Resources\BulletinBoard\AnnouncementResource;
 use App\Core\BulletinBoard\Announcement\Services\GetAnnouncementService;
 use App\Core\BulletinBoard\Announcement\Services\CreateAnnouncementService;
-use App\Core\BulletinBoard\Announcement\Services\GetPublishedAnnouncements;
 use App\Core\BulletinBoard\Announcement\Services\UpdateAnnouncementService;
 use App\Core\BulletinBoard\Announcement\Services\PublishAnnouncementService;
 
@@ -21,7 +21,7 @@ class AnnouncementController
         protected PublishAnnouncementService $publishService,
         protected UpdateAnnouncementService $updateService,
         protected GetAnnouncementService $getAnnouncementService,
-        protected GetPublishedAnnouncements $getPublishedAnnouncements,
+        protected GetPublishedAnnouncementsService $getPublishedAnnouncements,
     ) {
     }
 
