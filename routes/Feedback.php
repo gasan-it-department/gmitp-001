@@ -18,6 +18,8 @@ Route::prefix('api/feedback')
                 Route::put('{id}', 'update')->name('update');
 
                 Route::delete('{id}', 'destroy')->name('destroy');
+
+                Route::get('/', 'fetch')->name('fetch');
             });
 
         Route::post('/', 'store')->name('store');

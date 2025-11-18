@@ -2,17 +2,21 @@
 
 namespace App\External\Api\Controllers\Feedback;
 
+use App\Core\Feedback\Dto\FeedbackQueryDto;
+use App\Core\Feedback\UseCases\GetAllFeedback;
+use App\External\Api\Resources\Feedback\FeedbackResource;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\External\Api\Request\Feedback\FeedbackRequest;
 use App\Core\Feedback\Dto\CreateFeedbackDto;
-use App\Core\Feedback\Services\CreateFeedback;
-use SebastianBergmann\CodeCoverage\ReportAlreadyFinalizedException;
+use App\Core\Feedback\UseCases\CreateFeedback;
+use App\External\Api\Request\Feedback\FeedbackRequest;
 
 class FeedbackController extends Controller
 {
 
     public function __construct(
         protected CreateFeedback $feedbackService,
+        protected GetAllFeedback $getAllFeedback,
     ) {
     }
     public function store(FeedbackRequest $request)
@@ -46,7 +50,7 @@ class FeedbackController extends Controller
                 'success' => true,
                 'message' => 'Feedback submitted successfully',
                 'data' => [
-                    'feedback_id' => $feedback->id
+                    'message' => $feedback->message,
                 ]
             ], 201);
         } catch (\Exception $e) {
@@ -58,9 +62,33 @@ class FeedbackController extends Controller
         }
     }
 
-    public function index()
+    public function fetch(Request $request)
     {
+        try {
 
+            $municipalId = app('municipal_id');
+
+            $dto = new FeedbackQueryDto(
+                $request->input('per_page', 10),
+                $request->input('order_by', 'created_at'),
+                $request->input('direction', 'desc')
+            );
+
+            $feedback = $this->getAllFeedback->execute($dto, $municipalId);
+
+            return response()->json([
+                'success' => true,
+                'data' => FeedbackResource::collection($feedback),
+            ], 200);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 200);
+
+        }
     }
 
     public function show()

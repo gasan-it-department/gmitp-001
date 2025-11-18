@@ -22,12 +22,21 @@ class Feedback extends Model
         'user_agent',
         'municipal_id',
     ];
-    public $incrementing = false; // because you use ULIDs
+    public $incrementing = false;
     protected $keyType = 'string';
 
     public function attachments()
     {
         return $this->hasMany(FeedbackFiles::class);
     }
+
+    protected $casts = [
+
+        'sender_name' => 'encrypted',
+        'employee_name' => 'encrypted',
+        'message' => 'encrypted',
+
+    ];
+
 }
 

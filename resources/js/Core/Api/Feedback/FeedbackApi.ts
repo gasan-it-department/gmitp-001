@@ -29,5 +29,19 @@ export const FeedbackApi = {
         })
 
         return data;
+    },
+
+    async getAllFeedback(municipalSlug: string) {
+        const { url, method } = Feedback.FeedbackController.fetch();
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
     }
 }

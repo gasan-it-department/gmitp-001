@@ -3,9 +3,11 @@
 namespace App\Core\Feedback\Repositories;
 
 use App\Core\Feedback\Models\Feedback;
+use App\Core\Feedback\Dto\FeedbackQueryDto;
 use App\Core\Feedback\Models\FeedbackFiles;
 use App\Core\Feedback\Dto\CreateFeedbackDto;
 use App\Core\Feedback\Dto\CreateFeedbackFilesDto;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class FeedbackRepositories
 {
@@ -42,6 +44,15 @@ class FeedbackRepositories
             ]
         );
         return $feedbackFiles;
+    }
+
+    public function getAll(string $municipalId, FeedbackQueryDto $dto): LengthAwarePaginator
+    {
+
+        return Feedback::where('municipal_id', $municipalId)
+            ->orderBy($dto->orderBy, $dto->direction)
+            ->paginate($dto->perPage);
+
     }
 
 }

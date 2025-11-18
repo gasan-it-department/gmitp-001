@@ -1,5 +1,5 @@
 <?php
-namespace App\Core\Feedback\Services;
+namespace App\Core\Feedback\UseCases;
 
 use App\Core\Feedback\Dto\CreateFeedbackDto;
 use App\Core\Feedback\Models\Feedback;
@@ -37,6 +37,7 @@ class CreateFeedback
                 $this->filesValidator->validate($dto->feedbackFiles);
 
                 $feedbackId = $this->idGenerator->generate();
+
                 $isAnonymous = blank($dto->senderName);
 
                 $feedback = $this->feedbackRepositories->save($dto, $feedbackId, $isAnonymous);
