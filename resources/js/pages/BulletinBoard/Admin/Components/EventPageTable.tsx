@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import type { EventFormData } from "@/Core/Types/BulletinBoard/Events";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import AddminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
+import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 import { EventsApi } from "@/Core/Api/BulletinBoard/EventsApi";
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LoadingDialog from "@/pages/Utility/LoadingDialog";
@@ -163,7 +163,7 @@ export default function EventPageTable() {
 
                     <TableBody>
                         {eventList.length === 0 ? (
-                            <AddminEmptyListItem
+                            <AdminEmptyListItem
                                 title="No Events yet."
                                 message="Events you created will appear here." />
                         ) : (

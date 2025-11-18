@@ -157,147 +157,177 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent showCloseButton={false} className="max-h-[90vh] w-full overflow-y-auto p-6 sm:max-w-3xl sm:p-8">
-                <DialogHeader className="mb-2">
-                    <DialogTitle className="text-2xl font-bold text-foreground">Citizen Feedback Form</DialogTitle>
-                </DialogHeader>
+            <DialogContent
+                showCloseButton={false}
+                className="max-h-[90vh] w-full overflow-y-auto p-0 sm:max-w-3xl rounded-2xl shadow-xl border border-red-200"
+            >
+                {/* HEADER */}
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8 rounded-t-2xl sticky top-0 z-50">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold text-white">
+                            Citizen Feedback Form
+                        </DialogTitle>
+                    </DialogHeader>
+                </div>
 
-                {isSubmitted ? (
-                    <Alert className="bg-success/10 border-success/20 duration-300 animate-in fade-in-0 zoom-in-95">
-                        <CheckCircle2 className="text-success h-5 w-5" />
-                        <AlertDescription className="text-success font-medium">
-                            ✅ Feedback submitted successfully! Thank you for helping us improve.
-                        </AlertDescription>
-                    </Alert>
-                ) : (
-                    <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-8">
-                        {/* Feedback Target */}
-                        <div className="space-y-3">
-                            <Label className="text-base font-semibold text-foreground">
-                                Feedback About <span className="text-destructive">*</span>
-                            </Label>
-                            <Controller
-                                control={control}
-                                name="feedback_target"
-                                render={({ field }) => (
-                                    <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-6 pt-3 pb-3">
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="employee" id="employee" />
-                                            <Label htmlFor="employee" className="cursor-pointer font-normal">
-                                                Employee
-                                            </Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="department" id="department" />
-                                            <Label htmlFor="department" className="cursor-pointer font-normal">
-                                                Office/Department
-                                            </Label>
-                                        </div>
-                                    </RadioGroup>
-                                )}
-                            />
-                        </div>
-
-                        {/* Full Name */}
-                        <div className="space-y-2">
-                            <Label htmlFor="sender_name" className="font-semibold text-foreground">
-                                Full Name (Optional)
-                            </Label>
-                            <Input id="sender_name" placeholder="Enter your full name" {...register('sender_name')} />
-                        </div>
-
-                        {/* Target Name - Department or Employee */}
-                        {feedback_target === 'department' ? (
-                            <div className="space-y-2">
-                                <Label className="font-semibold text-foreground">
-                                    Select Department <span className="text-destructive">*</span>
+                <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-8">
+                    {isSubmitted ? (
+                        <Alert className="bg-green-100 border-green-300 animate-in fade-in slide-in-from-top-3 duration-300 rounded-xl">
+                            <CheckCircle2 className="text-green-600 h-5 w-5" />
+                            <AlertDescription className="text-green-700 font-medium">
+                                Feedback submitted successfully! Thank you for helping us improve.
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                            {/* SECTION CARD */}
+                            <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-4">
+                                <Label className="text-base font-semibold text-gray-800">
+                                    Feedback About <span className="text-red-500">*</span>
                                 </Label>
+
                                 <Controller
                                     control={control}
-                                    name="department_id"
-                                    rules={{ required: 'Department is required' }}
+                                    name="feedback_target"
                                     render={({ field }) => (
-                                        <Select
+                                        <RadioGroup
                                             value={field.value}
-                                            onValueChange={(value) => {
-                                                field.onChange(value);
-                                                setValue('department_id', value);
-                                                clearErrors('department_id');
-                                            }}
-                                            disabled={feedback_target !== 'department'}
+                                            onValueChange={field.onChange}
+                                            className="flex gap-6 pt-2"
                                         >
-                                            <SelectTrigger className={`w-full text-sm ${errors.department_id ? 'border-destructive' : ''}`}>
-                                                <SelectValue placeholder="-- Select Department --" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {dummy_departments.map((dept) => (
-                                                    <SelectItem key={dept.id} value={dept.id.toString()}>
-                                                        {dept.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="employee" id="employee" />
+                                                <Label htmlFor="employee" className="cursor-pointer">
+                                                    Employee
+                                                </Label>
+                                            </div>
+
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="department" id="department" />
+                                                <Label htmlFor="department" className="cursor-pointer">
+                                                    Office/Department
+                                                </Label>
+                                            </div>
+                                        </RadioGroup>
                                     )}
                                 />
-                                {errors.department_id && <p className="text-sm text-destructive">{errors.department_id.message}</p>}
                             </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <Label htmlFor="employee_name" className="font-semibold text-foreground">
-                                    Employee Name <span className="text-destructive">*</span>
+
+                            {/* FULL NAME */}
+                            <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-2">
+                                <Label className="font-semibold text-gray-800">
+                                    Your Full Name (Optional)
                                 </Label>
                                 <Input
-                                    id="employee_name"
-                                    placeholder="Enter employee name"
-                                    {...register('employee_name', {
-                                        required: feedback_target === 'employee' ? 'Employee name is required' : false,
-                                    })}
-                                    className={errors.employee_name ? 'border-destructive' : ''}
+                                    placeholder="Enter your full name"
+                                    {...register('sender_name')}
+                                    className="focus:ring-red-400"
                                 />
-                                {errors.employee_name && <p className="text-sm text-destructive">{errors.employee_name.message}</p>}
                             </div>
-                        )}
 
-                        {/* Rating - Only show for department feedback */}
-                        {feedback_target === 'department' && department_id && (
-                            <Controller
-                                control={control}
-                                name="rating"
-                                render={({ field }) => <StarRating value={field.value} onChange={field.onChange} />}
-                            />
-                        )}
+                            {/* EMPLOYEE or DEPARTMENT FIELD */}
+                            <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-2">
+                                {feedback_target === 'department' ? (
+                                    <>
+                                        <Label className="font-semibold text-gray-800">
+                                            Select Department <span className="text-red-500">*</span>
+                                        </Label>
 
-                        {/* Feedback Message */}
-                        <div className="space-y-2">
-                            <Label htmlFor="feedback_message" className="font-semibold text-foreground">
-                                Feedback Message <span className="text-destructive">*</span>
-                            </Label>
-                            <Textarea
-                                id="feedback_message"
-                                rows={5}
-                                placeholder="Share your compliments, suggestions, or complaints..."
-                                {...register('feedback_message', {
-                                    required: 'Feedback message is required',
-                                })}
-                                className={errors.feedback_message ? 'border-destructive' : ''}
-                            />
-                            {errors.feedback_message && <p className="text-sm text-destructive">{errors.feedback_message.message}</p>}
-                        </div>
+                                        <Controller
+                                            control={control}
+                                            name="department_id"
+                                            rules={{ required: 'Department is required' }}
+                                            render={({ field }) => (
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={(value) => {
+                                                        field.onChange(value);
+                                                        setValue('department_id', value);
+                                                        clearErrors('department_id');
+                                                    }}
+                                                >
+                                                    <SelectTrigger
+                                                        className={`w-full text-sm ${errors.department_id ? 'border-red-500' : ''
+                                                            }`}
+                                                    >
+                                                        <SelectValue placeholder="-- Select Department --" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {dummy_departments.map((dept) => (
+                                                            <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                                {dept.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                        {errors.department_id && (
+                                            <p className="text-sm text-red-500">{errors.department_id.message}</p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Label className="font-semibold text-gray-800">
+                                            Employee Name <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input
+                                            placeholder="Enter employee name"
+                                            {...register('employee_name', {
+                                                required: 'Employee name is required',
+                                            })}
+                                            className={errors.employee_name ? 'border-red-500' : ''}
+                                        />
+                                        {errors.employee_name && (
+                                            <p className="text-sm text-red-500">
+                                                {errors.employee_name.message}
+                                            </p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
 
-                        {/* File Upload */}
-                        <div className="space-y-3">
-                            <Label className="font-semibold text-foreground">Upload Evidence (Optional)</Label>
-                            <p className="text-sm text-muted-foreground">
-                                You may upload up to <span className="font-semibold">5 files</span> — total size must not exceed{' '}
-                                <span className="font-semibold">50MB</span>.
-                            </p>
+                            {/* RATING */}
+                            {feedback_target === 'department' && department_id && (
+                                <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm">
+                                    <Controller
+                                        control={control}
+                                        name="rating"
+                                        render={({ field }) => (
+                                            <StarRating value={field.value} onChange={field.onChange} />
+                                        )}
+                                    />
+                                </div>
+                            )}
 
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            {/* MESSAGE */}
+                            <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-2">
+                                <Label className="font-semibold text-gray-800">
+                                    Feedback Message <span className="text-red-500">*</span>
+                                </Label>
+                                <Textarea
+                                    rows={5}
+                                    placeholder="Share your compliments, suggestions, or complaints..."
+                                    {...register('feedback_message', { required: 'Feedback message is required' })}
+                                    className={errors.feedback_message ? 'border-red-500' : ''}
+                                />
+                                {errors.feedback_message && (
+                                    <p className="text-sm text-red-500">{errors.feedback_message.message}</p>
+                                )}
+                            </div>
+
+                            {/* UPLOAD */}
+                            <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-3">
+                                <Label className="font-semibold text-gray-800">Upload Evidence (Optional)</Label>
+                                <p className="text-sm text-gray-600">
+                                    Upload up to <b>5 files</b>, total size must not exceed <b>50MB</b>.
+                                </p>
+
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => document.getElementById('evidence')?.click()}
-                                    className="sm:w-auto"
+                                    className="border-red-300 text-red-600 hover:bg-red-50"
                                     disabled={files.length >= MAX_FILES}
                                 >
                                     <Upload className="mr-2 h-4 w-4" />
@@ -305,58 +335,66 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                                 </Button>
 
                                 <input id="evidence" type="file" multiple accept="image/*,video/*," onChange={handleFileChange} className="hidden" />
+
+                                {error && (
+                                    <div className="flex items-center gap-2 rounded-md bg-red-100 p-2 text-sm text-red-600 border border-red-300">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        {error}
+                                    </div>
+                                )}
+
+                                {files.length > 0 && (
+                                    <div className="space-y-2">
+                                        {files.map((file, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center justify-between gap-2 rounded-md bg-orange-50 px-3 py-2 text-sm border border-orange-200"
+                                            >
+                                                <div className="flex items-center gap-2 truncate">
+                                                    <FileIcon className="h-4 w-4 text-orange-600" />
+                                                    <span className="truncate">{file.name}</span>
+                                                    <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeFile(index)}
+                                                    className="h-6 w-6 p-0 text-gray-500 hover:text-red-500"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
-                            {error && (
-                                <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    {error}
-                                </div>
-                            )}
+                            {/* ACTIONS */}
+                            <div className="flex flex-row gap-4 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => onOpenChange(false)}
+                                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
+                                    disabled={isSubmitting}
+                                >
+                                    Cancel
+                                </Button>
 
-                            {files.length > 0 && (
-                                <div className="mt-2 space-y-2">
-                                    {files.map((file, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm text-foreground"
-                                        >
-                                            <div className="flex items-center gap-2 truncate">
-                                                <FileIcon className="h-4 w-4 text-muted-foreground" />
-                                                <span className="truncate">{file.name}</span>
-                                                <span className="text-xs text-muted-foreground">({(file.size / (1024 * 1024)).toFixed(1)} MB)</span>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeFile(index)}
-                                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Submit Buttons */}
-                        <div className="flex flex-row gap-4 pt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={isSubmitting}>
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                            </Button>
-                        </div>
-                    </form>
-                )}
+                                <Button
+                                    type="submit"
+                                    className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90 rounded-xl"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );
+
 }
