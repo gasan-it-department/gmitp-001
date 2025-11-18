@@ -4,33 +4,42 @@ import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, Pencil, Trash2 } from "lucide-react";
 import Utility from "@/pages/Utility/Utility";
+import { useEffect, useState } from "react";
+import { FeedbackApi } from "@/Core/Api/Feedback/FeedbackApi";
+import { useMunicipality } from "@/Core/Context/MunicipalityContext";
+
+
+interface FeedbackFormValues {
+    feedback_target: 'employee' | 'department';
+    department_id?: string;
+    employee_name: string;
+    feedback_message: string;
+    sender_name?: string;
+    rating?: number;
+    message: string
+    id: string
+    created_at: string
+}
+
 
 export default function FeedbackPageTable() {
-    const feedbacks = [
-        {
-            message: "Great service!",
-            department_id: null,
-            municipal_id: "A12345",
-            sender_name: "John Doe",
-            employee_name: "Jane Smith",
-            feedback_target: "employee",
-            rating: null,
-            id: "fb1",
-            created_at: "2025-11-18 14:00:34"
-        },
+    const [feedbacks, setFeedbacks] = useState<FeedbackFormValues[]>([]);
+    const { currentMunicipality } = useMunicipality();
 
-        {
-            message: "WORST EXPERIENCE EVER!",
-            department_id: 1,
-            municipal_id: "A12345",
-            sender_name: null,
-            employee_name: null,
-            feedback_target: "department",
-            rating: 1,
-            id: "fb1",
-            created_at: "2025-11-18 15:00:34"
+    useEffect(() => {
+        loadFeedbacks();
+    }, []);
+
+    const loadFeedbacks = async () => {
+        try {
+            const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug);
+            console.log("Feedbacks loaded: ", response.data);
+            setFeedbacks(response.data);
+        } catch (error: any) {
+            console.error("Error loading feedbacks: ", error);
         }
-    ];
+    };
+
 
     return (
         <div>
@@ -99,7 +108,7 @@ export default function FeedbackPageTable() {
                                         </TableCell>
                                         <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
                                         <TableCell className="flex gap-2 justify-center">
-                                            
+
                                             <Button
                                                 size="sm"
                                                 variant="outline"
