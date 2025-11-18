@@ -2,18 +2,25 @@
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\Feedback\FeedbackController;
 
-Route::prefix('feedback')
-    ->name('feedback')
+Route::prefix('api/feedback')
+    ->middleware(['municipalityContext'])
+    ->name('feedback.')
+    ->controller(FeedbackController::class)
     ->group(function () {
 
-        Route::get('/', [FeedbackController::class, 'index'])->name('index');
-        Route::post('/', [FeedbackController::class, 'store'])->name('store');
-        Route::get('{id}', [FeedbackController::class, 'show'])->name('show');
-        Route::put('{id}', [FeedbackController::class, 'update'])->name('update');
-        Route::delete('{id}', [FeedbackController::class, 'destroy'])->name('destroy');
 
-        //testing
-    
+        Route::middleware(['admin'])
+            ->prefix('admin')
+            ->group(function () {
+
+                Route::get('{id}', 'show')->name('show');
+
+                Route::put('{id}', 'update')->name('update');
+
+                Route::delete('{id}', 'destroy')->name('destroy');
+            });
+
+        Route::post('/', 'store')->name('store');
 
     });
 

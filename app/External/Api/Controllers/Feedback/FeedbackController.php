@@ -21,6 +21,8 @@ class FeedbackController extends Controller
             //validate the inputs via request
             $validated = $request->validated();
 
+            $municipalId = app('municipal_id');
+
             //ternary check if file exist in the request 
             $files = $request->hasFile('feedback_files') ? $request->file('feedback_files') : [];
             //form the (data transfer object) to be pass and process in the service
@@ -34,6 +36,7 @@ class FeedbackController extends Controller
                 message: $validated['feedback_message'],
                 feedbackFiles: $files,
                 ipAddress: $request->ip(),
+                municipalId: $municipalId,
                 userAgent: $request->userAgent(),
             );
             // call the service to process the feedback of citizen

@@ -22,7 +22,7 @@ class FileUploader
     {
 
         $uploadedFile = $this->cloudinary->uploadApi()->upload($file->getRealPath(), [
-            'folder' => 'feedback-files',
+            'folder' => 'feedback_files',
             'public_id' => $fileId,
             'resource_type' => 'auto',
             'context' => [

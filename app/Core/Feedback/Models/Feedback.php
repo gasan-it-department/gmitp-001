@@ -20,6 +20,7 @@ class Feedback extends Model
         'is_anonymous',
         'ip_address',
         'user_agent',
+        'municipal_id',
     ];
     public $incrementing = false; // because you use ULIDs
     protected $keyType = 'string';

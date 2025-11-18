@@ -30,6 +30,9 @@ return new class extends Migration {
             $table->text('user_agent')->nullable();
 
             $table->timestamps();
+
+            $table->index('municipal_id');
+
         });
 
         Schema::create('feedback_files', function (Blueprint $table) {

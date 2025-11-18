@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import axios from 'axios';
 import { AlertTriangle, CheckCircle2, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -52,6 +54,8 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
         },
         mode: 'onSubmit',
     });
+
+    const { currentMunicipality } = useMunicipality();
 
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,11 +127,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
             console.log('Payload:', payload);
 
             // Make API call to Laravel backend using axios
-            const response = await axios.post('/feedback', payload, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const response = await FeedbackApi.storeFeedback(currentMunicipality.slug, payload);
 
             console.log('Feedback submitted successfully:', response.data);
 
@@ -304,14 +304,7 @@ export function FeedbackFormDialog({ open, onOpenChange }: FeedbackDialogProps) 
                                     {files.length >= MAX_FILES ? 'Max Files Reached' : 'Choose Files'}
                                 </Button>
 
-                                <input
-                                    id="evidence"
-                                    type="file"
-                                    multiple
-                                    accept="image/*,video/*,"
-                                    onChange={handleFileChange}
-                                    className="hidden"
-                                />
+                                <input id="evidence" type="file" multiple accept="image/*,video/*," onChange={handleFileChange} className="hidden" />
                             </div>
 
                             {error && (

@@ -23,6 +23,7 @@ class FeedbackRepositories
             'is_anonymous' => $isAnonymous,
             'ip_address' => $dto->ipAddress,
             'user_agent' => $dto->userAgent,
+            'municipal_id' => $dto->municipalId,
         ]);
     }
 

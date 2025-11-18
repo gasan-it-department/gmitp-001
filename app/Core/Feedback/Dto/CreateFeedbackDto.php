@@ -15,6 +15,7 @@ class CreateFeedbackDto
         public readonly ?array $feedbackFiles,
         public readonly string $ipAddress,
         public readonly string $userAgent,
+        public readonly string $municipalId,
         public readonly ?string $id = null,
 
     ) {
