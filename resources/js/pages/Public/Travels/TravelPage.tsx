@@ -3,6 +3,7 @@ import { DestinationCard } from "./Components/DestinationsCard";
 import PromotionPage from "./Components/PromotionPage";
 import TravelHeader from "./Components/TravelHeader";
 import { Establishments } from "./Components/Establishments";
+import { MunicipalityProvider } from "@/Core/Context/MunicipalityContext";
 
 type Destination = {
     id: number;
@@ -53,14 +54,14 @@ export default function TravelPage() {
     ];
 
     return (
-        <div>
-            <TravelHeader />
-            <PromotionPage />
-            <LeaftfletMapView
-                destinationList={destinations} />
-            <DestinationCard
-                destinationList={destinations} />
-            <Establishments />
-        </div>
+        <MunicipalityProvider>
+            <div>
+                <TravelHeader />
+                <PromotionPage />
+                <LeaftfletMapView destinationList={destinations} />
+                <DestinationCard destinationList={destinations} />
+                <Establishments />
+            </div>
+        </MunicipalityProvider>
     );
 }

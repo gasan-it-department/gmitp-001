@@ -17,11 +17,10 @@ import {
   AlertTriangle,
   FileIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
 import MapCoordinates from "./MapCoordinates";
-import { Progress } from "@/components/ui/progress";
 
 interface ReportFormValues {
   issueType: string;
@@ -98,9 +97,36 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
     setValue("files", updatedFiles);
   };
 
-  const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      setIsGettingCoordinates(true);
+  const handleGetLocation = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    setIsGettingCoordinates(true);
+
+    try {
+      // Check permission status first
+      const permission = await navigator.permissions.query({
+        name: "geolocation",
+      });
+
+      if (permission.state === "denied") {
+        // Permission already denied — show dialog
+        setClassicDialog((prev) => ({
+          ...prev,
+          title: "Permission Denied",
+          message:
+            "Location permission has been denied. Please enable it in your browser settings.",
+          hideNegativeButton: true,
+          positiveButtonTitle: "Close",
+          isShowing: true,
+        }));
+        setIsGettingCoordinates(false);
+        return;
+      }
+
+      // If state is "granted" or "prompt", we can try to get location
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setValue("latitude", String(position.coords.latitude));
@@ -108,27 +134,54 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
           setIsGettingCoordinates(false);
         },
         (error) => {
+          let message = "Unable to get coordinates.";
+
+          if (error.code === error.PERMISSION_DENIED) {
+            message =
+              "Location permission denied. Please allow permission and try again.";
+          }
+
           setClassicDialog((prev) => ({
             ...prev,
-            title: "Permission Denied",
-            message: "Unable to get coordinates. Please allow Location permission.",
+            title: "Error",
+            message,
             hideNegativeButton: true,
             positiveButtonTitle: "Close",
             isShowing: true,
           }));
-          console.error(error);
+
           setIsGettingCoordinates(false);
         }
       );
-    } else {
-      alert("Geolocation is not supported by this browser.");
-      setIsGettingCoordinates(false);
+    } catch (err) {
+      console.log("Permission API error:", err);
+      // Fallback if the browser doesn't support Permission API
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setValue("latitude", String(position.coords.latitude));
+          setValue("longitude", String(position.coords.longitude));
+          setIsGettingCoordinates(false);
+        },
+        () => {
+          setClassicDialog((prev) => ({
+            ...prev,
+            title: "Permission Denied",
+            message:
+              "Unable to get coordinates. Please allow Location permission.",
+            hideNegativeButton: true,
+            positiveButtonTitle: "Close",
+            isShowing: true,
+          }));
+          setIsGettingCoordinates(false);
+        }
+      );
     }
   };
 
   const onSubmit = (data: ReportFormValues) => {
     console.log("Report Submitted:", data);
     setIsSubmitted(true);
+
     setTimeout(() => {
       setIsSubmitted(false);
       reset();
@@ -137,134 +190,150 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
     }, 3000);
   };
 
+  useEffect(() => {
+    setValue("latitude", "");
+    setValue("longitude", "");
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-6 sm:p-8">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            Report Local Issue
-          </DialogTitle>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Help your community by reporting damaged roads, broken streetlights, or other local concerns.
-          </p>
-        </DialogHeader>
+      <DialogContent
+        showCloseButton={true}
+        className="max-h-[90vh] w-full sm:max-w-3xl overflow-y-auto p-0 rounded-2xl shadow-xl border border-red-200"
+      >
+        {/* HEADER */}
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8 rounded-t-2xl sticky top-0 z-50">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white">
+              Report Local Issue
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        {isSubmitted ? (
-          <Alert className="bg-success/10 border-success/20 duration-300 animate-in fade-in-0 zoom-in-95">
-            <CheckCircle2 className="text-success h-5 w-5" />
-            <AlertDescription className="text-success font-medium">
-              ✅ Issue reported successfully! Thank you for helping your community.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-8">
-            {/* Issue Type */}
-            <div className="space-y-3">
-              <Label className="font-semibold">
-                Type of Issue <span className="text-destructive">*</span>
-              </Label>
-              <Controller
-                control={control}
-                name="issueType"
-                rules={{ required: "Please select an issue type." }}
-                render={({ field }) => (
-                  <RadioGroup
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      clearErrors("issueType");
-                    }}
-                    className="flex flex-wrap gap-4 pt-2"
-                  >
-                    {["Road Damage", "Streetlight", "Garbage", "Water Leak", "Others"].map(
-                      (issue) => (
-                        <div key={issue} className="flex items-center space-x-2">
-                          <RadioGroupItem value={issue.toLowerCase()} id={issue} />
-                          <Label htmlFor={issue} className="cursor-pointer font-normal">
-                            {issue}
-                          </Label>
-                        </div>
-                      )
-                    )}
-                  </RadioGroup>
+        <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-10">
+
+          {isSubmitted ? (
+            <Alert className="bg-green-100 border-green-300 animate-in fade-in slide-in-from-top-3 duration-300 rounded-xl">
+              <CheckCircle2 className="text-green-600 h-5 w-5" />
+              <AlertDescription className="text-green-700 font-medium">
+                Issue reported successfully! Thank you for helping your community.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+
+              {/* ISSUE TYPE */}
+              <div className="space-y-4">
+                <Label className="font-semibold text-gray-800">
+                  Type of Issue <span className="text-red-500">*</span>
+                </Label>
+
+                <Controller
+                  control={control}
+                  name="issueType"
+                  rules={{ required: "Please select an issue type." }}
+                  render={({ field }) => (
+                    <RadioGroup
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        clearErrors("issueType");
+                      }}
+                      className="flex flex-wrap gap-6 pt-1"
+                    >
+                      {["Road Damage", "Streetlight", "Garbage", "Water Leak", "Others"].map(
+                        (issue) => (
+                          <div key={issue} className="flex items-center space-x-2">
+                            <RadioGroupItem value={issue.toLowerCase()} id={issue} />
+                            <Label htmlFor={issue} className="cursor-pointer">
+                              {issue}
+                            </Label>
+                          </div>
+                        )
+                      )}
+                    </RadioGroup>
+                  )}
+                />
+
+                {errors.issueType && (
+                  <p className="text-sm text-red-500">{errors.issueType.message}</p>
                 )}
-              />
-              {errors.issueType && (
-                <p className="text-sm text-destructive">{errors.issueType.message}</p>
-              )}
-            </div>
-
-            {/* Location */}
-            <div className="space-y-3">
-              <Label htmlFor="location" className="font-semibold">
-                Location <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="location"
-                placeholder="e.g., Barangay Poblacion, near the municipal hall"
-                {...register("location", { required: "Location is required." })}
-                className={errors.location ? "border-destructive" : ""}
-              />
-              {errors.location && (
-                <p className="text-sm text-destructive">{errors.location.message}</p>
-              )}
-
-              <div className="grid sm:grid-cols-2 gap-3 pt-3">
-                <Input type="text" placeholder="Latitude" {...register("latitude")} readOnly />
-                <Input type="text" placeholder="Longitude" {...register("longitude")} readOnly />
               </div>
 
-              {watch("latitude") && watch("longitude") && (
-                <div className="relative mt-3 h-64 w-full z-10 overflow-hidden rounded-xl border">
-                  <MapCoordinates
-                    latitude={Number(watch("latitude"))}
-                    longitude={Number(watch("longitude"))}
-                  />
+              {/* LOCATION */}
+              <div className="space-y-4">
+                <Label className="font-semibold text-gray-800">
+                  Location <span className="text-red-500">*</span>
+                </Label>
+
+                <Input
+                  placeholder="e.g., Barangay Poblacion, near municipal hall"
+                  {...register("location", { required: "Location is required." })}
+                  className={errors.location ? "border-red-500" : ""}
+                />
+
+                {errors.location && (
+                  <p className="text-sm text-red-500">{errors.location.message}</p>
+                )}
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Input placeholder="Latitude" {...register("latitude")} readOnly />
+                  <Input placeholder="Longitude" {...register("longitude")} readOnly />
                 </div>
-              )}
 
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-2"
-                onClick={handleGetLocation}
-                disabled={isGettingCoordinates}
-              >
-                {isGettingCoordinates ? "Getting coordinates..." : "Get GPS Coordinates"}
-              </Button>
-            </div>
+                {watch("latitude") && watch("longitude") && (
+                  <div className="relative mt-3 h-64 w-full rounded-xl border overflow-hidden">
+                    <MapCoordinates
+                      latitude={Number(watch("latitude"))}
+                      longitude={Number(watch("longitude"))}
+                    />
+                  </div>
+                )}
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description" className="font-semibold">
-                Description <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                id="description"
-                rows={5}
-                placeholder="Describe the issue in detail..."
-                {...register("description", { required: "Description is required." })}
-                className={errors.description ? "border-destructive" : ""}
-              />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
-              )}
-            </div>
-
-            {/* File Upload (Feedback-style) */}
-            <div className="space-y-3">
-              <Label className="font-semibold text-foreground">Upload Photos or Videos (Optional)</Label>
-              <p className="text-sm text-muted-foreground">
-                You may upload up to <span className="font-semibold">5 files</span> — total size must not exceed{" "}
-                <span className="font-semibold">50MB</span>.
-              </p>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Button
                   type="button"
                   variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={handleGetLocation}
+                  disabled={isGettingCoordinates}
+                >
+                  {isGettingCoordinates ? "Getting coordinates..." : "Get GPS Coordinates"}
+                </Button>
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="space-y-3">
+                <Label className="font-semibold text-gray-800">
+                  Description <span className="text-red-500">*</span>
+                </Label>
+
+                <Textarea
+                  rows={5}
+                  placeholder="Describe the issue in detail..."
+                  {...register("description", { required: "Description is required." })}
+                  className={errors.description ? "border-red-500" : ""}
+                />
+
+                {errors.description && (
+                  <p className="text-sm text-red-500">{errors.description.message}</p>
+                )}
+              </div>
+
+              {/* FILE UPLOAD */}
+              <div className="space-y-4">
+                <Label className="font-semibold text-gray-800">
+                  Upload Photos or Videos (Optional)
+                </Label>
+
+                <p className="text-sm text-gray-600">
+                  Upload up to <b>5 files</b>, total size must not exceed <b>50MB</b>.
+                </p>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50"
                   onClick={() => document.getElementById("evidence")?.click()}
-                  className="sm:w-auto"
                   disabled={files.length >= MAX_FILES}
                 >
                   <Upload className="mr-2 h-4 w-4" />
@@ -275,98 +344,107 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
                   id="evidence"
                   type="file"
                   multiple
-                  accept="image/*,video/*,"
+                  accept="image/*,video/*"
                   onChange={handleFileChange}
                   className="hidden"
                 />
-              </div>
 
-              {error && (
-                <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-2 rounded-md">
-                  <AlertTriangle className="h-4 w-4" />
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="flex items-center gap-2 rounded-md bg-red-100 p-2 text-sm text-red-600 border border-red-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    {error}
+                  </div>
+                )}
 
-              {files.length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between gap-2 rounded-md bg-muted px-3 py-2 text-sm text-foreground"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <FileIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate">{file.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          ({(file.size / (1024 * 1024)).toFixed(1)} MB)
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index)}
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                {files.length > 0 && (
+                  <div className="space-y-2">
+                    {files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between gap-2 bg-orange-50 px-3 py-2 text-sm border border-orange-200 rounded-md"
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileIcon className="h-4 w-4 text-orange-600" />
 
-            {/* Personal Info */}
-            <div className="space-y-5 border-t pt-6">
-              <h3 className="text-lg font-semibold">Your Information</h3>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="fullName" className="font-semibold text-foreground">
-                    Full Name (Optional)
-                  </Label>
-                  <Input id="fullName" placeholder="Full name (optional)" {...register("fullName")} />
-                </div>
+                          {/* File name with ellipsis */}
+                          <span className="truncate max-w-[140px] sm:max-w-[200px]">
+                            {file.name}
+                          </span>
 
-                <div>
-                  <Label htmlFor="tel" className="font-semibold text-foreground">
-                    Contact Number (Optional)
-                  </Label>
-                  <Input
-                    id="tel"
-                    type="tel"
-                    placeholder="+63 912 345 6789"
-                    {...register("phone")}
-                  />
+                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                            ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                          </span>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          className="h-6 w-6 p-0 text-gray-500 hover:text-red-500 flex-shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              </div>
+
+              {/* PERSONAL INFO */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800">Your Information</h3>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <Label className="font-semibold text-gray-800">Full Name (Optional)</Label>
+                    <Input placeholder="Full name (optional)" {...register("fullName")} />
+                  </div>
+
+                  <div>
+                    <Label className="font-semibold text-gray-800">Contact Number (Optional)</Label>
+                    <Input type="tel" placeholder="+63 912 345 6789" {...register("phone")} />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Buttons */}
-            <div className="flex flex-row gap-4 pt-4">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
-              >
-                Submit Report
-              </Button>
-            </div>
-          </form>
-        )}
+              {/* BUTTONS */}
+              <div className="flex flex-row gap-4 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancel
+                </Button>
 
-        <ClassicDialog
-          title={classicDialog.title}
-          message={classicDialog.message}
-          positiveButtonText={classicDialog.positiveButtonTitle}
-          negativeButtonText={classicDialog.negativeButtonTitle}
-          hideNegativeButton={classicDialog.hideNegativeButton}
-          onPositiveClick={() => setClassicDialog((prev) => ({ ...prev, isShowing: false }))}
-          onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isShowing: false }))}
-          open={classicDialog.isShowing}
-        />
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90 rounded-xl"
+                >
+                  Submit Report
+                </Button>
+              </div>
+            </form>
+          )}
+
+          <ClassicDialog
+            title={classicDialog.title}
+            message={classicDialog.message}
+            positiveButtonText={classicDialog.positiveButtonTitle}
+            negativeButtonText={classicDialog.negativeButtonTitle}
+            hideNegativeButton={classicDialog.hideNegativeButton}
+            onPositiveClick={() =>
+              setClassicDialog((prev) => ({ ...prev, isShowing: false }))
+            }
+            onNegativeClick={() =>
+              setClassicDialog((prev) => ({ ...prev, isShowing: false }))
+            }
+            open={classicDialog.isShowing}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

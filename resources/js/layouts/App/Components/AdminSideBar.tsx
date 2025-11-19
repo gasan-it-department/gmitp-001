@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
@@ -73,7 +73,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }));
     };
 
-    console.log(currentMunicipality.slug);
     const AdminSidebarItems = [
         {
             title: 'ACTION CENTER',
@@ -104,36 +103,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             items: [{ title: 'Routing', url: '#', icon: Map }],
         },
     ];
-
-    const SuperAdminSidebarItems = [
-        {
-            title: 'USERS',
-            icon: Users,
-            items: [{ title: 'Administrators', url: '/super-admin/dashboard', icon: User }],
-        },
-        {
-            title: 'LOCAL GOVERNMENTS',
-            icon: Building,
-            items: [{ title: 'Municipalities', url: '/municipality/super-admin', icon: Map }],
-        },
-        {
-            title: 'LOGS',
-            icon: FileText,
-            items: [{ title: 'Audit Logs', url: '/admin/logs', icon: FileText }],
-        },
-        {
-            title: 'SETTINGS',
-            icon: Settings,
-            items: [{ title: 'System Settings', url: '/admin/settings', icon: Settings }],
-        },
-    ];
-
-    const filteredNav = userRole?.isAdmin ? AdminSidebarItems : SuperAdminSidebarItems;
-
-    const handleLogout = () => {
-        localStorage.removeItem('activeSidebarUrl');
-        router.visit(route(home.url({ municipality: currentMunicipality.slug })));
-    };
 
     return (
         <Sidebar {...props} className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm">
@@ -167,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent className="py-4">
                 <SidebarGroup>
                     <SidebarMenu className="space-y-5">
-                        {filteredNav.map((group) => (
+                        {AdminSidebarItems.map((group) => (
                             <SidebarMenuItem key={group.title}>
                                 {/* SECTION TITLE */}
                                 <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
@@ -185,11 +154,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
-                                                        isActive
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
                                                             ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
                                                             : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -197,11 +165,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${
-                                                                isActive
+                                                            className={`transition-all duration-200 ease-out ${isActive
                                                                     ? 'scale-110 stroke-orange-600 text-orange-600'
                                                                     : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                            }`}
+                                                                }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>

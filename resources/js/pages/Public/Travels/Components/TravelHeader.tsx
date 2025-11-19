@@ -1,10 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { home } from "@/routes";
 
 export default function AdaptiveHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { currentMunicipality } = useMunicipality();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -13,9 +16,9 @@ export default function AdaptiveHeader() {
   }, []);
 
   const navLinks = [
-    { label: "Home", href: "/home", color: "yellow" },
-    { label: "Emergency", href: "#emergency", color: "red" },
-    { label: "Popular Tour", href: "#popular_tour", color: "green" },
+    { label: "Home", href: home.url({ municipality: currentMunicipality.slug }), color: "yellow" },
+    // { label: "Emergency", href: "#emergency", color: "red" },
+    // { label: "Popular Tour", href: "#popular_tour", color: "green" },
   ];
 
   return (
@@ -49,8 +52,8 @@ export default function AdaptiveHeader() {
               key={link.label}
               href={link.href}
               className={`${scrolled
-                  ? "text-gray-900"
-                  : "text-white"
+                ? "text-gray-900"
+                : "text-white"
                 } hover:text-${link.color}-500 text-base sm:text-lg font-medium transition-colors`}
             >
               {link.label}

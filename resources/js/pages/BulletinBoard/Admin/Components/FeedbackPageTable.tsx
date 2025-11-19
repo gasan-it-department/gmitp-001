@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { FeedbackApi } from "@/Core/Api/Feedback/FeedbackApi";
 import { useMunicipality } from "@/Core/Context/MunicipalityContext";
 
-
 interface FeedbackFormValues {
     feedback_target: 'employee' | 'department';
     department_id?: string;
@@ -20,7 +19,6 @@ interface FeedbackFormValues {
     id: string
     created_at: string
 }
-
 
 export default function FeedbackPageTable() {
     const [feedbacks, setFeedbacks] = useState<FeedbackFormValues[]>([]);
@@ -39,7 +37,6 @@ export default function FeedbackPageTable() {
             console.error("Error loading feedbacks: ", error);
         }
     };
-
 
     return (
         <div>
@@ -75,7 +72,6 @@ export default function FeedbackPageTable() {
                                 message="Events you created will appear here." />
                         ) : (
                             feedbacks.map((item) => {
-
                                 return (
                                     <TableRow
                                         key={item.id}

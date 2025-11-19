@@ -27,7 +27,7 @@ export default function PromotionPage() {
                 ref={ref}
                 className="relative w-full h-[60vh] bg-cover bg-center overflow-hidden flex items-start justify-center"
                 style={{
-                    backgroundImage: "url('assets/travel_banner_1.png')",
+                    backgroundImage: "url('/assets/travel_banner_1.png')",
                     opacity: bgOpacity,
                 }}
             >

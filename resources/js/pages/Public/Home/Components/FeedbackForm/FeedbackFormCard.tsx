@@ -3,9 +3,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { FeedbackFormDialog } from './FeedbackFormDialog';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { stat } from 'fs';
+import { toast } from 'sonner';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 
 export default function FeedbackUi() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [classicDialogOpen, setClassicDialog] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
+        hideNegativeButton: false,
+        action: ""
+    });
 
     return (
         <Card
@@ -62,7 +75,54 @@ export default function FeedbackUi() {
                 </div>
 
                 {/* Feedback Form Modal */}
-                <FeedbackFormDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+                <FeedbackFormDialog
+                    open={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    onStatusChange={(status, message) => {
+                        if (status === 'success') {
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                isOpen: true,
+                                title: "Feedback Submitted",
+                                message: message || "Thank you for your feedback! We appreciate you taking the time to help us improve.",
+                                positiveButtonText: "Close",
+                                negativeButtonText: "",
+                                hideNegativeButton: true,
+                            }))
+                        } else {
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                isOpen: true,
+                                title: "Something went wrong!",
+                                message: message || "Thank you for your feedback! We appreciate you taking the time to help us improve.",
+                                positiveButtonText: "Close",
+                                negativeButtonText: "",
+                                hideNegativeButton: true,
+                            }))
+                        }
+                    }} />
+                <ClassicDialog
+                    title={classicDialogOpen.title}
+                    message={classicDialogOpen.message}
+                    open={classicDialogOpen.isOpen}
+                    positiveButtonText={classicDialogOpen.positiveButtonText}
+                    negativeButtonText={classicDialogOpen.negativeButtonText}
+                    hideNegativeButton={classicDialogOpen.hideNegativeButton}
+                    onPositiveClick={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: false,
+                            action: ""
+                        }))
+                    }}
+                    onNegativeClick={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: false,
+                            action: ""
+                        }))
+                    }}
+                />
             </CardContent>
         </Card>
 
