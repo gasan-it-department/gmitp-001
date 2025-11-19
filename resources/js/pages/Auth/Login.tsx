@@ -1,9 +1,9 @@
-import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import axios from '@/lib/axios';
+import { AuthApi } from '@/Core/Api/Auth/AuthApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -18,8 +18,10 @@ interface LoginFormProps {
     onLoggedIn: (redirectionLink: string) => void;
 }
 
-export default function LoginForm( {onLoggedIn}: LoginFormProps) {
+export default function LoginForm({ onLoggedIn }: LoginFormProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const { currentMunicipality } = useMunicipality();
+
     const {
         register,
         handleSubmit,
@@ -30,11 +32,8 @@ export default function LoginForm( {onLoggedIn}: LoginFormProps) {
 
     const onSubmit = async (data: FormData) => {
         try {
-            const response = await axios.post('/login', data, {
-                withCredentials: true,
-            });
-
-            onLoggedIn(response.data.redirect_to);
+            const response = await AuthApi.login(currentMunicipality.slug, data);
+            // onLoggedIn(response.data.redirect_to);
         } catch (error: any) {
             if (error.response?.data) {
                 const { errors: validationErrors, message } = error.response.data;
@@ -95,7 +94,11 @@ export default function LoginForm( {onLoggedIn}: LoginFormProps) {
                             </div>
 
                             <div className="relative">
-                                <Input id="password" type={showPassword ? 'text' : 'password'} {...register('password', { required: 'Password is required' })} />
+                                <Input
+                                    id="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    {...register('password', { required: 'Password is required' })}
+                                />
                                 <button
                                     type="button"
                                     onClick={togglePassword}

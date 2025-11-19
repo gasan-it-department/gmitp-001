@@ -42,7 +42,9 @@ class LaravelSessionService implements \App\Core\Auth\Interfaces\CookieSessionIn
     }
     public function regenerateSession(): void
     {
+
         Session::regenerate();
+
     }
     public function destroySession(): void
     {

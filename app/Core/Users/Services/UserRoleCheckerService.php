@@ -2,32 +2,37 @@
 
 namespace App\Core\Users\Services;
 
+use App\Core\Users\Contracts\HasRole;
 use App\Core\Users\Enums\EnumRoles as Role;
-use App\Core\Users\Models\User;
 
 class UserRoleCheckerService
 {
-    public function hasRole(User $user, Role $role): bool
+    public function hasRole(HasRole $user, Role $role): bool
     {
-        if (!$user) {
-            return false;
-        }
-        return $user->role === $role;
-    }
-    public function isClient(User $user): bool
-    {
-        return Role::from($user->role) === Role::CLIENT;
-    }
 
-    public function isAdmin(User $user): bool
-    {
-        return Role::from($user->role) === Role::ADMIN;
+        return Role::from($user->getRole()) === $role;
 
     }
 
-    public function isSuperAdmin(User $user): bool
+    public function isClient(HasRole $user): bool
     {
-        return Role::from($user->role) === Role::SUPER_ADMIN;
+
+        return $this->hasRole($user, Role::CLIENT);
+
+    }
+
+    public function isAdmin(HasRole $user): bool
+    {
+
+        return $this->hasRole($user, Role::ADMIN);
+
+    }
+
+    public function isSuperAdmin(HasRole $user): bool
+    {
+
+        return $this->hasRole($user, Role::SUPER_ADMIN);
+
     }
 
 }

@@ -7,6 +7,7 @@ use App\Core\Auth\Dto\LoginResponseDto;
 use App\Core\Auth\Exceptions\AccountLockedExceptions;
 use App\Core\Auth\Exceptions\InvalidCredentialsExceptions;
 use App\Core\Auth\Exceptions\InvalidPasswordException;
+use App\Core\Auth\Services\LoginRedirectionService;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Auth\Interfaces\PasswordHasherInterface;
 use App\Core\Auth\Interfaces\TokenServiceInterface;
@@ -25,13 +26,15 @@ class LoginUser
         private PasswordHasherInterface $passwordHasher,
         private TokenServiceInterface $tokenService,
         private RateLimiterInterface $rateLimiter,
-        private CookieSessionInterface $cookieSessionService
+        private CookieSessionInterface $cookieSessionService,
+        private LoginRedirectionService $loginRedirectionService,
     ) {
     }
-    public function execute(LoginRequestDto $dto): LoginResponseDto
+    public function execute(LoginRequestDto $dto, $slug): LoginResponseDto
     {
         // Create a unique key for the rate limiter based on IP and identifier
         $identifierKey = hash('sha256', $dto->identifier);
+
         $rateLimitKey = "login:ip:" . request()->ip();
 
         if ($this->rateLimiter->tooManyAttempts($rateLimitKey, self::RATE_LIMIT_ATTEMPTS)) {
@@ -60,12 +63,16 @@ class LoginUser
         //give token to logged the user
         $sessionData = $this->cookieSessionService->createAuthenticatedSession($users->id, $dto->rememberMe);
 
+        $redirect = $this->loginRedirectionService->redirectUser($users, $slug);
+
         return new LoginResponseDto(
             'login successful',
             null,
             'Session',
             $sessionData['expires_in'],
-            $users->toArray()
+            $redirect,
+            $users,
         );
+
     }
 }

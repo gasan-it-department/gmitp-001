@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EventsApi } from '@/Core/Api/BulletinBoard/EventsApi';
+import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { EventFormData } from '@/Core/Types/BulletinBoard/Events';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
@@ -103,6 +104,9 @@ export default function EventPageTable() {
         try {
             setIsLoading(true);
             const response = await EventsApi.fetch(currentMunicipality.slug);
+
+            const feedback = await FeedbackApi.getAllFeedback(currentMunicipality.slug);
+
             setIsLoading(false);
             if (response.success) {
                 const sorted = [...response.data].sort((a, b) => {

@@ -2,14 +2,15 @@
 
 namespace App\External\Api\Controllers\Feedback;
 
-use App\Core\Feedback\Dto\FeedbackQueryDto;
-use App\Core\Feedback\UseCases\GetAllFeedback;
-use App\External\Api\Resources\Feedback\FeedbackResource;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Core\Feedback\Models\Feedback;
+use App\Core\Feedback\Dto\FeedbackQueryDto;
 use App\Core\Feedback\Dto\CreateFeedbackDto;
 use App\Core\Feedback\UseCases\CreateFeedback;
+use App\Core\Feedback\UseCases\GetAllFeedback;
 use App\External\Api\Request\Feedback\FeedbackRequest;
+use App\External\Api\Resources\Feedback\FeedbackResource;
 
 class FeedbackController extends Controller
 {
@@ -75,6 +76,8 @@ class FeedbackController extends Controller
             );
 
             $feedback = $this->getAllFeedback->execute($dto, $municipalId);
+
+            dd($feedback);
 
             return response()->json([
                 'success' => true,

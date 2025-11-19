@@ -29,7 +29,7 @@ export const AnnouncementApi = {
 
             }
         });
-        console.log('hey');
+
         return data;
     },
 

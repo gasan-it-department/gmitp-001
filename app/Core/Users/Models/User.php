@@ -3,12 +3,13 @@
 namespace App\Core\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Core\Users\Contracts\HasRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Core\ActionCenter\Infrastructures\Models\AssistanceRequest;
-class User extends Authenticatable
+class User extends Authenticatable implements HasRole
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -23,6 +24,12 @@ class User extends Authenticatable
     {
         return \Database\Factories\UserFactory::new();
     }
+
+    public function getRole(): string
+    {
+        return $this->role;
+    }
+
     /**
      * The attributes that are mass assignable.
      *

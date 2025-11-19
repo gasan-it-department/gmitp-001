@@ -26,6 +26,9 @@ class AuthenticateUserController extends Controller
     public function login(LoginRequest $request)
     {
         try {
+
+            $municipality = app('current_municipality');
+
             //convert the users input to dto to service
             $loginDto = new LoginRequestDto(
                 $request->input('user_identifier'),
@@ -33,16 +36,14 @@ class AuthenticateUserController extends Controller
                 $request->boolean('remember_me'),
             );
             //auth user
-            $result = $this->loginUser->execute($loginDto);
-            //middleware handle the redirection
+
+            $result = $this->loginUser->execute($loginDto, $municipality->slug);
 
             return response()->json(
-
                 [
-                    $result->toArray(),
-                    'redirect' => match (true) {
-                    // $this->userRoleCheckerService->isClient($result) => home()->url()
-                    },
+                    'success' => true,
+                    'result' => $result,
+                    'redirect' => $result->redirect,
                 ],
                 200
             );

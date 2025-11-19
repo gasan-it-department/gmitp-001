@@ -21,13 +21,13 @@ class UserRepository
         ]);
     }
 
-    public function findByUserName(string $userName): User
+    public function findByUserName(string $userName): ?User
     {
         return User::where('user_name', $userName)->first();
     }
 
-    public function findByPhone($phone): User
+    public function findByPhone($phone): ?User
     {
-        return User::where('phone', $phone);
+        return User::where('phone', $phone)->first();
     }
 }

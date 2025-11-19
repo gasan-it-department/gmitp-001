@@ -5,19 +5,20 @@ use App\External\Api\Controllers\Auth\CreateUserController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\Auth\AuthenticateUserController;
 
-Route::middleware('guest')->group(function () {
-    //pages
-    Route::get('/register', [AuthController::class, 'showRegisterUserPage'])->name('register.show');
-    Route::get('/login', [AuthController::class, 'showLoginPage'])->name('login.show');
+Route::prefix('api/auth')
+    ->middleware(['guest', 'municipalityContext'])
+    ->group(function () {
+        //api
+        Route::post('/store-account', [CreateUserController::class, 'createUser'])->name('user.store');
+        Route::post('/login', [AuthenticateUserController::class, 'login'])
+            ->name('login')
+            ->middleware('municipalityContext');
 
-    //api
-    Route::post('/store-account', [CreateUserController::class, 'createUser'])->name('user.store');
-    Route::post('/login', [AuthenticateUserController::class, 'login'])
-        ->name('login')
-        ->middleware('roleCheckRedirect');
-});
+    });
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/logout', [AuthenticateUserController::class, 'logout'])->name('logout');
+
 });
 

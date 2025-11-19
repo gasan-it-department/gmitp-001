@@ -42,8 +42,10 @@ class SetMunicipalityContext
     public function setContext(object $municipality)
     {
         session(['municipal_id' => $municipality->id]);
+
         app()->instance('municipal_id', $municipality->id);
-        app()->instance('currentMunicipality', $municipality);
+
+        app()->instance('current_municipality', $municipality);
 
         \Inertia\Inertia::share([
             'currentMunicipality' => fn() => [

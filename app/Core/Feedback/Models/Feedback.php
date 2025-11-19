@@ -31,11 +31,9 @@ class Feedback extends Model
     }
 
     protected $casts = [
-
         'sender_name' => 'encrypted',
         'employee_name' => 'encrypted',
         'message' => 'encrypted',
-
     ];
 
 }

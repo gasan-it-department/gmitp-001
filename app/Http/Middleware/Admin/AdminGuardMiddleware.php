@@ -25,7 +25,7 @@ class AdminGuardMiddleware
         $user = request()->user();
         if (!$user) {
             // abort(401, 'Unauthorized');
-            return redirect()->route('landingPage.show');
+            return redirect()->route('landing');
         }
 
         if (!$this->userRoleCkerService->isAdmin($user)) {
