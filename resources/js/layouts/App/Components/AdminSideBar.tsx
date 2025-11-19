@@ -16,23 +16,10 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
 import bulletinBoard from '@/routes/bulletin-board';
+import feedback from '@/routes/feedback';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import {
-    Building,
-    CalendarDays,
-    ClipboardList,
-    FileText,
-    LayoutDashboard,
-    LogOut,
-    Map,
-    Megaphone,
-    MessageCircleIcon,
-    Settings,
-    User,
-    Users,
-    UsersIcon,
-} from 'lucide-react';
+import { CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Megaphone, MessageCircleIcon, UsersIcon } from 'lucide-react';
 import * as React from 'react';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -92,7 +79,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     icon: Megaphone,
                 },
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
-                { title: 'Feedbacks', url: '', icon: MessageCircleIcon },
+                { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
                 { title: 'Comunity Reports', url: '', icon: UsersIcon },
             ],
         },
@@ -154,10 +141,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
+                                                        isActive
                                                             ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
                                                             : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                        }`}
+                                                    }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -165,10 +153,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${isActive
+                                                            className={`transition-all duration-200 ease-out ${
+                                                                isActive
                                                                     ? 'scale-110 stroke-orange-600 text-orange-600'
                                                                     : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                                }`}
+                                                            }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>

@@ -11,10 +11,4 @@ class AdminDasboardController extends Controller
     {
         return Inertia::render('ActionCenter/Admin/Dashboard/AdminDashboard');
     }
-
-    // TESTING PURPOSES ONLY
-    public function showFeedbackPage()
-    {
-        return Inertia::render('BulletinBoard/Admin/FeedbackPage');
-    }
 }

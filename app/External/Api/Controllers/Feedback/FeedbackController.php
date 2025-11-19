@@ -28,6 +28,7 @@ class FeedbackController extends Controller
 
             $municipalId = app('municipal_id');
 
+            dd($municipalId);
             //ternary check if file exist in the request 
             $files = $request->hasFile('feedback_files') ? $request->file('feedback_files') : [];
             //form the (data transfer object) to be pass and process in the service
@@ -50,16 +51,17 @@ class FeedbackController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Feedback submitted successfully',
-                'data' => [
-                    'message' => $feedback->message,
-                ]
+                'data' => $feedback,
             ], 201);
+
         } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to submit feedback',
                 'error' => $e->getMessage()
             ], 500);
+
         }
     }
 
@@ -77,11 +79,11 @@ class FeedbackController extends Controller
 
             $feedback = $this->getAllFeedback->execute($dto, $municipalId);
 
-            dd($feedback);
-
             return response()->json([
                 'success' => true,
-                'data' => FeedbackResource::collection($feedback),
+                'data' => [
+                    'testing'
+                ],
             ], 200);
 
         } catch (\Exception $e) {

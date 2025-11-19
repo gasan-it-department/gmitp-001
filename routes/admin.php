@@ -10,7 +10,4 @@ Route::prefix('{municipality}/admin')
         Route::get('/dashboard', [AdminDasboardController::class, 'showAdminDashboard'])
             ->name('dashboard');
 
-        // TEST ROUTE
-        Route::get('/feedback-test', [AdminDasboardController::class, 'showFeedbackPage'])
-            ->name('feedbackTest');
     });

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
@@ -39,7 +39,9 @@ export default function GeneralAnnouncement() {
     async function loadAnnouncement() {
         try {
             setIsLoading(true);
-            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
+            // const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
+            const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug);
+
             setIsLoading(false);
             if (response.success) {
                 const sorted = [...response.data].sort((a, b) => {

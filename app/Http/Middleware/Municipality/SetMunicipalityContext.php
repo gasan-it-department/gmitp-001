@@ -25,13 +25,17 @@ class SetMunicipalityContext
         $slug = $request->route('municipality') ?? $request->header('X-Municipality-Slug');
 
         if (!is_string($slug) || empty($slug)) {
-            abort(404, 'Invalid url'); // now actually fires
+
+            abort(404, 'Invalid url');
+
         }
 
         $municipality = $this->municipalityContextService->execute($slug);
 
         if (!$municipality) {
-            abort(404, 'Invalid url'); // now actually fires
+
+            abort(404, 'Invalid url');
+
         }
 
         $this->setContext($municipality);

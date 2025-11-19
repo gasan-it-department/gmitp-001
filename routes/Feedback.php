@@ -1,17 +1,40 @@
 <?php
+use App\External\Web\Controllers\Feedback\Admin\FeedbackAdminController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\Feedback\FeedbackController;
 
+
+//eg. https://gasan-4905/feedback/
+Route::prefix('{municipality}')
+    ->middleware(['municipalityContext', 'admin'])
+    ->group(function () {
+
+        // ADMIN DASHBOARD (web page)
+        Route::middleware('admin')
+            ->prefix('feedback')
+            ->name('feedback.admin.')
+            ->controller(FeedbackAdminController::class)
+            ->group(function () {
+
+            Route::get('/admin', 'show')->name('index');
+
+        });
+
+    });
+
+
+
 Route::prefix('api/feedback')
     ->middleware(['municipalityContext'])
-    ->name('feedback.')
+    ->as('feedback.')
     ->controller(FeedbackController::class)
     ->group(function () {
 
 
-        Route::middleware(['admin'])
-            ->prefix('admin')
+        Route::middleware(['admin', 'auth:sanctum'])
             ->group(function () {
+
+                Route::get('/', 'fetch')->name('fetch');
 
                 Route::get('{id}', 'show')->name('show');
 
@@ -19,10 +42,8 @@ Route::prefix('api/feedback')
 
                 Route::delete('{id}', 'destroy')->name('destroy');
 
-                Route::get('/', 'fetch')->name('fetch');
             });
 
         Route::post('/', 'store')->name('store');
 
     });
-

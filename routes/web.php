@@ -4,9 +4,9 @@ use Inertia\Inertia;
 // use Illuminate\Support\Facades\Route;
 // use Inertia\Inertia;
 // use Illuminate\Http\Request;
-Route::get('feedback-form-testing', function () {
-    return Inertia::render('Feedback/FeedbackFormTrial');
-})->name('form.sample');
+// Route::get('feedback-form-testing', function () {
+//     return Inertia::render('Feedback/FeedbackFormTrial');
+// })->name('form.sample');
 
 
 require __DIR__ . '/auth.php';
