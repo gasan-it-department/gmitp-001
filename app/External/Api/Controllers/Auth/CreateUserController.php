@@ -25,6 +25,8 @@ class CreateUserController extends Controller
     public function createUser(CreateUserRequest $request)
     {
         try {
+            $municipality = app('current_municipality');
+
             $validated = $request->validated();
 
             $dto = new RegisterUserDto(
@@ -36,9 +38,12 @@ class CreateUserController extends Controller
                 password: $validated['password'],
             );
 
-            $this->registerUserCase->execute($dto);
+            $result = $this->registerUserCase->execute($dto, $municipality->slug);
 
-            return response()->json(['message' => 'User created successfully']);
+            return response()->json([
+                'message' => 'User created successfully',
+                'redirect' => $result['redirect'],
+            ]);
 
         } catch (InvalidUserInputException $event) {
 

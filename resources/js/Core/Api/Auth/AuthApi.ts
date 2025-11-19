@@ -17,7 +17,11 @@ export const AuthApi = {
 
         });
 
-        if (response.data.redirect) {
+        if (response.data.redirect === "BACK") {
+
+            window.history.back();
+
+        } else {
 
             window.location.href = response.data.redirect;
 
@@ -37,6 +41,11 @@ export const AuthApi = {
                 'X-municipality-Slug': municipalSlug,
             }
         });
+
+        if (data.redirect === "BACK") {
+
+            return
+        }
 
         return data;
 

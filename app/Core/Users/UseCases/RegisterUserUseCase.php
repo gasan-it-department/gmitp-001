@@ -5,6 +5,7 @@ declare(Strict_types=1);
 namespace App\Core\Users\UseCases;
 
 use App\Core\Auth\Interfaces\CookieSessionInterface;
+use App\Core\Auth\Services\LoginRedirectionService;
 use Illuminate\Support\Facades\DB;
 use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Dto\RegisterUserDto;
@@ -19,12 +20,13 @@ class RegisterUserUseCase
         private IdGeneratorInterface $idGenerator,
         private PasswordHasherService $hash,
         private CookieSessionInterface $cookieSessionService,
+        private LoginRedirectionService $loginRedirectionService,
     ) {
     }
 
-    public function execute(RegisterUserDto $dto)
+    public function execute(RegisterUserDto $dto, string $slug)
     {
-        DB::transaction(function () use ($dto) {
+        return DB::transaction(function () use ($dto, $slug) {
 
             $userId = $this->idGenerator->generate();
 
@@ -43,8 +45,14 @@ class RegisterUserUseCase
                 'role' => $role,
             ]);
 
-            $this->cookieSessionService->createAuthenticatedSession($userId);
+            $session = $this->cookieSessionService->createAuthenticatedSession($userId);
 
+            $redirect = $this->loginRedirectionService->redirectUser($user, $slug);
+
+            return [
+                'result' => $session,
+                'redirect' => null,
+            ];
         });
 
     }

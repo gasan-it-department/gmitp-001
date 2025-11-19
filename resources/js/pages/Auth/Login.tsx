@@ -33,6 +33,7 @@ export default function LoginForm({ onLoggedIn }: LoginFormProps) {
     const onSubmit = async (data: FormData) => {
         try {
             const response = await AuthApi.login(currentMunicipality.slug, data);
+
             // onLoggedIn(response.data.redirect_to);
         } catch (error: any) {
             if (error.response?.data) {
