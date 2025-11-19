@@ -48,9 +48,11 @@ class FeedbackRepositories
 
     public function getAll(string $municipalId, FeedbackQueryDto $dto): LengthAwarePaginator
     {
-        return $sample = Feedback::where('municipal_id', $municipalId)
+        $feedback = Feedback::where('municipal_id', $municipalId)
             ->orderBy($dto->orderBy, $dto->direction)
             ->paginate($dto->perPage);
+
+        return $feedback;
     }
 
 }

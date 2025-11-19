@@ -32,9 +32,7 @@ export default function FeedbackPageTable() {
         try {
             const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug);
 
-            console.log('Feedbacks loaded: ', response.data);
-
-            setFeedbacks(response.data);
+            setFeedbacks(response.data.data);
         } catch (error: any) {
             console.error('Error loading feedbacks: ', error);
         }

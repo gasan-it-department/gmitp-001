@@ -28,7 +28,6 @@ class FeedbackController extends Controller
 
             $municipalId = app('municipal_id');
 
-            dd($municipalId);
             //ternary check if file exist in the request 
             $files = $request->hasFile('feedback_files') ? $request->file('feedback_files') : [];
             //form the (data transfer object) to be pass and process in the service
@@ -81,9 +80,7 @@ class FeedbackController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'testing'
-                ],
+                'data' => $feedback,
             ], 200);
 
         } catch (\Exception $e) {
