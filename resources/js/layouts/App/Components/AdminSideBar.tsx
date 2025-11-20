@@ -66,7 +66,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             icon: ClipboardList,
             items: [
                 { title: 'Dashboard', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: LayoutDashboard },
-                { title: 'Requests', url: '/action-center/admin/request-list', icon: FileText },
+                { title: 'Requests', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: FileText },
             ],
         },
         {
