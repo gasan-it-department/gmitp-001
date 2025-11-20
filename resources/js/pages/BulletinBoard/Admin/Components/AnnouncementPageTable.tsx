@@ -58,7 +58,7 @@ export default function AnnouncementPageTable() {
             setIsLoadingDialogVisible(true);
 
             const response = await AnnouncementApi.deleteAnnouncement(id, currentMunicipality.slug);
-            if (response.data.success) {
+            if (response.success) {
                 setAnnouncementList((prev) => {
                     const updated = prev.filter((item) => item.id !== id);
                     if ((currentPage - 1) * itemsPerPage >= updated.length && currentPage > 1) {
@@ -69,7 +69,7 @@ export default function AnnouncementPageTable() {
                 });
                 setIsLoadingDialogVisible(false);
             } else {
-                console.error(response.data.message || 'Failed to delete announcement');
+                console.error(response.message || 'Failed to delete announcement');
             }
             setIsLoadingDialogVisible(false);
         } catch (error: any) {
@@ -95,7 +95,7 @@ export default function AnnouncementPageTable() {
             const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug);
             setIsLoadingDialogVisible(false);
             if (response.success) {
-                const sorted = [...response.data].sort((a, b) => {
+                const sorted = [...response.data.data].sort((a, b) => {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 });
                 setAnnouncementList(sorted);
@@ -111,7 +111,7 @@ export default function AnnouncementPageTable() {
             }
         } catch (error: any) {
             setIsLoadingDialogVisible(false);
-            console.error('Error fetching announcements:', error);
+            
             setClassicDialog((prev) => ({
                 ...prev,
                 isOpen: true,
