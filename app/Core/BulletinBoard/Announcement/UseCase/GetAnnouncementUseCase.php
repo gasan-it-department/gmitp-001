@@ -2,7 +2,8 @@
 
 namespace App\Core\BulletinBoard\Announcement\UseCase;
 
-use App\Core\BulletinBoard\Announcement\Dto\AnnouncementFilterDto;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Core\BulletinBoard\Announcement\Dto\AnnouncementQueryDto;
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 
 class GetAnnouncementUseCase
@@ -12,9 +13,10 @@ class GetAnnouncementUseCase
     ) {
     }
 
-    public function execute()
+    public function execute(AnnouncementQueryDto $dto, string $municipalId): LengthAwarePaginator
     {
-        $municipalId = app('municipal_id');
-        return $this->announcementRepository->getAll($municipalId);
+
+        return $this->announcementRepository->getAll($municipalId, $dto);
+
     }
 }

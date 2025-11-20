@@ -11,8 +11,12 @@ class DeleteAnnouncementUseCase
     ) {
     }
 
-    public function execute()
+    public function execute(string $id)
     {
+
+        $this->announcementRepository->findById($id);
+
+        $this->announcementRepository->delete($id);
 
     }
 }

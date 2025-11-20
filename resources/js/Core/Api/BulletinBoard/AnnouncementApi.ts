@@ -63,5 +63,19 @@ export const AnnouncementApi = {
 
         return data;
 
+    },
+
+    async deleteAnnouncement(id: string, municipalSlug: string) {
+        const { url, method } = bulletinBoard.AnnouncementController.destroy({ id });
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
     }
 }

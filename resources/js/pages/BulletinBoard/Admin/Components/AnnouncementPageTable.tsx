@@ -3,7 +3,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
-import axios from '@/lib/axios';
 import AddminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
@@ -57,7 +56,8 @@ export default function AnnouncementPageTable() {
     const handleDelete = async (id: string) => {
         try {
             setIsLoadingDialogVisible(true);
-            const response = await axios.delete(`/bulletin-board/announcement/${id}`);
+
+            const response = await AnnouncementApi.deleteAnnouncement(id, currentMunicipality.slug);
             if (response.data.success) {
                 setAnnouncementList((prev) => {
                     const updated = prev.filter((item) => item.id !== id);
@@ -77,9 +77,9 @@ export default function AnnouncementPageTable() {
             setClassicDialog((prev) => ({
                 ...prev,
                 isOpen: true,
-                title: "An error occurred.",
+                title: 'An error occurred.',
                 message: error,
-                positiveButtonText: "Close",
+                positiveButtonText: 'Close',
                 isNegativeButtonHidden: true,
             }));
         }
@@ -103,9 +103,9 @@ export default function AnnouncementPageTable() {
                 setClassicDialog((prev) => ({
                     ...prev,
                     isOpen: true,
-                    title: "An error occurred!",
-                    message: "Failed to load announcement. Please check your Internet connection and try again.",
-                    positiveButtonText: "Close",
+                    title: 'An error occurred!',
+                    message: 'Failed to load announcement. Please check your Internet connection and try again.',
+                    positiveButtonText: 'Close',
                     isNegativeButtonHidden: true,
                 }));
             }
@@ -115,9 +115,9 @@ export default function AnnouncementPageTable() {
             setClassicDialog((prev) => ({
                 ...prev,
                 isOpen: true,
-                title: "An error occurred!",
+                title: 'An error occurred!',
                 message: error,
-                positiveButtonText: "Close",
+                positiveButtonText: 'Close',
                 isNegativeButtonHidden: true,
             }));
         }
@@ -144,9 +144,9 @@ export default function AnnouncementPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Announcement List</h1>
                 <BulletinHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
-                    onExportButtonClicked={() => { }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {}}
+                    onExportButtonClicked={() => {}}
                     onAddNewButtonClicked={() => {
                         setAddEditDialog({
                             isOpened: true,

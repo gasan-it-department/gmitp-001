@@ -4,11 +4,11 @@ namespace App\External\Api\Controllers\BulletinBoard;
 
 use App\Core\BulletinBoard\Announcement\Dto\UpdateAnnouncementDto;
 use App\Core\BulletinBoard\Announcement\UseCase\CreateAnnouncementUseCase;
+use App\Core\BulletinBoard\Announcement\UseCase\DeleteAnnouncementUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\GetAnnouncementUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\GetPublishedAnnouncementsUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\UpdateAnnouncementUseCase;
 use Illuminate\Http\Request;
-use App\Core\BulletinBoard\Announcement\Models\Announcement;
 use App\External\Api\Request\BulletinBoard\AnnouncementRequest;
 use App\Core\BulletinBoard\Announcement\Dto\AnnouncementQueryDto;
 use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
@@ -23,6 +23,7 @@ class AnnouncementController
         protected UpdateAnnouncementUseCase $updateUseCase,
         protected GetAnnouncementUseCase $getAnnouncementService,
         protected GetPublishedAnnouncementsUseCase $getPublishedAnnouncements,
+        protected DeleteAnnouncementUseCase $deleteAnnouncement,
     ) {
     }
 
@@ -58,15 +59,24 @@ class AnnouncementController
         }
     }
 
-    public function fetch()
+    public function fetch(Request $request)
     {
         try {
 
-            $announcements = $this->getAnnouncementService->execute();
+            $municipalId = app('municipal_id');
+
+            $dto = new AnnouncementQueryDto(
+                perPage: $request->input('per_page', 10),
+                orderBy: $request->input('order_by', 'created_at'),
+                direction: $request->input('direction', 'desc'),
+                isPublished: $request->input('is_published', true),
+            );
+
+            $announcements = $this->getAnnouncementService->execute($dto, $municipalId);
 
             return response()->json([
                 'success' => true,
-                'data' => AnnouncementResource::collection($announcements),
+                'data' => $announcements,
             ]);
 
         } catch (\Exception $e) {
@@ -163,10 +173,7 @@ class AnnouncementController
     public function destroy(string $id)
     {
         try {
-
-            $announcement = Announcement::findOrFail($id);
-
-            $announcement->delete();
+            $this->deleteAnnouncement->execute($id);
 
             return response()->json([
                 'success' => true,

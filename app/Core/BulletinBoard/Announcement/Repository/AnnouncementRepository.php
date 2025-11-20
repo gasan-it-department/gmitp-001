@@ -51,6 +51,13 @@ class AnnouncementRepository
         return $announcement;
     }
 
+    public function delete(string $id)
+    {
+        $announcement = Announcement::findOrFail($id);
+
+        $announcement->delete();
+    }
+
     public function findById($id): Announcement
     {
 
@@ -68,12 +75,13 @@ class AnnouncementRepository
     }
 
     //for admin usage
-    public function getAll(string $municipalId): Collection
+    public function getAll(string $municipalId, AnnouncementQueryDto $dto): LengthAwarePaginator
     {
 
-        $announcements = Announcement::where('municipal_id', $municipalId)->get();
-
-        return $announcements;
+        return Announcement::where('municipal_id', $municipalId)
+            ->where('is_published', $dto->isPublished)
+            ->orderBy($dto->orderBy, $dto->direction)
+            ->paginate($dto->perPage);
 
     }
 
