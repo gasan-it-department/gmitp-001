@@ -25,19 +25,19 @@ class FeedbackRequest extends FormRequest
             'sender_name' => [
                 'nullable',
                 'string',
-                'max:255',
+                'max:200',
                 'regex:/^[A-Za-z\s]+$/'
             ],
             'employee_name' => [
                 'nullable',
                 'string',
-                'max:255',
+                'max:200',
                 'regex:/^[A-Za-z\s]+$/'
             ],
             'feedback_target' => 'required|string|in:department,employee',
             'department_id' => 'nullable',
             'rating' => 'nullable|integer|max:5',
-            'feedback_message' => 'required|string|max:255',
+            'feedback_message' => 'required|string|max:5000',
             'feedback_files' => 'nullable|array|max:5',
             'feedback_files.*' => 'file|mimetypes:image/jpeg,image/png,video/mp4,video/avi,video/mpeg|max:51200',
         ];

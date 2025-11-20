@@ -15,18 +15,12 @@ import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     Building,
-    CalendarDays,
-    ClipboardList,
     FileText,
-    LayoutDashboard,
     LogOut,
     Map,
-    Megaphone,
-    MessageCircleIcon,
     Settings,
     User,
     Users,
-    UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
 

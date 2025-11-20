@@ -200,6 +200,7 @@ export default function EventsCalendarUi() {
                 message={classicDialg.message}
                 positiveButtonText={classicDialg.positiveButtonText}
                 negativeButtonText={classicDialg.negativeButtonText}
+                hideNegativeButton={classicDialg.isNegativeButtonHidden}
                 open={classicDialg.isOpen}
                 onPositiveClick={() => {
                     setClassicDialog((prev) => ({

@@ -86,7 +86,7 @@ Route::prefix('/api/events')
 
             });
 
-        Route::get('/published', 'getPublished')->name('fetchPublish');
+        Route::get('/published', 'getPublished')->name('fetchPublish')->middleware('municipalityContext');
 
     });
 

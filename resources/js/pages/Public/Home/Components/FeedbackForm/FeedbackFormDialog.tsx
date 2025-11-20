@@ -129,6 +129,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
             onStatusChange?.("success", "Thank you for your feedback! We appreciate you taking the time to help us improve.");
         } catch (err) {
             console.error('Error submitting feedback:', err);
+            setIsSubmitting(false);
             if (axios.isAxiosError(err)) {
                 const errorMessage = err.response?.data?.message || 'Failed to submit feedback. Please try again.';
                 setError(errorMessage);
@@ -325,19 +326,27 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                     {files.map((file, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-center justify-between gap-2 rounded-md bg-orange-50 px-3 py-2 text-sm border border-orange-200"
+                                            className="flex items-center justify-between gap-2 bg-orange-50 px-3 py-2 text-sm border border-orange-200 rounded-md"
                                         >
-                                            <div className="flex items-center gap-2 truncate">
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
                                                 <FileIcon className="h-4 w-4 text-orange-600" />
-                                                <span className="truncate">{file.name}</span>
-                                                <span className="text-xs text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+
+                                                {/* File name with ellipsis */}
+                                                <span className="truncate max-w-[140px] sm:max-w-[200px]">
+                                                    {file.name}
+                                                </span>
+
+                                                <span className="text-xs text-gray-500 whitespace-nowrap">
+                                                    ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                                                </span>
                                             </div>
+
                                             <Button
                                                 type="button"
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => removeFile(index)}
-                                                className="h-6 w-6 p-0 text-gray-500 hover:text-red-500"
+                                                className="h-6 w-6 p-0 text-gray-500 hover:text-red-500 flex-shrink-0"
                                             >
                                                 <X className="h-4 w-4" />
                                             </Button>

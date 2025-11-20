@@ -7,7 +7,7 @@ interface PaginationProps {
     totalItems: number;
     itemsPerPage: number;
     onPageChange: (page: number, totalPage: number) => void;
-    maxVisible?: number;
+    maxVisible?: number; // optional, default pages visible around current
 }
 
 const PaginationView: React.FC<PaginationProps> = ({
@@ -23,19 +23,29 @@ const PaginationView: React.FC<PaginationProps> = ({
     let pages: (number | string)[] = [];
 
     if (totalPages <= maxVisible) {
+        // All pages visible
         pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-    } else if (currentPage <= 5) {
-        pages = ([...Array(6).keys()].map(i => i + 1) as (number | string)[]).concat(["...", totalPages]);
-    } else if (currentPage >= totalPages - 4) {
-        pages = ([1, "..."] as (number | string)[]).concat(
-            Array.from({ length: 6 }, (_, i) => totalPages - 5 + i)
-        );
     } else {
-        pages = [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+        const visiblePages = 1; // pages to show before & after current
+        const start = Math.max(2, currentPage - visiblePages);
+        const end = Math.min(totalPages - 1, currentPage + visiblePages);
+
+        pages.push(1); // first page
+
+        if (start > 2) pages.push("..."); // left ellipsis
+
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+
+        if (end < totalPages - 1) pages.push("..."); // right ellipsis
+
+        pages.push(totalPages); // last page
     }
 
     return (
-        <div className="flex flex-wrap justify-center items-center gap-2">
+        <div className="flex flex-wrap justify-center items-center gap-2 my-4">
+            {/* Prev Button */}
             <Button
                 variant="outline"
                 size="sm"
@@ -46,6 +56,7 @@ const PaginationView: React.FC<PaginationProps> = ({
                 Prev
             </Button>
 
+            {/* Page Buttons */}
             {pages.map((page, index) =>
                 typeof page === "number" ? (
                     <Button
@@ -67,6 +78,7 @@ const PaginationView: React.FC<PaginationProps> = ({
                 )
             )}
 
+            {/* Next Button */}
             <Button
                 variant="outline"
                 size="sm"

@@ -10,6 +10,7 @@ import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
+import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 
 export default function GeneralAnnouncement() {
     const { currentMunicipality } = useMunicipality();
@@ -40,10 +41,11 @@ export default function GeneralAnnouncement() {
         try {
             setIsLoading(true);
             // const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
-            const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug);
+            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
 
             setIsLoading(false);
             if (response.success) {
+                console.log('Announcements:', response.data);
                 const sorted = [...response.data].sort((a, b) => {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 });
