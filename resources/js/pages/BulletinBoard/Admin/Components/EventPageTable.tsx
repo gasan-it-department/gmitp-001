@@ -102,35 +102,25 @@ export default function EventPageTable() {
     async function loadEvents() {
         try {
             setIsLoading(true);
+
             const response = await EventsApi.fetch(currentMunicipality.slug);
 
             setIsLoading(false);
+
             if (response.success) {
+                // Sort newest → oldest using created_at
                 const sorted = [...response.data].sort((a, b) => {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 });
+
                 setEventList(sorted);
             } else {
-                // setClassicDialog((prev) => ({
-                //     ...prev,
-                //     isOpen: true,
-                //     title: "An error occurred!",
-                //     message: "Failed to load announcement. Please check your Internet connection and try again.",
-                //     positiveButtonText: "Close",
-                //     isNegativeButtonHidden: true,
-                // }));
+                // handle UI error if needed
             }
+
         } catch (error: any) {
             setIsLoading(false);
-            // console.error('Error fetching announcements:', error);
-            // setClassicDialog((prev) => ({
-            //     ...prev,
-            //     isOpen: true,
-            //     title: "An error occurred!",
-            //     message: error,
-            //     positiveButtonText: "Close",
-            //     isNegativeButtonHidden: true,
-            // }));
+            // handle UI error
         }
     }
 
@@ -140,9 +130,9 @@ export default function EventPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Event List</h1>
                 <BulletinHeader
-                    onSearch={() => {}}
-                    onFilterButtonClicked={() => {}}
-                    onExportButtonClicked={() => {}}
+                    onSearch={() => { }}
+                    onFilterButtonClicked={() => { }}
+                    onExportButtonClicked={() => { }}
                     onAddNewButtonClicked={() => setAddEventDialog({ isOpen: true, editData: null })}
                 />
             </div>
@@ -196,12 +186,12 @@ export default function EventPageTable() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={
-                                                    () => {}
-                                                    // setAddEventDialog({
-                                                    //     isOpen: true,
-                                                    //     editData: item,
-                                                    // })
+                                                onClick={() =>
+                                                    
+                                                    setAddEventDialog({
+                                                        isOpen: true,
+                                                        editData: item,
+                                                    })
                                                 }
                                                 className="border-blue-200 text-blue-600 hover:bg-blue-50"
                                             >
