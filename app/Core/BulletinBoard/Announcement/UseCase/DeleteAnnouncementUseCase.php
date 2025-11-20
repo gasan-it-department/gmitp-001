@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Core\BulletinBoard\Announcement\Services;
+namespace App\Core\BulletinBoard\Announcement\UseCase;
 
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 
-class DeleteAnnouncementService
+class DeleteAnnouncementUseCase
 {
     public function __construct(
         protected AnnouncementRepository $announcementRepository,

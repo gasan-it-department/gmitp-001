@@ -46,5 +46,22 @@ export const AnnouncementApi = {
 
         return data;
 
+    },
+
+    async updateAnnouncement(municipalSlug: string, id: string, updateData: any) {
+
+        const { url, method } = bulletinBoard.AnnouncementController.update({ id });
+
+        const { data } = await axios({
+            url,
+            method,
+            data: updateData,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
+
     }
 }

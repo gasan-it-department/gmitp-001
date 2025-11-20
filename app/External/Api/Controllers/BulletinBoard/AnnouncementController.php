@@ -2,26 +2,27 @@
 
 namespace App\External\Api\Controllers\BulletinBoard;
 
-use App\Core\BulletinBoard\Announcement\Services\GetPublishedAnnouncementsService;
+use App\Core\BulletinBoard\Announcement\Dto\UpdateAnnouncementDto;
+use App\Core\BulletinBoard\Announcement\UseCase\CreateAnnouncementUseCase;
+use App\Core\BulletinBoard\Announcement\UseCase\GetAnnouncementUseCase;
+use App\Core\BulletinBoard\Announcement\UseCase\GetPublishedAnnouncementsUseCase;
+use App\Core\BulletinBoard\Announcement\UseCase\UpdateAnnouncementUseCase;
 use Illuminate\Http\Request;
 use App\Core\BulletinBoard\Announcement\Models\Announcement;
 use App\External\Api\Request\BulletinBoard\AnnouncementRequest;
 use App\Core\BulletinBoard\Announcement\Dto\AnnouncementQueryDto;
 use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
 use App\External\Api\Resources\BulletinBoard\AnnouncementResource;
-use App\Core\BulletinBoard\Announcement\Services\GetAnnouncementService;
-use App\Core\BulletinBoard\Announcement\Services\CreateAnnouncementService;
-use App\Core\BulletinBoard\Announcement\Services\UpdateAnnouncementService;
 use App\Core\BulletinBoard\Announcement\Services\PublishAnnouncementService;
 
 class AnnouncementController
 {
     public function __construct(
-        protected CreateAnnouncementService $announcementService,
+        protected CreateAnnouncementUseCase $announcementService,
         protected PublishAnnouncementService $publishService,
-        protected UpdateAnnouncementService $updateService,
-        protected GetAnnouncementService $getAnnouncementService,
-        protected GetPublishedAnnouncementsService $getPublishedAnnouncements,
+        protected UpdateAnnouncementUseCase $updateUseCase,
+        protected GetAnnouncementUseCase $getAnnouncementService,
+        protected GetPublishedAnnouncementsUseCase $getPublishedAnnouncements,
     ) {
     }
 
@@ -119,11 +120,15 @@ class AnnouncementController
 
             $validated = $request->validated();
 
-            $announcement = $this->updateService->execute($id, [
-                'title' => $validated['title'] ?? null,
-                'message' => $validated['message'] ?? null,
-                'is_published' => $validated['is_published'] ?? false,
-            ]);
+            $userId = auth()->id();
+
+            $dto = new UpdateAnnouncementDto(
+                title: $validated['title'],
+                message: $validated['message'],
+                userId: $userId,
+            );
+
+            $announcement = $this->updateUseCase->execute($id, $dto);
 
             return response()->json([
                 'success' => true,

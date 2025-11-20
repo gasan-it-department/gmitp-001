@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Core\BulletinBoard\Announcement\Services;
+namespace App\Core\BulletinBoard\Announcement\UseCase;
 
 use App\Core\BulletinBoard\Announcement\Dto\AnnouncementQueryDto;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 
-class GetPublishedAnnouncementsService
+class GetPublishedAnnouncementsUseCase
 {
     public function __construct(
         private AnnouncementRepository $repo,

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Core\BulletinBoard\Announcement\Services;
+namespace App\Core\BulletinBoard\Announcement\UseCase;
 
 use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 use Illuminate\Support\Facades\DB;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
-class CreateAnnouncementService
+class CreateAnnouncementUseCase
 {
     public function __construct(
         private AnnouncementRepository $announcementRepository,

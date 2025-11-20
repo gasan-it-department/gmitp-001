@@ -51,11 +51,17 @@ Route::prefix('api/announcement/')
 
         Route::middleware(['admin', 'auth:sanctum'])
             ->group(function () {
+
                 Route::get('/', 'fetch')->name('fetch');
+
                 Route::post('/', 'store')->name('store');
+
                 Route::put('/{id}', 'update')->name('update');
+
                 Route::patch('/{id}/publish', 'publish')->name('publish');
+
                 Route::delete('/{id}', 'destroy')->name('destroy');
+
             });
 
         Route::get('/published', 'getPublished')->name('fetchPublished');
@@ -63,7 +69,6 @@ Route::prefix('api/announcement/')
 
 //eg. https://api/events/
 Route::prefix('/api/events')
-    ->middleware('municipalityContext')
     ->name('events.')
     ->controller(EventController::class)
     ->group(function () {
@@ -71,10 +76,13 @@ Route::prefix('/api/events')
         Route::middleware(['auth:sanctum', 'admin'])
             ->group(function () {
 
-                Route::get('/', 'fetch')->name("fetch");
-                Route::post('/', 'store')->name("store");
+                Route::get('/', 'fetch')->name("fetch")->middleware('municipalityContext');
+
+                Route::post('/', 'store')->name("store")->middleware('municipalityContext');
+
                 Route::put('/{id}', 'update')->name("update");
-                Route::delete('/{id}', 'destroy')->name('destroy');
+
+                Route::delete('/{id}', 'destroy')->name('destroy')->middleware('municipalityContext');
 
             });
 

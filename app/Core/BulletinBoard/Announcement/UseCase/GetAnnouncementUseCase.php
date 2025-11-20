@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Core\BulletinBoard\Announcement\Services;
+namespace App\Core\BulletinBoard\Announcement\UseCase;
 
 use App\Core\BulletinBoard\Announcement\Dto\AnnouncementFilterDto;
 use App\Core\BulletinBoard\Announcement\Repository\AnnouncementRepository;
 
-class GetAnnouncementService
+class GetAnnouncementUseCase
 {
     public function __construct(
         protected AnnouncementRepository $announcementRepository,

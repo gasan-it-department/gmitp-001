@@ -3,6 +3,7 @@
 namespace App\Core\BulletinBoard\Announcement\Repository;
 
 use App\Core\BulletinBoard\Announcement\Dto\AnnouncementQueryDto;
+use App\Core\BulletinBoard\Announcement\Dto\UpdateAnnouncementDto;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Core\BulletinBoard\Announcement\Models\Announcement;
@@ -25,6 +26,29 @@ class AnnouncementRepository
 
         return $announcement;
 
+    }
+
+    public function update(UpdateAnnouncementDto $dto, string $id)
+    {
+        $announcement = Announcement::findOrFail($id);
+
+        $updates = [];
+
+        if (!is_null($dto->title)) {
+            $updates['title'] = $dto->title;
+        }
+
+        if (!is_null($dto->message)) {
+            $updates['message'] = $dto->message;
+        }
+
+        if (!empty($updates)) {
+
+            $announcement->update($updates);
+
+        }
+
+        return $announcement;
     }
 
     public function findById($id): Announcement

@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 
@@ -45,10 +45,12 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
         try {
             let response;
             if (editData) {
-                // response = await axios.put(`/bulletin-board/announcement/${editData.id}`, payload);
-                // if (response.success) {
-                //     onSuccess(response.data, true);
-                // }
+                console.log(payload);
+                const response = await AnnouncementApi.updateAnnouncement(currentMunicipality.slug, editData.id, payload);
+
+                if (response) {
+                    onSuccess(response.data, true);
+                }
             } else {
                 response = await AnnouncementApi.storeAnnouncement(payload, municipalSlug);
                 if (response.success) {
