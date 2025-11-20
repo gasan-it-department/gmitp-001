@@ -46,5 +46,35 @@ export const EventsApi = {
 
 
         return data;
+    },
+
+    async deleteEvent(id: string, municipalSlug: string) {
+
+        const { url, method } = bulletinBoard.EventController.destroy(id);
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
+    },
+
+    async updateEvent(id: string, municipalSlug: string) {
+
+        const { url, method } = bulletinBoard.EventController.update(id);
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipal-Slug': municipalSlug
+            }
+        });
+
+        return data;
     }
 }

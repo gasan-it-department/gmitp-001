@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Core\BulletinBoard\Events\Services;
+namespace App\Core\BulletinBoard\Events\UseCase;
 
 use App\Core\BulletinBoard\Events\Dto\EventsQueryDto;
 use App\Core\BulletinBoard\Events\Repositories\EventRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class GetPublishedEventsService
+class GetPublishedEventsUseCase
 {
     public function __construct(
         private EventRepository $eventRepository,

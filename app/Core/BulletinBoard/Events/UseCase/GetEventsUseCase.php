@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Core\BulletinBoard\Events\Services;
+namespace App\Core\BulletinBoard\Events\UseCase;
 
 use App\Core\BulletinBoard\Events\Repositories\EventRepository;
 use Illuminate\Database\Eloquent\Collection;
 
-class GetEventsService
+class GetEventsUseCase
 {
     public function __construct(
         protected EventRepository $eventRepository
@@ -13,9 +13,8 @@ class GetEventsService
 
     }
 
-    public function execute(): Collection
+    public function execute(string $municipalId)
     {
-        $municipalId = app('municipal_id');
         $events = $this->eventRepository->getAllByMunicipalId($municipalId);
 
         return $events;

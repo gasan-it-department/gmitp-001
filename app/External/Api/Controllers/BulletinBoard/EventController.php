@@ -2,31 +2,48 @@
 
 namespace App\External\Api\Controllers\BulletinBoard;
 
+use App\Core\BulletinBoard\Events\Dto\UpdateEventDto;
+use App\Core\BulletinBoard\Events\UseCase\DeleteEventUseCase;
+use App\Core\BulletinBoard\Events\UseCase\GetPublishedEventsUseCase;
+use App\Core\BulletinBoard\Events\UseCase\CreateEventUseCase;
+use App\Core\BulletinBoard\Events\UseCase\GetEventsUseCase;
+use App\Core\BulletinBoard\Events\UseCase\UpdateEventUseCase;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Core\BulletinBoard\Events\Dto\CreateEventDto;
 use App\Core\BulletinBoard\Events\Dto\EventsQueryDto;
 use App\External\Api\Request\BulletinBoard\EventRequest;
-use App\Core\BulletinBoard\Events\Services\GetEventsService;
 use App\External\Api\Resources\BulletinBoard\EventsResource;
-use App\Core\BulletinBoard\Events\Services\CreateEventService;
-use App\Core\BulletinBoard\Events\Services\GetPublishedEventsService;
 
 class EventController extends Controller
 {
     public function __construct(
-        protected GetPublishedEventsService $getPublished,
-        protected CreateEventService $eventService,
-        protected GetEventsService $getEventsService,
+
+        protected GetPublishedEventsUseCase $getPublished,
+
+        protected CreateEventUseCase $eventCreateUseCase,
+
+        protected GetEventsUseCase $getEventsUseCase,
+
+        protected DeleteEventUseCase $deleteEvent,
+
+        protected UpdateEventUseCase $updateEvent
+
     ) {
     }
 
     public function store(EventRequest $request)
     {
         try {
+
             $validated = $request->validated();
+
             $userId = $request->user()->id;
+
+            $municipalId = app('municipal_id');
+
             $eventDate = \DateTimeImmutable::createFromFormat('Y-m-d', $validated['event_date']);
+
             $dto = new CreateEventDto(
                 title: $validated['title'],
                 description: $validated['description'],
@@ -35,7 +52,7 @@ class EventController extends Controller
                 isPublish: true,
             );
 
-            $this->eventService->execute($dto);
+            $this->eventCreateUseCase->execute($dto, $municipalId);
 
             return response()->json([
                 'successs' => true,
@@ -43,11 +60,13 @@ class EventController extends Controller
             ], 200);
 
         } catch (\Throwable $e) {
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create event',
                 'error' => $e->getMessage(),
             ], 200);
+
         }
     }
 
@@ -55,7 +74,9 @@ class EventController extends Controller
     {
         try {
 
-            $events = $this->getEventsService->execute();
+            $municipalId = app('municipal_id');
+
+            $events = $this->getEventsUseCase->execute($municipalId);
 
             return response()->json([
                 'success' => true,
@@ -107,18 +128,85 @@ class EventController extends Controller
 
     }
 
+    public function update(EventRequest $request, $id)
+    {
+        try {
+
+            $validated = $request->validated();
+
+            $userId = auth()->id();
+
+            $eventDate = \DateTimeImmutable::createFromFormat('Y-m-d', $validated['event_date']);
+
+
+            $dto = new UpdateEventDto(
+                title: $validated['description'],
+                description: $validated['title'],
+                eventDate: $eventDate,
+            );
+
+            $event = $this->updateEvent->execute($id, $dto);
+
+            return response()->json([
+                'success' => true,
+                'data' => $event,
+            ]);
+
+        } catch (\DomainException $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Announcement not found.',
+            ], 404);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 200);
+
+        }
+    }
+
+    public function destroy(string $id)
+    {
+        try {
+
+            $this->deleteEvent->execute($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Event deleted successfully.',
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Event not found.',
+            ], 200);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+
+        }
+    }
+
     public function show()
     {
 
     }
 
-    public function update()
-    {
-
-    }
-
-    public function destroy()
-    {
-
-    }
 }

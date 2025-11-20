@@ -169,10 +169,10 @@ class AnnouncementController
         }
     }
 
-
     public function destroy(string $id)
     {
         try {
+
             $this->deleteAnnouncement->execute($id);
 
             return response()->json([
@@ -185,7 +185,7 @@ class AnnouncementController
             return response()->json([
                 'success' => false,
                 'message' => 'Announcement not found.',
-            ], 404);
+            ], 200);
 
         } catch (\Exception $e) {
 

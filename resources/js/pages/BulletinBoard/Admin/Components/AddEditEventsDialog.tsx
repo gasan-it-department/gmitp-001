@@ -57,7 +57,8 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
         setServerError(null);
         try {
             if (editData) {
-                // await axios.put(`/bulletin-board/events/${editData.id}`, data);
+                const response = await EventsApi.updateEvent(editData.id, currentMunicipality.slug);
+
                 console.log('New Data', data);
             } else {
                 const response = await EventsApi.storeEvents(data, currentMunicipality.slug);
