@@ -81,6 +81,8 @@ export default function EventPageTable() {
             positiveButtonText: 'Delete',
             negativeButtonText: 'Cancel',
             isNegativeButtonHidden: false,
+            action: "delete-event",
+            selectedItemId: id,
         }));
     };
 
@@ -91,13 +93,23 @@ export default function EventPageTable() {
         positiveButtonText: '',
         negativeButtonText: '',
         isNegativeButtonHidden: false,
+        action: "",
+        selectedItemId: "",
     });
+
 
     const { currentMunicipality } = useMunicipality();
 
     useEffect(() => {
         loadEvents();
     }, []);
+
+    const handleDeleteEvent = async (id: string) => {
+        setIsLoading(true);
+        const response = await EventsApi.deleteEvent(id, currentMunicipality.slug);
+        console.log("Delete Event Response:", response);
+        setIsLoading(false);
+    }
 
     async function loadEvents() {
         try {
@@ -187,7 +199,6 @@ export default function EventPageTable() {
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() =>
-                                                    
                                                     setAddEventDialog({
                                                         isOpen: true,
                                                         editData: item,
@@ -233,6 +244,12 @@ export default function EventPageTable() {
                         ...prev,
                         isOpen: false,
                     }));
+
+                    switch (classicDialog.action) {
+                        case "delete-event":
+                            handleDeleteEvent(classicDialog.selectedItemId);
+                            break;
+                    }
                 }}
                 onNegativeClick={() => {
                     setClassicDialog((prev) => ({
