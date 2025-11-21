@@ -1,12 +1,12 @@
 <?php
 
-use App\External\Api\Controllers\CitizenReport\CitizenReportController;
+use App\External\Api\Controllers\CommunityReport\CommunityReportController;
 
 
-Route::prefix('api/citizen-report')
+Route::prefix('api/community-report')
     ->middleware(['municipalityContext'])
-    ->name('citizenReport')
-    ->controller(CitizenReportController::class)
+    ->name('communityReport')
+    ->controller(CommunityReportController::class)
     ->group(function () {
 
         Route::middleware(['admin', 'auth:sanctum'])

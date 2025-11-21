@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { CitizenReportApi } from '@/Core/Api/CitizenReport/CitizenReportApi';
+import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { AlertTriangle, CheckCircle2, FileIcon, Upload, X } from 'lucide-react';
@@ -17,7 +17,7 @@ interface ReportFormValues {
     issue_type: string;
     location: string;
     description: string;
-    full_name?: string;
+    sender_name?: string;
     contact: string;
     latitude?: string;
     longitude?: string;
@@ -57,7 +57,7 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
             issue_type: '',
             location: '',
             description: '',
-            full_name: '',
+            sender_name: '',
             contact: '',
             latitude: '',
             longitude: '',
@@ -170,7 +170,7 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
     const onSubmit = async (data: ReportFormValues) => {
         console.log('Report Submitted:', data);
 
-        const response = await CitizenReportApi.storeCitizenReport(currentMunicipality.slug, data);
+        const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
 
         setIsSubmitted(true);
 
@@ -364,7 +364,7 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
                                 <div className="grid gap-5 sm:grid-cols-2">
                                     <div>
                                         <Label className="font-semibold text-gray-800">Full Name (Optional)</Label>
-                                        <Input placeholder="Full name (optional)" {...register('full_name')} />
+                                        <Input placeholder="Full name (optional)" {...register('sender_name')} />
                                     </div>
 
                                     <div>

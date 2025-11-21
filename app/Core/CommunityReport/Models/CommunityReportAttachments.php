@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Core\CitizenReports\Models;
+namespace App\Core\CommunityReport\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CitizenReportAttachments extends Model
+class CommunityReportAttachments extends Model
 {
     public $incrementing = false;
 
@@ -17,7 +17,7 @@ class CitizenReportAttachments extends Model
     public function citizenReport()
     {
 
-        return $this->belongsTo(CitizenReport::class);
+        return $this->belongsTo(CommunityReport::class);
 
     }
 }

@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('citizen_reports', function (Blueprint $table) {
+        Schema::create('community_reports', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
@@ -19,6 +19,9 @@ return new class extends Migration {
             $table->text('description');
 
             $table->string('latitude');
+
+            $table->foreignUlid('user_id')
+                ->nullable();
 
             $table->string('longitude');
 
@@ -60,7 +63,7 @@ return new class extends Migration {
 
             $table->foreignUlid('report_id')
                 ->references('id')
-                ->on('citizen_reports')
+                ->on('community_reports')
                 ->onDelete('cascade');
         });
     }
@@ -73,7 +76,7 @@ return new class extends Migration {
 
         Schema::dropIfExists('report_files');
 
-        Schema::dropIfExists('citizen_reports');
+        Schema::dropIfExists('community_reports');
 
     }
 };

@@ -1,7 +1,6 @@
 <?php
 
-namespace App\Core\CitizenReports\Dto;
-
+namespace App\Core\CommunityReport\Dto;
 class CreateReportDto
 {
     public function __construct(
@@ -14,17 +13,16 @@ class CreateReportDto
 
         public readonly string $longitude,
 
-        public readonly string $status,
+        public readonly ?string $name = null,
 
-        public readonly string $name,
-
-        public readonly string $contact,
+        public readonly ?string $contact = null,
 
         public readonly string $location,
 
-        public readonly ?string $resolved_at = null,
+        public readonly ?array $ReportFiles,
 
-        public readonly ?array $files,
+        public readonly ?string $userId = null,
+
     ) {
     }
 

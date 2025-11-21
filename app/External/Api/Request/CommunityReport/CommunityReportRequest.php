@@ -1,10 +1,10 @@
 <?php
 
-namespace App\External\Api\Request\CitizenReport;
+namespace App\External\Api\Request\CommunityReport;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CitizenReportRequest extends FormRequest
+class CommunityReportRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,6 +26,8 @@ class CitizenReportRequest extends FormRequest
             'issue_type' => ['required', 'string'],
 
             'sender_name' => ['nullable', 'string'],
+
+            'contact' => ['nullable', 'string'],
 
             'location' => ['required', 'string'],
 
