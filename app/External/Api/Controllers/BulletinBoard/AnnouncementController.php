@@ -91,32 +91,20 @@ class AnnouncementController
 
     public function getPublished(Request $request)
     {
-        try {
+        $municipalId = app('municipal_id');
 
-            $municipalId = app('municipal_id');
+        $dto = new AnnouncementQueryDto(
+            perPage: $request->input('per_page', 10),
+            orderBy: $request->input('order_by', 'created_at'),
+            direction: $request->input('direction', 'desc'),
+        );
 
-            $dto = new AnnouncementQueryDto(
-                perPage: $request->input('per_page', 10),
-                orderBy: $request->input('order_by', 'created_at'),
-                direction: $request->input('direction', 'desc'),
-            );
+        $announcements = $this->getPublishedAnnouncements->execute($municipalId, $dto);
 
-            //get the announcement per municipal
-            $announcements = $this->getPublishedAnnouncements->execute($municipalId, $dto);
-
-            return response()->json([
+        return AnnouncementResource::collection($announcements)
+            ->additional([
                 'success' => true,
-                'data' => AnnouncementResource::collection($announcements),
             ]);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 200);
-
-        }
     }
 
     public function show($id)

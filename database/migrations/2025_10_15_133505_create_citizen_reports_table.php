@@ -24,7 +24,7 @@ return new class extends Migration {
 
             $table->string('status')->nullable();
 
-            $table->string('name')->nullable();
+            $table->string('sender_name')->nullable();
 
             $table->string('contact')->nullable();
 

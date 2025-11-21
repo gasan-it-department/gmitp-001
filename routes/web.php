@@ -18,6 +18,8 @@ require __DIR__ . '/municipality.php';
 require __DIR__ . '/Feedback.php';
 require __DIR__ . '/bulletin_board.php';
 require __DIR__ . '/super_admin.php';
+require __DIR__ . '/citizenReport.php';
+
 
 
 
