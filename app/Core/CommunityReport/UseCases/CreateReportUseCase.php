@@ -2,9 +2,11 @@
 
 namespace App\Core\CommunityReport\UseCases;
 
+use App\Core\CommunityReport\Services\CloudinaryFileUploadService;
+use Illuminate\Support\Facades\DB;
+use App\Shared\IdGenerator\Services\IdGenerator;
 use App\Core\CommunityReport\Dto\CreateReportDto;
 use App\Core\CommunityReport\Repositories\CommunityReportRepositories;
-use App\Shared\IdGenerator\Services\IdGenerator;
 
 class CreateReportUseCase
 {
@@ -12,8 +14,10 @@ class CreateReportUseCase
 
         protected CommunityReportRepositories $communityReportRepo,
 
-        protected IdGenerator $idGenerate
+        protected CloudinaryFileUploadService $uploader,
 
+
+        protected IdGenerator $idGenerate,
 
     ) {
     }
@@ -21,9 +25,30 @@ class CreateReportUseCase
     public function execute(string $municipalId, CreateReportDto $dto)
     {
 
-        $reportId = $this->idGenerate->generate();
+        return DB::transaction(function () use ($dto, $municipalId) {
 
-        return $this->communityReportRepo->save($municipalId, $dto, $reportId);
+            $reportId = $this->idGenerate->generate();
+
+            $this->communityReportRepo->save($municipalId, $dto, $reportId);
+
+            if (!empty($dto->reportFiles)) {
+
+                foreach ($dto->reportFiles as $file) {
+
+                    $fileMeta = $this->uploader->uploadFiles($file);
+
+                    $fileId = $this->idGenerate->generate();
+
+                    $this->communityReportRepo->saveFile($reportId, $fileMeta, $fileId);
+
+                }
+
+
+            }
+
+            return $reportId;
+
+        });
 
     }
 }

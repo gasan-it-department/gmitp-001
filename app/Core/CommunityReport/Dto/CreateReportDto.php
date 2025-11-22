@@ -19,7 +19,7 @@ class CreateReportDto
 
         public readonly string $location,
 
-        public readonly ?array $ReportFiles,
+        public readonly ?array $reportFiles,
 
         public readonly ?string $userId = null,
 

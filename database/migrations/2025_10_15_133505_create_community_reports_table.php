@@ -43,21 +43,19 @@ return new class extends Migration {
 
         });
 
-        Schema::create('report_files', function (Blueprint $table) {
+        Schema::create('community_report_files', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
-            $table->string('file_type')->nullable();
+            $table->string('file_url')->nullable();
+
+            $table->string('public_id')->nullable();
 
             $table->string('original_name')->nullable();
 
-            $table->string('file_url')->nullable();
-
-            $table->string('file_path')->nullable();
-
             $table->string('mime_type')->nullable();
 
-            $table->unsignedBigInteger('file_size');
+            $table->unsignedBigInteger('file_size')->nullable();
 
             $table->timestamps();
 
@@ -74,7 +72,7 @@ return new class extends Migration {
     public function down(): void
     {
 
-        Schema::dropIfExists('report_files');
+        Schema::dropIfExists('community_report_files');
 
         Schema::dropIfExists('community_reports');
 

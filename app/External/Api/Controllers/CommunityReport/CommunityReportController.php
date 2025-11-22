@@ -40,6 +40,16 @@ class CommunityReportController extends Controller
 
         $report = $this->createReport->execute($municipalId, $dto);
 
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Report Submitted'
+            ,
+            'data' => $report,
+
+        ], 200);
+
     }
 
     public function fetch()

@@ -9,7 +9,7 @@ class CommunityReport extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'community_reports';
+    // protected $table = 'community_reports';
 
     public $incrementing = false;
 
@@ -45,6 +45,8 @@ class CommunityReport extends Model
 
     public function attachments()
     {
-        return $this->hasMany(CommunityReportAttachments::class);
+
+        return $this->hasMany(CommunityReportFiles::class);
+
     }
 }
