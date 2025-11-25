@@ -144,8 +144,8 @@ class EventController extends Controller
 
 
             $dto = new UpdateEventDto(
-                title: $validated['description'],
-                description: $validated['title'],
+                title: $validated['title'],
+                description: $validated['description'],
                 eventDate: $eventDate,
             );
 
