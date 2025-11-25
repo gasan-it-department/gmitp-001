@@ -52,11 +52,12 @@ class EventController extends Controller
                 isPublish: true,
             );
 
-            $this->eventCreateUseCase->execute($dto, $municipalId);
+            $event = $this->eventCreateUseCase->execute($dto, $municipalId);
 
             return response()->json([
                 'successs' => true,
                 'message' => 'Event created successfully',
+                'data' => $event,
             ], 200);
 
         } catch (\Throwable $e) {
