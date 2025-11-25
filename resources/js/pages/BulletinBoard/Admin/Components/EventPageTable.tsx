@@ -6,10 +6,11 @@ import type { EventFormData } from '@/Core/Types/BulletinBoard/Events';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import PaginationView from "@/pages/Utility/PaginationView";
 import { CheckCircle2, Clock, Pencil, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AddEditEventsDialog from './AddEditEventsDialog';
-import BulletinHeader from './BulletinHeader';
+import EventPageHeader from './EventPageHeader';
 
 interface EventDataList {
     id: string;
@@ -22,196 +23,228 @@ interface EventDataList {
 export default function EventPageTable() {
     const [isLoading, setIsLoading] = useState(false);
     const [eventList, setEventList] = useState<EventDataList[]>([]);
-    const [addEventDialog, setAddEventDialog] = useState<{
-        isOpen: boolean;
-        editData: EventFormData | null;
-    }>({
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [totalItems, setTotalItems] = useState(0);
+
+    const { currentMunicipality } = useMunicipality();
+
+    const [addEventDialog, setAddEventDialog] = useState({
         isOpen: false,
-        editData: null,
+        editData: null as EventFormData | null,
     });
-    const getEventStatus = (eventDate: string): 'Upcoming' | 'Ongoing' | 'Completed' => {
-        const today = new Date();
-        const event = new Date(eventDate);
-        const todayStr = today.toISOString().split('T')[0];
-        const eventStr = event.toISOString().split('T')[0];
-        if (eventStr === todayStr) return 'Ongoing';
-        if (event > today) return 'Upcoming';
-        return 'Completed';
-    };
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        });
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'Upcoming':
-                return (
-                    <span className="flex items-center gap-1 text-sm font-medium text-blue-600">
-                        <Clock size={14} /> Upcoming
-                    </span>
-                );
-            case 'Ongoing':
-                return (
-                    <span className="flex items-center gap-1 text-sm font-medium text-green-600">
-                        <CheckCircle2 size={14} /> Ongoing
-                    </span>
-                );
-            case 'Completed':
-                return (
-                    <span className="flex items-center gap-1 text-sm font-medium text-gray-500">
-                        <XCircle size={14} /> Completed
-                    </span>
-                );
-            default:
-                return null;
-        }
-    };
-
-    const handleDelete = (id: string) => {
-        setClassicDialog((prev) => ({
-            ...prev,
-            isOpen: true,
-            title: 'Confirm',
-            message: 'Are you sure you want to delete this event?',
-            positiveButtonText: 'Delete',
-            negativeButtonText: 'Cancel',
-            isNegativeButtonHidden: false,
-            action: "delete-event",
-            selectedItemId: id,
-        }));
-    };
 
     const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
-        title: '',
-        message: '',
-        positiveButtonText: '',
-        negativeButtonText: '',
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
         isNegativeButtonHidden: false,
         action: "",
         selectedItemId: "",
     });
 
-
-    const { currentMunicipality } = useMunicipality();
-
     useEffect(() => {
-        loadEvents();
-    }, []);
+        loadEvents(currentPage);
+    }, [currentPage]);
 
-    const handleDeleteEvent = async (id: string) => {
-        setIsLoading(true);
-        const response = await EventsApi.deleteEvent(id, currentMunicipality.slug);
-        console.log("Delete Event Response:", response);
-        setIsLoading(false);
-    }
-
-    async function loadEvents() {
+    const loadEvents = async (page: number = 1) => {
         try {
             setIsLoading(true);
+            const response = await EventsApi.getPublished(currentMunicipality.slug, page);
+            const data = response.data;
+            const sorted = [...data].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            setEventList(sorted);
+            setCurrentPage(response.current_page);
+            setLastPage(response.last_page);
+            setPerPage(response.per_page);
+            setTotalItems(response.total);
+        } catch (error) {
+            setIsLoading(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-            const response = await EventsApi.fetch(currentMunicipality.slug);
+    const getEventStatus = (eventDate: string): string => {
+        const today = new Date();
+        const event = new Date(eventDate);
 
+        const todayStr = today.toISOString().split("T")[0];
+        const eventStr = event.toISOString().split("T")[0];
+
+        if (eventStr === todayStr) return "Ongoing";
+        if (event > today) return "Upcoming";
+        return "Completed";
+    };
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    };
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case "Upcoming":
+                return (
+                    <span className="flex items-center gap-1 text-sm font-medium text-blue-600">
+                        <Clock size={14} /> Upcoming
+                    </span>
+                );
+            case "Ongoing":
+                return (
+                    <span className="flex items-center gap-1 text-sm font-medium text-green-600">
+                        <CheckCircle2 size={14} /> Ongoing
+                    </span>
+                );
+            case "Completed":
+                return (
+                    <span className="flex items-center gap-1 text-sm font-medium text-gray-500">
+                        <XCircle size={14} /> Completed
+                    </span>
+                );
+        }
+    };
+
+    const handleDeleteEvent = async (id: string) => {
+        try {
+            setIsLoading(true);
+            const response = await EventsApi.deleteEvent(id, currentMunicipality.slug);
             setIsLoading(false);
 
             if (response.success) {
-                // Sort newest → oldest using created_at
-                const sorted = [...response.data].sort((a, b) => {
-                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                });
-
-                setEventList(sorted);
+                loadEvents(currentPage);
             } else {
-                // handle UI error if needed
+                console.log("Delete failed:", response);
             }
-
-        } catch (error: any) {
+        } catch (error) {
             setIsLoading(false);
-            // handle UI error
+            console.error("Delete error:", error);
         }
-    }
+    };
+
+    const handleSuccess = (data: EventFormData, isEdit: boolean) => {
+        // Close the modal
+        setAddEventDialog({ isOpen: false, editData: null });
+
+        if (isEdit) {
+            // UPDATE item locally
+            setEventList(prev =>
+                prev.map(item => item.id === data.id ? { ...item, ...data } : item)
+            );
+        } else {
+            // ADD item locally (only to current page)
+            const newEvent: EventDataList = {
+                ...data,
+                created_at: new Date().toISOString(),
+            };
+            setEventList(prev => [newEvent, ...prev]);
+
+            // Increase total items count
+            setTotalItems(prev => prev + 1);
+
+            // If adding makes the page overflow, optionally trim:
+            if (eventList.length >= perPage) {
+                setEventList(prev => prev.slice(0, perPage));
+            }
+        }
+    };
+
+    const handlePageChange = (page: number) => {
+        console.log("Changing to page: ", page);
+        if (page >= 1 && page <= lastPage) {
+            setCurrentPage(page);
+        }
+    };
 
     return (
         <div>
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Event List</h1>
-                <BulletinHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
-                    onExportButtonClicked={() => { }}
+                <EventPageHeader
                     onAddNewButtonClicked={() => setAddEventDialog({ isOpen: true, editData: null })}
                 />
             </div>
 
             {/* TABLE */}
             <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200">
-                <Table className="w-full">
+                <Table className="w-full table-auto">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
-                            <TableHead className="text-[12px] font-bold">Event Title</TableHead>
-                            <TableHead className="text-[12px] font-bold">Description</TableHead>
-                            <TableHead className="text-[12px] font-bold">Event Date</TableHead>
-                            <TableHead className="text-[12px] font-bold">Status</TableHead>
-                            <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
+                            <TableHead className="w-16 text-center">No.</TableHead>
+                            <TableHead>Event Title</TableHead>
+                            <TableHead className="w-[350px]">Description</TableHead>
+                            <TableHead>Event Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
                         {eventList.length === 0 ? (
-                            <AdminEmptyListItem title="No Events yet." message="Events you created will appear here." />
+                            <AdminEmptyListItem
+                                colSpan={6}
+                                title="No Events yet."
+                                message="Events you created will appear here." />
                         ) : (
-                            eventList.map((item) => {
-                                const status = getEventStatus(item.created_at);
+                            eventList.map((item, index) => {
+                                const status = getEventStatus(item.event_date);
                                 return (
-                                    <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                        <TableCell className="text-[13px] font-medium">{item.title}</TableCell>
+                                    <TableRow key={item.id} className="hover:bg-gray-50 transition-colors">
+                                        <TableCell className="text-center">
+                                            {index + 1 + (currentPage - 1) * perPage}
+                                        </TableCell>
 
-                                        <TableCell className="max-w-[300px] text-[12px]">
-                                            <span
-                                                className="block overflow-hidden text-ellipsis"
+                                        <TableCell>{item.title}</TableCell>
+
+                                        <TableCell className="max-w-[350px]">
+                                            <div
+                                                className="overflow-hidden"
                                                 style={{
-                                                    display: '-webkit-box',
-                                                    WebkitBoxOrient: 'vertical',
+                                                    display: "-webkit-box",
                                                     WebkitLineClamp: 3,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'normal',
-                                                    lineHeight: '1.4em',
-                                                    maxHeight: '4.2em',
+                                                    WebkitBoxOrient: "vertical",
                                                 }}
                                             >
                                                 {item.description}
-                                            </span>
+                                            </div>
                                         </TableCell>
 
                                         <TableCell>{formatDate(item.event_date)}</TableCell>
 
-                                        <TableCell className="text-[12px]">{getStatusBadge(status)}</TableCell>
+                                        <TableCell>{getStatusBadge(status)}</TableCell>
 
                                         <TableCell className="flex justify-center gap-2">
                                             <Button
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() =>
-                                                    setAddEventDialog({
-                                                        isOpen: true,
-                                                        editData: item,
-                                                    })
+                                                    setAddEventDialog({ isOpen: true, editData: item })
                                                 }
                                                 className="border-blue-200 text-blue-600 hover:bg-blue-50"
                                             >
                                                 <Pencil size={14} />
                                             </Button>
+
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => handleDelete(item.id)}
+                                                onClick={() =>
+                                                    setClassicDialog({
+                                                        isOpen: true,
+                                                        title: "Confirm",
+                                                        message: "Delete this event?",
+                                                        positiveButtonText: "Delete",
+                                                        negativeButtonText: "Cancel",
+                                                        isNegativeButtonHidden: false,
+                                                        action: "delete",
+                                                        selectedItemId: item.id,
+                                                    })
+                                                }
                                                 className="border-red-200 text-red-600 hover:bg-red-50"
                                             >
                                                 <Trash2 size={14} />
@@ -225,13 +258,26 @@ export default function EventPageTable() {
                 </Table>
             </div>
 
-            {/* ADD/EDIT DIALOG */}
+            {/* PAGINATION */}
+            <div className="mt-3">
+                <PaginationView
+                    currentPage={currentPage}
+                    totalPages={lastPage}
+                    totalItems={totalItems}
+                    itemsPerPage={perPage}
+                    onPageChange={(page) => handlePageChange(page)}
+                />
+            </div>
+
+            {/* Add/Edit */}
             <AddEditEventsDialog
                 isOpen={addEventDialog.isOpen}
                 editData={addEventDialog.editData}
+                onSuccess={handleSuccess}
                 onClose={() => setAddEventDialog({ isOpen: false, editData: null })}
             />
 
+            {/* Dialog */}
             <ClassicDialog
                 title={classicDialog.title}
                 message={classicDialog.message}
@@ -240,23 +286,14 @@ export default function EventPageTable() {
                 positiveButtonText={classicDialog.positiveButtonText}
                 negativeButtonText={classicDialog.negativeButtonText}
                 onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-
-                    switch (classicDialog.action) {
-                        case "delete-event":
-                            handleDeleteEvent(classicDialog.selectedItemId);
-                            break;
+                    setClassicDialog((p) => ({ ...p, isOpen: false }));
+                    if (classicDialog.action === "delete") {
+                        handleDeleteEvent(classicDialog.selectedItemId);
                     }
                 }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
+                onNegativeClick={() =>
+                    setClassicDialog((p) => ({ ...p, isOpen: false }))
+                }
             />
 
             <LoadingDialog isOpen={isLoading} />

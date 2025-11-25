@@ -43,7 +43,6 @@ class AnnouncementController
             );
 
             $announcement = $this->announcementService->execute($dto);
-
             return response()->json([
                 'success' => true,
                 'data' => $announcement,
@@ -62,7 +61,6 @@ class AnnouncementController
     public function fetch(Request $request)
     {
         try {
-
             $municipalId = app('municipal_id');
 
             $dto = new AnnouncementQueryDto(
@@ -74,10 +72,7 @@ class AnnouncementController
 
             $announcements = $this->getAnnouncementService->execute($dto, $municipalId);
 
-            return response()->json([
-                'success' => true,
-                'data' => $announcements,
-            ]);
+            return response()->json($announcements);
 
         } catch (\Exception $e) {
 
@@ -85,9 +80,9 @@ class AnnouncementController
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 200);
-
         }
     }
+
 
     public function getPublished(Request $request)
     {

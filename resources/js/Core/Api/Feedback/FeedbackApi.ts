@@ -31,12 +31,13 @@ export const FeedbackApi = {
         return data;
     },
 
-    async getAllFeedback(municipalSlug: string) {
+    async getAllFeedback(municipalSlug: string, page: number = 1) {
         const { url, method } = Feedback.FeedbackController.fetch();
 
         const { data } = await axios({
             url,
             method,
+            params: { page },
             headers: {
                 'X-Municipality-Slug': municipalSlug
             }
@@ -44,4 +45,5 @@ export const FeedbackApi = {
 
         return data;
     }
+
 }

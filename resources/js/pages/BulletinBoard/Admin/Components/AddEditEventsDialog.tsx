@@ -14,9 +14,11 @@ interface AddEditEventsDialogProps {
     isOpen: boolean;
     editData: EventFormData | null;
     onClose: () => void;
+    onSuccess?: (data: EventFormData, isEdit: boolean) => void;
+    onFailed?: (error: any, isEdit: boolean) => void;
 }
 
-export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEditEventsDialogProps) {
+export default function AddEditEventsDialog({ isOpen, editData, onClose, onSuccess, onFailed }: AddEditEventsDialogProps) {
     const {
         register,
         handleSubmit,
@@ -41,7 +43,7 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
                 id: editData.id ?? '',
                 title: editData.title ?? '',
                 description: editData.description ?? '',
-                event_date: editData.event_date ?? '',
+                event_date: toDateInputValue(editData.event_date) ?? '',
             });
         } else {
             reset({
@@ -57,15 +59,16 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
         setServerError(null);
         try {
             if (editData) {
-                const response = await EventsApi.updateEvent(editData.id, currentMunicipality.slug);
-
-                console.log('New Data', data);
+                await EventsApi.updateEvent(editData.id, currentMunicipality.slug, data);
+                console.log(data);
+                onSuccess!(data, true);
             } else {
-                const response = await EventsApi.storeEvents(data, currentMunicipality.slug);
+                await EventsApi.storeEvents(data, currentMunicipality.slug);
+                onSuccess!(data, false);
             }
             reset();
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             const err = error as AxiosError<any>;
             if (err.response?.status === 422 && err.response.data?.errors) {
                 const backendErrors = err.response.data.errors;
@@ -79,9 +82,17 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
                 });
             } else {
                 setServerError('Something went wrong. Please try again.');
+
             }
         }
     };
+
+    function toDateInputValue(dateString: string) {
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return ""; // invalid date fallback
+
+        return d.toISOString().split("T")[0];
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -102,9 +113,8 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
                                 id="title"
                                 placeholder="Enter event title"
                                 {...register('title', { required: 'Title is required' })}
-                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                    errors.title ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.title ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                             />
                             {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
                         </div>
@@ -119,9 +129,8 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
                                 placeholder="Enter event description"
                                 rows={4}
                                 {...register('description', { required: 'Description is required' })}
-                                className={`min-h-[150px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                    errors.description ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                                className={`min-h-[150px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.description ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                             />
                             {errors.description && <p className="text-sm text-red-600">{errors.description.message}</p>}
                         </div>
@@ -135,9 +144,8 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose }: AddEd
                                 type="date"
                                 id="event_date"
                                 {...register('event_date', { required: 'Date is required' })}
-                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
-                                    errors.event_date ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.event_date ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                             />
                             {errors.event_date && <p className="text-sm text-red-600">{errors.event_date.message}</p>}
                         </div>

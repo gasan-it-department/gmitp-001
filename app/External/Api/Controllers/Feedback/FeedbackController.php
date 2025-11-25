@@ -71,27 +71,34 @@ class FeedbackController extends Controller
             $municipalId = app('municipal_id');
 
             $dto = new FeedbackQueryDto(
-                $request->input('per_page', 10),
-                $request->input('order_by', 'created_at'),
-                $request->input('direction', 'desc')
+                page: $request->get('page', 1),
+                perPage: $request->get('per_page', 10),
+                orderBy: 'created_at',
+                direction: 'desc',
             );
 
             $feedback = $this->getAllFeedback->execute($dto, $municipalId);
 
             return response()->json([
                 'success' => true,
-                'data' => $feedback,
-            ], 200);
+                'data' => FeedbackResource::collection($feedback),
+                'current_page' => $feedback->currentPage(),
+                'last_page' => $feedback->lastPage(),
+                'per_page' => $feedback->perPage(),
+                'total' => $feedback->total(),
+            ]);
 
         } catch (\Exception $e) {
 
+            \Log::error("Fetch feedback failed: " . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Failed to fetch feedback',
             ], 200);
-
         }
     }
+
 
     public function show()
     {

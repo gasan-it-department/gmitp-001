@@ -32,13 +32,14 @@ export const EventsApi = {
         return data;
     },
 
-    async getPublished(municipalSlug: string) {
+    async getPublished(municipalSlug: string, page: number = 1) {
 
         const { url, method } = bulletinBoard.EventController.getPublished();
-
+        console.log("Municipal Slug in EventsApi:", url, method);
         const { data } = await axios({
             method,
             url,
+            params:{ page },
             headers: {
                 'X-Municipality-Slug': municipalSlug
             }
@@ -63,15 +64,16 @@ export const EventsApi = {
         return data;
     },
 
-    async updateEvent(id: string, municipalSlug: string) {
+    async updateEvent(id: string, municipalSlug: string, form: EventFormData) {
 
         const { url, method } = bulletinBoard.EventController.update(id);
 
         const { data } = await axios({
             url,
             method,
+            data: form,
             headers: {
-                'X-Municipal-Slug': municipalSlug
+                'X-Municipality-Slug': municipalSlug
             }
         });
 

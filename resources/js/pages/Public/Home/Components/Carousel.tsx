@@ -85,9 +85,8 @@ export default function Carousel() {
 
     return (
         <div>
-            {showNotice && (
+            {/* {showNotice && (
                 <Card className="relative mt-3 mr-3 mb-3 ml-3 rounded-xl border-l-4 border-orange-500 bg-orange-50 p-4 shadow-sm transition-all dark:border-orange-400 dark:bg-orange-900/20">
-                    {/* Close Button */}
                     <button
                         onClick={() => setShowNotice(false)}
                         className="absolute top-2 right-2 text-orange-700 transition hover:text-orange-900 dark:text-orange-300 dark:hover:text-orange-100"
@@ -116,7 +115,7 @@ export default function Carousel() {
                         </div>
                     </div>
                 </Card>
-            )}
+            )} */}
 
             <div
                 className="relative w-full cursor-grab overflow-hidden select-none"

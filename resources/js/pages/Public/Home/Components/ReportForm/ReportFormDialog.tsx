@@ -9,7 +9,7 @@ import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportAp
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { AlertTriangle, CheckCircle2, FileIcon, Upload, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import MapCoordinates from './MapCoordinates';
 
@@ -27,11 +27,12 @@ interface ReportFormValues {
 interface ReportFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
 }
 
-export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) {
+export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDialogProps) {
     const { currentMunicipality } = useMunicipality();
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmiting] = useState(false);
     const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
     const [classicDialog, setClassicDialog] = useState({
         title: '',
@@ -68,7 +69,7 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
 
     const files = watch('files');
     const MAX_FILES = 5;
-    const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+    const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
@@ -169,17 +170,14 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
 
     const onSubmit = async (data: ReportFormValues) => {
         console.log('Report Submitted:', data);
-
+        setIsSubmiting(true);
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
-
-        setIsSubmitted(true);
-
-        setTimeout(() => {
-            setIsSubmitted(false);
-            reset();
-            setError(null);
+        if (response.success) {
+            setIsSubmiting(false);
             onOpenChange(false);
-        }, 3000);
+            reset();
+            onSuccess();
+        }
     };
 
     useEffect(() => {
@@ -201,199 +199,191 @@ export function ReportFormDialog({ open, onOpenChange }: ReportFormDialogProps) 
                 </div>
 
                 <div className="space-y-10 px-6 py-6 sm:px-8 sm:py-8">
-                    {isSubmitted ? (
-                        <Alert className="rounded-xl border-green-300 bg-green-100 duration-300 animate-in fade-in slide-in-from-top-3">
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                            <AlertDescription className="font-medium text-green-700">
-                                Issue reported successfully! Thank you for helping your community.
-                            </AlertDescription>
-                        </Alert>
-                    ) : (
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
-                            {/* ISSUE TYPE */}
-                            <div className="space-y-4">
-                                <Label className="font-semibold text-gray-800">
-                                    Type of Issue <span className="text-red-500">*</span>
-                                </Label>
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+                        {/* ISSUE TYPE */}
+                        <div className="space-y-4">
+                            <Label className="font-semibold text-gray-800">
+                                Type of Issue <span className="text-red-500">*</span>
+                            </Label>
 
-                                <Controller
-                                    control={control}
-                                    name="issue_type"
-                                    rules={{ required: 'Please select an issue type.' }}
-                                    render={({ field }) => (
-                                        <RadioGroup
-                                            value={field.value}
-                                            onValueChange={(value) => {
-                                                field.onChange(value);
-                                                clearErrors('issue_type');
-                                            }}
-                                            className="flex flex-wrap gap-6 pt-1"
-                                        >
-                                            {['Road Damage', 'Streetlight', 'Garbage', 'Water Leak', 'Others'].map((issue) => (
-                                                <div key={issue} className="flex items-center space-x-2">
-                                                    <RadioGroupItem value={issue.toLowerCase()} id={issue} />
-                                                    <Label htmlFor={issue} className="cursor-pointer">
-                                                        {issue}
-                                                    </Label>
-                                                </div>
-                                            ))}
-                                        </RadioGroup>
-                                    )}
-                                />
-
-                                {errors.issue_type && <p className="text-sm text-red-500">{errors.issue_type.message}</p>}
-                            </div>
-
-                            {/* LOCATION */}
-                            <div className="space-y-4">
-                                <Label className="font-semibold text-gray-800">
-                                    Location <span className="text-red-500">*</span>
-                                </Label>
-
-                                <Input
-                                    placeholder="e.g., Barangay Poblacion, near municipal hall"
-                                    {...register('location', { required: 'Location is required.' })}
-                                    className={errors.location ? 'border-red-500' : ''}
-                                />
-
-                                {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
-
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <Input placeholder="Latitude" {...register('latitude')} readOnly />
-                                    <Input placeholder="Longitude" {...register('longitude')} readOnly />
-                                </div>
-
-                                {watch('latitude') && watch('longitude') && (
-                                    <div className="relative mt-3 h-64 w-full overflow-hidden rounded-xl border">
-                                        <MapCoordinates latitude={Number(watch('latitude'))} longitude={Number(watch('longitude'))} />
-                                    </div>
-                                )}
-
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="border-red-300 text-red-600 hover:bg-red-50"
-                                    onClick={handleGetLocation}
-                                    disabled={isGettingCoordinates}
-                                >
-                                    {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
-                                </Button>
-                            </div>
-
-                            {/* DESCRIPTION */}
-                            <div className="space-y-3">
-                                <Label className="font-semibold text-gray-800">
-                                    Description <span className="text-red-500">*</span>
-                                </Label>
-
-                                <Textarea
-                                    rows={5}
-                                    placeholder="Describe the issue in detail..."
-                                    {...register('description', { required: 'Description is required.' })}
-                                    className={errors.description ? 'border-red-500' : ''}
-                                />
-
-                                {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
-                            </div>
-
-                            {/* FILE UPLOAD */}
-                            <div className="space-y-4">
-                                <Label className="font-semibold text-gray-800">Upload Photos or Videos (Optional)</Label>
-
-                                <p className="text-sm text-gray-600">
-                                    Upload up to <b>5 files</b>, total size must not exceed <b>50MB</b>.
-                                </p>
-
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="border-red-300 text-red-600 hover:bg-red-50"
-                                    onClick={() => document.getElementById('evidence')?.click()}
-                                    disabled={files.length >= MAX_FILES}
-                                >
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {files.length >= MAX_FILES ? 'Max Files Reached' : 'Choose Files'}
-                                </Button>
-
-                                <input id="evidence" type="file" multiple accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
-
-                                {error && (
-                                    <div className="flex items-center gap-2 rounded-md border border-red-300 bg-red-100 p-2 text-sm text-red-600">
-                                        <AlertTriangle className="h-4 w-4" />
-                                        {error}
-                                    </div>
-                                )}
-
-                                {files.length > 0 && (
-                                    <div className="space-y-2">
-                                        {files.map((file, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex items-center justify-between gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm"
-                                            >
-                                                <div className="flex min-w-0 flex-1 items-center gap-2">
-                                                    <FileIcon className="h-4 w-4 text-orange-600" />
-
-                                                    {/* File name with ellipsis */}
-                                                    <span className="max-w-[140px] truncate sm:max-w-[200px]">{file.name}</span>
-
-                                                    <span className="text-xs whitespace-nowrap text-gray-500">
-                                                        ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                                                    </span>
-                                                </div>
-
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => removeFile(index)}
-                                                    className="h-6 w-6 flex-shrink-0 p-0 text-gray-500 hover:text-red-500"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
+                            <Controller
+                                control={control}
+                                name="issue_type"
+                                rules={{ required: 'Please select an issue type.' }}
+                                render={({ field }) => (
+                                    <RadioGroup
+                                        value={field.value}
+                                        onValueChange={(value) => {
+                                            field.onChange(value);
+                                            clearErrors('issue_type');
+                                        }}
+                                        className="flex flex-wrap gap-6 pt-1"
+                                    >
+                                        {['Road Damage', 'Streetlight', 'Garbage', 'Water Leak', 'Others'].map((issue) => (
+                                            <div key={issue} className="flex items-center space-x-2">
+                                                <RadioGroupItem value={issue.toLowerCase()} id={issue} />
+                                                <Label htmlFor={issue} className="cursor-pointer">
+                                                    {issue}
+                                                </Label>
                                             </div>
                                         ))}
-                                    </div>
+                                    </RadioGroup>
                                 )}
+                            />
+
+                            {errors.issue_type && <p className="text-sm text-red-500">{errors.issue_type.message}</p>}
+                        </div>
+
+                        {/* LOCATION */}
+                        <div className="space-y-4">
+                            <Label className="font-semibold text-gray-800">
+                                Location <span className="text-red-500">*</span>
+                            </Label>
+
+                            <Input
+                                placeholder="e.g., Barangay Poblacion, near municipal hall"
+                                {...register('location', { required: 'Location is required.' })}
+                                className={errors.location ? 'border-red-500' : ''}
+                            />
+
+                            {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Input placeholder="Latitude" {...register('latitude')} readOnly />
+                                <Input placeholder="Longitude" {...register('longitude')} readOnly />
                             </div>
 
-                            {/* PERSONAL INFO */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-800">Your Information</h3>
+                            {watch('latitude') && watch('longitude') && (
+                                <div className="relative mt-3 h-64 w-full overflow-hidden rounded-xl border">
+                                    <MapCoordinates latitude={Number(watch('latitude'))} longitude={Number(watch('longitude'))} />
+                                </div>
+                            )}
 
-                                <div className="grid gap-5 sm:grid-cols-2">
-                                    <div>
-                                        <Label className="font-semibold text-gray-800">Full Name (Optional)</Label>
-                                        <Input placeholder="Full name (optional)" {...register('sender_name')} />
-                                    </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                                onClick={handleGetLocation}
+                                disabled={isGettingCoordinates}
+                            >
+                                {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
+                            </Button>
+                        </div>
 
-                                    <div>
-                                        <Label className="font-semibold text-gray-800">Contact Number (Optional)</Label>
-                                        <Input type="tel" placeholder="+63 912 345 6789" {...register('contact')} />
-                                    </div>
+                        {/* DESCRIPTION */}
+                        <div className="space-y-3">
+                            <Label className="font-semibold text-gray-800">
+                                Description <span className="text-red-500">*</span>
+                            </Label>
+
+                            <Textarea
+                                rows={5}
+                                placeholder="Describe the issue in detail..."
+                                {...register('description', { required: 'Description is required.' })}
+                                className={errors.description ? 'border-red-500' : ''}
+                            />
+
+                            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+                        </div>
+
+                        {/* FILE UPLOAD */}
+                        <div className="space-y-4">
+                            <Label className="font-semibold text-gray-800">Upload Photos or Videos (Optional)</Label>
+
+                            <p className="text-sm text-gray-600">
+                                Upload up to <b>5 files</b>, total size must not exceed <b>50MB</b>.
+                            </p>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                                onClick={() => document.getElementById('evidence')?.click()}
+                                disabled={files.length >= MAX_FILES}
+                            >
+                                <Upload className="mr-2 h-4 w-4" />
+                                {files.length >= MAX_FILES ? 'Max Files Reached' : 'Choose Files'}
+                            </Button>
+
+                            <input id="evidence" type="file" multiple accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
+
+                            {error && (
+                                <div className="flex items-center gap-2 rounded-md border border-red-300 bg-red-100 p-2 text-sm text-red-600">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    {error}
+                                </div>
+                            )}
+
+                            {files.length > 0 && (
+                                <div className="space-y-2">
+                                    {files.map((file, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm"
+                                        >
+                                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                                                <FileIcon className="h-4 w-4 text-orange-600" />
+
+                                                {/* File name with ellipsis */}
+                                                <span className="max-w-[140px] truncate sm:max-w-[200px]">{file.name}</span>
+
+                                                <span className="text-xs whitespace-nowrap text-gray-500">
+                                                    ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                                                </span>
+                                            </div>
+
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeFile(index)}
+                                                className="h-6 w-6 flex-shrink-0 p-0 text-gray-500 hover:text-red-500"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* PERSONAL INFO */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-800">Your Information</h3>
+
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <div>
+                                    <Label className="font-semibold text-gray-800">Full Name (Optional)</Label>
+                                    <Input placeholder="Full name (optional)" {...register('sender_name')} />
+                                </div>
+
+                                <div>
+                                    <Label className="font-semibold text-gray-800">Contact Number (Optional)</Label>
+                                    <Input type="tel" placeholder="+63 912 345 6789" {...register('contact')} />
                                 </div>
                             </div>
+                        </div>
 
-                            {/* BUTTONS */}
-                            <div className="flex flex-row gap-4 pt-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
-                                    onClick={() => onOpenChange(false)}
-                                >
-                                    Cancel
-                                </Button>
+                        {/* BUTTONS */}
+                        <div className="flex flex-row gap-4 pt-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Cancel
+                            </Button>
 
-                                <Button
-                                    type="submit"
-                                    className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
-                                >
-                                    Submit Report
-                                </Button>
-                            </div>
-                        </form>
-                    )}
+                            <Button
+                                disabled={isSubmitting}
+                                type="submit"
+                                className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
+                            >
+                                Submit Report
+                            </Button>
+                        </div>
+                    </form>
 
                     <ClassicDialog
                         title={classicDialog.title}

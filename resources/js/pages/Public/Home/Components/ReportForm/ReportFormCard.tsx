@@ -3,9 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { ReportFormDialog } from "./ReportFormDialog";
 import { useState } from "react";
+import ClassicDialog from "@/pages/Utility/ClassicDialog";
 
 export default function ReportIssueCard() {
     const [isReportDialogShown, setIsReportDialogShown] = useState(false);
+    const [classicDialog, setClassicDialog] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
+        isNegativeButtonHidden: false,
+    });
+
     return (
         <Card
             className="
@@ -74,8 +84,42 @@ export default function ReportIssueCard() {
                     </Button>
                 </div> */}
 
-                <ReportFormDialog open={isReportDialogShown} onOpenChange={setIsReportDialogShown} />
+                <ReportFormDialog
+                    open={isReportDialogShown}
+                    onOpenChange={setIsReportDialogShown}
+                    onSuccess={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: true,
+                            title: "Report Submitted",
+                            message: "Thank you for your report! We appreciate your effort in helping us improve our community.",
+                            positiveButtonText: "OK",
+                            negativeButtonText: "",
+                            isNegativeButtonHidden: true,
+                        }))
+                    }} />
             </CardContent>
+
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                open={classicDialog.isOpen}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }))
+                }}
+
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }))
+                }} />
         </Card>
 
     );

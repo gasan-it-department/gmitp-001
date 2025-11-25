@@ -99,7 +99,6 @@ class EventController extends Controller
 
     public function getPublished(Request $request)
     {
-
         try {
 
             $municipalId = app('municipal_id');
@@ -110,22 +109,26 @@ class EventController extends Controller
                 direction: $request->input('direction', 'desc'),
             );
 
+            // This returns LengthAwarePaginator
             $events = $this->getPublished->execute($municipalId, $dto);
 
             return response()->json([
                 'success' => true,
                 'data' => EventsResource::collection($events),
+                'current_page' => $events->currentPage(),
+                'last_page' => $events->lastPage(),
+                'per_page' => $events->perPage(),
+                'total' => $events->total(),
             ]);
 
         } catch (\Exception $e) {
 
             return response()->json([
                 'success' => false,
-                'message' => $e,
+                'message' => $e->getMessage(),
             ], 200);
 
         }
-
     }
 
     public function update(EventRequest $request, $id)

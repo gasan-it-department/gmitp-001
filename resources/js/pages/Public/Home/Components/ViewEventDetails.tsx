@@ -64,18 +64,19 @@ export function ViewEventDetails({ isOpen, data, onClose }: Props) {
                 {/* Scrollable Description */}
                 <div
                     className="
-                        flex-1 w-full
-                        p-4 border border-gray-200 dark:border-neutral-700
-                        rounded-lg bg-gray-50 dark:bg-neutral-800
-                        text-gray-800 dark:text-gray-200
-                        leading-relaxed whitespace-pre-line break-words
-                        overflow-y-auto overflow-x-hidden
-                        scrollbar-thin scrollbar-thumb-orange-400 dark:scrollbar-thumb-orange-700
-                        scrollbar-track-transparent
-                    "
-                >
-                    {data.description || "No description provided."}
-                </div>
+        flex-1 w-full
+        p-4 border border-gray-200 dark:border-neutral-700
+        rounded-lg bg-gray-50 dark:bg-neutral-800
+        text-gray-800 dark:text-gray-200
+        leading-relaxed whitespace-pre-line break-words
+        overflow-y-auto overflow-x-hidden
+        scrollbar-thin scrollbar-thumb-orange-400 dark:scrollbar-thumb-orange-700
+        scrollbar-track-transparent
+    "
+                    dangerouslySetInnerHTML={{
+                        __html: Utility().linkify(data.description || "No description provided."),
+                    }}
+                />
 
                 {/* Footer */}
                 <DialogFooter className="mt-4 flex-shrink-0 flex justify-end">

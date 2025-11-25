@@ -80,7 +80,7 @@ export default function GeneralAnnouncement() {
                 <div className="px-2 sm:px-4">
                     <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">General Announcements</h2>
                     <p className="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                        Stay updated with important notices, reminders, and community information.
                     </p>
                 </div>
 

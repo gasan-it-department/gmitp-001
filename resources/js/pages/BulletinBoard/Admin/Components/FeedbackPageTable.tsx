@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import FeedbackPageTableHeader from './FeedbackPageTableHeader';
 import ViewFeedbackDialog from './ViewFeedbackDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
 
 interface FeedbackFormValues {
     feedback_target: 'employee' | 'department';
@@ -24,10 +25,11 @@ interface FeedbackFormValues {
 
 export default function FeedbackPageTable() {
     const { currentMunicipality } = useMunicipality();
+    const [isLoading, setIsLoading] = useState(false);
     const [feedbacks, setFeedbacks] = useState<FeedbackFormValues[]>([]);
-    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean, data: FeedbackFormValues | null }>({
+    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean; data: FeedbackFormValues | null }>({
         isOpen: false,
-        data: null
+        data: null,
     });
 
     // Pagination state
@@ -42,71 +44,73 @@ export default function FeedbackPageTable() {
 
     const loadFeedbacks = async (page: number) => {
         try {
-            const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug);
-            const responseData = response.data.data;
-
-            // Sort newest first
-            const sorted = [...responseData].sort((a, b) => {
-                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            });
-
+            setIsLoading(true);
+            const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug, page);
+            const data = response.data;
+            const sorted = [...data].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
             setFeedbacks(sorted);
-            setCurrentPage(responseData.current_page);
-            setLastPage(responseData.last_page);
-            setPerPage(responseData.per_page);
-            setTotalItems(responseData.total);
+            setCurrentPage(response.current_page);
+            setLastPage(response.last_page);
+            setPerPage(response.per_page);
+            setTotalItems(response.total);
         } catch (error: any) {
-            console.error("Error loading feedbacks: ", error);
+            setIsLoading(false);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handlePageChange = (page: number) => {
-        setCurrentPage(page);
+        if (page >= 1 && page <= lastPage) {
+            setCurrentPage(page);
+        }
     };
 
     return (
-        <div>
+        <div className="flex flex-col h-full">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Cute Netizen Feedback</h1>
-                <FeedbackPageTableHeader onSearch={() => { }} onFilterButtonClicked={() => { }} onExportButtonClicked={() => { }} />
+                <h1 className="text-3xl font-bold tracking-tight">Community Feedback</h1>
+                <FeedbackPageTableHeader
+                    onSearch={() => { }}
+                    onFilterButtonClicked={() => { }}
+                    onExportButtonClicked={() => { }}
+                />
             </div>
 
-            {/* TABLE */}
-            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200">
-                <Table className="w-full">
+            {/* TABLE WRAPPER */}
+            <div className="flex flex-col flex-1 w-full border rounded-lg overflow-hidden">
+                <Table className="min-w-full table-fixed">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
-                            <TableHead className="text-[12px] font-bold">No.</TableHead>
-                            <TableHead className="text-[12px] font-bold">Target Party</TableHead>
+                            <TableHead className="w-[5%] text-[12px] font-bold">No.</TableHead>
+                            <TableHead className="w-[15%] text-[12px] font-bold">Target Party</TableHead>
                             <TableHead className="text-[12px] font-bold">Message</TableHead>
-                            <TableHead className="text-[12px] font-bold">Date Reported</TableHead>
-                            <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
+                            <TableHead className="w-[15%] text-[12px] font-bold">Date Reported</TableHead>
+                            <TableHead className="w-[10%] text-center text-[12px] font-bold">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
-                        {feedbacks.length === 0 ? (
-                            <AdminEmptyListItem title="No Feedback yet." message="Feedback will appear here." />
-                        ) : (
+                        {feedbacks.length === 0 ?
+                            <AdminEmptyListItem title="No Feedback yet." message="Feedback will appear here." /> :
                             feedbacks.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                    <TableCell className="text-[13px] font-medium">
-                                        {(index + 1).toString()}
+                                    <TableCell className="whitespace-nowrap text-[13px] font-medium">
+                                        {index + 1 + (currentPage - 1) * perPage}
                                     </TableCell>
-                                    <TableCell className="text-[13px] font-medium text-red-500">
-                                        {item.employee_name ?? item.department_id}
+                                    <TableCell className="whitespace-nowrap text-[13px] font-medium truncate">
+                                        {item.employee_name ?? item.department_id ?? '—'}
                                     </TableCell>
-                                    <TableCell className="max-w-[300px] text-[12px]">
+                                    <TableCell className="text-[12px] max-w-0">
                                         <span
-                                            className="block overflow-hidden text-ellipsis"
+                                            className="block overflow-hidden"
                                             style={{
                                                 display: '-webkit-box',
                                                 WebkitBoxOrient: 'vertical',
                                                 WebkitLineClamp: 3,
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'normal',
                                                 lineHeight: '1.4em',
                                                 maxHeight: '4.2em',
                                             }}
@@ -114,7 +118,9 @@ export default function FeedbackPageTable() {
                                             {item.message}
                                         </span>
                                     </TableCell>
-                                    <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
+                                    <TableCell className="whitespace-nowrap text-[12px]">
+                                        {Utility().formatToReadableDate(item.created_at) ?? '—'}
+                                    </TableCell>
                                     <TableCell className="flex justify-center gap-2">
                                         <Button
                                             size="sm"
@@ -126,27 +132,29 @@ export default function FeedbackPageTable() {
                                         </Button>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
+                            ))}
                     </TableBody>
                 </Table>
+            </div>
 
-                {/* View Feedback Dialog */}
-                <ViewFeedbackDialog
-                    isOpen={selectedFeedback.isOpen}
-                    data={selectedFeedback.data}
-                    onClose={() => setSelectedFeedback({ isOpen: false, data: null })}
+            {/* PAGINATION */}
+            <div className="py-4 border-t bg-white">
+                <PaginationView
+                    currentPage={currentPage}
+                    totalPages={lastPage}
+                    totalItems={totalItems}
+                    itemsPerPage={perPage}
+                    onPageChange={handlePageChange}
                 />
             </div>
 
-            <PaginationView
-                currentPage={currentPage}
-                totalPages={lastPage}
-                totalItems={totalItems}
-                itemsPerPage={perPage}
-                onPageChange={(page, total) => handlePageChange(page)}
+            {/* DIALOGS */}
+            <ViewFeedbackDialog
+                isOpen={selectedFeedback.isOpen}
+                data={selectedFeedback.data}
+                onClose={() => setSelectedFeedback({ isOpen: false, data: null })}
             />
-
+            <LoadingDialog isOpen={isLoading} />
         </div>
     );
 }

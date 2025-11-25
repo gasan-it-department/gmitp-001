@@ -19,11 +19,12 @@ export const AnnouncementApi = {
         return data;
     },
 
-    async getAnnouncement(municipalSlug: string) {
+    async getAnnouncement(municipalSlug: string, page: number = 1) {
         const { url, method, } = bulletinBoard.AnnouncementController.fetch();
 
         const { data } = await axios({
             url, method,
+            params: { page },
             headers: {
                 'X-Municipality-Slug': municipalSlug
 

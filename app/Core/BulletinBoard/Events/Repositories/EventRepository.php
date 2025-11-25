@@ -41,22 +41,24 @@ class EventRepository
 
     public function getPublished(string $municipalId, bool $isPublished, EventsQueryDto $dto): LengthAwarePaginator
     {
-
         return Events::where('municipal_id', $municipalId)
             ->where('is_published', $isPublished)
             ->orderBy($dto->orderBy, $dto->direction)
             ->paginate($dto->perPage);
-
     }
+
 
     public function destroy(string $id)
     {
-
         $event = Events::findOrFail($id);
-
         $event->delete();
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Event deleted successfully'
+        ], 200);
     }
+
 
     public function update(string $id, UpdateEventDto $dto)
     {

@@ -178,6 +178,14 @@ export default function Utility() {
         return `${Math.abs(diffDays)} days ago`;
     }
 
+    function linkify(text: string) {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.replace(urlRegex, (url) => {
+            return `<a href="${url}" target="_blank" class="text-blue-600 underline">${url}</a>`;
+        });
+    }
+
+
     return {
         generateUniqueId,
         formatToReadableDate,
@@ -186,6 +194,7 @@ export default function Utility() {
         formatTimeAgo,
         calculateArrivingDays,
         formatToReadableDateNoTime,
-        formatAndAddDaysNoTime
+        formatAndAddDaysNoTime,
+        linkify
     };
 }
