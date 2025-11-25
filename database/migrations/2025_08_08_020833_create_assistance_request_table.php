@@ -14,6 +14,10 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
+            // $table->foreignUlid('municipality_id')
+            //     ->constrained('municipalities')
+            //     ->restrictOnDelete();
+
             $table->string('first_name');
 
             $table->string('middle_name')->nullable();
@@ -25,6 +29,8 @@ return new class extends Migration {
             $table->date('birth_date');
 
             $table->string('contact_number');
+
+            $table->string('email')->nullable();
 
             $table->string('province');
 
@@ -41,6 +47,7 @@ return new class extends Migration {
         });
 
         Schema::create('assistance_requests', function (Blueprint $table) {
+
             $table->ulid('id')->primary();
 
             $table->foreignUlid('beneficiary_id')
@@ -52,16 +59,22 @@ return new class extends Migration {
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->foreignUlid('municipality_id')
+            $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')
                 ->restrictOnDelete();
 
             $table->decimal('amount')->nullable();
+
             $table->string('transaction_number')->unique();
+
             $table->string('assistance_type');
+
             $table->string('status')->default('pending');
+
             $table->text('description')->nullable();
+
             $table->timestamps();
+
         });
     }
 

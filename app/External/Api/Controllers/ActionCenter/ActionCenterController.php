@@ -2,34 +2,92 @@
 
 namespace App\External\Api\Controllers\ActionCenter;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\External\Api\Request\ActionCenter\ClientAssistanceRequest;
+use App\Http\Controllers\Controller;
+use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
+use App\External\Api\Request\ActionCenter\AssistanceRequest;
+use App\External\Api\Request\ActionCenter\BeneficiaryRequest;
+use App\Core\ActionCenter\Beneficiaries\Dto\CreateBeneficiaryDto;
 use App\Core\ActionCenter\Applications\Services\CreateAssistanceRequest;
-use App\Core\ActionCenter\Infrastructures\Models\AssistanceRequest;
 use App\Core\ActionCenter\Applications\Services\UpdateAssistanceRequest;
+use App\Core\ActionCenter\Beneficiaries\UseCase\CreateBeneficiaryUseCase;
+use App\Core\ActionCenter\Requests\UseCase\CreateAssistanceRequestUseCase;
 use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
 
 class ActionCenterController extends Controller
 {
 
     public function __construct(
-        private CreateAssistanceRequest $createAssistaceRequest,
-        private UpdateAssistanceRequest $updateAssistanceRequest,
-        protected AssistanceRequestRepositories $assistanceRepository
+
+        private CreateBeneficiaryUseCase $createBeneficiary,
+
+        private CreateAssistanceRequestUseCase $createAssistance,
+
     ) {
     }
 
 
-    public function store(ClientAssistanceRequest $request)
+    public function store(AssistanceRequest $assistance, BeneficiaryRequest $beneficiary)
     {
-        $validated = $request->validated();
+        $validatedAssistance = $assistance->validated();
 
-        $user = request()->user();
+        $validatedBeneficiary = $beneficiary->validated();
 
-        $this->createAssistaceRequest->execute($validated, $user);
+        $userId = auth()->id();
 
-        return response()->json(['message' => 'request created'], 200);
+        $municipalId = app('municipal_id');
+
+        $beneficiaryDto = new CreateBeneficiaryDto(
+
+            $validatedBeneficiary['first_name'],
+
+            $validatedBeneficiary['last_name'],
+
+            $validatedBeneficiary['middle_name'],
+
+            $validatedBeneficiary['suffix'],
+
+            $validatedBeneficiary['birth_date'],
+
+            $validatedBeneficiary['contact_number'],
+
+            $validatedBeneficiary['province'],
+
+            $validatedBeneficiary['municipality'],
+
+            $validatedBeneficiary['barangay'],
+
+        );
+
+        $beneficiary = $this->createBeneficiary->execute($beneficiaryDto);
+
+        $assistanceDto = new CreateAssistanceDto(
+
+            $validatedAssistance['assistance_type'],
+
+            $validatedAssistance['description'],
+
+            $userId,
+
+            $beneficiary->id,
+
+        );
+
+        $assistance = $this->createAssistance->execute($assistanceDto, $municipalId);
+
+        return response()->json([
+
+            'message' => 'request created',
+
+            'data' => [
+
+                'assistance' => $assistance,
+
+                'beneficiary' => $beneficiary
+            ],
+
+        ], 200);
+
     }
 
     public function fetch()

@@ -6,16 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import axios from '@/lib/axios';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { useQueryClient } from '@tanstack/react-query';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { DatePicker } from './DatePicker';
-import { useQueryClient } from '@tanstack/react-query';
-import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
-import { setDate } from 'date-fns';
-import ToastProvider from '@/pages/Utility/ToastShower';
 import { toast } from 'sonner';
+import { DatePicker } from './DatePicker';
 
 interface Props {
     isOpen: boolean;
@@ -24,22 +25,17 @@ interface Props {
     onSubmit?: (data: AssistanceRequest) => void;
 }
 
-const assistanceOptions = [
-    'Medical Assistance',
-    'Food Assistance',
-    'Transportation Assistance',
-    'Financial Assistance',
-    'Burial Assistance',
-];
+const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
 
 export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmit }: Props) {
+    const { currentMunicipality } = useMunicipality();
     const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-    const [assistanceType, setAssistanceType] = useState("");
+    const [assistanceType, setAssistanceType] = useState('');
     const [geoData, setGeoData] = useState({
-        editProvince: "",
-        editMunicipality: "",
-        editBarangay: ""
+        editProvince: '',
+        editMunicipality: '',
+        editBarangay: '',
     });
     const {
         register,
@@ -69,7 +65,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
         try {
             if (editData == null) {
                 // Create new request
-                const response = await axios.post('/action-center/request', data);
+                const response = await ActionCenterApi.storeRequest(currentMunicipality.slug, data);
 
                 if (response.status !== 200) {
                     setError('root', response.data);
@@ -81,7 +77,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                     refetchType: 'active',
                 });
 
-                toast.success("Successfully added");
+                toast.success('Successfully added');
                 reset();
                 onClose();
             } else {
@@ -98,16 +94,15 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                     refetchType: 'active',
                 });
 
-                toast.success("Successfully updated");
+                toast.success('Successfully updated');
                 reset();
                 onClose();
             }
         } catch (error) {
             console.error('Error submitting form:', error);
-            toast.error("An error occurred. Try again later.");
+            toast.error('An error occurred. Try again later.');
         }
     };
-
 
     const handleReset = () => {
         reset();
@@ -116,37 +111,37 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
     useEffect(() => {
         if (editData != null) {
-            console.log("Edit Mode");
-            console.log("SD", editData);
+            console.log('Edit Mode');
+            console.log('SD', editData);
             const date = moment(editData.beneficiary.birth_date, 'YYYY-MM-DD').toDate();
             setSelectedDate(date);
-            setValue("first_name", editData.beneficiary.first_name);
-            setValue("last_name", editData.beneficiary.last_name);
-            setValue("middle_name", editData.beneficiary.middle_name);
-            setValue("suffix", editData.beneficiary.suffix);
-            setValue("contact_number", editData.beneficiary.contact_number);
+            setValue('first_name', editData.beneficiary.first_name);
+            setValue('last_name', editData.beneficiary.last_name);
+            setValue('middle_name', editData.beneficiary.middle_name);
+            setValue('suffix', editData.beneficiary.suffix);
+            setValue('contact_number', editData.beneficiary.contact_number);
             setSelectedDate(date);
-            setValue("description", editData.description);
+            setValue('description', editData.description);
             setValue('assistance_type', editData.assistance_type);
-            setValue("birth_date", editData.beneficiary.birth_date);
-            setValue("province", editData.beneficiary.province);
-            setValue("municipality", editData.beneficiary.municipality);
-            setValue("barangay", editData.beneficiary.barangay);
+            setValue('birth_date', editData.beneficiary.birth_date);
+            setValue('province', editData.beneficiary.province);
+            setValue('municipality', editData.beneficiary.municipality);
+            setValue('barangay', editData.beneficiary.barangay);
             setAssistanceType(editData.assistance_type);
             setGeoData((prev) => ({
                 ...prev,
                 editProvince: editData.beneficiary.province,
                 editMunicipality: editData.beneficiary.municipality,
-                editBarangay: editData.beneficiary.barangay
+                editBarangay: editData.beneficiary.barangay,
             }));
         } else {
-            setAssistanceType("");
+            setAssistanceType('');
             setSelectedDate(undefined);
             reset();
             setGeoData({
-                editProvince: "",
-                editMunicipality: "",
-                editBarangay: ""
+                editProvince: '',
+                editMunicipality: '',
+                editBarangay: '',
             });
         }
     }, [isOpen]);
@@ -172,26 +167,22 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                 className="scrollbar-hide m-0 flex h-auto w-full max-w-none flex-col rounded-none bg-gradient-to-b from-white via-orange-50 to-rose-50 p-4 shadow-xl sm:m-auto sm:h-auto sm:max-w-[720px] sm:rounded-2xl lg:h-[90vh]"
             >
                 {/* Header */}
-                <DialogHeader className="text-center pb-3 border-b border-orange-100">
-                    <DialogTitle className="text-2xl font-bold text-gray-800">
-                        {editData ? 'Edit Record' : 'Add New Record'}
-                    </DialogTitle>
-                    <p className="text-sm text-gray-500">
-                        Please fill in the required information carefully.
-                    </p>
+                <DialogHeader className="border-b border-orange-100 pb-3 text-center">
+                    <DialogTitle className="text-2xl font-bold text-gray-800">{editData ? 'Edit Record' : 'Add New Record'}</DialogTitle>
+                    <p className="text-sm text-gray-500">Please fill in the required information carefully.</p>
                 </DialogHeader>
 
                 {/* Scrollable form section */}
-                <div className="scrollbar-hide flex-1 overflow-y-auto mt-3">
-                    <Card className="border-0 bg-white/90 shadow-md rounded-xl">
-                        <CardContent className="p-6 space-y-8">
+                <div className="scrollbar-hide mt-3 flex-1 overflow-y-auto">
+                    <Card className="rounded-xl border-0 bg-white/90 shadow-md">
+                        <CardContent className="space-y-8 p-6">
                             <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
                                 {/* Personal Info */}
                                 <section>
-                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">
                                         Personal Information
                                     </h3>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                         <FormField
                                             label="First Name *"
                                             id="first_name"
@@ -208,13 +199,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                             requiredMsg="Last name is required"
                                             errors={errors}
                                         />
-                                        <FormField
-                                            label="Middle Name"
-                                            id="middle_name"
-                                            register={register}
-                                            name="middle_name"
-                                            errors={errors}
-                                        />
+                                        <FormField label="Middle Name" id="middle_name" register={register} name="middle_name" errors={errors} />
                                         <FormField
                                             label="Jr./Suffix"
                                             id="suffix"
@@ -243,11 +228,10 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                                 value={selectedDate}
                                                 onChange={(date) => {
                                                     setSelectedDate(date);
-                                                    setValue(
-                                                        'birth_date',
-                                                        date ? moment(date).format('YYYY-MM-DD') : '',
-                                                        { shouldValidate: true, shouldDirty: true },
-                                                    );
+                                                    setValue('birth_date', date ? moment(date).format('YYYY-MM-DD') : '', {
+                                                        shouldValidate: true,
+                                                        shouldDirty: true,
+                                                    });
                                                 }}
                                             />
                                             {errors.birth_date && (
@@ -261,10 +245,10 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                 {/* Assistance Section */}
                                 <section>
-                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">
                                         Assistance Information
                                     </h3>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label htmlFor="assistance_type" className="text-sm font-semibold text-gray-700">
                                                 Assistance Needed *
@@ -289,10 +273,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <input
-                                                type="hidden"
-                                                {...register('assistance_type', { required: 'Please select assistance type' })}
-                                            />
+                                            <input type="hidden" {...register('assistance_type', { required: 'Please select assistance type' })} />
                                             {errors.assistance_type && (
                                                 <p className="text-sm text-red-600" role="alert">
                                                     {errors.assistance_type.message}
@@ -304,21 +285,19 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
 
                                 {/* Address Section */}
                                 <section>
-                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
-                                        Address Details
-                                    </h3>
+                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">Address Details</h3>
 
                                     <AddressDropdown
                                         onAddressChange={handleAddressChange}
                                         editProvince={geoData.editProvince}
                                         editMunicipality={geoData.editMunicipality}
-                                        editBarangay={geoData.editBarangay} />
-                                        
+                                        editBarangay={geoData.editBarangay}
+                                    />
                                 </section>
 
                                 {/* Description */}
                                 <section>
-                                    <h3 className="text-base font-semibold text-orange-600 mb-3 border-b border-orange-100 pb-1">
+                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">
                                         Description / Reason
                                     </h3>
                                     <div className="space-y-2">
@@ -343,14 +322,14 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                                         type="button"
                                         variant="outline"
                                         onClick={handleReset}
-                                        className="flex-1 sm:flex-none rounded-md border-gray-300 text-gray-700 hover:bg-gray-100"
+                                        className="flex-1 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 sm:flex-none"
                                     >
                                         Cancel
                                     </Button>
                                     <Button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="flex-1 sm:flex-none rounded-md bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-50"
+                                        className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:opacity-50 sm:flex-none"
                                     >
                                         {isSubmitting ? 'Submitting...' : editData ? 'Update Record' : 'Add Record'}
                                     </Button>
@@ -359,7 +338,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                         </CardContent>
                     </Card>
 
-                    <ToastProvider/>
+                    <ToastProvider />
                 </div>
 
                 {/* <ClassicDialog {...classicDialog} /> */}

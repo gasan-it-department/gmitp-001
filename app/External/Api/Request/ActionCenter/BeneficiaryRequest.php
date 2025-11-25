@@ -5,7 +5,7 @@ namespace App\External\Api\Request\ActionCenter;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class ClientAssistanceRequest extends FormRequest
+class BeneficiaryRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -28,17 +28,25 @@ class ClientAssistanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'middle_name' => ['nullable', 'string', 'max:255'],
-            'suffix' => ['nullable', 'string', 'max:255'],
+
+            'first_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
+
+            'last_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
+
+            'middle_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
+
+            'suffix' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
+
             'birth_date' => ['required', 'date'],
+
             'contact_number' => ['required', 'string', 'min:10', 'max:15'],
+
             'province' => ['nullable', 'string', 'max:255'],
+
             'municipality' => ['nullable', 'string', 'max:255'],
+
             'barangay' => ['nullable', 'string', 'max:255'],
-            'assistance_type' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'max:255'],
+
         ];
     }
 }

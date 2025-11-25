@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\ActionCenter\Applications\Services;
+namespace App\Core\ActionCenter\Requests\Services;
 
 use App\Core\ActionCenter\Domains\Enums\RequestStatus;
 
