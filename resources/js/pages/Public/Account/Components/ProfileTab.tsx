@@ -1,15 +1,15 @@
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { SharedData } from "@/types";
-import { usePage } from "@inertiajs/react";
-import React, { useEffect, useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import axios from "@/lib/axios";
-import Cropper from "react-easy-crop";
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AuthApi } from '@/Core/Api/Auth/AuthApi';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
+import React, { useCallback, useEffect, useState } from 'react';
+import Cropper from 'react-easy-crop';
+import { useForm } from 'react-hook-form';
 
 type ProfileFormData = {
     first_name: string;
@@ -32,33 +32,33 @@ export default function ProfileTab() {
 
     // Dialogs
     const [classicDialog, setClassicDialog] = useState({
-        title: "No title",
-        message: "No message",
+        title: 'No title',
+        message: 'No message',
         isOpen: false,
-        positiveButtonText: "Ok",
-        negativeButtonText: "Cancel",
+        positiveButtonText: 'Ok',
+        negativeButtonText: 'Cancel',
         isNegativeButtonVisible: false,
-        currentAction: ""
+        currentAction: '',
     });
 
     // React Hook Form
     const { register, handleSubmit, setValue, watch } = useForm<ProfileFormData>({
         defaultValues: {
-            first_name: "",
-            middle_name: "",
-            last_name: "",
-            user_name: "",
-            phone: "",
+            first_name: '',
+            middle_name: '',
+            last_name: '',
+            user_name: '',
+            phone: '',
         },
     });
 
     useEffect(() => {
         if (auth.user) {
-            setValue("first_name", auth.user.first_name || "Sample First Name");
-            setValue("middle_name", auth.user.middle_name || "Sample Middle Name");
-            setValue("last_name", auth.user.last_name || "Sample Last Name");
-            setValue("user_name", auth.user.user_name || "");
-            setValue("phone", auth.user.phone || "");
+            setValue('first_name', auth.user.first_name || 'Sample First Name');
+            setValue('middle_name', auth.user.middle_name || 'Sample Middle Name');
+            setValue('last_name', auth.user.last_name || 'Sample Last Name');
+            setValue('user_name', auth.user.user_name || '');
+            setValue('phone', auth.user.phone || '');
             setUserAvatarURL(auth.user.avatar || null);
         }
     }, [auth.user, setValue]);
@@ -75,8 +75,8 @@ export default function ProfileTab() {
     const getCroppedImage = useCallback(async () => {
         if (!selectedImage || !croppedAreaPixels) return null;
         const image = await createImage(selectedImage);
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
         if (!ctx) return null;
 
         const { width, height, x, y } = croppedAreaPixels;
@@ -86,7 +86,7 @@ export default function ProfileTab() {
         return new Promise<string>((resolve) => {
             canvas.toBlob((blob) => {
                 if (blob) resolve(URL.createObjectURL(blob));
-            }, "image/png");
+            }, 'image/png');
         });
     }, [selectedImage, croppedAreaPixels]);
 
@@ -117,15 +117,14 @@ export default function ProfileTab() {
 
     const handleLogout = async () => {
         try {
-            const response = await axios.post("/logout");
-            window.location.href = response.data.redirect;
+            const response = await AuthApi.logout();
         } catch (error) {
-            console.error("Logout failed:", error);
+            console.error('Logout failed:', error);
         }
     };
 
     return (
-        <Card className="flex flex-1 flex-col w-full h-full rounded-none shadow-sm">
+        <Card className="flex h-full w-full flex-1 flex-col rounded-none shadow-sm">
             <CardHeader className="border-b bg-white px-6 py-4">
                 <CardTitle className="text-2xl font-semibold">Profile</CardTitle>
                 <p className="text-sm text-muted-foreground">Update your personal information.</p>
@@ -133,26 +132,18 @@ export default function ProfileTab() {
 
             <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-3 p-8">
+                    <div className="grid grid-cols-1 gap-8 p-8 md:grid-cols-3">
                         {/* AVATAR SECTION */}
-                        <div className="flex flex-col items-center gap-4 md:items-start md:col-span-1">
+                        <div className="flex flex-col items-center gap-4 md:col-span-1 md:items-start">
                             <div className="relative flex flex-col items-center">
                                 <Avatar className="h-32 w-32 ring-2 ring-gray-200">
-                                    <AvatarImage
-                                        src={userAvatarURL || "https://www.gravatar.com/avatar/?d=mp"}
-                                        alt="avatar"
-                                    />
+                                    <AvatarImage src={userAvatarURL || 'https://www.gravatar.com/avatar/?d=mp'} alt="avatar" />
                                 </Avatar>
 
-                                <div className="flex flex-row gap-2 mt-6">
-                                    <Button className="h-7 text-[12px] flex items-center justify-center">
-                                        <label className="flex cursor-pointer items-center justify-center w-full h-full">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleFileChange}
-                                                className="hidden"
-                                            />
+                                <div className="mt-6 flex flex-row gap-2">
+                                    <Button className="flex h-7 items-center justify-center text-[12px]">
+                                        <label className="flex h-full w-full cursor-pointer items-center justify-center">
+                                            <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                             Upload
                                         </label>
                                     </Button>
@@ -162,13 +153,13 @@ export default function ProfileTab() {
                                         onClick={() => {
                                             setClassicDialog((prev) => ({
                                                 ...prev,
-                                                title: "Remove Avatar",
-                                                message: "Are you sure you want to remove your avatar?",
-                                                negativeButtonText: "Cancel",
-                                                positiveButtonText: "Remove",
+                                                title: 'Remove Avatar',
+                                                message: 'Are you sure you want to remove your avatar?',
+                                                negativeButtonText: 'Cancel',
+                                                positiveButtonText: 'Remove',
                                                 isNegativeButtonVisible: true,
-                                                currentAction: "remove-avatar",
-                                                isOpen: true
+                                                currentAction: 'remove-avatar',
+                                                isOpen: true,
                                             }));
                                         }}
                                     >
@@ -176,9 +167,7 @@ export default function ProfileTab() {
                                     </Button>
                                 </div>
                             </div>
-                            <p className="text-center md:text-left text-[10px] text-muted-foreground">
-                                Recommended: 240×240 • JPG/PNG
-                            </p>
+                            <p className="text-center text-[10px] text-muted-foreground md:text-left">Recommended: 240×240 • JPG/PNG</p>
                         </div>
 
                         {/* FORM SECTION */}
@@ -186,32 +175,27 @@ export default function ProfileTab() {
                             <div className="grid gap-6">
                                 <div>
                                     <Label htmlFor="first_name">First Name</Label>
-                                    <Input id="first_name" {...register("first_name")} className="mt-1" />
+                                    <Input id="first_name" {...register('first_name')} className="mt-1" />
                                 </div>
 
                                 <div>
                                     <Label htmlFor="middle_name">Middle Name</Label>
-                                    <Input id="middle_name" {...register("middle_name")} className="mt-1" />
+                                    <Input id="middle_name" {...register('middle_name')} className="mt-1" />
                                 </div>
 
                                 <div>
                                     <Label htmlFor="last_name">Last Name</Label>
-                                    <Input id="last_name" {...register("last_name")} className="mt-1" />
+                                    <Input id="last_name" {...register('last_name')} className="mt-1" />
                                 </div>
 
                                 <div>
                                     <Label htmlFor="user_name">Username</Label>
-                                    <Input
-                                        id="user_name"
-                                        disabled
-                                        {...register("user_name")}
-                                        className="mt-1 bg-gray-100"
-                                    />
+                                    <Input id="user_name" disabled {...register('user_name')} className="mt-1 bg-gray-100" />
                                 </div>
 
                                 <div>
                                     <Label htmlFor="phone">Mobile Number</Label>
-                                    <Input id="phone" {...register("phone")} placeholder="09XXXXXXXXX" className="mt-1" />
+                                    <Input id="phone" {...register('phone')} placeholder="09XXXXXXXXX" className="mt-1" />
                                 </div>
                             </div>
                         </div>
@@ -224,21 +208,23 @@ export default function ProfileTab() {
                         hideNegativeButton={!classicDialog.isNegativeButtonVisible}
                         negativeButtonText={classicDialog.negativeButtonText}
                         positiveButtonText={classicDialog.positiveButtonText}
-                        onNegativeClick={() => setClassicDialog((prev) => ({
-                            ...prev,
-                            isOpen: false
-                        }))}
+                        onNegativeClick={() =>
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                isOpen: false,
+                            }))
+                        }
                         onPositiveClick={() => {
                             setClassicDialog((prev) => ({
                                 ...prev,
-                                isOpen: false
-                            }))
+                                isOpen: false,
+                            }));
 
                             switch (classicDialog.currentAction) {
-                                case "logout":
+                                case 'logout':
                                     handleLogout();
                                     break;
-                                case "remove-avatar":
+                                case 'remove-avatar':
                                     setUserAvatarURL(null);
                                     break;
                             }
@@ -248,9 +234,9 @@ export default function ProfileTab() {
 
                     {/* Cropper Dialog */}
                     {isCropDialogOpen && (
-                        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-                            <div className="bg-white rounded-lg p-4 w-[90%] max-w-md flex flex-col items-center gap-4">
-                                <div className="relative w-full h-64 bg-gray-100 rounded-md overflow-hidden">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                            <div className="flex w-[90%] max-w-md flex-col items-center gap-4 rounded-lg bg-white p-4">
+                                <div className="relative h-64 w-full overflow-hidden rounded-md bg-gray-100">
                                     <Cropper
                                         image={selectedImage!}
                                         crop={crop}
@@ -261,7 +247,7 @@ export default function ProfileTab() {
                                         onCropComplete={onCropComplete}
                                     />
                                 </div>
-                                <div className="flex gap-3 mt-4">
+                                <div className="mt-4 flex gap-3">
                                     <Button variant="outline" onClick={() => setIsCropDialogOpen(false)}>
                                         Cancel
                                     </Button>
@@ -271,14 +257,8 @@ export default function ProfileTab() {
                         </div>
                     )}
 
-                    <div className="border-t bg-white px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-end gap-2 w-full">
-                        <Button
-                            type="submit"
-                            className="w-full md:w-auto"
-                            onClick={() => {
-
-                            }}
-                        >
+                    <div className="flex w-full flex-col gap-2 border-t bg-white px-6 py-4 md:flex-row md:items-center md:justify-end">
+                        <Button type="submit" className="w-full md:w-auto" onClick={() => {}}>
                             Save changes
                         </Button>
 
@@ -287,16 +267,16 @@ export default function ProfileTab() {
                             onClick={() => {
                                 setClassicDialog((prev) => ({
                                     ...prev,
-                                    title: "Confirm Logout",
-                                    message: "Are you sure you want to logout?",
-                                    negativeButtonText: "Cancel",
-                                    positiveButtonText: "Logout",
+                                    title: 'Confirm Logout',
+                                    message: 'Are you sure you want to logout?',
+                                    negativeButtonText: 'Cancel',
+                                    positiveButtonText: 'Logout',
                                     isNegativeButtonVisible: true,
-                                    currentAction: "logout",
-                                    isOpen: true
+                                    currentAction: 'logout',
+                                    isOpen: true,
                                 }));
                             }}
-                            className="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white"
+                            className="w-full bg-red-600 text-white hover:bg-red-700 md:w-auto"
                         >
                             Logout
                         </Button>
@@ -311,9 +291,9 @@ export default function ProfileTab() {
 function createImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const image = new Image();
-        image.addEventListener("load", () => resolve(image));
-        image.addEventListener("error", (error) => reject(error));
-        image.setAttribute("crossOrigin", "anonymous");
+        image.addEventListener('load', () => resolve(image));
+        image.addEventListener('error', (error) => reject(error));
+        image.setAttribute('crossOrigin', 'anonymous');
         image.src = url;
     });
 }

@@ -18,7 +18,7 @@ interface LoginFormProps {
     onLoggedIn: (redirectionLink: string) => void;
 }
 
-export default function LoginForm({ onLoggedIn }: LoginFormProps) {
+export default function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
     const { currentMunicipality } = useMunicipality();
 
@@ -99,6 +99,7 @@ export default function LoginForm({ onLoggedIn }: LoginFormProps) {
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     {...register('password', { required: 'Password is required' })}
+                                    autoComplete="off"
                                 />
                                 <button
                                     type="button"

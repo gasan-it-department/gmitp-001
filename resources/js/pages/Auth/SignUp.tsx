@@ -23,7 +23,7 @@ interface RegisterPageProps {
     onSignedIn: () => void;
 }
 
-export default function RegisterPage({ onSignedIn }: RegisterPageProps) {
+export default function RegisterPage() {
     const {
         register,
         handleSubmit,
@@ -62,19 +62,7 @@ export default function RegisterPage({ onSignedIn }: RegisterPageProps) {
 
             const response = await AuthApi.storeAccount(currentMunicipality.slug, data);
 
-            if (response.data.errors) {
-                setClassicDialog((prev) => ({
-                    ...prev,
-                    title: 'Validation Error',
-                    message: JSON.stringify(response.data.errors, null, 2),
-                    isDialogShowing: true,
-                }));
-                setIsSigningIn(false);
-                return;
-            }
-
             console.log('Registration successful', response.data);
-            onSignedIn();
             reset();
         } catch (error: any) {
             setIsSigningIn(false);
@@ -183,6 +171,7 @@ export default function RegisterPage({ onSignedIn }: RegisterPageProps) {
                                     message: 'Password must be at least 8 characters.',
                                 },
                             })}
+                            autoComplete="off"
                             className={`pr-10 ${errors.password ? 'border-destructive' : ''}`}
                         />
                         <button
@@ -209,6 +198,7 @@ export default function RegisterPage({ onSignedIn }: RegisterPageProps) {
                             validate: (value) => value === watch('password') || 'Passwords do not match.',
                         })}
                         className={errors.password_confirmation ? 'border-destructive' : ''}
+                        autoComplete="off"
                     />
                     {errors.password_confirmation && <InputError message={errors.password_confirmation.message} />}
                 </div>

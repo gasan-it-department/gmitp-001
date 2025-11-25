@@ -39,11 +39,13 @@ class AuthenticateUserController extends Controller
 
             $result = $this->loginUser->execute($loginDto, $municipality->slug);
 
+
             return response()->json(
                 [
                     'success' => true,
                     'result' => $result,
                     'redirect' => $result->redirect,
+                    // 'csrfToken' => csrf_token(),
                 ],
                 200
             );
@@ -79,15 +81,4 @@ class AuthenticateUserController extends Controller
 
     }
 
-    // public function refresh(Request $request): JsonResponse
-    // {
-    //     $token = $request->bearerToken();
-    //     $authResponse = $this->rememberUseCase->execute($token);
-
-    //     if (!$authResponse) {
-    //         return response()->json(['error' => 'Invalid or expired token'], 401);
-    //     }
-
-    //     return response()->json(['auth' => $authResponse->toArray()]);
-    // }
 }

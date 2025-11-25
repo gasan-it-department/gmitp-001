@@ -18,31 +18,26 @@ export default function LogInSignUpDialog({ isOpen, onClose, onSignedIn, onLogge
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent
-                showCloseButton={true}
-                className="flex w-[600px]"
-            >
+            <DialogContent showCloseButton={true} className="flex w-[600px]">
                 <Tabs
                     defaultValue="login"
                     className="h-full w-full flex-1"
                     onValueChange={(value) => {
                         switch (value) {
-                            case "signup":
-                                setDialogTitle("Register new account");
+                            case 'signup':
+                                setDialogTitle('Register new account');
                                 break;
-                            case "login":
-                                setDialogTitle("Log in to your account");
+                            case 'login':
+                                setDialogTitle('Log in to your account');
                                 break;
                         }
                     }}
                 >
-                    <DialogHeader className="p-0 mb-3">
-                        <DialogTitle className="text-center text-lg font-semibold">
-                            {dialogTitle}
-                        </DialogTitle>
+                    <DialogHeader className="mb-3 p-0">
+                        <DialogTitle className="text-center text-lg font-semibold">{dialogTitle}</DialogTitle>
                     </DialogHeader>
 
-                    <TabsList className="flex w-full mb-3">
+                    <TabsList className="mb-3 flex w-full">
                         <TabsTrigger value="login" className="flex-1 text-sm">
                             Log In
                         </TabsTrigger>
@@ -53,21 +48,11 @@ export default function LogInSignUpDialog({ isOpen, onClose, onSignedIn, onLogge
 
                     <div className="flex h-full items-center justify-center">
                         <TabsContent value="login" className="w-full px-2 sm:px-4">
-                            <LoginForm
-                                onLoggedIn={(redirectionLink) => {
-                                    onLoggedIn(redirectionLink);
-                                    onClose();
-                                }}
-                            />
+                            <LoginForm />
                         </TabsContent>
 
                         <TabsContent value="signup" className="w-full px-2 sm:px-4">
-                            <SignUp
-                                onSignedIn={() => {
-                                    onSignedIn();
-                                    onClose();
-                                }}
-                            />
+                            <SignUp />
                         </TabsContent>
                     </div>
                 </Tabs>

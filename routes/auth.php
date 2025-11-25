@@ -1,6 +1,5 @@
 <?php
 
-use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Api\Controllers\Auth\CreateUserController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\Auth\AuthenticateUserController;

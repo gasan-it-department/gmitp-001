@@ -49,8 +49,8 @@ Route::prefix('/api/action-center')
                 Route::get('/mine', 'fetchMine')->name('mine');
                 Route::post('/', 'store')->name('store');
                 Route::put('/{id}', 'update')->name('update');
-                Route::delete('/{id}', 'destroy')->name('destroy');
-
+                Route::delete('/{id}', action: 'destroy')->name('destroy');
+                Route::get('/{id}', 'show')->name('show');
                 // Route::get('status-list', [ActionCenterStatusController::class, 'getStatusList'])
                 //     ->name('status');
                 // Route::get('assistance-options', [AssistanceTypeController::class, 'assistanceTypesSelect'])

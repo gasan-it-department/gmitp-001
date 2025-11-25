@@ -11,17 +11,33 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('assistance_beneficiaries', function (Blueprint $table) {
+
             $table->ulid('id')->primary();
+
             $table->string('first_name');
+
             $table->string('middle_name')->nullable();
-            $table->string('last_name')->nullable();
+
+            $table->string('last_name');
+
             $table->string('suffix')->nullable();
+
             $table->date('birth_date');
+
             $table->string('contact_number');
+
             $table->string('province');
+
             $table->string('municipality');
+
             $table->string('barangay');
+
+            $table->boolean('is_active')->default(false);
+
+            $table->timestamp('verified_at')->nullable();
+
             $table->timestamps();
+
         });
 
         Schema::create('assistance_requests', function (Blueprint $table) {

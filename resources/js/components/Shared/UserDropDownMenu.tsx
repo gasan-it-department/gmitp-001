@@ -6,12 +6,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { AuthApi } from '@/Core/Api/Auth/AuthApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import axios from '@/lib/axios';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { account } from '@/routes';
 import admin from '@/routes/admin';
 import superAdmin from '@/routes/superAdmin';
-import { account } from '@/routes';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -24,8 +24,7 @@ export function UserDropdownMenu() {
 
     const handleLogout = async () => {
         try {
-            const response = await axios.post('/logout');
-            window.location.href = response.data.redirect;
+            await AuthApi.logout();
         } catch (error) {
             console.error('Logout failed:', error);
         }

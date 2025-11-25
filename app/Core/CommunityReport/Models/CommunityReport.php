@@ -43,6 +43,16 @@ class CommunityReport extends Model
 
     ];
 
+    protected $casts = [
+
+        'sender_name' => 'encrypted',
+
+        'description' => 'encrypted',
+
+        'contact' => 'encrypted'
+
+    ];
+
     public function attachments()
     {
 

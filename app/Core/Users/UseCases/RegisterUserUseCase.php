@@ -23,7 +23,6 @@ class RegisterUserUseCase
         private LoginRedirectionService $loginRedirectionService,
     ) {
     }
-
     public function execute(RegisterUserDto $dto, string $slug)
     {
         return DB::transaction(function () use ($dto, $slug) {
@@ -51,7 +50,7 @@ class RegisterUserUseCase
 
             return [
                 'result' => $session,
-                'redirect' => null,
+                'redirect' => $redirect,
             ];
         });
 

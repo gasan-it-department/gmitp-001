@@ -1,6 +1,6 @@
 import Auth from "@/actions/App/External/Api/Controllers/Auth"
-import axios from 'axios'
-
+import axios from "@/lib/axios"
+import { router } from "@inertiajs/react"
 
 export const AuthApi = {
     async login(municipalSlug: string, formData: any) {
@@ -19,11 +19,15 @@ export const AuthApi = {
 
         if (response.data.redirect === "BACK") {
 
-            window.history.back();
+            // router.reload();
+            router.visit(window.location.href, {
+                preserveScroll: true,
+                preserveState: true,
+            });
 
         } else {
 
-            window.location.href = response.data.redirect;
+            router.visit(response.data.redirect);
 
         }
 
@@ -42,10 +46,35 @@ export const AuthApi = {
             }
         });
 
+
         if (data.redirect === "BACK") {
 
-            return
+            //for client redirection ask (harvey)
+            router.visit(window.location.href, {
+                preserveScroll: true,
+                preserveState: true,
+            });
+
+        } else {
+
+            //for admin and super admin redirection (ask harvey)
+            router.visit(data.redirect);
+
         }
+
+        return data;
+
+    },
+
+    async logout() {
+        const { url, method } = Auth.AuthenticateUserController.logout()
+
+        const { data } = await axios({
+            url,
+            method,
+        });
+
+        router.visit(data.redirect);
 
         return data;
 
