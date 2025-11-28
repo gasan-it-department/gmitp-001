@@ -34,7 +34,7 @@ class AssistanceRequestRepositories
 
         $assistance = AssistanceRequest::with('beneficiary')
             ->where('municipal_id', $municipalId)
-            ->paginate(10);
+            ->paginate(perPage: 30);
 
         return $assistance;
 

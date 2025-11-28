@@ -1,36 +1,45 @@
-import { SpinnerCustom } from '@/components/SpinnerCustom';
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuSeparator,
+    ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
-import axios from '@/lib/axios';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Printer, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import PrintView from './PrintView';
 import SortSelectionDialog from './SortSelectionDialog';
+import { ca } from 'date-fns/locale';
+import PaginationView from '@/pages/Utility/PaginationView';
 
 export function AssistanceRequestTable() {
     const { currentMunicipality } = useMunicipality();
-    const queryClient = useQueryClient();
     const [editingData, setEditingData] = useState<AssistanceRequest | null>(null);
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
     const [currentSelectedSortOption, setCurrentSelectedSortOption] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedStatus, setSelectedStatus] = useState('all');
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
+    const [requestList, setRequestList] = useState<AssistanceRequest[]>([]);
+    const [selectedItems, setSelectedItems] = useState<AssistanceRequest[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [perPage, setPerPage] = useState(30);
+    const [totalItems, setTotalItems] = useState(0);
+
     const [printDialogState, setPrintDialogState] = useState<{
         isVisible: boolean;
         request: AssistanceRequest | null;
@@ -47,7 +56,7 @@ export function AssistanceRequestTable() {
         negativeButtonText: string;
         isNegativeButtonHidden: boolean;
         action: string;
-        payload: string;
+        payload: any;
     }>({
         isOpen: false,
         title: '',
@@ -59,87 +68,93 @@ export function AssistanceRequestTable() {
         payload: '',
     });
 
-    const { data, isLoading, error } = useQuery<{ request: AssistanceRequest[] }>({
-        queryKey: ['request-list'],
-        queryFn: () => ActionCenterApi.getAllRequest(currentMunicipality.slug),
-        refetchOnWindowFocus: false,
-    });
+    // --------------------------------------------------
+    // LOAD TABLE DATA
+    // --------------------------------------------------
+    useEffect(() => {
+        loadRequestList(currentPage);
+    }, [currentPage]);
 
-    const filteredRequests = useMemo(() => {
-        if (!data?.request) return [];
-
-        const query = searchQuery.toLowerCase().trim();
-
-        // --- Filter by search and status ---
-        let results = data.request.filter((req) => {
-            const fullName = `${req.beneficiary.first_name} ${req.beneficiary.last_name}`.toLowerCase();
-            const matchesSearch =
-                !query ||
-                fullName.includes(query) ||
-                req.assistance_type?.toLowerCase().includes(query) ||
-                req.transaction_number?.toLowerCase().includes(query);
-
-            const matchesStatus = selectedStatus === 'all' || req.status === selectedStatus;
-            return matchesSearch && matchesStatus;
-        });
-
-        // --- Sort results ---
-        if (currentSelectedSortOption) {
-            results = [...results].sort((a, b) => {
-                switch (currentSelectedSortOption) {
-                    case 'sort_name': {
-                        const nameA = `${a.beneficiary.last_name} ${a.beneficiary.first_name}`.toLowerCase();
-                        const nameB = `${b.beneficiary.last_name} ${b.beneficiary.first_name}`.toLowerCase();
-                        return nameA.localeCompare(nameB);
-                    }
-                    case 'sort_request_date':
-                        // ✅ Show newest first
-                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                    case 'sort_due_date':
-                        return (
-                            new Date(Utility().formatAndAddDays(b.created_at, 90)).getTime() -
-                            new Date(Utility().formatAndAddDays(a.created_at, 90)).getTime()
-                        );
-                    case 'sort_transaction_id':
-                        return (b.transaction_number || '').localeCompare(a.transaction_number || '');
-                    case 'sort_status':
-                        return (a.status || '').localeCompare(b.status || '');
-                    case 'sort_title':
-                        return (a.assistance_type || '').localeCompare(b.assistance_type || '');
-                    default:
-                        return 0;
-                }
-            });
-        } else {
-            // ✅ Default sort: newest request first
-            results = [...results].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        }
-
-        return results;
-    }, [data, searchQuery, selectedStatus, currentSelectedSortOption]);
-
-    const handleDeleteRequest = async (requestId: string) => {
+    const loadRequestList = async (currentPage: number = 1) => {
         try {
             setIsLoadingDialogVisible(true);
-            await axios.delete(`/action-center/request/${requestId}`);
+            const response = await ActionCenterApi.getAllRequest(currentMunicipality.slug, currentPage);
+            const data = response.data.data ?? [];
 
-            // Refresh the request list
-            queryClient.invalidateQueries({ queryKey: ['request-list'] });
+            // Sort by created_at descending
+            data.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+            setCurrentPage(response.data.current_page);
+            setLastPage(response.data.last_page);
+            setPerPage(response.data.per_page);
+            setTotalItems(response.data.total);
+
+            setRequestList(data);
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to load requests');
+        } finally {
             setIsLoadingDialogVisible(false);
-            toast.success('Record deleted successfully!');
-        } catch (error: any) {
-            setIsLoadingDialogVisible(false);
-            console.error('Error deleting request:', error);
-            toast.error(error.response?.data?.message || 'Failed to delete record.');
         }
     };
 
+    // --------------------------------------------------
+    // DELETE REQUEST
+    // --------------------------------------------------
+    const deleteRequest = async (requestId: string[]) => {
+        try {
+            if (requestId.length === 1) {
+                // DELETE SINGLE RECORD
+                console.log("Delete 1 recond only.");
+            } else {
+                // DDELETE MULTIPLE RECORD
+                console.log(`Delete ${requestId.length} records.`);
+            }
+        } catch (error: any) {
+
+        }
+    };
+
+    const addNewItem = (newItem: AssistanceRequest) => {
+        setTotalItems(prev => {
+            const newTotal = prev + 1;
+            const newLastPage = Math.ceil(newTotal / perPage);
+            setLastPage(newLastPage);
+
+            return newTotal;
+        });
+
+        if (currentPage === 1) {
+            const updated = [newItem, ...requestList];
+            if (updated.length > perPage) {
+                updated.pop();
+            }
+
+            setRequestList(updated);
+        }
+
+        if (currentPage !== 1) {
+            loadRequestList(1);
+        }
+    };
+
+    const normalizeAssistance = (data: any) => {
+        if (!data.assistance) return data;
+        return {
+            ...data.assistance,
+            beneficiary: data.beneficiary
+        };
+    };
+
+    // --------------------------------------------------
+    // TABLE RENDER
+    // --------------------------------------------------
     return (
         <div>
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Request Records</h1>
+
                 <Header
                     className="flex justify-end"
                     onAddNewButtonClicked={() => {
@@ -147,14 +162,15 @@ export function AssistanceRequestTable() {
                         setIsAddNewRecordDialogOpen(true);
                     }}
                     onExportButtonClicked={() => {
-                        if (filteredRequests.length === 0) {
+                        if (requestList.length === 0) {
                             toast('No data to export');
                             return;
                         }
+
                         setClassicDialog((prev) => ({
                             ...prev,
                             title: 'Export File',
-                            message: 'Are you sure you want to export the list as .xlsx',
+                            message: 'Are you sure you want to export the list as .xlsx?',
                             positiveButtonText: 'Export',
                             negativeButtonText: 'Cancel',
                             isNegativeButtonHidden: false,
@@ -163,8 +179,33 @@ export function AssistanceRequestTable() {
                         }));
                     }}
                     onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
-                    onSearch={(query) => setSearchQuery(query)}
+                    onSearch={(query) => { }}
                 />
+            </div>
+
+            <div className="flex items-center justify-between mb-2">
+                <div>
+                    <Button
+                        size="sm"
+                        disabled={selectedItems.length <= 0}
+                        className="bg-red-600 hover:bg-red-700 text-white border-none"
+                        onClick={() =>
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                isOpen: true,
+                                title: "Confirm",
+                                message: `Are you sure you want to delete ${selectedItems.length} selected records(s)? THIS CANNOT BE UNDONE.`,
+                                positiveButtonText: "Delete",
+                                negativeButtonText: "Cancel",
+                                isNegativeButtonHidden: false,
+                                payload: selectedItems,
+                                action: "delete_record"
+                            }))
+                        }
+                    >
+                        Delete ({selectedItems.length}) items
+                    </Button>
+                </div>
             </div>
 
             {/* TABLE */}
@@ -172,6 +213,21 @@ export function AssistanceRequestTable() {
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
+
+                            <TableHead className="bg-gray-50 w-10">
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 cursor-pointer"
+                                    checked={selectedItems.length === requestList.length && requestList.length > 0}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setSelectedItems(requestList);
+                                        } else {
+                                            setSelectedItems([]);
+                                        }
+                                    }}
+                                />
+                            </TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">No.</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Name</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Request Date</TableHead>
@@ -184,34 +240,43 @@ export function AssistanceRequestTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={8} className="h-[75vh] text-center">
-                                    <div className="flex items-center justify-center">
-                                        <SpinnerCustom />
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ) : error ? (
-                            <TableRow>
-                                <TableCell colSpan={8} className="h-64 text-center text-gray-500">
-                                    Failed to load data. Please try again.
-                                </TableCell>
-                            </TableRow>
-                        ) : filteredRequests.length === 0 ? (
-                            <AdminEmptyListItem colSpan={8} title="No records yet." message="Action center records will show here." />
+                        {requestList.length === 0 ? (
+                            <AdminEmptyListItem
+                                colSpan={9}
+                                title="No records found."
+                                message="Action center records will show here."
+                            />
                         ) : (
-                            filteredRequests.map((req, index) => (
+                            requestList.map((req, index) => (
                                 <ContextMenu key={req.id}>
                                     <ContextMenuTrigger asChild>
                                         <TableRow className="cursor-pointer transition-colors hover:bg-gray-50">
+                                            <TableCell className="text-[12px] w-8">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 cursor-pointer"
+                                                    checked={selectedItems.some((item) => item.id === req.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedItems((prev) => [...prev, req]);
+                                                        } else {
+                                                            setSelectedItems((prev) =>
+                                                                prev.filter((item) => item.id !== req.id)
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </TableCell>
+
                                             <TableCell className="text-[12px]">{index + 1}</TableCell>
 
                                             <TableCell className="text-[12px] capitalize">
                                                 {req.beneficiary.first_name} {req.beneficiary.last_name}
                                             </TableCell>
 
-                                            <TableCell className="text-[12px]">{Utility().formatToReadableDateNoTime(req.created_at)}</TableCell>
+                                            <TableCell className="text-[12px]">
+                                                {Utility().formatToReadableDateNoTime(req.created_at)}
+                                            </TableCell>
 
                                             <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
 
@@ -219,17 +284,16 @@ export function AssistanceRequestTable() {
 
                                             <TableCell className="text-[12px]">
                                                 <span
-                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
-                                                        req.status === 'approved'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : req.status === 'rejected'
-                                                              ? 'bg-red-100 text-red-700'
-                                                              : req.status === 'in_review'
+                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${req.status === 'approved'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : req.status === 'rejected'
+                                                            ? 'bg-red-100 text-red-700'
+                                                            : req.status === 'in_review'
                                                                 ? 'bg-blue-100 text-blue-700'
                                                                 : req.status === 'completed'
-                                                                  ? 'bg-emerald-100 text-emerald-700'
-                                                                  : 'bg-yellow-100 text-yellow-700'
-                                                    }`}
+                                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                                    : 'bg-yellow-100 text-yellow-700'
+                                                        }`}
                                                 >
                                                     {{
                                                         pending: 'Pending',
@@ -241,11 +305,12 @@ export function AssistanceRequestTable() {
                                                 </span>
                                             </TableCell>
 
-                                            <TableCell className="text-[12px]">{Utility().formatAndAddDaysNoTime(req.created_at, 90)}</TableCell>
+                                            <TableCell className="text-[12px]">
+                                                {Utility().formatAndAddDaysNoTime(req.created_at, 90)}
+                                            </TableCell>
 
                                             {/* ACTION BUTTONS */}
                                             <TableCell className="flex gap-2">
-                                                {/* EDIT BUTTON */}
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
@@ -258,73 +323,82 @@ export function AssistanceRequestTable() {
                                                     <Pencil size={14} />
                                                 </Button>
 
-                                                {/* PRINT BUTTON */}
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => {
-                                                        setPrintDialogState((prev) => ({
-                                                            ...prev,
+                                                    onClick={() =>
+                                                        setPrintDialogState({
                                                             isVisible: true,
                                                             request: req,
-                                                        }));
-                                                    }}
+                                                        })
+                                                    }
                                                     className="border-green-200 text-green-600 hover:bg-green-50"
                                                 >
                                                     <Printer size={14} />
                                                 </Button>
 
-                                                {/* DELETE BUTTON */}
-                                                <Button
+                                                {/* <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => {
-                                                        setClassicDialog((prev) => ({
-                                                            ...prev,
+                                                    onClick={() =>
+                                                        setClassicDialog({
+                                                            ...classicDialog,
                                                             isOpen: true,
                                                             title: 'Delete Record',
-                                                            message: 'Are you sure you want to delete this record? This cannot be undone.',
+                                                            message:
+                                                                'Are you sure you want to delete this record? This cannot be undone.',
                                                             positiveButtonText: 'Delete',
                                                             negativeButtonText: 'Cancel',
                                                             isNegativeButtonHidden: false,
                                                             action: 'delete_record',
                                                             payload: req.id,
-                                                        }));
-                                                    }}
+                                                        })
+                                                    }
                                                     className="border-red-200 text-red-600 hover:bg-red-50"
                                                 >
                                                     <Trash2 size={14} />
-                                                </Button>
+                                                </Button> */}
                                             </TableCell>
                                         </TableRow>
                                     </ContextMenuTrigger>
 
-                                    {/* Right-click menu */}
+                                    {/* CONTEXT MENU
                                     <ContextMenuContent className="w-44">
-                                        {/* <ContextMenuItem inset onClick={() => setSelectedItem(req)}>
-                                            View Details
-                                        </ContextMenuItem> */}
                                         <ContextMenuItem inset onClick={() => setEditingData(req)}>
                                             Edit
                                         </ContextMenuItem>
+
                                         <ContextMenuSeparator />
+
                                         <ContextMenuItem
                                             inset
-                                            onClick={() => handleDeleteRequest(req.id)}
+                                            onClick={() => deleteRequest(selectedItems)}
                                             className="text-red-600 focus:bg-red-50 focus:text-red-700"
                                         >
                                             Delete
                                         </ContextMenuItem>
-                                    </ContextMenuContent>
+                                    </ContextMenuContent> */}
                                 </ContextMenu>
                             ))
                         )}
                     </TableBody>
                 </Table>
-                <ToastProvider />
+            </div>
+
+            <div className="mt-2">
+                <PaginationView
+                    currentPage={currentPage}
+                    totalPages={lastPage}
+                    totalItems={totalItems}
+                    itemsPerPage={perPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             {/* DIALOGS */}
+
+            <ToastProvider />
+
             <SortSelectionDialog
                 currentSelected={currentSelectedSortOption}
                 selectedSortOption={(value) => {
@@ -335,7 +409,19 @@ export function AssistanceRequestTable() {
                 onClose={() => setIsSortSelectionDialogOpen(false)}
             />
 
-            <AddEditRecordDialog editData={editingData} isOpen={isAddNewRecordDialogOpen} onClose={() => setIsAddNewRecordDialogOpen(false)} />
+            <AddEditRecordDialog
+                editData={editingData}
+                isOpen={isAddNewRecordDialogOpen}
+                onClose={() => setIsAddNewRecordDialogOpen(false)}
+                onSuccess={(data, isEditMode) => {
+                    if (isEditMode) {
+
+                    } else {
+                        const normalizedData = normalizeAssistance(data);
+                        addNewItem(normalizedData);
+                    }
+                }}
+            />
 
             <ClassicDialog
                 title={classicDialog.title}
@@ -345,43 +431,44 @@ export function AssistanceRequestTable() {
                 negativeButtonText={classicDialog.negativeButtonText}
                 open={classicDialog.isOpen}
                 onPositiveClick={() => {
-                    switch (classicDialog.action) {
-                        case 'delete_record':
-                            handleDeleteRequest(classicDialog.payload);
-                            break;
-                        case 'file_export':
-                            ToExcel(filteredRequests, `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`);
-                            break;
+                    if (classicDialog.action === 'delete_record') {
+                        deleteRequest(classicDialog.payload);
                     }
 
-                    setClassicDialog((prev) => ({
-                        ...prev,
+                    if (classicDialog.action === 'file_export') {
+                        ToExcel(
+                            requestList,
+                            `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                        );
+                    }
+
+                    setClassicDialog({
+                        ...classicDialog,
                         isOpen: false,
                         action: '',
                         payload: '',
-                    }));
+                    });
                 }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
+                onNegativeClick={() =>
+                    setClassicDialog({
+                        ...classicDialog,
                         isOpen: false,
                         action: '',
                         payload: '',
-                    }));
-                }}
+                    })
+                }
             />
 
             <LoadingDialog title="Loading, please wait..." isOpen={isLoadingDialogVisible} />
 
             <PrintView
                 isOpen={printDialogState.isVisible}
-                onClose={() => {
-                    setPrintDialogState((prev) => ({
-                        ...prev,
+                onClose={() =>
+                    setPrintDialogState({
                         isVisible: false,
                         request: null,
-                    }));
-                }}
+                    })
+                }
                 data={printDialogState.request}
             />
         </div>

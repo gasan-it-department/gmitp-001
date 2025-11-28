@@ -23,9 +23,10 @@ import { CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Me
 import * as React from 'react';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { auth, url } = usePage<SharedData>().props;
+    const { auth } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
+
     const [classicDialog, setClassicDialog] = React.useState({
         isOpen: false,
         title: '',
@@ -35,15 +36,23 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         isNegativeButtonHidden: true,
         action: '',
     });
-    const cachedUrl = typeof window !== 'undefined' ? localStorage.getItem('activeSidebarUrl') || String(url) : String(url);
 
-    const isRouteActive = (pattern: string) => {
-        if (!pattern) return false;
-        return cachedUrl === pattern || cachedUrl.startsWith(pattern + '/') || cachedUrl.startsWith(pattern + '?') || cachedUrl.includes(pattern);
+    // Read cached active URL from localStorage
+    const cachedUrl =
+        typeof window !== 'undefined'
+            ? localStorage.getItem('activeSidebarUrl') || ''
+            : '';
+
+    const [activeUrl, setActiveUrl] = React.useState<string>(cachedUrl);
+
+    const isRouteActive = (linkUrl: string) => {
+        if (!linkUrl) return false;
+        return activeUrl === linkUrl || activeUrl.startsWith(linkUrl + '/') || activeUrl.includes(linkUrl);
     };
 
     const handleLinkClick = (linkUrl: string) => {
         localStorage.setItem('activeSidebarUrl', linkUrl);
+        setActiveUrl(linkUrl);
         router.visit(linkUrl);
     };
 
@@ -65,7 +74,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             title: 'ACTION CENTER',
             icon: ClipboardList,
             items: [
-                { title: 'Dashboard', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: LayoutDashboard },
+                // { title: 'Dashboard', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: LayoutDashboard },
                 { title: 'Requests', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: FileText },
             ],
         },
@@ -80,10 +89,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
                 { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
-                { title: 'Comunity Reports', url: '', icon: UsersIcon },
+                { title: 'Community Reports', url: '', icon: UsersIcon },
             ],
         },
-
         {
             title: 'TOURISM',
             icon: Map,
@@ -135,17 +143,16 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                 <SidebarMenuSub className="space-y-1 border-l border-gray-100 pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
-                                        const isActive = isRouteActive(sub.title);
+                                        const isActive = isRouteActive(sub.url);
 
                                         return (
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
-                                                        isActive
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
                                                             ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
                                                             : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -153,11 +160,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${
-                                                                isActive
+                                                            className={`transition-all duration-200 ease-out ${isActive
                                                                     ? 'scale-110 stroke-orange-600 text-orange-600'
                                                                     : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                            }`}
+                                                                }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>
@@ -192,23 +198,13 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 negativeButtonText={classicDialog.negativeButtonText}
                 hideNegativeButton={classicDialog.isNegativeButtonHidden}
                 onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
+                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
 
-                    switch (classicDialog.action) {
-                        case 'exit':
-                            router.visit(home.url({ municipality: currentMunicipality.slug }));
-                            break;
+                    if (classicDialog.action === 'exit') {
+                        router.visit(home.url({ municipality: currentMunicipality.slug }));
                     }
                 }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
+                onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
             />
         </Sidebar>
     );

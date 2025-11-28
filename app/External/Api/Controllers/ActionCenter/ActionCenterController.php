@@ -87,11 +87,9 @@ class ActionCenterController extends Controller
         return response()->json([
 
             'message' => 'request created',
-
+            'success' => true,
             'data' => [
-
-                'assistance' => $assistance,
-
+                'assistance' => $assistance, 
                 'beneficiary' => $beneficiary
             ],
 
@@ -108,7 +106,6 @@ class ActionCenterController extends Controller
         return response()->json([
 
             'success' => true,
-
             'data' => $assitance,
 
         ], 200);

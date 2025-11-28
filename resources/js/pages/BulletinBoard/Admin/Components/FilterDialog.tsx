@@ -6,8 +6,9 @@ import { useState, useEffect } from "react";
 interface FilterDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    filters: string[]; // list of filter names
-    selectedFilter: string | null; // initially selected filter
+    filters: string[];
+    selectedFilter: string | null;
+    currentFilter: string | null;
     onApply: (selected: string | null) => void;
 }
 
@@ -15,17 +16,17 @@ export default function FilterDialog({
     isOpen,
     onClose,
     filters,
-    selectedFilter,
+    currentFilter,
     onApply,
 }: FilterDialogProps) {
     const [selected, setSelected] = useState<string | null>(null);
 
-    // Initialize selected filter when dialog opens
+    // ✅ Set default selected value whenever dialog opens
     useEffect(() => {
         if (isOpen) {
-            setSelected(selectedFilter);
+            setSelected(currentFilter);
         }
-    }, [isOpen, selectedFilter]);
+    }, [isOpen, currentFilter]);
 
     const handleApply = () => {
         onApply(selected);
@@ -36,15 +37,15 @@ export default function FilterDialog({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
                 className="
-          w-[90vw] sm:w-[80vw] md:w-[400px]
-          max-w-md rounded-2xl p-6
-          border shadow-lg
-          bg-white dark:bg-neutral-900
-          flex flex-col items-center text-center gap-5
-          transition-all duration-300 ease-in-out
-        "
+                    w-[90vw] sm:w-[80vw] md:w-[400px]
+                    max-w-md rounded-2xl p-6
+                    border shadow-lg
+                    bg-white dark:bg-neutral-900
+                    flex flex-col items-center text-center gap-5
+                    transition-all duration-300 ease-in-out
+                "
             >
-                <h3 className="text-lg font-semibold">Filter Options</h3>
+                <h3 className="text-lg font-semibold">Sort By</h3>
 
                 <RadioGroup
                     value={selected || ""}
@@ -56,15 +57,20 @@ export default function FilterDialog({
                             key={filter}
                             className="flex items-center gap-2 cursor-pointer text-left px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-neutral-800"
                         >
-                            <RadioGroupItem value={filter} className="accent-orange-400 dark:accent-orange-600" />
+                            <RadioGroupItem
+                                value={filter}
+                                className="accent-orange-400 dark:accent-orange-600"
+                            />
                             <span>{filter}</span>
                         </label>
                     ))}
                 </RadioGroup>
 
-                {/* Apply button */}
                 <div className="flex w-full justify-end mt-4">
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white" onClick={handleApply}>
+                    <Button
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                        onClick={handleApply}
+                    >
                         Apply
                     </Button>
                 </div>

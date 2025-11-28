@@ -6,6 +6,7 @@ import InformationDashboard from './Components/InformationDashboard';
 import Report from './Components/ReportForm/ReportFormCard';
 
 export default function HomePage() {
+
     return (
         <PublicLayout title="Home" description="">
             <div>

@@ -22,15 +22,14 @@ export const ActionCenterApi = {
 
     },
 
-    async getAllRequest(municipalSlug: string) {
+    async getAllRequest(municipalSlug: string, page: number = 1) {
         const { url, method } = ActionCenterController.fetch();
 
         const { data } = await axios({
             url, method,
+            params: { page },
             headers: {
-
                 'X-Municipality-Slug': municipalSlug
-
             }
         })
 

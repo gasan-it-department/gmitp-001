@@ -6,29 +6,28 @@ interface PaginationProps {
     totalPages: number;
     totalItems: number;
     itemsPerPage: number;
-    onPageChange: (page: number, totalPage: number) => void;
+    onPageChange: (page: number) => void;
     maxVisible?: number;
 }
 
 const PaginationView: React.FC<PaginationProps> = ({
     currentPage,
     totalPages,
-    totalItems,
-    itemsPerPage,
     onPageChange,
-    maxVisible = 4,
+    maxVisible = 9,
 }) => {
+    console.log("Total page: ", totalPages);
     if (totalPages <= 1) return null;
 
     let pages: (number | string)[] = [];
 
     if (totalPages <= maxVisible) {
         pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-    } else if (currentPage <= 5) {
-        pages = ([...Array(6).keys()].map(i => i + 1) as (number | string)[]).concat(["...", totalPages]);
-    } else if (currentPage >= totalPages - 4) {
+    } else if (currentPage <= 4) {
+        pages = ([1, 2, 3, 4, 5] as (number | string)[]).concat(["...", totalPages]);
+    } else if (currentPage >= totalPages - 3) {
         pages = ([1, "..."] as (number | string)[]).concat(
-            Array.from({ length: 6 }, (_, i) => totalPages - 5 + i)
+            Array.from({ length: 5 }, (_, i) => totalPages - 4 + i)
         );
     } else {
         pages = [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
@@ -40,7 +39,7 @@ const PaginationView: React.FC<PaginationProps> = ({
                 variant="outline"
                 size="sm"
                 disabled={currentPage === 1}
-                onClick={() => onPageChange(currentPage - 1, totalPages)}
+                onClick={() => onPageChange(currentPage - 1)}
                 className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300"
             >
                 Prev
@@ -51,10 +50,10 @@ const PaginationView: React.FC<PaginationProps> = ({
                     <Button
                         key={index}
                         size="sm"
-                        onClick={() => onPageChange(page, totalPages)}
+                        onClick={() => onPageChange(page)}
                         className={`${page === currentPage
-                                ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md"
-                                : "border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300"
+                            ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md"
+                            : "border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300"
                             }`}
                         variant={page === currentPage ? "default" : "outline"}
                     >
@@ -71,7 +70,7 @@ const PaginationView: React.FC<PaginationProps> = ({
                 variant="outline"
                 size="sm"
                 disabled={currentPage === totalPages}
-                onClick={() => onPageChange(currentPage + 1, totalPages)}
+                onClick={() => onPageChange(currentPage + 1)}
                 className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300"
             >
                 Next

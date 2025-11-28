@@ -169,7 +169,7 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
                                 disabled={isSubmitting}
                                 className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:opacity-50 sm:flex-none"
                             >
-                                {isSubmitting ? (editData ? 'Updating...' : 'Saving...') : editData ? 'Update' : 'Save'}
+                                {isSubmitting ? (editData ? 'Updating...' : 'Saving...') : editData ? 'Update' : 'Post'}
                             </Button>
                         </DialogFooter>
                     </form>

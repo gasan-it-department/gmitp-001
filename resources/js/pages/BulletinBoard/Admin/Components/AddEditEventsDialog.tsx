@@ -18,7 +18,7 @@ interface AddEditEventsDialogProps {
     onFailed?: (error: any, isEdit: boolean) => void;
 }
 
-export default function AddEditEventsDialog({ isOpen, editData, onClose, onSuccess, onFailed }: AddEditEventsDialogProps) {
+export default function AddEditEventsDialog({ isOpen, editData, onClose, onSuccess }: AddEditEventsDialogProps) {
     const {
         register,
         handleSubmit,
@@ -60,11 +60,18 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
         try {
             if (editData) {
                 await EventsApi.updateEvent(editData.id, currentMunicipality.slug, data);
-                console.log(data);
                 onSuccess!(data, true);
             } else {
-                await EventsApi.storeEvents(data, currentMunicipality.slug);
-                onSuccess!(data, false);
+                const response = await EventsApi.storeEvents(data, currentMunicipality.slug);
+                const reconstructedResponse = {
+                    id: response.data.id,
+                    title: response.data.title,
+                    description: response.data.description,
+                    event_date: response.data.event_date.date,
+                    event_created_at: response.data.created_at.date,
+                }
+                console.log("Response data:", response.data);
+                onSuccess!(reconstructedResponse, false);
             }
             reset();
             onClose();

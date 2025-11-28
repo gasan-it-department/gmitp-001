@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
-import axios from '@/lib/axios';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { useQueryClient } from '@tanstack/react-query';
 import moment from 'moment';
@@ -18,16 +17,17 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { DatePicker } from './DatePicker';
 
+
 interface Props {
     isOpen: boolean;
     editData?: AssistanceRequest | null;
     onClose: () => void;
-    onSubmit?: (data: AssistanceRequest) => void;
+    onSuccess: (data: AssistanceRequest, editMode: boolean) => void;
 }
 
 const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
 
-export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmit }: Props) {
+export default function AddEditRecordDialog({ isOpen, onClose, editData, onSuccess }: Props) {
     const { currentMunicipality } = useMunicipality();
     const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -61,13 +61,14 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
             description: '',
         },
     });
+
     const handleFormSubmit = async (data: Beneficiary) => {
         try {
-            if (editData == null) {
+            if (editData === null) {
                 // Create new request
                 const response = await ActionCenterApi.storeRequest(currentMunicipality.slug, data);
 
-                if (response.status !== 200) {
+                if (!response.success) {
                     setError('root', response.data);
                     throw new Error(response.data);
                 }
@@ -78,25 +79,27 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSubmi
                 });
 
                 toast.success('Successfully added');
+                console.log("Newly added data: ", response.data);
+                onSuccess(response.data, false);
                 reset();
                 onClose();
             } else {
                 // Update existing request
-                const response = await axios.put(`/action-center/request/${editData.id}`, data);
+                // const response = await axios.put(`/action-center/request/${editData.id}`, data);
 
-                if (response.status !== 200) {
-                    setError('root', response.data);
-                    throw new Error(response.data);
-                }
+                // if (response.status !== 200) {
+                //     setError('root', response.data);
+                //     throw new Error(response.data);
+                // }
 
-                await queryClient.invalidateQueries({
-                    queryKey: ['request-list'],
-                    refetchType: 'active',
-                });
+                // await queryClient.invalidateQueries({
+                //     queryKey: ['request-list'],
+                //     refetchType: 'active',
+                // });
 
-                toast.success('Successfully updated');
-                reset();
-                onClose();
+                // toast.success('Successfully updated');
+                // reset();
+                // onClose();
             }
         } catch (error) {
             console.error('Error submitting form:', error);
