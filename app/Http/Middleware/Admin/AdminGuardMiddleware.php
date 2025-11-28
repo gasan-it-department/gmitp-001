@@ -29,7 +29,7 @@ class AdminGuardMiddleware
         }
 
         if (!$this->userRoleCkerService->isAdmin($user)) {
-            abort(403, 'Forbidden: Admin access only.');
+            return redirect()->route('landing');
         }
 
         return $next($request);

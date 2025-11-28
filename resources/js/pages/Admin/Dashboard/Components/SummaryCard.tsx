@@ -2,12 +2,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
-import { useQuery } from '@tanstack/react-query';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import { useQuery } from '@tanstack/react-query';
 
 export function SummaryCards() {
     const { data, isLoading, error } = useQuery<{ request: AssistanceRequest[] }>({
-        queryKey: ['request-list'],
+        queryKey: ['request'],
         queryFn: ActionCenterApi.getAllRequest,
         refetchOnWindowFocus: false,
     });
@@ -20,8 +20,7 @@ export function SummaryCards() {
         return <div>Error loading data.</div>;
     }
 
-    const countByType = (type: string) =>
-        data.request.filter((r) => r.assistance_type?.toLowerCase() === type.toLowerCase()).length;
+    const countByType = (type: string) => data.request.filter((r) => r.assistance_type?.toLowerCase() === type.toLowerCase()).length;
 
     const stats = [
         { title: 'Food Assistance', count: countByType('Food Assistance') },
@@ -34,12 +33,10 @@ export function SummaryCards() {
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card key="total_disbursement" className="bg-gradient-to-br from-emerald-50 to-teal-100 shadow-md border-none rounded-2xl">
+            <Card key="total_disbursement" className="rounded-2xl border-none bg-gradient-to-br from-emerald-50 to-teal-100 shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-semibold text-emerald-800">
-                        Total Disbursement
-                    </CardTitle>
-                    <div className="p-2 bg-emerald-100 rounded-full">
+                    <CardTitle className="text-sm font-semibold text-emerald-800">Total Disbursement</CardTitle>
+                    <div className="rounded-full bg-emerald-100 p-2">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5 text-emerald-700"
@@ -61,19 +58,16 @@ export function SummaryCards() {
                 </CardContent>
             </Card>
 
-
             {stats.map((item) => (
                 <Card
                     key={item.title}
-                    className="bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-shadow border border-gray-100 rounded-2xl"
+                    className="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 shadow-sm transition-shadow hover:shadow-md"
                 >
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-semibold text-gray-600">
-                            {item.title}
-                        </CardTitle>
+                        <CardTitle className="text-sm font-semibold text-gray-600">{item.title}</CardTitle>
 
                         {/* Optional dynamic icon per card (can be customized) */}
-                        <div className="p-2 bg-gray-100 rounded-full">
+                        <div className="rounded-full bg-gray-100 p-2">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-4 w-4 text-gray-500"
@@ -95,9 +89,7 @@ export function SummaryCards() {
                         <div className="text-3xl font-extrabold text-gray-900">{item.count}</div>
 
                         {item.count > 0 ? (
-                            <p className="mt-1 text-xs text-emerald-700 font-medium">
-                                ₱15,000 total disbursement
-                            </p>
+                            <p className="mt-1 text-xs font-medium text-emerald-700">₱15,000 total disbursement</p>
                         ) : (
                             <p className="mt-1 text-xs text-muted-foreground">No requests yet</p>
                         )}

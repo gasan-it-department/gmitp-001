@@ -31,11 +31,29 @@ class Beneficiary extends Model
 
         'contact_number',
 
+        'email',
+
         'province',
 
         'municipality',
 
         'barangay',
+
+    ];
+
+    protected $casts = [
+
+        'first_name' => 'encrypted',
+
+        'last_name' => 'encrypted',
+
+        'middle_name' => 'encrypted',
+
+        'suffix' => 'encrypted',
+
+        'contact_number' => 'encrypted',
+
+        'email' => 'encrypted',
 
     ];
 

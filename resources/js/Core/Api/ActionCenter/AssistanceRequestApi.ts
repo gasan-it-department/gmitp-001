@@ -12,7 +12,9 @@ export const ActionCenterApi = {
             data: formData,
             method,
             headers: {
+
                 'X-Municipality-Slug': municipalSlug,
+
             }
         });
 
@@ -22,16 +24,46 @@ export const ActionCenterApi = {
 
     async getAllRequest(municipalSlug: string) {
         const { url, method } = ActionCenterController.fetch();
-        console.log(url, method);
+
         const { data } = await axios({
             url, method,
             headers: {
+
                 'X-Municipality-Slug': municipalSlug
+
             }
         })
 
         return data;
+
     },
+
+    async getStatusLabels() {
+        const { url, method } = ActionCenterController.getStatusList();
+
+        const { data } = await axios({
+            url,
+            method,
+        });
+
+        return data;
+    },
+
+    async getAssistanceTypes(municipalSlug: string) {
+        const { url, method } = ActionCenterController.getAssistanceTypesList();
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+
+                'X-Municipality-Slug': municipalSlug
+
+            }
+        });
+        console.log(data, 'hello');
+        return data;
+    }
 
 
 };

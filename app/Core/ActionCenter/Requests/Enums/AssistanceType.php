@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\ActionCenter\Domains\Enums;
+namespace App\Core\ActionCenter\Requests\Enums;
 
 enum AssistanceType: string
 {

@@ -4,14 +4,17 @@ namespace App\External\Api\Controllers\ActionCenter;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Core\ActionCenter\Requests\Services\StatusList;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\External\Api\Request\ActionCenter\AssistanceRequest;
 use App\External\Api\Request\ActionCenter\BeneficiaryRequest;
+use App\Core\ActionCenter\Requests\Services\AssistanceTypesList;
 use App\Core\ActionCenter\Beneficiaries\Dto\CreateBeneficiaryDto;
 use App\Core\ActionCenter\Applications\Services\CreateAssistanceRequest;
 use App\Core\ActionCenter\Applications\Services\UpdateAssistanceRequest;
 use App\Core\ActionCenter\Beneficiaries\UseCase\CreateBeneficiaryUseCase;
 use App\Core\ActionCenter\Requests\UseCase\CreateAssistanceRequestUseCase;
+use App\Core\ActionCenter\Requests\UseCase\GetAllAssistancePerMunicipality;
 use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
 
 class ActionCenterController extends Controller
@@ -23,12 +26,18 @@ class ActionCenterController extends Controller
 
         private CreateAssistanceRequestUseCase $createAssistance,
 
+        private GetAllAssistancePerMunicipality $getAllAssistance,
+
+        private AssistanceTypesList $assistanceTypesList
+
+
     ) {
     }
 
 
     public function store(AssistanceRequest $assistance, BeneficiaryRequest $beneficiary)
     {
+
         $validatedAssistance = $assistance->validated();
 
         $validatedBeneficiary = $beneficiary->validated();
@@ -92,11 +101,18 @@ class ActionCenterController extends Controller
 
     public function fetch()
     {
-        try {
-            // $assistance = $this
-        } catch (error) {
+        $municipalId = app('municipal_id');
 
-        }
+        $assitance = $this->getAllAssistance->execute($municipalId);
+
+        return response()->json([
+
+            'success' => true,
+
+            'data' => $assitance,
+
+        ], 200);
+
     }
 
     public function show($id)
@@ -163,5 +179,24 @@ class ActionCenterController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getStatusList(StatusList $statusService)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $statusService->statusList()
+        ], 200);
+
+    }
+
+    public function getAssistanceTypesList(AssistanceTypesList $assistanceTypes)
+    {
+
+        return response()->json([
+            'success' => true,
+            'data' => $assistanceTypes->assistanceOptionsV2(),
+        ], 200);
+
     }
 }

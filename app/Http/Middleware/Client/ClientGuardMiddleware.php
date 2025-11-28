@@ -5,7 +5,7 @@ namespace App\Http\Middleware\Client;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Core\Users\Application\Services\UserRoleCheckerService;
+use App\Core\Users\Services\UserRoleCheckerService;
 
 
 class ClientGuardMiddleware

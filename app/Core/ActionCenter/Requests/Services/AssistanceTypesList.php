@@ -2,11 +2,12 @@
 
 namespace App\Core\ActionCenter\Requests\Services;
 
-use App\Core\ActionCenter\Domains\Enums\AssistanceType;
+use App\Core\ActionCenter\Requests\Enums\AssistanceType;
+
 class AssistanceTypesList
 {
 
-    public function assistanceOptionsV1(): array
+    public function assistanceOptions(): array
     {
         $options = [];
 

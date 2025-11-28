@@ -14,7 +14,7 @@ import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Printer, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
@@ -134,6 +134,19 @@ export function AssistanceRequestTable() {
             toast.error(error.response?.data?.message || 'Failed to delete record.');
         }
     };
+
+    useEffect(() => {
+        const testApi = async () => {
+            try {
+                const response = await ActionCenterApi.getAssistanceTypes(currentMunicipality.slug);
+                console.log('API Response:', response);
+            } catch (error) {
+                console.error('API Error:', error);
+            }
+        };
+
+        testApi();
+    }, [currentMunicipality]);
     return (
         <div>
             {/* HEADER */}

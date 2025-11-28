@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Requests\Repositories;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
 
@@ -26,5 +27,16 @@ class AssistanceRequestRepositories
             'municipal_id' => $municipalId,
 
         ]);
+    }
+
+    public function getAll(string $municipalId): LengthAwarePaginator
+    {
+
+        $assistance = AssistanceRequest::with('beneficiary')
+            ->where('municipal_id', $municipalId)
+            ->paginate(10);
+
+        return $assistance;
+
     }
 }

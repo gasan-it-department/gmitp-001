@@ -2,7 +2,9 @@
 
 namespace App\Core\ActionCenter\Requests\Services;
 
-use App\Core\ActionCenter\Domains\Enums\RequestStatus;
+use App\Core\ActionCenter\Requests\Enums\RequestStatus;
+
+
 
 class StatusList
 {
@@ -13,4 +15,24 @@ class StatusList
             'label' => $status->label(),
         ], RequestStatus::cases());
     }
+
+    // public function statusListV2()
+    // {
+
+    //     $cases = RequestStatus::cases();
+
+    //     $status = [];
+
+    //     foreach ($cases as $status) {
+    //         [
+    //             'value' => $status->value,
+    //             'label' => $status->label(),
+    //         ];
+
+    //     }
+
+
+    //     return $status;
+    // }
+
 }

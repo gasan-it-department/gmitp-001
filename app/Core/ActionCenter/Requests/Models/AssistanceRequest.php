@@ -36,6 +36,11 @@ class AssistanceRequest extends Model
 
     ];
 
+    protected $casts = [
+
+        'description' => 'encrypted',
+
+    ];
 
     public function beneficiary()
     {
