@@ -1,4 +1,5 @@
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AssistanceOption } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,11 +9,11 @@ export function AssistanceOptions({ onChange }: { onChange?: (value: string) => 
     const [options, setOptions] = useState<AssistanceOption[]>([]);
     const [selected, setSelected] = useState('');
     const [loading, setLoading] = useState(true);
-
+    const { currentMunicipality } = useMunicipality();
     useEffect(() => {
         async function fetchOptions() {
             try {
-                const res = await ActionCenterApi.getAllAssitanceOptions();
+                const res = await ActionCenterApi.getAssistanceTypes(currentMunicipality.slug);
                 if (res.success) setOptions(res.data);
 
                 console.log(res.data);

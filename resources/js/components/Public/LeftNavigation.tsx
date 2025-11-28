@@ -1,4 +1,5 @@
-import { useNavigation } from '@/config/navigation/navigationItems';
+import { useNavigation } from '@/layouts/Public/Components/navigationItems';
+import { account } from '@/routes/';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
@@ -6,7 +7,6 @@ import { HomeIcon, Menu } from 'lucide-react';
 import { LogInSignUpForm } from '../LoginSignUpForm';
 import { Button } from '../ui/button';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
-import { account } from '@/routes/';
 
 type Municipality = {
     id: string;
@@ -45,11 +45,8 @@ export function LeftNavigation() {
                 <div className="flex flex-1 flex-col overflow-y-auto">
                     {/* User Info */}
                     {auth?.user && (
-                        <Link
-                            href={account.url({ municipality: currentMunicipality.slug })}>
-                            <div
-                                className="m-3 flex cursor-pointer items-center rounded-xl p-3 transition duration-200 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800"
-                            >
+                        <Link href={account.url({ municipality: currentMunicipality.slug })}>
+                            <div className="m-3 flex cursor-pointer items-center rounded-xl p-3 transition duration-200 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800">
                                 <Avatar className="h-14 w-14 flex-shrink-0">
                                     <AvatarImage
                                         src={
@@ -83,14 +80,13 @@ export function LeftNavigation() {
 
                     {/* Navigation Section */}
                     <div className="mt-2 px-3">
-                        <span className="mb-2 block text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                            Explore
-                        </span>
+                        <span className="mb-2 block text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Explore</span>
 
                         <nav className="flex flex-col space-y-1">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
-                                const href = typeof item.route === 'function' ? item.route({ municipality: currentMunicipality.slug }).url : item.route;
+                                const href =
+                                    typeof item.route === 'function' ? item.route({ municipality: currentMunicipality.slug }).url : item.route;
                                 return (
                                     <SheetClose asChild key={item.title}>
                                         <a
@@ -115,4 +111,3 @@ export function LeftNavigation() {
         </Sheet>
     );
 }
-

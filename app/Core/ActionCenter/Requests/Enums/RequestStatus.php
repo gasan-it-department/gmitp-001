@@ -13,19 +13,32 @@ enum RequestStatus: string
     case CANCELLED = 'cancelled';
     case EXPIRED = 'expired';
     case ARCHIVED = 'archived';
+    case HOLD = 'hold';
 
     public function label(): string
     {
         return match ($this) {
+
             self::PENDING => 'Pending',
+
             self::IN_REVIEW => 'In Review',
+
             self::APPROVED => 'Approved',
+
             self::REJECTED => 'Rejected',
+
             self::WAITING => 'Waiting',
+
             self::COMPLETED => 'Completed',
+
             self::CANCELLED => 'Cancelled',
+
             self::EXPIRED => 'Expired',
+
             self::ARCHIVED => 'Archived',
+
+            self::HOLD => 'Hold',
+
         };
     }
 }

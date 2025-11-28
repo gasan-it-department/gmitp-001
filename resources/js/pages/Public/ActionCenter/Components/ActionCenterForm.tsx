@@ -2,9 +2,8 @@
 
 import type React from 'react';
 
-import { AssistanceOptions } from '@/components/ActionCenterOptions';
+import { AssistanceOptions } from '@/components/ActionCenter/AssistanceOptionsDropdown';
 import { FormInput } from '@/components/FormInputField';
-import { AddressDropdown } from '@/components/Shared/AddressDropdown';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { HandHeart } from 'lucide-react';
@@ -24,6 +23,7 @@ interface FormData {
 }
 
 export function ActionCenterForm() {
+    const [status, setStatus] = useState('');
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState<FormData>({
         firstName: '',
@@ -140,11 +140,9 @@ export function ActionCenterForm() {
                                 <FormInput name="middle_name" label="Middle name" required autoComplete="off" />
                                 <FormInput name="suffix" label="Suffix" required autoComplete="off" />
                                 <FormInput name="contact_number" label="Contact number" required autoComplete="off" />
+                                <AssistanceOptions onChange={setStatus} />
                             </div>
-                            <div>
-                                <AssistanceOptions />
-                                <AddressDropdown onAddressChange={setAddress} />
-                            </div>
+                            <div>{/* <AddressDropdown onAddressChange={setAddress} /> */}</div>
                         </div>
                         <div className="flex gap-5">
                             <Button onClick={() => setOpen(false)} className="w-full border border-gray-300 bg-white text-gray-700">

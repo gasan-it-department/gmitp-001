@@ -1,5 +1,5 @@
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/components/ui/navigation-menu';
-import { NavigationItem, useNavigation } from '@/config/navigation/navigationItems';
+import { NavigationItem, useNavigation } from '@/layouts/Public/Components/navigationItems';
 import { Link, usePage } from '@inertiajs/react';
 
 type Municipality = {

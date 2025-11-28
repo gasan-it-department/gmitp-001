@@ -122,31 +122,10 @@ class ActionCenterController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $validated = $request->validate([
-            'assistance_type' => 'sometimes|string',
-            'description' => 'sometimes|string',
-            'status' => 'sometimes|string|in:PENDING,APPROVED,REJECTED',
-            'first_name' => 'sometimes|string',
-            'last_name' => 'sometimes|string',
-            'middle_name' => 'nullable|string',
-            'suffix' => 'nullable|string',
-            'birth_date' => 'sometimes|date',
-            'contact_number' => 'sometimes|string',
-            'province' => 'sometimes|string',
-            'municipality' => 'sometimes|string',
-            'barangay' => 'sometimes|string',
-        ]);
-
-        $user = $request->user();
-
-        $this->updateAssistanceRequest->execute($id, $validated, $user);
-
-        // Now this works because $assistanceRepository exists
-        $updatedRequest = $this->assistanceRepository->findOrFail($id);
 
         return response()->json([
+            'success' => true,
             'message' => "Request {$id} updated successfully",
-            'request' => $updatedRequest,
         ], 200);
     }
 
@@ -154,7 +133,10 @@ class ActionCenterController extends Controller
     {
         $request = AssistanceRequest::findOrFail($id);
         $request->delete();
-        return response()->json(['message' => 'Deleted successfully'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Deleted successfully'
+        ], 200);
     }
 
     public function destroy($id)
