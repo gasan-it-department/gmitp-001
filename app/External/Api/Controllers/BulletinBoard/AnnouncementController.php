@@ -202,13 +202,15 @@ class AnnouncementController
 
         $dto = new DeleteMultipleAnnouncementDto($validated['idList']);
 
-        $this->deleteMultiAnnouncement->execute($dto);
+        $data = $this->deleteMultiAnnouncement->execute($dto);
 
         return response()->json([
 
             'success' => true,
 
-            'message' => 'Deleted Successfully'
+            'message' => 'Deleted Successfully',
+
+            'data' => $data
 
         ]);
 
