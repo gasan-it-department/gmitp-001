@@ -80,7 +80,7 @@ export const AnnouncementApi = {
         return data;
     },
 
-    async deleteMultiple(municipalSlug: string, ids: any) {
+    async deleteMultiple(ids: any, municipalSlug: string) {
 
         const { url, method } = bulletinBoard.AnnouncementController.destroyMultiple();
 

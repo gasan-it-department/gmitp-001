@@ -7,18 +7,20 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AddEditAnnouncementDialog from './AddEditAnnouncementDialog';
 import AnnouncementPageHeader from './AnnouncementPageHeader';
 import FilterDialog from './FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { toast } from 'sonner';
 
 export default function AnnouncementPageTable() {
     const { currentMunicipality } = useMunicipality();
     const [rawAnnouncementList, setRawAnnouncementList] = useState<AnnouncementData[]>([]);
     const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
-    const [selectedItems, setSelectedItems] = useState<string[]>([]); // Track selected IDs
+    const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
     const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
     const [currentFilter, setCurrentFilter] = useState<string | null>("Event title");
@@ -65,8 +67,6 @@ export default function AnnouncementPageTable() {
             setLastPage(response.last_page);
             setPerPage(response.per_page);
             setTotalItems(response.total);
-
-            // Clear selected items when loading a new page
             setSelectedItems([]);
         } catch (error: any) {
             setClassicDialog((prev) => ({
@@ -132,16 +132,26 @@ export default function AnnouncementPageTable() {
         setIsLoadingDialogVisible(true);
         try {
             if (idList.length == 1) {
+                // SINGLE DELETE
                 const response = await AnnouncementApi.deleteAnnouncement(idList[0], currentMunicipality.slug);
                 if (response.success) {
                     const isLastItemOnPage = announcementList.length === 1;
                     const newPage = isLastItemOnPage && currentPage > 1 ? currentPage - 1 : currentPage;
                     loadAnnouncement(newPage);
+                    toast.success("Successfully deleted");
                 } else {
-                    console.error(response.message || "Failed to delete announcement");
+                    toast.error("An error occurred wile deleting");
                 }
             } else {
-                console.log("Multiple delete detected.");
+                // MULTIPLE DELETE
+                /** NOTE: PRODUCES ERROR WHEN DELETING MULTIPLE. PLEASE READ THE ERROR MESSAGE */
+                const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
+                if (response.success) {
+                    console.log("Response: ", response.data);
+                    toast.success("Successfully deleted");
+                } else {
+                    toast.error("An error occurred wile deleting");
+                }
             }
         } catch (error: any) {
             setClassicDialog((prev) => ({
@@ -165,13 +175,14 @@ export default function AnnouncementPageTable() {
 
     const toggleSelectAll = () => {
         if (selectedItems.length === announcementList.length) {
-            setSelectedItems([]); // deselect all
+            setSelectedItems([]);
         } else {
-            setSelectedItems(announcementList.map(item => item.id)); // select all
+            setSelectedItems(announcementList.map(item => item.id));
         }
     };
 
-    const deleteMultiple = (idList: string[]) => {
+    const handleSort = (currentSeletedSort: string | null) => {
+        // SEND FILTER TO BACKEND
 
     }
 
@@ -309,6 +320,8 @@ export default function AnnouncementPageTable() {
                 </Table>
             </div>
 
+            <ToastProvider />
+
             {/* PAGINATION */}
             <div className="mt-2">
                 <PaginationView
@@ -337,7 +350,7 @@ export default function AnnouncementPageTable() {
                 open={classicDialog.isOpen}
                 onPositiveClick={() => {
                     if (classicDialog.payload) handleDelete(classicDialog.payload);
-                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
+                    setClassicDialog((prev) => ({ ...prev, isOpen: false, payload: null }));
                 }}
                 onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
             />
@@ -352,7 +365,7 @@ export default function AnnouncementPageTable() {
                 selectedFilter={currentFilter}
                 onApply={(selectedFilter) => {
                     setCurrentFilter(selectedFilter);
-                    // BACKEND FILTERING
+                    handleSort(selectedFilter);
                 }}
             />
         </div>

@@ -195,12 +195,12 @@ class AnnouncementController
     {
         $validated = $request->validate([
 
-            'selectedItems' => ['required', 'array', 'min:1'],
-            'selectedItems.*' => ['ulid', 'distinct'],
+            'idList' => ['required', 'array', 'min:1'],
+            'idList.*' => ['ulid', 'distinct'],
 
         ]);
 
-        $dto = new DeleteMultipleAnnouncementDto($validated['selectedItems']);
+        $dto = new DeleteMultipleAnnouncementDto($validated['idList']);
 
         $this->deleteMultiAnnouncement->execute($dto);
 
