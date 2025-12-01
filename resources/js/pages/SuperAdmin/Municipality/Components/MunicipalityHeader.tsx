@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import SearchBar from '@/pages/Utility/SearchBar';
 import { Filter, PlusIcon, UploadIcon } from 'lucide-react';
 
 interface Props {

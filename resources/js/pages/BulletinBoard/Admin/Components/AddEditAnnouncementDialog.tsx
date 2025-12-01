@@ -20,7 +20,7 @@ interface AddEditAnnouncementProps {
 export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, onSuccess }: AddEditAnnouncementProps) {
     const { currentMunicipality } = useMunicipality();
     const municipalSlug = currentMunicipality.slug;
-
+    const [serverError, setServerError] = useState<string | null>(null);
     const {
         register,
         handleSubmit,
@@ -30,9 +30,7 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
     } = useForm<AnnouncementData>({
         defaultValues: { title: '', message: '', is_published: false },
     });
-
-    const [serverError, setServerError] = useState<string | null>(null);
-
+    
     const onSubmit: SubmitHandler<AnnouncementData> = async (data) => {
         setServerError(null);
 
@@ -109,6 +107,7 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogTitle></DialogTitle>
             <DialogContent className="max-h-[90vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl sm:max-w-md">
                 <DialogHeader className="border-b border-orange-100 pb-3 text-center">
                     <DialogTitle className="text-2xl font-bold text-gray-800">

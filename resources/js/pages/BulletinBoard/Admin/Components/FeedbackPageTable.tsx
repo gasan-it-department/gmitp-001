@@ -10,6 +10,7 @@ import FeedbackPageTableHeader from './FeedbackPageTableHeader';
 import ViewFeedbackDialog from './ViewFeedbackDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import FilterDialog from './FilterDialog';
 
 interface FeedbackFormValues {
     feedback_target: 'employee' | 'department';
@@ -27,16 +28,18 @@ export default function FeedbackPageTable() {
     const { currentMunicipality } = useMunicipality();
     const [isLoading, setIsLoading] = useState(false);
     const [feedbacks, setFeedbacks] = useState<FeedbackFormValues[]>([]);
-    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean; data: FeedbackFormValues | null }>({
-        isOpen: false,
-        data: null,
-    });
+    const [currentFilter, setCurrentFilter] = useState<string | null>(null);
+    const [isFilterOpened, setIsFilterOpened] = useState(false);
 
-    // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+
+    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean; data: FeedbackFormValues | null }>({
+        isOpen: false,
+        data: null,
+    });
 
     useEffect(() => {
         loadFeedbacks(currentPage);
@@ -66,6 +69,11 @@ export default function FeedbackPageTable() {
         }
     };
 
+    const handleSort = (selectedSort: string | null) => {
+        // HANDLE SORT IN THE BACKEND
+        console.log("Feedback filter ", selectedSort);
+    }
+
     return (
         <div className="flex flex-col h-full">
             {/* HEADER */}
@@ -73,7 +81,7 @@ export default function FeedbackPageTable() {
                 <h1 className="text-3xl font-bold tracking-tight">Community Feedback</h1>
                 <FeedbackPageTableHeader
                     onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
+                    onFilterButtonClicked={() => { setIsFilterOpened(true) }}
                     onExportButtonClicked={() => { }}
                 />
             </div>
@@ -137,6 +145,19 @@ export default function FeedbackPageTable() {
                 </Table>
             </div>
 
+            <FilterDialog
+                isOpen={isFilterOpened}
+                onClose={() => {
+                    setIsFilterOpened(false);
+                }}
+                filters={["Message", "Date reported"]}
+                selectedFilter={currentFilter}
+                currentFilter={currentFilter}
+                onApply={(selectedFilter) => {
+                    setCurrentFilter(selectedFilter);
+                    handleSort(selectedFilter);
+                }} />
+
             {/* PAGINATION */}
             <div className="py-4 border-t bg-white">
                 <PaginationView
@@ -154,6 +175,7 @@ export default function FeedbackPageTable() {
                 data={selectedFeedback.data}
                 onClose={() => setSelectedFeedback({ isOpen: false, data: null })}
             />
+
             <LoadingDialog isOpen={isLoading} />
         </div>
     );

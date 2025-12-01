@@ -23,8 +23,8 @@ import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import PrintView from './PrintView';
 import SortSelectionDialog from './SortSelectionDialog';
-import { ca } from 'date-fns/locale';
 import PaginationView from '@/pages/Utility/PaginationView';
+import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 
 export function AssistanceRequestTable() {
     const { currentMunicipality } = useMunicipality();
@@ -80,15 +80,12 @@ export function AssistanceRequestTable() {
             setIsLoadingDialogVisible(true);
             const response = await ActionCenterApi.getAllRequest(currentMunicipality.slug, currentPage);
             const data = response.data.data ?? [];
-
-            // Sort by created_at descending
             data.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
             setCurrentPage(response.data.current_page);
             setLastPage(response.data.last_page);
             setPerPage(response.data.per_page);
             setTotalItems(response.data.total);
-
             setRequestList(data);
         } catch (err) {
             console.error(err);
@@ -145,6 +142,11 @@ export function AssistanceRequestTable() {
             beneficiary: data.beneficiary
         };
     };
+
+    const handleSort = (currentSeletedSort: string | null) => {
+        // SEND FILTER TO BACKEND
+        console.log("Action center filter: ", currentSeletedSort);
+    }
 
     // --------------------------------------------------
     // TABLE RENDER
@@ -267,21 +269,15 @@ export function AssistanceRequestTable() {
                                                     }}
                                                 />
                                             </TableCell>
-
                                             <TableCell className="text-[12px]">{index + 1}</TableCell>
-
                                             <TableCell className="text-[12px] capitalize">
                                                 {req.beneficiary.first_name} {req.beneficiary.last_name}
                                             </TableCell>
-
                                             <TableCell className="text-[12px]">
                                                 {Utility().formatToReadableDateNoTime(req.created_at)}
                                             </TableCell>
-
                                             <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
-
                                             <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
-
                                             <TableCell className="text-[12px]">
                                                 <span
                                                     className={`rounded-full px-2 py-1 text-[11px] font-medium ${req.status === 'approved'
@@ -326,6 +322,7 @@ export function AssistanceRequestTable() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
+                                                    disabled={req.status === 'pending'}
                                                     onClick={() =>
                                                         setPrintDialogState({
                                                             isVisible: true,
@@ -399,14 +396,16 @@ export function AssistanceRequestTable() {
 
             <ToastProvider />
 
-            <SortSelectionDialog
-                currentSelected={currentSelectedSortOption}
-                selectedSortOption={(value) => {
-                    setCurrentSelectedSortOption(value);
-                    setIsSortSelectionDialogOpen(false);
-                }}
+            <FilterDialog
                 isOpen={isSortSelectionDialogOpen}
+                currentFilter={currentSelectedSortOption}
                 onClose={() => setIsSortSelectionDialogOpen(false)}
+                filters={["Title", "Request Date", "Assistance Type", "Transaction No.", "Status", "Due Date"]}
+                selectedFilter={currentSelectedSortOption}
+                onApply={(selectedFilter) => {
+                    setCurrentSelectedSortOption(selectedFilter || '');
+                    handleSort(selectedFilter);
+                }}
             />
 
             <AddEditRecordDialog
@@ -418,6 +417,7 @@ export function AssistanceRequestTable() {
 
                     } else {
                         const normalizedData = normalizeAssistance(data);
+                        normalizedData.status = normalizedData.status ?? "pending";
                         addNewItem(normalizedData);
                     }
                 }}

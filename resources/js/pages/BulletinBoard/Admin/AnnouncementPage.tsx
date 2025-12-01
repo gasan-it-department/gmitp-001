@@ -1,12 +1,8 @@
-import { Button } from '@/components/ui/button';
+
 import AdminLayout from '@/layouts/App/AppLayout';
-import AddEditAnnouncementDialog from './Components/AddEditAnnouncementDialog';
-import { useState } from 'react';
 import AnnouncementPageTable from './Components/AnnouncementPageTable';
 
 export default function AnnouncementPage() {
-    const [isAnnouncementDialog, setIsAnnouncementDialogShow] = useState(false);
-
     return (
         <AdminLayout>
             <section className="">

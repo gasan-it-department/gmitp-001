@@ -1,160 +1,223 @@
 'use client';
 
-import type React from 'react';
-
-import { AssistanceOptions } from '@/components/ActionCenter/AssistanceOptionsDropdown';
-import { FormInput } from '@/components/FormInputField';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { HandHeart } from 'lucide-react';
-import { useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectItem,
+    SelectContent,
+} from '@/components/ui/select';
+import { useState, useCallback } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
+import { AddressDropdown } from '@/components/Shared/AddressDropdown';
 
-interface FormData {
-    firstName: string;
-    middleName: string;
-    lastName: string;
-    suffix: string;
-    contactNumber: string;
-    birthdate: string;
-    assistanceType: string;
-    description: string;
+const assistanceOptions = [
+    'Medical Assistance',
+    'Food Assistance',
+    'Transportation Assistance',
+    'Financial Assistance',
+    'Burial Assistance',
+];
+
+interface Props {
+    isOpen: boolean;
+    onClose: () => void;
 }
 
-export function ActionCenterForm() {
-    const [status, setStatus] = useState('');
-    const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState<FormData>({
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        suffix: '',
-        contactNumber: '',
-        birthdate: '',
-        assistanceType: '',
-        description: '',
-    });
-    const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+interface FormData {
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    suffix: string;
+    contact_number: string;
+    assistance_type: string;
+    description: string;
+    province_code?: string;
+    municipality_code?: string;
+    barangay_code?: string;
+}
 
-    const handleInputChange = (field: keyof FormData, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
-        // Clear error when user starts typing
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: '' }));
-        }
-    };
-
-    const validateForm = (): boolean => {
-        const newErrors: Partial<Record<keyof FormData, string>> = {};
-
-        if (!formData.firstName.trim()) {
-            newErrors.firstName = 'First name is required';
-        }
-        if (!formData.lastName.trim()) {
-            newErrors.lastName = 'Last name is required';
-        }
-        if (!formData.contactNumber.trim()) {
-            newErrors.contactNumber = 'Contact number is required';
-        } else if (!/^\d+$/.test(formData.contactNumber)) {
-            newErrors.contactNumber = 'Contact number must contain only numbers';
-        }
-        if (!formData.birthdate) {
-            newErrors.birthdate = 'Birthdate is required';
-        }
-        if (!formData.assistanceType) {
-            newErrors.assistanceType = 'Please select a type of assistance';
-        }
-        if (!formData.description.trim()) {
-            newErrors.description = 'Description is required';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (validateForm()) {
-            // Close dialog
-            setOpen(false);
-
-            toast.success('Request Submitted Successfully', {
-                description: 'Your assistance request has been submitted successfully. Thank you for reaching out to the Municipal Action Center.',
-                duration: 5000,
-            });
-
-            // Reset form
-            setFormData({
-                firstName: '',
-                middleName: '',
-                lastName: '',
-                suffix: '',
-                contactNumber: '',
-                birthdate: '',
-                assistanceType: '',
-                description: '',
-            });
-            setErrors({});
-        }
-    };
-    const methods = useForm({
+export function ActionCenterForm({ isOpen, onClose }: Props) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const {
+        register,
+        handleSubmit,
+        control,
+        reset,
+        setValue,
+        formState: { errors },
+    } = useForm<FormData>({
         defaultValues: {
-            email: '',
-            password: '',
+            first_name: '',
+            middle_name: '',
+            last_name: '',
+            suffix: '',
+            contact_number: '',
+            assistance_type: '',
+            description: '',
         },
     });
 
-    const onSubmit = (data: any) => {
-        console.log('Form submitted:', data);
+    // ✅ Memoized handler to prevent infinite loops
+    const handleAddressChange = useCallback(
+        (address: { provinceCode: string; municipalityCode: string; barangayCode: string } | null) => {
+            if (!address) return;
+            setValue('province_code', address.provinceCode);
+            setValue('municipality_code', address.municipalityCode);
+            setValue('barangay_code', address.barangayCode);
+        },
+        [setValue]
+    );
+
+    const onSubmit = async (data: FormData) => {
+        setIsSubmitting(true);
+        try {
+            console.log('Submitted data:', data);
+            reset();
+            setIsSubmitting(false);
+            onClose();
+        } catch (err) {
+            console.error(err);
+            setIsSubmitting(false);
+        }
     };
-    function handleAddressChange(address: any | null): void {
-        throw new Error('Function not implemented.');
-    }
-    const [address, setAddress] = useState(null);
+
     return (
-        <Dialog open={open} onOpenChange={setOpen} modal={true}>
-            <DialogTrigger asChild>
-                <Button size="lg" className="gap-2 bg-gradient-to-r from-red-500 to-orange-500 hover:bg-accent/90">
-                    <HandHeart className="h-5 w-5" />
-                    Request Assistance
-                </Button>
-            </DialogTrigger>
-            <DialogContent onInteractOutside={(e) => e.preventDefault()} className="max-h-[90vh] max-w-2xl overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-2xl font-semibold text-balance">
-                        <HandHeart className="h-6 w-6 text-primary" />
-                        Request for Assistance
-                    </DialogTitle>
-                    <DialogDescription className="text-base leading-relaxed">
-                        Please fill out the form below to request assistance from the Municipal Action Center.
-                    </DialogDescription>
-                </DialogHeader>
-                <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)}>
-                        <div className="mb-15">
-                            <div className="mx-auto grid max-w-md grid-cols-1 gap-5 lg:grid-cols-2">
-                                <FormInput name="first_name" label="First name" type="text" required autoComplete="off" />
-                                <FormInput name="last_name" label="Last name" required autoComplete="off" />
-                                <FormInput name="middle_name" label="Middle name" required autoComplete="off" />
-                                <FormInput name="suffix" label="Suffix" required autoComplete="off" />
-                                <FormInput name="contact_number" label="Contact number" required autoComplete="off" />
-                                <AssistanceOptions onChange={setStatus} />
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent
+                showCloseButton={false}
+                className="max-h-[90vh] w-full overflow-y-auto p-0 sm:max-w-3xl rounded-2xl border border-orange-200"
+            >
+                {/* HEADER */}
+                <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:px-8 rounded-t-2xl sticky top-0 z-50">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold text-white">
+                            Assistance Request Form
+                        </DialogTitle>
+                    </DialogHeader>
+                </div>
+
+                <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                        {/* PERSONAL INFORMATION */}
+                        <div className="space-y-4">
+                            <h3 className="text-base font-semibold text-orange-600">
+                                Personal Information
+                            </h3>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <InputField label="Last Name *" id="last_name" register={register} errors={errors} required />
+                                <InputField label="First Name *" id="first_name" register={register} errors={errors} required />
+                                <InputField label="Middle Name" id="middle_name" register={register} errors={errors} />
+                                <InputField label="Suffix" id="suffix" register={register} errors={errors} />
+                                <InputField label="Contact Number *" id="contact_number" type="tel" register={register} errors={errors} required />
                             </div>
-                            <div>{/* <AddressDropdown onAddressChange={setAddress} /> */}</div>
                         </div>
-                        <div className="flex gap-5">
-                            <Button onClick={() => setOpen(false)} className="w-full border border-gray-300 bg-white text-gray-700">
+
+                        {/* ADDRESS DROPDOWN */}
+                        <AddressDropdown onAddressChange={handleAddressChange} />
+
+                        {/* ASSISTANCE TYPE */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-gray-700">
+                                Type of Assistance *
+                            </Label>
+                            <Controller
+                                name="assistance_type"
+                                control={control}
+                                rules={{ required: 'Please select a type of assistance' }}
+                                render={({ field }) => (
+                                    <Select value={field.value} onValueChange={field.onChange}>
+                                        <SelectTrigger className={`w-full text-sm ${errors.assistance_type ? 'border-red-500' : 'border-gray-300'}`}>
+                                            <SelectValue placeholder="Select type of assistance" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {assistanceOptions.map((opt) => (
+                                                <SelectItem key={opt} value={opt}>
+                                                    {opt}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.assistance_type && <p className="text-sm text-red-500">{errors.assistance_type.message}</p>}
+                        </div>
+
+                        {/* DESCRIPTION */}
+                        <div className="space-y-2">
+                            <Label className="font-semibold text-gray-800">Description / Reason *</Label>
+                            <Textarea
+                                {...register('description', { required: 'Description is required' })}
+                                rows={4}
+                                placeholder="Provide details about your request..."
+                                className={errors.description ? 'border-red-500' : 'border-gray-300'}
+                            />
+                            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
+                        </div>
+
+                        {/* ACTIONS */}
+                        <div className="flex flex-row gap-4 pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
+                                onClick={() => {
+                                    reset();
+                                    onClose();
+                                }}
+                                disabled={isSubmitting}
+                            >
                                 Cancel
                             </Button>
-                            <Button type="submit" className="w-full">
-                                Submit
+                            <Button
+                                type="submit"
+                                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white hover:opacity-90 rounded-xl"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Submitting...' : 'Submit Request'}
                             </Button>
                         </div>
                     </form>
-                </FormProvider>
+                </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+// HELPER INPUT FIELD
+interface InputFieldProps {
+    label: string;
+    id: string;
+    type?: string;
+    register: any;
+    errors: any;
+    required?: boolean;
+}
+function InputField({ label, id, type = 'text', register, errors, required }: InputFieldProps) {
+    return (
+        <div className="space-y-2">
+            <Label htmlFor={id} className="text-sm font-semibold text-gray-700">
+                {label}
+            </Label>
+            <Input
+                id={id}
+                type={type}
+                autoComplete="off"
+                {...register(id, required ? { required: `${label} is required` } : {})}
+                className={`rounded-md border font-medium text-gray-600 focus:ring-orange-200 focus:border-orange-400 ${errors[id] ? 'border-red-500' : 'border-gray-300'}`}
+            />
+            {errors[id] && <p className="text-sm text-red-500">{errors[id]?.message}</p>}
+        </div>
     );
 }

@@ -131,28 +131,35 @@ export default function AnnouncementPageTable() {
     const handleDelete = async (idList: string[]) => {
         setIsLoadingDialogVisible(true);
         try {
-            if (idList.length == 1) {
-                // SINGLE DELETE
-                const response = await AnnouncementApi.deleteAnnouncement(idList[0], currentMunicipality.slug);
-                if (response.success) {
-                    const isLastItemOnPage = announcementList.length === 1;
-                    const newPage = isLastItemOnPage && currentPage > 1 ? currentPage - 1 : currentPage;
-                    loadAnnouncement(newPage);
-                    toast.success("Successfully deleted");
-                } else {
-                    toast.error("An error occurred wile deleting");
-                }
-            } else {
-                // MULTIPLE DELETE
-                /** NOTE: PRODUCES ERROR WHEN DELETING MULTIPLE. PLEASE READ THE ERROR MESSAGE */
-                const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
-                if (response.success) {
-                    console.log("Response: ", response.data);
-                    toast.success("Successfully deleted");
-                } else {
-                    toast.error("An error occurred wile deleting");
-                }
+            if (idList.length === 0) return;
+            const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
+            if (!response.success) {
+                toast.error("An error occurred while deleting");
+                return;
             }
+
+            toast.success("Successfully deleted");
+            const updatedRawList = rawAnnouncementList.filter(
+                (item) => !idList.includes(item.id)
+            );
+            const newTotal = updatedRawList.length;
+            setTotalItems(newTotal);
+            const newLastPage = Math.max(1, Math.ceil(newTotal / perPage));
+            setLastPage(newLastPage);
+            const isPageEmpty =
+                (currentPage - 1) * perPage >= newTotal;
+
+            const nextPage = isPageEmpty
+                ? Math.max(1, currentPage - 1)
+                : currentPage;
+
+            setCurrentPage(nextPage);
+            const startIndex = (nextPage - 1) * perPage;
+            const paginatedList = updatedRawList.slice(startIndex, startIndex + perPage);
+            setRawAnnouncementList(updatedRawList);
+            setAnnouncementList(paginatedList);
+            applyFilterWithData(currentFilter, paginatedList);
+            setSelectedItems([]);
         } catch (error: any) {
             setClassicDialog((prev) => ({
                 ...prev,
@@ -166,6 +173,53 @@ export default function AnnouncementPageTable() {
             setIsLoadingDialogVisible(false);
         }
     };
+
+
+    // const handleDelete = async (idList: string[]) => {
+    //     setIsLoadingDialogVisible(true);
+    //     try {
+    //         if(idList.length === 0) return;
+    //         const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
+    //         if (response.success) {
+    //             console.log("Response: ", response.data);
+    //             toast.success("Successfully deleted");
+    //         } else {
+    //             toast.error("An error occurred wile deleting");
+    //         }
+    //         // if (idList.length == 1) {
+    //         //     // SINGLE DELETE
+    //         //     const response = await AnnouncementApi.deleteAnnouncement(idList[0], currentMunicipality.slug);
+    //         //     if (response.success) {
+    //         //         const isLastItemOnPage = announcementList.length === 1;
+    //         //         const newPage = isLastItemOnPage && currentPage > 1 ? currentPage - 1 : currentPage;
+    //         //         loadAnnouncement(newPage);
+    //         //         toast.success("Successfully deleted");
+    //         //     } else {
+    //         //         toast.error("An error occurred wile deleting");
+    //         //     }
+    //         // } else {
+    //         //     // MULTIPLE DELETE
+    //         //     const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
+    //         //     if (response.success) {
+    //         //         console.log("Response: ", response.data);
+    //         //         toast.success("Successfully deleted");
+    //         //     } else {
+    //         //         toast.error("An error occurred wile deleting");
+    //         //     }
+    //         // }
+    //     } catch (error: any) {
+    //         setClassicDialog((prev) => ({
+    //             ...prev,
+    //             isOpen: true,
+    //             title: "An error occurred.",
+    //             message: error.message || "Failed to delete announcement",
+    //             positiveButtonText: "Close",
+    //             isNegativeButtonHidden: true,
+    //         }));
+    //     } finally {
+    //         setIsLoadingDialogVisible(false);
+    //     }
+    // };
 
     const toggleSelectItem = (id: string) => {
         setSelectedItems(prev =>
@@ -183,7 +237,7 @@ export default function AnnouncementPageTable() {
 
     const handleSort = (currentSeletedSort: string | null) => {
         // SEND FILTER TO BACKEND
-
+        console.log("Announcement selected filter: ", currentSeletedSort);
     }
 
 

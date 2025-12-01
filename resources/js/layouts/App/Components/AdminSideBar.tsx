@@ -19,11 +19,21 @@ import bulletinBoard from '@/routes/bulletin-board';
 import feedback from '@/routes/feedback';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { CalendarDays, ClipboardList, FileText, LayoutDashboard, LogOut, Map, Megaphone, MessageCircleIcon, UsersIcon } from 'lucide-react';
+import {
+    CalendarDays,
+    ClipboardList,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    Map,
+    Megaphone,
+    MessageCircleIcon,
+    UsersIcon,
+} from 'lucide-react';
 import * as React from 'react';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
 
@@ -37,22 +47,23 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         action: '',
     });
 
-    // Read cached active URL from localStorage
+    // Keep selected item on reload
     const cachedUrl =
         typeof window !== 'undefined'
-            ? localStorage.getItem('activeSidebarUrl') || ''
-            : '';
-
-    const [activeUrl, setActiveUrl] = React.useState<string>(cachedUrl);
+            ? localStorage.getItem('activeSidebarUrl') || String(url)
+            : String(url);
 
     const isRouteActive = (linkUrl: string) => {
         if (!linkUrl) return false;
-        return activeUrl === linkUrl || activeUrl.startsWith(linkUrl + '/') || activeUrl.includes(linkUrl);
+        return (
+            cachedUrl === linkUrl ||
+            cachedUrl.startsWith(linkUrl + '/') ||
+            cachedUrl.includes(linkUrl)
+        );
     };
 
     const handleLinkClick = (linkUrl: string) => {
         localStorage.setItem('activeSidebarUrl', linkUrl);
-        setActiveUrl(linkUrl);
         router.visit(linkUrl);
     };
 
@@ -89,9 +100,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
                 { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
-                { title: 'Community Reports', url: '', icon: UsersIcon },
+                { title: 'Comunity Reports', url: '', icon: UsersIcon },
             ],
         },
+
         {
             title: 'TOURISM',
             icon: Map,
@@ -105,7 +117,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             <SidebarHeader className="border-b border-gray-100 pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-orange-50">
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-orange-50"
+                        >
                             <a href="#" className="flex items-center gap-3">
                                 <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md">
                                     <span className="text-lg font-semibold">
@@ -118,7 +134,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                         {auth.user?.first_name} {auth.user?.last_name}
                                     </span>
                                     <span className="mt-1 mb-1 text-xs text-gray-500">
-                                        {userRole?.isAdmin ? 'Administrator' : userRole?.isSuperAdmin ? 'Super-Admin' : 'User'}
+                                        {userRole?.isAdmin
+                                            ? 'Administrator'
+                                            : userRole?.isSuperAdmin
+                                                ? 'Super-Admin'
+                                                : 'User'}
                                     </span>
                                 </div>
                             </a>
@@ -150,7 +170,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                 <SidebarMenuSubButton
                                                     asChild
                                                     className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
-                                                            ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
+                                                            ? 'bg-orange-100 text-orange-700 font-semibold shadow-sm'
                                                             : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
                                                         }`}
                                                 >
@@ -198,13 +218,23 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 negativeButtonText={classicDialog.negativeButtonText}
                 hideNegativeButton={classicDialog.isNegativeButtonHidden}
                 onPositiveClick={() => {
-                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }));
 
-                    if (classicDialog.action === 'exit') {
-                        router.visit(home.url({ municipality: currentMunicipality.slug }));
+                    switch (classicDialog.action) {
+                        case 'exit':
+                            router.visit(home.url({ municipality: currentMunicipality.slug }));
+                            break;
                     }
                 }}
-                onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }));
+                }}
             />
         </Sidebar>
     );

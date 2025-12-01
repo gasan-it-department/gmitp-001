@@ -21,7 +21,6 @@ export default function FilterDialog({
 }: FilterDialogProps) {
     const [selected, setSelected] = useState<string | null>(null);
 
-    // ✅ Set default selected value whenever dialog opens
     useEffect(() => {
         if (isOpen) {
             setSelected(currentFilter);
