@@ -20,7 +20,7 @@ Route::prefix('api/community-report')
     ->controller(CommunityReportController::class)
     ->group(function () {
 
-        Route::middleware(['admin', 'auth:sanctum'])
+        Route::middleware(['admin', 'auth:sanctum', 'municipalityContext'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name('fetch');
