@@ -80,13 +80,14 @@ export const AnnouncementApi = {
         return data;
     },
 
-    async deleteMultiple(municipalSlug: string) {
+    async deleteMultiple(municipalSlug: string, ids: any) {
 
         const { url, method } = bulletinBoard.AnnouncementController.destroyMultiple();
 
         const { data } = await axios({
             url,
             method,
+            data: ids,
             headers: {
                 'X-Municipality-Slug': municipalSlug,
             }
