@@ -9,7 +9,7 @@ Route::prefix('{municipality}/community-report')
     ->controller(CommunityReportAdminController::class)
     ->group(function () {
 
-        Route::get('/', 'index')->name('page');
+        Route::get('/admin', 'index')->name('page');
 
     });
 

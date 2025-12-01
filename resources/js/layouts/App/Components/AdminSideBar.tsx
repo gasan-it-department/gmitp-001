@@ -13,30 +13,28 @@ import {
 } from '@/components/ui/sidebar';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
 import bulletinBoard from '@/routes/bulletin-board';
 import feedback from '@/routes/feedback';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
+import communityReport from '@/routes/communityReport';
 import {
     CalendarDays,
     ClipboardList,
     FileText,
-    LayoutDashboard,
     LogOut,
-    Map,
     Megaphone,
     MessageCircleIcon,
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
+import { home } from '@/routes';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
-
     const [classicDialog, setClassicDialog] = React.useState({
         isOpen: false,
         title: '',
@@ -47,7 +45,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         action: '',
     });
 
-    // Keep selected item on reload
     const cachedUrl =
         typeof window !== 'undefined'
             ? localStorage.getItem('activeSidebarUrl') || String(url)
@@ -100,15 +97,15 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
                 { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
-                { title: 'Comunity Reports', url: '', icon: UsersIcon },
+                { title: 'Comunity Reports', url: communityReport.page.url({municipality: currentMunicipality.slug}), icon: UsersIcon },
             ],
         },
 
-        {
-            title: 'TOURISM',
-            icon: Map,
-            items: [{ title: 'Routing', url: '#', icon: Map }],
-        },
+        // {
+        //     title: 'TOURISM',
+        //     icon: Map,
+        //     items: [{ title: 'Routing', url: '#', icon: Map }],
+        // },
     ];
 
     return (

@@ -33,7 +33,7 @@ class CommunityReportFiles extends Model
     public function citizenReport()
     {
 
-        return $this->belongsTo(CommunityReport::class);
+        return $this->belongsTo(CommunityReport::class, 'report_id');
 
     }
 }

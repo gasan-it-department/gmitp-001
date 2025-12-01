@@ -10,7 +10,7 @@ class CommunityReportAdminController extends Controller
 
     public function index()
     {
-        return Inertia::render('');
+        return Inertia::render('BulletinBoard/Admin/CommunityReportPage');
     }
 
 }

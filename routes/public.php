@@ -2,7 +2,7 @@
 
 use App\External\Web\Controllers\Public\PublicController;
 
-Route::prefix('{municipality}') // treated as string
+Route::prefix('{municipality}')
     ->middleware('municipalityContext')
     ->group(function () {
         // Route::get('/services', [PublicController::class, 'showServicePage'])->name('services');
