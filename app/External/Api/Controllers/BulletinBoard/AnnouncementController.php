@@ -2,9 +2,11 @@
 
 namespace App\External\Api\Controllers\BulletinBoard;
 
+use App\Core\BulletinBoard\Announcement\Dto\DeleteMultipleAnnouncementDto;
 use App\Core\BulletinBoard\Announcement\Dto\UpdateAnnouncementDto;
 use App\Core\BulletinBoard\Announcement\UseCase\CreateAnnouncementUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\DeleteAnnouncementUseCase;
+use App\Core\BulletinBoard\Announcement\UseCase\DeleteMultipleAnnouncementUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\GetAnnouncementUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\GetPublishedAnnouncementsUseCase;
 use App\Core\BulletinBoard\Announcement\UseCase\UpdateAnnouncementUseCase;
@@ -18,12 +20,21 @@ use App\Core\BulletinBoard\Announcement\Services\PublishAnnouncementService;
 class AnnouncementController
 {
     public function __construct(
+
         protected CreateAnnouncementUseCase $announcementService,
+
         protected PublishAnnouncementService $publishService,
+
         protected UpdateAnnouncementUseCase $updateUseCase,
+
         protected GetAnnouncementUseCase $getAnnouncementService,
+
         protected GetPublishedAnnouncementsUseCase $getPublishedAnnouncements,
+
         protected DeleteAnnouncementUseCase $deleteAnnouncement,
+
+        protected DeleteMultipleAnnouncementUseCase $deleteMultiAnnouncement
+
     ) {
     }
 
@@ -178,6 +189,29 @@ class AnnouncementController
             ], 500);
 
         }
+    }
+
+    public function destroyMultiple(Request $request)
+    {
+        $validated = $request->validate([
+
+            'selectedItems' => ['required', 'array', 'min:1'],
+            'selectedItems.*' => ['ulid', 'distinct'],
+
+        ]);
+
+        $dto = new DeleteMultipleAnnouncementDto($validated['selectedItems']);
+
+        $this->deleteMultiAnnouncement->execute($dto);
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Deleted Successfully'
+
+        ]);
+
     }
 
 }

@@ -58,6 +58,14 @@ class AnnouncementRepository
         $announcement->delete();
     }
 
+    public function multipleDelete(array $ids)
+    {
+
+        return Announcement::whereIn('id', $ids)
+            ->delete();
+
+    }
+
     public function findById($id): Announcement
     {
 

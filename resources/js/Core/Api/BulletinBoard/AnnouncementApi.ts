@@ -78,5 +78,21 @@ export const AnnouncementApi = {
         });
 
         return data;
+    },
+
+    async deleteMultiple(municipalSlug: string) {
+
+        const { url, method } = bulletinBoard.AnnouncementController.destroyMultiple();
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug,
+            }
+        });
+
+        return data;
+
     }
 }

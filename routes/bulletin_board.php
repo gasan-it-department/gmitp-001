@@ -62,6 +62,7 @@ Route::prefix('api/announcement/')
 
                 Route::delete('/{id}', 'destroy')->name('destroy');
 
+                Route::post('/delete/multiple', 'destroyMultiple')->name('destroyMultiple');
             });
 
         Route::get('/published', 'getPublished')->name('fetchPublished');
