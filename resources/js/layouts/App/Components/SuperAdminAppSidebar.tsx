@@ -11,17 +11,10 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import municipality from '@/routes/municipality';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import {
-    Building,
-    FileText,
-    LogOut,
-    Map,
-    Settings,
-    User,
-    Users,
-} from 'lucide-react';
+import { Building, FileText, LogOut, Map, Settings, User, Users } from 'lucide-react';
 import * as React from 'react';
 
 // -------------------------
@@ -55,10 +48,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
         action: '',
     });
 
-    const cachedUrl =
-        typeof window !== 'undefined'
-            ? localStorage.getItem('activeSidebarUrl') || String(url)
-            : String(url);
+    const cachedUrl = typeof window !== 'undefined' ? localStorage.getItem('activeSidebarUrl') || String(url) : String(url);
 
     const SuperAdminSidebarItems: SidebarGroupType[] = [
         {
@@ -69,7 +59,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
         {
             title: 'LOCAL GOVERNMENTS',
             icon: Building,
-            items: [{ title: 'Municipalities', url: '/municipality/super-admin', icon: Map }],
+            items: [{ title: 'Municipalities', url: municipality.superAdmin.page.url(), icon: Map }],
         },
         {
             title: 'LOGS',
@@ -88,12 +78,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
     // -------------------------
     const isRouteActive = (pattern: string) => {
         if (!pattern) return false;
-        return (
-            cachedUrl === pattern ||
-            cachedUrl.startsWith(pattern + '/') ||
-            cachedUrl.startsWith(pattern + '?') ||
-            cachedUrl.includes(pattern)
-        );
+        return cachedUrl === pattern || cachedUrl.startsWith(pattern + '/') || cachedUrl.startsWith(pattern + '?') || cachedUrl.includes(pattern);
     };
 
     const handleLinkClick = (linkUrl: string) => {
@@ -119,7 +104,6 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
     // -------------------------
     return (
         <Sidebar {...props} className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm">
-
             {/* HEADER */}
             <SidebarHeader className="border-b border-gray-100 pb-3">
                 <SidebarMenu>
@@ -137,11 +121,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
                                         {auth.user?.first_name} {auth.user?.last_name}
                                     </span>
                                     <span className="text-xs text-gray-500">
-                                        {userRole?.isAdmin
-                                            ? 'Administrator'
-                                            : userRole?.isSuperAdmin
-                                                ? 'Super-Admin'
-                                                : 'User'}
+                                        {userRole?.isAdmin ? 'Administrator' : userRole?.isSuperAdmin ? 'Super-Admin' : 'User'}
                                     </span>
                                 </div>
                             </a>
@@ -171,13 +151,16 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium
-                                                    ${active
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium ${
+                                                        active
                                                             ? 'border-l-4 border-orange-500 bg-orange-100 text-orange-700 shadow-sm'
                                                             : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700'
-                                                        }`}
+                                                    }`}
                                                 >
-                                                    <a onClick={() => handleLinkClick(sub.url)} className="flex w-full items-center gap-2 cursor-pointer">
+                                                    <a
+                                                        onClick={() => handleLinkClick(sub.url)}
+                                                        className="flex w-full cursor-pointer items-center gap-2"
+                                                    >
                                                         <SubIcon
                                                             size={14}
                                                             className={`${active ? 'stroke-orange-600 text-orange-600' : 'stroke-orange-500 text-orange-500'}`}
@@ -199,7 +182,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
             <div className="mt-auto border-t border-gray-100 px-3 py-3">
                 <Button
                     onClick={handleExitAdminClick}
-                    className="w-full flex items-center gap-3 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white"
+                    className="flex w-full items-center gap-3 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white"
                 >
                     <LogOut size={18} />
                     <span>Exit Admin</span>

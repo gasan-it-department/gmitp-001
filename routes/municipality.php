@@ -13,7 +13,7 @@ Route::prefix('municipality')
         // ========================
         Route::middleware(['superAdmin'])
             ->prefix('super-admin')
-            ->as('super-admin.')
+            ->as('superAdmin.')
             ->group(function () {
             Route::get('/', [SuperAdminController::class, 'showMunicipalityPage'])
                 ->name('page');
