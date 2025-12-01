@@ -1,34 +1,18 @@
 'use client';
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { AddressDropdown } from '@/components/Shared/AddressDropdown';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    Select,
-    SelectTrigger,
-    SelectValue,
-    SelectItem,
-    SelectContent,
-} from '@/components/ui/select';
-import { useState, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { toast } from 'sonner';
-import { AddressDropdown } from '@/components/Shared/AddressDropdown';
+import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { useCallback, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
-const assistanceOptions = [
-    'Medical Assistance',
-    'Food Assistance',
-    'Transportation Assistance',
-    'Financial Assistance',
-    'Burial Assistance',
-];
+const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
 
 interface Props {
     isOpen: boolean;
@@ -49,6 +33,7 @@ interface FormData {
 }
 
 export function ActionCenterForm({ isOpen, onClose }: Props) {
+    const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const {
         register,
@@ -77,13 +62,16 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
             setValue('municipality_code', address.municipalityCode);
             setValue('barangay_code', address.barangayCode);
         },
-        [setValue]
+        [setValue],
     );
 
     const onSubmit = async (data: FormData) => {
         setIsSubmitting(true);
         try {
             console.log('Submitted data:', data);
+
+            const response = await ActionCenterApi.storeRequest(currentMunicipality.slug, data);
+
             reset();
             setIsSubmitting(false);
             onClose();
@@ -97,24 +85,20 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
                 showCloseButton={false}
-                className="max-h-[90vh] w-full overflow-y-auto p-0 sm:max-w-3xl rounded-2xl border border-orange-200"
+                className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-orange-200 p-0 sm:max-w-3xl"
             >
                 {/* HEADER */}
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:px-8 rounded-t-2xl sticky top-0 z-50">
+                <div className="sticky top-0 z-50 rounded-t-2xl bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:px-8">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-white">
-                            Assistance Request Form
-                        </DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-white">Assistance Request Form</DialogTitle>
                     </DialogHeader>
                 </div>
 
-                <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-6">
+                <div className="space-y-6 px-6 py-6 sm:px-8 sm:py-8">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* PERSONAL INFORMATION */}
                         <div className="space-y-4">
-                            <h3 className="text-base font-semibold text-orange-600">
-                                Personal Information
-                            </h3>
+                            <h3 className="text-base font-semibold text-orange-600">Personal Information</h3>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <InputField label="Last Name *" id="last_name" register={register} errors={errors} required />
                                 <InputField label="First Name *" id="first_name" register={register} errors={errors} required />
@@ -129,9 +113,7 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
 
                         {/* ASSISTANCE TYPE */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-gray-700">
-                                Type of Assistance *
-                            </Label>
+                            <Label className="text-sm font-semibold text-gray-700">Type of Assistance *</Label>
                             <Controller
                                 name="assistance_type"
                                 control={control}
@@ -182,7 +164,7 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
                             </Button>
                             <Button
                                 type="submit"
-                                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white hover:opacity-90 rounded-xl"
+                                className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white hover:opacity-90"
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Submitting...' : 'Submit Request'}
@@ -215,7 +197,7 @@ function InputField({ label, id, type = 'text', register, errors, required }: In
                 type={type}
                 autoComplete="off"
                 {...register(id, required ? { required: `${label} is required` } : {})}
-                className={`rounded-md border font-medium text-gray-600 focus:ring-orange-200 focus:border-orange-400 ${errors[id] ? 'border-red-500' : 'border-gray-300'}`}
+                className={`rounded-md border font-medium text-gray-600 focus:border-orange-400 focus:ring-orange-200 ${errors[id] ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors[id] && <p className="text-sm text-red-500">{errors[id]?.message}</p>}
         </div>
