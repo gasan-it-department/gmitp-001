@@ -1,6 +1,17 @@
 <?php
 
 use App\External\Api\Controllers\CommunityReport\CommunityReportController;
+use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
+
+Route::prefix('/community-report')
+    ->middleware(['municipalContext', 'admin'])
+    ->name('communityReport')
+    ->controller(CommunityReportAdminController::class)
+    ->group(function () {
+
+        Route::get('/', 'index')->name('page');
+
+    });
 
 
 Route::prefix('api/community-report')
