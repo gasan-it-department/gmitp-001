@@ -4,7 +4,9 @@ namespace App\Core\CommunityReport\Repositories;
 
 use App\Core\CommunityReport\Dto\CreateReportDto;
 use App\Core\CommunityReport\Models\CommunityReport;
+use App\Core\CommunityReport\Dto\CommunityReportQueryDto;
 use App\Core\CommunityReport\Models\CommunityReportFiles;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class CommunityReportRepositories
 {
@@ -44,6 +46,16 @@ class CommunityReportRepositories
             'file_size' => $reportFile['file_size'],
 
         ]);
+
+    }
+
+    public function fetchByMunicipalId(string $municipalId, CommunityReportQueryDto $dto): LengthAwarePaginator
+    {
+
+        return CommunityReport::with('attachments')
+            ->where('municipal_id', $municipalId)
+            ->orderBy($dto->orderBy, $dto->direction)
+            ->paginate($dto->perPage);
 
     }
 }
