@@ -2,15 +2,20 @@
 
 import { AddressDropdown } from '@/components/Shared/AddressDropdown';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Control, Controller, ControllerProps, FieldErrors, Path, useForm } from 'react-hook-form';
 
 const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
 
@@ -27,9 +32,10 @@ interface FormData {
     contact_number: string;
     assistance_type: string;
     description: string;
-    province_code?: string;
-    municipality_code?: string;
-    barangay_code?: string;
+    province?: string;
+    municipality?: string;
+    barangay?: string;
+    birth_date?: string;
 }
 
 export function ActionCenterForm({ isOpen, onClose }: Props) {
@@ -51,6 +57,7 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
             contact_number: '',
             assistance_type: '',
             description: '',
+            birth_date: '',
         },
     });
 
@@ -58,9 +65,9 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
     const handleAddressChange = useCallback(
         (address: { provinceCode: string; municipalityCode: string; barangayCode: string } | null) => {
             if (!address) return;
-            setValue('province_code', address.provinceCode);
-            setValue('municipality_code', address.municipalityCode);
-            setValue('barangay_code', address.barangayCode);
+            setValue('province', address.provinceCode);
+            setValue('municipality', address.municipalityCode);
+            setValue('barangay', address.barangayCode);
         },
         [setValue],
     );
@@ -104,6 +111,10 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
                                 <InputField label="First Name *" id="first_name" register={register} errors={errors} required />
                                 <InputField label="Middle Name" id="middle_name" register={register} errors={errors} />
                                 <InputField label="Suffix" id="suffix" register={register} errors={errors} />
+
+                                {/* ✅ Birth Date Input */}
+                                <DatePickerField label="Birth Date *" name="birth_date" control={control} errors={errors} required />
+
                                 <InputField label="Contact Number *" id="contact_number" type="tel" register={register} errors={errors} required />
                             </div>
                         </div>
@@ -177,7 +188,10 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
     );
 }
 
-// HELPER INPUT FIELD
+// ----------------------------------------------------------------------
+// HELPER COMPONENTS
+// ----------------------------------------------------------------------
+
 interface InputFieldProps {
     label: string;
     id: string;
@@ -186,6 +200,7 @@ interface InputFieldProps {
     errors: any;
     required?: boolean;
 }
+
 function InputField({ label, id, type = 'text', register, errors, required }: InputFieldProps) {
     return (
         <div className="space-y-2">
@@ -200,6 +215,62 @@ function InputField({ label, id, type = 'text', register, errors, required }: In
                 className={`rounded-md border font-medium text-gray-600 focus:border-orange-400 focus:ring-orange-200 ${errors[id] ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors[id] && <p className="text-sm text-red-500">{errors[id]?.message}</p>}
+        </div>
+    );
+}
+
+// ✅ NEW: Date Picker Component wrapping Controller + Popover + Calendar
+interface DatePickerFieldProps {
+    name: Path<FormData>;
+    control: Control<FormData>;
+    errors: FieldErrors<FormData>;
+    label: string;
+    required?: boolean;
+}
+
+function DatePickerField({ name, control, errors, label, required = false }: DatePickerFieldProps) {
+    const rules: ControllerProps<FormData>['rules'] = required ? { required: `${label} is required` } : {};
+
+    return (
+        <div className="space-y-2">
+            <Label className="text-sm font-semibold text-gray-700">{label}</Label>
+            <Controller
+                name={name}
+                control={control}
+                rules={rules}
+                render={({ field }) => (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    'w-full justify-start text-left font-medium',
+                                    !field.value && 'text-muted-foreground',
+                                    errors[name] ? 'border-red-500' : 'border-gray-300',
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(new Date(field.value), 'PPP') : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        {/* Added z-[1000] and pointer-events-auto to ensure it sits on top of the Dialog (which is typically z-50).
+                          This fixes the issue where calendar dates are not clickable inside a modal.
+                        */}
+                        <PopoverContent className="pointer-events-auto z-[1000] w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value ? new Date(field.value) : undefined}
+                                onSelect={(date) => {
+                                    field.onChange(date ? format(date, 'yyyy-MM-dd') : '');
+                                }}
+                                disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                )}
+            />
+            {errors[name] && <p className="text-sm text-red-500">{errors[name]?.message}</p>}
         </div>
     );
 }
