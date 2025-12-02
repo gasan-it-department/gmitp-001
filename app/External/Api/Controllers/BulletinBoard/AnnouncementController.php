@@ -75,10 +75,17 @@ class AnnouncementController
             $municipalId = app('municipal_id');
 
             $dto = new AnnouncementQueryDto(
+
                 perPage: $request->input('per_page', 10),
+
                 orderBy: $request->input('order_by', 'created_at'),
+
                 direction: $request->input('direction', 'desc'),
+
                 isPublished: $request->input('is_published', true),
+
+                search: $request->input('search')
+
             );
 
             $announcements = $this->getAnnouncementService->execute($dto, $municipalId);

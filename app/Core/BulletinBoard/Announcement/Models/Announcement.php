@@ -2,6 +2,7 @@
 
 namespace App\Core\BulletinBoard\Announcement\Models;
 
+use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,4 +23,9 @@ class Announcement extends Model
         'message',
         'is_published',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

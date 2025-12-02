@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->string('title');
             $table->text('message');
 
+            $table->string('status')->nullable();
+
             $table->foreignUlid('user_id')
                 ->constrained()
                 ->restrictOnDelete();
@@ -37,6 +39,9 @@ return new class extends Migration {
             $table->string('title');
             $table->text('description');
             $table->timestamp('event_date');
+
+            $table->string('status')->nullable();
+
 
             $table->foreignUlid('user_id')
                 ->constrained('users')

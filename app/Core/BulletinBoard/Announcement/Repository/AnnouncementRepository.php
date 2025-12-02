@@ -83,12 +83,31 @@ class AnnouncementRepository
     }
 
     //for admin usage
-    public function getAll(string $municipalId, AnnouncementQueryDto $dto): LengthAwarePaginator
+    public function fetchByMunicipalId(string $municipalId, AnnouncementQueryDto $dto): LengthAwarePaginator
     {
 
-        return Announcement::where('municipal_id', $municipalId)
+        $query = Announcement::where('municipal_id', $municipalId)
             ->where('is_published', $dto->isPublished)
-            ->orderBy($dto->orderBy, $dto->direction)
+            ->with('user');
+
+        if (!empty($dto->search)) {
+
+            $searchTerm = '%' . $dto->search . '%';
+
+            $query->where(function ($q) use ($searchTerm) {
+
+                $q->where('title', 'like', $searchTerm)
+                    ->orWhere('message', 'like', $searchTerm)
+                    ->orWhereHas('user', function ($userQ) use ($searchTerm) {
+                        $userQ->where('user_name', 'like', $searchTerm);
+                    });
+
+            });
+
+        }
+
+
+        return $query->orderBy($dto->orderBy, $dto->direction)
             ->paginate($dto->perPage);
 
     }
@@ -97,32 +116,26 @@ class AnnouncementRepository
     public function getPublished(string $municipalId, bool $isPublish, AnnouncementQueryDto $dto): LengthAwarePaginator
     {
 
-        return Announcement::where('municipal_id', $municipalId)
-            ->where('is_published', $isPublish)
-            ->orderBy($dto->orderBy, $dto->direction)
-            ->paginate($dto->perPage);
+        $query = Announcement::where('municipal_id', $municipalId)
+            ->where('is_published', $isPublish);
 
-    }
+        if (!empty($dto->search)) {
 
-    public function getFiltered(AnnouncementFilterDto $dto): Announcement
-    {
+            $searchTerm = '%' . $dto->search . '%';
 
-        $query = Announcement::query();
+            $query->where(function ($q) use ($searchTerm) {
 
-        if (!is_null($dto->isPublished)) {
-            $query->where('is_published', $dto->isPublished);
+                $q->where('title', 'like', $searchTerm)
+                    ->orWhere('description', 'like', $searchTerm)
+                    ->orWhereHas('user', function ($userQ) use ($searchTerm) {
+                        $userQ->where('name', 'like', $searchTerm);
+                    });
+
+            });
+
         }
 
-        if ($dto->fromDate) {
-            $query->whereDate('created_at', '>=', $dto->fromDate);
-        }
-
-        if ($dto->toDate) {
-            $query->whereDate('created_at', '<=', $dto->toDate);
-        }
-
-        return $query
-            ->orderyBy('created_at', $dto->sort)
+        return $query->orderBy($dto->orderBy, $dto->direction)
             ->paginate($dto->perPage);
 
     }

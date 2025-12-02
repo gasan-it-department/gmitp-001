@@ -108,6 +108,7 @@ class EventController extends Controller
                 perPage: $request->input('per_page', 10),
                 orderBy: $request->input('order_by', 'created_at'),
                 direction: $request->input('direction', 'desc'),
+                search: $request->input('search')
             );
 
             // This returns LengthAwarePaginator

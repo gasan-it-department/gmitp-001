@@ -16,7 +16,7 @@ class GetAnnouncementUseCase
     public function execute(AnnouncementQueryDto $dto, string $municipalId): LengthAwarePaginator
     {
 
-        return $this->announcementRepository->getAll($municipalId, $dto);
+        return $this->announcementRepository->fetchByMunicipalId($municipalId, $dto);
 
     }
 }
