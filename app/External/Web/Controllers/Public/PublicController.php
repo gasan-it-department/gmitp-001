@@ -78,9 +78,16 @@ class PublicController extends Controller
         return Inertia::render('Public/ExecutiveOrder/ExevutiveOrdersPage');
     }
 
-    public function showAnnouncementsPage()
+    // NAME IS MODIFIED - DEC. 2
+    public function showAllAnnouncementPage()
     {
-        return Inertia::render('Public/Home/Components/GeneralAnnouncementList');
+        return Inertia::render('Public/AllAnnouncements/AllAnnouncementsPage');
+    }
+
+    // NEWLY ADDED FOR SHOWING ALL EVENTS - DEC. 2
+    public function showAllEventsPage()
+    {
+        return Inertia::render('Public/AllEvents/AllEventsPage');
     }
 
     public function showWeddingPage()

@@ -9,6 +9,9 @@ import { motion } from 'framer-motion';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { ViewEventDetails } from './ViewEventDetails';
+import { router } from '@inertiajs/react';
+import { events } from '@/routes';
+import municipality from '@/routes/municipality';
 
 interface EventDataList {
     title: string;
@@ -24,6 +27,7 @@ export default function EventsCalendarUi() {
     const [selectedEventData, setSelectedEventData] = useState<EventDataList | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { currentMunicipality } = useMunicipality();
+
 
     const [classicDialg, setClassicDialog] = useState({
         isOpen: false,
@@ -113,35 +117,32 @@ export default function EventsCalendarUi() {
                                         setSelectedEventData(item);
                                         setIsEventDialogShowing(true);
                                     }}
-                                    className={`relative overflow-hidden rounded-xl p-5 shadow-md transition-all duration-300 ${
-                                        isDecember
-                                            ? 'bg-gradient-to-br from-green-700 via-green-600 to-green-500'
-                                            : isNovember
-                                              ? 'bg-gradient-to-br from-[#2e0233] via-[#3c063d] to-[#5e1a00]'
-                                              : 'bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900'
-                                    }`}
+                                    className={`relative overflow-hidden rounded-xl p-5 shadow-md transition-all duration-300 ${isDecember
+                                        ? 'bg-gradient-to-br from-green-700 via-green-600 to-green-500'
+                                        : isNovember
+                                            ? 'bg-gradient-to-br from-[#2e0233] via-[#3c063d] to-[#5e1a00]'
+                                            : 'bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900'
+                                        }`}
                                 >
                                     <div
-                                        className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-sm ${
-                                            isDecember
-                                                ? 'bg-red-600 text-white'
-                                                : isNovember
-                                                  ? 'bg-orange-600 text-black'
-                                                  : 'bg-gradient-to-r from-red-500 to-orange-500 text-white'
-                                        }`}
+                                        className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-sm ${isDecember
+                                            ? 'bg-red-600 text-white'
+                                            : isNovember
+                                                ? 'bg-orange-600 text-black'
+                                                : 'bg-gradient-to-r from-red-500 to-orange-500 text-white'
+                                            }`}
                                     >
                                         {Utility().calculateArrivingDays(item.event_date)}
                                     </div>
 
                                     <div className="flex items-center gap-3 sm:gap-4">
                                         <div
-                                            className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border font-semibold shadow-md sm:h-14 sm:w-14 ${
-                                                isDecember
-                                                    ? 'border-green-900 bg-green-800 text-white'
-                                                    : isNovember
-                                                      ? 'border-orange-800 bg-gradient-to-br from-orange-700 to-black text-orange-200'
-                                                      : 'border-red-300 bg-gradient-to-br from-red-400 to-orange-400 text-white dark:border-orange-800'
-                                            }`}
+                                            className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border font-semibold shadow-md sm:h-14 sm:w-14 ${isDecember
+                                                ? 'border-green-900 bg-green-800 text-white'
+                                                : isNovember
+                                                    ? 'border-orange-800 bg-gradient-to-br from-orange-700 to-black text-orange-200'
+                                                    : 'border-red-300 bg-gradient-to-br from-red-400 to-orange-400 text-white dark:border-orange-800'
+                                                }`}
                                         >
                                             <span className="text-xs leading-none uppercase sm:text-sm">
                                                 {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('MMM')}
@@ -153,16 +154,14 @@ export default function EventsCalendarUi() {
 
                                         <div className="flex min-w-0 flex-grow flex-col">
                                             <span
-                                                className={`text-xs font-semibold sm:text-sm ${
-                                                    isDecember ? 'text-red-100' : isNovember ? 'text-orange-300' : 'text-red-700 dark:text-amber-400'
-                                                }`}
+                                                className={`text-xs font-semibold sm:text-sm ${isDecember ? 'text-red-100' : isNovember ? 'text-orange-300' : 'text-red-700 dark:text-amber-400'
+                                                    }`}
                                             >
                                                 {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('YYYY')}
                                             </span>
                                             <h3
-                                                className={`truncate text-base font-semibold sm:text-lg ${
-                                                    isDecember ? 'text-white' : isNovember ? 'text-orange-200' : 'text-red-900 dark:text-orange-100'
-                                                }`}
+                                                className={`truncate text-base font-semibold sm:text-lg ${isDecember ? 'text-white' : isNovember ? 'text-orange-200' : 'text-red-900 dark:text-orange-100'
+                                                    }`}
                                             >
                                                 {item.title}
                                             </h3>
@@ -170,9 +169,8 @@ export default function EventsCalendarUi() {
                                     </div>
 
                                     <p
-                                        className={`mt-3 line-clamp-3 text-sm sm:text-base ${
-                                            isDecember ? 'text-white/90' : isNovember ? 'text-orange-100' : 'text-orange-800 dark:text-orange-200'
-                                        }`}
+                                        className={`mt-3 line-clamp-3 text-sm sm:text-base ${isDecember ? 'text-white/90' : isNovember ? 'text-orange-100' : 'text-orange-800 dark:text-orange-200'
+                                            }`}
                                     >
                                         {item.description}
                                     </p>
@@ -189,7 +187,10 @@ export default function EventsCalendarUi() {
 
             {dashboardList.length > 0 && (
                 <div className="mt-6 flex w-full items-end justify-end">
-                    <Button variant="outline">View More</Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => router.visit(events.url(currentMunicipality.slug))}>
+                        View More</Button>
                 </div>
             )}
 

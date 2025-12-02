@@ -1,4 +1,4 @@
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import CommunityReportHeader from "./CommunityReportHeader";
 import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 import { useEffect, useState } from "react";
@@ -10,6 +10,8 @@ import ClassicDialog from "@/pages/Utility/ClassicDialog";
 import ToastProvider from "@/pages/Utility/ToastShower";
 import PaginationView from "@/pages/Utility/PaginationView";
 import FilterDialog from "./FilterDialog";
+import { Button } from "@/components/ui/button";
+import { Eye, EyeIcon, Map, Pencil } from "lucide-react";
 
 export default function CommunityReportPageTable() {
     const [communityReportsList, setCommunityReportsList] = useState<CommunityReportData[]>([]);
@@ -40,8 +42,9 @@ export default function CommunityReportPageTable() {
             setLoadingDialogVisible(true);
             // FOUND AN ERROR HERE
             const response = await CommunityReportApi.getCommunityReport(currentMunicipality.slug);
-            console.log("Response: ", response);
-            setLoadingDialogVisible(false);
+            if (response.success) {
+                setCommunityReportsList(response.data.data);
+            }
         } catch (error: any) {
             setClassicDialog((prev) => ({
                 ...prev,
@@ -82,6 +85,12 @@ export default function CommunityReportPageTable() {
         // HANDLE SORT IN BACKEND
     }
 
+    const toggleSelectItem = (id: string) => {
+        setSelectedItems(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
     return (
         <div>
             {/* HEADER */}
@@ -102,7 +111,7 @@ export default function CommunityReportPageTable() {
                                     <input
                                         type="checkbox"
                                         className="w-4 h-4 cursor-pointer"
-                                        checked={communityReportsList.length === communityReportsList.length && communityReportsList.length > 0}
+                                        checked={selectedItems.length === communityReportsList.length && communityReportsList.length > 0}
                                         onChange={toggleSelectAll}
                                     />
                                 </div>
@@ -111,7 +120,7 @@ export default function CommunityReportPageTable() {
                             <TableHead className="w-64">Sender Name</TableHead>
                             <TableHead className="w-[500px]">Location</TableHead>
                             <TableHead className="w-32">Contact</TableHead>
-                            <TableHead className="w-24 text-center">Status</TableHead>
+                            {/* <TableHead className="w-24 text-center">Status</TableHead> */}
                             <TableHead className="w-24 text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -125,7 +134,58 @@ export default function CommunityReportPageTable() {
                         ) : (
                             communityReportsList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
+                                    <TableCell>
+                                        <div className="flex items-center justify-center p-2">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 cursor-pointer"
+                                                checked={selectedItems.includes(item.id)}
+                                                onChange={() => toggleSelectItem(item.id)}
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{index + 1 + (currentPage - 1) * perPage}</TableCell>
+                                    <TableCell>{item.sender_name ? item.sender_name : "Concerned Citizen"}</TableCell>
+                                    <TableCell>{item.location}</TableCell>
+                                    <TableCell>{item.contact ? item.contact : "Not provided"}</TableCell>
+                                    {/* <TableCell>{item.status ? item.status : "N/A"}</TableCell> */}
+                                    <TableCell className="flex justify-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => { }}
+                                            className="border-green-200 text-green-600 hover:bg-green-50"
+                                        >
+                                            <EyeIcon size={14} />
+                                        </Button>
 
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => { }}
+                                            className="border-green-200 text-blue-600 hover:bg-green-50"
+                                        >
+                                            <Map size={14} />
+                                        </Button>
+                                        {/* <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setClassicDialog((prev) => ({
+                                                    ...prev,
+                                                    isOpen: true,
+                                                    title: 'Confirm',
+                                                    message: 'Are you sure you want to delete this announcement?',
+                                                    positiveButtonText: 'Delete',
+                                                    negativeButtonText: 'Cancel',
+                                                    payload: item.id,
+                                                }))
+                                            }
+                                            className="border-red-200 text-red-600 hover:bg-red-50"
+                                        >
+                                            <Trash2 size={14} />
+                                        </Button> */}
+                                    </TableCell>
                                 </TableRow>
                             ))
                         )}

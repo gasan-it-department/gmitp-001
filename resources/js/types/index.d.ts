@@ -8,6 +8,7 @@ export interface Auth {
         isAdmin: boolean;
         isSuperAdmin: boolean;
     }
+    access: ["action-center" | ""]
 }
 
 export interface BreadcrumbItem {

@@ -17,7 +17,8 @@ Route::prefix('{municipality}')
         Route::get('/travel', [PublicController::class, 'showTravelPage'])->name('travel');
         Route::get('/transparency', [PublicController::class, 'showTransparencyPage'])->name('transparency');
         Route::get('/executive-orders', [PublicController::class, 'showExecutiveOrdersPage'])->name('orders');
-        Route::get('/announcements', [PublicController::class, 'showAnnouncementsPage'])->name('announcements');
+        Route::get('/all-announcements', [PublicController::class, 'showAllAnnouncementPage'])->name('announcements');
+        Route::get('/all-events', [PublicController::class, 'showAllEventsPage'])->name('events');
         Route::get('/schedule-wedding', [PublicController::class, 'showWeddingPage'])->name('wedding');
     });
 

@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { announcements } from '@/routes';
 
 export default function GeneralAnnouncement() {
     const { currentMunicipality } = useMunicipality();
@@ -154,7 +155,7 @@ export default function GeneralAnnouncement() {
                                         variant="outline"
                                         className="text-sm sm:text-base"
                                         onClick={() => {
-                                            router.visit(route('announcements.list.show'));
+                                            router.visit(announcements.url(currentMunicipality.slug))
                                         }}
                                     >
                                         View More

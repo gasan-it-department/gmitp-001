@@ -12,7 +12,6 @@ import { ActionCenterForm } from './Components/ActionCenterForm';
 
 export default function Home() {
     const { auth } = usePage<SharedData>().props;
-
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     return (

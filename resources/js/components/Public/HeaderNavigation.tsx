@@ -10,9 +10,7 @@ type Municipality = {
 };
 
 export function HeaderNav() {
-    // Step 1: assert unknown, Step 2: assert your type
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-
     const navItems = useNavigation();
 
     return (

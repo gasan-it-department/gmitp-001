@@ -22,7 +22,6 @@ import { toast } from 'sonner';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import PrintView from './PrintView';
-import SortSelectionDialog from './SortSelectionDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 

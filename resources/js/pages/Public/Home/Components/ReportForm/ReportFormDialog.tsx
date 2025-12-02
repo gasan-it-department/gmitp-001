@@ -1,4 +1,3 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -8,21 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { AlertTriangle, CheckCircle2, FileIcon, Upload, X } from 'lucide-react';
-import { use, useEffect, useState } from 'react';
+import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import MapCoordinates from './MapCoordinates';
-
-interface ReportFormValues {
-    issue_type: string;
-    location: string;
-    description: string;
-    sender_name?: string;
-    contact: string;
-    latitude?: string;
-    longitude?: string;
-    files: File[];
-}
+import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
 
 interface ReportFormDialogProps {
     open: boolean;
@@ -53,7 +42,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         watch,
         formState: { errors },
         reset,
-    } = useForm<ReportFormValues>({
+    } = useForm<CommunityReportFormData>({
         defaultValues: {
             issue_type: '',
             location: '',
@@ -168,7 +157,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         }
     };
 
-    const onSubmit = async (data: ReportFormValues) => {
+    const onSubmit = async (data: CommunityReportFormData) => {
         console.log('Report Submitted:', data);
         setIsSubmiting(true);
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);

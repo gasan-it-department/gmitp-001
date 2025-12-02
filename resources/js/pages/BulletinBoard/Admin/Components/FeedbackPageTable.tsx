@@ -11,32 +11,20 @@ import ViewFeedbackDialog from './ViewFeedbackDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import FilterDialog from './FilterDialog';
-
-interface FeedbackFormValues {
-    feedback_target: 'employee' | 'department';
-    department_id?: string;
-    employee_name: string;
-    feedback_message: string;
-    sender_name?: string;
-    rating?: number;
-    message: string;
-    id: string;
-    created_at: string;
-}
+import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
 
 export default function FeedbackPageTable() {
     const { currentMunicipality } = useMunicipality();
     const [isLoading, setIsLoading] = useState(false);
-    const [feedbacks, setFeedbacks] = useState<FeedbackFormValues[]>([]);
+    const [feedbacks, setFeedbacks] = useState<FeedbackFormData[]>([]);
     const [currentFilter, setCurrentFilter] = useState<string | null>(null);
     const [isFilterOpened, setIsFilterOpened] = useState(false);
-
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
-    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean; data: FeedbackFormValues | null }>({
+    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean; data: FeedbackFormData | null }>({
         isOpen: false,
         data: null,
     });

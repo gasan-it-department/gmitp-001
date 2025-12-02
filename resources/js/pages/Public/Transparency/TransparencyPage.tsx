@@ -14,15 +14,15 @@ export default function Transparency() {
         <PublicLayout title="Transparency" description="">
             <main className="container mx-auto max-w-7xl px-4 py-8">
                 <div className="space-y-8">
-                    <MunicipalityInfo />
+                    {/* <MunicipalityInfo />
                     <Officials />
-                    <FinancialDocuments />
+                    <FinancialDocuments /> */}
                     <BidsAndAwards />
                     <CitizensCharter />
-                    <ReportsAndAudits />
+                    {/* <ReportsAndAudits />
                     <ProgramsAndProjects />
                     <PublicNotices />
-                    <FeedbackSection />
+                    <FeedbackSection /> */}
                 </div>
             </main>
         </PublicLayout>

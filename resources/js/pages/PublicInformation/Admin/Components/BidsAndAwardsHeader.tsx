@@ -1,17 +1,17 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import SearchBar from "@/pages/Utility/SearchBar";
-import { Filter, List, PlusIcon, UploadIcon } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import SearchBar from '@/pages/Utility/SearchBar';
+import { List, PlusIcon } from 'lucide-react';
 
 interface Props {
     className?: string;
-    // onAddNewButtonClicked: () => void;
+    onAddNewButtonClicked: () => void;
     onExportButtonClicked?: () => void;
     onFilterButtonClicked?: () => void;
     onSearch?: (search: string) => void;
 }
 
-export default function FeedbackPage({ className, onFilterButtonClicked, onSearch, onExportButtonClicked }: Props) {
+export default function BidsAndAwardsHeader({ className, onAddNewButtonClicked, onFilterButtonClicked, onSearch }: Props) {
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             {/* <h1 className="w-full justify-items-center text-3xl font-extrabold tracking-wide text-balance">Request List</h1> */}
@@ -22,14 +22,14 @@ export default function FeedbackPage({ className, onFilterButtonClicked, onSearc
 
             <div className="ml-2" />
 
-            <Button
+            {/* <Button
                 onClick={onExportButtonClicked}
                 variant="outline"
                 className="flex items-center gap-2 rounded-lg border-gray-300 text-gray-700 shadow-sm hover:bg-gray-100"
             >
                 <UploadIcon className="h-4 w-4" />
                 Export
-            </Button>
+            </Button> */}
 
             <Button
                 onClick={onFilterButtonClicked}
@@ -40,14 +40,14 @@ export default function FeedbackPage({ className, onFilterButtonClicked, onSearc
                 Sort
             </Button>
 
-            {/* <Button
+            <Button
                 onClick={onAddNewButtonClicked}
                 variant="outline"
                 className="flex items-center gap-2 rounded-lg border-gray-300 text-gray-700 shadow-sm hover:bg-gray-100"
             >
                 <PlusIcon className="h-4 w-4" />
-                Create
-            </Button> */}
+                Add
+            </Button>
         </div>
     );
 }

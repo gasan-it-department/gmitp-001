@@ -4,14 +4,16 @@ export interface Department {
     name: string;
 }
 
-export interface Feedback {
-    id: string;
-    userId?: string;
-    message: string;
-    subject: string;
+export interface FeedbackFormData {
+    feedback_target: 'employee' | 'department';
+    department_id?: string;
+    employee_name: string;
+    feedback_message: string;
+    sender_name?: string;
     rating?: number;
-    createdAt: string;
-
+    message: string;
+    id: string;
+    created_at: string;
 }
 
 export interface BaseFeedbackForm {

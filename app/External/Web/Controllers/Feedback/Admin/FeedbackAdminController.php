@@ -10,4 +10,9 @@ class FeedbackAdminController
     {
         return Inertia::render('BulletinBoard/Admin/FeedbackPage');
     }
+
+    public function showViewingFeedback()
+    {
+        return Inertia::render('BulletinBoard/Admin/Components/ViewingFeedbackPage');
+    }
 }

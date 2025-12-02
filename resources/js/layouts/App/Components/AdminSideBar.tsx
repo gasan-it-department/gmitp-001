@@ -23,13 +23,17 @@ import {
     CalendarDays,
     ClipboardList,
     FileText,
+    FileTextIcon,
+    Info,
     LogOut,
     Megaphone,
     MessageCircleIcon,
+    Trophy,
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
 import { home } from '@/routes';
+import bidsAndAwards from '@/routes/bidsAndAwards';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -87,7 +91,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             ],
         },
         {
-            title: 'PUBLIC INFORMATION',
+            title: 'NOTICES & ADVISORIES',
             icon: FileText,
             items: [
                 {
@@ -98,6 +102,22 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
                 { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
                 { title: 'Comunity Reports', url: communityReport.page.url({municipality: currentMunicipality.slug}), icon: UsersIcon },
+            ],
+        },
+        {
+            title: 'PUBLIC INFORMATION',
+            icon: FileText,
+            items: [
+                {
+                    title: 'Bids and Awards',
+                    url: bidsAndAwards.page.url({municipality: currentMunicipality.slug}),
+                    icon: Trophy,
+                },
+                {
+                    title: 'Citizen\'s Charter',
+                    url: '',
+                    icon: Info,
+                },
             ],
         },
 
