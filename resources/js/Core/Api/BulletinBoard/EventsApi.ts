@@ -17,13 +17,15 @@ export const EventsApi = {
         return data;
     },
 
-    async fetch(municipalSlug: string) {
+    //for admin table api
+    async fetch(municipalSlug: string, page: number = 1) {
 
         const { url, method } = bulletinBoard.EventController.fetch();
 
         const { data } = await axios({
             url,
             method,
+            params: { page },
             headers: {
                 'X-Municipality-Slug': municipalSlug
             }
@@ -32,6 +34,7 @@ export const EventsApi = {
         return data;
     },
 
+    //for public facing api 
     async getPublished(municipalSlug: string, page: number = 1) {
 
         const { url, method } = bulletinBoard.EventController.getPublished();
@@ -39,7 +42,7 @@ export const EventsApi = {
         const { data } = await axios({
             method,
             url,
-            params:{ page },
+            params: { page },
             headers: {
                 'X-Municipality-Slug': municipalSlug
             }

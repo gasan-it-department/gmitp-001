@@ -16,11 +16,28 @@ class AnnouncementResource extends JsonResource
     {
 
         return [
+
             'id' => $this->id,
+
             'title' => $this->title,
+
             'message' => $this->message,
+
             'is_published' => $this->is_published,
+
             'created_at' => $this->created_at,
+
+            'author' => $this->whenLoaded('user', function ($user) {
+
+                return [
+
+                    'id' => $user->id,
+
+                    'name' => $user->first_name . ' ' . $user->last_name,
+
+                ];
+
+            })
         ];
 
     }

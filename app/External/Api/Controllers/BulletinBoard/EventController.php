@@ -73,29 +73,15 @@ class EventController extends Controller
 
     public function fetch()
     {
-        try {
 
-            $municipalId = app('municipal_id');
+        $municipalId = app('municipal_id');
 
-            $events = $this->getEventsUseCase->execute($municipalId);
+        $events = $this->getEventsUseCase->execute($municipalId);
 
-            return response()->json([
-                'success' => true,
-                'data' => EventsResource::collection($events),
-            ]);
+        return EventsResource::collection($events)->additional([
+            'success' => true,
+        ]);
 
-        } catch (\Exception $e) {
-
-            \Log::error('Failed to fetch events: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch events',
-            ], 200);
-
-        }
     }
 
     public function getPublished(Request $request)
@@ -108,7 +94,7 @@ class EventController extends Controller
                 perPage: $request->input('per_page', 10),
                 orderBy: $request->input('order_by', 'created_at'),
                 direction: $request->input('direction', 'desc'),
-                search: $request->input('search')
+                search: $request->input('search', 'harvey')
             );
 
             // This returns LengthAwarePaginator

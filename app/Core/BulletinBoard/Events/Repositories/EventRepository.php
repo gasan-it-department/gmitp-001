@@ -32,9 +32,9 @@ class EventRepository
     }
 
     //for admin usage 
-    public function getAllByMunicipalId(string $municipalId): Collection
+    public function getAllByMunicipalId(string $municipalId): LengthAwarePaginator
     {
-        $events = Events::where('municipal_id', $municipalId)->get();
+        $events = Events::where('municipal_id', $municipalId)->paginate(10);
 
         return $events;
     }
@@ -44,6 +44,7 @@ class EventRepository
         $query = Events::query()
             ->where('municipal_id', $municipalId)
             ->where('is_published', $isPublished)
+            ->with('user')
             ->when(!empty($dto->search), function ($query) use ($dto) {
 
                 $searchTerm = '%' . $dto->search . '%';

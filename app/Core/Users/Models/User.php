@@ -3,12 +3,13 @@
 namespace App\Core\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Laravel\Sanctum\HasApiTokens;
 use App\Core\Users\Contracts\HasRole;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use App\Core\ActionCenter\Infrastructures\Models\AssistanceRequest;
+use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
+
 class User extends Authenticatable implements HasRole
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */

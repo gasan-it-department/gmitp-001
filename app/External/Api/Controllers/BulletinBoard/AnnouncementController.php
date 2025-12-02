@@ -71,34 +71,31 @@ class AnnouncementController
 
     public function fetch(Request $request)
     {
-        try {
-            $municipalId = app('municipal_id');
 
-            $dto = new AnnouncementQueryDto(
+        $municipalId = app('municipal_id');
 
-                perPage: $request->input('per_page', 10),
+        $dto = new AnnouncementQueryDto(
 
-                orderBy: $request->input('order_by', 'created_at'),
+            perPage: $request->input('per_page', 10),
 
-                direction: $request->input('direction', 'desc'),
+            orderBy: $request->input('order_by', 'created_at'),
 
-                isPublished: $request->input('is_published', true),
+            direction: $request->input('direction', 'desc'),
 
-                search: $request->input('search')
+            isPublished: $request->input('is_published', true),
 
-            );
+            search: $request->input('search')
 
-            $announcements = $this->getAnnouncementService->execute($dto, $municipalId);
+        );
 
-            return response()->json($announcements);
+        $announcements = $this->getAnnouncementService->execute($dto, $municipalId);
 
-        } catch (\Exception $e) {
+        return AnnouncementResource::collection($announcements)->additional([
 
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 200);
-        }
+            'success' => true,
+
+        ]);
+
     }
 
 
