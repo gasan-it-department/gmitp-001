@@ -1,22 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Utility from '@/pages/Utility/Utility';
 import { Star } from 'lucide-react';
+import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
 
 interface ViewFeedbackDialogProps {
     isOpen: boolean;
-    data: FeedbackFormValues | null;
+    data: FeedbackFormData | null;
     onClose: () => void;
-}
-
-interface FeedbackFormValues {
-    feedback_target: 'employee' | 'department';
-    department_id?: string;
-    employee_name: string;
-    sender_name?: string | null;
-    rating?: number;
-    message: string;
-    id: string;
-    created_at: string;
 }
 
 export default function ViewFeedbackDialog({ isOpen, data, onClose }: ViewFeedbackDialogProps) {
@@ -27,7 +17,7 @@ export default function ViewFeedbackDialog({ isOpen, data, onClose }: ViewFeedba
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-h-[90vh] sm:max-w-md w-full overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl">
+            <DialogContent className="max-h-[90vh] sm:max-w-md w-full min-w-[150vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl">
 
                 {/* HEADER */}
                 <DialogHeader className="border-b border-orange-200 pb-3 text-center">

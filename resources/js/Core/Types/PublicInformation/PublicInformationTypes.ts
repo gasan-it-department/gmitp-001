@@ -1,5 +1,5 @@
 
-export interface BidsAndAwardsFormData{
+export interface BidsAndAwardsFormData {
     title: string;
     type: string;
     deadline: string;
@@ -8,6 +8,12 @@ export interface BidsAndAwardsFormData{
     files: File[]
 }
 
-export interface BidsAndAwardsData{
-
+export interface BidsAndAwardsData {
+    id: string;
+    title: string;
+    type: string;
+    deadline: string;
+    budget: number;
+    year: string;
+    files: File[]
 }

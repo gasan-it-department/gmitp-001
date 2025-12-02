@@ -9,9 +9,9 @@ class CreateReportDto
 
         public readonly string $description,
 
-        public readonly string $latitude,
+        public readonly ?string $latitude,
 
-        public readonly string $longitude,
+        public readonly ?string $longitude,
 
         public readonly ?string $name = null,
 

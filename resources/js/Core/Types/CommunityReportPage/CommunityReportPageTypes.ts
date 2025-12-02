@@ -4,7 +4,7 @@ export interface CommunityReportFormData {
     location: string;
     description: string;
     sender_name?: string;
-    contact: string;
+    contact?: string;
     latitude?: string;
     longitude?: string;
     files: File[];
@@ -12,13 +12,14 @@ export interface CommunityReportFormData {
 
 export interface CommunityReportData {
     id: string;
-    issue_type: string;
+    type: string;
     location: string;
     description: string;
     sender_name?: string;
-    contact: string;
+    contact?: string;
     latitude?: string;
     longitude?: string;
+    created_at: string;
     status: string;
     files: File[];
 }

@@ -15,6 +15,7 @@ import FilterDialog from './FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { toast } from 'sonner';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 
 export default function AnnouncementPageTable() {
     const { currentMunicipality } = useMunicipality();
@@ -23,7 +24,7 @@ export default function AnnouncementPageTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
     const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
-    const [currentFilter, setCurrentFilter] = useState<string | null>("Event title");
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
@@ -82,36 +83,6 @@ export default function AnnouncementPageTable() {
         }
     };
 
-    const applyFilterWithData = (filter: string | null, list: AnnouncementData[]) => {
-        if (!filter) {
-            setAnnouncementList(list);
-            return;
-        }
-        let filtered = [...list];
-        switch (filter) {
-            case "Title":
-                filtered = filtered
-                    .filter(item => item.title?.trim().length > 0)
-                    .sort((a, b) => a.title.localeCompare(b.title));
-                break;
-            case "Message":
-                filtered = filtered
-                    .filter(item => item.message?.trim().length > 0)
-                    .sort((a, b) => a.message.localeCompare(b.message));
-                break;
-            case "Date Posted":
-                filtered = filtered
-                    .filter(item => item.created_at != null)
-                    .sort((a, b) =>
-                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    );
-                break;
-            default:
-                filtered = list;
-        }
-        setAnnouncementList(filtered);
-    };
-
     const handleSuccess = (data: AnnouncementData, isEdit: boolean) => {
         let updatedList: AnnouncementData[] = [];
         if (isEdit) {
@@ -125,7 +96,6 @@ export default function AnnouncementPageTable() {
             return;
         }
         setRawAnnouncementList(updatedList);
-        applyFilterWithData(currentFilter, updatedList);
     };
 
     const handleDelete = async (idList: string[]) => {
@@ -158,7 +128,6 @@ export default function AnnouncementPageTable() {
             const paginatedList = updatedRawList.slice(startIndex, startIndex + perPage);
             setRawAnnouncementList(updatedRawList);
             setAnnouncementList(paginatedList);
-            applyFilterWithData(currentFilter, paginatedList);
             setSelectedItems([]);
         } catch (error: any) {
             setClassicDialog((prev) => ({
@@ -415,13 +384,22 @@ export default function AnnouncementPageTable() {
                 isOpen={isFilterDialogVisible}
                 currentFilter={currentFilter}
                 onClose={() => setIsFilterDialogVisible(false)}
-                filters={["Title", "Message", "Date Posted"]}
-                selectedFilter={currentFilter}
-                onApply={(selectedFilter) => {
+                filters={[
+                    { title: "Title", sub: "title" },
+                    { title: "Message", sub: "message" },
+                    { title: "Date Posted", sub: "created_at" }
+                ]}
+                onApply={(selectedFilter: FilterDialogData | null) => {
+                    // set current filter properly
                     setCurrentFilter(selectedFilter);
-                    handleSort(selectedFilter);
+
+                    // Apply the sorting / filtering logic using the 'sub' key
+                    if (selectedFilter) {
+                        handleSort(selectedFilter.sub);
+                    }
                 }}
             />
+
         </div>
     );
 }

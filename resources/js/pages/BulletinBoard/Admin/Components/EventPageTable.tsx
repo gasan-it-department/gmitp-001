@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import AddEditEventsDialog from './AddEditEventsDialog';
 import EventPageHeader from './EventPageHeader';
 import FilterDialog from './FilterDialog';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 
 interface EventDataList {
     id: string;
@@ -30,7 +31,7 @@ export default function EventPageTable() {
     const [perPage, setPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
     const { currentMunicipality } = useMunicipality();
-    const [currentFilter, setCurrentFilter] = useState<string | null>(null);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [isFilterOpened, setIsFilterOpened] = useState(false);
     const [addEventDialog, setAddEventDialog] = useState({
         isOpen: false,
@@ -193,9 +194,9 @@ export default function EventPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Event List</h1>
                 <EventPageHeader
-                onFilterButtonClicked={() => {
-                    setIsFilterOpened(true);
-                }}
+                    onFilterButtonClicked={() => {
+                        setIsFilterOpened(true);
+                    }}
                     onAddNewButtonClicked={() => setAddEventDialog({ isOpen: true, editData: null })}
                 />
             </div>
@@ -343,12 +344,19 @@ export default function EventPageTable() {
                 onClose={function (): void {
                     setIsFilterOpened(false);
                 }}
-                filters={["Event title", "Description", "Evet date", "Status"]}
-                selectedFilter={currentFilter}
+                filters={[
+                    { title: "Title", sub: "title" },
+                    { title: "Description", sub: "description" },
+                    { title: "Event Date", sub: "event_date" },
+                    { title: "Date Created", sub: "created_at" }
+                ]}
                 currentFilter={currentFilter}
                 onApply={(selectedFilter) => {
                     setCurrentFilter(selectedFilter);
-                    handleSort(selectedFilter);
+
+                    if (selectedFilter) {
+                        handleSort(selectedFilter?.sub);
+                    }
                 }} />
 
             {/* Add/Edit */}

@@ -11,7 +11,6 @@ import { useEffect, useState } from 'react';
 import { ViewEventDetails } from './ViewEventDetails';
 import { router } from '@inertiajs/react';
 import { events } from '@/routes';
-import municipality from '@/routes/municipality';
 
 interface EventDataList {
     title: string;
@@ -95,9 +94,10 @@ export default function EventsCalendarUi() {
                     </div>
                 ) : dashboardList.length > 0 ? (
                     dashboardList.map((item, index) => {
-                        const month = moment(parseInt(item.event_date, 10) * 1000).format('MM');
-                        const isDecember = month === '12' && seasonalTheme;
-                        const isNovember = month === '11' && seasonalTheme;
+                        const month = moment(item.event_date).format("MM");
+                        const isDecember = month === "12" && seasonalTheme;
+                        const isNovember = month === "11" && seasonalTheme;
+
 
                         return (
                             <motion.div

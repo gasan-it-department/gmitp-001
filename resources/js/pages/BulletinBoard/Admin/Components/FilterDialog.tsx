@@ -1,15 +1,16 @@
-import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
+import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 interface FilterDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    filters: string[];
-    selectedFilter: string | null;
-    currentFilter: string | null;
-    onApply: (selected: string | null) => void;
+    filters: FilterDialogData[];
+    currentFilter: FilterDialogData | null;
+    onApply: (selected: FilterDialogData | null) => void;
 }
 
 export default function FilterDialog({
@@ -19,7 +20,7 @@ export default function FilterDialog({
     currentFilter,
     onApply,
 }: FilterDialogProps) {
-    const [selected, setSelected] = useState<string | null>(null);
+    const [selected, setSelected] = useState<FilterDialogData | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -32,8 +33,11 @@ export default function FilterDialog({
         onClose();
     };
 
+    console.log("Filters: ", filters);
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogTitle></DialogTitle>
             <DialogContent
                 className="
                     w-[90vw] sm:w-[80vw] md:w-[400px]
@@ -47,20 +51,23 @@ export default function FilterDialog({
                 <h3 className="text-lg font-semibold">Sort By</h3>
 
                 <RadioGroup
-                    value={selected || ""}
-                    onValueChange={(value) => setSelected(value)}
+                    value={selected?.title || ""}
+                    onValueChange={(value) => {
+        const filter = filters.find(f => f.title === value) || null;
+        setSelected(filter);
+    }}
                     className="flex flex-col gap-2 w-full"
                 >
                     {filters.map((filter) => (
                         <label
-                            key={filter}
+                            key={filter.title}
                             className="flex items-center gap-2 cursor-pointer text-left px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-neutral-800"
                         >
                             <RadioGroupItem
-                                value={filter}
+                                value={filter.title}
                                 className="accent-orange-400 dark:accent-orange-600"
                             />
-                            <span>{filter}</span>
+                            <span>{filter.title}</span>
                         </label>
                     ))}
                 </RadioGroup>

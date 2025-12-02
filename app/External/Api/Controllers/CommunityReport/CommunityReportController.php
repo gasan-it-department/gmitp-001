@@ -35,8 +35,8 @@ class CommunityReportController extends Controller
         $dto = new CreateReportDto(
             $validated['issue_type'],
             $validated['description'],
-            $validated['latitude'],
-            $validated['longitude'],
+            $validated['latitude'] ?? null,
+            $validated['longitude'] ?? null,
             $validated['sender_name'] ?? null,
             $validated['contact'] ?? null,
             $validated['location'],

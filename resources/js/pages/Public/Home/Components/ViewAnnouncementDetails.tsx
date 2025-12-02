@@ -18,6 +18,16 @@ type Props = {
 
 export function ViewAnnouncementDetails({ isOpen, data, onClose }: Props) {
     if (!data) return null;
+
+    const linkifyText = (text: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+        return text.replace(urlRegex, (url) => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800">${url}</a>`;
+        });
+    };
+
+
     return (
         <Dialog open={isOpen}>
             <DialogContent
@@ -75,10 +85,10 @@ export function ViewAnnouncementDetails({ isOpen, data, onClose }: Props) {
         scrollbar-thin scrollbar-thumb-orange-400 dark:scrollbar-thumb-orange-700
         scrollbar-track-transparent
     "
-                >
-                    {data.message || "No message provided for this announcement."}
-                </div>
-
+                    dangerouslySetInnerHTML={{
+                        __html: linkifyText(data.message || "No message provided for this announcement."),
+                    }}
+                />
 
                 {/* Footer */}
                 <DialogFooter className="mt-4 flex-shrink-0 flex justify-end">

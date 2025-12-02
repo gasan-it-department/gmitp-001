@@ -113,11 +113,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: bidsAndAwards.page.url({municipality: currentMunicipality.slug}),
                     icon: Trophy,
                 },
-                {
-                    title: 'Citizen\'s Charter',
-                    url: '',
-                    icon: Info,
-                },
+                // {
+                //     title: 'Citizen\'s Charter',
+                //     url: '',
+                //     icon: Info,
+                // },
             ],
         },
 
