@@ -43,8 +43,6 @@ export default function GeneralAnnouncement() {
             setIsLoading(true);
             // const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
-
-            setIsLoading(false);
             if (response.success) {
                 console.log('Announcements:', response.data);
                 const sorted = [...response.data].sort((a, b) => {
@@ -62,7 +60,6 @@ export default function GeneralAnnouncement() {
                 }));
             }
         } catch (error: any) {
-            setIsLoading(false);
             console.error('Error fetching announcements:', error);
             setClassicDialog((prev) => ({
                 ...prev,
@@ -72,6 +69,8 @@ export default function GeneralAnnouncement() {
                 positiveButtonText: 'Close',
                 isNegativeButtonHidden: true,
             }));
+        } finally {
+            setIsLoading(false);
         }
     }
 

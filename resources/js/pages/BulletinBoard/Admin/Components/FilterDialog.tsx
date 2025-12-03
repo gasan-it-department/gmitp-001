@@ -15,7 +15,7 @@ interface FilterDialogProps {
 
 export default function FilterDialog({
     isOpen,
-    onClose,
+    onClose, 
     filters,
     currentFilter,
     onApply,

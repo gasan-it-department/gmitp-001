@@ -21,6 +21,8 @@ require __DIR__ . '/super_admin.php';
 require __DIR__ . '/communityReport.php';
 require __DIR__ . '/bids_and_awards.php';
 require __DIR__ . '/viewing_feedback.php';
+require __DIR__ . '/home_banner_page.php';
+
 
 
 

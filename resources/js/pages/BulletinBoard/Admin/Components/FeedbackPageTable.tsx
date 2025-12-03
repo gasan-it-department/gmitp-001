@@ -12,12 +12,13 @@ import PaginationView from '@/pages/Utility/PaginationView';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import FilterDialog from './FilterDialog';
 import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 
 export default function FeedbackPageTable() {
     const { currentMunicipality } = useMunicipality();
     const [isLoading, setIsLoading] = useState(false);
     const [feedbacks, setFeedbacks] = useState<FeedbackFormData[]>([]);
-    const [currentFilter, setCurrentFilter] = useState<string | null>(null);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [isFilterOpened, setIsFilterOpened] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
@@ -138,12 +139,16 @@ export default function FeedbackPageTable() {
                 onClose={() => {
                     setIsFilterOpened(false);
                 }}
-                filters={["Message", "Date reported"]}
-                selectedFilter={currentFilter}
+                filters={[
+                    { title: "Message", sub: "message" },
+                    { title: "Date Reported", sub: "created_at" }
+                ]}
                 currentFilter={currentFilter}
                 onApply={(selectedFilter) => {
                     setCurrentFilter(selectedFilter);
-                    handleSort(selectedFilter);
+                    if (selectedFilter) {
+                        handleSort(selectedFilter?.sub);
+                    }
                 }} />
 
             {/* PAGINATION */}

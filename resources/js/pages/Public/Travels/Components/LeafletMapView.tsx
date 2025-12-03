@@ -53,7 +53,7 @@ export default function TouristMap({ destinationList }: any) {
                 </a>
 
                 <div className="flex flex-col sm:flex-row sm:space-x-3 justify-end items-center w-full sm:w-auto">
-                    <div className="bg-white/90 backdrop-blur-md rounded-md shadow-md p-2 w-full sm:w-fit mb-2 sm:mb-0">
+                    {/* <div className="bg-white/90 backdrop-blur-md rounded-md shadow-md p-2 w-full sm:w-fit mb-2 sm:mb-0">
                         <label className="text-sm font-medium text-gray-700 mr-2">
                             Find:
                         </label>
@@ -67,7 +67,7 @@ export default function TouristMap({ destinationList }: any) {
                             <option value="hotels">Hotels</option>
                             <option value="restaurant">Restaurant</option>
                         </select>
-                    </div>
+                    </div> */}
 
                     <div className="bg-white/90 backdrop-blur-md rounded-md shadow-md p-2 w-full sm:w-fit">
                         <label className="text-sm font-medium text-gray-700 mr-2">

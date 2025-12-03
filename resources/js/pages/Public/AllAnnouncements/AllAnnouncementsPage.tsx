@@ -3,7 +3,7 @@ import AllAnnouncementTable from "./Components/AllAnnouncementTable";
 
 export default function AllAnnouncements() {
     return (
-        <PublicLayout title="Executive Order" description="">
+        <PublicLayout title="All Announcement" description="">
             <AllAnnouncementTable/>
         </PublicLayout>
     );

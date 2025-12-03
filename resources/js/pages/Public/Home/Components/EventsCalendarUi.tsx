@@ -11,19 +11,13 @@ import { useEffect, useState } from 'react';
 import { ViewEventDetails } from './ViewEventDetails';
 import { router } from '@inertiajs/react';
 import { events } from '@/routes';
-
-interface EventDataList {
-    title: string;
-    event_date: string;
-    description: string;
-    id: string;
-}
+import { EventData } from '@/Core/Types/BulletinBoard/Events';
 
 export default function EventsCalendarUi() {
     const [seasonalTheme, setSeasonalTheme] = useState(true);
-    const [dashboardList, setDashboardList] = useState<EventDataList[]>([]);
+    const [dashboardList, setDashboardList] = useState<EventData[]>([]);
     const [isEventDetailDialogShowing, setIsEventDialogShowing] = useState(false);
-    const [selectedEventData, setSelectedEventData] = useState<EventDataList | null>(null);
+    const [selectedEventData, setSelectedEventData] = useState<EventData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { currentMunicipality } = useMunicipality();
 

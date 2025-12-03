@@ -24,16 +24,19 @@ import {
     ClipboardList,
     FileText,
     FileTextIcon,
+    FlagIcon,
     Info,
     LogOut,
     Megaphone,
     MessageCircleIcon,
+    Plane,
     Trophy,
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
 import { home } from '@/routes';
 import bidsAndAwards from '@/routes/bidsAndAwards';
+import homeBanner from '@/routes/homeBanner';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -101,7 +104,20 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
                 { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
-                { title: 'Comunity Reports', url: communityReport.page.url({municipality: currentMunicipality.slug}), icon: UsersIcon },
+                { title: 'Comunity Reports', url: communityReport.page.url({ municipality: currentMunicipality.slug }), icon: UsersIcon },
+            ],
+        },
+        {
+            title: 'PROMOTIONS',
+            icon: FileText,
+            items: [
+                { title: 'Home Banners', url: homeBanner.page.url({municipality: currentMunicipality.slug}), icon: FlagIcon },
+                { title: 'Travels', url: '', icon: Plane },
+                // {
+                //     title: 'Citizen\'s Charter',
+                //     url: '',
+                //     icon: Info,
+                // },
             ],
         },
         {
@@ -110,7 +126,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             items: [
                 {
                     title: 'Bids and Awards',
-                    url: bidsAndAwards.page.url({municipality: currentMunicipality.slug}),
+                    url: bidsAndAwards.page.url({ municipality: currentMunicipality.slug }),
                     icon: Trophy,
                 },
                 // {
@@ -187,8 +203,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                 <SidebarMenuSubButton
                                                     asChild
                                                     className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
-                                                            ? 'bg-orange-100 text-orange-700 font-semibold shadow-sm'
-                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                        ? 'bg-orange-100 text-orange-700 font-semibold shadow-sm'
+                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
                                                         }`}
                                                 >
                                                     <a
@@ -198,8 +214,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                         <SubIcon
                                                             size={14}
                                                             className={`transition-all duration-200 ease-out ${isActive
-                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
                                                                 }`}
                                                         />
                                                         <span>{sub.title}</span>
