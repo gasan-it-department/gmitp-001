@@ -4,6 +4,7 @@ import Carousel from './Components/Carousel';
 import FeedbackUi from './Components/FeedbackForm/FeedbackFormCard';
 import InformationDashboard from './Components/InformationDashboard';
 import Report from './Components/ReportForm/ReportFormCard';
+import BiddingCardView from './Components/Bidding/BiddingCardView';
 
 export default function HomePage() {
 
@@ -13,6 +14,8 @@ export default function HomePage() {
                 <Carousel />
 
                 <div className="h-5" />
+
+                {/* <BiddingCardView /> */}
 
                 <div className="flex flex-col gap-4 lg:flex-row lg:pr-8 lg:pl-8">
                     <div className="flex-1">

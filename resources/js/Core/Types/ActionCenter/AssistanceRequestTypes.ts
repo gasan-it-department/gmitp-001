@@ -8,6 +8,7 @@ export interface AssistanceRequest {
     status: string;
     user_id: string;
     beneficiary: Beneficiary;
+    amount: number | string | null;
 }
 
 export interface Beneficiary {

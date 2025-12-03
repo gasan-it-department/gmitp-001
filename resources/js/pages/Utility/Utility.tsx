@@ -185,6 +185,27 @@ export default function Utility() {
         });
     }
 
+    function formatCurrency(value: string | number | undefined | null): string {
+        if (value === null || value === undefined) {
+            return "₱0.00";
+        }
+
+        const numberValue = typeof value === 'string' ? parseFloat(value) : value;
+
+        if (isNaN(numberValue)) {
+            return "₱0.00";
+        }
+
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(numberValue);
+    }
+
+    // Example of how to use it in your component structure:
+    // <TableCell className="text-[12px]">{formatCurrency(req.amount)}</TableCell>
 
     return {
         generateUniqueId,
@@ -195,6 +216,7 @@ export default function Utility() {
         calculateArrivingDays,
         formatToReadableDateNoTime,
         formatAndAddDaysNoTime,
-        linkify
+        linkify,
+        formatCurrency
     };
 }

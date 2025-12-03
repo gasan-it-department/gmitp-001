@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';

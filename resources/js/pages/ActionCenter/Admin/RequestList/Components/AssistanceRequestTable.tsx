@@ -79,6 +79,7 @@ export function AssistanceRequestTable() {
             setIsLoadingDialogVisible(true);
             const response = await ActionCenterApi.getAllRequest(currentMunicipality.slug, currentPage);
             const data = response.data.data ?? [];
+            console.log("Response: ", data);
             data.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
             setCurrentPage(response.data.current_page);
@@ -235,6 +236,7 @@ export function AssistanceRequestTable() {
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Assistance Type</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Transaction Number</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Status</TableHead>
+                            <TableHead className="bg-gray-50 text-[12px] font-bold">Amount</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Due Date</TableHead>
                             <TableHead className="bg-gray-50 text-[12px] font-bold">Action</TableHead>
                         </TableRow>
@@ -299,6 +301,7 @@ export function AssistanceRequestTable() {
                                                     }[req.status] || 'Unknown'}
                                                 </span>
                                             </TableCell>
+                                            <TableCell className="text-[12px]">{Utility().formatCurrency(req.amount)}</TableCell>
 
                                             <TableCell className="text-[12px]">
                                                 {Utility().formatAndAddDaysNoTime(req.created_at, 90)}
@@ -397,13 +400,19 @@ export function AssistanceRequestTable() {
 
             <FilterDialog
                 isOpen={isSortSelectionDialogOpen}
-                currentFilter={currentSelectedSortOption}
+                currentFilter={currentSelectedSortOption ? { title: currentSelectedSortOption, sub: currentSelectedSortOption } : null}
                 onClose={() => setIsSortSelectionDialogOpen(false)}
-                filters={["Title", "Request Date", "Assistance Type", "Transaction No.", "Status", "Due Date"]}
-                selectedFilter={currentSelectedSortOption}
+                filters={[
+                    { title: "Name", sub: "first_name" },
+                    { title: "Request Date", sub: "created_at" },
+                    { title: "Transaction Number", sub: "transaction_number" },
+                    { title: "Status", sub: "status" }
+                ]}
                 onApply={(selectedFilter) => {
-                    setCurrentSelectedSortOption(selectedFilter || '');
-                    handleSort(selectedFilter);
+                    setCurrentSelectedSortOption(selectedFilter?.sub || '');
+                    if (selectedFilter) {
+                        handleSort(selectedFilter.sub);
+                    }
                 }}
             />
 

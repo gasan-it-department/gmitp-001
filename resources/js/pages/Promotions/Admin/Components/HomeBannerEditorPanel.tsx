@@ -1,7 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Plus } from "lucide-react";
+// Import Cropper component
+import Cropper from 'react-easy-crop';
 
 interface Banner {
     id: string;
@@ -14,10 +16,21 @@ export default function HomeBannerEditorPanel() {
     const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const selectedBanner = banners.find((b) => b.id === selectedBannerId);
+
+    // Drag and Drop States
     const dragItemIndex = useRef<number | null>(null);
     const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+    // --- CROPPING STATES ---
+    const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null); // Original image source URL
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null); // Pixel area defined by Cropper
+    // ----------------------------
+
+    // Function to trigger file selection
     const handlePickImage = () => {
         if (fileInputRef.current) {
             fileInputRef.current.click();
@@ -25,27 +38,86 @@ export default function HomeBannerEditorPanel() {
         }
     };
 
+    // --- MODIFIED FILE CHANGE HANDLER (Triggers Cropper) ---
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        const bannerId = e.target.dataset.bannerId;
-        if (!file || !bannerId) return;
+        if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (event) => {
-            if (bannerId === "new") {
-                const newId = Date.now().toString();
-                const newBanner: Banner = {
-                    id: newId,
-                    title: `Banner ${banners.length + 1}`,
-                    image: event.target?.result as string,
-                };
-                setBanners([...banners, newBanner]);
-                setSelectedBannerId(newId);
-            }
+            const url = event.target?.result as string;
+            setSelectedImage(url);
+            setIsCropDialogOpen(true);
         };
         reader.readAsDataURL(file);
         e.target.value = "";
     };
+
+    // --- CROPPING LOGIC ---
+
+    const onCropComplete = useCallback((_: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    const getCroppedImage = useCallback(async () => {
+        if (!selectedImage || !croppedAreaPixels) return null;
+
+        // Helper function (defined below the component) to load the image element
+        const image = await createImage(selectedImage);
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        const { width, height, x, y } = croppedAreaPixels;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw the cropped portion of the original image onto the new canvas
+        ctx.drawImage(
+            image,
+            x, // source x
+            y, // source y
+            width, // source width
+            height, // source height
+            0, // destination x
+            0, // destination y
+            width, // destination width
+            height // destination height
+        );
+
+        // Convert the canvas image to a data URL
+        return new Promise<string>((resolve) => {
+            canvas.toBlob((blob) => {
+                if (blob) resolve(URL.createObjectURL(blob));
+            }, 'image/png');
+        });
+    }, [selectedImage, croppedAreaPixels]);
+
+    // Function executed when the user clicks 'Apply' in the cropping dialog
+    async function handleCropSave() {
+        const croppedImgUrl = await getCroppedImage();
+
+        if (croppedImgUrl) {
+            // Create a new banner using the final cropped image URL
+            const newId = Date.now().toString();
+            const newBanner: Banner = {
+                id: newId,
+                title: `Banner ${banners.length + 1}`,
+                image: croppedImgUrl,
+            };
+            setBanners((prev) => [...prev, newBanner]);
+            setSelectedBannerId(newId);
+        }
+
+        // Close and reset cropping states
+        setIsCropDialogOpen(false);
+        setSelectedImage(null);
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
+    }
+    // -----------------------------
+
 
     const removeBanner = (id: string) => {
         const filtered = banners.filter((b) => b.id !== id);
@@ -54,6 +126,7 @@ export default function HomeBannerEditorPanel() {
         else if (selectedBannerId === id) setSelectedBannerId(filtered[0].id);
     };
 
+    // --- DRAG AND DROP HANDLERS ---
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number, id: string) => {
         dragItemIndex.current = index;
         setIsDraggingId(id);
@@ -86,10 +159,8 @@ export default function HomeBannerEditorPanel() {
         const newBanners = [...banners];
         const draggedItem = newBanners[dragItemIndex.current];
 
-        // Remove the item from its original position
+        // Perform array reordering
         newBanners.splice(dragItemIndex.current, 1);
-
-        // Insert the item into the new position
         newBanners.splice(index, 0, draggedItem);
 
         setBanners(newBanners);
@@ -97,7 +168,7 @@ export default function HomeBannerEditorPanel() {
         setDragOverIndex(null);
         setIsDraggingId(null);
     };
-    // --- End Drag Events ---
+    // ---------------------------------
 
 
     return (
@@ -123,7 +194,7 @@ export default function HomeBannerEditorPanel() {
                         <img
                             src={selectedBanner.image}
                             alt={selectedBanner.title}
-                            className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-xl border border-gray-200"
+                            className="w-full h-1px object-cover rounded-xl border border-gray-200"
                         />
                         <div className="absolute bottom-6 left-6 bg-black/50 text-white p-2 rounded-lg text-lg font-semibold">
                             {selectedBanner.title}
@@ -193,7 +264,7 @@ export default function HomeBannerEditorPanel() {
                                     src={banner.image}
                                     alt={banner.title}
                                     // Use smaller images for the thumbnail list
-                                    className="w-full h-24 object-cover rounded-lg mb-1"
+                                    className="w-full h-35 object-cover rounded-lg mb-1"
                                 />
                                 <div className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">
                                     {index + 1}. {banner.title}
@@ -203,7 +274,8 @@ export default function HomeBannerEditorPanel() {
                                         e.stopPropagation(); // Prevent card selection
                                         removeBanner(banner.id);
                                     }}
-                                    className="absolute top-3 right-3 bg-red-600/90 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold hover:bg-red-700 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                    // FIX: Changed opacity-0 group-hover:opacity-100 to opacity-100 for permanent visibility
+                                    className="absolute top-3 right-3 bg-red-600/90 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold hover:bg-red-700 shadow-md opacity-100 transition-opacity"
                                     title="Remove Banner"
                                 >
                                     <X className="w-3 h-3" />
@@ -213,6 +285,62 @@ export default function HomeBannerEditorPanel() {
                     })}
                 </div>
             </div>
+
+            {/* CROPPING DIALOG */}
+            {isCropDialogOpen && selectedImage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="flex w-[95%] max-w-lg flex-col items-center gap-4 rounded-xl bg-white dark:bg-neutral-800 p-6 shadow-2xl">
+                        <h3 className="text-xl font-bold text-gray-800 dark:text-white">Crop Image</h3>
+                        <div className="relative h-80 w-full overflow-hidden rounded-xl border border-gray-300 bg-gray-100 dark:bg-neutral-700">
+                            <Cropper
+                                image={selectedImage}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={25 / 12.5}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onCropComplete={onCropComplete}
+                                showGrid={true}
+                            />
+                        </div>
+
+                        {/* Zoom Slider */}
+                        <div className="w-full px-4">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Zoom: {Math.round(zoom * 100)}%</label>
+                            <input
+                                type="range"
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                value={zoom}
+                                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg dark:bg-gray-700"
+                            />
+                        </div>
+
+                        <div className="mt-4 flex gap-3">
+                            <Button variant="outline" onClick={() => setIsCropDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button onClick={handleCropSave} className="bg-blue-600 hover:bg-blue-700">
+                                Apply & Add Banner
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
+}
+
+/* Helper for cropper image creation (kept outside the component) */
+function createImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.addEventListener('load', () => resolve(image));
+        image.addEventListener('error', (error) => reject(error));
+        // Must set crossOrigin to 'anonymous' to avoid CORS issues when using canvas.toBlob
+        image.setAttribute('crossOrigin', 'anonymous');
+        image.src = url;
+    });
 }

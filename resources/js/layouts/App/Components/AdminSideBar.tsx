@@ -25,18 +25,21 @@ import {
     FileText,
     FileTextIcon,
     FlagIcon,
+    Hand,
     Info,
     LogOut,
     Megaphone,
     MessageCircleIcon,
     Plane,
     Trophy,
+    User,
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import { home } from '@/routes';
+import { home, travel } from '@/routes';
 import bidsAndAwards from '@/routes/bidsAndAwards';
 import homeBanner from '@/routes/homeBanner';
+import travelEditor from '@/routes/travelEditor';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -111,8 +114,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             title: 'PROMOTIONS',
             icon: FileText,
             items: [
-                { title: 'Home Banners', url: homeBanner.page.url({municipality: currentMunicipality.slug}), icon: FlagIcon },
-                { title: 'Travels', url: '', icon: Plane },
+                { title: 'Home Banners', url: homeBanner.page.url({ municipality: currentMunicipality.slug }), icon: FlagIcon },
+                { title: 'Travel Editor', url: travelEditor.page.url({ municipality: currentMunicipality.slug }), icon: Plane },
                 // {
                 //     title: 'Citizen\'s Charter',
                 //     url: '',
@@ -121,13 +124,23 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             ],
         },
         {
-            title: 'PUBLIC INFORMATION',
+            title: 'BIDS AND AWARDS',
             icon: FileText,
             items: [
                 {
-                    title: 'Bids and Awards',
+                    title: 'Invitation to Bid',
                     url: bidsAndAwards.page.url({ municipality: currentMunicipality.slug }),
+                    icon: Hand,
+                },
+                {
+                    title: 'Awards',
+                    url: '',
                     icon: Trophy,
+                },
+                {
+                    title: 'Citizen\s Charter',
+                    url: '',
+                    icon: User,
                 },
                 // {
                 //     title: 'Citizen\'s Charter',
