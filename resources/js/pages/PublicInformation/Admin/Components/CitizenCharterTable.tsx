@@ -1,24 +1,23 @@
 import { Button } from "@/components/ui/button";
-import BidsAndAwardsHeader from "./BidsAndAwardsHeader";
 import { useState } from "react";
-import AddEditBidsAndAwardsDialog from "./AddEditBidsAndAwardDialog";
-import { BidsAndAwardsData, BidsAndAwardsFormData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
+import { BiddingData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 import { EyeIcon } from "lucide-react";
+import CitizenCharterHeader from "./CitizenCharterHeader";
+import AddEditCitizenCharterDialog from "./AddEditCitizenCharterDialog";
 
-
-export default function BidsAndAwardsTable() {
+export default function CitizenCharterTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    const [biddingList, setBiddingList] = useState<BiddingData[]>([]);
     const [isAddEditDialogVisible, setIsAddEditDialogVisible] = useState(false);
-    const [bidsAndAwardsList, setBidsAndAwardsList] = useState<BidsAndAwardsData[]>([]);
 
     return (
         <div className="flex flex-col h-full">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Bids and Awards</h1>
-                <BidsAndAwardsHeader
+                <h1 className="text-3xl font-bold tracking-tight">Citizen's Charter</h1>
+                <CitizenCharterHeader
                     onSearch={() => { }}
                     onFilterButtonClicked={() => { }}
                     onExportButtonClicked={() => { }}
@@ -75,13 +74,13 @@ export default function BidsAndAwardsTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {bidsAndAwardsList.length === 0 ? (
+                        {biddingList.length === 0 ? (
                             <AdminEmptyListItem
                                 colSpan={7}
-                                title='No biddings yet'
-                                message='Biddings will appear here once you create one.' />
+                                title='No charter yet'
+                                message='Charters will appear here once you create one.' />
                         ) : (
-                            bidsAndAwardsList.map((item, index) => (
+                            biddingList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
                                     {/* <TableCell>
                                         <div className="flex items-center justify-center p-2">
@@ -150,7 +149,7 @@ export default function BidsAndAwardsTable() {
                 </Table>
             </div>
 
-            <AddEditBidsAndAwardsDialog
+            <AddEditCitizenCharterDialog
                 isOpen={isAddEditDialogVisible}
                 onClose={() => setIsAddEditDialogVisible(false)}
                 onSuccess={(data, isEditMode) => {

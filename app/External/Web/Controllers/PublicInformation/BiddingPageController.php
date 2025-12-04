@@ -5,10 +5,10 @@ namespace App\External\Web\Controllers\PublicInformation;
 use App\Http\Controllers\Controller;
 use inertia\Inertia;
 
-class PublicInformationController extends Controller
+class BiddingPageController extends Controller
 {
     public function index()
     {
-        return Inertia::render('PublicInformation/Admin/BidsAndAwardsPage');
+        return Inertia::render('PublicInformation/Admin/BiddingPage');
     }
 }
