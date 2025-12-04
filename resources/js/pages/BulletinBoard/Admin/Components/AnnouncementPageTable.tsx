@@ -3,36 +3,59 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
+import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import AddEditAnnouncementDialog from './AddEditAnnouncementDialog';
 import AnnouncementPageHeader from './AnnouncementPageHeader';
 import FilterDialog from './FilterDialog';
-import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
-import ToastProvider from '@/pages/Utility/ToastShower';
-import { toast } from 'sonner';
-import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+
+// 1. Define Types matching the Laravel API Resource
+interface PaginationMeta {
+    current_page: number;
+    from: number;
+    last_page: number;
+    per_page: number;
+    to: number;
+    total: number;
+}
+
+interface AnnouncementApiResponse {
+    data: AnnouncementData[];
+    meta: PaginationMeta;
+    links: any;
+    success: boolean;
+}
 
 export default function AnnouncementPageTable() {
     const { currentMunicipality } = useMunicipality();
-    const [rawAnnouncementList, setRawAnnouncementList] = useState<AnnouncementData[]>([]);
+
+    // State
+    const [isLoading, setIsLoading] = useState(false);
     const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
-    const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
-    const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
-    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
+
+    // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+
+    // Dialogs & Filters
+    const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [addEditDialog, setAddEditDialog] = useState<{ isOpened: boolean; editData: AnnouncementData | null }>({
         isOpened: false,
         editData: null,
     });
+
     const [classicDialog, setClassicDialog] = useState<{
         isOpen: boolean;
         title: string;
@@ -40,7 +63,8 @@ export default function AnnouncementPageTable() {
         positiveButtonText: string;
         negativeButtonText: string;
         isNegativeButtonHidden: boolean;
-        payload: any;
+        action: string;
+        selectedItemId: string[] | null;
     }>({
         isOpen: false,
         title: '',
@@ -48,197 +72,124 @@ export default function AnnouncementPageTable() {
         positiveButtonText: 'Ok',
         negativeButtonText: 'Cancel',
         isNegativeButtonHidden: false,
-        payload: null,
+        action: '',
+        selectedItemId: [],
     });
 
     useEffect(() => {
         loadAnnouncement(currentPage);
     }, [currentPage]);
 
+    // 2. Refactored Load Logic to use Meta Data
     const loadAnnouncement = async (page: number = 1) => {
-        setIsLoadingDialogVisible(true);
+        setIsLoading(true);
         try {
+            // Cast the response to our Interface
             const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug, page);
-            const sorted = [...response.data].sort(
-                (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            setRawAnnouncementList(sorted);
-            setAnnouncementList(sorted);
-            setCurrentPage(response.current_page);
-            setLastPage(response.last_page);
-            setPerPage(response.per_page);
-            setTotalItems(response.total);
+            const apiData = response as unknown as AnnouncementApiResponse;
+
+            setAnnouncementList(apiData.data);
+
+            // Set Pagination from Meta
+            setCurrentPage(apiData.meta.current_page);
+            setLastPage(apiData.meta.last_page);
+            setPerPage(apiData.meta.per_page);
+            setTotalItems(apiData.meta.total);
+
+            // Clear selections on page change
             setSelectedItems([]);
         } catch (error: any) {
-            setClassicDialog((prev) => ({
-                ...prev,
-                isOpen: true,
-                title: 'An error occurred!',
-                message: error.message || 'Failed to load announcements.',
-                positiveButtonText: 'Close',
-                isNegativeButtonHidden: true,
-            }));
+            console.error(error);
+            setAnnouncementList([]);
         } finally {
-            setIsLoadingDialogVisible(false);
+            setIsLoading(false);
         }
     };
 
     const handleSuccess = (data: AnnouncementData, isEdit: boolean) => {
-        let updatedList: AnnouncementData[] = [];
-        if (isEdit) {
-            updatedList = rawAnnouncementList.map(item => item.id === data.id ? data : item);
-        } else {
-            updatedList = [data, ...rawAnnouncementList];
-            setAnnouncementList(updatedList.slice(0, perPage));
-            setTotalItems(prev => prev + 1);
-            setCurrentPage(1);
-            setRawAnnouncementList(updatedList);
-            return;
-        }
-        setRawAnnouncementList(updatedList);
+        setAddEditDialog({ isOpened: false, editData: null });
+        // Reload page 1 to ensure order and consistency
+        loadAnnouncement(1);
+        toast.success(isEdit ? 'Announcement updated successfully' : 'Announcement created successfully');
     };
 
-    const handleDelete = async (idList: string[]) => {
-        setIsLoadingDialogVisible(true);
+    // 3. Simplified Delete Logic (Reloads page instead of manual slicing)
+    const handleDelete = async (idList: string[] | null) => {
+        if (!idList || idList.length === 0) return;
+
+        setIsLoading(true);
         try {
-            if (idList.length === 0) return;
             const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
-            if (!response.success) {
-                toast.error("An error occurred while deleting");
-                return;
+
+            if (response.success) {
+                toast.success('Successfully deleted');
+                // Reload current page to fill the gap left by deleted items
+                loadAnnouncement(currentPage);
+                setSelectedItems([]);
+            } else {
+                toast.error('An error occurred while deleting');
             }
-
-            toast.success("Successfully deleted");
-            const updatedRawList = rawAnnouncementList.filter(
-                (item) => !idList.includes(item.id)
-            );
-            const newTotal = updatedRawList.length;
-            setTotalItems(newTotal);
-            const newLastPage = Math.max(1, Math.ceil(newTotal / perPage));
-            setLastPage(newLastPage);
-            const isPageEmpty =
-                (currentPage - 1) * perPage >= newTotal;
-
-            const nextPage = isPageEmpty
-                ? Math.max(1, currentPage - 1)
-                : currentPage;
-
-            setCurrentPage(nextPage);
-            const startIndex = (nextPage - 1) * perPage;
-            const paginatedList = updatedRawList.slice(startIndex, startIndex + perPage);
-            setRawAnnouncementList(updatedRawList);
-            setAnnouncementList(paginatedList);
-            setSelectedItems([]);
         } catch (error: any) {
             setClassicDialog((prev) => ({
                 ...prev,
                 isOpen: true,
-                title: "An error occurred.",
-                message: error.message || "Failed to delete announcement",
-                positiveButtonText: "Close",
+                title: 'An error occurred.',
+                message: error.message || 'Failed to delete announcement',
+                positiveButtonText: 'Close',
                 isNegativeButtonHidden: true,
             }));
         } finally {
-            setIsLoadingDialogVisible(false);
+            setIsLoading(false);
         }
     };
 
-
-    // const handleDelete = async (idList: string[]) => {
-    //     setIsLoadingDialogVisible(true);
-    //     try {
-    //         if(idList.length === 0) return;
-    //         const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
-    //         if (response.success) {
-    //             console.log("Response: ", response.data);
-    //             toast.success("Successfully deleted");
-    //         } else {
-    //             toast.error("An error occurred wile deleting");
-    //         }
-    //         // if (idList.length == 1) {
-    //         //     // SINGLE DELETE
-    //         //     const response = await AnnouncementApi.deleteAnnouncement(idList[0], currentMunicipality.slug);
-    //         //     if (response.success) {
-    //         //         const isLastItemOnPage = announcementList.length === 1;
-    //         //         const newPage = isLastItemOnPage && currentPage > 1 ? currentPage - 1 : currentPage;
-    //         //         loadAnnouncement(newPage);
-    //         //         toast.success("Successfully deleted");
-    //         //     } else {
-    //         //         toast.error("An error occurred wile deleting");
-    //         //     }
-    //         // } else {
-    //         //     // MULTIPLE DELETE
-    //         //     const response = await AnnouncementApi.deleteMultiple(idList, currentMunicipality.slug);
-    //         //     if (response.success) {
-    //         //         console.log("Response: ", response.data);
-    //         //         toast.success("Successfully deleted");
-    //         //     } else {
-    //         //         toast.error("An error occurred wile deleting");
-    //         //     }
-    //         // }
-    //     } catch (error: any) {
-    //         setClassicDialog((prev) => ({
-    //             ...prev,
-    //             isOpen: true,
-    //             title: "An error occurred.",
-    //             message: error.message || "Failed to delete announcement",
-    //             positiveButtonText: "Close",
-    //             isNegativeButtonHidden: true,
-    //         }));
-    //     } finally {
-    //         setIsLoadingDialogVisible(false);
-    //     }
-    // };
-
     const toggleSelectItem = (id: string) => {
-        setSelectedItems(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
+        setSelectedItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
     };
 
     const toggleSelectAll = () => {
         if (selectedItems.length === announcementList.length) {
             setSelectedItems([]);
         } else {
-            setSelectedItems(announcementList.map(item => item.id));
+            setSelectedItems(announcementList.map((item) => item.id));
         }
     };
 
-    const handleSort = (currentSeletedSort: string | null) => {
-        // SEND FILTER TO BACKEND
-        console.log("Announcement selected filter: ", currentSeletedSort);
-    }
-
+    const handleSort = (currentSelectedSort: string | null) => {
+        console.log('Announcement selected filter: ', currentSelectedSort);
+        // Implement server filter logic here
+    };
 
     return (
-        <div className="flex flex-col h-full">
-
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Announcement List</h1>
                 <AnnouncementPageHeader
-                    onSearch={() => { }}
+                    onSearch={() => {}}
                     onFilterButtonClicked={() => setIsFilterDialogVisible(true)}
-                    onExportButtonClicked={() => { }}
+                    onExportButtonClicked={() => {}}
                     onAddNewButtonClicked={() => setAddEditDialog({ isOpened: true, editData: null })}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <div>
                     <Button
                         size="sm"
                         disabled={selectedItems.length <= 0}
-                        className="bg-red-600 hover:bg-red-700 text-white border-none"
+                        className="border-none bg-red-600 text-white hover:bg-red-700"
                         onClick={() =>
                             setClassicDialog((prev) => ({
                                 ...prev,
                                 isOpen: true,
-                                title: "Confirm",
+                                title: 'Confirm',
                                 message: `Are you sure you want to delete ${selectedItems.length} selected announcement(s)?`,
-                                positiveButtonText: "Delete",
-                                negativeButtonText: "Cancel",
-                                payload: selectedItems,
+                                positiveButtonText: 'Delete',
+                                negativeButtonText: 'Cancel',
+                                payload: selectedItems, // Payload kept for compatibility
+                                action: 'delete',
+                                selectedItemId: selectedItems,
                             }))
                         }
                     >
@@ -248,7 +199,7 @@ export default function AnnouncementPageTable() {
             </div>
 
             {/* TABLE */}
-            <div className="overflow-auto rounded-2xl border border-gray-200 shadow-sm">
+            <div className="max-h-[75vh] overflow-auto rounded-2xl border border-gray-200 shadow-sm">
                 <Table className="min-w-full table-auto">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
@@ -256,13 +207,13 @@ export default function AnnouncementPageTable() {
                                 <div className="flex items-center justify-center p-2">
                                     <input
                                         type="checkbox"
-                                        className="w-4 h-4 cursor-pointer"
+                                        className="h-4 w-4 cursor-pointer"
                                         checked={selectedItems.length === announcementList.length && announcementList.length > 0}
                                         onChange={toggleSelectAll}
                                     />
                                 </div>
                             </TableHead>
-                            <TableHead className="w-16">No.</TableHead>
+                            <TableHead className="w-16 text-center">No.</TableHead>
                             <TableHead className="w-64">Title</TableHead>
                             <TableHead className="w-[500px]">Message</TableHead>
                             <TableHead className="w-32">Date Posted</TableHead>
@@ -271,73 +222,76 @@ export default function AnnouncementPageTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {announcementList.length === 0 ? (
-                            <AdminEmptyListItem
-                                colSpan={6}
-                                title='No announcement yet'
-                                message='Your posted announcement will appear here.' />
+                        {announcementList.length === 0 && !isLoading ? (
+                            <AdminEmptyListItem colSpan={6} title="No announcement yet" message="Your posted announcement will appear here." />
                         ) : (
-                            announcementList.map((item, index) => (
-                                <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                    <TableCell>
-                                        <div className="flex items-center justify-center p-2">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 cursor-pointer"
-                                                checked={selectedItems.includes(item.id)}
-                                                onChange={() => toggleSelectItem(item.id)}
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{index + 1 + (currentPage - 1) * perPage}</TableCell>
-                                    <TableCell>{item.title}</TableCell>
-                                    <TableCell className="truncate max-w-[500px]">
-                                        <span
-                                            className="block overflow-hidden"
-                                            style={{
-                                                display: '-webkit-box',
-                                                WebkitBoxOrient: 'vertical',
-                                                WebkitLineClamp: 3,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                lineHeight: '1.4em',
-                                                maxHeight: '4.2em',
-                                            }}
-                                        >
-                                            {item.message}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>{Utility().formatToReadableDate(item.created_at) || '—'}</TableCell>
-                                    <TableCell className="flex justify-center gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setAddEditDialog({ isOpened: true, editData: item })}
-                                            className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                                        >
-                                            <Pencil size={14} />
-                                        </Button>
-                                        {/* <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() =>
-                                                setClassicDialog((prev) => ({
-                                                    ...prev,
-                                                    isOpen: true,
-                                                    title: 'Confirm',
-                                                    message: 'Are you sure you want to delete this announcement?',
-                                                    positiveButtonText: 'Delete',
-                                                    negativeButtonText: 'Cancel',
-                                                    payload: item.id,
-                                                }))
-                                            }
-                                            className="border-red-200 text-red-600 hover:bg-red-50"
-                                        >
-                                            <Trash2 size={14} />
-                                        </Button> */}
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                            announcementList.map((item, index) => {
+                                // 4. Correct Row Number Calculation
+                                const rowNumber = (currentPage - 1) * perPage + (index + 1);
+
+                                return (
+                                    <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
+                                        <TableCell>
+                                            <div className="flex items-center justify-center p-2">
+                                                <input
+                                                    type="checkbox"
+                                                    className="h-4 w-4 cursor-pointer"
+                                                    checked={selectedItems.includes(item.id)}
+                                                    onChange={() => toggleSelectItem(item.id)}
+                                                />
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-center">{rowNumber}</TableCell>
+                                        <TableCell>{item.title}</TableCell>
+                                        <TableCell className="max-w-[500px]">
+                                            <span
+                                                className="block overflow-hidden"
+                                                style={{
+                                                    display: '-webkit-box',
+                                                    WebkitBoxOrient: 'vertical',
+                                                    WebkitLineClamp: 3,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                }}
+                                            >
+                                                {item.message}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>{Utility().formatToReadableDate(item.created_at) || '—'}</TableCell>
+                                        <TableCell>
+                                            <div className="flex justify-center gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setAddEditDialog({ isOpened: true, editData: item })}
+                                                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                >
+                                                    <Pencil size={14} />
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="border-red-200 text-red-600 hover:bg-red-50"
+                                                    onClick={() =>
+                                                        setClassicDialog({
+                                                            isOpen: true,
+                                                            title: 'Confirm',
+                                                            message: 'Delete this announcement?',
+                                                            positiveButtonText: 'Delete',
+                                                            negativeButtonText: 'Cancel',
+                                                            isNegativeButtonHidden: false,
+                                                            action: 'delete',
+                                                            selectedItemId: [item.id],
+                                                        })
+                                                    }
+                                                >
+                                                    <Trash2 size={14} />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>
@@ -372,34 +326,32 @@ export default function AnnouncementPageTable() {
                 negativeButtonText={classicDialog.negativeButtonText}
                 open={classicDialog.isOpen}
                 onPositiveClick={() => {
-                    if (classicDialog.payload) handleDelete(classicDialog.payload);
+                    if (classicDialog.action === 'delete') {
+                        handleDelete(classicDialog.selectedItemId);
+                    }
                     setClassicDialog((prev) => ({ ...prev, isOpen: false, payload: null }));
                 }}
                 onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
             />
 
-            <LoadingDialog title="Loading, please wait..." isOpen={isLoadingDialogVisible} />
+            <LoadingDialog title="Loading..." isOpen={isLoading} />
 
             <FilterDialog
                 isOpen={isFilterDialogVisible}
                 currentFilter={currentFilter}
                 onClose={() => setIsFilterDialogVisible(false)}
                 filters={[
-                    { title: "Title", sub: "title" },
-                    { title: "Message", sub: "message" },
-                    { title: "Date Posted", sub: "created_at" }
+                    { title: 'Title', sub: 'title' },
+                    { title: 'Message', sub: 'message' },
+                    { title: 'Date Posted', sub: 'created_at' },
                 ]}
                 onApply={(selectedFilter: FilterDialogData | null) => {
-                    // set current filter properly
                     setCurrentFilter(selectedFilter);
-
-                    // Apply the sorting / filtering logic using the 'sub' key
                     if (selectedFilter) {
                         handleSort(selectedFilter.sub);
                     }
                 }}
             />
-
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AssistanceRequest } from '../AssistanceRequestsDetails';
+import { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 
 export default function RequestInfoCard({ request }: { request: AssistanceRequest }) {
     // Formatter for Currency (PHP)
