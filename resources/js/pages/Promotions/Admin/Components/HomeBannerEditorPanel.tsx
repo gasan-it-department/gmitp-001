@@ -6,6 +6,7 @@ import { Image, Loader2, Phone, Plus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
+import LogoEditor from './LogoEditor'; // Imported LogoEditor
 
 // --- TYPES ---
 interface Banner {
@@ -48,8 +49,11 @@ export default function HomeBannerEditorPanel() {
     // 2. Local State
     const [banners, setBanners] = useState<Banner[]>([]);
     const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'banners' | 'hotlines'>('banners');
+    const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('banners');
     const [isUploading, setIsUploading] = useState(false);
+
+    // 3. Logo State
+    const [logo, setLogo] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,12 +143,12 @@ export default function HomeBannerEditorPanel() {
     return (
         <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
             <h1 className="mb-2 text-3xl font-extrabold text-gray-900 dark:text-gray-100">CMS Editor Panel</h1>
-            <p className="mb-6 text-gray-600 dark:text-gray-400">Manage featured banners and municipal hotlines.</p>
+            <p className="mb-6 text-gray-600 dark:text-gray-400">Manage featured banners, municipal hotlines, and site branding.</p>
 
             <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
 
             {/* TAB NAVIGATION */}
-            <div className="mb-6 flex space-x-4 border-b border-gray-200 pb-1 dark:border-neutral-700">
+            <div className="mb-6 flex space-x-4 border-b border-gray-200 pb-1 dark:border-neutral-700 overflow-x-auto">
                 <Button
                     variant={activeTab === 'banners' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('banners')}
@@ -158,6 +162,13 @@ export default function HomeBannerEditorPanel() {
                     className={`gap-2 ${activeTab === 'hotlines' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
                 >
                     <Phone className="h-4 w-4" /> Emergency Hotlines
+                </Button>
+                <Button
+                    variant={activeTab === 'logo' ? 'default' : 'ghost'}
+                    onClick={() => setActiveTab('logo')}
+                    className={`gap-2 ${activeTab === 'logo' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                >
+                    <div className="w-4 h-4 border-2 border-current rounded-full" /> Municipal Logo
                 </Button>
             </div>
 
@@ -211,9 +222,8 @@ export default function HomeBannerEditorPanel() {
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all ${
-                                        selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
-                                    } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
+                                        } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
                                 >
                                     <img src={banner.image} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
@@ -249,18 +259,21 @@ export default function HomeBannerEditorPanel() {
             {/* HOTLINES TAB */}
             {activeTab === 'hotlines' && (
                 <div className="space-y-8">
-                    {/* Editor */}
                     <HotlineEditor hotlines={hotlines} setHotlines={setHotlines} />
 
-                    {/* Footer Preview Section */}
-                    <div className="mt-10 border-t pt-10 dark:border-neutral-700">
-                        <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">Website Footer Preview</h2>
-                        <p className="mb-6 text-sm text-gray-600">Preview of the Emergency Hotline card as it appears on the public site.</p>
-                        <div className="flex justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 dark:border-neutral-700 dark:bg-neutral-900">
+                    <div className="border-t pt-10 mt-10 dark:border-neutral-700">
+                        <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Website Footer Preview</h2>
+                        <p className="text-gray-600 mb-6 text-sm">Preview of the Emergency Hotline card as it appears on the public site.</p>
+                        <div className="flex justify-center p-8 bg-gray-50 dark:bg-neutral-900 rounded-xl border border-dashed border-gray-200 dark:border-neutral-700 overflow-x-auto">
                             <HotlinePreview hotlines={hotlines} />
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* LOGO TAB */}
+            {activeTab === 'logo' && (
+                <LogoEditor logo={logo} setLogo={setLogo} />
             )}
         </div>
     );
