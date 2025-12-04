@@ -63,7 +63,7 @@ return new class extends Migration {
                 ->constrained('municipalities')
                 ->restrictOnDelete();
 
-            $table->decimal('amount')->nullable();
+            $table->decimal('amount', 12, 2)->default(0);
 
             $table->string('transaction_number')->unique();
 

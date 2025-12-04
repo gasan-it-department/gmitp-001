@@ -2,6 +2,8 @@
 
 use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
+use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('{municipality}/action-center')
@@ -18,6 +20,9 @@ Route::prefix('{municipality}/action-center')
 
             Route::get('/', [AdminActionCenterController::class, 'index'])
                 ->name('index');
+
+            Route::get('/assistance-request/{id}', [AdminActionCenterController::class, 'show'])
+                ->name('show');
         });
 
         //eg. https://gasan-4905/action-center/beneficiary
@@ -33,12 +38,14 @@ Route::prefix('/api/action-center')
     ->controller(ActionCenterController::class)
     ->group(function () {
 
-        Route::middleware('admin')
+        Route::middleware(['admin', 'municipalityContext'])
             ->group(function () {
 
-                Route::get('/', 'fetch')->name('fetch')->middleware('municipalityContext');
+                Route::get('/', 'fetch')->name('fetch');
 
                 Route::get('/status-labels', 'getStatusList')->name('status');
+
+                Route::put('/set-amount/{id}', [AssistanceRequestController::class, 'setAmount'])->name('setAmount');
 
 
             });
@@ -52,12 +59,11 @@ Route::prefix('/api/action-center')
 
                 Route::put('/{id}', 'update')->name('update');
 
-                Route::delete('/{id}', action: 'destroy')->name('destroy');
+                Route::delete('/{id}', 'destroy')->name('destroy');
 
                 Route::get('/{id}', 'show')->name('show');
 
                 Route::get('/assistance/types', 'getAssistanceTypesList')->name('assistanceTypes');
-
 
             });
 

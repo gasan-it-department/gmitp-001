@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { AssistanceRequestResponse, AssistanceStatus, AssistanceOption, AssistanceOptionsResponse } from "@/Core/Types/ActionCenter/AssistanceRequestTypes";
 import ActionCenterController from "@/actions/App/External/Api/Controllers/ActionCenter/ActionCenterController";
+import AssistanceRequestController from "@/actions/App/External/Api/Controllers/ActionCenter/AssistanceRequestController";
 
 export const ActionCenterApi = {
 
@@ -22,6 +23,7 @@ export const ActionCenterApi = {
 
     },
 
+    //getter for admin
     async getAllRequest(municipalSlug: string, page: number = 1) {
         const { url, method } = ActionCenterController.fetch();
 
@@ -62,7 +64,21 @@ export const ActionCenterApi = {
         });
         console.log(data, 'hello');
         return data;
-    }
+    },
 
+    async setAmount(municipalSlug: string, id: string, amount: any) {
+        const { url, method } = AssistanceRequestController.setAmount(id);
+
+        const { data } = await axios({
+            url,
+            method,
+            data: amount,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
+    }
 
 };

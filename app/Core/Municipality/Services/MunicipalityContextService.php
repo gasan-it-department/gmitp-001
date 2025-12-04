@@ -12,8 +12,8 @@ class MunicipalityContextService
     ) {
     }
 
-    public function execute(string $slug): ?Municipality
+    public function execute(string $slug, bool $isActive): ?Municipality
     {
-        return $this->municipalityRepository->findBySlug($slug);
+        return $this->municipalityRepository->findBySlug($slug, $isActive);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Controllers\ActionCenter;
 
+use App\Core\ActionCenter\Requests\UseCase\GetAssistanceRequestByIdUseCase;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Core\ActionCenter\Requests\Services\StatusList;
@@ -28,8 +29,9 @@ class ActionCenterController extends Controller
 
         private GetAllAssistancePerMunicipality $getAllAssistance,
 
-        private AssistanceTypesList $assistanceTypesList
+        private AssistanceTypesList $assistanceTypesList,
 
+        private GetAssistanceRequestByIdUseCase $getAssistanceById
 
     ) {
     }
@@ -89,7 +91,7 @@ class ActionCenterController extends Controller
             'message' => 'request created',
             'success' => true,
             'data' => [
-                'assistance' => $assistance, 
+                'assistance' => $assistance,
                 'beneficiary' => $beneficiary
             ],
 
@@ -114,8 +116,8 @@ class ActionCenterController extends Controller
 
     public function show($id)
     {
-        // Example: find request by ID
-        // $requestModel = RequestModel::findOrFail($id);
+
+        $assistance = $this->getAssistanceById->execute($id);
 
         return response()->json(['message' => "Showing request {$id}"], 200);
     }

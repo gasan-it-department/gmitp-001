@@ -1,29 +1,23 @@
 import { Button } from '@/components/ui/button';
-import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuSeparator,
-    ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import PaginationView from '@/pages/Utility/PaginationView';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
-import { Pencil, Printer, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Pencil, Printer } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import PrintView from './PrintView';
-import PaginationView from '@/pages/Utility/PaginationView';
-import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 
 export function AssistanceRequestTable() {
     const { currentMunicipality } = useMunicipality();
@@ -79,8 +73,11 @@ export function AssistanceRequestTable() {
             setIsLoadingDialogVisible(true);
             const response = await ActionCenterApi.getAllRequest(currentMunicipality.slug, currentPage);
             const data = response.data.data ?? [];
-            console.log("Response: ", data);
-            data.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            console.log('Response: ', data);
+            data.sort(
+                (a: { created_at: string | number | Date }, b: { created_at: string | number | Date }) =>
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
 
             setCurrentPage(response.data.current_page);
             setLastPage(response.data.last_page);
@@ -102,18 +99,16 @@ export function AssistanceRequestTable() {
         try {
             if (requestId.length === 1) {
                 // DELETE SINGLE RECORD
-                console.log("Delete 1 recond only.");
+                console.log('Delete 1 recond only.');
             } else {
                 // DDELETE MULTIPLE RECORD
                 console.log(`Delete ${requestId.length} records.`);
             }
-        } catch (error: any) {
-
-        }
+        } catch (error: any) {}
     };
 
     const addNewItem = (newItem: AssistanceRequest) => {
-        setTotalItems(prev => {
+        setTotalItems((prev) => {
             const newTotal = prev + 1;
             const newLastPage = Math.ceil(newTotal / perPage);
             setLastPage(newLastPage);
@@ -139,14 +134,14 @@ export function AssistanceRequestTable() {
         if (!data.assistance) return data;
         return {
             ...data.assistance,
-            beneficiary: data.beneficiary
+            beneficiary: data.beneficiary,
         };
     };
 
     const handleSort = (currentSeletedSort: string | null) => {
         // SEND FILTER TO BACKEND
-        console.log("Action center filter: ", currentSeletedSort);
-    }
+        console.log('Action center filter: ', currentSeletedSort);
+    };
 
     // --------------------------------------------------
     // TABLE RENDER
@@ -181,27 +176,27 @@ export function AssistanceRequestTable() {
                         }));
                     }}
                     onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
-                    onSearch={(query) => { }}
+                    onSearch={(query) => {}}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <div>
                     <Button
                         size="sm"
                         disabled={selectedItems.length <= 0}
-                        className="bg-red-600 hover:bg-red-700 text-white border-none"
+                        className="border-none bg-red-600 text-white hover:bg-red-700"
                         onClick={() =>
                             setClassicDialog((prev) => ({
                                 ...prev,
                                 isOpen: true,
-                                title: "Confirm",
+                                title: 'Confirm',
                                 message: `Are you sure you want to delete ${selectedItems.length} selected records(s)? THIS CANNOT BE UNDONE.`,
-                                positiveButtonText: "Delete",
-                                negativeButtonText: "Cancel",
+                                positiveButtonText: 'Delete',
+                                negativeButtonText: 'Cancel',
                                 isNegativeButtonHidden: false,
                                 payload: selectedItems,
-                                action: "delete_record"
+                                action: 'delete_record',
                             }))
                         }
                     >
@@ -215,11 +210,10 @@ export function AssistanceRequestTable() {
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
-
-                            <TableHead className="bg-gray-50 w-10">
+                            <TableHead className="w-10 bg-gray-50">
                                 <input
                                     type="checkbox"
-                                    className="w-4 h-4 cursor-pointer"
+                                    className="h-4 w-4 cursor-pointer"
                                     checked={selectedItems.length === requestList.length && requestList.length > 0}
                                     onChange={(e) => {
                                         if (e.target.checked) {
@@ -244,28 +238,22 @@ export function AssistanceRequestTable() {
 
                     <TableBody>
                         {requestList.length === 0 ? (
-                            <AdminEmptyListItem
-                                colSpan={9}
-                                title="No records found."
-                                message="Action center records will show here."
-                            />
+                            <AdminEmptyListItem colSpan={9} title="No records found." message="Action center records will show here." />
                         ) : (
                             requestList.map((req, index) => (
                                 <ContextMenu key={req.id}>
                                     <ContextMenuTrigger asChild>
                                         <TableRow className="cursor-pointer transition-colors hover:bg-gray-50">
-                                            <TableCell className="text-[12px] w-8">
+                                            <TableCell className="w-8 text-[12px]">
                                                 <input
                                                     type="checkbox"
-                                                    className="w-4 h-4 cursor-pointer"
+                                                    className="h-4 w-4 cursor-pointer"
                                                     checked={selectedItems.some((item) => item.id === req.id)}
                                                     onChange={(e) => {
                                                         if (e.target.checked) {
                                                             setSelectedItems((prev) => [...prev, req]);
                                                         } else {
-                                                            setSelectedItems((prev) =>
-                                                                prev.filter((item) => item.id !== req.id)
-                                                            );
+                                                            setSelectedItems((prev) => prev.filter((item) => item.id !== req.id));
                                                         }
                                                     }}
                                                 />
@@ -274,23 +262,22 @@ export function AssistanceRequestTable() {
                                             <TableCell className="text-[12px] capitalize">
                                                 {req.beneficiary.first_name} {req.beneficiary.last_name}
                                             </TableCell>
-                                            <TableCell className="text-[12px]">
-                                                {Utility().formatToReadableDateNoTime(req.created_at)}
-                                            </TableCell>
+                                            <TableCell className="text-[12px]">{Utility().formatToReadableDateNoTime(req.created_at)}</TableCell>
                                             <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
                                             <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
                                             <TableCell className="text-[12px]">
                                                 <span
-                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${req.status === 'approved'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : req.status === 'rejected'
-                                                            ? 'bg-red-100 text-red-700'
-                                                            : req.status === 'in_review'
+                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                                                        req.status === 'approved'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : req.status === 'rejected'
+                                                              ? 'bg-red-100 text-red-700'
+                                                              : req.status === 'in_review'
                                                                 ? 'bg-blue-100 text-blue-700'
                                                                 : req.status === 'completed'
-                                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                                    : 'bg-yellow-100 text-yellow-700'
-                                                        }`}
+                                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                                  : 'bg-yellow-100 text-yellow-700'
+                                                    }`}
                                                 >
                                                     {{
                                                         pending: 'Pending',
@@ -303,9 +290,7 @@ export function AssistanceRequestTable() {
                                             </TableCell>
                                             <TableCell className="text-[12px]">{Utility().formatCurrency(req.amount)}</TableCell>
 
-                                            <TableCell className="text-[12px]">
-                                                {Utility().formatAndAddDaysNoTime(req.created_at, 90)}
-                                            </TableCell>
+                                            <TableCell className="text-[12px]">{Utility().formatAndAddDaysNoTime(req.created_at, 90)}</TableCell>
 
                                             {/* ACTION BUTTONS */}
                                             <TableCell className="flex gap-2">
@@ -360,23 +345,6 @@ export function AssistanceRequestTable() {
                                             </TableCell>
                                         </TableRow>
                                     </ContextMenuTrigger>
-
-                                    {/* CONTEXT MENU
-                                    <ContextMenuContent className="w-44">
-                                        <ContextMenuItem inset onClick={() => setEditingData(req)}>
-                                            Edit
-                                        </ContextMenuItem>
-
-                                        <ContextMenuSeparator />
-
-                                        <ContextMenuItem
-                                            inset
-                                            onClick={() => deleteRequest(selectedItems)}
-                                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                                        >
-                                            Delete
-                                        </ContextMenuItem>
-                                    </ContextMenuContent> */}
                                 </ContextMenu>
                             ))
                         )}
@@ -403,10 +371,10 @@ export function AssistanceRequestTable() {
                 currentFilter={currentSelectedSortOption ? { title: currentSelectedSortOption, sub: currentSelectedSortOption } : null}
                 onClose={() => setIsSortSelectionDialogOpen(false)}
                 filters={[
-                    { title: "Name", sub: "first_name" },
-                    { title: "Request Date", sub: "created_at" },
-                    { title: "Transaction Number", sub: "transaction_number" },
-                    { title: "Status", sub: "status" }
+                    { title: 'Name', sub: 'first_name' },
+                    { title: 'Request Date', sub: 'created_at' },
+                    { title: 'Transaction Number', sub: 'transaction_number' },
+                    { title: 'Status', sub: 'status' },
                 ]}
                 onApply={(selectedFilter) => {
                     setCurrentSelectedSortOption(selectedFilter?.sub || '');
@@ -422,10 +390,9 @@ export function AssistanceRequestTable() {
                 onClose={() => setIsAddNewRecordDialogOpen(false)}
                 onSuccess={(data, isEditMode) => {
                     if (isEditMode) {
-
                     } else {
                         const normalizedData = normalizeAssistance(data);
-                        normalizedData.status = normalizedData.status ?? "pending";
+                        normalizedData.status = normalizedData.status ?? 'pending';
                         addNewItem(normalizedData);
                     }
                 }}
@@ -444,10 +411,7 @@ export function AssistanceRequestTable() {
                     }
 
                     if (classicDialog.action === 'file_export') {
-                        ToExcel(
-                            requestList,
-                            `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`,
-                        );
+                        ToExcel(requestList, `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`);
                     }
 
                     setClassicDialog({

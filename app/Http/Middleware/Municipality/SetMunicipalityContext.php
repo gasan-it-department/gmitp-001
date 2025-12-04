@@ -29,8 +29,9 @@ class SetMunicipalityContext
             abort(404, 'Invalid url');
 
         }
+        $isActive = true;
 
-        $municipality = $this->municipalityContextService->execute($slug);
+        $municipality = $this->municipalityContextService->execute($slug, $isActive);
 
         if (!$municipality) {
 

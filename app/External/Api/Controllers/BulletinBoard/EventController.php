@@ -71,12 +71,19 @@ class EventController extends Controller
         }
     }
 
-    public function fetch()
+    public function fetch(Request $request)
     {
 
         $municipalId = app('municipal_id');
 
-        $events = $this->getEventsUseCase->execute($municipalId);
+        $dto = new EventsQueryDto(
+            perPage: $request->input('per_page', 10),
+            orderBy: $request->input('order_by', 'created_at'),
+            direction: $request->input('direction', 'desc'),
+            search: $request->input('search')
+        );
+
+        $events = $this->getEventsUseCase->execute($municipalId, $dto);
 
         return EventsResource::collection($events)->additional([
             'success' => true,
@@ -94,7 +101,7 @@ class EventController extends Controller
                 perPage: $request->input('per_page', 10),
                 orderBy: $request->input('order_by', 'created_at'),
                 direction: $request->input('direction', 'desc'),
-                search: $request->input('search', 'harvey')
+                search: $request->input('search')
             );
 
             // This returns LengthAwarePaginator

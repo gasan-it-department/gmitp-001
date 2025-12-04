@@ -39,4 +39,18 @@ class AssistanceRequestRepositories
         return $assistance;
 
     }
+
+    public function findById(string $id): ?AssistanceRequest
+    {
+
+        return AssistanceRequest::find($id);
+
+    }
+
+    public function findByIdWithBeneficiary(string $id)
+    {
+
+        return AssistanceRequest::with('beneficiary')->findOrFail($id);
+
+    }
 }

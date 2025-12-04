@@ -12,7 +12,7 @@ export default function BaseLayout({ children }: PropsWithChildren) {
     const { auth } = usePage<SharedData>().props;
 
     const isAdmin = auth.roles?.isAdmin;
-    console.log(isAdmin);
+
     return (
         <AppShell>
             {isAdmin ? (

@@ -2,8 +2,9 @@
 
 namespace App\Core\BulletinBoard\Events\UseCase;
 
+use App\Core\BulletinBoard\Events\Dto\EventsQueryDto;
 use App\Core\BulletinBoard\Events\Repositories\EventRepository;
-use Illuminate\Database\Eloquent\Collection;
+
 
 class GetEventsUseCase
 {
@@ -13,9 +14,10 @@ class GetEventsUseCase
 
     }
 
-    public function execute(string $municipalId)
+    public function execute(string $municipalId, EventsQueryDto $dto)
     {
-        $events = $this->eventRepository->getAllByMunicipalId($municipalId);
+
+        $events = $this->eventRepository->getAllByMunicipalId($municipalId, $dto);
 
         return $events;
     }

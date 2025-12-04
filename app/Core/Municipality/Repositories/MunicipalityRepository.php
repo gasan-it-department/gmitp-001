@@ -86,8 +86,10 @@ class MunicipalityRepository
             ->get();
     }
 
-    public function findBySlug(string $slug): ?Municipality
+    public function findBySlug(string $slug, bool $isActive): ?Municipality
     {
-        return Municipality::where('slug', $slug)->first();
+        return Municipality::where('slug', $slug)
+            ->where('is_active', $isActive)
+            ->first();
     }
 }
