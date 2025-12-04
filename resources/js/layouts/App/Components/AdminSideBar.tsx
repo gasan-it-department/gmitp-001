@@ -13,20 +13,24 @@ import {
 } from '@/components/ui/sidebar';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
+import awardsAdminPage from '@/routes/awardsAdminPage';
+import biddingAdminPage from '@/routes/biddingAdminPage';
 import bulletinBoard from '@/routes/bulletin-board';
+import citizenCharter from '@/routes/citizenCharter';
+import communityReport from '@/routes/communityReport';
 import feedback from '@/routes/feedback';
+import municipality from '@/routes/municipality';
+import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import communityReport from '@/routes/communityReport';
 import {
     CalendarDays,
     ClipboardList,
     FileText,
-    FileTextIcon,
     FlagIcon,
     Hand,
-    Info,
     LogOut,
     Megaphone,
     MessageCircleIcon,
@@ -36,12 +40,6 @@ import {
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import { home, travel } from '@/routes';
-import homeBanner from '@/routes/homeBanner';
-import travelEditor from '@/routes/travelEditor';
-import biddingAdminPage from '@/routes/biddingAdminPage';
-import awardsAdminPage from '@/routes/awardsAdminPage';
-import citizenCharter from '@/routes/citizenCharter';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -57,18 +55,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         action: '',
     });
 
-    const cachedUrl =
-        typeof window !== 'undefined'
-            ? localStorage.getItem('activeSidebarUrl') || String(url)
-            : String(url);
+    const cachedUrl = typeof window !== 'undefined' ? localStorage.getItem('activeSidebarUrl') || String(url) : String(url);
 
     const isRouteActive = (linkUrl: string) => {
         if (!linkUrl) return false;
-        return (
-            cachedUrl === linkUrl ||
-            cachedUrl.startsWith(linkUrl + '/') ||
-            cachedUrl.includes(linkUrl)
-        );
+        return cachedUrl === linkUrl || cachedUrl.startsWith(linkUrl + '/') || cachedUrl.includes(linkUrl);
     };
 
     const handleLinkClick = (linkUrl: string) => {
@@ -116,7 +107,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             title: 'PROMOTIONS',
             icon: FileText,
             items: [
-                { title: 'Content Manager', url: homeBanner.page.url({ municipality: currentMunicipality.slug }), icon: FlagIcon },
+                { title: 'Home Banners', url: municipality.admin.page.url({ municipality: currentMunicipality.slug }), icon: FlagIcon },
                 { title: 'Travel Editor', url: travelEditor.page.url({ municipality: currentMunicipality.slug }), icon: Plane },
                 // {
                 //     title: 'Citizen\'s Charter',
@@ -136,12 +127,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Awards',
-                    url: awardsAdminPage.page.url({municipality: currentMunicipality.slug}),
+                    url: awardsAdminPage.page.url({ municipality: currentMunicipality.slug }),
                     icon: Trophy,
                 },
                 {
                     title: 'Citizen\s Charter',
-                    url: citizenCharter.page.url({municipality: currentMunicipality.slug}),
+                    url: citizenCharter.page.url({ municipality: currentMunicipality.slug }),
                     icon: User,
                 },
                 // {
@@ -165,11 +156,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             <SidebarHeader className="border-b border-gray-100 pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            asChild
-                            className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-orange-50"
-                        >
+                        <SidebarMenuButton size="lg" asChild className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-orange-50">
                             <a href="#" className="flex items-center gap-3">
                                 <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md">
                                     <span className="text-lg font-semibold">
@@ -182,11 +169,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                         {auth.user?.first_name} {auth.user?.last_name}
                                     </span>
                                     <span className="mt-1 mb-1 text-xs text-gray-500">
-                                        {userRole?.isAdmin
-                                            ? 'Administrator'
-                                            : userRole?.isSuperAdmin
-                                                ? 'Super-Admin'
-                                                : 'User'}
+                                        {userRole?.isAdmin ? 'Administrator' : userRole?.isSuperAdmin ? 'Super-Admin' : 'User'}
                                     </span>
                                 </div>
                             </a>
@@ -217,10 +200,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
-                                                        ? 'bg-orange-100 text-orange-700 font-semibold shadow-sm'
-                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                        }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
+                                                        isActive
+                                                            ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
+                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                    }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -228,10 +212,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${isActive
-                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                                }`}
+                                                            className={`transition-all duration-200 ease-out ${
+                                                                isActive
+                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                            }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>

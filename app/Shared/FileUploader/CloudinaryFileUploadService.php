@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Shared\FileUploader;
+
+use Cloudinary\Cloudinary;
+use Illuminate\Http\UploadedFile;
+
+
+class CloudinaryFileUploadService
+{
+
+    protected Cloudinary $cloudinary;
+
+    public function __construct()
+    {
+        $this->cloudinary = new Cloudinary(config('cloudinary.cloud_url'));
+    }
+
+    public function uploadFiles(UploadedFile $file, string $folder): array
+    {
+
+        $result = $this->cloudinary->uploadApi()->upload(
+            $file->getRealPath(),
+            [
+                'folder' => $folder,
+                'resource_type' => 'auto',
+                'transformation' => [
+                    'quality' => 'auto:good',
+                    'fetch_format' => 'auto'
+                ],
+            ]
+        );
+
+        return [
+
+            'public_id' => $result['public_id'],
+
+            'file_url' => $result['secure_url'],
+
+            'original_name' => $file->getClientOriginalName(),
+
+            'mime_type' => $file->getClientMimeType(),
+
+            'file_size' => $result['bytes'],
+
+            'resource_type' => $result['resource_type'],
+
+            'format' => $result['format'] ?? '',
+
+        ];
+
+    }
+
+    public function delete(string $publicId)
+    {
+
+        $this->cloudinary->uploadApi()->destroy($publicId);
+
+        return true;
+
+    }
+
+    public function deleteMultiple()
+    {
+
+    }
+}
+

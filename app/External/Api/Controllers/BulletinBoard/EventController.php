@@ -73,7 +73,7 @@ class EventController extends Controller
 
     public function fetch(Request $request)
     {
-
+        //admin fetch
         $municipalId = app('municipal_id');
 
         $dto = new EventsQueryDto(
@@ -93,6 +93,7 @@ class EventController extends Controller
 
     public function getPublished(Request $request)
     {
+        //public fetch
         try {
 
             $municipalId = app('municipal_id');

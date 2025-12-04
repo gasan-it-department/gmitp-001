@@ -3,6 +3,7 @@
 namespace App\External\Api\Controllers\ActionCenter;
 
 use App\Core\ActionCenter\Requests\UseCase\GetAssistanceRequestByIdUseCase;
+use App\External\Api\Resources\ActionCenter\AssistanceResource;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Core\ActionCenter\Requests\Services\StatusList;
@@ -105,12 +106,11 @@ class ActionCenterController extends Controller
 
         $assitance = $this->getAllAssistance->execute($municipalId);
 
-        return response()->json([
+        return AssistanceResource::collection($assitance)->additional([
 
             'success' => true,
-            'data' => $assitance,
 
-        ], 200);
+        ]);
 
     }
 
