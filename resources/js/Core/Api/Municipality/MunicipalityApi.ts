@@ -22,7 +22,7 @@ export const MunicipalitiesApi = {
     // UPDATED: Now accepts FormData
     async uploadMunicipalSettings(municipalSlug: string, formData: FormData) {
         const { url, method } = Municipality.MunicipalitySettingsController.store();
-
+        console.log('fudge')
         const { data } = await axios({
             url,
             method,

@@ -12,8 +12,6 @@ class SetMunicipalitySettingDto
 
         public string $userId,
 
-        public ?UploadedFile $homeBanners = null,
-
         public ?UploadedFile $municiplaLogo = null,
 
     ) {

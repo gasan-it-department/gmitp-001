@@ -2,9 +2,7 @@
 
 namespace App\Core\Municipality\Repositories;
 
-use App\Core\Municipality\Models\MunicipalityBanner;
 use App\Core\Municipality\Models\MunicipalitySettings;
-use App\Core\Municipality\Dto\SetMunicipalityBannerDto;
 use App\Core\Municipality\Dto\SetMunicipalitySettingDto;
 
 class MunicipalitySettingRepository
@@ -13,40 +11,29 @@ class MunicipalitySettingRepository
     public function save(SetMunicipalitySettingDto $dto, string $municipalSettingsId, array $fileData)
     {
 
-        return MunicipalitySettings::create([
+        $settings = MunicipalitySettings::firstOrNew([
 
-            'id' => $municipalSettingsId,
-
-            'municipal_id' => $dto->municipalId,
-
-            'user_id' => $dto->userId,
-
-            'logo_public_id' => $fileData['public_id'],
+            'municipal_id' => $dto->municipalId
 
         ]);
 
+        if (!$settings->exists) {
 
-    }
+            $settings->id = $municipalSettingsId;
 
-    public function saveBanner(array $fileData, string $bannerId, SetMunicipalityBannerDto $dto)
-    {
+        }
 
-        return MunicipalityBanner::create([
+        $settings->user_id = $dto->userId;
 
-            'id' => $bannerId,
+        if (!empty($fileData['public_id'])) {
 
-            'municipal_id' => $dto->municipalId,
+            $settings->logo_public_id = $fileData['public_id'];
 
-            'user_id' => $dto->userId,
+        }
 
-            'public_id' => $fileData['public_id'],
+        $settings->save();
 
-        ]);
-
-    }
-
-    public function updateMunicipalSettings()
-    {
+        return $settings;
 
     }
 

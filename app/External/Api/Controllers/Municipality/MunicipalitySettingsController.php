@@ -27,7 +27,7 @@ class MunicipalitySettingsController
 
         $municipalId = app('municipal_id');
 
-        $homeBanners = $request->hasFile('banner') ? $request->file('banner') : [];
+        $municipalLogo = $request->hasFile('logo') ? $request->file('logo') : [];
 
         $dto = new SetMunicipalitySettingDto(
 
@@ -35,7 +35,7 @@ class MunicipalitySettingsController
 
             userId: $userId,
 
-            homeBanners: $homeBanners
+            municiplaLogo: $municipalLogo
 
         );
 

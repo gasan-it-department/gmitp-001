@@ -27,8 +27,9 @@ class SetMunicipalitySettingsUseCase
         $municipalitSettingsId = $this->idGenerator->generate();
 
 
+        $fileData = null;
+
         if ($dto->municiplaLogo) {
-            $logoId = $this->idGenerator->generate();
 
             $fileData = $this->cloudinaryFileUploadService->uploadFiles(
                 $dto->municiplaLogo,

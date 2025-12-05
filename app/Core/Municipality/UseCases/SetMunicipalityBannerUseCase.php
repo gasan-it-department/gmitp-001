@@ -3,16 +3,19 @@
 namespace App\Core\Municipality\UseCases;
 
 use App\Core\Municipality\Dto\SetMunicipalityBannerDto;
+use App\Core\Municipality\Repositories\MunicipalityBannerRepository;
 use App\Shared\FileUploader\CloudinaryFileUploadService;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
-use App\Core\Municipality\Repositories\MunicipalitySettingRepository;
+use Exception;
 
 class SetMunicipalityBannerUseCase
 {
 
+    private const MAX_BANNERS = 10;
+
     public function __construct(
 
-        protected MunicipalitySettingRepository $municipalitySettingsRepo,
+        protected MunicipalityBannerRepository $municipalityBannerRepo,
 
         protected CloudinaryFileUploadService $fileUplaod,
 
@@ -23,6 +26,13 @@ class SetMunicipalityBannerUseCase
 
     public function execute(SetMunicipalityBannerDto $dto)
     {
+        $currentCount = $this->municipalityBannerRepo->countBanner($dto->municipalId);
+
+        if ($currentCount >= self::MAX_BANNERS) {
+
+            throw new Exception("Maximum of " . self::MAX_BANNERS . " banners allowed per municipality.");
+
+        }
 
         if ($dto->homeBanners) {
 
@@ -30,9 +40,10 @@ class SetMunicipalityBannerUseCase
                 $dto->homeBanners,
                 'municipal_banners'
             );
+
             $bannerId = $this->idGenerator->generate();
 
-            $this->municipalitySettingsRepo->saveBanner($uploadResults, $bannerId, $dto);
+            $this->municipalityBannerRepo->saveBanner($uploadResults, $bannerId, $dto);
 
         }
 

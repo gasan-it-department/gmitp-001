@@ -14,7 +14,7 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
-            $table->foreignUlid('municipality_id')
+            $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')
                 ->cascadeOnDelete();
 
