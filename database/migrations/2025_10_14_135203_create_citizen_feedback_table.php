@@ -42,7 +42,7 @@ return new class extends Migration {
             $table->string('file_url')->nullable();
             $table->string('file_path')->nullable();
             $table->string('mime_type')->nullable();
-            $table->unsignedBigInteger('file_size');
+            $table->unsignedBigInteger('file_size')->nullable();
             $table->timestamps();
 
             $table->foreignUlid('feedback_id')

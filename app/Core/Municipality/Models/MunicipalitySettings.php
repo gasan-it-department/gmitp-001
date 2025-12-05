@@ -3,7 +3,7 @@
 namespace App\Core\Municipality\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MunicipalitySettings extends Model
 {
 
@@ -24,5 +24,24 @@ class MunicipalitySettings extends Model
         'logo_public_id',
 
     ];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+
+        if (!$this->logo_public_id) {
+
+            return null;
+
+        }
+        return "https://res.cloudinary.com/" . config('cloudinary.cloud_name') .
+            "/image/upload/f_auto,q_auto,w_500,c_limit/" .
+            $this->logo_public_id;
+
+    }
+
+    public function municipality(): BelongsTo
+    {
+        return $this->belongsTo(Municipality::class, 'municipal_id');
+    }
 
 }

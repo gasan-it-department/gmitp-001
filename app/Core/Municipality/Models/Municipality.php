@@ -2,8 +2,9 @@
 
 namespace App\Core\Municipality\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Municipality extends Model
 {
@@ -22,9 +23,11 @@ class Municipality extends Model
         'zip_code',
     ];
 
-    // public function boot()
-    // {
-    //     parent::boot();
-    //     Route::model('municipality', Municipality::class);
-    // }
+    public function settings(): HasOne
+    {
+
+        return $this->hasOne(MunicipalitySettings::class, 'municipal_id');
+
+    }
+
 }

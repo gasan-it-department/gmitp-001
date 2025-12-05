@@ -18,7 +18,6 @@ class CloudinaryFileUploadService
 
     public function uploadFiles(UploadedFile $file, string $folder): array
     {
-
         $result = $this->cloudinary->uploadApi()->upload(
             $file->getRealPath(),
             [

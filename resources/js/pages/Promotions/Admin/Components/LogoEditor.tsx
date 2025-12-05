@@ -2,22 +2,31 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MunicipalitiesApi } from '@/Core/Api/Municipality/MunicipalityApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { router } from '@inertiajs/react'; // Import Inertia router for refreshing props
 import { Image as ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react'; // Added useEffect
 import { toast } from 'sonner';
 
-interface LogoEditorProps {
-    logo: string | null;
-    setLogo: (logo: string | null) => void;
-}
+// Removed LogoEditorProps interface and props from signature
 
-export default function LogoEditor({ logo, setLogo }: LogoEditorProps) {
+export default function LogoEditor() {
     const logoInputRef = useRef<HTMLInputElement>(null);
-    const { currentMunicipality } = useMunicipality();
+    const { currentMunicipality, logoUrl: persistedLogoUrl } = useMunicipality();
+
+    // State to manage the logo displayed, initialized from the context
+    const [localLogoUrl, setLocalLogoUrl] = useState<string | null>(persistedLogoUrl);
     const [isUploading, setIsUploading] = useState(false);
 
+    // CRITICAL: Sync local state when the global context updates (e.g., after successful Inertia reload)
+    // This ensures the component always shows the globally correct/persisted logo URL.
+    useEffect(() => {
+        setLocalLogoUrl(persistedLogoUrl);
+    }, [persistedLogoUrl]);
+
     const handlePickLogo = () => {
-        logoInputRef.current?.click();
+        if (!isUploading) {
+            logoInputRef.current?.click();
+        }
     };
 
     const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,28 +41,29 @@ export default function LogoEditor({ logo, setLogo }: LogoEditorProps) {
         setIsUploading(true);
 
         try {
-            // 1. Prepare FormData for file upload
             const formData = new FormData();
-
-            // FIX: The key must match '$request->file("logo")' in your Laravel Controller
             formData.append('logo', file);
 
-            // 2. Call the API
+            // 1. Call the API to upload
             await MunicipalitiesApi.uploadMunicipalSettings(currentMunicipality.slug, formData);
 
-            // 3. UI Update (on success)
+            // 2. UI Update (Immediate feedback)
             const reader = new FileReader();
             reader.onload = (event) => {
-                setLogo(event.target?.result as string);
+                setLocalLogoUrl(event.target?.result as string); // Update local state with the Data URL
             };
             reader.readAsDataURL(file);
+
             toast.success('Logo uploaded successfully!');
+
+            // 3. CRITICAL: Refresh Inertia Props to get the permanent, optimized Cloudinary URL into the context
+            router.reload({ only: ['currentMunicipality'] });
         } catch (error) {
             console.error('Logo upload failed:', error);
             toast.error('Failed to upload logo. Please check the file size and type.');
         } finally {
             setIsUploading(false);
-            e.target.value = ''; // Clear input to allow re-selection
+            e.target.value = ''; // Clear input
         }
     };
 
@@ -63,13 +73,25 @@ export default function LogoEditor({ logo, setLogo }: LogoEditorProps) {
             return;
         }
 
-        // Since the removal API is not yet available, we just update the UI state.
+        setIsUploading(true); // Treat deletion as an upload state
+
         try {
-            setLogo(null);
-            toast.success('Logo removed (UI updated, API pending)!');
+            // API call to remove logo: Send empty string/null for 'logo' field
+            const formData = new FormData();
+            formData.append('logo', '');
+            await MunicipalitiesApi.uploadMunicipalSettings(currentMunicipality.slug, formData);
+
+            setLocalLogoUrl(null); // Clear local state immediately
+
+            toast.success('Logo removed successfully!');
+
+            // CRITICAL: Refresh Inertia Props to sync the global context state
+            router.reload({ only: ['currentMunicipality'] });
         } catch (error) {
             console.error('Logo removal failed:', error);
             toast.error('Failed to remove logo.');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -82,9 +104,9 @@ export default function LogoEditor({ logo, setLogo }: LogoEditorProps) {
                     {/* Logo Preview Circle */}
                     <div className="flex-shrink-0">
                         <div className="group relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-100 shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
-                            {logo ? (
+                            {localLogoUrl ? (
                                 <>
-                                    <img src={logo} alt="Site Logo" className="h-full w-full object-cover" />
+                                    <img src={localLogoUrl} alt="Site Logo" className="h-full w-full object-cover" />
                                     {/* Hover Overlay */}
                                     <div
                                         className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
@@ -123,9 +145,9 @@ export default function LogoEditor({ logo, setLogo }: LogoEditorProps) {
                         <div className="flex flex-col justify-center gap-3 sm:flex-row md:justify-start">
                             <Button onClick={handlePickLogo} className="gap-2 bg-blue-600 text-white hover:bg-blue-700" disabled={isUploading}>
                                 {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                {logo ? 'Replace Logo' : 'Upload Logo'}
+                                {localLogoUrl ? 'Replace Logo' : 'Upload Logo'}
                             </Button>
-                            {logo && (
+                            {localLogoUrl && (
                                 <Button
                                     variant="outline"
                                     onClick={handleRemoveLogo}

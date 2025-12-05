@@ -2,19 +2,15 @@
 
 namespace App\Http\Middleware\Municipality;
 
+use App\External\Api\Resources\Municipality\MunicipalitysettingsResource;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Core\Municipality\Services\MunicipalityContextService;
+use Inertia\Inertia;
 
 class SetMunicipalityContext
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-
     public function __construct(
         protected MunicipalityContextService $municipalityContextService,
     ) {
@@ -29,6 +25,7 @@ class SetMunicipalityContext
             abort(404, 'Invalid url');
 
         }
+
         $isActive = true;
 
         $municipality = $this->municipalityContextService->execute($slug, $isActive);
@@ -52,18 +49,25 @@ class SetMunicipalityContext
 
         app()->instance('current_municipality', $municipality);
 
-        \Inertia\Inertia::share([
-            'currentMunicipality' => fn() => [
-                'id' => $municipality->id,
-                'name' => $municipality->name,
-                'slug' => $municipality->slug,
-                'zip_code' => $municipality->zip_code,
-            ],
+        $municipality->load('settings');
+
+        Inertia::share([
+            'currentMunicipality' => function () use ($municipality) {
+                return [
+                    'id' => $municipality->id,
+                    'name' => $municipality->name,
+                    'slug' => $municipality->slug,
+                    'zip_code' => $municipality->zip_code,
+
+                    'settings' => $municipality->settings
+                        ? (new MunicipalitysettingsResource($municipality->settings))->resolve()
+                        : null,
+                ];
+            },
         ]);
     }
 
     public function guardUserMunicipality()
     {
-        //develop for later for admin user checking 
     }
 }
