@@ -34,5 +34,22 @@ export const MunicipalitiesApi = {
         });
 
         return data;
+    },
+
+    async savebanner(municipalSlug: string, formData: FormData) {
+        const { url, method } = Municipality.MunicipalitySettingsController.storeBanner();
+
+
+        const { data } = await axios({
+            url,
+            method,
+            data: formData, // Pass the FormData here
+            headers: {
+                'X-Municipality-Slug': municipalSlug,
+                'Content-Type': 'multipart/form-data', // Explicitly set content type
+            }
+        });
+
+        return data;
     }
 }

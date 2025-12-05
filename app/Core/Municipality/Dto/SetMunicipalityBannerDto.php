@@ -3,7 +3,7 @@
 namespace App\Core\Municipality\Dto;
 use Illuminate\Http\UploadedFile;
 
-class SetMunicipalitySettingDto
+class SetMunicipalityBannerDto
 {
 
     public function __construct(
@@ -13,8 +13,6 @@ class SetMunicipalitySettingDto
         public string $userId,
 
         public ?UploadedFile $homeBanners = null,
-
-        public ?UploadedFile $municiplaLogo = null,
 
     ) {
     }

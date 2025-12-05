@@ -62,6 +62,7 @@ Route::prefix('api/municipality')
 
         Route::patch('/{id}', 'update')->name('updateSettings');
 
+        Route::post('/save-banner', 'storeBanner')->name('saveBanner');
 
     });
 

@@ -35,8 +35,6 @@ class CloudinaryFileUploadService
 
             'public_id' => $result['public_id'],
 
-            'file_url' => $result['secure_url'],
-
             'original_name' => $file->getClientOriginalName(),
 
             'mime_type' => $file->getClientMimeType(),

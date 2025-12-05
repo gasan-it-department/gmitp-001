@@ -90,7 +90,7 @@ export default function HomeBannerEditorPanel() {
                 formData.append('home_subtitle', 'Default Subtitle');
 
                 // 2. Upload to API
-                await MunicipalitiesApi.uploadMunicipalSettings(municipalSlug, formData);
+                await MunicipalitiesApi.savebanner(municipalSlug, formData);
 
                 toast.success('Banner uploaded successfully!');
 
@@ -148,7 +148,7 @@ export default function HomeBannerEditorPanel() {
             <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
 
             {/* TAB NAVIGATION */}
-            <div className="mb-6 flex space-x-4 border-b border-gray-200 pb-1 dark:border-neutral-700 overflow-x-auto">
+            <div className="mb-6 flex space-x-4 overflow-x-auto border-b border-gray-200 pb-1 dark:border-neutral-700">
                 <Button
                     variant={activeTab === 'banners' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('banners')}
@@ -168,7 +168,7 @@ export default function HomeBannerEditorPanel() {
                     onClick={() => setActiveTab('logo')}
                     className={`gap-2 ${activeTab === 'logo' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
                 >
-                    <div className="w-4 h-4 border-2 border-current rounded-full" /> Municipal Logo
+                    <div className="h-4 w-4 rounded-full border-2 border-current" /> Municipal Logo
                 </Button>
             </div>
 
@@ -222,8 +222,9 @@ export default function HomeBannerEditorPanel() {
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
-                                        } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    className={`relative cursor-pointer p-2 transition-all ${
+                                        selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
+                                    } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
                                 >
                                     <img src={banner.image} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
@@ -261,10 +262,10 @@ export default function HomeBannerEditorPanel() {
                 <div className="space-y-8">
                     <HotlineEditor hotlines={hotlines} setHotlines={setHotlines} />
 
-                    <div className="border-t pt-10 mt-10 dark:border-neutral-700">
-                        <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Website Footer Preview</h2>
-                        <p className="text-gray-600 mb-6 text-sm">Preview of the Emergency Hotline card as it appears on the public site.</p>
-                        <div className="flex justify-center p-8 bg-gray-50 dark:bg-neutral-900 rounded-xl border border-dashed border-gray-200 dark:border-neutral-700 overflow-x-auto">
+                    <div className="mt-10 border-t pt-10 dark:border-neutral-700">
+                        <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">Website Footer Preview</h2>
+                        <p className="mb-6 text-sm text-gray-600">Preview of the Emergency Hotline card as it appears on the public site.</p>
+                        <div className="flex justify-center overflow-x-auto rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 dark:border-neutral-700 dark:bg-neutral-900">
                             <HotlinePreview hotlines={hotlines} />
                         </div>
                     </div>
@@ -272,9 +273,7 @@ export default function HomeBannerEditorPanel() {
             )}
 
             {/* LOGO TAB */}
-            {activeTab === 'logo' && (
-                <LogoEditor logo={logo} setLogo={setLogo} />
-            )}
+            {activeTab === 'logo' && <LogoEditor logo={logo} setLogo={setLogo} />}
         </div>
     );
 }

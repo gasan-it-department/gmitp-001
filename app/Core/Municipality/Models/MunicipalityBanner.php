@@ -4,10 +4,10 @@ namespace App\Core\Municipality\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MunicipalitySettings extends Model
+class MunicipalityBanner extends Model
 {
 
-    // protected $table = 'municipality_settings';
+    // protected $table = 'municipality_banners';
 
     public $incrementing = false;
 
@@ -17,12 +17,11 @@ class MunicipalitySettings extends Model
 
         'id',
 
+        'public_id',
+
         'municipal_id',
 
-        'user_id',
-
-        'logo_public_id',
+        'position',
 
     ];
-
 }

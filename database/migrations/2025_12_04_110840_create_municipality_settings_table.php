@@ -15,13 +15,35 @@ return new class extends Migration {
             $table->ulid('id')->primary();
 
             $table->foreignUlid('municipality_id')
-                ->constrained()
+                ->constrained('municipalities')
                 ->cascadeOnDelete();
 
-            $table->string('home_banner_url')->nullable();
+            $table->foreignUlid('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->string('logo_public_id')->nullable();
 
             $table->timestamps();
         });
+
+        Schema::create('municipality_banners', function (Blueprint $table) {
+
+            $table->ulid('id')->primary();
+
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->cascadeOnDelete();
+
+            $table->string('public_id');
+
+            $table->string('position')->nullable();
+
+            $table->timestamps();
+        });
+
+
+
     }
 
     /**
@@ -29,6 +51,11 @@ return new class extends Migration {
      */
     public function down(): void
     {
+
         Schema::dropIfExists('municipality_settings');
+
+        Schema::dropIfExists('municipality_banners');
+
+
     }
 };
