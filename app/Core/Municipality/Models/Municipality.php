@@ -30,4 +30,11 @@ class Municipality extends Model
 
     }
 
+    public function banners()
+    {
+
+        return $this->hasMany(MunicipalityBanner::class, 'municipal_id');
+
+    }
+
 }

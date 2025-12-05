@@ -38,7 +38,7 @@ export const EventsApi = {
     async getPublished(municipalSlug: string, page: number = 1) {
 
         const { url, method } = bulletinBoard.EventController.getPublished();
-        console.log("Municipal Slug in EventsApi:", url, method);
+
         const { data } = await axios({
             method,
             url,

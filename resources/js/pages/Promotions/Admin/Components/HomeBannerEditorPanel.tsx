@@ -2,21 +2,18 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MunicipalitiesApi } from '@/Core/Api/Municipality/MunicipalityApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { Image, Loader2, Phone, Plus, X } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Phone, Plus, X } from 'lucide-react'; // Image alias fixed
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
-import LogoEditor from './LogoEditor'; // Imported LogoEditor
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
-import ToastProvider from '@/pages/Utility/ToastShower';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { title } from 'process';
+import LogoEditor from './LogoEditor';
 
 // --- TYPES ---
-interface Banner {
+// Exported so the Page component can use it
+export interface Banner {
     id: string;
     title: string;
-    image: string;
+    bannerUrl: string; // This corresponds to 'image' from your Resource (the URL)
 }
 
 interface Hotline {
@@ -25,7 +22,12 @@ interface Hotline {
     number: string;
 }
 
-// --- COMPONENT: HOTLINE PREVIEW CARD (Red Theme) ---
+// --- PROPS ---
+interface HomeBannerEditorPanelProps {
+    initialBanners: Banner[];
+}
+
+// --- COMPONENT: HOTLINE PREVIEW CARD ---
 const HotlinePreview = ({ hotlines }: { hotlines: Hotline[] }) => (
     <div className="w-full max-w-md rounded-3xl bg-gradient-to-br from-red-600 to-orange-500 p-8 text-white shadow-2xl">
         <h2 className="mb-6 text-2xl font-extrabold tracking-wide uppercase">Emergency Hotline</h2>
@@ -45,15 +47,20 @@ const HotlinePreview = ({ hotlines }: { hotlines: Hotline[] }) => (
 );
 
 // --- MAIN COMPONENT ---
-export default function HomeBannerEditorPanel() {
+export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBannerEditorPanelProps) {
+    // 1. Context & Hooks
     const { currentMunicipality } = useMunicipality();
     const municipalSlug = currentMunicipality?.slug;
-    const [banners, setBanners] = useState<Banner[]>([]);
+
+    // 2. Local State (Initialized with data from Backend)
+    const [banners, setBanners] = useState<Banner[]>(initialBanners);
     const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('banners');
     const [isUploading, setIsUploading] = useState(false);
-    const [logo, setLogo] = useState<string | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Hotline State (Static for now, connect to backend later if needed)
     const [hotlines, setHotlines] = useState<Hotline[]>([
         { id: '1', name: 'MDRRMO', number: '(042) 332-0833\n09091099922 – SMART' },
         { id: '2', name: 'Gasan Police Station', number: '0912-345-6789' },
@@ -65,9 +72,9 @@ export default function HomeBannerEditorPanel() {
         message: string;
         positiveButtonText: string;
         negativeButtonText: string;
-        negativeButtonHidden: boolean
+        negativeButtonHidden: boolean;
         action: string | null;
-        data: any[] | null
+        data: any[] | null;
     }>({
         isOpen: false,
         title: '',
@@ -76,17 +83,14 @@ export default function HomeBannerEditorPanel() {
         negativeButtonText: '',
         negativeButtonHidden: true,
         action: null,
-        data: null
+        data: null,
     });
     const dragItemIndex = useRef<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const handlePickImage = () => {
-        if (banners.length >= 10) {
-            toast.error("Cannot add more images");
-            return;
-        }
-        fileInputRef.current?.click()
-    };
+
+    const handlePickImage = () => fileInputRef.current?.click();
+
+    // --- HANDLE FILE SELECTION ---
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!municipalSlug) {
             toast.error('Municipality context missing');
@@ -99,23 +103,29 @@ export default function HomeBannerEditorPanel() {
             setIsUploading(true);
             try {
                 const formData = new FormData();
-                formData.append('banner', file); // Direct file upload
+                formData.append('banner', file);
                 const newBannerTitle = `Banner ${banners.length + 1}`;
                 formData.append('home_title', newBannerTitle);
                 formData.append('home_subtitle', 'Default Subtitle');
 
-                await MunicipalitiesApi.savebanner(municipalSlug, formData);
+                // 2. Upload to API
+                // Assuming the API returns the created banner object (id, url, etc.)
+                const response = await MunicipalitiesApi.savebanner(municipalSlug, formData);
 
                 toast.success('Banner uploaded successfully!');
-                const newId = Date.now().toString();
-                const previewUrl = URL.createObjectURL(file);
+
+                // 3. Update Local State
+                // Best Practice: Use the real ID/URL from the server response if available.
+                // Fallback: Use object URL for immediate preview if API doesn't return the new object.
+                const newId = response.data?.id || Date.now().toString();
+                const previewUrl = response.data?.image || URL.createObjectURL(file);
 
                 setBanners((prev) => [
                     ...prev,
                     {
                         id: newId,
                         title: newBannerTitle,
-                        image: previewUrl,
+                        bannerUrl: previewUrl,
                     },
                 ]);
                 setSelectedBannerId(newId);
@@ -124,7 +134,7 @@ export default function HomeBannerEditorPanel() {
                 toast.error('Failed to upload banner.');
             } finally {
                 setIsUploading(false);
-                e.target.value = '';
+                if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input properly
             }
         }
     };
@@ -146,13 +156,15 @@ export default function HomeBannerEditorPanel() {
         setBanners(newBanners);
         dragItemIndex.current = null;
         setDragOverIndex(null);
+
+        // Note: You should call an API here to persist the new order!
+        // MunicipalitiesApi.reorderBanners(municipalSlug, newBanners.map(b => b.id));
     };
     const selectedBanner = banners.find((b) => b.id === selectedBannerId);
 
     const handleDeleteImage = (bannerData: Banner, e: any) => {
-
         // Call Delete API  here.
-        // Use response.success 
+        // Use response.success
         // if (response.success) {
         // This code will remove and refresh banner list.
         //     e.stopPropagation();
@@ -160,7 +172,7 @@ export default function HomeBannerEditorPanel() {
         // }
         e.stopPropagation();
         setBanners((b) => b.filter((i) => i.id !== bannerData.id));
-    }
+    };
 
     return (
         <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
@@ -176,7 +188,7 @@ export default function HomeBannerEditorPanel() {
                     onClick={() => setActiveTab('banners')}
                     className={`gap-2 ${activeTab === 'banners' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
                 >
-                    <Image className="h-4 w-4" /> Home Banners
+                    <ImageIcon className="h-4 w-4" /> Home Banners
                 </Button>
                 <Button
                     variant={activeTab === 'hotlines' ? 'default' : 'ghost'}
@@ -202,7 +214,7 @@ export default function HomeBannerEditorPanel() {
                         <h2 className="mb-4 text-lg font-bold text-gray-700 dark:text-gray-300">Selected Banner Preview</h2>
                         {selectedBanner ? (
                             <div className="relative aspect-[2/1] overflow-hidden rounded-xl bg-black shadow-lg">
-                                <img src={selectedBanner.image} alt={selectedBanner.title} className="h-full w-full object-cover" />
+                                <img src={selectedBanner.bannerUrl} alt={selectedBanner.title} className="h-full w-full object-cover" />
                                 <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
                                     <h3 className="text-xl font-bold">{selectedBanner.title}</h3>
                                 </div>
@@ -244,30 +256,20 @@ export default function HomeBannerEditorPanel() {
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
-                                        } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    className={`relative cursor-pointer p-2 transition-all ${
+                                        selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
+                                    } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
                                 >
-                                    <img src={banner.image} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
+                                    <img src={banner.bannerUrl} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
                                         <span className="flex-1 truncate text-xs font-medium">
                                             {index + 1}. {banner.title}
                                         </span>
                                         <button
                                             onClick={(e) => {
-                                                setClassicDialog((prev) => ({
-                                                    ...prev,
-                                                    isOpen: true,
-                                                    title: `Remove ${banner.title}?`,
-                                                    message: `Are you sure you want to remove ${banner.title}? This cannot be undone.`,
-                                                    positiveButtonText: "Remove",
-                                                    negativeButtonText: "Cancel",
-                                                    negativeButtonHidden: false,
-                                                    data: [
-                                                        banner,
-                                                        e
-                                                    ],
-                                                    action: "delete_image"
-                                                }))
+                                                e.stopPropagation();
+                                                // Ideally call API delete here
+                                                setBanners((b) => b.filter((i) => i.id !== banner.id));
                                             }}
                                             className="text-gray-400 hover:text-red-500"
                                         >
@@ -306,41 +308,8 @@ export default function HomeBannerEditorPanel() {
             )}
 
             {/* LOGO TAB */}
-            {activeTab === 'logo' && <LogoEditor logo={logo} setLogo={setLogo} />}
-
-            <ToastProvider />
-
-            <LoadingDialog
-                title='Uploading...'
-                isOpen={isUploading} />
-
-            <ClassicDialog
-                title={classicDialog.title}
-                message={classicDialog.message}
-                positiveButtonText={classicDialog.positiveButtonText}
-                negativeButtonText={classicDialog.negativeButtonText}
-                hideNegativeButton={classicDialog.negativeButtonHidden}
-                open={classicDialog.isOpen}
-                onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                        action: null,
-                        data: null
-                    }));
-
-                    if (classicDialog.data && classicDialog.action == "delete_image") {
-                        handleDeleteImage(classicDialog.data[0], classicDialog.data[1]);
-                    }
-                }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                        action: null,
-                        data: null
-                    }));
-                }} />
+            {/* LogoEditor is self-contained and uses the global context */}
+            {activeTab === 'logo' && <LogoEditor />}
         </div>
     );
 }

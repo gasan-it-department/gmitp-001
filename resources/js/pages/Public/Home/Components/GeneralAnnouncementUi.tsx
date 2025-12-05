@@ -1,16 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
 import Utility from '@/pages/Utility/Utility';
+import { announcements } from '@/routes';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
-import { announcements } from '@/routes';
 
 export default function GeneralAnnouncement() {
     const { currentMunicipality } = useMunicipality();
@@ -43,7 +43,6 @@ export default function GeneralAnnouncement() {
             // const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             if (response.success) {
-                console.log('Announcements:', response.data);
                 const sorted = [...response.data].sort((a, b) => {
                     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 });
@@ -153,7 +152,7 @@ export default function GeneralAnnouncement() {
                                         variant="outline"
                                         className="text-sm sm:text-base"
                                         onClick={() => {
-                                            router.visit(announcements.url(currentMunicipality.slug))
+                                            router.visit(announcements.url(currentMunicipality.slug));
                                         }}
                                     >
                                         View More

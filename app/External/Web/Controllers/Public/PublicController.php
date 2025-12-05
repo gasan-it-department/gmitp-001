@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\Public;
 
+use App\External\Api\Resources\Municipality\MunicipalBannerResource;
 use App\Http\Controllers\Controller;
 use inertia\Inertia;
 
@@ -15,7 +16,16 @@ class PublicController extends Controller
 
     public function showHomePage()
     {
-        return Inertia::render('Public/Home/HomePage');
+
+        $municipality = app('current_municipality');
+
+        $banners = $municipality->banners()
+            ->get();
+
+        return Inertia::render('Public/Home/HomePage', [
+
+            'banners' => (MunicipalBannerResource::collection($banners))->resolve()
+        ]);
     }
 
     public function showServicePage()
