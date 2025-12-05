@@ -1,37 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import AwardsHeader from "./AwardsHeader";
-import { useState } from "react";
-import { AwardsData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
 import { EyeIcon } from "lucide-react";
-import AddEditAwardsDialog from "./AddEditAwardsDialog";
-import SortDialog from "@/pages/BulletinBoard/Admin/Components/FilterDialog";
-import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
+import ExecutiveOrdersHeader from "./ExecutiveOrdersHeader";
+import { useState } from "react";
+import { ExecutiveOrdersData } from "@/Core/Types/LocalGovernment/ExecutiveOrdersTypes";
 
 
-export default function AwardsTable() {
+export default function ExecutiveOrdersTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
-    const [awardsList, setAwardsList] = useState<AwardsData[]>([]);
-    const [isAddEditDialogVisible, setIsAddEditDialogVisible] = useState(false);
-    const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
-    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
-
-    const handleSort = (currentSelectedSort: string | null) => {
-        console.log('Announcement selected filter: ', currentSelectedSort);
-        // Implement server filter logic here
-    };
-
+    const [executiveOrdersList, setExecutiveOrdersList] = useState<ExecutiveOrdersData[]>([]);
+    
     return (
         <div className="flex flex-col h-full">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Awards</h1>
-                <AwardsHeader
+                <h1 className="text-3xl font-bold tracking-tight">Executive Orders</h1>
+                <ExecutiveOrdersHeader
                     onSearch={() => { }}
-                    onFilterButtonClicked={() => { setIsFilterDialogVisible(true) }}
+                    onFilterButtonClicked={() => { }}
                     onExportButtonClicked={() => { }}
-                    onAddNewButtonClicked={() => { setIsAddEditDialogVisible(true) }}
+                    onAddNewButtonClicked={() => {  }}
                 />
             </div>
 
@@ -84,13 +73,13 @@ export default function AwardsTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {awardsList.length === 0 ? (
+                        {executiveOrdersList.length === 0 ? (
                             <AdminEmptyListItem
                                 colSpan={7}
-                                title='No awards yet'
-                                message='Awards will appear here once you create one.' />
+                                title='No executive orders yet'
+                                message='Executive orders will appear here once you add.' />
                         ) : (
-                            awardsList.map((item, index) => (
+                            executiveOrdersList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
                                     {/* <TableCell>
                                                 <div className="flex items-center justify-center p-2">
@@ -159,30 +148,7 @@ export default function AwardsTable() {
                 </Table>
             </div>
 
-            <AddEditAwardsDialog
-                isOpen={isAddEditDialogVisible}
-                onClose={() => setIsAddEditDialogVisible(false)}
-                onSuccess={(data, isEditMode) => {
-
-                }} />
-
-            <SortDialog
-                isOpen={isFilterDialogVisible}
-                currentFilter={currentFilter}
-                onClose={() => setIsFilterDialogVisible(false)}
-                filters={[
-                    { title: 'Title', sub: 'title' },
-                    { title: 'Date Created', sub: 'created_at' },
-                    { title: 'Date Awarded', sub: 'awarded_at' },
-                    { title: 'Contract Amount', sub: 'contract_amount' },
-                ]}
-                onApply={(selectedFilter: FilterDialogData | null) => {
-                    setCurrentFilter(selectedFilter);
-                    if (selectedFilter) {
-                        handleSort(selectedFilter.sub);
-                    }
-                }}
-            />
+            
         </div>
     );
 }

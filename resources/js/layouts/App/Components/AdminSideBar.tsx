@@ -20,21 +20,30 @@ import biddingAdminPage from '@/routes/biddingAdminPage';
 import bulletinBoard from '@/routes/bulletin-board';
 import citizenCharter from '@/routes/citizenCharter';
 import communityReport from '@/routes/communityReport';
+import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
+import officialsEditor from '@/routes/officialsEditor';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
+    BadgeCheck,
     CalendarDays,
     ClipboardList,
+    FileSignature,
     FileText,
     FlagIcon,
     Hand,
+    Info,
+    Landmark,
     LogOut,
+    Medal,
     Megaphone,
+    MegaphoneIcon,
     MessageCircleIcon,
     Plane,
+    Sparkle,
     Trophy,
     User,
     UsersIcon,
@@ -85,40 +94,59 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             title: 'ACTION CENTER',
             icon: ClipboardList,
             items: [
-                // { title: 'Dashboard', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: LayoutDashboard },
-                { title: 'Requests', url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }), icon: FileText },
+
+                {
+                    title: 'Requests',
+                    url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }),
+                    icon: FileText
+                },
             ],
         },
         {
             title: 'NOTICES & ADVISORIES',
-            icon: FileText,
+            icon: Info,
             items: [
                 {
                     title: 'Announcement',
                     url: bulletinBoard.announcement.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Megaphone,
                 },
-                { title: 'Events', url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }), icon: CalendarDays },
-                { title: 'Feedbacks', url: feedback.admin.index.url({ municipality: currentMunicipality.slug }), icon: MessageCircleIcon },
-                { title: 'Comunity Reports', url: communityReport.page.url({ municipality: currentMunicipality.slug }), icon: UsersIcon },
+                {
+                    title: 'Events',
+                    url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }),
+                    icon: CalendarDays
+                },
+                {
+                    title: 'Feedbacks',
+                    url: feedback.admin.index.url({ municipality: currentMunicipality.slug }),
+                    icon: MessageCircleIcon
+                },
+                {
+                    title: 'Comunity Reports',
+                    url: communityReport.page.url({ municipality: currentMunicipality.slug }),
+                    icon: UsersIcon
+                },
             ],
         },
         {
             title: 'PROMOTIONS',
-            icon: FileText,
+            icon: Sparkle,
             items: [
-                { title: 'Home Banners', url: municipality.admin.page.url({ municipality: currentMunicipality.slug }), icon: FlagIcon },
-                { title: 'Travel Editor', url: travelEditor.page.url({ municipality: currentMunicipality.slug }), icon: Plane },
-                // {
-                //     title: 'Citizen\'s Charter',
-                //     url: '',
-                //     icon: Info,
-                // },
+                {
+                    title: 'CMS',
+                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    icon: FlagIcon
+                },
+                {
+                    title: 'Travel Editor',
+                    url: travelEditor.page.url({ municipality: currentMunicipality.slug }),
+                    icon: Plane
+                },
             ],
         },
         {
             title: 'BIDS AND AWARDS',
-            icon: FileText,
+            icon: Medal,
             items: [
                 {
                     title: 'Invitation to Bid',
@@ -135,19 +163,24 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: citizenCharter.page.url({ municipality: currentMunicipality.slug }),
                     icon: User,
                 },
-                // {
-                //     title: 'Citizen\'s Charter',
-                //     url: '',
-                //     icon: Info,
-                // },
             ],
         },
-
-        // {
-        //     title: 'TOURISM',
-        //     icon: Map,
-        //     items: [{ title: 'Routing', url: '#', icon: Map }],
-        // },
+        {
+            title: 'LOCAL GOVERNMENT',
+            icon: Landmark,
+            items: [
+                {
+                    title: 'Executive Orders',
+                    url: executiveOrders.page.url({ municipality: currentMunicipality.slug }),
+                    icon: FileSignature,
+                },
+                {
+                    title: 'Officials',
+                    url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
+                    icon: BadgeCheck,
+                },
+            ],
+        },
     ];
 
     return (
@@ -200,11 +233,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSubItem key={sub.title}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
-                                                        isActive
-                                                            ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
-                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                    }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
+                                                        ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
+                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                        }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -212,11 +244,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${
-                                                                isActive
-                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                            }`}
+                                                            className={`transition-all duration-200 ease-out ${isActive
+                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                                }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>

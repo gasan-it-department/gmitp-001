@@ -5,13 +5,22 @@ import AddEditBidsAndAwardsDialog from "./AddEditBiddingDialog";
 import { BiddingData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import { EyeIcon } from "lucide-react";
+import { EyeIcon, Filter } from "lucide-react";
+import SortDialog from "@/pages/BulletinBoard/Admin/Components/FilterDialog";
+import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
 
 
 export default function BiddingTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [isAddEditDialogVisible, setIsAddEditDialogVisible] = useState(false);
     const [biddingList, setBiddingList] = useState<BiddingData[]>([]);
+    const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
+
+    const handleSort = (currentSelectedSort: string | null) => {
+        console.log('Announcement selected filter: ', currentSelectedSort);
+        // Implement server filter logic here
+    };
 
     return (
         <div className="flex flex-col h-full">
@@ -20,7 +29,7 @@ export default function BiddingTable() {
                 <h1 className="text-3xl font-bold tracking-tight">Invitations to Bid</h1>
                 <BidsAndAwardsHeader
                     onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
+                    onFilterButtonClicked={() => { setIsFilterDialogVisible(true) }}
                     onExportButtonClicked={() => { }}
                     onAddNewButtonClicked={() => { setIsAddEditDialogVisible(true) }}
                 />
@@ -149,6 +158,22 @@ export default function BiddingTable() {
                     </TableBody>
                 </Table>
             </div>
+
+            <SortDialog
+                isOpen={isFilterDialogVisible}
+                currentFilter={currentFilter}
+                onClose={() => setIsFilterDialogVisible(false)}
+                filters={[
+                    { title: 'Title', sub: 'title' },
+                    { title: 'Date', sub: 'created_at' },
+                ]}
+                onApply={(selectedFilter: FilterDialogData | null) => {
+                    setCurrentFilter(selectedFilter);
+                    if (selectedFilter) {
+                        handleSort(selectedFilter.sub);
+                    }
+                }}
+            />
 
             <AddEditBidsAndAwardsDialog
                 isOpen={isAddEditDialogVisible}

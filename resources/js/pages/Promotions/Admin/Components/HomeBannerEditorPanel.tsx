@@ -7,6 +7,10 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
 import LogoEditor from './LogoEditor'; // Imported LogoEditor
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { title } from 'process';
 
 // --- TYPES ---
 interface Banner {
@@ -42,35 +46,47 @@ const HotlinePreview = ({ hotlines }: { hotlines: Hotline[] }) => (
 
 // --- MAIN COMPONENT ---
 export default function HomeBannerEditorPanel() {
-    // 1. Context & Hooks
     const { currentMunicipality } = useMunicipality();
     const municipalSlug = currentMunicipality?.slug;
-
-    // 2. Local State
     const [banners, setBanners] = useState<Banner[]>([]);
     const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('banners');
     const [isUploading, setIsUploading] = useState(false);
-
-    // 3. Logo State
     const [logo, setLogo] = useState<string | null>(null);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Hotline State
     const [hotlines, setHotlines] = useState<Hotline[]>([
         { id: '1', name: 'MDRRMO', number: '(042) 332-0833\n09091099922 – SMART' },
         { id: '2', name: 'Gasan Police Station', number: '0912-345-6789' },
         { id: '3', name: 'Bureau of Fire Protection', number: '0912-345-6789' },
     ]);
-
-    // Drag States
+    const [classicDialog, setClassicDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        positiveButtonText: string;
+        negativeButtonText: string;
+        negativeButtonHidden: boolean
+        action: string | null;
+        data: any[] | null
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        positiveButtonText: '',
+        negativeButtonText: '',
+        negativeButtonHidden: true,
+        action: null,
+        data: null
+    });
     const dragItemIndex = useRef<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-    const handlePickImage = () => fileInputRef.current?.click();
-
-    // --- HANDLE FILE SELECTION (Direct Upload, No Resize) ---
+    const handlePickImage = () => {
+        if (banners.length >= 10) {
+            toast.error("Cannot add more images");
+            return;
+        }
+        fileInputRef.current?.click()
+    };
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!municipalSlug) {
             toast.error('Municipality context missing');
@@ -82,19 +98,15 @@ export default function HomeBannerEditorPanel() {
 
             setIsUploading(true);
             try {
-                // 1. Prepare Form Data
                 const formData = new FormData();
                 formData.append('banner', file); // Direct file upload
                 const newBannerTitle = `Banner ${banners.length + 1}`;
                 formData.append('home_title', newBannerTitle);
                 formData.append('home_subtitle', 'Default Subtitle');
 
-                // 2. Upload to API
                 await MunicipalitiesApi.savebanner(municipalSlug, formData);
 
                 toast.success('Banner uploaded successfully!');
-
-                // 3. Update Local State (Use object URL for immediate preview)
                 const newId = Date.now().toString();
                 const previewUrl = URL.createObjectURL(file);
 
@@ -112,12 +124,10 @@ export default function HomeBannerEditorPanel() {
                 toast.error('Failed to upload banner.');
             } finally {
                 setIsUploading(false);
-                e.target.value = ''; // Reset input
+                e.target.value = '';
             }
         }
     };
-
-    // --- DRAG HANDLERS ---
     const handleDragStart = (index: number) => {
         dragItemIndex.current = index;
     };
@@ -137,8 +147,20 @@ export default function HomeBannerEditorPanel() {
         dragItemIndex.current = null;
         setDragOverIndex(null);
     };
-
     const selectedBanner = banners.find((b) => b.id === selectedBannerId);
+
+    const handleDeleteImage = (bannerData: Banner, e: any) => {
+
+        // Call Delete API  here.
+        // Use response.success 
+        // if (response.success) {
+        // This code will remove and refresh banner list.
+        //     e.stopPropagation();
+        //     setBanners((b) => b.filter((i) => i.id !== bannerData.id));
+        // }
+        e.stopPropagation();
+        setBanners((b) => b.filter((i) => i.id !== bannerData.id));
+    }
 
     return (
         <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
@@ -196,7 +218,7 @@ export default function HomeBannerEditorPanel() {
                     <div>
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">Active Banners ({banners.length}/10)</h2>
-                            {banners.length < 10 && (
+                            {banners.length !== 0 && banners.length < 10 && (
                                 <Button onClick={handlePickImage} disabled={isUploading} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
                                     {isUploading ? (
                                         <>
@@ -222,9 +244,8 @@ export default function HomeBannerEditorPanel() {
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all ${
-                                        selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
-                                    } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
+                                        } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
                                 >
                                     <img src={banner.image} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
@@ -233,8 +254,20 @@ export default function HomeBannerEditorPanel() {
                                         </span>
                                         <button
                                             onClick={(e) => {
-                                                e.stopPropagation();
-                                                setBanners((b) => b.filter((i) => i.id !== banner.id));
+                                                setClassicDialog((prev) => ({
+                                                    ...prev,
+                                                    isOpen: true,
+                                                    title: `Remove ${banner.title}?`,
+                                                    message: `Are you sure you want to remove ${banner.title}? This cannot be undone.`,
+                                                    positiveButtonText: "Remove",
+                                                    negativeButtonText: "Cancel",
+                                                    negativeButtonHidden: false,
+                                                    data: [
+                                                        banner,
+                                                        e
+                                                    ],
+                                                    action: "delete_image"
+                                                }))
                                             }}
                                             className="text-gray-400 hover:text-red-500"
                                         >
@@ -274,6 +307,40 @@ export default function HomeBannerEditorPanel() {
 
             {/* LOGO TAB */}
             {activeTab === 'logo' && <LogoEditor logo={logo} setLogo={setLogo} />}
+
+            <ToastProvider />
+
+            <LoadingDialog
+                title='Uploading...'
+                isOpen={isUploading} />
+
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                hideNegativeButton={classicDialog.negativeButtonHidden}
+                open={classicDialog.isOpen}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                        action: null,
+                        data: null
+                    }));
+
+                    if (classicDialog.data && classicDialog.action == "delete_image") {
+                        handleDeleteImage(classicDialog.data[0], classicDialog.data[1]);
+                    }
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                        action: null,
+                        data: null
+                    }));
+                }} />
         </div>
     );
 }

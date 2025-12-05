@@ -130,7 +130,6 @@ export default function AddEditAwardDialog({ isOpen, editData, onClose, onSucces
             >
                 <DialogHeader className="border-b border-orange-100 pb-3 flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <Award className="h-6 w-6 text-red-600 dark:text-orange-400" />
                         <DialogTitle className="text-2xl font-extrabold text-red-800 dark:text-gray-100">
                             {editData ? "Edit Award Record" : "Add New Awarded Contract"}
                         </DialogTitle>
@@ -156,7 +155,6 @@ export default function AddEditAwardDialog({ isOpen, editData, onClose, onSucces
                             register={register}
                             requiredMsg="Project Title is required"
                             errors={errors}
-                            icon={FileText}
                         />
 
                         {/* -------------------- ROW 2: WINNING CONTRACTOR & TYPE -------------------- */}
@@ -170,7 +168,6 @@ export default function AddEditAwardDialog({ isOpen, editData, onClose, onSucces
                                 register={register}
                                 requiredMsg="Contractor is required"
                                 errors={errors}
-                                icon={Briefcase}
                             />
 
                             {/* Dropdown 1: Procurement Type */}
@@ -221,7 +218,6 @@ export default function AddEditAwardDialog({ isOpen, editData, onClose, onSucces
                                 requiredMsg="Award Date is required"
                                 errors={errors}
                                 type="date"
-                                icon={Clock}
                             />
 
                             {/* Contract Amount */}
@@ -234,7 +230,6 @@ export default function AddEditAwardDialog({ isOpen, editData, onClose, onSucces
                                 errors={errors}
                                 type="number"
                                 placeholder="e.g., 1850000.50"
-                                icon={DollarSign}
                             />
                         </div>
 

@@ -6,11 +6,20 @@ import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
 import { EyeIcon } from "lucide-react";
 import CitizenCharterHeader from "./CitizenCharterHeader";
 import AddEditCitizenCharterDialog from "./AddEditCitizenCharterDialog";
+import SortDialog from "@/pages/BulletinBoard/Admin/Components/FilterDialog";
+import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
 
 export default function CitizenCharterTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [biddingList, setBiddingList] = useState<BiddingData[]>([]);
     const [isAddEditDialogVisible, setIsAddEditDialogVisible] = useState(false);
+    const [isSortingDialogVisible, setIsSortingDialogVisible] = useState(false);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
+
+    const handleSort = (currentSelectedSort: string | null) => {
+        console.log('Announcement selected filter: ', currentSelectedSort);
+        // Implement server filter logic here
+    };
 
     return (
         <div className="flex flex-col h-full">
@@ -19,7 +28,7 @@ export default function CitizenCharterTable() {
                 <h1 className="text-3xl font-bold tracking-tight">Citizen's Charter</h1>
                 <CitizenCharterHeader
                     onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
+                    onFilterButtonClicked={() => { setIsSortingDialogVisible(true) }}
                     onExportButtonClicked={() => { }}
                     onAddNewButtonClicked={() => { setIsAddEditDialogVisible(true) }}
                 />
@@ -148,6 +157,23 @@ export default function CitizenCharterTable() {
                     </TableBody>
                 </Table>
             </div>
+
+            <SortDialog
+                isOpen={isSortingDialogVisible}
+                currentFilter={currentFilter}
+                onClose={() => setIsSortingDialogVisible(false)}
+                filters={[
+                    { title: 'Service Name', sub: 'service_name' },
+                    { title: 'Offices', sub: 'created_at' },
+                    { title: 'Fees', sub: 'fees' },
+                ]}
+                onApply={(selectedFilter: FilterDialogData | null) => {
+                    setCurrentFilter(selectedFilter);
+                    if (selectedFilter) {
+                        handleSort(selectedFilter.sub);
+                    }
+                }}
+            />
 
             <AddEditCitizenCharterDialog
                 isOpen={isAddEditDialogVisible}

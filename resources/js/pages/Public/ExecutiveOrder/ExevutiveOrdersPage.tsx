@@ -1,5 +1,5 @@
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import { ExecutiveOrders } from '@/pages/Public/ExecutiveOrder/Components/Eo';
+import { ExecutiveOrders } from './Components/ExecutiveOrders';
 
 export default function Home() {
     return (

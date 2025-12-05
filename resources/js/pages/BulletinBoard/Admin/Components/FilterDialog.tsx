@@ -13,7 +13,7 @@ interface FilterDialogProps {
     onApply: (selected: FilterDialogData | null) => void;
 }
 
-export default function FilterDialog({
+export default function SortDialog({
     isOpen,
     onClose, 
     filters,

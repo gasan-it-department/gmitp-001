@@ -151,7 +151,6 @@ export default function AddEditBiddingDialog({ isOpen, editData, onClose, onSucc
                             register={register}
                             requiredMsg="Project Title is required"
                             errors={errors}
-                            icon={FileText}
                         />
 
                         {/* -------------------- ROW 2: TYPE & STATUS -------------------- */}
@@ -228,20 +227,18 @@ export default function AddEditBiddingDialog({ isOpen, editData, onClose, onSucc
                                 requiredMsg="Deadline is required"
                                 errors={errors}
                                 type="date"
-                                icon={Clock}
                             />
 
                             {/* Budget */}
                             <FormField
-                                label="Approved Budget *"
+                                label="Approved Budget (₱)*"
                                 id="budget"
                                 name="budget"
                                 register={register}
                                 requiredMsg="Budget is required"
                                 errors={errors}
                                 type="number"
-                                placeholder="e.g., 5000000"
-                                icon={DollarSign}
+                                placeholder="e.g., ₱5000000"
                             />
                         </div>
 

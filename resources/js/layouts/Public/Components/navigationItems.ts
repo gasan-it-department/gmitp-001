@@ -1,5 +1,5 @@
 import { LucideIcon, Folders, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck, Heart } from "lucide-react";
-import { travel, home, landing, government, transparency } from '@/routes';
+import { travel, home, landing, government, transparency, executiveOrders, contact} from '@/routes';
 import municipality from "@/routes/municipality";
 
 export type NavigationItem = {
@@ -37,12 +37,12 @@ export const useNavigation = (): NavigationItem[] => [
   },
   {
     title: "Executive Orders",
-    route: "#", // static route
+    route: executiveOrders,
     icon: Folders,
   },
   {
     title: "Contact Us",
-    route: "#", // static route
+    route: contact,
     icon: Phone,
   },
 ];
