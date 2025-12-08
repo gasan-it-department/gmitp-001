@@ -38,4 +38,13 @@ class MunicipalityBannerRepository
 
     }
 
+    public function destroyBanner(string $bannerId)
+    {
+
+        $banner = MunicipalityBanner::findOrFail($bannerId);
+
+        $banner->delete();
+
+    }
+
 }

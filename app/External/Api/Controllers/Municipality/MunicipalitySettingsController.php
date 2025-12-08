@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Controllers\Municipality;
 
+use App\Core\Municipality\UseCases\DeleteBannerUseCase;
 use App\Core\Municipality\UseCases\SetMunicipalitySettingsUseCase;
 use Illuminate\Http\Request;
 use App\Core\Municipality\Dto\SetMunicipalityBannerDto;
@@ -16,6 +17,8 @@ class MunicipalitySettingsController
         private SetMunicipalityBannerUseCase $setMunicipalityBannerUseCase,
 
         private SetMunicipalitySettingsUseCase $setMunicipalitySettingsUseCase,
+
+        private DeleteBannerUseCase $deleteBannerUseCase,
 
     ) {
     }
@@ -76,6 +79,13 @@ class MunicipalitySettingsController
             'success' => true
 
         ], 200);
+
+    }
+
+    public function destroyBanner(Request $request)
+    {
+
+        $this->deleteBannerUseCase->execute();
 
     }
 
