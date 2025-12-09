@@ -72,17 +72,17 @@ export function AssistanceRequestTable() {
         try {
             setIsLoadingDialogVisible(true);
             const response = await ActionCenterApi.getAllRequest(currentMunicipality.slug, currentPage);
-            const data = response.data.data ?? [];
+            const data = response.data ?? [];
             console.log('Response: ', data);
             data.sort(
                 (a: { created_at: string | number | Date }, b: { created_at: string | number | Date }) =>
                     new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
             );
 
-            setCurrentPage(response.data.current_page);
-            setLastPage(response.data.last_page);
-            setPerPage(response.data.per_page);
-            setTotalItems(response.data.total);
+            setCurrentPage(response.meta.current_page);
+            setLastPage(response.meta.last_page);
+            setPerPage(response.meta.per_page);
+            setTotalItems(response.meta.total);
             setRequestList(data);
         } catch (err) {
             console.error(err);
@@ -260,7 +260,7 @@ export function AssistanceRequestTable() {
                                             </TableCell>
                                             <TableCell className="text-[12px]">{index + 1}</TableCell>
                                             <TableCell className="text-[12px] capitalize">
-                                                {req.beneficiary.first_name} {req.beneficiary.last_name}
+                                                {req.beneficiary!.first_name} {req.beneficiary!.last_name}
                                             </TableCell>
                                             <TableCell className="text-[12px]">{Utility().formatToReadableDateNoTime(req.created_at)}</TableCell>
                                             <TableCell className="text-[12px]">{req.assistance_type}</TableCell>

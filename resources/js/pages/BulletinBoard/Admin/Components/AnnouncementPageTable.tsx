@@ -106,14 +106,32 @@ export default function AnnouncementPageTable() {
         }
     };
 
+    // --- LOCAL SUCCESS HANDLER (FIXED) ---
     const handleSuccess = (data: AnnouncementData, isEdit: boolean) => {
         setAddEditDialog({ isOpened: false, editData: null });
-        // Reload page 1 to ensure order and consistency
-        loadAnnouncement(1);
-        toast.success(isEdit ? 'Announcement updated successfully' : 'Announcement created successfully');
-    };
 
-    // 3. Simplified Delete Logic (Reloads page instead of manual slicing)
+        if (isEdit) {
+            // 1. EDIT: Find and replace the updated item in the current list
+            setAnnouncementList(prevList => prevList.map(
+                item => item.id === data.id ? data : item
+            ));
+            toast.success('Announcement updated successfully');
+        } else {
+            // 2. ADD: Insert the new item at the beginning of the list (Page 1 behavior)
+            // This ensures the new total count and calculated total pages are correct.
+            setTotalItems(prev => prev + 1);
+
+            if (currentPage === 1) {
+                setAnnouncementList(prevList => {
+                    const newList = [data, ...prevList];
+                    // Ensure the list doesn't exceed the items per page count (clipping the oldest)
+                    return newList.slice(0, perPage);
+                });
+            }
+            toast.success('Announcement created successfully');
+        }
+    };
+    // 3. Simplified Delete Logic (FIXED to handle empty pages)
     const handleDelete = async (idList: string[] | null) => {
         if (!idList || idList.length === 0) return;
 
@@ -123,8 +141,23 @@ export default function AnnouncementPageTable() {
 
             if (response.success) {
                 toast.success('Successfully deleted');
-                // Reload current page to fill the gap left by deleted items
-                loadAnnouncement(currentPage);
+
+                // --- NEW LOGIC START ---
+                const deletedCount = idList.length;
+                const remainingOnPage = announcementList.length - deletedCount;
+
+                let pageToLoad = currentPage;
+
+                // Check if the current page will become empty and we are not on page 1
+                // We use the total items count (simulated) to check if we are deleting the last item on the last page.
+                if (remainingOnPage <= 0 && currentPage > 1 && totalItems - deletedCount <= (currentPage - 1) * perPage) {
+                    pageToLoad = currentPage - 1;
+                }
+
+                // Reload the determined page
+                loadAnnouncement(pageToLoad);
+                // --- NEW LOGIC END ---
+
                 setSelectedItems([]);
             } else {
                 toast.error('An error occurred while deleting');
@@ -166,9 +199,9 @@ export default function AnnouncementPageTable() {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Announcement List</h1>
                 <AnnouncementPageHeader
-                    onSearch={() => {}}
+                    onSearch={() => { }}
                     onFilterButtonClicked={() => setIsFilterDialogVisible(true)}
-                    onExportButtonClicked={() => {}}
+                    onExportButtonClicked={() => { }}
                     onAddNewButtonClicked={() => setAddEditDialog({ isOpened: true, editData: null })}
                 />
             </div>
@@ -268,7 +301,7 @@ export default function AnnouncementPageTable() {
                                                 >
                                                     <Pencil size={14} />
                                                 </Button>
-                                                <Button
+                                                {/* <Button
                                                     size="sm"
                                                     variant="outline"
                                                     className="border-red-200 text-red-600 hover:bg-red-50"
@@ -286,7 +319,7 @@ export default function AnnouncementPageTable() {
                                                     }
                                                 >
                                                     <Trash2 size={14} />
-                                                </Button>
+                                                </Button> */}
                                             </div>
                                         </TableCell>
                                     </TableRow>

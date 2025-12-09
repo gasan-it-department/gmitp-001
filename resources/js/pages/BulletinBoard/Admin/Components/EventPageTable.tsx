@@ -311,7 +311,7 @@ export default function EventPageTable() {
                                                     <Pencil size={14} />
                                                 </Button>
                                                 {/* Uncommented and fixed Trash button for single delete */}
-                                                <Button
+                                                {/* <Button
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() =>
@@ -329,7 +329,7 @@ export default function EventPageTable() {
                                                     className="border-red-200 text-red-600 hover:bg-red-50"
                                                 >
                                                     <Trash2 size={14} />
-                                                </Button>
+                                                </Button> */}
                                             </div>
                                         </TableCell>
                                     </TableRow>

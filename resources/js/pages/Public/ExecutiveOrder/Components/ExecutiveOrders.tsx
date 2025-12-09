@@ -9,6 +9,7 @@ import { Calendar, FileSignature, Search, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ViewOrderDialog } from './ViewExecutiveOrderDialog';
 import { ExecutiveOrder } from '@/Core/Types/ExecutiveOrders/ExecutiveOrders';
+import SearchBar from '@/pages/Utility/SearchBar';
 
 // Mock Data
 const executiveOrders: ExecutiveOrder[] = [
@@ -84,11 +85,28 @@ export function ExecutiveOrders() {
         console.log(`Downloading ${orderNumber}`);
         alert(`Downloading ${orderNumber}.pdf`);
     };
-
-    // --- THEME HELPERS ---
     const primaryGradient = "bg-gradient-to-r from-red-500 to-orange-500";
     const textGradient = "bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent";
-    // ---------------------
+
+    const handleSearchQuery = async (query: string) => {
+        try{
+            if(query === ""){
+                // CALL API TO LOAD THE DEFAULT LIST HERE. GO BACK TO ORIGINAL LIST.
+                // const response = await ExecutiveOrderApi.loadExecutiveOrders( page: 1);
+                // if(response.success){
+                //     // REFRESH LIST
+                // }
+            }else{
+                // CALL API TO SEARCH FOR QUERY
+                // const response = await ExecutiveOrderApi.searchFor(query);
+                // if(response.success){
+                //     // REFRESH LIST
+                // }
+            }
+        }catch(error: any){
+
+        }
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
@@ -118,16 +136,9 @@ export function ExecutiveOrders() {
                 {/* FILTERS & SEARCH */}
                 <div className="mb-8 space-y-4 rounded-2xl bg-white border border-gray-200 p-5 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
                     <div className="flex flex-col gap-4 md:flex-row">
-                        <div className="relative flex-1">
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-orange-500" />
-                            <Input
-                                type="text"
-                                placeholder="Search by title, number, or keyword..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 border-gray-300 focus:border-orange-500 focus:ring-orange-200 dark:border-neutral-700 dark:bg-neutral-950"
-                            />
-                        </div>
+                        <SearchBar onSearch={(keyword) => {
+                            handleSearchQuery(keyword);
+                        }} searchBarHint={'Search transactions, ID or type'} />
                         <div className="flex gap-3">
                             <Select value={selectedYear} onValueChange={setSelectedYear}>
                                 <SelectTrigger className="w-[140px] border-gray-300 focus:ring-orange-200 dark:border-neutral-700">

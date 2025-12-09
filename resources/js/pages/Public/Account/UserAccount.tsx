@@ -3,6 +3,7 @@ import PublicLayout from "@/layouts/Public/wrapper/PublicLayoutTemplate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileTab from "./Components/ProfileTab";
 import SecurityTab from "./Components/SecurityTab";
+import TransactionsTab from "./Components/TransactionsTab";
 
 export default function UserAccount() {
 
@@ -18,6 +19,9 @@ export default function UserAccount() {
               <TabsTrigger value="securityy" className="p-5 text-[16px]">
                 Security
               </TabsTrigger>
+              <TabsTrigger value="transactions" className="p-5 text-[16px]">
+                Transactions
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -27,6 +31,10 @@ export default function UserAccount() {
 
           <TabsContent value="securityy">
             <SecurityTab />
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <TransactionsTab />
           </TabsContent>
 
         </Tabs>

@@ -13,7 +13,7 @@ const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(query);
-    }, 600);
+    }, 800);
 
     return () => {
       clearTimeout(handler);

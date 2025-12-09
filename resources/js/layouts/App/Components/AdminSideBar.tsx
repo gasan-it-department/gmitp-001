@@ -23,6 +23,7 @@ import communityReport from '@/routes/communityReport';
 import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
+import officesAdmin from '@/routes/officesAdmin';
 import officialsEditor from '@/routes/officialsEditor';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
@@ -182,7 +183,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Offices',
-                    url: '',
+                    url: officesAdmin.page.url({ municipality: currentMunicipality.slug }),
                     icon: Building2,
                 },
             ],

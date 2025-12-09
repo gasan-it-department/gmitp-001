@@ -9,6 +9,7 @@ import { router } from "@inertiajs/react";
 import moment from "moment";
 import { useState, useEffect } from "react";
 import { ViewEventDetails } from "../../Home/Components/ViewEventDetails";
+import PaginationView from "@/pages/Utility/PaginationView";
 
 export default function AllEvenntsTable() {
     const [eventList, setEventList] = useState<EventData[]>([]);
@@ -18,6 +19,11 @@ export default function AllEvenntsTable() {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedEventData, setSelectedEventData] = useState<EventData | null>(null);
     const [isEventDetailDialogShowing, setIsEventDialogShowing] = useState(false);
+
+    // Pagination State
+    const [lastPage, setLastPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [totalItems, setTotalItems] = useState(0);
 
     useEffect(() => {
         loadEvents(currentPage);
@@ -139,6 +145,17 @@ export default function AllEvenntsTable() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* PAGINATION */}
+            <div className="mt-2">
+                <PaginationView
+                    currentPage={currentPage}
+                    totalPages={lastPage}
+                    totalItems={totalItems}
+                    itemsPerPage={perPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
 
             <ViewEventDetails isOpen={isEventDetailDialogShowing} data={selectedEventData} onClose={() => setIsEventDialogShowing(false)} />

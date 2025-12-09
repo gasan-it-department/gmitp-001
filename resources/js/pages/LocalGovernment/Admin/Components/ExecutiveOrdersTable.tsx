@@ -6,7 +6,6 @@ import ExecutiveOrdersHeader from "./ExecutiveOrdersHeader";
 import { useState } from "react";
 import { ExecutiveOrdersData } from "@/Core/Types/LocalGovernment/ExecutiveOrdersTypes";
 
-
 export default function ExecutiveOrdersTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [executiveOrdersList, setExecutiveOrdersList] = useState<ExecutiveOrdersData[]>([]);

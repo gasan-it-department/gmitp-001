@@ -1,4 +1,4 @@
-import { DepartmentsData } from "@/Core/Types/Offices/OfficesTypes";
+import { DepartmentsData } from "@/Core/Types/LocalGovernment/OfficesTypes";
 
 export const dummy_departments: DepartmentsData[] = [
     { id: "1", name: 'Office of the Mayor' },

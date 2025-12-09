@@ -11,6 +11,7 @@ import Utility from "@/pages/Utility/Utility";
 import { router } from "@inertiajs/react";
 import { home } from "@/routes";
 import { ArrowUp } from "lucide-react"; // Travel/arrow icon
+import PaginationView from "@/pages/Utility/PaginationView";
 
 export default function AllAnnouncementTable() {
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
@@ -18,6 +19,11 @@ export default function AllAnnouncementTable() {
     const { currentMunicipality } = useMunicipality();
     const [currentPage, setCurrentPage] = useState(1);
     const [showScrollTop, setShowScrollTop] = useState(false);
+
+    // Pagination State
+    const [lastPage, setLastPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [totalItems, setTotalItems] = useState(0);
 
     const [announcementDetailsDialog, setAnnouncementDetailsDialog] = useState<{
         isOpen: boolean;
@@ -135,8 +141,16 @@ export default function AllAnnouncementTable() {
                     )}
                 </div>
 
-                {/* Pagination */}
-                <Pagination />
+                {/* PAGINATION */}
+                <div className="mt-2">
+                    <PaginationView
+                        currentPage={currentPage}
+                        totalPages={lastPage}
+                        totalItems={totalItems}
+                        itemsPerPage={perPage}
+                        onPageChange={setCurrentPage}
+                    />
+                </div>
 
                 <ViewAnnouncementDetails
                     isOpen={announcementDetailsDialog.isOpen}
