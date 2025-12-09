@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { cn } from '@/lib/utils';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import ToastProvider from '@/pages/Utility/ToastShower';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -22,6 +24,7 @@ const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportat
 interface Props {
     isOpen: boolean;
     onClose: () => void;
+    onSubmitSuccess: (title: string, message: string) => void;
 }
 
 interface FormData {
@@ -38,9 +41,27 @@ interface FormData {
     birth_date?: string;
 }
 
-export function ActionCenterForm({ isOpen, onClose }: Props) {
+export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [classicDialog, setClassicDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        positiveButtonText: string;
+        negativeButtonText: string;
+        isNegativeButtonHidden: boolean;
+        action: string | null;
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
+        isNegativeButtonHidden: false,
+        action: null
+    });
+
     const {
         register,
         handleSubmit,
@@ -61,7 +82,6 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
         },
     });
 
-    // ✅ Memoized handler to prevent infinite loops
     const handleAddressChange = useCallback(
         (address: { provinceCode: string; municipalityCode: string; barangayCode: string } | null) => {
             if (!address) return;
@@ -76,14 +96,33 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
         setIsSubmitting(true);
         try {
             console.log('Submitted data:', data);
-
             const response = await ActionCenterApi.storeRequest(currentMunicipality.slug, data);
-
+            if (response.success) {
+                onSubmitSuccess("Submitted!", "Your request has been successfully submitted. A municipal staff member may contact you soon.");
+                onClose();
+            } else {
+                setClassicDialog((prev) => ({
+                    ...prev,
+                    isOpen: true,
+                    title: "Failed!",
+                    message: "An error occurred while submitting your request. Please try again later.",
+                    positiveButtonText: "Close",
+                    isNegativeButtonHidden: true
+                }))
+            }
+            console.log("Action center response: ", response);
             reset();
             setIsSubmitting(false);
-            onClose();
-        } catch (err) {
-            console.error(err);
+        } catch (error: any) {
+            setClassicDialog((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: "An error occurred!",
+                message: error,
+                positiveButtonText: "Close",
+                isNegativeButtonHidden: true
+            }))
+            console.error(error);
             setIsSubmitting(false);
         }
     };
@@ -182,6 +221,32 @@ export function ActionCenterForm({ isOpen, onClose }: Props) {
                             </Button>
                         </div>
                     </form>
+
+                    <ToastProvider />
+
+                    <ClassicDialog
+                        title={classicDialog.title}
+                        message={classicDialog.message}
+                        open={classicDialog.isOpen}
+                        positiveButtonText={classicDialog.positiveButtonText}
+                        negativeButtonText={classicDialog.negativeButtonText}
+                        hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                        onPositiveClick={() => {
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                action: null,
+                                isOpen: false
+                            }));
+                        }}
+                        onNegativeClick={() => {
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                action: null,
+                                isOpen: false
+                            }));
+
+                        }}
+                    />
                 </div>
             </DialogContent>
         </Dialog>

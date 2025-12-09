@@ -9,10 +9,28 @@ import { Heart } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ActionCenterForm } from './Components/ActionCenterForm';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 
 export default function Home() {
     const { auth } = usePage<SharedData>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [classicDialog, setClassicDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        positiveButtonText: string;
+        negativeButtonText: string;
+        isNegativeButtonHidden: boolean;
+        action: string | null;
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        positiveButtonText: "",
+        negativeButtonText: "",
+        isNegativeButtonHidden: false,
+        action: null
+    });
 
     return (
         <PublicLayout title="Action Center" description="">
@@ -46,6 +64,16 @@ export default function Home() {
 
                                 {/* The Dialog */}
                                 <ActionCenterForm
+                                    onSubmitSuccess={(title, message) => {
+                                        setClassicDialog((prev) => ({
+                                            ...prev,
+                                            isOpen: true,
+                                            title: title,
+                                            message: message,
+                                            positiveButtonText: "Close",
+                                            isNegativeButtonHidden: true
+                                        }))
+                                    }}
                                     isOpen={isDialogOpen}
                                     onClose={() => setIsDialogOpen(false)}
                                 />
@@ -92,6 +120,30 @@ export default function Home() {
                         ))}
                     </div>
                 </div>
+
+                <ClassicDialog
+                    title={classicDialog.title}
+                    message={classicDialog.message}
+                    open={classicDialog.isOpen}
+                    positiveButtonText={classicDialog.positiveButtonText}
+                    negativeButtonText={classicDialog.negativeButtonText}
+                    hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                    onPositiveClick={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            action: null,
+                            isOpen: false
+                        }));
+                    }}
+                    onNegativeClick={() => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            action: null,
+                            isOpen: false
+                        }));
+
+                    }}
+                />
             </section>
 
             <Toaster />

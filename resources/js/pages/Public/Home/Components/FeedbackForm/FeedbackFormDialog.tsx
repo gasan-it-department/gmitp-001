@@ -13,6 +13,7 @@ import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import StarRating from './StarRatingBar';
+import {dummy_departments } from '@/pages/Utility/Offices';
 
 interface FeedbackDialogProps {
     open: boolean;
@@ -28,11 +29,6 @@ interface FeedbackFormValues {
     sender_name?: string;
     rating?: number;
 }
-
-type DepartmentsData = {
-    id: number;
-    name: string;
-};
 
 export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: FeedbackDialogProps) {
     const {
@@ -62,14 +58,6 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
     const [error, setError] = useState<string | null>(null);
     const feedback_target = watch('feedback_target');
     const department_id = watch('department_id');
-
-    const dummy_departments: DepartmentsData[] = [
-        { id: 1, name: 'Office of the Mayor' },
-        { id: 2, name: 'Office of the Vice Mayor' },
-        { id: 3, name: 'Business Permits and Licensing Office (BPLO)' },
-        { id: 4, name: 'City Planning and Development Office (CPDO)' },
-        { id: 5, name: 'Engineering Office' },
-    ];
 
     const MAX_FILES = 5;
     const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
@@ -121,6 +109,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
             }
 
             await FeedbackApi.storeFeedback(currentMunicipality.slug, payload);
+
             setIsSubmitting(false);
             reset();
             setFiles([]);

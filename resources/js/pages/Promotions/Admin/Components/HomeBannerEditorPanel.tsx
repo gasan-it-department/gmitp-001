@@ -8,6 +8,9 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
 import LogoEditor from './LogoEditor';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import { title } from 'process';
+import ToastProvider from '@/pages/Utility/ToastShower';
 
 // --- TYPES ---
 export interface Banner {
@@ -57,19 +60,20 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('banners');
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dragItemIndex = useRef<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState({
+        isOpened: false,
+        title: "Loading..."
+    });
 
-    // Hotline State
     const [hotlines, setHotlines] = useState<Hotline[]>([
         { id: '1', name: 'MDRRMO', number: '(042) 332-0833\n09091099922 – SMART' },
         { id: '2', name: 'Gasan Police Station', number: '0912-345-6789' },
         { id: '3', name: 'Bureau of Fire Protection', number: '0912-345-6789' },
     ]);
 
-    // Dialog State
     const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
         title: '',
@@ -82,17 +86,11 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     });
 
     const selectedBanner = banners.find((b) => b.id === selectedBannerId);
-
-    // --- HELPERS ---
     const handlePickImage = () => fileInputRef.current?.click();
-
     const resetDialog = () => {
         setClassicDialog((prev) => ({ ...prev, isOpen: false, action: null, data: null }));
     };
 
-    // --- API ACTIONS ---
-
-    // 1. Upload Banner
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!municipalSlug) return toast.error('Municipality context missing');
 
@@ -106,11 +104,21 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             formData.append('home_title', `Banner ${banners.length + 1}`);
             formData.append('home_subtitle', 'Default Subtitle');
 
+            setIsLoadingDialogVisible((prev) => ({
+                ...prev,
+                isOpened: true,
+                title: "Uploading, please wait..."
+            }))
+
             const response = await MunicipalitiesApi.savebanner(municipalSlug, formData);
 
-            toast.success('Banner uploaded successfully!');
+            setIsLoadingDialogVisible((prev) => ({
+                ...prev,
+                isOpened: false,
+                title: "Loading..."
+            }))
 
-            // Use response data if available, otherwise fallback to local preview
+            toast.success('Banner uploaded successfully!');
             const newId = response.data?.id || Date.now().toString();
             const previewUrl = response.data?.image || URL.createObjectURL(file);
 
@@ -134,7 +142,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
 
     // 2. Request Delete (Open Dialog)
     const requestDeleteBanner = (bannerId: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent card click (selection)
+        e.stopPropagation();
         setClassicDialog({
             isOpen: true,
             title: 'Delete Banner',
@@ -151,18 +159,18 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     const handleConfirmAction = async () => {
         if (classicDialog.action === 'DELETE_BANNER' && classicDialog.data) {
             const bannerId = classicDialog.data;
-
             if (!municipalSlug) return;
 
             setIsDeleting(true);
             try {
-                // Call the API
+                setIsLoadingDialogVisible((prev) => ({
+                    ...prev,
+                    isOpened: true,
+                    title: "Deleting, please wait..."
+                }))
                 await MunicipalitiesApi.deleteBanner(municipalSlug, bannerId);
-
-                // Update State
                 setBanners((prev) => prev.filter((b) => b.id !== bannerId));
                 if (selectedBannerId === bannerId) setSelectedBannerId(null);
-
                 toast.success('Banner deleted successfully.');
                 resetDialog();
             } catch (error) {
@@ -170,6 +178,10 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 toast.error('Failed to delete banner.');
             } finally {
                 setIsDeleting(false);
+                setIsLoadingDialogVisible((prev) => ({
+                    ...prev,
+                    isOpened: false
+                }))
             }
         }
     };
@@ -253,17 +265,9 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                     <div>
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">Active Banners ({banners.length}/10)</h2>
-                            {banners.length < 10 && (
+                            {banners.length === 0 || banners.length < 10 && (
                                 <Button onClick={handlePickImage} disabled={isUploading} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-                                    {isUploading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus className="h-4 w-4" /> Add Banner
-                                        </>
-                                    )}
+                                    <Plus className="h-4 w-4" /> Add Banner
                                 </Button>
                             )}
                         </div>
@@ -279,9 +283,8 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all ${
-                                        selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
-                                    } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
+                                        } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
                                 >
                                     <img src={banner.bannerUrl} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
@@ -339,10 +342,26 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 title={classicDialog.title}
                 message={classicDialog.message}
                 positiveButtonText={classicDialog.positiveButtonText}
-                onPositiveClick={handleConfirmAction}
-                onNegativeClick={resetDialog}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false
+                    }))
+                    handleConfirmAction();
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false
+                    }))
+                    resetDialog();
+                }}
                 hideNegativeButton={classicDialog.negativeButtonHidden}
             />
+
+            <LoadingDialog isOpen={isLoadingDialogVisible.isOpened} title={isLoadingDialogVisible.title} />
+
+            <ToastProvider />
         </div>
     );
 }

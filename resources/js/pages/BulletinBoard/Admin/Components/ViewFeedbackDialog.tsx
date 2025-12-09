@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import Utility from '@/pages/Utility/Utility';
 import { Star } from 'lucide-react';
 import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
+import { dummy_departments } from '@/pages/Utility/Offices';
 
 interface ViewFeedbackDialogProps {
     isOpen: boolean;
@@ -38,8 +39,16 @@ export default function ViewFeedbackDialog({ isOpen, data, onClose }: ViewFeedba
 
                     {/* DEPARTMENT */}
                     {data.department_id && (
-                        <Card label="Department" value={data.department_id} />
+                        <Card
+                            label="Department"
+                            value={
+                                dummy_departments.find(
+                                    d => d.id === data.department_id!.trim()
+                                )?.name ?? "Unknown"
+                            }
+                        />
                     )}
+
 
                     {/* SENDER */}
                     <Card label="Sender" value={getSenderName(data.sender_name)} />

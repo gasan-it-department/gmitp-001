@@ -13,6 +13,7 @@ import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import FilterDialog from './FilterDialog';
 import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import { dummy_departments } from '@/pages/Utility/Offices';
 
 export default function FeedbackPageTable() {
     const { currentMunicipality } = useMunicipality();
@@ -97,8 +98,13 @@ export default function FeedbackPageTable() {
                                         {index + 1 + (currentPage - 1) * perPage}
                                     </TableCell>
                                     <TableCell className="whitespace-nowrap text-[13px] font-medium truncate">
-                                        {item.employee_name ?? item.department_id ?? '—'}
+                                        {item.employee_name
+                                            ?? dummy_departments.find(
+                                                d => d.id === item.department_id?.trim()
+                                            )?.name
+                                            ?? '—'}
                                     </TableCell>
+
                                     <TableCell className="text-[12px] max-w-0">
                                         <span
                                             className="block overflow-hidden"

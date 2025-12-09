@@ -11,12 +11,9 @@ interface HomePageProps {
 }
 
 export default function HomePage({ banners }: HomePageProps) {
-    console.log(banners);
     return (
         <PublicLayout title="Home" description="">
             <div>
-                {/* CLEAN: Pass the data explicitly. 
-                    If banners is empty, Carousel handles it gracefully. */}
                 <Carousel slides={banners} />
 
                 <div className="h-5" />

@@ -4,26 +4,76 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import MapCoordinates from './MapCoordinates';
-import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
+import { Controller, useForm, UseFormClearErrors, UseFormSetValue } from 'react-hook-form';
 
-interface ReportFormDialogProps {
+
+// --- MOCK DEFINITIONS AND TYPES ---
+interface CommunityReportFormData {
+    issue_type: string;
+    location: string;
+    description: string;
+    sender_name: string;
+    contact: string;
+    latitude: string;
+    longitude: string;
+    files: File[];
+}
+
+interface ClassicDialogState {
+    title: string;
+    message: string;
+    positiveButtonTitle: string;
+    negativeButtonTitle: string;
+    isShowing: boolean;
+    hideNegativeButton: boolean;
+}
+
+const CommunityReportApi = {
+    storeCommunityReport: (slug: string, data: CommunityReportFormData) => new Promise<{ success: boolean }>(resolve => setTimeout(() => resolve({ success: true }), 500)),
+};
+
+const useMunicipality = () => ({
+    currentMunicipality: { slug: 'gasan' },
+});
+
+const MapCoordinates = ({ latitude, longitude }: { latitude: number, longitude: number }) => (
+    <div className="flex items-center justify-center h-full text-sm text-gray-500 bg-gray-100">
+        Map Preview: ({latitude}, {longitude})
+    </div>
+);
+
+const ClassicDialog = ({ title, message, open, onPositiveClick, hideNegativeButton, positiveButtonText }: any) => {
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+            <div className="bg-white p-6 rounded-lg shadow-2xl max-w-md mx-4">
+                <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+                <p className="mt-3 text-sm text-gray-600 whitespace-pre-wrap">{message}</p>
+                <div className="mt-5 flex justify-end">
+                    <button onClick={onPositiveClick} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        {positiveButtonText || "OK"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+// ------------------------------------------
+
+
+// --- MAIN COMPONENT ---
+
+export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
-}
-
-export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDialogProps) {
+}) {
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmiting] = useState(false);
     const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
-    const [classicDialog, setClassicDialog] = useState({
+    const [classicDialog, setClassicDialog] = useState<ClassicDialogState>({
         title: '',
         message: '',
         positiveButtonTitle: '',
@@ -79,65 +129,119 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         setValue('files', updatedFiles);
     };
 
+    // --- DIRECT GEOLOCATION HANDLER (Consolidated Logic) ---
     const handleGetLocation = () => {
+        setIsGettingCoordinates(true);
+        clearErrors('latitude');
+        clearErrors('longitude');
+
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by this browser.');
+            setClassicDialog(prev => ({
+                ...prev,
+                title: 'Geolocation Not Supported',
+                message: 'Your browser or device does not support location services.',
+                hideNegativeButton: true,
+                positiveButtonTitle: 'Close',
+                isShowing: true,
+            }));
+            setIsGettingCoordinates(false);
             return;
         }
-        setIsGettingCoordinates(true);
-        navigator.geolocation.getCurrentPosition(
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        };
+
+        window.navigator.geolocation.getCurrentPosition(
+            // === SUCCESS CALLBACK ===
             (position) => {
-                setValue('latitude', String(position.coords.latitude));
-                setValue('longitude', String(position.coords.longitude));
+                const latitude = String(position.coords.latitude);
+                const longitude = String(position.coords.longitude);
+                setValue('latitude', latitude, { shouldValidate: true });
+                setValue('longitude', longitude, { shouldValidate: true });
                 setIsGettingCoordinates(false);
             },
-            (error) => {
-                let message = 'Unable to get coordinates.';
 
-                if (error.code === error.PERMISSION_DENIED) {
-                    message =
-                        'Location permission denied. Please allow location access in your browser settings.';
-                } else if (error.code === error.POSITION_UNAVAILABLE) {
-                    message = 'Location information is unavailable.';
-                } else if (error.code === error.TIMEOUT) {
-                    message = 'Location request timed out. Please try again.';
+            // === ERROR CALLBACK ===
+            (error) => {
+                let title = "Location Access Required";
+                let message;
+
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        message =
+                            "Location permission was permanently denied by your device or browser settings.\n\n" +
+                            "**Troubleshooting Steps:**\n" +
+                            "1. Go to your Phone's Settings (Android/iOS).\n" +
+                            "2. Find Apps/Browser settings and ensure Location access is 'Allowed'.\n" +
+                            "3. Restart your browser and try again.\n\n" + 
+                            "Still can't get location? Please check if the website is running at https not in http.";
+                        title = "ACCESS DENIED (Check Settings)";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = "Location information is unavailable. Ensure your device's GPS is ON and you have a clear sky view.";
+                        break;
+                    case error.TIMEOUT:
+                        message = "The location request timed out (15 seconds). Check your internet/GPS signal strength and try again.";
+                        title = "Request Timed Out";
+                        break;
+                    default:
+                        message = "An unknown error occurred while attempting to find your location.";
                 }
 
-                setClassicDialog((prev) => ({
+                setValue('latitude', '');
+                setValue('longitude', '');
+
+                setClassicDialog(prev => ({
                     ...prev,
-                    title: 'Location Error',
-                    message,
+                    title: title,
+                    message: message,
                     hideNegativeButton: true,
-                    positiveButtonTitle: 'Close',
+                    positiveButtonTitle: 'OK',
                     isShowing: true,
                 }));
-
                 setIsGettingCoordinates(false);
             },
-            {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0,
-            }
+            options
         );
     };
+    // ---------------------------------------------------
 
     const onSubmit = async (data: CommunityReportFormData) => {
         console.log('Report Submitted:', data);
         setIsSubmiting(true);
+
+        // --- API CALL ---
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
+
         if (response.success) {
             setIsSubmiting(false);
             onOpenChange(false);
             reset();
             onSuccess();
+        } else {
+            setClassicDialog(prev => ({
+                ...prev,
+                title: 'Submission Failed',
+                message: 'There was an error submitting your report. Please try again.',
+                hideNegativeButton: true,
+                positiveButtonTitle: 'OK',
+                isShowing: true,
+            }));
+            setIsSubmiting(false);
         }
     };
 
     useEffect(() => {
-        setValue('latitude', '');
-        setValue('longitude', '');
-    }, [open]);
+        // Reset coordinates when dialog opens/closes
+        if (open) {
+            setValue('latitude', '');
+            setValue('longitude', '');
+            setError(null); // Clear any file errors
+        }
+    }, [open, setValue]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -196,19 +300,30 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
 
                             <Input
                                 placeholder="e.g., Barangay Poblacion, near municipal hall"
-                                {...register('location', { required: 'Location is required.' })}
+                                {...register('location', { required: 'Location description is required.' })}
                                 className={errors.location ? 'border-red-500' : ''}
                             />
 
                             {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Input placeholder="Latitude" {...register('latitude')} readOnly />
-                                <Input placeholder="Longitude" {...register('longitude')} readOnly />
+                                <Input
+                                    placeholder="Latitude"
+                                    {...register('latitude', { required: 'GPS coordinates are required.' })}
+                                    readOnly
+                                    className={errors.latitude ? 'border-red-500' : ''}
+                                />
+                                <Input
+                                    placeholder="Longitude"
+                                    {...register('longitude', { required: 'GPS coordinates are required.' })}
+                                    readOnly
+                                    className={errors.longitude ? 'border-red-500' : ''}
+                                />
                             </div>
 
                             {watch('latitude') && watch('longitude') && (
                                 <div className="relative mt-3 h-64 w-full overflow-hidden rounded-xl border">
+                                    {/* Note: MapCoordinates component needs an external map library to function */}
                                     <MapCoordinates latitude={Number(watch('latitude'))} longitude={Number(watch('longitude'))} />
                                 </div>
                             )}
@@ -222,6 +337,8 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                             >
                                 {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
                             </Button>
+                            {errors.latitude && <p className="text-sm text-red-500">{errors.latitude.message}</p>}
+
                         </div>
 
                         {/* DESCRIPTION */}

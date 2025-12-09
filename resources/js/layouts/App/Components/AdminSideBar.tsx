@@ -29,6 +29,7 @@ import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     BadgeCheck,
+    Building2,
     CalendarDays,
     ClipboardList,
     FileSignature,
@@ -178,6 +179,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Officials',
                     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
                     icon: BadgeCheck,
+                },
+                {
+                    title: 'Offices',
+                    url: '',
+                    icon: Building2,
                 },
             ],
         },
