@@ -79,82 +79,47 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         setValue('files', updatedFiles);
     };
 
-    const handleGetLocation = async () => {
+    const handleGetLocation = () => {
         if (!navigator.geolocation) {
             alert('Geolocation is not supported by this browser.');
             return;
         }
-
         setIsGettingCoordinates(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setValue('latitude', String(position.coords.latitude));
+                setValue('longitude', String(position.coords.longitude));
+                setIsGettingCoordinates(false);
+            },
+            (error) => {
+                let message = 'Unable to get coordinates.';
 
-        try {
-            // Check permission status first
-            const permission = await navigator.permissions.query({
-                name: 'geolocation',
-            });
+                if (error.code === error.PERMISSION_DENIED) {
+                    message =
+                        'Location permission denied. Please allow location access in your browser settings.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    message = 'Location information is unavailable.';
+                } else if (error.code === error.TIMEOUT) {
+                    message = 'Location request timed out. Please try again.';
+                }
 
-            if (permission.state === 'denied') {
-                // Permission already denied — show dialog
                 setClassicDialog((prev) => ({
                     ...prev,
-                    title: 'Permission Denied',
-                    message: 'Location permission has been denied. Please enable it in your browser settings.',
+                    title: 'Location Error',
+                    message,
                     hideNegativeButton: true,
                     positiveButtonTitle: 'Close',
                     isShowing: true,
                 }));
+
                 setIsGettingCoordinates(false);
-                return;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0,
             }
-
-            // If state is "granted" or "prompt", we can try to get location
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setValue('latitude', String(position.coords.latitude));
-                    setValue('longitude', String(position.coords.longitude));
-                    setIsGettingCoordinates(false);
-                },
-                (error) => {
-                    let message = 'Unable to get coordinates.';
-
-                    if (error.code === error.PERMISSION_DENIED) {
-                        message = 'Location permission denied. Please allow permission and try again.';
-                    }
-
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        title: 'Error',
-                        message,
-                        hideNegativeButton: true,
-                        positiveButtonTitle: 'Close',
-                        isShowing: true,
-                    }));
-
-                    setIsGettingCoordinates(false);
-                },
-            );
-        } catch (err) {
-            console.log('Permission API error:', err);
-            // Fallback if the browser doesn't support Permission API
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setValue('latitude', String(position.coords.latitude));
-                    setValue('longitude', String(position.coords.longitude));
-                    setIsGettingCoordinates(false);
-                },
-                () => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        title: 'Permission Denied',
-                        message: 'Unable to get coordinates. Please allow Location permission.',
-                        hideNegativeButton: true,
-                        positiveButtonTitle: 'Close',
-                        isShowing: true,
-                    }));
-                    setIsGettingCoordinates(false);
-                },
-            );
-        }
+        );
     };
 
     const onSubmit = async (data: CommunityReportFormData) => {
