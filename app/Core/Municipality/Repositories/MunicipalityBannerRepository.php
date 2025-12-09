@@ -34,7 +34,7 @@ class MunicipalityBannerRepository
     public function findById(string $bannerId)
     {
 
-        return MunicipalityBanner::findOrFail('id', $bannerId);
+        return MunicipalityBanner::findOrFail($bannerId);
 
     }
 

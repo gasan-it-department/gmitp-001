@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 
 class ActionCenterServiceProvider extends ServiceProvider
 {
@@ -20,8 +19,6 @@ class ActionCenterServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->environment('local') && request()->server('HTTP_X_FORWARDED_PROTO') === 'https') {
-            URL::forceScheme('https');
-        }
+
     }
 }

@@ -51,5 +51,20 @@ export const MunicipalitiesApi = {
         });
 
         return data;
+    },
+
+    async deleteBanner(municipalSlug: string, id: string) {
+        const { url, method } = Municipality.MunicipalitySettingsController.destroyBanner(id);
+
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
+
     }
 }

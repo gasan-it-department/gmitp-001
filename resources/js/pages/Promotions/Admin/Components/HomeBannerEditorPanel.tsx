@@ -2,18 +2,18 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MunicipalitiesApi } from '@/Core/Api/Municipality/MunicipalityApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { Image as ImageIcon, Loader2, Phone, Plus, X } from 'lucide-react'; // Image alias fixed
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { Image as ImageIcon, Loader2, Phone, Plus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
 import LogoEditor from './LogoEditor';
 
 // --- TYPES ---
-// Exported so the Page component can use it
 export interface Banner {
     id: string;
     title: string;
-    bannerUrl: string; // This corresponds to 'image' from your Resource (the URL)
+    bannerUrl: string;
 }
 
 interface Hotline {
@@ -22,7 +22,6 @@ interface Hotline {
     number: string;
 }
 
-// --- PROPS ---
 interface HomeBannerEditorPanelProps {
     initialBanners: Banner[];
 }
@@ -52,92 +51,130 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     const { currentMunicipality } = useMunicipality();
     const municipalSlug = currentMunicipality?.slug;
 
-    // 2. Local State (Initialized with data from Backend)
+    // 2. Local State
     const [banners, setBanners] = useState<Banner[]>(initialBanners);
     const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('banners');
     const [isUploading, setIsUploading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const dragItemIndex = useRef<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-    // Hotline State (Static for now, connect to backend later if needed)
+    // Hotline State
     const [hotlines, setHotlines] = useState<Hotline[]>([
         { id: '1', name: 'MDRRMO', number: '(042) 332-0833\n09091099922 – SMART' },
         { id: '2', name: 'Gasan Police Station', number: '0912-345-6789' },
         { id: '3', name: 'Bureau of Fire Protection', number: '0912-345-6789' },
     ]);
-    const [classicDialog, setClassicDialog] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-        positiveButtonText: string;
-        negativeButtonText: string;
-        negativeButtonHidden: boolean;
-        action: string | null;
-        data: any[] | null;
-    }>({
+
+    // Dialog State
+    const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
         title: '',
         message: '',
         positiveButtonText: '',
         negativeButtonText: '',
-        negativeButtonHidden: true,
-        action: null,
-        data: null,
+        negativeButtonHidden: false,
+        action: null as string | null,
+        data: null as any,
     });
-    const dragItemIndex = useRef<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+    const selectedBanner = banners.find((b) => b.id === selectedBannerId);
+
+    // --- HELPERS ---
     const handlePickImage = () => fileInputRef.current?.click();
 
-    // --- HANDLE FILE SELECTION ---
+    const resetDialog = () => {
+        setClassicDialog((prev) => ({ ...prev, isOpen: false, action: null, data: null }));
+    };
+
+    // --- API ACTIONS ---
+
+    // 1. Upload Banner
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!municipalSlug) {
-            toast.error('Municipality context missing');
-            return;
+        if (!municipalSlug) return toast.error('Municipality context missing');
+
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('banner', file);
+            formData.append('home_title', `Banner ${banners.length + 1}`);
+            formData.append('home_subtitle', 'Default Subtitle');
+
+            const response = await MunicipalitiesApi.savebanner(municipalSlug, formData);
+
+            toast.success('Banner uploaded successfully!');
+
+            // Use response data if available, otherwise fallback to local preview
+            const newId = response.data?.id || Date.now().toString();
+            const previewUrl = response.data?.image || URL.createObjectURL(file);
+
+            setBanners((prev) => [
+                ...prev,
+                {
+                    id: newId,
+                    title: `Banner ${prev.length + 1}`,
+                    bannerUrl: previewUrl,
+                },
+            ]);
+            setSelectedBannerId(newId);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to upload banner.');
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
+    };
 
-        if (e.target.files?.[0]) {
-            const file = e.target.files[0];
+    // 2. Request Delete (Open Dialog)
+    const requestDeleteBanner = (bannerId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent card click (selection)
+        setClassicDialog({
+            isOpen: true,
+            title: 'Delete Banner',
+            message: 'Are you sure you want to delete this banner? This action cannot be undone.',
+            positiveButtonText: 'Delete',
+            negativeButtonText: 'Cancel',
+            negativeButtonHidden: false,
+            action: 'DELETE_BANNER',
+            data: bannerId,
+        });
+    };
 
-            setIsUploading(true);
+    // 3. Confirm Delete (Execute API)
+    const handleConfirmAction = async () => {
+        if (classicDialog.action === 'DELETE_BANNER' && classicDialog.data) {
+            const bannerId = classicDialog.data;
+
+            if (!municipalSlug) return;
+
+            setIsDeleting(true);
             try {
-                const formData = new FormData();
-                formData.append('banner', file);
-                const newBannerTitle = `Banner ${banners.length + 1}`;
-                formData.append('home_title', newBannerTitle);
-                formData.append('home_subtitle', 'Default Subtitle');
+                // Call the API
+                await MunicipalitiesApi.deleteBanner(municipalSlug, bannerId);
 
-                // 2. Upload to API
-                // Assuming the API returns the created banner object (id, url, etc.)
-                const response = await MunicipalitiesApi.savebanner(municipalSlug, formData);
+                // Update State
+                setBanners((prev) => prev.filter((b) => b.id !== bannerId));
+                if (selectedBannerId === bannerId) setSelectedBannerId(null);
 
-                toast.success('Banner uploaded successfully!');
-
-                // 3. Update Local State
-                // Best Practice: Use the real ID/URL from the server response if available.
-                // Fallback: Use object URL for immediate preview if API doesn't return the new object.
-                const newId = response.data?.id || Date.now().toString();
-                const previewUrl = response.data?.image || URL.createObjectURL(file);
-
-                setBanners((prev) => [
-                    ...prev,
-                    {
-                        id: newId,
-                        title: newBannerTitle,
-                        bannerUrl: previewUrl,
-                    },
-                ]);
-                setSelectedBannerId(newId);
+                toast.success('Banner deleted successfully.');
+                resetDialog();
             } catch (error) {
                 console.error(error);
-                toast.error('Failed to upload banner.');
+                toast.error('Failed to delete banner.');
             } finally {
-                setIsUploading(false);
-                if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input properly
+                setIsDeleting(false);
             }
         }
     };
+
+    // --- DRAG AND DROP ---
     const handleDragStart = (index: number) => {
         dragItemIndex.current = index;
     };
@@ -148,6 +185,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
         dragItemIndex.current = null;
         setDragOverIndex(null);
     };
+
     const handleDrop = (index: number) => {
         if (dragItemIndex.current === null) return;
         const newBanners = [...banners];
@@ -156,22 +194,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
         setBanners(newBanners);
         dragItemIndex.current = null;
         setDragOverIndex(null);
-
-        // Note: You should call an API here to persist the new order!
-        // MunicipalitiesApi.reorderBanners(municipalSlug, newBanners.map(b => b.id));
-    };
-    const selectedBanner = banners.find((b) => b.id === selectedBannerId);
-
-    const handleDeleteImage = (bannerData: Banner, e: any) => {
-        // Call Delete API  here.
-        // Use response.success
-        // if (response.success) {
-        // This code will remove and refresh banner list.
-        //     e.stopPropagation();
-        //     setBanners((b) => b.filter((i) => i.id !== bannerData.id));
-        // }
-        e.stopPropagation();
-        setBanners((b) => b.filter((i) => i.id !== bannerData.id));
+        // TODO: Call reorder API here if available
     };
 
     return (
@@ -230,7 +253,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                     <div>
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">Active Banners ({banners.length}/10)</h2>
-                            {banners.length !== 0 && banners.length < 10 && (
+                            {banners.length < 10 && (
                                 <Button onClick={handlePickImage} disabled={isUploading} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
                                     {isUploading ? (
                                         <>
@@ -266,14 +289,15 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                                             {index + 1}. {banner.title}
                                         </span>
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                // Ideally call API delete here
-                                                setBanners((b) => b.filter((i) => i.id !== banner.id));
-                                            }}
-                                            className="text-gray-400 hover:text-red-500"
+                                            onClick={(e) => requestDeleteBanner(banner.id, e)}
+                                            className="text-gray-400 hover:text-red-500 disabled:opacity-50"
+                                            disabled={isDeleting}
                                         >
-                                            <X className="h-4 w-4" />
+                                            {isDeleting && classicDialog.data === banner.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <X className="h-4 w-4" />
+                                            )}
                                         </button>
                                     </div>
                                 </Card>
@@ -296,7 +320,6 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             {activeTab === 'hotlines' && (
                 <div className="space-y-8">
                     <HotlineEditor hotlines={hotlines} setHotlines={setHotlines} />
-
                     <div className="mt-10 border-t pt-10 dark:border-neutral-700">
                         <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">Website Footer Preview</h2>
                         <p className="mb-6 text-sm text-gray-600">Preview of the Emergency Hotline card as it appears on the public site.</p>
@@ -308,8 +331,18 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             )}
 
             {/* LOGO TAB */}
-            {/* LogoEditor is self-contained and uses the global context */}
             {activeTab === 'logo' && <LogoEditor />}
+
+            {/* Confirmation Dialog */}
+            <ClassicDialog
+                open={classicDialog.isOpen}
+                title={classicDialog.title}
+                message={classicDialog.message}
+                positiveButtonText={classicDialog.positiveButtonText}
+                onPositiveClick={handleConfirmAction}
+                onNegativeClick={resetDialog}
+                hideNegativeButton={classicDialog.negativeButtonHidden}
+            />
         </div>
     );
 }

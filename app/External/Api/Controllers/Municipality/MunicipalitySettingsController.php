@@ -82,10 +82,12 @@ class MunicipalitySettingsController
 
     }
 
-    public function destroyBanner(Request $request)
+    public function destroyBanner($id)
     {
 
-        $this->deleteBannerUseCase->execute();
+        $this->deleteBannerUseCase->execute($id);
+
+        return response()->json(['message' => 'Banner successfully deleted']);
 
     }
 
