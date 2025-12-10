@@ -76,15 +76,11 @@ class EventRepository
     }
 
 
-    public function destroy(string $id)
+    public function destroy(array $ids)
     {
-        $event = Events::findOrFail($id);
-        $event->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Event deleted successfully'
-        ], 200);
+        return Events::destroy($ids);
+
     }
 
 

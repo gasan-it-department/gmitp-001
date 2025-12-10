@@ -10,13 +10,13 @@ class AssistanceQueryDto
 
     public function __construct(
 
-        public readonly ?int $perPage = 2,
+        public readonly ?int $perPage = 30,
 
         public readonly ?string $orderBy = 'created_at',
 
         public readonly ?string $direction = 'desc',
 
-        public readonly ?string $search = 'adsfasdfa',
+        public readonly ?string $search = '',
 
         public readonly ?string $status = null,
 
@@ -37,7 +37,7 @@ class AssistanceQueryDto
 
             $request->get('direction', 'desc'),
 
-            $request->get('search', 'ads'),
+            $request->get('search'),
 
             $request->get('status'),
 

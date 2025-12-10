@@ -175,31 +175,36 @@ class EventController extends Controller
         }
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request)
     {
         try {
+            // 1. Validate that we received an array of IDs
+            $validated = $request->validate([
+                'ids' => ['required', 'array', 'min:1'],
+                'ids.*' => ['ulid', 'distinct'],
+            ]);
 
-            $this->deleteEvent->execute($id);
+            // 2. Execute the Bulk Delete
+            $count = $this->deleteEvent->execute($validated['ids']);
 
+            if ($count === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No events were deleted.',
+                ], 404);
+            }
+
+            // 3. Return Success
             return response()->json([
                 'success' => true,
-                'message' => 'Event deleted successfully.',
-            ], 200);
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Event not found.',
+                'message' => "$count event(s) deleted successfully.",
             ], 200);
 
         } catch (\Exception $e) {
-
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Failed to delete events: ' . $e->getMessage(),
             ], 500);
-
         }
     }
 

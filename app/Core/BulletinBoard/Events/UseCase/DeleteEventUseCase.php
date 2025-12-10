@@ -13,10 +13,10 @@ class DeleteEventUseCase
     ) {
     }
 
-    public function execute(string $id)
+    public function execute(array $ids)
     {
 
-        $this->eventRepo->destroy($id);
+        return $this->eventRepo->destroy($ids);
 
     }
 }
