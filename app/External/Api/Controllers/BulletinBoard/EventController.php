@@ -178,12 +178,12 @@ class EventController extends Controller
     public function destroy(Request $request)
     {
         try {
+
             // 1. Validate that we received an array of IDs
             $validated = $request->validate([
                 'ids' => ['required', 'array', 'min:1'],
                 'ids.*' => ['ulid', 'distinct'],
             ]);
-
             // 2. Execute the Bulk Delete
             $count = $this->deleteEvent->execute($validated['ids']);
 

@@ -52,16 +52,17 @@ export const EventsApi = {
         return data;
     },
 
-    async deleteEvent(id: string, municipalSlug: string) {
+    async deleteEvent(ids: string[], municipalSlug: string) {
 
-        const { url, method } = bulletinBoard.EventController.destroy(id);
+        const { url, method } = bulletinBoard.EventController.destroy();
 
         const { data } = await axios({
             url,
             method,
             headers: {
                 'X-Municipality-Slug': municipalSlug
-            }
+            },
+            data: { ids },
         });
 
         return data;

@@ -83,7 +83,7 @@ Route::prefix('/api/events')
 
                 Route::put('/{id}', 'update')->name("update")->middleware('municipalityContext');
 
-                Route::delete('/{id}', 'destroy')->name('destroy')->middleware('municipalityContext');
+                Route::post('/delete', 'destroy')->name('destroy')->middleware('municipalityContext');
 
             });
 

@@ -88,21 +88,26 @@ export default function EventPageTable() {
         try {
             setIsLoading(true);
             const response = await EventsApi.fetch(currentMunicipality.slug, page);
-
-            // Access the actual data array
             const apiData: Apiresponse = response;
-
-            // Set the List
             setEventList(apiData.data);
-
-            // Set Pagination from 'meta'
             setCurrentPage(apiData.meta.current_page);
             setLastPage(apiData.meta.last_page);
             setPerPage(apiData.meta.per_page);
             setTotalItems(apiData.meta.total);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to load events', error);
             setEventList([]);
+            setClassicDialog((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: 'An error occurred!',
+                message: error,
+                positiveButtonText: 'Close',
+                isNegativeButtonHidden: true,
+                payload: null,
+                action: 'none',
+                selectedItemId: null,
+            }))
         } finally {
             setIsLoading(false);
         }
@@ -146,20 +151,36 @@ export default function EventPageTable() {
         }
     };
 
-    const handleDeleteEvent = async (idList: string[] | null) => {
+    const handleDeleteEvent = async (ids: string[] | null) => {
         try {
-            if (idList == null) return;
+            if (!ids || ids.length === 0) return;
             setIsLoading(true);
+            console.log("List of Ids: ", ids);
 
-            // Assuming your delete API works and returns success
-            const response = await EventsApi.deleteEvent(idList[0], currentMunicipality.slug);
+            // Call delete API
+            const response = await EventsApi.deleteEvent(ids, currentMunicipality.slug);
 
             setIsLoading(false);
 
             if (response.success) {
-                // Reload current page to reflect changes from server
-                loadEvents(currentPage);
-                setSelectedItems([]); // Clear selection
+                setSelectedItems([]);
+
+                // After deletion, check if current page would be empty
+                // If yes and not page 1, go back one page
+                const remainingItemsOnPage = eventList.length - ids.length;
+                const newTotalItems = totalItems - ids.length;
+                const newLastPage = Math.ceil(newTotalItems / perPage);
+
+                if (remainingItemsOnPage <= 0 && currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                } else {
+                    // Reload current page
+                    loadEvents(currentPage);
+                }
+
+                // Update total items and last page
+                setTotalItems(newTotalItems);
+                setLastPage(newLastPage);
             } else {
                 console.log('Delete failed:', response);
             }
@@ -171,9 +192,37 @@ export default function EventPageTable() {
 
     const handleSuccess = (data: EventFormData, isEdit: boolean) => {
         setAddEventDialog({ isOpen: false, editData: null });
-        // For accurate pagination, it's often safer to reload the list from server
-        // so the new item appears in the correct sort order and count updates
-        loadEvents(1); // Go to page 1 to see the new item (assuming Desc sorting)
+
+        if (isEdit) {
+            // Update existing item
+            setEventList((prevList) =>
+                prevList.map((item) =>
+                    item.id === data.id ? { ...item, ...data } : item
+                )
+            );
+        } else {
+            // Add new item at the beginning with created_at
+            const newItem: EventDataList = {
+                ...data,
+                created_at: new Date().toISOString(),
+            };
+
+            setEventList((prevList) => {
+                const newList = [newItem, ...prevList];
+                return newList.slice(0, perPage);
+            });
+
+            // Update total items
+            setTotalItems((prev) => prev + 1);
+
+            // Recalculate last page
+            setLastPage(Math.ceil((totalItems + 1) / perPage));
+
+            // If not on page 1, go back to page 1
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            }
+        }
     };
 
     const handlePageChange = (page: number) => {

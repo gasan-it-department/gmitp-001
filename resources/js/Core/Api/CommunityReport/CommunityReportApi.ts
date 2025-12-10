@@ -1,7 +1,6 @@
 import CommunityReport from "@/actions/App/External/Api/Controllers/CommunityReport";
 import axios from "axios";
 
-
 export const CommunityReportApi = {
     async storeCommunityReport(municipalSlug: string, payload: any) {
 

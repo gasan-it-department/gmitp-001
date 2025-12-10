@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, UseFormClearErrors, UseFormSetValue } from 'react-hook-form';
@@ -29,10 +30,6 @@ interface ClassicDialogState {
     isShowing: boolean;
     hideNegativeButton: boolean;
 }
-
-const CommunityReportApi = {
-    storeCommunityReport: (slug: string, data: CommunityReportFormData) => new Promise<{ success: boolean }>(resolve => setTimeout(() => resolve({ success: true }), 500)),
-};
 
 const useMunicipality = () => ({
     currentMunicipality: { slug: 'gasan' },

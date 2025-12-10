@@ -84,7 +84,7 @@ export default function EventsCalendarUi() {
                         <LoadingSpinner />
                     </div>
                 ) : dashboardList.length > 0 ? (
-                    dashboardList.map((item, index) => {
+                    dashboardList.slice(0, 5).map((item, index) => {
                         const month = moment(item.event_date).format('MM');
                         const isDecember = month === '12' && seasonalTheme;
                         const isNovember = month === '11' && seasonalTheme;

@@ -18,7 +18,7 @@ export default function ViewFeedbackDialog({ isOpen, data, onClose }: ViewFeedba
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-h-[90vh] sm:max-w-md w-full min-w-[150vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl">
+            <DialogContent className="max-h-[90vh] sm:max-w-[70vh] overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-white via-orange-50 to-rose-50 shadow-xl">
 
                 {/* HEADER */}
                 <DialogHeader className="border-b border-orange-200 pb-3 text-center">
