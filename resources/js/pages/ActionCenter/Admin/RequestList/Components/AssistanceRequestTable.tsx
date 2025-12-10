@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
@@ -9,17 +9,14 @@ import PaginationView from '@/pages/Utility/PaginationView';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
+import ActionCenter from '@/routes/actionCenter/admin'; // ✅ Import Wayfinder Route Definition
 import { router } from '@inertiajs/react';
 import { Eye, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-// Removed 'ziggy-js' import
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import PrintView from './PrintView';
-
-// Tell TypeScript that 'route' exists globally (provided by Wayfinder)
-// declare var route: any; // Removed as requested
 
 // 1. Interfaces matching your API Resource
 interface PaginationMeta {
@@ -44,9 +41,9 @@ interface Props {
 }
 
 export function AssistanceRequestTable({ data, filters }: Props) {
+    const { currentMunicipality } = useMunicipality();
+
     // --- STATE ---
-    // UI State Only (No data fetching state)
-    const [selectedItems, setSelectedItems] = useState<AssistanceRequest[]>([]);
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
 
@@ -62,67 +59,70 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         positiveButtonText: string;
         negativeButtonText: string;
         isNegativeButtonHidden: boolean;
-        action: string;
-        payload: any;
+        action: string | null;
     }>({
         isOpen: false,
         title: '',
         message: '',
-        positiveButtonText: 'Ok',
-        negativeButtonText: 'Cancel',
+        positiveButtonText: '',
+        negativeButtonText: '',
         isNegativeButtonHidden: true,
-        action: '',
-        payload: '',
+        action: null,
     });
 
-    // Extract data for easier access with Safe Defaults to prevent crash
+    // Extract data for easier access with Safe Defaults
     const requestList = data?.data || [];
     const meta = data?.meta || {
         current_page: 1,
-        from: 0,
         last_page: 1,
         per_page: 15,
-        to: 0,
         total: 0,
+        from: 0,
+        to: 0,
     };
 
-    // --- HANDLERS (The Inertia Way) ---
+    // --- HANDLERS ---
 
-    // 1. Pagination: Just update the URL parameter
+    // 1. Pagination: Updates URL ?page=X
     const handlePageChange = (page: number) => {
-        // Disabled for now to focus on display
-        console.log('Page change requested:', page);
-        /*
+        // ✅ FIX: Use Wayfinder for the index route instead of 'route()'
+        const targetUrl = ActionCenter.index.url({
+            municipality: currentMunicipality.slug,
+        });
+
         router.get(
-            route('admin.action-center.index'),
+            targetUrl,
             { page: page, ...filters }, // Preserve existing filters
-            { 
-                preserveState: true, 
-                preserveScroll: true, 
-                only: ['requests'] // Partial reload for speed
-            }
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ['requests'],
+            },
         );
-        */
     };
 
     // 2. Navigation
     const handleViewRequest = (id: string) => {
-        // Disabled for now
-        console.log('View request:', id);
-        // router.visit(route('admin.action-center.show', id));
+        const targetUrl = ActionCenter.show.url({
+            municipality: currentMunicipality.slug,
+            id: id,
+        });
+        console.log(targetUrl);
+        router.visit(targetUrl);
     };
 
     // 3. Sorting / Searching
     const handleSearchOrSort = (params: object) => {
-        // Disabled for now
-        console.log('Search/Sort:', params);
-        /*
+        // ✅ FIX: Use Wayfinder for the index route instead of 'route()'
+        const targetUrl = ActionCenter.index.url({
+            municipality: currentMunicipality.slug,
+        });
+
         router.get(
-            route('admin.action-center.index'),
+            targetUrl,
             { ...filters, ...params, page: 1 }, // Reset to page 1 on new search/sort
-            { preserveState: true, preserveScroll: true, only: ['requests', 'filters'] }
+            { preserveState: true, preserveScroll: true, only: ['requests', 'filters'] },
         );
-        */
     };
 
     // 4. Reload
@@ -146,11 +146,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         }
     };
 
-    const toggleSelectAll = (isChecked: boolean) => {
-        if (isChecked) setSelectedItems(requestList);
-        else setSelectedItems([]);
-    };
-
     // --- RENDER ---
     return (
         <div className="flex h-full flex-col">
@@ -171,39 +166,11 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                             negativeButtonText: 'Cancel',
                             isNegativeButtonHidden: false,
                             action: 'file_export',
-                            payload: null,
                         });
                     }}
                     onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
-                    // Search triggers a URL update via Inertia
-                    onSearch={(query) => handleSearchOrSort({ search: query })}
+                    // onSearch={(query) => handleSearchOrSort({ search: query })}
                 />
-            </div>
-
-            {/* BULK ACTIONS */}
-            <div className="mb-2 flex h-8 items-center justify-between">
-                <div>
-                    {selectedItems.length > 0 && (
-                        <Button
-                            size="sm"
-                            className="border-none bg-red-600 text-white duration-200 animate-in fade-in zoom-in-95 hover:bg-red-700"
-                            onClick={() =>
-                                setClassicDialog({
-                                    isOpen: true,
-                                    title: 'Confirm Delete',
-                                    message: `Delete ${selectedItems.length} selected records?`,
-                                    positiveButtonText: 'Delete',
-                                    negativeButtonText: 'Cancel',
-                                    isNegativeButtonHidden: false,
-                                    payload: selectedItems,
-                                    action: 'delete_record',
-                                })
-                            }
-                        >
-                            Delete ({selectedItems.length}) items
-                        </Button>
-                    )}
-                </div>
             </div>
 
             {/* TABLE */}
@@ -211,15 +178,8 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
                         <TableRow>
-                            <TableHead className="w-10">
-                                <input
-                                    type="checkbox"
-                                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    checked={requestList.length > 0 && selectedItems.length === requestList.length}
-                                    onChange={(e) => toggleSelectAll(e.target.checked)}
-                                />
-                            </TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">No.</TableHead>
+                            {/* Removed Checkbox Column */}
+                            <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">No.</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Beneficiary</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Date</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Type</TableHead>
@@ -232,86 +192,65 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
                     <TableBody>
                         {requestList.length === 0 ? (
-                            <AdminEmptyListItem colSpan={9} title="No records found." message="Action center records will show here." />
+                            <AdminEmptyListItem colSpan={8} title="No records found." message="Action center records will show here." />
                         ) : (
                             requestList.map((req, index) => {
-                                // Calculate row number using Meta from props
                                 const rowNumber = (meta.current_page - 1) * meta.per_page + (index + 1);
 
                                 return (
-                                    <ContextMenu key={req.id}>
-                                        <ContextMenuTrigger asChild>
-                                            <TableRow className="group transition-colors hover:bg-gray-50 data-[state=selected]:bg-gray-100">
-                                                {/* Checkbox */}
-                                                <TableCell className="w-8">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                        checked={selectedItems.some((item) => item.id === req.id)}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) setSelectedItems((prev) => [...prev, req]);
-                                                            else setSelectedItems((prev) => prev.filter((item) => item.id !== req.id));
-                                                        }}
-                                                    />
-                                                </TableCell>
+                                    <TableRow key={req.id} className="group transition-colors hover:bg-gray-50">
+                                        <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
 
-                                                <TableCell className="text-xs text-gray-500">{rowNumber}</TableCell>
+                                        {/* Beneficiary Safe Access */}
+                                        <TableCell className="text-xs font-medium text-gray-900 capitalize">
+                                            {req.beneficiary ? (
+                                                `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
+                                            ) : (
+                                                <span className="text-gray-400 italic">No Beneficiary</span>
+                                            )}
+                                        </TableCell>
 
-                                                {/* FIXED: Beneficiary Safe Access */}
-                                                <TableCell className="text-xs font-medium text-gray-900 capitalize">
-                                                    {req.beneficiary ? (
-                                                        // We verified beneficiary exists above, so we can access properties directly
-                                                        `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
-                                                    ) : (
-                                                        <span className="text-gray-400 italic">No Beneficiary</span>
-                                                    )}
-                                                </TableCell>
+                                        <TableCell className="text-xs text-gray-600">
+                                            {Utility().formatToReadableDateNoTime(req.created_at)}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
+                                        <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
 
-                                                <TableCell className="text-xs text-gray-600">
-                                                    {Utility().formatToReadableDateNoTime(req.created_at)}
-                                                </TableCell>
-                                                <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
-                                                <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
+                                        {/* Status Badge */}
+                                        <TableCell>
+                                            <span
+                                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
+                                            >
+                                                {req.status.replace('_', ' ')}
+                                            </span>
+                                        </TableCell>
 
-                                                {/* Status Badge */}
-                                                <TableCell>
-                                                    <span
-                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
-                                                    >
-                                                        {req.status.replace('_', ' ')}
-                                                    </span>
-                                                </TableCell>
+                                        <TableCell className="text-xs font-semibold text-gray-700">{Utility().formatCurrency(req.amount)}</TableCell>
 
-                                                <TableCell className="text-xs font-semibold text-gray-700">
-                                                    {Utility().formatCurrency(req.amount)}
-                                                </TableCell>
+                                        {/* Actions */}
+                                        <TableCell>
+                                            <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                    onClick={() => handleViewRequest(req.id)}
+                                                >
+                                                    <Eye size={16} />
+                                                </Button>
 
-                                                {/* Actions */}
-                                                <TableCell>
-                                                    <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                            onClick={() => handleViewRequest(req.id)}
-                                                        >
-                                                            <Eye size={16} />
-                                                        </Button>
-
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            disabled={req.status === 'pending'}
-                                                            className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
-                                                            onClick={() => setPrintDialogState({ isVisible: true, request: req })}
-                                                        >
-                                                            <Printer size={16} />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        </ContextMenuTrigger>
-                                    </ContextMenu>
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    disabled={req.status === 'pending'}
+                                                    className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
+                                                    onClick={() => setPrintDialogState({ isVisible: true, request: req })}
+                                                >
+                                                    <Printer size={16} />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
                                 );
                             })
                         )}

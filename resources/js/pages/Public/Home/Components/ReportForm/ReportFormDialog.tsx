@@ -5,10 +5,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Controller, useForm, UseFormClearErrors, UseFormSetValue } from 'react-hook-form';
-
+import { Controller, useForm } from 'react-hook-form';
 
 // --- MOCK DEFINITIONS AND TYPES ---
 interface CommunityReportFormData {
@@ -31,12 +31,8 @@ interface ClassicDialogState {
     hideNegativeButton: boolean;
 }
 
-const useMunicipality = () => ({
-    currentMunicipality: { slug: 'gasan' },
-});
-
-const MapCoordinates = ({ latitude, longitude }: { latitude: number, longitude: number }) => (
-    <div className="flex items-center justify-center h-full text-sm text-gray-500 bg-gray-100">
+const MapCoordinates = ({ latitude, longitude }: { latitude: number; longitude: number }) => (
+    <div className="flex h-full items-center justify-center bg-gray-100 text-sm text-gray-500">
         Map Preview: ({latitude}, {longitude})
     </div>
 );
@@ -45,12 +41,12 @@ const ClassicDialog = ({ title, message, open, onPositiveClick, hideNegativeButt
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-            <div className="bg-white p-6 rounded-lg shadow-2xl max-w-md mx-4">
+            <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-2xl">
                 <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-                <p className="mt-3 text-sm text-gray-600 whitespace-pre-wrap">{message}</p>
+                <p className="mt-3 text-sm whitespace-pre-wrap text-gray-600">{message}</p>
                 <div className="mt-5 flex justify-end">
-                    <button onClick={onPositiveClick} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        {positiveButtonText || "OK"}
+                    <button onClick={onPositiveClick} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                        {positiveButtonText || 'OK'}
                     </button>
                 </div>
             </div>
@@ -59,14 +55,9 @@ const ClassicDialog = ({ title, message, open, onPositiveClick, hideNegativeButt
 };
 // ------------------------------------------
 
-
 // --- MAIN COMPONENT ---
 
-export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onSuccess: () => void;
-}) {
+export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: boolean; onOpenChange: (open: boolean) => void; onSuccess: () => void }) {
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmiting] = useState(false);
     const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
@@ -133,7 +124,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
         clearErrors('longitude');
 
         if (!navigator.geolocation) {
-            setClassicDialog(prev => ({
+            setClassicDialog((prev) => ({
                 ...prev,
                 title: 'Geolocation Not Supported',
                 message: 'Your browser or device does not support location services.',
@@ -148,7 +139,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
         const options = {
             enableHighAccuracy: true,
             timeout: 15000,
-            maximumAge: 0
+            maximumAge: 0,
         };
 
         window.navigator.geolocation.getCurrentPosition(
@@ -163,35 +154,35 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
 
             // === ERROR CALLBACK ===
             (error) => {
-                let title = "Location Access Required";
+                let title = 'Location Access Required';
                 let message;
 
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
                         message =
-                            "Location permission was permanently denied by your device or browser settings.\n\n" +
-                            "**Troubleshooting Steps:**\n" +
+                            'Location permission was permanently denied by your device or browser settings.\n\n' +
+                            '**Troubleshooting Steps:**\n' +
                             "1. Go to your Phone's Settings (Android/iOS).\n" +
                             "2. Find Apps/Browser settings and ensure Location access is 'Allowed'.\n" +
-                            "3. Restart your browser and try again.\n\n" + 
+                            '3. Restart your browser and try again.\n\n' +
                             "Still can't get location? Please check if the website is running at https not in http.";
-                        title = "ACCESS DENIED (Check Settings)";
+                        title = 'ACCESS DENIED (Check Settings)';
                         break;
                     case error.POSITION_UNAVAILABLE:
                         message = "Location information is unavailable. Ensure your device's GPS is ON and you have a clear sky view.";
                         break;
                     case error.TIMEOUT:
-                        message = "The location request timed out (15 seconds). Check your internet/GPS signal strength and try again.";
-                        title = "Request Timed Out";
+                        message = 'The location request timed out (15 seconds). Check your internet/GPS signal strength and try again.';
+                        title = 'Request Timed Out';
                         break;
                     default:
-                        message = "An unknown error occurred while attempting to find your location.";
+                        message = 'An unknown error occurred while attempting to find your location.';
                 }
 
                 setValue('latitude', '');
                 setValue('longitude', '');
 
-                setClassicDialog(prev => ({
+                setClassicDialog((prev) => ({
                     ...prev,
                     title: title,
                     message: message,
@@ -201,7 +192,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
                 }));
                 setIsGettingCoordinates(false);
             },
-            options
+            options,
         );
     };
     // ---------------------------------------------------
@@ -209,17 +200,17 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
     const onSubmit = async (data: CommunityReportFormData) => {
         console.log('Report Submitted:', data);
         setIsSubmiting(true);
+        console.log(currentMunicipality.slug);
 
         // --- API CALL ---
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
-
         if (response.success) {
             setIsSubmiting(false);
             onOpenChange(false);
             reset();
             onSuccess();
         } else {
-            setClassicDialog(prev => ({
+            setClassicDialog((prev) => ({
                 ...prev,
                 title: 'Submission Failed',
                 message: 'There was an error submitting your report. Please try again.',
@@ -335,7 +326,6 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: {
                                 {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
                             </Button>
                             {errors.latitude && <p className="text-sm text-red-500">{errors.latitude.message}</p>}
-
                         </div>
 
                         {/* DESCRIPTION */}

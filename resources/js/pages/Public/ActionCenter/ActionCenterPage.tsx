@@ -1,15 +1,15 @@
+import { ActionCenterForm } from '@/components/ActionCenter/RequestAssistanceBeneficiaryForm';
 import { LogInSignUpForm } from '@/components/LoginSignUpForm';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import PublicLayout from '@/layouts/Public/PublicLayout';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { TooltipTrigger } from '@radix-ui/react-tooltip';
 import { Heart } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ActionCenterForm } from './Components/ActionCenterForm';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
 
 export default function Home() {
     const { auth } = usePage<SharedData>().props;
@@ -24,12 +24,12 @@ export default function Home() {
         action: string | null;
     }>({
         isOpen: false,
-        title: "",
-        message: "",
-        positiveButtonText: "",
-        negativeButtonText: "",
+        title: '',
+        message: '',
+        positiveButtonText: '',
+        negativeButtonText: '',
         isNegativeButtonHidden: false,
-        action: null
+        action: null,
     });
 
     return (
@@ -47,8 +47,8 @@ export default function Home() {
                     </h2>
 
                     <p className="mx-auto max-w-2xl text-lg leading-relaxed text-pretty text-muted-foreground md:text-xl">
-                        The Municipal Action Center provides essential assistance to residents in need.
-                        Whether you need food, medical, financial, or other support, we're here for you.
+                        The Municipal Action Center provides essential assistance to residents in need. Whether you need food, medical, financial, or
+                        other support, we're here for you.
                     </p>
 
                     <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
@@ -56,7 +56,7 @@ export default function Home() {
                             <>
                                 <Button
                                     size="lg"
-                                    className="bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                                    className="bg-orange-500 font-semibold text-white hover:bg-orange-600"
                                     onClick={() => setIsDialogOpen(true)}
                                 >
                                     Request Assistance
@@ -70,9 +70,9 @@ export default function Home() {
                                             isOpen: true,
                                             title: title,
                                             message: message,
-                                            positiveButtonText: "Close",
-                                            isNegativeButtonHidden: true
-                                        }))
+                                            positiveButtonText: 'Close',
+                                            isNegativeButtonHidden: true,
+                                        }));
                                     }}
                                     isOpen={isDialogOpen}
                                     onClose={() => setIsDialogOpen(false)}
@@ -99,18 +99,36 @@ export default function Home() {
             {/* Services Overview */}
             <section className="container mx-auto border-t border-border px-4 py-16">
                 <div className="mx-auto max-w-5xl">
-                    <h3 className="mb-12 text-center text-2xl font-semibold text-foreground md:text-3xl">
-                        Available Assistance Programs
-                    </h3>
+                    <h3 className="mb-12 text-center text-2xl font-semibold text-foreground md:text-3xl">Available Assistance Programs</h3>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {[
-                            { title: 'Food Assistance', icon: '🍽️', description: 'Access to nutritious meals and food supplies for families in need.' },
-                            { title: 'Medical Assistance', icon: '🏥', description: 'Support for medical expenses, prescriptions, and healthcare needs.' },
-                            { title: 'Financial Assistance', icon: '💰', description: 'Emergency financial aid for utilities, rent, and essential expenses.' },
+                            {
+                                title: 'Food Assistance',
+                                icon: '🍽️',
+                                description: 'Access to nutritious meals and food supplies for families in need.',
+                            },
+                            {
+                                title: 'Medical Assistance',
+                                icon: '🏥',
+                                description: 'Support for medical expenses, prescriptions, and healthcare needs.',
+                            },
+                            {
+                                title: 'Financial Assistance',
+                                icon: '💰',
+                                description: 'Emergency financial aid for utilities, rent, and essential expenses.',
+                            },
                             { title: 'Burial Assistance', icon: '🕊️', description: 'Compassionate support for funeral and burial expenses.' },
-                            { title: 'Transportation Assistance', icon: '🚗', description: 'Help with transportation for medical appointments and essential travel.' },
-                            { title: 'Community Resources', icon: '🤝', description: 'Connections to additional local services and support programs.' },
+                            {
+                                title: 'Transportation Assistance',
+                                icon: '🚗',
+                                description: 'Help with transportation for medical appointments and essential travel.',
+                            },
+                            {
+                                title: 'Community Resources',
+                                icon: '🤝',
+                                description: 'Connections to additional local services and support programs.',
+                            },
                         ].map((service, idx) => (
                             <div key={idx} className="space-y-3 rounded-lg border border-border bg-card p-6 transition-shadow hover:shadow-md">
                                 <div className="text-4xl">{service.icon}</div>
@@ -132,16 +150,15 @@ export default function Home() {
                         setClassicDialog((prev) => ({
                             ...prev,
                             action: null,
-                            isOpen: false
+                            isOpen: false,
                         }));
                     }}
                     onNegativeClick={() => {
                         setClassicDialog((prev) => ({
                             ...prev,
                             action: null,
-                            isOpen: false
+                            isOpen: false,
                         }));
-
                     }}
                 />
             </section>

@@ -12,13 +12,6 @@ interface Props {
 // 1. Remove the misplaced console.log(AssistanceApiResponse);
 
 export default function ActionCenterRequestList({ requests, filters }: Props) {
-    // 2. Add the console.log here, inside the function body
-    // This will execute every time the component renders (including partial reloads)
-    console.log('--- INERTIA PROPS RECEIVED ---');
-    console.log('Requests Data (Paginator Structure):', requests);
-    console.log('Filters Data:', filters);
-    console.log('----------------------------');
-
     return (
         <AdminLayout>
             <section className="">

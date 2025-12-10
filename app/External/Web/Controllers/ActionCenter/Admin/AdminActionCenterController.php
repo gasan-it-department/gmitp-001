@@ -29,18 +29,17 @@ class AdminActionCenterController extends Controller
         );
     }
 
-    public function show($id, GetAssistanceRequestByIdUseCase $getAssistanceRequestByIdUseCase)
-    {
+    // App/External/Web/Controllers/ActionCenter/Admin/AdminActionCenterController.php
 
-        $assistance = $getAssistanceRequestByIdUseCase->execute('01KBT8535NCCP2KEJRA3M3ZCA6');
+    // Note: Added $municipality as the first argument to match the URL structure
+    public function show($municipalId = null, $id, GetAssistanceRequestByIdUseCase $useCase)
+    {
+        $assistance = $useCase->execute($id);
 
         $assistance->load('beneficiary');
 
         return Inertia::render('ActionCenter/Admin/RequestDetails/AssistanceRequestsDetails', [
-
             'data' => (new AssistanceResource($assistance))->resolve(),
-
         ]);
-
     }
 }
