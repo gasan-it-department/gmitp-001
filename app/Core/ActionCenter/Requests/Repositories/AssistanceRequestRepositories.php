@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Requests\Repositories;
 
+use App\Core\ActionCenter\Requests\Dto\AssistanceQueryDto;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
@@ -29,15 +30,38 @@ class AssistanceRequestRepositories
         ]);
     }
 
-    public function getAll(string $municipalId): LengthAwarePaginator
+    public function getAllPerMunicipality(string $municipalId, AssistanceQueryDto $dto): LengthAwarePaginator
     {
-
-        $assistance = AssistanceRequest::with('beneficiary')
+        $assistance = AssistanceRequest::query()
+            ->with('beneficiary')
             ->where('municipal_id', $municipalId)
-            ->paginate(perPage: 30);
+
+            ->when(!empty($dto->search), function ($query) use ($dto) {
+                $searchTerm = '%' . $dto->search . '%';
+
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('transaction_number', 'like', $searchTerm)
+                        ->orWhere('description', 'like', $searchTerm)
+
+                        ->orWhereHas('beneficiary', function ($bQuery) use ($searchTerm) {
+                            $bQuery->searchBeneficiary($searchTerm);
+                        });
+                });
+            })
+
+            ->when(!empty($dto->status), function ($query) use ($dto) {
+                $query->where('status', $dto->status);
+            })
+
+            ->when(!empty($dto->assistanceType), function ($query) use ($dto) {
+                $query->where('assistance_type', $dto->assistanceType);
+            })
+
+            ->orderBy($dto->orderBy, $dto->direction)
+            ->paginate($dto->perPage)
+            ->withQueryString();
 
         return $assistance;
-
     }
 
     public function findById(string $id): ?AssistanceRequest

@@ -60,7 +60,7 @@ Route::prefix('api/municipality')
 
         Route::post('/', 'store')->name('setSettings');
 
-        Route::patch('/update/{id}', 'update')->name('updateSettings');
+        Route::patch('/update/{id}', 'updateSettings')->name('updateSettings');
 
         Route::post('/save-banner', 'storeBanner')->name('saveBanner');
 

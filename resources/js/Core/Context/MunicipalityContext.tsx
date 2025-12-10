@@ -1,8 +1,9 @@
 import { usePage } from '@inertiajs/react';
 import { createContext, ReactNode, useContext } from 'react';
 
-// 1. Define the Settings structure coming from your Laravel Resource
+// 1. Define the Settings structure
 type MunicipalitySettings = {
+    id: string;
     logoUrl: string | null;
     homeTitle: string | null;
     primaryColor: string | null;
@@ -17,10 +18,11 @@ type Municipality = {
     settings: MunicipalitySettings | null;
 };
 
-// 3. Add logoUrl to the Context Type for easy access
+// 3. UPDATE: Add settingsId to the Context Type
 type MunicipalityContextType = {
     currentMunicipality: Municipality;
     logoUrl: string | null;
+    settingsId: string | undefined; // <--- ADD THIS
 };
 
 const MunicipalityContext = createContext<MunicipalityContextType | undefined>(undefined);
@@ -29,10 +31,22 @@ export const MunicipalityProvider = ({ children }: { children: ReactNode }) => {
     // Fetch data from Inertia shared props
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    // 4. Derive the logoUrl safely
+    // 4. Derive values safely
     const logoUrl = currentMunicipality?.settings?.logoUrl ?? null;
+    const settingsId = currentMunicipality?.settings?.id;
 
-    return <MunicipalityContext.Provider value={{ currentMunicipality, logoUrl }}>{children}</MunicipalityContext.Provider>;
+    // Debugging log
+    return (
+        <MunicipalityContext.Provider
+            value={{
+                currentMunicipality,
+                logoUrl,
+                settingsId,
+            }}
+        >
+            {children}
+        </MunicipalityContext.Provider>
+    );
 };
 
 export const useMunicipality = () => {

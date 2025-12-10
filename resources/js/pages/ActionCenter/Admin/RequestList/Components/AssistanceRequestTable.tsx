@@ -1,45 +1,59 @@
 import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
-import { Pencil, Printer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { router } from '@inertiajs/react';
+import { Eye, Printer } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+// Removed 'ziggy-js' import
 import AddEditRecordDialog from './AddEditRecordDialog';
 import Header from './Header';
 import PrintView from './PrintView';
 
-export function AssistanceRequestTable() {
-    const { currentMunicipality } = useMunicipality();
-    const [editingData, setEditingData] = useState<AssistanceRequest | null>(null);
+// Tell TypeScript that 'route' exists globally (provided by Wayfinder)
+// declare var route: any; // Removed as requested
+
+// 1. Interfaces matching your API Resource
+interface PaginationMeta {
+    current_page: number;
+    from: number;
+    last_page: number;
+    per_page: number;
+    to: number;
+    total: number;
+}
+
+// Export this so the parent page can use it for typing
+export interface AssistanceApiResponse {
+    data: AssistanceRequest[];
+    meta: PaginationMeta;
+    links: any;
+}
+
+interface Props {
+    data: AssistanceApiResponse; // Data from Props
+    filters?: any; // Filters from Props
+}
+
+export function AssistanceRequestTable({ data, filters }: Props) {
+    // --- STATE ---
+    // UI State Only (No data fetching state)
+    const [selectedItems, setSelectedItems] = useState<AssistanceRequest[]>([]);
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
-    const [currentSelectedSortOption, setCurrentSelectedSortOption] = useState('');
-    const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
-    const [requestList, setRequestList] = useState<AssistanceRequest[]>([]);
-    const [selectedItems, setSelectedItems] = useState<AssistanceRequest[]>([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
-    const [perPage, setPerPage] = useState(30);
-    const [totalItems, setTotalItems] = useState(0);
 
     const [printDialogState, setPrintDialogState] = useState<{
         isVisible: boolean;
         request: AssistanceRequest | null;
-    }>({
-        isVisible: false,
-        request: null,
-    });
+    }>({ isVisible: false, request: null });
 
     const [classicDialog, setClassicDialog] = useState<{
         isOpen: boolean;
@@ -61,178 +75,158 @@ export function AssistanceRequestTable() {
         payload: '',
     });
 
-    // --------------------------------------------------
-    // LOAD TABLE DATA
-    // --------------------------------------------------
-    useEffect(() => {
-        loadRequestList(currentPage);
-    }, [currentPage]);
-
-    const loadRequestList = async (currentPage: number = 1) => {
-        try {
-            setIsLoadingDialogVisible(true);
-            const response = await ActionCenterApi.getAllRequest(currentMunicipality.slug, currentPage);
-            const data = response.data ?? [];
-            console.log('Response: ', data);
-            data.sort(
-                (a: { created_at: string | number | Date }, b: { created_at: string | number | Date }) =>
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-            );
-
-            setCurrentPage(response.meta.current_page);
-            setLastPage(response.meta.last_page);
-            setPerPage(response.meta.per_page);
-            setTotalItems(response.meta.total);
-            setRequestList(data);
-        } catch (err) {
-            console.error(err);
-            toast.error('Failed to load requests');
-        } finally {
-            setIsLoadingDialogVisible(false);
-        }
+    // Extract data for easier access with Safe Defaults to prevent crash
+    const requestList = data?.data || [];
+    const meta = data?.meta || {
+        current_page: 1,
+        from: 0,
+        last_page: 1,
+        per_page: 15,
+        to: 0,
+        total: 0,
     };
 
-    // --------------------------------------------------
-    // DELETE REQUEST
-    // --------------------------------------------------
-    const deleteRequest = async (requestId: string[]) => {
-        try {
-            if (requestId.length === 1) {
-                // DELETE SINGLE RECORD
-                console.log('Delete 1 recond only.');
-            } else {
-                // DDELETE MULTIPLE RECORD
-                console.log(`Delete ${requestId.length} records.`);
+    // --- HANDLERS (The Inertia Way) ---
+
+    // 1. Pagination: Just update the URL parameter
+    const handlePageChange = (page: number) => {
+        // Disabled for now to focus on display
+        console.log('Page change requested:', page);
+        /*
+        router.get(
+            route('admin.action-center.index'),
+            { page: page, ...filters }, // Preserve existing filters
+            { 
+                preserveState: true, 
+                preserveScroll: true, 
+                only: ['requests'] // Partial reload for speed
             }
-        } catch (error: any) {}
+        );
+        */
     };
 
-    const addNewItem = (newItem: AssistanceRequest) => {
-        setTotalItems((prev) => {
-            const newTotal = prev + 1;
-            const newLastPage = Math.ceil(newTotal / perPage);
-            setLastPage(newLastPage);
+    // 2. Navigation
+    const handleViewRequest = (id: string) => {
+        // Disabled for now
+        console.log('View request:', id);
+        // router.visit(route('admin.action-center.show', id));
+    };
 
-            return newTotal;
-        });
+    // 3. Sorting / Searching
+    const handleSearchOrSort = (params: object) => {
+        // Disabled for now
+        console.log('Search/Sort:', params);
+        /*
+        router.get(
+            route('admin.action-center.index'),
+            { ...filters, ...params, page: 1 }, // Reset to page 1 on new search/sort
+            { preserveState: true, preserveScroll: true, only: ['requests', 'filters'] }
+        );
+        */
+    };
 
-        if (currentPage === 1) {
-            const updated = [newItem, ...requestList];
-            if (updated.length > perPage) {
-                updated.pop();
-            }
+    // 4. Reload
+    const handleReload = () => {
+        router.reload({ only: ['requests'] });
+    };
 
-            setRequestList(updated);
+    // --- HELPERS ---
+    const getStatusBadgeColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'approved':
+                return 'bg-green-100 text-green-700';
+            case 'rejected':
+                return 'bg-red-100 text-red-700';
+            case 'in_review':
+                return 'bg-blue-100 text-blue-700';
+            case 'completed':
+                return 'bg-emerald-100 text-emerald-700';
+            default:
+                return 'bg-yellow-100 text-yellow-700';
         }
-
-        if (currentPage !== 1) {
-            loadRequestList(1);
-        }
     };
 
-    const normalizeAssistance = (data: any) => {
-        if (!data.assistance) return data;
-        return {
-            ...data.assistance,
-            beneficiary: data.beneficiary,
-        };
+    const toggleSelectAll = (isChecked: boolean) => {
+        if (isChecked) setSelectedItems(requestList);
+        else setSelectedItems([]);
     };
 
-    const handleSort = (currentSeletedSort: string | null) => {
-        // SEND FILTER TO BACKEND
-        console.log('Action center filter: ', currentSeletedSort);
-    };
-
-    // --------------------------------------------------
-    // TABLE RENDER
-    // --------------------------------------------------
+    // --- RENDER ---
     return (
-        <div>
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Request Records</h1>
 
                 <Header
                     className="flex justify-end"
-                    onAddNewButtonClicked={() => {
-                        setEditingData(null);
-                        setIsAddNewRecordDialogOpen(true);
-                    }}
+                    onAddNewButtonClicked={() => setIsAddNewRecordDialogOpen(true)}
                     onExportButtonClicked={() => {
-                        if (requestList.length === 0) {
-                            toast('No data to export');
-                            return;
-                        }
-
-                        setClassicDialog((prev) => ({
-                            ...prev,
+                        if (requestList.length === 0) return toast('No data to export');
+                        setClassicDialog({
+                            isOpen: true,
                             title: 'Export File',
-                            message: 'Are you sure you want to export the list as .xlsx?',
+                            message: 'Export list as .xlsx?',
                             positiveButtonText: 'Export',
                             negativeButtonText: 'Cancel',
                             isNegativeButtonHidden: false,
                             action: 'file_export',
-                            isOpen: true,
-                        }));
+                            payload: null,
+                        });
                     }}
                     onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
-                    onSearch={(query) => {}}
+                    // Search triggers a URL update via Inertia
+                    onSearch={(query) => handleSearchOrSort({ search: query })}
                 />
             </div>
 
-            <div className="mb-2 flex items-center justify-between">
+            {/* BULK ACTIONS */}
+            <div className="mb-2 flex h-8 items-center justify-between">
                 <div>
-                    <Button
-                        size="sm"
-                        disabled={selectedItems.length <= 0}
-                        className="border-none bg-red-600 text-white hover:bg-red-700"
-                        onClick={() =>
-                            setClassicDialog((prev) => ({
-                                ...prev,
-                                isOpen: true,
-                                title: 'Confirm',
-                                message: `Are you sure you want to delete ${selectedItems.length} selected records(s)? THIS CANNOT BE UNDONE.`,
-                                positiveButtonText: 'Delete',
-                                negativeButtonText: 'Cancel',
-                                isNegativeButtonHidden: false,
-                                payload: selectedItems,
-                                action: 'delete_record',
-                            }))
-                        }
-                    >
-                        Delete ({selectedItems.length}) items
-                    </Button>
+                    {selectedItems.length > 0 && (
+                        <Button
+                            size="sm"
+                            className="border-none bg-red-600 text-white duration-200 animate-in fade-in zoom-in-95 hover:bg-red-700"
+                            onClick={() =>
+                                setClassicDialog({
+                                    isOpen: true,
+                                    title: 'Confirm Delete',
+                                    message: `Delete ${selectedItems.length} selected records?`,
+                                    positiveButtonText: 'Delete',
+                                    negativeButtonText: 'Cancel',
+                                    isNegativeButtonHidden: false,
+                                    payload: selectedItems,
+                                    action: 'delete_record',
+                                })
+                            }
+                        >
+                            Delete ({selectedItems.length}) items
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* TABLE */}
-            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200">
+            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <Table className="w-full">
-                    <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                    <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
                         <TableRow>
-                            <TableHead className="w-10 bg-gray-50">
+                            <TableHead className="w-10">
                                 <input
                                     type="checkbox"
-                                    className="h-4 w-4 cursor-pointer"
-                                    checked={selectedItems.length === requestList.length && requestList.length > 0}
-                                    onChange={(e) => {
-                                        if (e.target.checked) {
-                                            setSelectedItems(requestList);
-                                        } else {
-                                            setSelectedItems([]);
-                                        }
-                                    }}
+                                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    checked={requestList.length > 0 && selectedItems.length === requestList.length}
+                                    onChange={(e) => toggleSelectAll(e.target.checked)}
                                 />
                             </TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">No.</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Name</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Request Date</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Assistance Type</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Transaction Number</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Status</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Amount</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Due Date</TableHead>
-                            <TableHead className="bg-gray-50 text-[12px] font-bold">Action</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">No.</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Beneficiary</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Date</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Type</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Ref No.</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Status</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Amount</TableHead>
+                            <TableHead className="text-center text-xs font-bold text-gray-700">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
@@ -240,207 +234,148 @@ export function AssistanceRequestTable() {
                         {requestList.length === 0 ? (
                             <AdminEmptyListItem colSpan={9} title="No records found." message="Action center records will show here." />
                         ) : (
-                            requestList.map((req, index) => (
-                                <ContextMenu key={req.id}>
-                                    <ContextMenuTrigger asChild>
-                                        <TableRow className="cursor-pointer transition-colors hover:bg-gray-50">
-                                            <TableCell className="w-8 text-[12px]">
-                                                <input
-                                                    type="checkbox"
-                                                    className="h-4 w-4 cursor-pointer"
-                                                    checked={selectedItems.some((item) => item.id === req.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedItems((prev) => [...prev, req]);
-                                                        } else {
-                                                            setSelectedItems((prev) => prev.filter((item) => item.id !== req.id));
-                                                        }
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-[12px]">{index + 1}</TableCell>
-                                            <TableCell className="text-[12px] capitalize">
-                                                {req.beneficiary!.first_name} {req.beneficiary!.last_name}
-                                            </TableCell>
-                                            <TableCell className="text-[12px]">{Utility().formatToReadableDateNoTime(req.created_at)}</TableCell>
-                                            <TableCell className="text-[12px]">{req.assistance_type}</TableCell>
-                                            <TableCell className="text-[12px]">{req.transaction_number}</TableCell>
-                                            <TableCell className="text-[12px]">
-                                                <span
-                                                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
-                                                        req.status === 'approved'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : req.status === 'rejected'
-                                                              ? 'bg-red-100 text-red-700'
-                                                              : req.status === 'in_review'
-                                                                ? 'bg-blue-100 text-blue-700'
-                                                                : req.status === 'completed'
-                                                                  ? 'bg-emerald-100 text-emerald-700'
-                                                                  : 'bg-yellow-100 text-yellow-700'
-                                                    }`}
-                                                >
-                                                    {{
-                                                        pending: 'Pending',
-                                                        in_review: 'In Review',
-                                                        approved: 'Approved',
-                                                        rejected: 'Rejected',
-                                                        completed: 'Completed',
-                                                    }[req.status] || 'Unknown'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-[12px]">{Utility().formatCurrency(req.amount)}</TableCell>
+                            requestList.map((req, index) => {
+                                // Calculate row number using Meta from props
+                                const rowNumber = (meta.current_page - 1) * meta.per_page + (index + 1);
 
-                                            <TableCell className="text-[12px]">{Utility().formatAndAddDaysNoTime(req.created_at, 90)}</TableCell>
+                                return (
+                                    <ContextMenu key={req.id}>
+                                        <ContextMenuTrigger asChild>
+                                            <TableRow className="group transition-colors hover:bg-gray-50 data-[state=selected]:bg-gray-100">
+                                                {/* Checkbox */}
+                                                <TableCell className="w-8">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                        checked={selectedItems.some((item) => item.id === req.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedItems((prev) => [...prev, req]);
+                                                            else setSelectedItems((prev) => prev.filter((item) => item.id !== req.id));
+                                                        }}
+                                                    />
+                                                </TableCell>
 
-                                            {/* ACTION BUTTONS */}
-                                            <TableCell className="flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        setEditingData(req);
-                                                        setIsAddNewRecordDialogOpen(true);
-                                                    }}
-                                                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                >
-                                                    <Pencil size={14} />
-                                                </Button>
+                                                <TableCell className="text-xs text-gray-500">{rowNumber}</TableCell>
 
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    disabled={req.status === 'pending'}
-                                                    onClick={() =>
-                                                        setPrintDialogState({
-                                                            isVisible: true,
-                                                            request: req,
-                                                        })
-                                                    }
-                                                    className="border-green-200 text-green-600 hover:bg-green-50"
-                                                >
-                                                    <Printer size={14} />
-                                                </Button>
+                                                {/* FIXED: Beneficiary Safe Access */}
+                                                <TableCell className="text-xs font-medium text-gray-900 capitalize">
+                                                    {req.beneficiary ? (
+                                                        // We verified beneficiary exists above, so we can access properties directly
+                                                        `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">No Beneficiary</span>
+                                                    )}
+                                                </TableCell>
 
-                                                {/* <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                        setClassicDialog({
-                                                            ...classicDialog,
-                                                            isOpen: true,
-                                                            title: 'Delete Record',
-                                                            message:
-                                                                'Are you sure you want to delete this record? This cannot be undone.',
-                                                            positiveButtonText: 'Delete',
-                                                            negativeButtonText: 'Cancel',
-                                                            isNegativeButtonHidden: false,
-                                                            action: 'delete_record',
-                                                            payload: req.id,
-                                                        })
-                                                    }
-                                                    className="border-red-200 text-red-600 hover:bg-red-50"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </Button> */}
-                                            </TableCell>
-                                        </TableRow>
-                                    </ContextMenuTrigger>
-                                </ContextMenu>
-                            ))
+                                                <TableCell className="text-xs text-gray-600">
+                                                    {Utility().formatToReadableDateNoTime(req.created_at)}
+                                                </TableCell>
+                                                <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
+                                                <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
+
+                                                {/* Status Badge */}
+                                                <TableCell>
+                                                    <span
+                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
+                                                    >
+                                                        {req.status.replace('_', ' ')}
+                                                    </span>
+                                                </TableCell>
+
+                                                <TableCell className="text-xs font-semibold text-gray-700">
+                                                    {Utility().formatCurrency(req.amount)}
+                                                </TableCell>
+
+                                                {/* Actions */}
+                                                <TableCell>
+                                                    <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                            onClick={() => handleViewRequest(req.id)}
+                                                        >
+                                                            <Eye size={16} />
+                                                        </Button>
+
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            disabled={req.status === 'pending'}
+                                                            className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
+                                                            onClick={() => setPrintDialogState({ isVisible: true, request: req })}
+                                                        >
+                                                            <Printer size={16} />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        </ContextMenuTrigger>
+                                    </ContextMenu>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>
             </div>
 
-            <div className="mt-2">
+            {/* PAGINATION */}
+            <div className="mt-4">
                 <PaginationView
-                    currentPage={currentPage}
-                    totalPages={lastPage}
-                    totalItems={totalItems}
-                    itemsPerPage={perPage}
-                    onPageChange={setCurrentPage}
+                    currentPage={meta.current_page}
+                    totalPages={meta.last_page}
+                    totalItems={meta.total}
+                    itemsPerPage={meta.per_page}
+                    onPageChange={handlePageChange}
                 />
             </div>
 
-            {/* DIALOGS */}
-
+            {/* --- DIALOGS --- */}
             <ToastProvider />
 
             <FilterDialog
                 isOpen={isSortSelectionDialogOpen}
-                currentFilter={currentSelectedSortOption ? { title: currentSelectedSortOption, sub: currentSelectedSortOption } : null}
+                currentFilter={null}
                 onClose={() => setIsSortSelectionDialogOpen(false)}
                 filters={[
                     { title: 'Name', sub: 'first_name' },
-                    { title: 'Request Date', sub: 'created_at' },
-                    { title: 'Transaction Number', sub: 'transaction_number' },
+                    { title: 'Date', sub: 'created_at' },
+                    { title: 'Transaction', sub: 'transaction_number' },
                     { title: 'Status', sub: 'status' },
                 ]}
-                onApply={(selectedFilter) => {
-                    setCurrentSelectedSortOption(selectedFilter?.sub || '');
-                    if (selectedFilter) {
-                        handleSort(selectedFilter.sub);
-                    }
-                }}
+                onApply={(selectedFilter) => handleSearchOrSort({ sort: selectedFilter?.sub })}
             />
 
             <AddEditRecordDialog
-                editData={editingData}
                 isOpen={isAddNewRecordDialogOpen}
                 onClose={() => setIsAddNewRecordDialogOpen(false)}
-                onSuccess={(data, isEditMode) => {
-                    if (isEditMode) {
-                    } else {
-                        const normalizedData = normalizeAssistance(data);
-                        normalizedData.status = normalizedData.status ?? 'pending';
-                        addNewItem(normalizedData);
-                    }
-                }}
+                editData={null}
+                onSuccess={() => handleReload()}
             />
 
             <ClassicDialog
+                open={classicDialog.isOpen}
                 title={classicDialog.title}
                 message={classicDialog.message}
-                hideNegativeButton={classicDialog.isNegativeButtonHidden}
                 positiveButtonText={classicDialog.positiveButtonText}
                 negativeButtonText={classicDialog.negativeButtonText}
-                open={classicDialog.isOpen}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
                 onPositiveClick={() => {
-                    if (classicDialog.action === 'delete_record') {
-                        deleteRequest(classicDialog.payload);
-                    }
-
                     if (classicDialog.action === 'file_export') {
-                        ToExcel(requestList, `Assistance_Requests_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                        ToExcel(requestList, `Assistance_List_${new Date().toISOString().slice(0, 10)}.xlsx`);
                     }
-
-                    setClassicDialog({
-                        ...classicDialog,
-                        isOpen: false,
-                        action: '',
-                        payload: '',
-                    });
+                    if (classicDialog.action === 'delete_record') {
+                        // Implement server side delete via router.delete() if needed
+                        toast.info('Delete logic should be implemented on backend.');
+                    }
+                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
                 }}
-                onNegativeClick={() =>
-                    setClassicDialog({
-                        ...classicDialog,
-                        isOpen: false,
-                        action: '',
-                        payload: '',
-                    })
-                }
+                onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
             />
-
-            <LoadingDialog title="Loading, please wait..." isOpen={isLoadingDialogVisible} />
 
             <PrintView
                 isOpen={printDialogState.isVisible}
-                onClose={() =>
-                    setPrintDialogState({
-                        isVisible: false,
-                        request: null,
-                    })
-                }
+                onClose={() => setPrintDialogState({ isVisible: false, request: null })}
                 data={printDialogState.request}
             />
         </div>

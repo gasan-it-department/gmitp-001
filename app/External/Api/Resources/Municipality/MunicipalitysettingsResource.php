@@ -15,8 +15,9 @@ class MunicipalitysettingsResource extends JsonResource
     {
         return [
             // We expose the computed URL, not the raw public_id
-            'logoUrl' => $this->logo_url,
+            'id' => $this->id,
 
+            'logoUrl' => $this->logo_url,
             // add other settings
 
         ];

@@ -2,22 +2,21 @@
 
 namespace App\External\Api\Controllers\ActionCenter;
 
-use App\Core\ActionCenter\Requests\UseCase\GetAssistanceRequestByIdUseCase;
-use App\External\Api\Resources\ActionCenter\AssistanceResource;
+use App\Core\ActionCenter\Requests\Dto\AssistanceQueryDto;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Core\ActionCenter\Requests\Services\StatusList;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\External\Api\Request\ActionCenter\AssistanceRequest;
 use App\External\Api\Request\ActionCenter\BeneficiaryRequest;
+use App\External\Api\Resources\ActionCenter\AssistanceResource;
 use App\Core\ActionCenter\Requests\Services\AssistanceTypesList;
 use App\Core\ActionCenter\Beneficiaries\Dto\CreateBeneficiaryDto;
-use App\Core\ActionCenter\Applications\Services\CreateAssistanceRequest;
-use App\Core\ActionCenter\Applications\Services\UpdateAssistanceRequest;
 use App\Core\ActionCenter\Beneficiaries\UseCase\CreateBeneficiaryUseCase;
 use App\Core\ActionCenter\Requests\UseCase\CreateAssistanceRequestUseCase;
 use App\Core\ActionCenter\Requests\UseCase\GetAllAssistancePerMunicipality;
-use App\Core\ActionCenter\Infrastructures\Repositories\AssistanceRequestRepositories;
+use App\Core\ActionCenter\Requests\UseCase\GetAssistanceRequestByIdUseCase;
+use App\Core\ActionCenter\Requests\UseCase\GetAssistancePerMunicipalityUseCase;
 
 class ActionCenterController extends Controller
 {
@@ -28,7 +27,7 @@ class ActionCenterController extends Controller
 
         private CreateAssistanceRequestUseCase $createAssistance,
 
-        private GetAllAssistancePerMunicipality $getAllAssistance,
+        private GetAssistancePerMunicipalityUseCase $getAllAssistance,
 
         private AssistanceTypesList $assistanceTypesList,
 
@@ -100,11 +99,14 @@ class ActionCenterController extends Controller
 
     }
 
-    public function fetch()
+    public function fetch(Request $request)
     {
         $municipalId = app('municipal_id');
 
-        $assitance = $this->getAllAssistance->execute($municipalId);
+        $dto = AssistanceQueryDto::fromRequest($request);
+
+        $assitance = $this->getAllAssistance->execute($municipalId, $dto);
+
 
         return AssistanceResource::collection($assitance)->additional([
 

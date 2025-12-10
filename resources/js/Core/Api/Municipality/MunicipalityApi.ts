@@ -22,7 +22,7 @@ export const MunicipalitiesApi = {
     // UPDATED: Now accepts FormData
     async uploadMunicipalSettings(municipalSlug: string, formData: FormData) {
         const { url, method } = Municipality.MunicipalitySettingsController.store();
-        console.log('fudge')
+
         const { data } = await axios({
             url,
             method,
@@ -66,5 +66,41 @@ export const MunicipalitiesApi = {
 
         return data;
 
-    }
+    },
+
+    async updateMunicipalitySettings(
+        municipalSlug: string,
+        id: string,
+        payload: { logo?: File | null }
+    ) {
+        const { url, method } = Municipality.MunicipalitySettingsController.updateSettings(id);
+
+        // 2. Create FormData object
+        const formData = new FormData();
+
+        // Only append the file if the user selected a NEW one
+        // This satisfies your "if uploaded update it, if none (ignore)" requirement
+        if (payload.logo) {
+            formData.append('logo', payload.logo);
+            // Make sure 'logoImage' matches the key expected in your Backend DTO ($dto->logoImage)
+        }
+
+        // 3. Send the request
+        // Note: We use '_method' trick if your backend requires PUT/PATCH via FormData (common in Laravel)
+        // If your backend natively supports PUT for multipart, you can skip appending '_method'.
+        formData.append('_method', 'PATCH');
+
+        const { data } = await axios({
+            url,
+            method: 'POST', // Use POST with _method: PUT for file uploads (safest cross-server compatible way)
+            data: formData, // Pass the FormData here
+            headers: {
+                'X-Municipality-Slug': municipalSlug,
+                // 'Content-Type': 'multipart/form-data' <--- REMOVED! Let Axios handle this automatically.
+            }
+        });
+
+        return data;
+    },
+
 }

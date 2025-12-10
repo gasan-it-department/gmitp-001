@@ -21,7 +21,7 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <LeftNavigation />
                     </div>
 
-                    <div className="pointer-events-none flex items-center space-x-2 md:pointer-events-auto">
+                    <div className="pointer-events-auto flex items-center space-x-2">
                         <GmitpLogo />
                     </div>
 

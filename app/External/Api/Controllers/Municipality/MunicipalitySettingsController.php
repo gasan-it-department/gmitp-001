@@ -2,8 +2,10 @@
 
 namespace App\External\Api\Controllers\Municipality;
 
+use App\Core\Municipality\Dto\UpdateMunicipalitySettingsDto;
 use App\Core\Municipality\UseCases\DeleteBannerUseCase;
 use App\Core\Municipality\UseCases\SetMunicipalitySettingsUseCase;
+use App\Core\Municipality\UseCases\UpdateMunicipalitySettingsUseCase;
 use Illuminate\Http\Request;
 use App\Core\Municipality\Dto\SetMunicipalityBannerDto;
 use App\Core\Municipality\Dto\SetMunicipalitySettingDto;
@@ -19,6 +21,8 @@ class MunicipalitySettingsController
         private SetMunicipalitySettingsUseCase $setMunicipalitySettingsUseCase,
 
         private DeleteBannerUseCase $deleteBannerUseCase,
+
+        private UpdateMunicipalitySettingsUseCase $updateMunicipalitySettingsUseCase
 
     ) {
     }
@@ -80,6 +84,34 @@ class MunicipalitySettingsController
 
         ], 200);
 
+    }
+
+    public function updateSettings(Request $request, $id)
+    {
+
+        $userId = auth()->id();
+
+        $municipalLogo = $request->hasfile('logo') ? $request->file('logo') : [];
+
+        $dto = new UpdateMunicipalitySettingsDto(
+
+            settingsId: $id,
+
+            userId: $userId,
+
+            logoImage: $municipalLogo,
+
+        );
+
+        $this->updateMunicipalitySettingsUseCase->execute($dto);
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'update successful'
+
+        ], 200);
     }
 
     public function destroyBanner($id)

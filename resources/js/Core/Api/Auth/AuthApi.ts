@@ -27,7 +27,11 @@ export const AuthApi = {
 
         } else {
 
-            router.visit(response.data.redirect);
+            // router.visit(response.data.redirect);
+            router.visit(window.location.href, {
+                preserveScroll: true,
+                preserveState: true,
+            });
 
         }
 

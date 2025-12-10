@@ -7,16 +7,17 @@ const GmitpLogo = () => {
     const { currentMunicipality, logoUrl } = useMunicipality();
 
     return (
-        <div className="flex flex-row items-center">
-            {/* Use the logoUrl from context */}
+        <Link href={landing()} className="z-[1000] flex cursor-pointer flex-row items-center">
+            {/* 2. Image is now part of the link */}
             {logoUrl && <img src={logoUrl} alt={`${currentMunicipality.name} Logo`} className="h-10 w-auto rounded-full object-contain" />}
 
             <div className="w-2.5" />
 
+            {/* 3. The name text */}
             <span className="text-md mb-0.5 truncate leading-tight font-extrabold text-gray-600 md:text-xl xl:text-xl">
-                <Link href={landing()}>{currentMunicipality.name}</Link>
+                {currentMunicipality.name}
             </span>
-        </div>
+        </Link>
     );
 };
 
