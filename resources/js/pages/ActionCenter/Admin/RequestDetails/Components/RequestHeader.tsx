@@ -5,10 +5,11 @@ import { CheckCircle2, Printer, XCircle } from 'lucide-react';
 
 interface Props {
     request: AssistanceRequest;
+    onPrintClicked: () => void;
     onProcess: () => void; // <--- New Prop
 }
 
-export default function RequestHeader({ request, onProcess }: Props) {
+export default function RequestHeader({ request, onProcess, onPrintClicked }: Props) {
     // ... (keep your existing color logic) ...
     const getStatusColor = (status: string) => {
         /*...*/ return '';
@@ -25,12 +26,15 @@ export default function RequestHeader({ request, onProcess }: Props) {
             </div>
 
             <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2"
+                    onClick={() => {
+                        onPrintClicked();
+                    }}>
                     <Printer size={16} /> Print
                 </Button>
 
                 {/* LOGIC: Only show "Process" if it's Pending */}
-                {request.status === 'pending' && (
+                {/* {request.status === 'pending' && (
                     <>
                         <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50">
                             <XCircle size={16} className="mr-1" /> Reject
@@ -40,7 +44,16 @@ export default function RequestHeader({ request, onProcess }: Props) {
                             <CheckCircle2 size={16} /> Process Request
                         </Button>
                     </>
-                )}
+                )} */}
+                <>
+                    <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50">
+                        <XCircle size={16} className="mr-1" /> Reject
+                    </Button>
+
+                    <Button onClick={onProcess} size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+                        <CheckCircle2 size={16} /> Process Request
+                    </Button>
+                </>
             </div>
         </div>
     );

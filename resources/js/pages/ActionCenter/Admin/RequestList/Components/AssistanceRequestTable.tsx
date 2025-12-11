@@ -16,14 +16,12 @@ import { router } from '@inertiajs/react';
 import { Eye, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-// import AddEditRecordDialog from './AddEditRecordDialog'; // ❌ Removed old dialog
 import Header from './Header';
 import PrintView from './PrintView';
+import AssistanceRequestDetails from '../../RequestDetails/AssistanceRequestsDetails';
+import { ref } from 'process';
 
-// Declare global route for other parts if needed
-declare var route: any;
 
-// 1. Interfaces matching your API Resource
 interface PaginationMeta {
     current_page: number;
     from: number;
@@ -50,6 +48,13 @@ export function AssistanceRequestTable({ data, filters }: Props) {
     // --- STATE ---
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
+    const [detailsView, setDetailsView] = useState<{
+        data: AssistanceRequest | null;
+        isOpen: boolean;
+    }>({
+        data: null,
+        isOpen: false
+    });
 
     const [printDialogState, setPrintDialogState] = useState<{
         isVisible: boolean;
@@ -128,6 +133,20 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 return 'bg-yellow-100 text-yellow-700';
         }
     };
+
+    if (detailsView.isOpen) {
+        return (
+            <AssistanceRequestDetails
+                data={detailsView.data}
+                onBackPressed={() => {
+                    setDetailsView((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                        data: null
+                    }));
+                }} />
+        );
+    }
 
     // --- RENDER ---
     return (
@@ -212,12 +231,19 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                                 </TableCell>
 
                                                 <TableCell>
-                                                    <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                                    <div className="flex justify-center gap-2">
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
                                                             className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                            onClick={() => handleViewRequest(req.id)}
+                                                            onClick={() => {
+                                                                // handleViewRequest(req.id)
+                                                                setDetailsView((prev) => ({
+                                                                    ...prev,
+                                                                    isOpen: true,
+                                                                    data: req
+                                                                }));
+                                                            }}
                                                         >
                                                             <Eye size={16} />
                                                         </Button>

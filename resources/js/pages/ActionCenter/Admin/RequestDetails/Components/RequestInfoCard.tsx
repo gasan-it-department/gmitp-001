@@ -35,6 +35,12 @@ export default function RequestInfoCard({ request }: { request: AssistanceReques
                     <div className="rounded-lg border border-gray-100 p-4 text-sm leading-relaxed text-gray-700">{request.description}</div>
                 </div>
 
+                {/* Remarks */}
+                <div>
+                    <h4 className="mb-2 text-sm font-medium text-gray-500">Remarks</h4>
+                    <div className="rounded-lg border border-gray-100 p-4 text-sm leading-relaxed text-gray-700">{request.remarks ?? "No remarks"}</div>
+                </div>
+
                 {/* Additional Metadata (Timeline) */}
                 <div className="pt-4">
                     <h4 className="mb-3 text-sm font-medium text-gray-500">Timeline</h4>

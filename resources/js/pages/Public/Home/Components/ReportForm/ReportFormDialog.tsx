@@ -235,16 +235,24 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: bool
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={true}
-                className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-red-200 p-0 shadow-xl sm:max-w-3xl"
-            >
+                className="
+                    /* MOBILE (Default: Full Screen) */
+                    flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0
+                    
+                    /* DESKTOP/LAPTOP (sm: breakpoint and above) */
+                    sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border
+                    lg:max-w-2xl 
+                    
+                    bg-white p-0
+                ">
                 {/* HEADER */}
-                <div className="sticky top-0 z-50 rounded-t-2xl bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8">
+                <div className="sticky top-0 z-50 bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold text-white">Report Local Issue</DialogTitle>
                     </DialogHeader>
                 </div>
 
-                <div className="space-y-10 px-6 py-6 sm:px-8 sm:py-8">
+                <div className="space-y-10 px-6 py-6 sm:px-8 sm:py-8 overflow-auto">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
                         {/* ISSUE TYPE */}
                         <div className="space-y-4">

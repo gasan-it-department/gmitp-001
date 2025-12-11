@@ -57,6 +57,7 @@ export function UserDropdownMenu() {
                     {auth.roles?.isAdmin && (
                         <DropdownMenuItem
                             onClick={() => {
+                                localStorage.setItem('activeSidebarUrl', "/gasan-4905/action-center/admin");
                                 router.visit(admin.dashboard.url({ municipality: currentMunicipality.slug }));
                             }}
                         >

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import SearchBar from '@/pages/Utility/SearchBar';
 import { Award, ExternalLink, FileText, Gavel, FileCheck, Banknote } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
@@ -79,6 +80,14 @@ export function BidsAndAwards() {
     const activeTabClasses = `${primaryGradient} text-white shadow-md hover:from-red-600 hover:to-orange-600`;
     // --------------------
 
+    const handleSearch = (keyword: string) => {
+        if (keyword === "") {
+            // Revery back the default list.
+        } else {
+            // Show matched list.
+        }
+    }
+
     return (
         <Card className="rounded-2xl shadow-xl border-red-200/60 dark:border-red-900/40">
             <CardHeader className="border-b border-orange-200 dark:border-red-900">
@@ -116,6 +125,10 @@ export function BidsAndAwards() {
 
                 {/* FILTERED LIST CONTENT */}
                 <div className="space-y-4">
+                    <SearchBar
+                        onSearch={(keyword) => {
+                            handleSearch(keyword);
+                        }} searchBarHint={'Search here...'} />
                     {filteredBids.length > 0 ? (
                         filteredBids.map((bid, index) => (
                             <div

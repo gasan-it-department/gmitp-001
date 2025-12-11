@@ -9,6 +9,7 @@ export interface AssistanceRequest {
     status: string;
     user_id: string;
     beneficiary?: Beneficiary;
+    remarks?: string;
 }
 
 export interface Beneficiary {
@@ -21,9 +22,15 @@ export interface Beneficiary {
     barangay: string;
     municipality: string;
     province: string;
+
+    // ISOLATED ADDITION
+    middle_name: string;
+    suffix: string;
+    birth_date: string;
+    description: string;
+    assistance_type: string;
+    source: string;
 }
-
-
 
 export interface AssistanceRequestResponse {
     request: AssistanceRequest[];

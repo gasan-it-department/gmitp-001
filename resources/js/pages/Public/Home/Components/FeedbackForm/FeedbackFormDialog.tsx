@@ -134,10 +134,18 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="max-h-[90vh] w-full overflow-y-auto p-0 sm:max-w-3xl rounded-2xl shadow-xl border border-red-200"
-            >
+                className="
+                    /* MOBILE (Default: Full Screen) */
+                    flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0
+                    
+                    /* DESKTOP/LAPTOP (sm: breakpoint and above) */
+                    sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border
+                    lg:max-w-2xl 
+                    
+                    bg-white p-0
+                ">
                 {/* HEADER */}
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8 rounded-t-2xl sticky top-0 z-50">
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8 sticky top-0 z-50">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold text-white">
                             Citizen Feedback Form
@@ -145,7 +153,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                     </DialogHeader>
                 </div>
 
-                <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-8">
+                <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-8 overflow-auto">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                         {/* SECTION CARD */}
                         <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-4">

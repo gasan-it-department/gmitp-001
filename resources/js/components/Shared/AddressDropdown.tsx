@@ -6,7 +6,8 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 
 type LocationItem = { code: string; name: string };
 
@@ -30,72 +31,119 @@ const PROVINCES: LocationItem[] = [{ code: "174000000", name: "Marinduque" }];
 
 export function AddressDropdown({
     onAddressChange,
-    editProvince = "",
-    editMunicipality = "",
-    editBarangay = "",
+    editProvince,
+    editMunicipality,
+    editBarangay,
 }: AddressDropdownProps) {
     const BASE = "https://psgc.gitlab.io/api";
-
     const [provinces] = useState<LocationItem[]>(PROVINCES);
     const [municipalities, setMunicipalities] = useState<LocationItem[]>([]);
     const [barangays, setBarangays] = useState<LocationItem[]>([]);
-
     const [selectedProvince, setSelectedProvince] = useState("");
     const [selectedMunicipality, setSelectedMunicipality] = useState("");
     const [selectedBarangay, setSelectedBarangay] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
-    useEffect(() => {
-        async function init() {
-            if (!editProvince) return;
+    const fetchMunicipalities = useCallback(async (provinceCode: string) => {
+        if (!provinceCode) return [];
+        try {
+            const res = await fetch(`${BASE}/provinces/${provinceCode}/municipalities/`);
+            const data: LocationItem[] = await res.json();
+            const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+            setMunicipalities(sorted);
+            return sorted;
+        } catch (error) {
+            console.error("Failed to fetch municipalities", error);
+            return [];
+        }
+    }, []);
+
+    const fetchBarangays = useCallback(async (municipalityCode: string) => {
+        if (!municipalityCode) return [];
+        try {
+            const res = await fetch(`${BASE}/municipalities/${municipalityCode}/barangays/`);
+            const data: LocationItem[] = await res.json();
+            const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+            setBarangays(sorted);
+            return sorted;
+        } catch (error) {
+            console.error("Failed to fetch barangays", error);
+            return [];
+        }
+    }, []);
+
+    const init = useCallback(async () => {
+        // If we are not in edit mode, initialize immediately
+        if (!editProvince) {
+            setIsInitialized(true);
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // 1. Set State Immediately
             setSelectedProvince(editProvince);
+            setSelectedMunicipality(editMunicipality || "");
+            setSelectedBarangay(editBarangay || "");
 
-            const muniRes = await fetch(`${BASE}/provinces/${editProvince}/municipalities/`);
-            const muniList: LocationItem[] = await muniRes.json();
-            setMunicipalities(muniList);
+            // 2. Fetch Data
+            await fetchMunicipalities(editProvince);
 
             if (editMunicipality) {
-                setSelectedMunicipality(editMunicipality);
-                const brgyRes = await fetch(`${BASE}/municipalities/${editMunicipality}/barangays/`);
-                const brgyList: LocationItem[] = await brgyRes.json();
-                setBarangays(brgyList);
+                await fetchBarangays(editMunicipality);
             }
 
-            if (editBarangay) setSelectedBarangay(editBarangay);
+        } catch (error) {
+            console.error("Init Error", error);
+        } finally {
+            setIsLoading(false);
+            // ⭐️ Crucial: Mark as initialized only after all async operations complete
+            setIsInitialized(true);
         }
-        init();
-    }, [editProvince, editMunicipality, editBarangay]);
+    }, [editProvince, editMunicipality, editBarangay, fetchMunicipalities, fetchBarangays]);
 
-    // Cascading
+    useEffect(() => {
+        init();
+    }, [init]);
+
+    // Handlers (remain the same for user interaction)
     const handleProvinceChange = async (code: string) => {
         setSelectedProvince(code);
         setSelectedMunicipality("");
         setSelectedBarangay("");
+        setMunicipalities([]);
         setBarangays([]);
-        const res = await fetch(`${BASE}/provinces/${code}/municipalities/`);
-        const data: LocationItem[] = await res.json();
-        setMunicipalities(data);
+        await fetchMunicipalities(code);
     };
 
     const handleMunicipalityChange = async (code: string) => {
         setSelectedMunicipality(code);
         setSelectedBarangay("");
-        const res = await fetch(`${BASE}/municipalities/${code}/barangays/`);
-        const data: LocationItem[] = await res.json();
-        setBarangays(data);
+        setBarangays([]);
+        await fetchBarangays(code);
     };
 
     const handleBarangayChange = (code: string) => {
         setSelectedBarangay(code);
     };
 
+    // Output Effect (Remains the same)
     useEffect(() => {
-        if (!selectedProvince || !selectedMunicipality || !selectedBarangay) {
+        if (!isInitialized || isLoading) {
             onAddressChange(null);
             return;
         }
-        const provinceName = provinces.find((p) => p.code === selectedProvince)?.name || "";
-        const municipalityName = municipalities.find((m) => m.code === selectedMunicipality)?.name || "";
-        const barangayName = barangays.find((b) => b.code === selectedBarangay)?.name || "";
+
+        if (!selectedProvince) {
+            onAddressChange(null);
+            return;
+        }
+
+        const provinceName = provinces.find(p => String(p.code) === String(selectedProvince))?.name || "";
+        const municipalityName = municipalities.find(m => String(m.code) === String(selectedMunicipality))?.name || "";
+        const barangayName = barangays.find(b => String(b.code) === String(selectedBarangay))?.name || "";
+
         onAddressChange({
             provinceCode: selectedProvince,
             municipalityCode: selectedMunicipality,
@@ -104,22 +152,49 @@ export function AddressDropdown({
             municipalityName,
             barangayName,
         });
-    }, [selectedProvince, selectedMunicipality, selectedBarangay, onAddressChange]);
+    }, [selectedProvince, selectedMunicipality, selectedBarangay, onAddressChange, provinces, municipalities, barangays, isLoading, isInitialized]);
+
+    // Manual Name Lookups (Memoized and String Safe)
+    const currentMuniName = useMemo(() =>
+        municipalities.find(m => String(m.code) === String(selectedMunicipality))?.name,
+        [municipalities, selectedMunicipality]);
+
+    const currentBrgyName = useMemo(() =>
+        barangays.find(b => String(b.code) === String(selectedBarangay))?.name,
+        [barangays, selectedBarangay]);
+
+    const LoadingPlaceholder = ({ text }: { text: string }) => (
+        <div className="flex h-10 w-full items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm opacity-50">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="text-muted-foreground">Loading {text}...</span>
+        </div>
+    );
+
+    // 🛑 Render nothing but the placeholder if we are in edit mode and haven't initialized
+    if (editProvince && !isInitialized) {
+        return (
+            <div className="space-y-3">
+                <LoadingPlaceholder text="Address Data" />
+                <LoadingPlaceholder text="Address Data" />
+                <LoadingPlaceholder text="Address Data" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-3">
-            {/* Province */}
+            {/* Province - Always rendered after init */}
             <div className="space-y-1">
                 <Label>Province</Label>
-                <Select value={selectedProvince} onValueChange={handleProvinceChange}>
+                <Select value={selectedProvince} onValueChange={handleProvinceChange} disabled={isLoading}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select a Province" />
+                        <SelectValue placeholder="Select a Province">
+                            {provinces.find(p => String(p.code) === String(selectedProvince))?.name}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
                         {provinces.map((p) => (
-                            <SelectItem key={p.code} value={p.code}>
-                                {p.name}
-                            </SelectItem>
+                            <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -128,43 +203,54 @@ export function AddressDropdown({
             {/* Municipality */}
             <div className="space-y-1">
                 <Label>Municipality</Label>
-                <Select
-                    value={selectedMunicipality}
-                    onValueChange={handleMunicipalityChange}
-                    disabled={municipalities.length === 0}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder={!selectedProvince ? "Select a Province first" : "Select a Municipality"} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                        {municipalities.map((m) => (
-                            <SelectItem key={m.code} value={m.code}>
-                                {m.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                {isLoading && !currentMuniName ? ( // Show placeholder if loading AND no name found (prevents flicker)
+                    <LoadingPlaceholder text="Municipalities" />
+                ) : (
+                    <Select
+                        // Key forces remount if list changes size or value changes
+                        key={`muni-${municipalities.length}-${selectedMunicipality}`}
+                        value={selectedMunicipality}
+                        onValueChange={handleMunicipalityChange}
+                        disabled={municipalities.length === 0}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={!selectedProvince ? "Select a Province first" : "Select a Municipality"}>
+                                {currentMuniName}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                            {municipalities.map((m) => (
+                                <SelectItem key={m.code} value={m.code}>{m.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
             </div>
 
             {/* Barangay */}
             <div className="space-y-1">
                 <Label>Barangay</Label>
-                <Select
-                    value={selectedBarangay}
-                    onValueChange={handleBarangayChange}
-                    disabled={barangays.length === 0}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder={!selectedMunicipality ? "Select a Municipality first" : "Select a Barangay"} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                        {barangays.map((b) => (
-                            <SelectItem key={b.code} value={b.code}>
-                                {b.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                {isLoading && !currentBrgyName ? (
+                    <LoadingPlaceholder text="Barangays" />
+                ) : (
+                    <Select
+                        key={`brgy-${barangays.length}-${selectedBarangay}`}
+                        value={selectedBarangay}
+                        onValueChange={handleBarangayChange}
+                        disabled={barangays.length === 0}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder={!selectedMunicipality ? "Select a Municipality first" : "Select a Barangay"}>
+                                {currentBrgyName}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                            {barangays.map((b) => (
+                                <SelectItem key={b.code} value={b.code}>{b.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
             </div>
         </div>
     );

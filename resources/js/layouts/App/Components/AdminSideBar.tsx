@@ -42,7 +42,6 @@ import {
     LogOut,
     Medal,
     Megaphone,
-    MegaphoneIcon,
     MessageCircleIcon,
     Plane,
     Sparkle,
@@ -51,11 +50,14 @@ import {
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
+import { useRef, useEffect } from 'react'; // <-- Imported for scroll logic
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
+    const activeItemRef = useRef<HTMLLIElement>(null);
+
     const [classicDialog, setClassicDialog] = React.useState({
         isOpen: false,
         title: '',
@@ -75,6 +77,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
 
     const handleLinkClick = (linkUrl: string) => {
         localStorage.setItem('activeSidebarUrl', linkUrl);
+        console.log("Active URL: ", linkUrl);
         router.visit(linkUrl);
     };
 
@@ -90,6 +93,16 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             action: 'exit',
         }));
     };
+
+    // 2. useEffect to scroll the active item into view
+    useEffect(() => {
+        if (activeItemRef.current) {
+            activeItemRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest', // Scrolls the element into the nearest viewable area
+            });
+        }
+    }, [url]); // Dependency on 'url' ensures it runs on route change
 
     const AdminSidebarItems = [
         {
@@ -161,7 +174,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     icon: Trophy,
                 },
                 {
-                    title: 'Citizen\s Charter',
+                    title: "Citizen's Charter",
                     url: citizenCharter.page.url({ municipality: currentMunicipality.slug }),
                     icon: User,
                 },
@@ -181,11 +194,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
                     icon: BadgeCheck,
                 },
-                {
-                    title: 'Offices',
-                    url: officesAdmin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Building2,
-                },
+                // {
+                //     title: 'Offices',
+                //     url: officesAdmin.page.url({ municipality: currentMunicipality.slug }),
+                //     icon: Building2,
+                // },
             ],
         },
     ];
@@ -237,7 +250,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                         const isActive = isRouteActive(sub.url);
 
                                         return (
-                                            <SidebarMenuSubItem key={sub.title}>
+                                            <SidebarMenuSubItem
+                                                key={sub.title}
+                                                // 3. Attach the ref to the active item's container
+                                                ref={isActive ? activeItemRef : null}
+                                            >
                                                 <SidebarMenuSubButton
                                                     asChild
                                                     className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive

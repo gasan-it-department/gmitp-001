@@ -57,7 +57,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     // 2. Local State
     const [banners, setBanners] = useState<Banner[]>(initialBanners);
     const [selectedBannerId, setSelectedBannerId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('banners');
+    const [activeTab, setActiveTab] = useState<'banners' | 'hotlines' | 'logo'>('logo');
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -219,26 +219,27 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             {/* TAB NAVIGATION */}
             <div className="mb-6 flex space-x-4 overflow-x-auto border-b border-gray-200 pb-1 dark:border-neutral-700">
                 <Button
-                    variant={activeTab === 'banners' ? 'default' : 'ghost'}
-                    onClick={() => setActiveTab('banners')}
-                    className={`gap-2 ${activeTab === 'banners' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
-                >
-                    <ImageIcon className="h-4 w-4" /> Home Banners
-                </Button>
-                <Button
-                    variant={activeTab === 'hotlines' ? 'default' : 'ghost'}
-                    onClick={() => setActiveTab('hotlines')}
-                    className={`gap-2 ${activeTab === 'hotlines' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
-                >
-                    <Phone className="h-4 w-4" /> Emergency Hotlines
-                </Button>
-                <Button
                     variant={activeTab === 'logo' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('logo')}
                     className={`gap-2 ${activeTab === 'logo' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
                 >
                     <div className="h-4 w-4 rounded-full border-2 border-current" /> Municipal Logo
                 </Button>
+
+                <Button
+                    variant={activeTab === 'banners' ? 'default' : 'ghost'}
+                    onClick={() => setActiveTab('banners')}
+                    className={`gap-2 ${activeTab === 'banners' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                >
+                    <ImageIcon className="h-4 w-4" /> Home Banners
+                </Button>
+                {/* <Button
+                    variant={activeTab === 'hotlines' ? 'default' : 'ghost'}
+                    onClick={() => setActiveTab('hotlines')}
+                    className={`gap-2 ${activeTab === 'hotlines' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                >
+                    <Phone className="h-4 w-4" /> Emergency Hotlines
+                </Button> */}
             </div>
 
             {/* BANNERS TAB */}
