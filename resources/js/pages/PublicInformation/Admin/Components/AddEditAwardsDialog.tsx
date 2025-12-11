@@ -1,124 +1,217 @@
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { useForm, Controller, UseFormRegister, FieldErrors } from "react-hook-form";
-import { Label } from "@radix-ui/react-label";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, AlertTriangle, FileText, DollarSign, Clock, Briefcase, Award } from "lucide-react";
-import { useState } from "react";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProcurementsApi } from '@/Core/Api/PublicInformation/ProcureMentApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { Label } from '@radix-ui/react-label';
+import { AlertTriangle, Calendar, CheckCircle2, DollarSign, FileText, Hash, Tag, Trash2, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Controller, FieldErrors, useForm, UseFormRegister } from 'react-hook-form';
 
 const MAX_FILES = 5;
 const MAX_TOTAL_SIZE_MB = 50;
 
 // --- CONSTANTS ---
-const BID_TYPES = ['Goods', 'Infrastructure', 'Services', 'Consulting'];
-// -------------------
+const PROCUREMENT_CATEGORIES = ['Goods', 'Infrastructure', 'Consulting Services'];
+const STATUS_OPTIONS = ['OPEN', 'CLOSED', 'AWARDED', 'FAILED'];
 
-// Mock Type Definition for Award Data
-interface AwardFormData {
-    title: string; // Project Title
-    type: string; // Procurement Type
-    winningContractor: string; // Winning Contractor/Supplier
-    contractAmount: number; // Final Award/Contract Amount
-    awardDate: string; // Date the award was issued
-    files?: File[]; // Documents like Notice of Award (NOA)
+const DOCUMENT_TYPES = [
+    { label: 'Invitation to Bid / REI', value: 'INVITATION' },
+    { label: 'Bidding Documents', value: 'BID_DOCS' },
+    { label: 'Bid Bulletin', value: 'BULLETIN' },
+    { label: 'Notice of Award', value: 'NOTICE_OF_AWARD' },
+    { label: 'Contract', value: 'CONTRACT' },
+    { label: 'Notice to Proceed', value: 'NOTICE_TO_PROCEED' },
+    { label: 'Others', value: 'OTHERS' },
+];
+
+export interface ProcurementFormData {
+    reference_number: string;
+    title: string;
+    category: string;
+    status: string;
+    approved_budget: number;
+    contract_amount?: number | null;
+    pre_bid_date?: string | null;
+    closing_date?: string | null;
+    award_date?: string | null;
+    winning_bidder?: string | null;
+    file_attachments?: { file: File; type: string }[];
 }
 
 interface Props {
     isOpen: boolean;
-    editData?: AwardFormData | null;
+    editData?: ProcurementFormData | null;
     onClose: () => void;
-    onSuccess: (data: AwardFormData, editMode: boolean) => void;
+    onSuccess: (formData: FormData) => void;
 }
 
-// --- HELPER COMPONENT: FormField (Themed) ---
-function FormField({ label, id, name, register, requiredMsg, type = "text", placeholder, errors, icon: Icon }: {
-    label: string; id: string; name: keyof AwardFormData; register: UseFormRegister<AwardFormData>;
-    requiredMsg?: string; type?: string; placeholder?: string; errors: FieldErrors<AwardFormData>;
+// --- HELPER: Friendlier Form Field ---
+function FormField({
+    label,
+    id,
+    name,
+    register,
+    requiredMsg,
+    type = 'text',
+    placeholder,
+    errors,
+    icon: Icon,
+    required = false,
+    helperText,
+}: {
+    label: string;
+    id: string;
+    name: keyof ProcurementFormData;
+    register: UseFormRegister<ProcurementFormData>;
+    requiredMsg?: string;
+    type?: string;
+    placeholder?: string;
+    errors: FieldErrors<ProcurementFormData>;
     icon?: React.ElementType;
+    required?: boolean;
+    helperText?: string;
 }) {
     return (
-        <div className="space-y-1">
-            <Label htmlFor={id} className="text-sm font-semibold text-red-700 dark:text-orange-200">
-                {label}
-            </Label>
-            <div className="relative">
+        <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+                <Label htmlFor={id} className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    {label} {required && <span className="text-red-500">*</span>}
+                </Label>
+            </div>
+
+            <div className="group relative">
                 {Icon && (
-                    <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-500" />
+                    <div className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-orange-500">
+                        <Icon className="h-4 w-4" />
+                    </div>
                 )}
                 <Input
                     id={id}
                     type={type}
+                    step={type === 'number' ? '0.01' : undefined}
                     autoComplete="off"
                     placeholder={placeholder}
                     {...register(name, requiredMsg ? { required: requiredMsg } : {})}
-                    className={`
-                        rounded-md border font-medium text-gray-800 transition-colors bg-white dark:bg-neutral-900
-                        focus:border-red-500 focus:ring-2 focus:ring-red-200 pl-${Icon ? '10' : '3'}
-                        ${errors[name] ? "border-red-500 ring-red-100" : "border-gray-300 dark:border-neutral-700"}
-                    `}
+                    className={`h-11 rounded-lg border bg-white text-gray-900 shadow-sm transition-all dark:bg-neutral-900 dark:text-gray-100 ${Icon ? 'pl-10' : 'pl-3'} ${
+                        errors[name]
+                            ? 'border-red-300 ring-4 ring-red-50 focus:border-red-500 focus:ring-red-100 dark:border-red-800 dark:ring-red-900/20'
+                            : 'border-gray-200 hover:border-orange-300 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:border-neutral-700 dark:hover:border-neutral-600 dark:focus:ring-neutral-800'
+                    } `}
                 />
             </div>
-            {errors[name] && <p className="text-sm text-red-600 font-medium mt-1">{errors[name]?.message || "This field is required."}</p>}
+
+            {helperText && !errors[name] && <p className="ml-1 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>}
+
+            {errors[name] && (
+                <p className="flex items-center gap-1.5 text-xs font-medium text-red-600 animate-in slide-in-from-top-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {errors[name]?.message}
+                </p>
+            )}
         </div>
     );
 }
 
+export default function ProcurementFormDialog({ isOpen, editData, onClose, onSuccess }: Props) {
+    const [stagedFiles, setStagedFiles] = useState<{ file: File; type: string }[]>([]);
+    const [fileError, setFileError] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-// --- MAIN DIALOG COMPONENT ---
-
-export default function AddEditAwardDialog({ isOpen, editData, onClose, onSuccess }: Props) {
-    const [files, setFiles] = useState<File[]>([]);
-    const [error, setError] = useState<string | null>(null);
+    const { currentMunicipality } = useMunicipality();
 
     const {
         register,
         handleSubmit,
         control,
+        watch,
         formState: { errors, isSubmitting },
-    } = useForm<AwardFormData>({
+    } = useForm<ProcurementFormData>({
         defaultValues: editData || {
+            reference_number: '',
             title: '',
-            type: BID_TYPES[0],
-            winningContractor: '',
-            contractAmount: 0,
-            awardDate: new Date().toISOString().split('T')[0],
+            category: 'Infrastructure',
+            status: 'OPEN',
+            approved_budget: 0,
+            contract_amount: null,
+            winning_bidder: '',
         },
     });
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setError(null);
-        const selectedFiles = e.target.files;
-        if (!selectedFiles) return;
+    const currentStatus = watch('status');
 
-        let newFiles = Array.from(selectedFiles);
+    // --- DRAG & DROP + FILE LOGIC ---
+    const processFiles = (fileList: FileList | null) => {
+        setFileError(null);
+        if (!fileList) return;
 
-        // Limit file count
-        if (files.length + newFiles.length > MAX_FILES) {
-            setError(`You can upload up to ${MAX_FILES} files.`);
-            newFiles = newFiles.slice(0, MAX_FILES - files.length);
+        let newItems = Array.from(fileList)
+            .filter((f) => f.type === 'application/pdf') // Strict PDF check
+            .map((file) => ({ file, type: 'DOCUMENT' }));
+
+        if (newItems.length < fileList.length) {
+            setFileError('Some files were skipped. Only PDF files are allowed.');
         }
 
-        // Limit total size
-        const totalSizeMB = [...files, ...newFiles].reduce((acc, f) => acc + f.size / 1024 / 1024, 0);
-        if (totalSizeMB > MAX_TOTAL_SIZE_MB) {
-            setError(`Total file size cannot exceed ${MAX_TOTAL_SIZE_MB} MB.`);
+        if (stagedFiles.length + newItems.length > MAX_FILES) {
+            setFileError(`You can upload up to ${MAX_FILES} files.`);
+            newItems = newItems.slice(0, MAX_FILES - stagedFiles.length);
+        }
+
+        const totalSize = [...stagedFiles, ...newItems].reduce((acc, item) => acc + item.file.size / 1024 / 1024, 0);
+        if (totalSize > MAX_TOTAL_SIZE_MB) {
+            setFileError(`Total size limit (${MAX_TOTAL_SIZE_MB}MB) exceeded.`);
             return;
         }
 
-        setFiles((prev) => [...prev, ...newFiles]);
-        e.target.value = ""; // reset input
+        setStagedFiles((prev) => [...prev, ...newItems]);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        processFiles(e.target.files);
+        e.target.value = '';
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        processFiles(e.dataTransfer.files);
+    };
+
+    const updateFileType = (index: number, newType: string) => {
+        setStagedFiles((prev) => prev.map((item, i) => (i === index ? { ...item, type: newType } : item)));
     };
 
     const removeFile = (index: number) => {
-        setFiles((prev) => prev.filter((_, i) => i !== index));
+        setStagedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleFormSubmit = (data: AwardFormData) => {
-        // Attach files for processing
-        data.files = files;
-        onSuccess(data, !!editData);
+    // --- SUBMISSION (FIXED LOGIC) ---
+    const onSubmit = async (data: ProcurementFormData) => {
+        const formData = new FormData();
+
+        // 1. Text Data
+        Object.keys(data).forEach((key) => {
+            const value = data[key as keyof ProcurementFormData];
+            if (value !== null && value !== undefined && key !== 'file_attachments') {
+                formData.append(key, value.toString());
+            }
+        });
+
+        // 2. File Data
+        stagedFiles.forEach((item, index) => {
+            formData.append(`files[${index}]`, item.file);
+            formData.append(`file_types[${index}]`, item.type);
+        });
+
+        try {
+            const response = await ProcurementsApi.store(currentMunicipality.slug, formData);
+            onSuccess(response);
+        } catch (error) {
+            console.error('Upload failed', error);
+        }
     };
 
     return (
@@ -126,201 +219,302 @@ export default function AddEditAwardDialog({ isOpen, editData, onClose, onSucces
             <DialogContent
                 showCloseButton
                 onInteractOutside={(e) => e.preventDefault()}
-                className="m-0 flex w-full max-w-[800px] flex-col rounded-2xl bg-gradient-to-b from-white via-orange-50 to-rose-50 p-6 shadow-xl sm:m-auto dark:from-neutral-900 dark:via-neutral-950 dark:to-neutral-950"
+                className="flex max-h-[90vh] w-full max-w-[850px] flex-col gap-0 overflow-hidden rounded-2xl border-none bg-white p-0 shadow-2xl sm:m-auto dark:bg-neutral-950"
             >
-                <DialogHeader className="border-b border-orange-100 pb-3 flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                        <DialogTitle className="text-2xl font-extrabold text-red-800 dark:text-gray-100">
-                            {editData ? "Edit Award Record" : "Add New Awarded Contract"}
-                        </DialogTitle>
-                    </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Record the details of the successfully awarded procurement contract.
-                    </p>
+                {/* Header */}
+                <DialogHeader className="border-b border-gray-100 bg-gray-50/50 px-8 py-6 dark:border-neutral-800 dark:bg-neutral-900/50">
+                    <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {editData ? 'Edit Procurement' : 'Create Procurement'}
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-500">
+                        Fill in the details below to publish a new government transparency record.
+                    </DialogDescription>
                 </DialogHeader>
 
-                <div className="overflow-y-auto mt-3">
-                    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6 pb-6">
-
-                        {/* --- PROJECT DETAILS --- */}
-                        <h4 className="text-lg font-bold text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-neutral-800 pb-2 mb-4">
-                            Project Information
-                        </h4>
-
-                        {/* -------------------- ROW 1: PROJECT TITLE -------------------- */}
-                        <FormField
-                            label="Project Title *"
-                            id="title"
-                            name="title"
-                            register={register}
-                            requiredMsg="Project Title is required"
-                            errors={errors}
-                        />
-
-                        {/* -------------------- ROW 2: WINNING CONTRACTOR & TYPE -------------------- */}
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-
-                            {/* Winning Contractor */}
+                <div className="flex-1 overflow-y-auto px-8 py-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                        {/* --- GROUP 1: ESSENTIAL INFO --- */}
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <FormField
-                                label="Winning Contractor/Supplier *"
-                                id="winningContractor"
-                                name="winningContractor"
+                                label="Reference Number"
+                                id="reference_number"
+                                name="reference_number"
                                 register={register}
-                                requiredMsg="Contractor is required"
+                                placeholder="e.g. INFRA-2025-001"
                                 errors={errors}
+                                icon={Hash}
+                                required
+                                requiredMsg="Required for tracking"
                             />
-
-                            {/* Dropdown 1: Procurement Type */}
-                            <div className="space-y-1">
-                                <Label htmlFor="type" className="text-sm font-semibold text-red-700 dark:text-orange-200">
-                                    Procurement Type *
-                                </Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Category</Label>
                                 <Controller
-                                    name="type"
+                                    name="category"
                                     control={control}
-                                    rules={{ required: "Type is required" }}
                                     render={({ field }) => (
                                         <Select onValueChange={field.onChange} value={field.value}>
-                                            <SelectTrigger
-                                                id="type"
-                                                className={`rounded-md border font-medium transition-colors bg-white dark:bg-neutral-900 
-                                                    focus:border-red-500 focus:ring-2 focus:ring-red-200 ${errors.type ? "border-red-500 ring-red-100" : "border-gray-300 dark:border-neutral-700"
-                                                    }`}
-                                            >
-                                                <SelectValue placeholder="Select type" />
+                                            <SelectTrigger className="h-11 border-gray-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                                                <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-white dark:bg-neutral-800">
-                                                {BID_TYPES.map(type => (
-                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                            <SelectContent>
+                                                {PROCUREMENT_CATEGORIES.map((c) => (
+                                                    <SelectItem key={c} value={c}>
+                                                        {c}
+                                                    </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                     )}
                                 />
-                                {errors.type && <p className="text-sm text-red-600 font-medium mt-1">{errors.type.message}</p>}
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <FormField
+                                    label="Project Title"
+                                    id="title"
+                                    name="title"
+                                    register={register}
+                                    placeholder="e.g. Construction of Multi-Purpose Hall..."
+                                    errors={errors}
+                                    icon={Tag}
+                                    required
+                                    requiredMsg="Project title is required"
+                                />
                             </div>
                         </div>
 
-                        {/* --- FINANCIAL DETAILS --- */}
-                        <h4 className="text-lg font-bold text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-neutral-800 pb-2 mb-4 pt-4">
-                            Financial & Dates
-                        </h4>
+                        {/* --- GROUP 2: STATUS & BUDGET --- */}
+                        <div className="rounded-xl border border-gray-100 bg-slate-50/50 p-5 dark:border-neutral-800 dark:bg-neutral-900/30">
+                            <h4 className="mb-4 flex items-center gap-2 text-sm font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                <DollarSign className="h-4 w-4" /> Financials & Timeline
+                            </h4>
 
-                        {/* -------------------- ROW 3: AWARD DATE & CONTRACT AMOUNT -------------------- */}
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-200">Status</Label>
+                                    <Controller
+                                        name="status"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <SelectTrigger
+                                                    className={`h-11 font-medium ${
+                                                        field.value === 'OPEN'
+                                                            ? 'border-blue-200 bg-blue-50 text-blue-600'
+                                                            : field.value === 'AWARDED'
+                                                              ? 'border-green-200 bg-green-50 text-green-600'
+                                                              : 'bg-white'
+                                                    }`}
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {STATUS_OPTIONS.map((s) => (
+                                                        <SelectItem key={s} value={s}>
+                                                            {s}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                </div>
 
-                            {/* Award Date */}
-                            <FormField
-                                label="Date Awarded *"
-                                id="awardDate"
-                                name="awardDate"
-                                register={register}
-                                requiredMsg="Award Date is required"
-                                errors={errors}
-                                type="date"
-                            />
+                                <FormField
+                                    label="Approved Budget (ABC)"
+                                    id="approved_budget"
+                                    name="approved_budget"
+                                    type="number"
+                                    register={register}
+                                    required
+                                    requiredMsg="Required"
+                                    errors={errors}
+                                    helperText="Total allocated budget"
+                                />
 
-                            {/* Contract Amount */}
-                            <FormField
-                                label="Final Contract Amount (PHP) *"
-                                id="contractAmount"
-                                name="contractAmount"
-                                register={register}
-                                requiredMsg="Contract Amount is required"
-                                errors={errors}
-                                type="number"
-                                placeholder="e.g., 1850000.50"
-                            />
+                                <FormField
+                                    label="Closing Date"
+                                    id="closing_date"
+                                    name="closing_date"
+                                    type="datetime-local"
+                                    register={register}
+                                    errors={errors}
+                                    icon={Calendar}
+                                />
+                            </div>
+
+                            {/* Extra Dates (Collapsible feel) */}
+                            <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+                                <FormField
+                                    label="Pre-Bid Conference"
+                                    id="pre_bid_date"
+                                    name="pre_bid_date"
+                                    type="datetime-local"
+                                    register={register}
+                                    errors={errors}
+                                    icon={Calendar}
+                                    helperText="Optional"
+                                />
+                            </div>
                         </div>
 
+                        {/* --- GROUP 3: AWARD (Conditional) --- */}
+                        {(currentStatus === 'AWARDED' || currentStatus === 'CLOSED') && (
+                            <div className="relative overflow-hidden rounded-xl border border-green-200 bg-green-50/50 p-5 duration-300 animate-in fade-in slide-in-from-bottom-2 dark:border-green-900/30 dark:bg-green-950/20">
+                                <div className="absolute top-0 right-0 p-3 opacity-10">
+                                    <CheckCircle2 className="h-24 w-24 text-green-600" />
+                                </div>
+                                <h4 className="mb-4 flex items-center gap-2 text-sm font-bold tracking-wider text-green-700 uppercase dark:text-green-400">
+                                    <Tag className="h-4 w-4" /> Winner Details
+                                </h4>
+                                <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+                                    <div className="md:col-span-2">
+                                        <FormField
+                                            label="Winning Contractor / Bidder"
+                                            id="winning_bidder"
+                                            name="winning_bidder"
+                                            register={register}
+                                            errors={errors}
+                                            placeholder="Official Company Name"
+                                        />
+                                    </div>
+                                    <FormField
+                                        label="Final Contract Amount"
+                                        id="contract_amount"
+                                        name="contract_amount"
+                                        type="number"
+                                        register={register}
+                                        errors={errors}
+                                    />
+                                    <FormField
+                                        label="Date of Award"
+                                        id="award_date"
+                                        name="award_date"
+                                        type="datetime-local"
+                                        register={register}
+                                        errors={errors}
+                                        icon={Calendar}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
-                        {/* -------------------- FILE UPLOAD (Notice of Award, Contract, etc.) -------------------- */}
-                        <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-3 dark:bg-neutral-800 dark:border-neutral-700">
-                            <Label className="font-semibold text-red-700 dark:text-orange-200">Upload Award Documents (PDF)</Label>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Upload up to <b>{MAX_FILES}</b> files, total size must not exceed <b>{MAX_TOTAL_SIZE_MB} MB</b> (e.g., Notice of Award).
-                            </p>
+                        {/* --- GROUP 4: DRAG & DROP FILES --- */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-base font-semibold text-gray-900 dark:text-white">Documents</Label>
+                                <span className="text-xs text-gray-500">
+                                    {stagedFiles.length} / {MAX_FILES} attached
+                                </span>
+                            </div>
 
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => document.getElementById('award_documents')?.click()}
-                                className="border-red-400 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-orange-300 dark:hover:bg-neutral-700/60"
-                                disabled={files.length >= MAX_FILES}
+                            {/* Drop Zone */}
+                            <div
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(true);
+                                }}
+                                onDragLeave={() => setIsDragging(false)}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all ${
+                                    isDragging
+                                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                                        : 'border-gray-200 hover:border-orange-400 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
+                                } ${stagedFiles.length >= MAX_FILES ? 'pointer-events-none opacity-50' : ''} `}
                             >
-                                <Upload className="mr-2 h-4 w-4" />
-                                {files.length >= MAX_FILES ? 'Max Files Reached' : 'Choose Files (PDF Only)'}
-                            </Button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    multiple
+                                    accept="application/pdf"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                                <div className="mb-3 rounded-full bg-orange-100 p-3 dark:bg-neutral-800">
+                                    <Upload className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Click to upload or drag and drop</p>
+                                <p className="mt-1 text-xs text-gray-500">PDF files only (Max {MAX_TOTAL_SIZE_MB}MB total)</p>
+                            </div>
 
-                            <input
-                                id="award_documents"
-                                type="file"
-                                multiple
-                                accept="application/pdf"
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-
-                            {error && (
-                                <div className="flex items-center gap-2 rounded-md bg-red-100 p-2 text-sm text-red-700 border border-red-300 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    {error}
+                            {fileError && (
+                                <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-300">
+                                    <AlertTriangle className="h-4 w-4 shrink-0" /> {fileError}
                                 </div>
                             )}
 
-                            {files.length > 0 && (
-                                <div className="space-y-2">
-                                    {files.map((file, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center justify-between gap-2 bg-orange-50/70 dark:bg-neutral-700/80 px-3 py-2 text-sm border border-orange-200/70 dark:border-orange-900 rounded-md shadow-sm"
-                                        >
-                                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                <FileText className="h-4 w-4 text-red-600 dark:text-orange-400" />
-                                                <span className="truncate text-gray-800 dark:text-gray-200 font-medium max-w-[200px] sm:max-w-none">{file.name}</span>
-                                                <span className="text-xs text-gray-500 whitespace-nowrap dark:text-gray-400">
-                                                    ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                                                </span>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeFile(index)}
-                                                className="h-6 w-6 p-0 text-gray-500 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </Button>
+                            {/* File List */}
+                            <div className="space-y-3">
+                                {stagedFiles.map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="group flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
+                                    >
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                                            <FileText className="h-5 w-5" />
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
 
-                        {/* Filler space to ensure scrolling works well */}
-                        <div className="h-4"></div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{item.file.name}</p>
+                                            <div className="mt-1 flex gap-2">
+                                                <span className="text-xs text-gray-500">{(item.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                                {/* Inline Type Selector */}
+                                                <select
+                                                    value={item.type}
+                                                    onChange={(e) => updateFileType(index, e.target.value)}
+                                                    className="h-auto w-auto rounded border-none bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 focus:ring-2 focus:ring-orange-500 dark:bg-neutral-800 dark:text-gray-300"
+                                                >
+                                                    {DOCUMENT_TYPES.map((t) => (
+                                                        <option key={t.value} value={t.value}>
+                                                            {t.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeFile(index);
+                                            }}
+                                            className="text-gray-400 hover:bg-red-50 hover:text-red-600"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </form>
                 </div>
 
-                {/* Footer Buttons (fixed position in scrollable dialog) */}
-                <div className="flex w-full gap-4 border-t border-orange-100 pt-4 sm:justify-end flex-shrink-0 dark:border-neutral-700">
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-white px-8 py-5 dark:border-neutral-800 dark:bg-neutral-900">
                     <Button
-                        type="button"
-                        variant="outline"
+                        variant="ghost"
                         onClick={onClose}
-                        className="flex-1 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 sm:flex-none dark:border-neutral-700 dark:text-gray-300 dark:hover:bg-neutral-700/60"
                         disabled={isSubmitting}
+                        className="text-gray-500 hover:text-gray-900 dark:text-gray-400"
                     >
                         Cancel
                     </Button>
                     <Button
-                        type="submit"
+                        onClick={handleSubmit(onSubmit)}
                         disabled={isSubmitting}
-                        // Use button inside form scrollable area for submission
-                        onClick={handleSubmit(handleFormSubmit)}
-                        className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md hover:from-orange-600 hover:to-red-600 sm:flex-none"
+                        className="min-w-[140px] bg-orange-600 text-white shadow-lg shadow-orange-600/20 hover:bg-orange-700 hover:shadow-orange-600/30"
                     >
-                        {isSubmitting ? "Processing..." : editData ? "Update Award" : "Add Award"}
+                        {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                                <Upload className="h-4 w-4 animate-spin" /> Uploading...
+                            </span>
+                        ) : (
+                            'Post Opportunity'
+                        )}
                     </Button>
                 </div>
             </DialogContent>

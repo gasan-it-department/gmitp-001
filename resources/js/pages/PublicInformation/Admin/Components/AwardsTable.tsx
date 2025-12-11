@@ -1,19 +1,16 @@
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import AwardsHeader from "./AwardsHeader";
-import { useState } from "react";
-import { AwardsData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
-import { EyeIcon } from "lucide-react";
-import AddEditAwardsDialog from "./AddEditAwardsDialog";
-import SortDialog from "@/pages/BulletinBoard/Admin/Components/FilterDialog";
-import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
-
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AwardsData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import SortDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import { EyeIcon } from 'lucide-react';
+import { useState } from 'react';
+import AwardsHeader from './AwardsHeader';
 
 export default function AwardsTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [awardsList, setAwardsList] = useState<AwardsData[]>([]);
-    const [isAddEditDialogVisible, setIsAddEditDialogVisible] = useState(false);
     const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
     const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
 
@@ -23,25 +20,26 @@ export default function AwardsTable() {
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Awards</h1>
                 <AwardsHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { setIsFilterDialogVisible(true) }}
-                    onExportButtonClicked={() => { }}
-                    onAddNewButtonClicked={() => { setIsAddEditDialogVisible(true) }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {
+                        setIsFilterDialogVisible(true);
+                    }}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <div>
                     <Button
                         size="sm"
                         disabled={selectedItems.length <= 0}
-                        className="bg-red-600 hover:bg-red-700 text-white border-none"
-                        onClick={() => { }
+                        className="border-none bg-red-600 text-white hover:bg-red-700"
+                        onClick={
+                            () => {}
                             // setClassicDialog((prev) => ({
                             //     ...prev,
                             //     isOpen: true,
@@ -85,29 +83,10 @@ export default function AwardsTable() {
 
                     <TableBody>
                         {awardsList.length === 0 ? (
-                            <AdminEmptyListItem
-                                colSpan={7}
-                                title='No awards yet'
-                                message='Awards will appear here once you create one.' />
+                            <AdminEmptyListItem colSpan={7} title="No awards yet" message="Awards will appear here once you create one." />
                         ) : (
                             awardsList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                    {/* <TableCell>
-                                                <div className="flex items-center justify-center p-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 cursor-pointer"
-                                                        checked={selectedItems.includes(item.id)}
-                                                        onChange={() => toggleSelectItem(item.id)}
-                                                    />
-                                                </div>
-                                            </TableCell> */}
-                                    {/* <TableCell>{index + 1 + (currentPage - 1) * perPage}</TableCell>
-                                            <TableCell>{item.sender_name ? item.sender_name : "Concerned Citizen"}</TableCell>
-                                            <TableCell>{item.location}</TableCell>
-                                            <TableCell>{item.contact ? item.contact : "Not provided"}</TableCell>
-                                            <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell> */}
-                                    {/* <TableCell>{item.status ? item.status : "N/A"}</TableCell> */}
                                     <TableCell className="flex justify-center gap-2">
                                         <Button
                                             size="sm"
@@ -158,13 +137,6 @@ export default function AwardsTable() {
                     </TableBody>
                 </Table>
             </div>
-
-            <AddEditAwardsDialog
-                isOpen={isAddEditDialogVisible}
-                onClose={() => setIsAddEditDialogVisible(false)}
-                onSuccess={(data, isEditMode) => {
-
-                }} />
 
             <SortDialog
                 isOpen={isFilterDialogVisible}

@@ -39,10 +39,6 @@ interface FormData {
     birth_date?: string;
 }
 
-// ----------------------------------------------------------------------
-// MAIN FORM COMPONENT
-// ----------------------------------------------------------------------
-
 export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,7 +66,6 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
         control,
         reset,
         setValue,
-        setError,
         formState: { errors },
     } = useForm<FormData>({
         defaultValues: {
@@ -98,55 +93,34 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
     const onSubmit = async (data: FormData) => {
         setIsSubmitting(true);
         try {
+            console.log('Submitted data:', data);
             const response = await ActionCenterApi.storeRequest(currentMunicipality.slug, data);
-
             if (response.success) {
                 onSubmitSuccess('Submitted!', 'Your request has been successfully submitted. A municipal staff member may contact you soon.');
-                reset();
                 onClose();
             } else {
                 setClassicDialog((prev) => ({
                     ...prev,
                     isOpen: true,
                     title: 'Failed!',
-                    message: response.message || 'An error occurred while submitting your request.',
+                    message: 'An error occurred while submitting your request. Please try again later.',
                     positiveButtonText: 'Close',
                     isNegativeButtonHidden: true,
                 }));
             }
+            console.log('Action center response: ', response);
+            reset();
+            setIsSubmitting(false);
         } catch (error: any) {
-            if (error.response?.data) {
-                const { errors: validationErrors, message } = error.response.data;
-                if (validationErrors) {
-                    Object.keys(validationErrors).forEach((field) => {
-                        setError(field as keyof FormData, {
-                            type: 'server',
-                            message: validationErrors[field][0],
-                        });
-                    });
-                }
-                if (!validationErrors && message) {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: true,
-                        title: 'An error occurred!',
-                        message: message,
-                        positiveButtonText: 'Close',
-                        isNegativeButtonHidden: true,
-                    }));
-                }
-            } else {
-                setClassicDialog((prev) => ({
-                    ...prev,
-                    isOpen: true,
-                    title: 'An error occurred!',
-                    message: error.message || 'The server could not process the request.',
-                    positiveButtonText: 'Close',
-                    isNegativeButtonHidden: true,
-                }));
-            }
+            setClassicDialog((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: 'An error occurred!',
+                message: error,
+                positiveButtonText: 'Close',
+                isNegativeButtonHidden: true,
+            }));
             console.error(error);
-        } finally {
             setIsSubmitting(false);
         }
     };
@@ -155,28 +129,27 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
                 showCloseButton={false}
-                // ✅ APPLIED: Mobile full screen, flex-col structure
-                className="flex h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 bg-background p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-lg sm:rounded-xl sm:border"
+                className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-orange-200 p-0 sm:max-w-3xl"
             >
-                {/* Header Section (Fixed/Non-scrollable) */}
-                <div className="shrink-0 bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:rounded-t-xl">
+                {/* HEADER */}
+                <div className="sticky top-0 z-50 rounded-t-2xl bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:px-8">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold text-white">Assistance Request Form</DialogTitle>
                     </DialogHeader>
                 </div>
 
-                {/* Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto px-6 py-6">
+                <div className="space-y-6 px-6 py-6 sm:px-8 sm:py-8">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* PERSONAL INFORMATION */}
                         <div className="space-y-4">
-                            <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Personal Information</h3>
+                            <h3 className="text-base font-semibold text-orange-600">Personal Information</h3>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <InputField label="Last Name *" id="last_name" register={register} errors={errors} required />
                                 <InputField label="First Name *" id="first_name" register={register} errors={errors} required />
                                 <InputField label="Middle Name" id="middle_name" register={register} errors={errors} />
                                 <InputField label="Suffix" id="suffix" register={register} errors={errors} />
 
+                                {/* ✅ Birth Date Input */}
                                 <DatePickerField label="Birth Date *" name="birth_date" control={control} errors={errors} required />
 
                                 <InputField label="Contact Number *" id="contact_number" type="tel" register={register} errors={errors} required />
@@ -184,55 +157,47 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
                         </div>
 
                         {/* ADDRESS DROPDOWN */}
-                        <div className="space-y-4">
-                            <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Address</h3>
-                            <AddressDropdown onAddressChange={handleAddressChange} />
-                        </div>
+                        <AddressDropdown onAddressChange={handleAddressChange} />
 
                         {/* ASSISTANCE TYPE */}
-                        <div className="space-y-4">
-                            <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Request Details</h3>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-semibold text-gray-700">Type of Assistance *</Label>
-                                <Controller
-                                    name="assistance_type"
-                                    control={control}
-                                    rules={{ required: 'Please select a type of assistance' }}
-                                    render={({ field }) => (
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <SelectTrigger
-                                                className={`w-full text-sm ${errors.assistance_type ? 'border-red-500' : 'border-gray-300'}`}
-                                            >
-                                                <SelectValue placeholder="Select type of assistance" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {assistanceOptions.map((opt) => (
-                                                    <SelectItem key={opt} value={opt}>
-                                                        {opt}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                                {errors.assistance_type && <p className="animate-pulse text-sm text-red-500">{errors.assistance_type.message}</p>}
-                            </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-gray-700">Type of Assistance *</Label>
+                            <Controller
+                                name="assistance_type"
+                                control={control}
+                                rules={{ required: 'Please select a type of assistance' }}
+                                render={({ field }) => (
+                                    <Select value={field.value} onValueChange={field.onChange}>
+                                        <SelectTrigger className={`w-full text-sm ${errors.assistance_type ? 'border-red-500' : 'border-gray-300'}`}>
+                                            <SelectValue placeholder="Select type of assistance" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {assistanceOptions.map((opt) => (
+                                                <SelectItem key={opt} value={opt}>
+                                                    {opt}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.assistance_type && <p className="text-sm text-red-500">{errors.assistance_type.message}</p>}
+                        </div>
 
-                            {/* DESCRIPTION */}
-                            <div className="space-y-2">
-                                <Label className="font-semibold text-gray-800">Description / Reason *</Label>
-                                <Textarea
-                                    {...register('description', { required: 'Description is required' })}
-                                    rows={4}
-                                    placeholder="Provide details about your request..."
-                                    className={errors.description ? 'border-red-500' : 'border-gray-300'}
-                                />
-                                {errors.description && <p className="animate-pulse text-sm text-red-500">{errors.description.message}</p>}
-                            </div>
+                        {/* DESCRIPTION */}
+                        <div className="space-y-2">
+                            <Label className="font-semibold text-gray-800">Description / Reason *</Label>
+                            <Textarea
+                                {...register('description', { required: 'Description is required' })}
+                                rows={4}
+                                placeholder="Provide details about your request..."
+                                className={errors.description ? 'border-red-500' : 'border-gray-300'}
+                            />
+                            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
                         </div>
 
                         {/* ACTIONS */}
-                        <div className="flex flex-row gap-4 pt-4 pb-2">
+                        <div className="flex flex-row gap-4 pt-4">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -247,22 +212,16 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
                             </Button>
                             <Button
                                 type="submit"
-                                className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white transition-all duration-300 hover:opacity-90 active:scale-[0.98]"
+                                className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white hover:opacity-90"
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? (
-                                    <span className="flex items-center gap-2">
-                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                                        Submitting...
-                                    </span>
-                                ) : (
-                                    'Submit Request'
-                                )}
+                                {isSubmitting ? 'Submitting...' : 'Submit Request'}
                             </Button>
                         </div>
                     </form>
 
                     <ToastProvider />
+
                     <ClassicDialog
                         title={classicDialog.title}
                         message={classicDialog.message}
@@ -271,10 +230,18 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
                         negativeButtonText={classicDialog.negativeButtonText}
                         hideNegativeButton={classicDialog.isNegativeButtonHidden}
                         onPositiveClick={() => {
-                            setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                action: null,
+                                isOpen: false,
+                            }));
                         }}
                         onNegativeClick={() => {
-                            setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
+                            setClassicDialog((prev) => ({
+                                ...prev,
+                                action: null,
+                                isOpen: false,
+                            }));
                         }}
                     />
                 </div>
@@ -289,10 +256,10 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
 
 interface InputFieldProps {
     label: string;
-    id: Path<FormData>;
+    id: string;
     type?: string;
     register: any;
-    errors: FieldErrors<FormData>;
+    errors: any;
     required?: boolean;
 }
 
@@ -307,17 +274,14 @@ function InputField({ label, id, type = 'text', register, errors, required }: In
                 type={type}
                 autoComplete="off"
                 {...register(id, required ? { required: `${label} is required` } : {})}
-                className={cn(
-                    'rounded-md border font-medium text-gray-600 focus:border-orange-400 focus:ring-orange-200',
-                    errors[id] && 'border-red-500 focus-visible:ring-red-500', // Added explicit focus ring for errors
-                )}
+                className={`rounded-md border font-medium text-gray-600 focus:border-orange-400 focus:ring-orange-200 ${errors[id] ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {/* Added animate-pulse as per your preference */}
-            {errors[id] && <p className="animate-pulse text-sm text-red-500">{errors[id]?.message}</p>}
+            {errors[id] && <p className="text-sm text-red-500">{errors[id]?.message}</p>}
         </div>
     );
 }
 
+// ✅ NEW: Date Picker Component wrapping Controller + Popover + Calendar
 interface DatePickerFieldProps {
     name: Path<FormData>;
     control: Control<FormData>;
@@ -351,6 +315,9 @@ function DatePickerField({ name, control, errors, label, required = false }: Dat
                                 {field.value ? format(new Date(field.value), 'PPP') : <span>Pick a date</span>}
                             </Button>
                         </PopoverTrigger>
+                        {/* Added z-[1000] and pointer-events-auto to ensure it sits on top of the Dialog (which is typically z-50).
+                          This fixes the issue where calendar dates are not clickable inside a modal.
+                        */}
                         <PopoverContent className="pointer-events-auto z-[1000] w-auto p-0" align="start">
                             <Calendar
                                 mode="single"
@@ -365,7 +332,7 @@ function DatePickerField({ name, control, errors, label, required = false }: Dat
                     </Popover>
                 )}
             />
-            {errors[name] && <p className="animate-pulse text-sm text-red-500">{errors[name]?.message}</p>}
+            {errors[name] && <p className="text-sm text-red-500">{errors[name]?.message}</p>}
         </div>
     );
 }

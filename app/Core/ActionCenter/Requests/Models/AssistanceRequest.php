@@ -34,11 +34,15 @@ class AssistanceRequest extends Model
 
         'municipal_id',
 
+        'amount',
+
     ];
 
     protected $casts = [
 
         'description' => 'encrypted',
+
+        'amount' => 'encrypted',
 
     ];
 

@@ -1,4 +1,6 @@
+import { ActionCenterForm } from '@/components/ActionCenter/RequestAssistanceBeneficiaryForm'; // ✅ Import new form
 import { Button } from '@/components/ui/button';
+import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
@@ -9,14 +11,17 @@ import PaginationView from '@/pages/Utility/PaginationView';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
-import ActionCenter from '@/routes/actionCenter/admin'; // ✅ Import Wayfinder Route Definition
+import ActionCenter from '@/routes/actionCenter/admin';
 import { router } from '@inertiajs/react';
 import { Eye, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import AddEditRecordDialog from './AddEditRecordDialog';
+// import AddEditRecordDialog from './AddEditRecordDialog'; // ❌ Removed old dialog
 import Header from './Header';
 import PrintView from './PrintView';
+
+// Declare global route for other parts if needed
+declare var route: any;
 
 // 1. Interfaces matching your API Resource
 interface PaginationMeta {
@@ -28,7 +33,6 @@ interface PaginationMeta {
     total: number;
 }
 
-// Export this so the parent page can use it for typing
 export interface AssistanceApiResponse {
     data: AssistanceRequest[];
     meta: PaginationMeta;
@@ -36,8 +40,8 @@ export interface AssistanceApiResponse {
 }
 
 interface Props {
-    data: AssistanceApiResponse; // Data from Props
-    filters?: any; // Filters from Props
+    data: AssistanceApiResponse;
+    filters?: any;
 }
 
 export function AssistanceRequestTable({ data, filters }: Props) {
@@ -70,7 +74,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         action: null,
     });
 
-    // Extract data for easier access with Safe Defaults
     const requestList = data?.data || [];
     const meta = data?.meta || {
         current_page: 1,
@@ -83,54 +86,34 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
     // --- HANDLERS ---
 
-    // 1. Pagination: Updates URL ?page=X
     const handlePageChange = (page: number) => {
-        // ✅ FIX: Use Wayfinder for the index route instead of 'route()'
         const targetUrl = ActionCenter.index.url({
             municipality: currentMunicipality.slug,
         });
 
-        router.get(
-            targetUrl,
-            { page: page, ...filters }, // Preserve existing filters
-            {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['requests'],
-            },
-        );
+        router.get(targetUrl, { page: page, ...filters }, { preserveState: true, preserveScroll: true, only: ['requests'] });
     };
 
-    // 2. Navigation
     const handleViewRequest = (id: string) => {
         const targetUrl = ActionCenter.show.url({
             municipality: currentMunicipality.slug,
             id: id,
         });
-        console.log(targetUrl);
         router.visit(targetUrl);
     };
 
-    // 3. Sorting / Searching
     const handleSearchOrSort = (params: object) => {
-        // ✅ FIX: Use Wayfinder for the index route instead of 'route()'
         const targetUrl = ActionCenter.index.url({
             municipality: currentMunicipality.slug,
         });
 
-        router.get(
-            targetUrl,
-            { ...filters, ...params, page: 1 }, // Reset to page 1 on new search/sort
-            { preserveState: true, preserveScroll: true, only: ['requests', 'filters'] },
-        );
+        // router.get(targetUrl, { ...filters, ...params, page: 1 }, { preserveState: true, preserveScroll: true, only: ['requests', 'filters'] });
     };
 
-    // 4. Reload
     const handleReload = () => {
         router.reload({ only: ['requests'] });
     };
 
-    // --- HELPERS ---
     const getStatusBadgeColor = (status: string) => {
         switch (status.toLowerCase()) {
             case 'approved':
@@ -169,7 +152,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                         });
                     }}
                     onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
-                    // onSearch={(query) => handleSearchOrSort({ search: query })}
+                    onSearch={(query) => handleSearchOrSort({ search: query })}
                 />
             </div>
 
@@ -178,7 +161,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
                         <TableRow>
-                            {/* Removed Checkbox Column */}
                             <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">No.</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Beneficiary</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Date</TableHead>
@@ -198,59 +180,62 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                 const rowNumber = (meta.current_page - 1) * meta.per_page + (index + 1);
 
                                 return (
-                                    <TableRow key={req.id} className="group transition-colors hover:bg-gray-50">
-                                        <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
+                                    <ContextMenu key={req.id}>
+                                        <ContextMenuTrigger asChild>
+                                            <TableRow className="group transition-colors hover:bg-gray-50">
+                                                <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
 
-                                        {/* Beneficiary Safe Access */}
-                                        <TableCell className="text-xs font-medium text-gray-900 capitalize">
-                                            {req.beneficiary ? (
-                                                `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
-                                            ) : (
-                                                <span className="text-gray-400 italic">No Beneficiary</span>
-                                            )}
-                                        </TableCell>
+                                                <TableCell className="text-xs font-medium text-gray-900 capitalize">
+                                                    {req.beneficiary ? (
+                                                        `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">No Beneficiary</span>
+                                                    )}
+                                                </TableCell>
 
-                                        <TableCell className="text-xs text-gray-600">
-                                            {Utility().formatToReadableDateNoTime(req.created_at)}
-                                        </TableCell>
-                                        <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
-                                        <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
+                                                <TableCell className="text-xs text-gray-600">
+                                                    {Utility().formatToReadableDateNoTime(req.created_at)}
+                                                </TableCell>
+                                                <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
+                                                <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
 
-                                        {/* Status Badge */}
-                                        <TableCell>
-                                            <span
-                                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
-                                            >
-                                                {req.status.replace('_', ' ')}
-                                            </span>
-                                        </TableCell>
+                                                <TableCell>
+                                                    <span
+                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
+                                                    >
+                                                        {req.status.replace('_', ' ')}
+                                                    </span>
+                                                </TableCell>
 
-                                        <TableCell className="text-xs font-semibold text-gray-700">{Utility().formatCurrency(req.amount)}</TableCell>
+                                                <TableCell className="text-xs font-semibold text-gray-700">
+                                                    {Utility().formatCurrency(req.amount)}
+                                                </TableCell>
 
-                                        {/* Actions */}
-                                        <TableCell>
-                                            <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                    onClick={() => handleViewRequest(req.id)}
-                                                >
-                                                    <Eye size={16} />
-                                                </Button>
+                                                <TableCell>
+                                                    <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                            onClick={() => handleViewRequest(req.id)}
+                                                        >
+                                                            <Eye size={16} />
+                                                        </Button>
 
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    disabled={req.status === 'pending'}
-                                                    className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
-                                                    onClick={() => setPrintDialogState({ isVisible: true, request: req })}
-                                                >
-                                                    <Printer size={16} />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            disabled={req.status === 'pending'}
+                                                            className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
+                                                            onClick={() => setPrintDialogState({ isVisible: true, request: req })}
+                                                        >
+                                                            <Printer size={16} />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        </ContextMenuTrigger>
+                                    </ContextMenu>
                                 );
                             })
                         )}
@@ -258,7 +243,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 </Table>
             </div>
 
-            {/* PAGINATION */}
             <div className="mt-4">
                 <PaginationView
                     currentPage={meta.current_page}
@@ -269,7 +253,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 />
             </div>
 
-            {/* --- DIALOGS --- */}
             <ToastProvider />
 
             <FilterDialog
@@ -285,11 +268,23 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 onApply={(selectedFilter) => handleSearchOrSort({ sort: selectedFilter?.sub })}
             />
 
-            <AddEditRecordDialog
+            {/* ✅ NEW: ActionCenterForm Implementation */}
+            <ActionCenterForm
                 isOpen={isAddNewRecordDialogOpen}
                 onClose={() => setIsAddNewRecordDialogOpen(false)}
-                editData={null}
-                onSuccess={() => handleReload()}
+                onSubmitSuccess={(title, message) => {
+                    // 1. Show the success dialog
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                        title: title,
+                        message: message,
+                        positiveButtonText: 'Close',
+                        isNegativeButtonHidden: true,
+                    }));
+                    // 2. Reload the table data to show the new record
+                    handleReload();
+                }}
             />
 
             <ClassicDialog
@@ -302,10 +297,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 onPositiveClick={() => {
                     if (classicDialog.action === 'file_export') {
                         ToExcel(requestList, `Assistance_List_${new Date().toISOString().slice(0, 10)}.xlsx`);
-                    }
-                    if (classicDialog.action === 'delete_record') {
-                        // Implement server side delete via router.delete() if needed
-                        toast.info('Delete logic should be implemented on backend.');
                     }
                     setClassicDialog((prev) => ({ ...prev, isOpen: false }));
                 }}

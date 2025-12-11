@@ -63,7 +63,7 @@ return new class extends Migration {
                 ->constrained('municipalities')
                 ->restrictOnDelete();
 
-            $table->decimal('amount', 12, 2)->default(0);
+            $table->text('amount')->nullable(); // Text is safer for long encrypted strings
 
             $table->string('transaction_number')->unique();
 
