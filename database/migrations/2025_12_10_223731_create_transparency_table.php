@@ -21,6 +21,11 @@ return new class extends Migration {
 
             $table->string('reference_number')->unique()->nullable();
 
+            $table->foreignUlid('municipal_id')
+                ->nullable()
+                ->index() // <--- This creates a standard B-Tree index for fast lookups
+                ->constrained('municipalities')
+                ->nullOnDelete();
 
             $table->string('title');
 
@@ -36,12 +41,13 @@ return new class extends Migration {
 
             $table->dateTime('closing_date')->nullable();
 
-            //winner info
             $table->string('winning_bidder')->nullable();
 
             $table->dateTime('award_date')->nullable();
 
             $table->timestamps();
+
+            $table->index(['municipal_id', 'status']);
 
         });
 
@@ -56,6 +62,8 @@ return new class extends Migration {
             $table->string('public_id');
 
             $table->string('type')->default('DOCUMENT');
+
+            $table->string('resource_type')->default('image')->after('file_name');
 
             $table->string('file_name'); // e.g., "Invitation_to_Bid.pdf" (Original name)
 

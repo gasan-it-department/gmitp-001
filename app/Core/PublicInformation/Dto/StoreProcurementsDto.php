@@ -8,25 +8,33 @@ use Illuminate\Http\UploadedFile;
 class StoreProcurementsDto
 {
     public function __construct(
-        public ?string $userId, // Nullable in case unauthenticated (though usually required)
+
+        public ?string $userId,
+
+        public string $municipalId,
+
         public string $referenceNumber,
+
         public string $title,
+
         public string $category,
+
         public string $status,
 
         public float $approvedBudget,
+
         public ?float $contractAmount,
 
         public ?string $winningBidder,
 
         public ?string $preBidDate,
+
         public ?string $closingDate,
+
         public ?string $awardDate,
 
-        /** @var UploadedFile[] */
         public array $files = [],
 
-        /** @var string[] */
         public array $fileTypes = []
     ) {
     }
@@ -37,6 +45,7 @@ class StoreProcurementsDto
 
         return new self(
             userId: $request->user()?->id,
+            municipalId: app('municipal_id'),
             referenceNumber: $data['reference_number'],
             title: $data['title'],
             category: $data['category'],

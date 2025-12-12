@@ -18,6 +18,8 @@ class ProcurementsRepository
 
             'user_id' => $dto->userId,
 
+            'municipal_id' => $dto->municipalId,
+
             'reference_number' => $dto->referenceNumber,
 
             'title' => $dto->title,
@@ -55,7 +57,9 @@ class ProcurementsRepository
 
             'file_name' => $fileData['original_name'],
 
-            'type' => $type
+            'type' => $type,
+
+            'resource_type' => $fileData['resource_type'] ?? 'image',
 
         ]);
 
@@ -65,6 +69,16 @@ class ProcurementsRepository
     {
 
         return Procurement::findOrFail($id);
+
+    }
+
+    public function getAllPermunicipality(string $municipalId)
+    {
+
+        return Procurement::query()
+            ->where('municipal_id', $municipalId)
+            ->with('files')
+            ->paginate(10);
 
     }
 

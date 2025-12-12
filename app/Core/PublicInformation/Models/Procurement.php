@@ -27,6 +27,8 @@ class Procurement extends Model
 
         'user_id',
 
+        'municipal_id',
+
         'reference_number',
 
         'title',

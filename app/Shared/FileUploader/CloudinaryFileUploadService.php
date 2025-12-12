@@ -23,10 +23,11 @@ class CloudinaryFileUploadService
             [
                 'folder' => $folder,
                 'resource_type' => 'auto',
-                'transformation' => [
-                    'quality' => 'auto:good',
-                    'fetch_format' => 'auto'
-                ],
+
+                // --- REMOVED TRANSFORMATIONS ---
+                // We removed 'transformation' => [...]
+                // This ensures the PDF is stored exactly as the user uploaded it.
+                // We will handle optimization in the Frontend/Resource URL generation instead.
             ]
         );
 

@@ -1,13 +1,13 @@
 <?php
 
 
-use App\External\Web\Controllers\PublicInformation\AwardsPageController;
 use App\External\Api\Controllers\PublicInformation\ProcurementsController;
+use App\External\Web\Controllers\PublicInformation\Admin\ProcurementsPageController;
 
 Route::prefix('{municipality}/awards-editor')
     ->middleware(['municipalityContext', 'admin'])
     ->name('awardsAdminPage.')
-    ->controller(AwardsPageController::class)
+    ->controller(ProcurementsPageController::class)
     ->group(function () {
 
         Route::get('/admin', 'index')->name('page');

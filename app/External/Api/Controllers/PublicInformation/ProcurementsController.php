@@ -30,4 +30,11 @@ class ProcurementsController
 
     }
 
+    public function fetch()
+    {
+
+
+
+    }
+
 }
