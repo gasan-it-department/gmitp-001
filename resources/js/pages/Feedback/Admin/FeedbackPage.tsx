@@ -1,14 +1,14 @@
 import AdminLayout from '@/layouts/App/AppLayout';
-import FeedbackPageTable from './Components/FeedbackPageTable';
 
-export default function FeedbackPage() {
+export default function FeedbackPage({ feedbacks }: any) {
+    console.log(feedbacks);
     return (
         <AdminLayout>
             <section className="">
                 <div className="m-5 mt-0 flex bg-white">
                     <div className="w-full">
                         {/* <EventPageTable /> */}
-                        <FeedbackPageTable />
+                        {/* <FeedbackPageTable /> */}
                     </div>
                 </div>
             </section>

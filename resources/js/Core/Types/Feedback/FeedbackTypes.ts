@@ -1,3 +1,7 @@
+export type Feedback = {
+    id: string
+
+}
 
 export interface Department {
     id: string;

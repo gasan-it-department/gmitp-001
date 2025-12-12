@@ -1,5 +1,5 @@
 
-export interface CommunityReportFormData {
+export type CommunityReportFormData = {
     issue_type: string;
     location: string;
     description: string;
@@ -10,7 +10,7 @@ export interface CommunityReportFormData {
     files: File[];
 }
 
-export interface CommunityReportData {
+export type CommunityReportData = {
     id: string;
     type: string;
     location: string;

@@ -2,18 +2,18 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import { dummy_departments } from '@/pages/Utility/Offices';
+import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';
 import { EyeIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import FilterDialog from '../../../BulletinBoard/Admin/Components/FilterDialog';
+import ViewFeedbackDialog from '../../../BulletinBoard/Admin/Components/ViewFeedbackDialog';
 import FeedbackPageTableHeader from './FeedbackPageTableHeader';
-import ViewFeedbackDialog from './ViewFeedbackDialog';
-import PaginationView from '@/pages/Utility/PaginationView';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
-import FilterDialog from './FilterDialog';
-import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
-import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
-import { dummy_departments } from '@/pages/Utility/Offices';
 
 export default function FeedbackPageTable() {
     const { currentMunicipality } = useMunicipality();
@@ -61,23 +61,25 @@ export default function FeedbackPageTable() {
 
     const handleSort = (selectedSort: string | null) => {
         // HANDLE SORT IN THE BACKEND
-        console.log("Feedback filter ", selectedSort);
-    }
+        console.log('Feedback filter ', selectedSort);
+    };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Community Feedback</h1>
                 <FeedbackPageTableHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { setIsFilterOpened(true) }}
-                    onExportButtonClicked={() => { }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {
+                        setIsFilterOpened(true);
+                    }}
+                    onExportButtonClicked={() => {}}
                 />
             </div>
 
             {/* TABLE WRAPPER */}
-            <div className="flex flex-col flex-1 w-full border rounded-lg overflow-hidden">
+            <div className="flex w-full flex-1 flex-col overflow-hidden rounded-lg border">
                 <Table className="min-w-full table-fixed">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
@@ -90,22 +92,19 @@ export default function FeedbackPageTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {feedbacks.length === 0 ?
-                            <AdminEmptyListItem title="No Feedback yet." message="Feedback will appear here." /> :
+                        {feedbacks.length === 0 ? (
+                            <AdminEmptyListItem title="No Feedback yet." message="Feedback will appear here." />
+                        ) : (
                             feedbacks.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                    <TableCell className="whitespace-nowrap text-[13px] font-medium">
+                                    <TableCell className="text-[13px] font-medium whitespace-nowrap">
                                         {index + 1 + (currentPage - 1) * perPage}
                                     </TableCell>
-                                    <TableCell className="whitespace-nowrap text-[13px] font-medium truncate">
-                                        {item.employee_name
-                                            ?? dummy_departments.find(
-                                                d => d.id === item.department_id?.trim()
-                                            )?.name
-                                            ?? '—'}
+                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">
+                                        {item.employee_name ?? dummy_departments.find((d) => d.id === item.department_id?.trim())?.name ?? '—'}
                                     </TableCell>
 
-                                    <TableCell className="text-[12px] max-w-0">
+                                    <TableCell className="max-w-0 text-[12px]">
                                         <span
                                             className="block overflow-hidden"
                                             style={{
@@ -121,7 +120,7 @@ export default function FeedbackPageTable() {
                                             {item.message}
                                         </span>
                                     </TableCell>
-                                    <TableCell className="whitespace-nowrap text-[12px]">
+                                    <TableCell className="text-[12px] whitespace-nowrap">
                                         {Utility().formatToReadableDate(item.created_at) ?? '—'}
                                     </TableCell>
                                     <TableCell className="flex justify-center gap-2">
@@ -135,7 +134,8 @@ export default function FeedbackPageTable() {
                                         </Button>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </div>
@@ -146,8 +146,8 @@ export default function FeedbackPageTable() {
                     setIsFilterOpened(false);
                 }}
                 filters={[
-                    { title: "Message", sub: "message" },
-                    { title: "Date Reported", sub: "created_at" }
+                    { title: 'Message', sub: 'message' },
+                    { title: 'Date Reported', sub: 'created_at' },
                 ]}
                 currentFilter={currentFilter}
                 onApply={(selectedFilter) => {
@@ -155,10 +155,11 @@ export default function FeedbackPageTable() {
                     if (selectedFilter) {
                         handleSort(selectedFilter?.sub);
                     }
-                }} />
+                }}
+            />
 
             {/* PAGINATION */}
-            <div className="py-4 border-t bg-white">
+            <div className="border-t bg-white py-4">
                 <PaginationView
                     currentPage={currentPage}
                     totalPages={lastPage}
