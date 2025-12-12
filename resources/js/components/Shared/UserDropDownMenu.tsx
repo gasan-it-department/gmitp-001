@@ -10,6 +10,7 @@ import { AuthApi } from '@/Core/Api/Auth/AuthApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { account } from '@/routes';
+import actionCenter from '@/routes/actionCenter';
 import admin from '@/routes/admin';
 import superAdmin from '@/routes/superAdmin';
 import { type SharedData } from '@/types';
@@ -58,7 +59,7 @@ export function UserDropdownMenu() {
                         <DropdownMenuItem
                             onClick={() => {
                                 localStorage.setItem('activeSidebarUrl', "/gasan-4905/action-center/admin");
-                                router.visit(admin.dashboard.url({ municipality: currentMunicipality.slug }));
+                                router.visit(actionCenter.admin.index.url({ municipality: currentMunicipality.slug }));
                             }}
                         >
                             Admin Panel

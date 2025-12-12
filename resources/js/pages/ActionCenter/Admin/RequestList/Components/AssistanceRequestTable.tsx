@@ -13,14 +13,12 @@ import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
 import ActionCenter from '@/routes/actionCenter/admin';
 import { router } from '@inertiajs/react';
-import { Eye, Printer } from 'lucide-react';
+import { Eye, Pencil, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Header from './Header';
 import PrintView from './PrintView';
 import AssistanceRequestDetails from '../../RequestDetails/AssistanceRequestsDetails';
-import { ref } from 'process';
-
 
 interface PaginationMeta {
     current_page: number;
@@ -44,8 +42,6 @@ interface Props {
 
 export function AssistanceRequestTable({ data, filters }: Props) {
     const { currentMunicipality } = useMunicipality();
-
-    // --- STATE ---
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
     const [detailsView, setDetailsView] = useState<{
@@ -88,8 +84,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         from: 0,
         to: 0,
     };
-
-    // --- HANDLERS ---
 
     const handlePageChange = (page: number) => {
         const targetUrl = ActionCenter.index.url({

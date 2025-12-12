@@ -112,10 +112,10 @@ export const PDFStructure: React.FC<PDFProps> = ({ data, locationNames }) => {
     );
 
   const { beneficiary } = data;
-  const province = locationNames?.provinceName || beneficiary.province;
-  const municipality = locationNames?.municipalityName || beneficiary.municipality;
-  const barangay = locationNames?.barangayName || beneficiary.barangay;
-  const fullName = `${beneficiary.first_name} ${beneficiary.middle_name || ''} ${beneficiary.last_name} ${beneficiary.suffix || ''}`
+  const province = locationNames?.provinceName || beneficiary!.province;
+  const municipality = locationNames?.municipalityName || beneficiary!.municipality;
+  const barangay = locationNames?.barangayName || beneficiary!.barangay;
+  const fullName = `${beneficiary!.first_name} ${beneficiary!.middle_name || ''} ${beneficiary!.last_name} ${beneficiary!.suffix || ''}`
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -163,11 +163,11 @@ export const PDFStructure: React.FC<PDFProps> = ({ data, locationNames }) => {
           </View>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Birth Date:</Text>
-            <Text style={styles.value}>{Utility().formatToReadableDateNoTime(beneficiary.birth_date)}</Text>
+            <Text style={styles.value}>{Utility().formatToReadableDateNoTime(beneficiary!.birth_date)}</Text>
           </View>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Contact No:</Text>
-            <Text style={styles.value}>{beneficiary.contact_number}</Text>
+            <Text style={styles.value}>{beneficiary!.contact_number}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -189,7 +189,7 @@ export const PDFStructure: React.FC<PDFProps> = ({ data, locationNames }) => {
 
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Source:</Text>
-            <Text style={styles.value}>{beneficiary.source}</Text>
+            <Text style={styles.value}>{beneficiary!.source}</Text>
           </View>
           <View style={styles.fieldRow}>
             <Text style={styles.label}>Description:</Text>

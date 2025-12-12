@@ -6,62 +6,24 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import MapCoordinates from './MapCoordinates';
+import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
 
-// --- MOCK DEFINITIONS AND TYPES ---
-interface CommunityReportFormData {
-    issue_type: string;
-    location: string;
-    description: string;
-    sender_name: string;
-    contact: string;
-    latitude: string;
-    longitude: string;
-    files: File[];
+interface ReportFormDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
 }
 
-interface ClassicDialogState {
-    title: string;
-    message: string;
-    positiveButtonTitle: string;
-    negativeButtonTitle: string;
-    isShowing: boolean;
-    hideNegativeButton: boolean;
-}
-
-const MapCoordinates = ({ latitude, longitude }: { latitude: number; longitude: number }) => (
-    <div className="flex h-full items-center justify-center bg-gray-100 text-sm text-gray-500">
-        Map Preview: ({latitude}, {longitude})
-    </div>
-);
-
-const ClassicDialog = ({ title, message, open, onPositiveClick, hideNegativeButton, positiveButtonText }: any) => {
-    if (!open) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-            <div className="mx-4 max-w-md rounded-lg bg-white p-6 shadow-2xl">
-                <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-                <p className="mt-3 text-sm whitespace-pre-wrap text-gray-600">{message}</p>
-                <div className="mt-5 flex justify-end">
-                    <button onClick={onPositiveClick} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                        {positiveButtonText || 'OK'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-// ------------------------------------------
-
-// --- MAIN COMPONENT ---
-
-export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: boolean; onOpenChange: (open: boolean) => void; onSuccess: () => void }) {
+export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDialogProps) {
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmiting] = useState(false);
     const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
-    const [classicDialog, setClassicDialog] = useState<ClassicDialogState>({
+    const [classicDialog, setClassicDialog] = useState({
         title: '',
         message: '',
         positiveButtonTitle: '',
@@ -117,119 +79,100 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: bool
         setValue('files', updatedFiles);
     };
 
-    // --- DIRECT GEOLOCATION HANDLER (Consolidated Logic) ---
-    const handleGetLocation = () => {
-        setIsGettingCoordinates(true);
-        clearErrors('latitude');
-        clearErrors('longitude');
-
+    const handleGetLocation = async () => {
         if (!navigator.geolocation) {
-            setClassicDialog((prev) => ({
-                ...prev,
-                title: 'Geolocation Not Supported',
-                message: 'Your browser or device does not support location services.',
-                hideNegativeButton: true,
-                positiveButtonTitle: 'Close',
-                isShowing: true,
-            }));
-            setIsGettingCoordinates(false);
+            alert('Geolocation is not supported by this browser.');
             return;
         }
 
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0,
-        };
+        setIsGettingCoordinates(true);
 
-        window.navigator.geolocation.getCurrentPosition(
-            // === SUCCESS CALLBACK ===
-            (position) => {
-                const latitude = String(position.coords.latitude);
-                const longitude = String(position.coords.longitude);
-                setValue('latitude', latitude, { shouldValidate: true });
-                setValue('longitude', longitude, { shouldValidate: true });
-                setIsGettingCoordinates(false);
-            },
+        try {
+            // Check permission status first
+            const permission = await navigator.permissions.query({
+                name: 'geolocation',
+            });
 
-            // === ERROR CALLBACK ===
-            (error) => {
-                let title = 'Location Access Required';
-                let message;
-
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        message =
-                            'Location permission was permanently denied by your device or browser settings.\n\n' +
-                            '**Troubleshooting Steps:**\n' +
-                            "1. Go to your Phone's Settings (Android/iOS).\n" +
-                            "2. Find Apps/Browser settings and ensure Location access is 'Allowed'.\n" +
-                            '3. Restart your browser and try again.\n\n' +
-                            "Still can't get location? Please check if the website is running at https not in http.";
-                        title = 'ACCESS DENIED (Check Settings)';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        message = "Location information is unavailable. Ensure your device's GPS is ON and you have a clear sky view.";
-                        break;
-                    case error.TIMEOUT:
-                        message = 'The location request timed out (15 seconds). Check your internet/GPS signal strength and try again.';
-                        title = 'Request Timed Out';
-                        break;
-                    default:
-                        message = 'An unknown error occurred while attempting to find your location.';
-                }
-
-                setValue('latitude', '');
-                setValue('longitude', '');
-
+            if (permission.state === 'denied') {
+                // Permission already denied — show dialog
                 setClassicDialog((prev) => ({
                     ...prev,
-                    title: title,
-                    message: message,
+                    title: 'Permission Denied',
+                    message: 'Location permission has been denied. Please enable it in your browser settings.',
                     hideNegativeButton: true,
-                    positiveButtonTitle: 'OK',
+                    positiveButtonTitle: 'Close',
                     isShowing: true,
                 }));
                 setIsGettingCoordinates(false);
-            },
-            options,
-        );
+                return;
+            }
+
+            // If state is "granted" or "prompt", we can try to get location
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setValue('latitude', String(position.coords.latitude));
+                    setValue('longitude', String(position.coords.longitude));
+                    setIsGettingCoordinates(false);
+                },
+                (error) => {
+                    let message = 'Unable to get coordinates.';
+
+                    if (error.code === error.PERMISSION_DENIED) {
+                        message = 'Location permission denied. Please allow permission and try again.';
+                    }
+
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        title: 'Error',
+                        message,
+                        hideNegativeButton: true,
+                        positiveButtonTitle: 'Close',
+                        isShowing: true,
+                    }));
+
+                    setIsGettingCoordinates(false);
+                },
+            );
+        } catch (err) {
+            console.log('Permission API error:', err);
+            // Fallback if the browser doesn't support Permission API
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setValue('latitude', String(position.coords.latitude));
+                    setValue('longitude', String(position.coords.longitude));
+                    setIsGettingCoordinates(false);
+                },
+                () => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        title: 'Permission Denied',
+                        message: 'Unable to get coordinates. Please allow Location permission.',
+                        hideNegativeButton: true,
+                        positiveButtonTitle: 'Close',
+                        isShowing: true,
+                    }));
+                    setIsGettingCoordinates(false);
+                },
+            );
+        }
     };
-    // ---------------------------------------------------
 
     const onSubmit = async (data: CommunityReportFormData) => {
         console.log('Report Submitted:', data);
         setIsSubmiting(true);
-        console.log(currentMunicipality.slug);
-
-        // --- API CALL ---
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
         if (response.success) {
             setIsSubmiting(false);
             onOpenChange(false);
             reset();
             onSuccess();
-        } else {
-            setClassicDialog((prev) => ({
-                ...prev,
-                title: 'Submission Failed',
-                message: 'There was an error submitting your report. Please try again.',
-                hideNegativeButton: true,
-                positiveButtonTitle: 'OK',
-                isShowing: true,
-            }));
-            setIsSubmiting(false);
         }
     };
 
     useEffect(() => {
-        // Reset coordinates when dialog opens/closes
-        if (open) {
-            setValue('latitude', '');
-            setValue('longitude', '');
-            setError(null); // Clear any file errors
-        }
-    }, [open, setValue]);
+        setValue('latitude', '');
+        setValue('longitude', '');
+    }, [open]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -252,7 +195,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: bool
                     </DialogHeader>
                 </div>
 
-                <div className="space-y-10 px-6 py-6 sm:px-8 sm:py-8 overflow-auto">
+                <div className="overflow-auto space-y-10 px-6 py-6 sm:px-8 sm:py-8">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
                         {/* ISSUE TYPE */}
                         <div className="space-y-4">
@@ -296,30 +239,19 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: bool
 
                             <Input
                                 placeholder="e.g., Barangay Poblacion, near municipal hall"
-                                {...register('location', { required: 'Location description is required.' })}
+                                {...register('location', { required: 'Location is required.' })}
                                 className={errors.location ? 'border-red-500' : ''}
                             />
 
                             {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
 
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Input
-                                    placeholder="Latitude"
-                                    {...register('latitude', { required: 'GPS coordinates are required.' })}
-                                    readOnly
-                                    className={errors.latitude ? 'border-red-500' : ''}
-                                />
-                                <Input
-                                    placeholder="Longitude"
-                                    {...register('longitude', { required: 'GPS coordinates are required.' })}
-                                    readOnly
-                                    className={errors.longitude ? 'border-red-500' : ''}
-                                />
+                                <Input placeholder="Latitude" {...register('latitude')} readOnly />
+                                <Input placeholder="Longitude" {...register('longitude')} readOnly />
                             </div>
 
                             {watch('latitude') && watch('longitude') && (
                                 <div className="relative mt-3 h-64 w-full overflow-hidden rounded-xl border">
-                                    {/* Note: MapCoordinates component needs an external map library to function */}
                                     <MapCoordinates latitude={Number(watch('latitude'))} longitude={Number(watch('longitude'))} />
                                 </div>
                             )}
@@ -333,7 +265,6 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: { open: bool
                             >
                                 {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
                             </Button>
-                            {errors.latitude && <p className="text-sm text-red-500">{errors.latitude.message}</p>}
                         </div>
 
                         {/* DESCRIPTION */}

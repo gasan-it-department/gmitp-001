@@ -23,7 +23,6 @@ import communityReport from '@/routes/communityReport';
 import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
-import officesAdmin from '@/routes/officesAdmin';
 import officialsEditor from '@/routes/officialsEditor';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
@@ -50,7 +49,7 @@ import {
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import { useRef, useEffect } from 'react'; // <-- Imported for scroll logic
+import { useRef, useEffect } from 'react';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -94,15 +93,14 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         }));
     };
 
-    // 2. useEffect to scroll the active item into view
     useEffect(() => {
         if (activeItemRef.current) {
             activeItemRef.current.scrollIntoView({
                 behavior: 'smooth',
-                block: 'nearest', // Scrolls the element into the nearest viewable area
+                block: 'nearest',
             });
         }
-    }, [url]); // Dependency on 'url' ensures it runs on route change
+    }, [url]);
 
     const AdminSidebarItems = [
         {

@@ -4,18 +4,18 @@ import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { home } from '@/routes';
 import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react'; // Import MapPin for placeholder
 import { useEffect, useState } from 'react';
 
 export function MunicipalityCard() {
     const [municipalities, setMunicipalities] = useState<MunicipalityType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
     useEffect(() => {
         async function fetchMunicipalities() {
             try {
                 const data = await MunicipalitiesApi.getMunicipalities();
-                console.log(data.data);
                 setMunicipalities(data.data);
             } catch (err) {
                 console.error('Error fetching municipalities:', err);
@@ -49,42 +49,57 @@ export function MunicipalityCard() {
 
             {/* Responsive grid layout */}
             <div className="mb-15 grid grid-cols-1 justify-items-center gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {municipalities.map((municipality, index) => (
-                    <motion.div
-                        key={municipality.id}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1, duration: 0.5, ease: 'easeOut' }}
-                        className="w-full max-w-[20rem]"
-                    >
-                        <Card className="group relative flex flex-col items-center rounded-[1.8rem] border border-orange-200/40 bg-gradient-to-b from-white/70 via-orange-50/20 to-red-50/20 p-6 text-center shadow-md backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-orange-300/70 hover:shadow-xl sm:p-7">
-                            {/* 🧭 Icon */}
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-red-100 shadow-inner sm:h-16 sm:w-16">
-                                <MapPin className="h-6 w-6 text-orange-600 sm:h-7 sm:w-7" />
-                            </div>
+                {municipalities.map((municipality, index) => {
+                    const logoUrl = municipality.settings?.logo_url;
+                    const hasLogo = logoUrl && logoUrl.trim() !== '';
 
-                            {/* 🏙️ Municipality name */}
-                            <h3 className="mt-4 text-[20px] font-bold text-gray-800 transition-colors duration-300 group-hover:text-orange-600 sm:text-[22px]">
-                                {municipality.name}
-                            </h3>
+                    return (
+                        <motion.div
+                            key={municipality.id}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1, duration: 0.5, ease: 'easeOut' }}
+                            className="w-full max-w-[20rem]"
+                        >
+                            <Card className="group relative flex flex-col items-center rounded-[1.8rem] border border-orange-200/40 bg-gradient-to-b from-white/70 via-orange-50/20 to-red-50/20 p-6 text-center shadow-md backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-orange-300/70 hover:shadow-xl sm:p-7">
+                                {/* 🧭 Icon/Logo Container */}
+                                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-red-100 shadow-inner sm:h-16 sm:w-16">
+                                    {hasLogo ? (
+                                        // Display logo if URL is present
+                                        <img
+                                            src={logoUrl}
+                                            alt={`${municipality.name} logo`}
+                                            className="h-full w-full rounded-full object-contain p-1"
+                                        />
+                                    ) : (
+                                        // Display placeholder icon if no logo URL
+                                        <MapPin className="h-8 w-8 text-orange-500 sm:h-9 sm:w-9" />
+                                    )}
+                                </div>
 
-                            {/* 📮 Zip Code */}
-                            <p className="mt-1 text-sm text-gray-500">
-                                Zip Code: <span className="font-medium">{municipality.zip_code || '—'}</span>
-                            </p>
-                            {/* 🔗 CTA */}
-                            <Link
-                                href={home({ municipality: municipality.slug })}
-                                className="mt-5 inline-block w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:from-orange-600 hover:to-red-600 hover:shadow-lg focus:ring-2 focus:ring-orange-300 focus:ring-offset-2"
-                            >
-                                View Details
-                            </Link>
+                                {/* 🏙️ Municipality name */}
+                                <h3 className="mt-4 text-[20px] font-bold text-gray-800 transition-colors duration-300 group-hover:text-orange-600 sm:text-[22px]">
+                                    {municipality.name}
+                                </h3>
 
-                            {/* ✨ Hover glow */}
-                            <div className="absolute inset-0 -z-10 scale-105 rounded-[1.8rem] bg-gradient-to-br from-orange-200/40 via-transparent to-red-200/40 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
-                        </Card>
-                    </motion.div>
-                ))}
+                                {/* 📮 Zip Code */}
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Zip Code: <span className="font-medium">{municipality.zip_code || '—'}</span>
+                                </p>
+                                {/* 🔗 CTA */}
+                                <Link
+                                    href={home({ municipality: municipality.slug })}
+                                    className="mt-5 inline-block w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:from-orange-600 hover:to-red-600 hover:shadow-lg focus:ring-2 focus:ring-orange-300 focus:ring-offset-2"
+                                >
+                                    View Details
+                                </Link>
+
+                                {/* ✨ Hover glow */}
+                                <div className="absolute inset-0 -z-10 scale-105 rounded-[1.8rem] bg-gradient-to-br from-orange-200/40 via-transparent to-red-200/40 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
+                            </Card>
+                        </motion.div>
+                    );
+                })}
             </div>
         </section>
     );

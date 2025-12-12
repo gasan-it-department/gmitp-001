@@ -1,77 +1,173 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import SearchBar from '@/pages/Utility/SearchBar';
-import { Award, ExternalLink, FileText, Gavel, FileCheck, Banknote } from 'lucide-react';
+import { Input } from '@/components/ui/input'; // Needed for SearchBar mock
+import { Award, ExternalLink, FileText, Gavel, FileCheck, Banknote, Clock, Tag, DollarSign, Search, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
-const bids = [
-    {
-        title: 'Construction of Municipal Health Center',
-        type: 'Infrastructure',
-        status: 'Open',
-        deadline: '2025-02-15',
-        budget: '₱5,000,000',
-    },
-    {
-        title: 'Supply and Delivery of Office Equipment',
-        type: 'Goods',
-        status: 'Awarded',
-        deadline: '2025-01-20',
-        budget: '₱850,000',
-    },
-    {
-        title: 'Road Rehabilitation Project - Barangay Roads',
-        type: 'Infrastructure',
-        status: 'Evaluation',
-        deadline: '2025-01-30',
-        budget: '₱3,200,000',
-    },
-    {
-        title: 'Software Licensing Renewal 2025-2026',
-        type: 'Services',
-        status: 'Open',
-        deadline: '2025-03-10',
-        budget: '₱450,000',
-    },
-    {
-        title: 'Supply of COVID-19 Test Kits',
-        type: 'Goods',
-        status: 'Awarded',
-        deadline: '2024-11-05',
-        budget: '₱1,100,000',
-    },
-];
+// --- MOCK SEARCH BAR COMPONENT (No changes needed, already responsive) ---
+interface SearchBarProps {
+    onSearch: (value: string) => void;
+    searchBarHint: string;
+}
 
-// Helper function for badge variant coloring
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, searchBarHint }) => {
+    const [query, setQuery] = useState("");
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSearch(query);
+    };
+
+    const handleClear = () => {
+        setQuery("");
+        onSearch("");
+    };
+
+    return (
+        <form onSubmit={handleSearch} className="flex flex-1 w-full">
+            <div className="relative flex-1 min-w-[200px] flex items-center">
+                <Input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={searchBarHint}
+                    className="flex-1 w-full p-2 pl-4 pr-20 border border-gray-300 dark:border-neutral-700 rounded-lg outline-none focus:ring-2 focus:ring-red-400 dark:bg-neutral-900 dark:text-gray-100 transition-shadow"
+                />
+
+                {query && (
+                    <button
+                        type="button"
+                        onClick={handleClear}
+                        className="absolute right-14 top-1/2 -translate-y-1/2 p-1 hover:text-red-500 text-gray-400 z-10"
+                        aria-label="Clear search"
+                    >
+                        <X size={18} />
+                    </button>
+                )}
+
+                <Button
+                    type="submit"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 shadow-md flex-shrink-0 rounded-lg"
+                    aria-label="Submit search"
+                >
+                    <Search size={18} />
+                </Button>
+            </div>
+        </form>
+    );
+};
+// ------------------------------------
+
+
+// --- FILE CONSTANTS ---
+const FILE_TYPE_INVITATION = 'INVITATION';
+const FILE_TYPE_BID_DOCUMENTS = 'BID_DOCUMENTS';
+const FILE_TYPE_NOTICE_OF_AWARD = 'NOTICE_OF_AWARD';
+const MAX_ITEMS_DISPLAY = 10;
+
+// Mock Type Definition based on provided sample data
+interface AwardFile {
+    id: number;
+    name: string;
+    type: string;
+    view_url: string;
+    download_url: string;
+}
+
+interface AwardsFormData {
+    id: string;
+    title: string;
+    status: 'OPEN' | 'EVALUATION' | 'AWARDED' | 'CLOSED';
+    approved_budget: number;
+    closing_date: string;
+    category: string;
+    reference_number: string;
+    winning_bidder: string | null;
+    contract_amount: number | null;
+    files?: AwardFile[];
+}
+
+interface BidsAndAwardsProps {
+    data: AwardsFormData[]
+    metaData: any
+}
+
+// --- UTILITY FUNCTIONS ---
+
+const formatCurrency = (value: number | undefined | null): string => {
+    if (value === null || value === undefined || isNaN(Number(value))) {
+        return "N/A";
+    }
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
+}
+
 const getBadgeVariant = (status: string) => {
     switch (status) {
-        case 'Open':
+        case 'OPEN':
             return 'default';
-        case 'Awarded':
+        case 'AWARDED':
             return 'secondary';
-        case 'Evaluation':
+        case 'EVALUATION':
             return 'outline';
+        case 'CLOSED':
+            return 'destructive';
         default:
             return 'outline';
     }
 };
 
-export function BidsAndAwards() {
-    const [activeTab, setActiveTab] = useState('biddings'); // 'biddings' or 'awards'
+/**
+ * Finds the download URL for a specific file type.
+ */
+const findFileUrl = (files: AwardsFormData['files'], type: string): string | undefined => {
+    if (!files || files.length === 0) return undefined;
+    const file = files.find(f => f.type === type);
+    return file ? file.download_url : undefined;
+};
 
-    const filteredBids = useMemo(() => {
+export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
+    const [activeTab, setActiveTab] = useState('biddings');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter the raw data based on the active tab and search query
+    const { filteredAndSlicedBids, fullFilteredCount } = useMemo(() => {
+        let list = data;
+
+        // 1. Filter by Tab (Bidding vs. Awarded)
         if (activeTab === 'biddings') {
-            // Show Open and Evaluation items
-            return bids.filter(bid => bid.status === 'Open' || bid.status === 'Evaluation');
+            // Bidding items are OPEN and EVALUATION (exclude AWARDED and CLOSED)
+            list = list.filter(bid => bid.status === 'OPEN' || bid.status === 'EVALUATION');
         } else {
-            // Show Awarded items
-            return bids.filter(bid => bid.status === 'Awarded');
+            // Award items are AWARDED (exclude all others)
+            list = list.filter(bid => bid.status === 'AWARDED');
         }
-    }, [activeTab]);
 
-    const BiddingCount = bids.filter(bid => bid.status === 'Open' || bid.status === 'Evaluation').length;
-    const AwardCount = bids.filter(bid => bid.status === 'Awarded').length;
+        // 2. Filter by Search Query
+        if (searchQuery) {
+            const lowerQuery = searchQuery.toLowerCase();
+            list = list.filter(bid =>
+                bid.title.toLowerCase().includes(lowerQuery) ||
+                bid.reference_number.toLowerCase().includes(lowerQuery) ||
+                bid.category.toLowerCase().includes(lowerQuery)
+            );
+        }
+
+        const fullFilteredCount = list.length;
+        const filteredAndSlicedBids = list.slice(0, MAX_ITEMS_DISPLAY); // Apply the limit
+
+        return { filteredAndSlicedBids, fullFilteredCount };
+    }, [activeTab, data, searchQuery]);
+
+    // Counts for tab navigation (based on all data, excluding CLOSED for active lists)
+    const BiddingCount = data.filter(bid => bid.status === 'OPEN' || bid.status === 'EVALUATION').length;
+    const AwardCount = data.filter(bid => bid.status === 'AWARDED').length;
 
     // --- THEME COLORS ---
     const primaryGradient = 'bg-gradient-to-r from-red-500 to-orange-500';
@@ -81,11 +177,7 @@ export function BidsAndAwards() {
     // --------------------
 
     const handleSearch = (keyword: string) => {
-        if (keyword === "") {
-            // Revery back the default list.
-        } else {
-            // Show matched list.
-        }
+        setSearchQuery(keyword);
     }
 
     return (
@@ -104,6 +196,7 @@ export function BidsAndAwards() {
             <CardContent className="space-y-6 pt-6">
 
                 {/* TAB NAVIGATION */}
+                {/* Responsive: Buttons will shrink/grow to fit but maintain space-x-3 */}
                 <div className="flex space-x-3 border-b border-gray-200 dark:border-neutral-700 pb-2">
                     <Button
                         variant={activeTab === 'biddings' ? 'default' : 'ghost'}
@@ -111,7 +204,7 @@ export function BidsAndAwards() {
                         className={`font-semibold transition-all duration-200 ${activeTab === 'biddings' ? activeTabClasses : primaryText + ' ' + primaryBgHover}`}
                     >
                         <Banknote className="h-4 w-4 mr-2" />
-                        Biddings ({BiddingCount})
+                        <span className="truncate">Biddings ({BiddingCount})</span>
                     </Button>
                     <Button
                         variant={activeTab === 'awards' ? 'default' : 'ghost'}
@@ -119,83 +212,156 @@ export function BidsAndAwards() {
                         className={`font-semibold transition-all duration-200 ${activeTab === 'awards' ? activeTabClasses : primaryText + ' ' + primaryBgHover}`}
                     >
                         <Award className="h-4 w-4 mr-2" />
-                        Awards ({AwardCount})
+                        <span className="truncate">Awards ({AwardCount})</span>
                     </Button>
                 </div>
 
+                {/* SEARCH BAR */}
+                <SearchBar
+                    onSearch={handleSearch}
+                    searchBarHint={`Search ${activeTab === 'biddings' ? 'active bids' : 'awarded projects'}...`}
+                />
+
+                {/* DISPLAY LIMIT MESSAGE */}
+                {fullFilteredCount > MAX_ITEMS_DISPLAY && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Showing top {MAX_ITEMS_DISPLAY} results. Total matching items: {fullFilteredCount}.
+                    </p>
+                )}
+
+
                 {/* FILTERED LIST CONTENT */}
                 <div className="space-y-4">
-                    <SearchBar
-                        onSearch={(keyword) => {
-                            handleSearch(keyword);
-                        }} searchBarHint={'Search here...'} />
-                    {filteredBids.length > 0 ? (
-                        filteredBids.map((bid, index) => (
-                            <div
-                                key={index}
-                                className={`
-                                    space-y-3 rounded-xl border border-red-200/60 dark:border-red-900/40 p-4 transition-all duration-300 cursor-pointer
-                                    // Use the warm gradient background
-                                    bg-gradient-to-br from-red-50/70 via-orange-50/70 to-amber-100/70
-                                    dark:from-red-950/70 dark:via-orange-950/70 dark:to-amber-900/70
-                                    hover:shadow-lg hover:border-red-400
-                                `}
-                            >
-                                <div className="flex items-start justify-between gap-4">
-                                    {/* Title and Details */}
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="mb-1 font-bold text-lg text-red-900 dark:text-orange-100 truncate">{bid.title}</h3>
-                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-orange-800/80 dark:text-orange-200/80">
-                                            <span className="font-medium">{bid.type}</span>
-                                            <span className="text-gray-400">•</span>
-                                            {/* <span className="font-medium">Budget: {bid.budget}</span>
-                                            <span className="text-gray-400">•</span>
-                                            <span className="font-medium">Deadline: {bid.deadline}</span> */}
+                    {filteredAndSlicedBids.length > 0 ? (
+                        filteredAndSlicedBids.map((bid, index) => {
+                            // Find relevant document URLs
+                            const invitationUrl = findFileUrl(bid.files, FILE_TYPE_INVITATION);
+                            const bidDocumentsUrl = findFileUrl(bid.files, FILE_TYPE_BID_DOCUMENTS);
+                            const noticeOfAwardUrl = findFileUrl(bid.files, FILE_TYPE_NOTICE_OF_AWARD);
+
+                            // Determine status specific classes
+                            const statusColorClass = bid.status === 'OPEN'
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : bid.status === 'EVALUATION'
+                                    ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                    : bid.status === 'AWARDED'
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-gray-400 text-white hover:bg-gray-500'; // CLOSED status style
+
+                            return (
+                                <div
+                                    key={bid.id}
+                                    className={`
+                                        space-y-3 rounded-xl border border-red-200/60 dark:border-red-900/40 p-4 transition-all duration-300 cursor-pointer
+                                        bg-gradient-to-br from-red-50/70 via-orange-50/70 to-amber-100/70
+                                        dark:from-red-950/70 dark:via-orange-950/70 dark:to-amber-900/70
+                                        hover:shadow-lg hover:border-red-400
+                                    `}
+                                >
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+                                        {/* Title and Details (Container) */}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="mb-1 font-bold text-lg text-red-900 dark:text-orange-100 truncate w-full">{bid.title}</h3>
+
+                                            {/* Details Row - Use flex-wrap for horizontal stacking on wide screens, wrapping on small screens */}
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-orange-800/80 dark:text-orange-200/80">
+
+                                                {/* Category */}
+                                                <span className="flex items-center gap-1 font-medium">
+                                                    <Tag className="h-3 w-3 text-red-500" />
+                                                    {bid.category}
+                                                </span>
+
+                                                {/* Budget/Contract Amount */}
+                                                <span className="text-gray-400">•</span>
+                                                <span className="flex items-center gap-1 font-medium">
+                                                    <DollarSign className="h-3 w-3 text-red-500" />
+                                                    {bid.status === 'AWARDED' ? 'Contract Amount' : 'Approved Budget'}: {formatCurrency(bid.approved_budget)}
+                                                </span>
+
+                                                {/* Deadline/Award Date */}
+                                                <span className="text-gray-400">•</span>
+                                                <span className="flex items-center gap-1 font-medium">
+                                                    <Clock className="h-3 w-3 text-red-500" />
+                                                    {bid.status === 'AWARDED' ? 'Award Date' : 'Closing Date'}: {bid.closing_date ? new Date(bid.closing_date).toLocaleDateString() : 'N/A'}
+                                                </span>
+                                            </div>
+
+                                            {/* Reference Number (Subtle) - Forced to new line for clarity */}
+                                            <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block w-full">
+                                                Ref No: {bid.reference_number || '—'}
+                                            </span>
+
+                                            {/* Winning Bidder (If awarded) - Forced to new line for clarity */}
+                                            {bid.status === 'AWARDED' && bid.winning_bidder && (
+                                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1 block w-full">
+                                                    Winning Bidder: {bid.winning_bidder}
+                                                </span>
+                                            )}
                                         </div>
+
+                                        {/* Status Badge */}
+                                        <Badge
+                                            variant={getBadgeVariant(bid.status)}
+                                            className={`font-bold text-sm h-7 flex items-center shadow-sm flex-shrink-0 ${statusColorClass}`}
+                                        >
+                                            {bid.status}
+                                        </Badge>
                                     </div>
 
-                                    {/* Status Badge */}
-                                    <Badge
-                                        variant={getBadgeVariant(bid.status)}
-                                        className={`font-bold text-sm h-7 flex items-center shadow-sm ${
-                                            // Red/Orange themed status colors
-                                            bid.status === 'Open' ? 'bg-green-600 text-white hover:bg-green-700' :
-                                                bid.status === 'Evaluation' ? 'bg-orange-600 text-white hover:bg-orange-700' :
-                                                    'bg-blue-600 text-white hover:bg-blue-700' // Keeping Awarded as blue for contrast
-                                            }`}
-                                    >
-                                        {bid.status}
-                                    </Badge>
+                                    {/* Action Buttons - key change: added flex-wrap for responsiveness */}
+                                    <div className="flex flex-wrap gap-2 pt-2">
+
+                                        {/* View Invitation PDF Button (Use INVITATION type) */}
+                                        {invitationUrl && (
+                                            <Button size="sm" variant="outline" asChild className={`gap-2 bg-white dark:bg-neutral-900 border-red-500 ${primaryText} hover:bg-red-50/50`}>
+                                                <a href={invitationUrl} target="_blank" rel="noopener noreferrer">
+                                                    <FileText className="h-4 w-4" />
+                                                    View Invitation PDF
+                                                </a>
+                                            </Button>
+                                        )}
+
+                                        {/* Bid Documents Button (If Open or Evaluation) */}
+                                        {(bid.status === 'OPEN' || bid.status === 'EVALUATION') && bidDocumentsUrl && (
+                                            <Button size="sm" asChild className="gap-2 bg-yellow-600 text-white hover:bg-yellow-700">
+                                                <a href={bidDocumentsUrl} target="_blank" rel="noopener noreferrer">
+                                                    <FileCheck className="h-4 w-4" />
+                                                    Bid Documents
+                                                </a>
+                                            </Button>
+                                        )}
+
+                                        {/* Notice of Award Button (Only if Awarded) */}
+                                        {bid.status === 'AWARDED' && noticeOfAwardUrl && (
+                                            <Button size="sm" asChild className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                                                <a href={noticeOfAwardUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Award className="h-4 w-4" />
+                                                    Notice of Award
+                                                </a>
+                                            </Button>
+                                        )}
+
+                                    </div>
                                 </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex gap-2 pt-2">
-                                    <Button size="sm" variant="outline" className={`gap-2 bg-white dark:bg-neutral-900 border-red-500 ${primaryText} hover:bg-red-50/50`}>
-                                        <FileText className="h-4 w-4" />
-                                        View PDF
-                                    </Button>
-
-                                    {bid.status === 'Awarded' && (
-                                        <Button size="sm" className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-                                            <Award className="h-4 w-4" />
-                                            Notice of Award
-                                        </Button>
-                                    )}
-
-                                    {/* {bid.status === 'Evaluation' && (
-                                        <Button size="sm" className="gap-2 bg-yellow-600 text-white hover:bg-yellow-700">
-                                            <FileCheck className="h-4 w-4" />
-                                            Bid Documents
-                                        </Button>
-                                    )} */}
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400 border border-dashed rounded-lg bg-white dark:bg-neutral-800">
                             {activeTab === 'biddings' ? 'No active procurement bids at this time.' : 'No recent awards issued.'}
                         </div>
                     )}
+                </div>
+
+                {/* Footer Link */}
+                <div className="border-t border-gray-200 dark:border-neutral-700 pt-4">
+                    <Button
+                        variant="outline"
+                        className={`w-full gap-2 bg-white dark:bg-neutral-900 sm:w-auto border-red-500 ${primaryText} hover:bg-red-50/50`}
+                    >
+                        <ExternalLink className="h-4 w-4" />
+                        View All Bids on PhilGEPS
+                    </Button>
                 </div>
             </CardContent>
         </Card>

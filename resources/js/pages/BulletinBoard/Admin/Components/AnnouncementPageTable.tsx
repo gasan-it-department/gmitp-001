@@ -236,7 +236,7 @@ export default function AnnouncementPageTable() {
                         }))
                     }
                 >
-                    Delete ({selectedItems.length})
+                    Delete ({selectedItems.length}) items
                 </Button>
             </div>
 

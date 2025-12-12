@@ -11,7 +11,7 @@ export default function Transparency({ procurements }: any) {
                     {/* <MunicipalityInfo />
                     <Officials />
                     <FinancialDocuments /> */}
-                    <BidsAndAwards />
+                    <BidsAndAwards data={procurements.data} metaData={procurements.meta}/>
                     <CitizensCharter />
                     {/* <ReportsAndAudits />
                     <ProgramsAndProjects />

@@ -45,7 +45,6 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
             if (editData) {
                 console.log(payload);
                 const response = await AnnouncementApi.updateAnnouncement(currentMunicipality.slug, editData.id, payload);
-
                 if (response) {
                     onSuccess(response.data, true);
                 }
@@ -62,7 +61,6 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
             const err = error as AxiosError<any>;
             if (err.response?.status === 422 && err.response.data?.errors) {
                 const backendErrors = err.response.data.errors;
-
                 Object.entries(backendErrors).forEach(([field, messages]) => {
                     if (Array.isArray(messages)) {
                         setError(field as keyof AnnouncementData, {

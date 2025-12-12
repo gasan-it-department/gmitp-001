@@ -5,4 +5,5 @@ export interface MunicipalityType {
     zip_code: string;
     municipal_code: string;
     is_active?: boolean;
+    settings?: any
 }

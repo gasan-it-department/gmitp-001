@@ -131,7 +131,6 @@ export default function Carousel({ slides }: CarouselProps) {
     const baseTransform = index * 100;
     const finalTransform = `translateX(calc(-${baseTransform}% + ${dragOffset}px))`;
 
-
     return (
         <div
             className="group relative w-full cursor-grab overflow-hidden select-none"
@@ -155,14 +154,21 @@ export default function Carousel({ slides }: CarouselProps) {
                 {slides.map((banner, i) => (
                     <div
                         key={banner.id}
-                        className="flex h-full w-full min-w-full transition-transform duration-700 ease-in-out"
+                        // 1. Set the container's height responsively using the 2.4:1 aspect ratio.
+                        className="flex w-full min-w-full justify-center items-center bg-gray-100 aspect-[24/10] overflow-hidden"
                     >
                         <img
                             src={banner.bannerUrl}
                             alt={banner.title || `Banner ${i}`}
-                            className="aspect-[2/1] h-auto w-full object-cover md:aspect-[3/1]"
-                            // Dragging fixes
+
+                            // 2. Change object-cover to object-contain. 
+                            // Since container ratio (2.4:1) matches image ratio (2.4:1), this results in a perfect fit 
+                            // with NO cropping and NO white space.
+                            // Removed mb-2 and rounded-lg for a clean banner fit.
+                            className="h-full w-full flex-shrink-0 object-fill"
+
                             draggable={false}
+                            style={{ pointerEvents: 'none' }}
                         />
                     </div>
                 ))}

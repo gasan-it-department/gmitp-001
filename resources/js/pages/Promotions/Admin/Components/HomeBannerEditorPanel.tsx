@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
 import LogoEditor from './LogoEditor';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
-import { title } from 'process';
 import ToastProvider from '@/pages/Utility/ToastShower';
 
 // --- TYPES ---
@@ -29,7 +28,7 @@ interface HomeBannerEditorPanelProps {
     initialBanners: Banner[];
 }
 
-// --- COMPONENT: HOTLINE PREVIEW CARD ---
+// --- COMPONENT: HOTLINE PREVIEW CARD (Original Theme) ---
 const HotlinePreview = ({ hotlines }: { hotlines: Hotline[] }) => (
     <div className="w-full max-w-md rounded-3xl bg-gradient-to-br from-red-600 to-orange-500 p-8 text-white shadow-2xl">
         <h2 className="mb-6 text-2xl font-extrabold tracking-wide uppercase">Emergency Hotline</h2>
@@ -209,6 +208,11 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
         // TODO: Call reorder API here if available
     };
 
+    // --- GRADIENT CLASS CONSTANT ---
+    const ACTIVE_GRADIENT_CLASS = 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:opacity-90';
+    const HOVER_TEXT_COLOR = 'hover:text-red-600';
+
+
     return (
         <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
             <h1 className="mb-2 text-3xl font-extrabold text-gray-900 dark:text-gray-100">CMS Editor Panel</h1>
@@ -216,12 +220,13 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
 
             <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
 
-            {/* TAB NAVIGATION */}
+            {/* TAB NAVIGATION - RED-TO-ORANGE THEME */}
             <div className="mb-6 flex space-x-4 overflow-x-auto border-b border-gray-200 pb-1 dark:border-neutral-700">
                 <Button
                     variant={activeTab === 'logo' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('logo')}
-                    className={`gap-2 ${activeTab === 'logo' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                    // THEME CHANGE: Use gradient for active tab
+                    className={`gap-2 ${activeTab === 'logo' ? ACTIVE_GRADIENT_CLASS : HOVER_TEXT_COLOR}`}
                 >
                     <div className="h-4 w-4 rounded-full border-2 border-current" /> Municipal Logo
                 </Button>
@@ -229,14 +234,17 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 <Button
                     variant={activeTab === 'banners' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('banners')}
-                    className={`gap-2 ${activeTab === 'banners' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                    // THEME CHANGE: Use gradient for active tab
+                    className={`gap-2 ${activeTab === 'banners' ? ACTIVE_GRADIENT_CLASS : HOVER_TEXT_COLOR}`}
                 >
                     <ImageIcon className="h-4 w-4" /> Home Banners
                 </Button>
+
                 {/* <Button
                     variant={activeTab === 'hotlines' ? 'default' : 'ghost'}
                     onClick={() => setActiveTab('hotlines')}
-                    className={`gap-2 ${activeTab === 'hotlines' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}`}
+                    // THEME CHANGE: Use gradient for active tab
+                    className={`gap-2 ${activeTab === 'hotlines' ? ACTIVE_GRADIENT_CLASS : HOVER_TEXT_COLOR}`}
                 >
                     <Phone className="h-4 w-4" /> Emergency Hotlines
                 </Button> */}
@@ -246,6 +254,10 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             {activeTab === 'banners' && (
                 <div className="space-y-8">
                     {/* Preview */}
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+                        <p className="font-bold">Image Dimensions</p>
+                        <p>Image size required for a perfect fit: 1600px by 800px.</p>
+                    </div>
                     <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 dark:border-neutral-700 dark:bg-neutral-900">
                         <h2 className="mb-4 text-lg font-bold text-gray-700 dark:text-gray-300">Selected Banner Preview</h2>
                         {selectedBanner ? (
@@ -267,7 +279,10 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">Active Banners ({banners.length}/10)</h2>
                             {banners.length === 0 || banners.length < 10 && (
-                                <Button onClick={handlePickImage} disabled={isUploading} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                                <Button onClick={handlePickImage} disabled={isUploading}
+                                    // THEME CHANGE: Use gradient for Add button
+                                    className={`gap-2 ${ACTIVE_GRADIENT_CLASS}`}
+                                >
                                     <Plus className="h-4 w-4" /> Add Banner
                                 </Button>
                             )}
@@ -284,8 +299,10 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-blue-500' : 'hover:border-blue-300'
-                                        } ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    className={`relative cursor-pointer p-2 transition-all 
+                                        ${selectedBannerId === banner.id ? 'ring-2 ring-red-500' : 'hover:border-red-300'} 
+                                        ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                // Ring and hover border uses red/orange tone for selection emphasis
                                 >
                                     <img src={banner.bannerUrl} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
