@@ -34,17 +34,19 @@ export interface AwardsData {
     reference_number: string;
     category: string;
     approved_budget: number;
-    status: string;
-    pre_bid_date: string;
-    closing_date: string;
-    winning_bidder: string;
-    award_date: string;
+    status: string | null;
+    pre_bid_date: string | null;
+    closing_date: string | null;
+    winning_bidder: string | null;
+    award_date: string | null;
     created_at: string;
     files?: ProcurementFile[];
 }
 
 export interface ProcurementFile {
     id: string;
+    name: string;
+    type: string;
     download_link: string;
     view_link: string;
 }

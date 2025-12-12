@@ -78,11 +78,6 @@ class PublicController extends Controller
         return Inertia::render('Public/Travels/TravelPage');
     }
 
-    public function showTransparencyPage()
-    {
-        return Inertia::render('Public/Transparency/TransparencyPage');
-    }
-
     public function showExecutiveOrdersPage()
     {
         return Inertia::render('Public/ExecutiveOrder/ExevutiveOrdersPage');

@@ -1,15 +1,9 @@
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { BidsAndAwards } from './Components/BidsAndAwards';
 import { CitizensCharter } from './Components/CitizenCharter';
-import { FeedbackSection } from './Components/FeedbackSection';
-import { FinancialDocuments } from './Components/FinancialDocuments';
-import { MunicipalityInfo } from './Components/MunicipalityInfo';
-import { Officials } from './Components/Officials';
-import { ProgramsAndProjects } from './Components/ProgramsAndProjects';
-import { PublicNotices } from './Components/PublicNotices';
-import { ReportsAndAudits } from './Components/ReportsAndAudits';
 
-export default function Transparency() {
+export default function Transparency({ procurements }: any) {
+    console.log(procurements);
     return (
         <PublicLayout title="Transparency" description="">
             <main className="container mx-auto max-w-7xl px-4 py-8">

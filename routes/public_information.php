@@ -3,8 +3,9 @@
 
 use App\External\Api\Controllers\PublicInformation\ProcurementsController;
 use App\External\Web\Controllers\PublicInformation\Admin\ProcurementsPageController;
+use App\External\Web\Controllers\PublicInformation\Client;
 
-Route::prefix('{municipality}/awards-editor')
+Route::prefix('{municipality}/awards')
     ->middleware(['municipalityContext', 'admin'])
     ->name('awardsAdminPage.')
     ->controller(ProcurementsPageController::class)
@@ -16,7 +17,17 @@ Route::prefix('{municipality}/awards-editor')
 
     });
 
+Route::prefix('{municipality}/transparency')
+    ->middleware(['municipalityContext'])
+    ->name('transparency.')
+    ->controller(Client\ProcuremenstPageController::class)
+    ->group(function () {
 
+        Route::get('/', 'index')->name('index');
+
+    });
+
+//api for procurement
 Route::prefix('api/public-information')
     ->middleware(['municipalityContext'])
     ->name('publicInformation.')

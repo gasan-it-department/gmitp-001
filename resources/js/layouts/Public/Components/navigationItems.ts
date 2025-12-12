@@ -1,6 +1,7 @@
 import { LucideIcon, Folders, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck, Heart } from "lucide-react";
-import { travel, home, landing, government, transparency, executiveOrders, contact} from '@/routes';
+import { travel, home, landing, government, executiveOrders, contact } from '@/routes';
 import municipality from "@/routes/municipality";
+import transparency from "@/routes/transparency";
 
 export type NavigationItem = {
   title: string;
@@ -32,7 +33,7 @@ export const useNavigation = (): NavigationItem[] => [
   },
   {
     title: "Transparency",
-    route: transparency,
+    route: transparency.index,
     icon: ShieldCheck,
   },
   {

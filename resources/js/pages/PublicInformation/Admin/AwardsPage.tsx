@@ -10,7 +10,7 @@ interface PageProps {
     };
 }
 
-export default function AwardsPage({ procurements }: any) {
+export default function AwardsPage({ procurements }: PageProps) {
     return (
         <AdminLayout>
             <section className="">

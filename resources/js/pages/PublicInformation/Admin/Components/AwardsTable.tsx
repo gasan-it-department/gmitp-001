@@ -28,7 +28,7 @@ export default function AwardsTable({ data = [] }: Props) {
     };
 
     // Helper for Status Colors
-    const getStatusColor = (status: string) => {
+    const getStatusColor = (status: string | null) => {
         switch (status) {
             case 'AWARDED':
                 return 'bg-green-100 text-green-700 border-green-200';
