@@ -13,7 +13,7 @@ class MunicipalitysettingsResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $data = [
             // We expose the computed URL, not the raw public_id
             'id' => $this->id,
 
@@ -21,5 +21,8 @@ class MunicipalitysettingsResource extends JsonResource
             // add other settings
 
         ];
+
+
+        return $data;
     }
 }

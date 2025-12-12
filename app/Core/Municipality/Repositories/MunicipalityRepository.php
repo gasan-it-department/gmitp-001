@@ -82,7 +82,8 @@ class MunicipalityRepository
 
     public function getActiveStatus(): Collection
     {
-        return Municipality::where('is_active', true)
+        return Municipality::with('settings')
+            ->where('is_active', true)
             ->get();
     }
 

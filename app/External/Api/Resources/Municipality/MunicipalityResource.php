@@ -24,6 +24,9 @@ class MunicipalityResource extends JsonResource
             'slug' => $this->slug,
             'zip_code' => $this->zip_code,
             'municipal_code' => $this->municipal_code,
+            'settings' => [
+                'logo_url' => $this->settings->logo_url,
+            ],
         ];
 
         if ($user && $roleChecker->isSuperAdmin($user)) {

@@ -2,16 +2,27 @@
 
 namespace App\External\Web\Controllers\Public;
 
+use App\Core\Municipality\Services\GetActiveMunicipality;
 use App\External\Api\Resources\Municipality\MunicipalBannerResource;
+use App\External\Api\Resources\Municipality\MunicipalityResource;
 use App\Http\Controllers\Controller;
 use inertia\Inertia;
 
 class PublicController extends Controller
 {
 
-    public function showMainLandingPage()
+    public function showMainLandingPage(GetActiveMunicipality $getActiveMunicipality)
     {
+
+        // $municipality = $getActiveMunicipality->execute();
+
+        // return Inertia::render('Public/MainLandingPage/MainLandingPage', [
+
+        //     'municipality' => MunicipalityResource::collection($municipality)
+
+        // ]);
         return Inertia::render('Public/MainLandingPage/MainLandingPage');
+
     }
 
     public function showHomePage()
