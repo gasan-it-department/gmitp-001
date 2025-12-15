@@ -21,5 +21,14 @@ export type CommunityReportData = {
     longitude?: string;
     created_at: string;
     status: string;
-    files: File[];
+    resolved_at?: string;
+    attachements: CommunityReportAttachments[];
+}
+
+export interface CommunityReportAttachments {
+    id: string;
+    name: string;
+    type: string;
+    view_url: string;
+    download_url: string;
 }

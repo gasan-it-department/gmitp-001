@@ -38,6 +38,8 @@ class CommunityReportResource extends JsonResource
 
             'resolved_at' => $this->resolved_at,
 
+            'attachments' => CommunityReportFileResource::collection($this->whenLoaded('attachments')),
+
         ];
 
         return $data;

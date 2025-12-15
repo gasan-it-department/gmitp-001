@@ -35,10 +35,12 @@ class CommunityReportAdminController extends Controller
 
         $municipalId = app('municipal_id');
 
-        $report = $showReportDetailsUseCase->execute($municipalId, '01KCFZ3C9K8YJ751WFCKYABHDE');
+        $report = $showReportDetailsUseCase->execute($municipalId, $reportId);
 
         return Inertia::render('CitizenReport/Admin/Details/ReportDetails', [
-            'report' => $report
+
+            'report' => (new CommunityReportResource($report))->resolve(),
+
         ]);
 
     }

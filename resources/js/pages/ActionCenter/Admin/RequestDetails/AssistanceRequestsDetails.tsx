@@ -3,11 +3,11 @@ import { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTy
 import { Head } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import PrintView from '../RequestList/Components/PrintView';
 import BeneficiaryCard from './Components/BeneficiaryCard';
 import ProcessRequestDialog from './Components/ProcessRequestDialog';
 import RequestHeader from './Components/RequestHeader';
 import RequestInfoCard from './Components/RequestInfoCard';
-import PrintView from '../RequestList/Components/PrintView';
 
 interface AssistanceRequestDetailsProps {
     data: AssistanceRequest | null;
@@ -41,7 +41,7 @@ export default function AssistanceRequestDetails({ data, onBackPressed }: Assist
 
     if (!requestData) return null;
     return (
-        <div className="space-y-6 p-6 bg-white/50 animate-in fade-in duration-300">
+        <div className="space-y-6 bg-white/50 p-6 duration-300 animate-in fade-in">
             <Head title={`Request #${requestData.transaction_number}`} />
 
             {/* Back Button */}
@@ -58,7 +58,7 @@ export default function AssistanceRequestDetails({ data, onBackPressed }: Assist
 
             <RequestHeader
                 onPrintClicked={() => {
-                    setPrintDialogState({ isVisible: true, request: data })
+                    setPrintDialogState({ isVisible: true, request: data });
                 }}
                 request={requestData}
                 onProcess={() => setIsProcessOpen(true)}
@@ -74,12 +74,7 @@ export default function AssistanceRequestDetails({ data, onBackPressed }: Assist
                 </div>
             </div>
 
-            <ProcessRequestDialog
-                isOpen={isProcessOpen}
-                onClose={() => setIsProcessOpen(false)}
-                request={requestData}
-                onSuccess={handleSuccess}
-            />
+            <ProcessRequestDialog isOpen={isProcessOpen} onClose={() => setIsProcessOpen(false)} request={requestData} onSuccess={handleSuccess} />
 
             <PrintView
                 isOpen={printDialogState.isVisible}

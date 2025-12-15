@@ -1,33 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
-import { Link } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, Calendar, CheckCircle, ExternalLink, MapPin, Phone, User } from 'lucide-react';
-
-// 1. Define Interface based on your data
-interface ReportData {
-    id: string;
-    sender_name: string;
-    contact: string;
-    type: string;
-    location: string;
-    latitude: string;
-    longitude: string;
-    description: string;
-    status: string | null; // Data says null, so we handle that
-    created_at: string;
-    resolved_at: string | null;
-    // Assuming there might be images later, but optional for now
-    images?: { url: string }[];
-}
+import { AlertTriangle, Calendar, CheckCircle, ExternalLink, MapPin, Phone, User } from 'lucide-react';
 
 interface Props {
-    report: ReportData;
+    report: CommunityReportData;
 }
 
 export default function ReportDetailsPage({ report }: Props) {
     // Helper: Format Date
+    console.log(report);
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -50,18 +34,15 @@ export default function ReportDetailsPage({ report }: Props) {
             <div className="space-y-6 p-6">
                 {/* --- HEADER --- */}
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="mb-1 flex items-center gap-2 text-gray-500">
-                            <Link href="/admin/community-reports" className="flex items-center transition-colors hover:text-gray-900">
-                                <ArrowLeft className="mr-1 h-4 w-4" />
-                                Back to Reports
-                            </Link>
-                            <span>/</span>
-                            <span className="font-mono text-xs uppercase">{report.id}</span>
-                        </div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                            {report.type.charAt(0).toUpperCase() + report.type.slice(1)} Report
-                        </h1>
+                    <div className="mb-4">
+                        {/* <Button
+                            variant="ghost"
+                            className="gap-2 pl-0 hover:bg-transparent hover:text-blue-600"
+                            onClick={() => window.history.back()} // ✅ Wired to prop
+                        >
+                            <ArrowLeft size={18} />
+                            Back to Requests
+                        </Button> */}
                     </div>
 
                     <div className="flex items-center gap-3">

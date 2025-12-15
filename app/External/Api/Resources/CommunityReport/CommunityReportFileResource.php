@@ -1,15 +1,20 @@
 <?php
 
-namespace App\External\Api\Resources\Feedback;
+namespace App\External\Api\Resources\CommunityReport;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class FeedbackFileResource extends JsonResource
+class CommunityReportFileResource extends JsonResource
 {
-
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
+
 
         $cloudName = config('cloudinary.cloud_name');
 
@@ -17,7 +22,7 @@ class FeedbackFileResource extends JsonResource
 
         $baseUrl = "https://res.cloudinary.com/{$cloudName}/{$resourceType}/upload";
 
-        $extension = pathinfo($this->file_name, PATHINFO_EXTENSION);
+        $extension = pathinfo($this->original_name, PATHINFO_EXTENSION);
 
         $publicId = $this->public_id;
 
@@ -36,6 +41,6 @@ class FeedbackFileResource extends JsonResource
             'download_url' => "{$baseUrl}/fl_attachment/{$publicId}.{$extension}",
 
         ];
-    }
 
+    }
 }

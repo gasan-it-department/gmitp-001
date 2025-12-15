@@ -23,6 +23,8 @@ class CommunityReportFiles extends Model
 
         'public_id',
 
+        'resource_type',
+
         'mime_type',
 
         'file_size',

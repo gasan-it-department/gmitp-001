@@ -56,7 +56,7 @@ return new class extends Migration {
 
             $table->string('mime_type')->nullable();
 
-            $table->string('resource_type')->nullable();
+            $table->string('resource_type')->default('image');
 
             $table->string('original_name')->nullable();
 

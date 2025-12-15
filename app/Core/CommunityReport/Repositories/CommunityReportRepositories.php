@@ -39,6 +39,8 @@ class CommunityReportRepositories
 
             'mime_type' => $reportFile['mime_type'],
 
+            'resource_type' => $reportFile['resource_type'],
+
             'public_id' => $reportFile['public_id'],
 
             'file_size' => $reportFile['file_size'],
