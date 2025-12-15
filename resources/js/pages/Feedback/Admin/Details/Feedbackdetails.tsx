@@ -36,7 +36,7 @@ export default function FeedbackDetails({ feedback }: Props) {
                         <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
                             Feedback Details
                             <Badge variant="outline" className="font-mono text-xs font-normal text-gray-500">
-                                #{feedback.id.substring(0, 8)}
+                                #{feedback.id}
                             </Badge>
                         </h1>
                     </div>

@@ -17,7 +17,7 @@ class FeedbackFileResource extends JsonResource
 
         $baseUrl = "https://res.cloudinary.com/{$cloudName}/{$resourceType}/upload";
 
-        $extension = pathinfo($this->file_name, PATHINFO_EXTENSION);
+        $extension = pathinfo($this->original_name, PATHINFO_EXTENSION);
 
         $publicId = $this->public_id;
 
