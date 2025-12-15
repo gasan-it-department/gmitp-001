@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import MapCoordinates from './MapCoordinates';
 import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
 
 interface ReportFormDialogProps {
     open: boolean;
@@ -21,7 +22,10 @@ interface ReportFormDialogProps {
 
 export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDialogProps) {
     const { currentMunicipality } = useMunicipality();
-    const [isSubmitting, setIsSubmiting] = useState(false);
+    const [isSubmitting, setIsSubmiting] = useState({
+        isOpen: false,
+        title: "Loading, please wait..."
+    });
     const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
     const [classicDialog, setClassicDialog] = useState({
         title: '',
@@ -159,10 +163,18 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
 
     const onSubmit = async (data: CommunityReportFormData) => {
         console.log('Report Submitted:', data);
-        setIsSubmiting(true);
+        setIsSubmiting((prev) => ({
+            ...prev,
+            isOpen: true,
+            title: "Submitting..."
+        }))
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
         if (response.success) {
-            setIsSubmiting(false);
+            setIsSubmiting((prev) => ({
+            ...prev,
+            isOpen: false,
+            title: "Submitting..."
+        }))
             onOpenChange(false);
             reset();
             onSuccess();
@@ -373,7 +385,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                             </Button>
 
                             <Button
-                                disabled={isSubmitting}
+                                disabled={isSubmitting.isOpen}
                                 type="submit"
                                 className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
                             >
@@ -392,6 +404,8 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                         onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isShowing: false }))}
                         open={classicDialog.isShowing}
                     />
+
+                    <LoadingDialog isOpen={isSubmitting.isOpen} title={isSubmitting.title}/>
                 </div>
             </DialogContent>
         </Dialog>

@@ -49,7 +49,7 @@ export default function AssistanceRequestDetails({ data, onBackPressed }: Assist
                 <Button
                     variant="ghost"
                     className="gap-2 pl-0 hover:bg-transparent hover:text-blue-600"
-                    onClick={onBackPressed} // ✅ Wired to prop
+                    onClick={onBackPressed}
                 >
                     <ArrowLeft size={18} />
                     Back to Requests

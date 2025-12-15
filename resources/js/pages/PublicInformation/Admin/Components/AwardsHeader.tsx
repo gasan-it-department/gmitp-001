@@ -2,27 +2,26 @@ import { Button } from '@/components/ui/button';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext'; // Import the hook
 import { cn } from '@/lib/utils';
 import SearchBar from '@/pages/Utility/SearchBar';
-import awardsAdminPage from '@/routes/awardsAdminPage';
-import { router } from '@inertiajs/react';
 import { List, PlusIcon } from 'lucide-react';
 
 interface Props {
     className?: string;
     onFilterButtonClicked?: () => void;
     onSearch?: (search: string) => void;
+    onCreateNewButtonClicked: () => void;
 }
 
-export default function AwardsHeader({ className, onFilterButtonClicked, onSearch }: Props) {
+export default function AwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked}: Props) {
     // 1. Consuming the context here is the clean, correct way
     const { currentMunicipality } = useMunicipality();
-
     const handleCreateClick = () => {
-        // 2. Ensure we have the slug before navigating
+        onCreateNewButtonClicked();
         if (!currentMunicipality?.slug) return;
+        // onCreateNewButtonClicked();
 
-        // 3. Assuming your url builder accepts the slug
-        router.visit(awardsAdminPage.addEditPage.url(currentMunicipality.slug));
+        // router.visit(awardsAdminPage.addEditPage.url(currentMunicipality.slug));
     };
+    
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             <SearchBar

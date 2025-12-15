@@ -9,6 +9,7 @@ import Utility from '@/pages/Utility/Utility';
 import communityReport from '@/routes/communityReport';
 import { router } from '@inertiajs/react';
 import { EyeIcon } from 'lucide-react';
+import CommunityReportHeader from './CommunityReportHeader';
 
 interface Props {
     reports: PaginatedResponse<CommunityReportData>;
@@ -36,6 +37,17 @@ export default function CommunityReportPageTable({ reports }: Props) {
     return (
         <div className="flex h-full flex-col">
             {/* HEADER ... */}
+            <div className="my-5 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">
+                    Announcement List
+                </h1>
+                <CommunityReportHeader
+                    onSearch={() => { }}
+                    onFilterButtonClicked={() => { }}
+                    onExportButtonClicked={() => { }}
+
+                />
+            </div>
 
             {/* TABLE */}
             <div className="overflow-auto rounded-2xl border border-gray-200 shadow-sm">
@@ -58,7 +70,7 @@ export default function CommunityReportPageTable({ reports }: Props) {
                                     {/* 3. CALCULATE ROW NUMBER USING META PROPS */}
                                     <TableCell>{meta.from + index}</TableCell>
 
-                                    <TableCell>{item.type || 'Concerned Citizen'}</TableCell>
+                                    <TableCell>{item.type.toUpperCase() || 'Concerned Citizen'}</TableCell>
                                     <TableCell>{item.location}</TableCell>
                                     <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
                                     <TableCell className="flex justify-center gap-2">

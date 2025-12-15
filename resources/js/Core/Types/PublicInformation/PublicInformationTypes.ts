@@ -29,7 +29,7 @@ export interface AwardsFormData {
 }
 
 export interface AwardsData {
-    id: string;
+    id?: string;
     title: string;
     reference_number: string;
     category: string;
@@ -42,6 +42,20 @@ export interface AwardsData {
     created_at: string;
     files?: ProcurementFile[];
 }
+
+export interface ProcurementFormData {
+    reference_number: string;
+    title: string;
+    category: string;
+    status: string;
+    approved_budget: number;
+    contract_amount?: number | null;
+    pre_bid_date?: string | null;
+    closing_date?: string | null;
+    award_date?: string | null;
+    winning_bidder?: string | null;
+}
+
 
 export interface ProcurementFile {
     id: string;

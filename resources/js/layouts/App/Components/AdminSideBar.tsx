@@ -161,15 +161,15 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             title: 'BIDS AND AWARDS',
             icon: Medal,
             items: [
+                // {
+                //     title: 'Invitation to Bid',
+                //     url: biddingAdminPage.page.url({ municipality: currentMunicipality.slug }),
+                //     icon: Hand,
+                // },
                 {
-                    title: 'Invitation to Bid',
-                    url: biddingAdminPage.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Hand,
-                },
-                {
-                    title: 'Awards',
+                    title: 'Biddings',
                     url: awardsAdminPage.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Trophy,
+                    icon: Hand,
                 },
                 {
                     title: "Citizen's Charter",
