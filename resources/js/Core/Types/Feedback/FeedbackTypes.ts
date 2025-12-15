@@ -9,11 +9,24 @@ export type FeedbackData = {
     user_agent?: string;
     ip_address?: string;
     created_at: string;
+    attachments: FeedbackAttachments[];
 }
+
+export interface FeedbackAttachments {
+    id: string;
+    name: string;
+    type: string;
+    view_url: string;
+    download_url: string;
+}
+
 
 export interface Department {
     id: string;
     name: string;
+    type: string;
+    view_url: string;
+    download_url: string;
 }
 
 export interface FeedbackFormData {

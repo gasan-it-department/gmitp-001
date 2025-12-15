@@ -8,7 +8,6 @@ interface FeedbackPageProps {
 }
 
 export default function FeedbackPage({ feedbacks }: FeedbackPageProps) {
-    console.log(feedbacks);
     return (
         <AdminLayout>
             <section className="">

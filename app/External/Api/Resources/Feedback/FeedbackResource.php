@@ -32,7 +32,11 @@ class FeedbackResource extends JsonResource
 
             'created_at' => $this->created_at,
 
-            'attachments' => FeedbackFileResource::collection($this->whenLoaded('attachments')),
+            'attachments' => $this->whenLoaded('attachments', function () {
+
+                return FeedbackFileResource::collection($this->attachments)->resolve();
+
+            }),
         ];
     }
 }

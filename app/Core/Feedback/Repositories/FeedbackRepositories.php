@@ -66,4 +66,13 @@ class FeedbackRepositories
         return $feedback;
     }
 
+    public function findByIdAndMunicipality(string $municipalId, string $feedbackId)
+    {
+
+        return Feedback::with('attachments')
+            ->where('municipal_id', $municipalId)
+            ->findOrFail($feedbackId);
+
+    }
+
 }

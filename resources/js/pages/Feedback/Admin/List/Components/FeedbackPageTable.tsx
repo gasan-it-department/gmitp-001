@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { FeedbackData } from '@/Core/Types/Feedback/FeedbackTypes';
-import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
-import { dummy_departments } from '@/pages/Utility/Offices';
-import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';
+import feedback from '@/routes/feedback';
+import { router } from '@inertiajs/react';
 import { EyeIcon } from 'lucide-react';
 import { useState } from 'react';
 import FeedbackPageTableHeader from './FeedbackPageTableHeader';
@@ -18,8 +18,9 @@ interface Props {
 
 export default function FeedbackPageTable({ feedbacks }: Props) {
     const feebackList = feedbacks.data;
+    const { currentMunicipality } = useMunicipality();
+
     const [isLoading, setIsLoading] = useState(false);
-    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [isFilterOpened, setIsFilterOpened] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
@@ -45,7 +46,7 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                 <Table className="min-w-full table-fixed">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
-                            <TableHead className="text-[12px] font-bold">No.</TableHead>
+                            <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
                             <TableHead className="text-[12px] font-bold">Target Party</TableHead>
                             <TableHead className="text-[12px] font-bold">Message</TableHead>
                             <TableHead className="text-[12px] font-bold">Date Reported</TableHead>
@@ -59,28 +60,13 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                         ) : (
                             feebackList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                    <TableCell className="text-[13px] font-medium whitespace-nowrap">
+                                    <TableCell className="text-center text-[13px] font-medium whitespace-nowrap">
                                         {index + 1 + (currentPage - 1) * perPage}
                                     </TableCell>
-                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">
-                                        {item.employee_name ?? dummy_departments.find((d) => d.id === item.department_id?.trim())?.name ?? '—'}
-                                    </TableCell>
+                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">{item.feedback_target}</TableCell>
 
                                     <TableCell className="max-w-0 text-[12px]">
-                                        <span
-                                            className="block overflow-hidden"
-                                            style={{
-                                                display: '-webkit-box',
-                                                WebkitBoxOrient: 'vertical',
-                                                WebkitLineClamp: 3,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                lineHeight: '1.4em',
-                                                maxHeight: '4.2em',
-                                            }}
-                                        >
-                                            {item.message}
-                                        </span>
+                                        <span className="block overflow-hidden">{item.message}</span>
                                     </TableCell>
                                     <TableCell className="text-[12px] whitespace-nowrap">
                                         {Utility().formatToReadableDate(item.created_at) ?? '—'}
@@ -89,7 +75,14 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => {}}
+                                            onClick={() => {
+                                                router.visit(
+                                                    feedback.admin.show.url({
+                                                        municipality: currentMunicipality.slug,
+                                                        id: item.id,
+                                                    }),
+                                                );
+                                            }}
                                             className="border-green-200 text-green-600 hover:bg-green-50"
                                         >
                                             <EyeIcon size={14} />
@@ -103,7 +96,7 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
             </div>
             {/* PAGINATION */}
             <div className="border-t bg-white py-4">
-                <PaginationView currentPage={currentPage} totalPages={lastPage} totalItems={totalItems} itemsPerPage={perPage} />
+                {/* <PaginationView currentPage={currentPage} totalPages={lastPage} totalItems={totalItems} itemsPerPage={perPage} /> */}
             </div>
 
             <LoadingDialog isOpen={isLoading} />

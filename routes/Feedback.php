@@ -16,7 +16,9 @@ Route::prefix('{municipality}')
             ->controller(FeedbackAdminController::class)
             ->group(function () {
 
-            Route::get('/admin', 'show')->name('index');
+            Route::get('/admin', 'index')->name('index');
+
+            Route::get('/show/{id}', 'show')->name('show');
 
         });
 
