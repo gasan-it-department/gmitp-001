@@ -4,7 +4,7 @@ import AdminLayout from '@/layouts/App/AppLayout';
 import FeedbackPageTable from './Components/FeedbackPageTable';
 
 interface FeedbackPageProps {
-    reports: PaginatedResponse<FeedbackData>;
+    feedbacks: PaginatedResponse<FeedbackData>;
 }
 
 export default function FeedbackPage({ feedbacks }: FeedbackPageProps) {

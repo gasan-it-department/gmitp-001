@@ -10,14 +10,30 @@ class FeedbackFileResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+
+        $cloudName = config('cloudinary.cloud_name');
+
+        $resourceType = $this->resource_type;
+
+        $baseUrl = "https://res.cloudinary.com/{$cloudName}/{$resourceType}/upload";
+
+        $extension = pathinfo($this->file_name, PATHINFO_EXTENSION);
+
+        $publicId = $this->public_id;
+
+        $viewTransformation = ($resourceType === 'image') ? "/f_auto,q_auto" : "";
+
         return [
 
             'id' => $this->id,
 
-            'public_url' => $this->public_url,
+            'name' => $this->original_name,
 
-            'file_type' => $this->file_type
+            'type' => $this->mime_type,
 
+            'view_url' => "{$baseUrl}{$viewTransformation}/{$publicId}.{$extension}",
+
+            'download_url' => "{$baseUrl}/fl_attachment/{$publicId}.{$extension}",
         ];
     }
 

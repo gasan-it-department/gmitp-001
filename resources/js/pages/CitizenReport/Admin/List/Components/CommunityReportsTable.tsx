@@ -1,24 +1,24 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';
-import { Eye } from 'lucide-react';
+import communityReport from '@/routes/communityReport';
+import { router } from '@inertiajs/react';
+import { EyeIcon } from 'lucide-react';
 
 interface Props {
     reports: PaginatedResponse<CommunityReportData>;
 }
 
 export default function CommunityReportPageTable({ reports }: Props) {
-    // 1. DERIVE DATA DIRECTLY (No useState needed)
     const reportList = reports.data;
     const meta = reports.meta;
-    console.log(reportList);
-    // 2. HANDLE PAGE CHANGES
-    // Instead of setting state, we tell Inertia to visit the new URL.
-    // This fetches the new data and re-renders this component automatically.
+    const { currentMunicipality } = useMunicipality();
+
     const handlePageChange = (newPage: number) => {
         // router.get(
         //     reports.links.path || window.location.pathname,
@@ -61,17 +61,22 @@ export default function CommunityReportPageTable({ reports }: Props) {
                                     <TableCell>{item.type || 'Concerned Citizen'}</TableCell>
                                     <TableCell>{item.location}</TableCell>
                                     <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
-                                    <TableCell>
-                                        <div className="flex justify-center gap-2">
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                onClick={() => {}}
-                                            >
-                                                <Eye size={16} />
-                                            </Button>
-                                        </div>
+                                    <TableCell className="flex justify-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                router.visit(
+                                                    communityReport.show.url({
+                                                        municipality: currentMunicipality.slug, // Matches {municipality} in route
+                                                        id: item.id,
+                                                    }),
+                                                );
+                                            }}
+                                            className="border-green-200 text-green-600 hover:bg-green-50"
+                                        >
+                                            <EyeIcon size={14} />
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))

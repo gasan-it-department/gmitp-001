@@ -45,8 +45,6 @@ class CommunityReport extends Model
 
         'sender_name' => 'encrypted',
 
-        'description' => 'encrypted',
-
         'contact' => 'encrypted'
 
     ];

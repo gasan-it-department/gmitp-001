@@ -1,68 +1,30 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { FeedbackFormData } from '@/Core/Types/Feedback/FeedbackTypes';
+import { FeedbackData } from '@/Core/Types/Feedback/FeedbackTypes';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import { dummy_departments } from '@/pages/Utility/Offices';
 import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';
 import { EyeIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import FilterDialog from '../../../BulletinBoard/Admin/Components/FilterDialog';
-import ViewFeedbackDialog from '../../../BulletinBoard/Admin/Components/ViewFeedbackDialog';
+import { useState } from 'react';
 import FeedbackPageTableHeader from './FeedbackPageTableHeader';
 
-export default function FeedbackPageTable() {
-    const { currentMunicipality } = useMunicipality();
+interface Props {
+    feedbacks: PaginatedResponse<FeedbackData>;
+}
+
+export default function FeedbackPageTable({ feedbacks }: Props) {
+    const feebackList = feedbacks.data;
     const [isLoading, setIsLoading] = useState(false);
-    const [feedbacks, setFeedbacks] = useState<FeedbackFormData[]>([]);
     const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [isFilterOpened, setIsFilterOpened] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
-
-    const [selectedFeedback, setSelectedFeedback] = useState<{ isOpen: boolean; data: FeedbackFormData | null }>({
-        isOpen: false,
-        data: null,
-    });
-
-    useEffect(() => {
-        loadFeedbacks(currentPage);
-    }, [currentPage]);
-
-    const loadFeedbacks = async (page: number) => {
-        try {
-            setIsLoading(true);
-            const response = await FeedbackApi.getAllFeedback(currentMunicipality.slug, page);
-            const data = response.data;
-            const sorted = [...data].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            setFeedbacks(sorted);
-            setCurrentPage(response.current_page);
-            setLastPage(response.last_page);
-            setPerPage(response.per_page);
-            setTotalItems(response.total);
-        } catch (error: any) {
-            setIsLoading(false);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handlePageChange = (page: number) => {
-        if (page >= 1 && page <= lastPage) {
-            setCurrentPage(page);
-        }
-    };
-
-    const handleSort = (selectedSort: string | null) => {
-        // HANDLE SORT IN THE BACKEND
-        console.log('Feedback filter ', selectedSort);
-    };
 
     return (
         <div className="flex h-full flex-col">
@@ -83,19 +45,19 @@ export default function FeedbackPageTable() {
                 <Table className="min-w-full table-fixed">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
-                            <TableHead className="w-[5%] text-[12px] font-bold">No.</TableHead>
-                            <TableHead className="w-[15%] text-[12px] font-bold">Target Party</TableHead>
+                            <TableHead className="text-[12px] font-bold">No.</TableHead>
+                            <TableHead className="text-[12px] font-bold">Target Party</TableHead>
                             <TableHead className="text-[12px] font-bold">Message</TableHead>
-                            <TableHead className="w-[15%] text-[12px] font-bold">Date Reported</TableHead>
-                            <TableHead className="w-[10%] text-center text-[12px] font-bold">Actions</TableHead>
+                            <TableHead className="text-[12px] font-bold">Date Reported</TableHead>
+                            <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
-                        {feedbacks.length === 0 ? (
+                        {feebackList.length === 0 ? (
                             <AdminEmptyListItem title="No Feedback yet." message="Feedback will appear here." />
                         ) : (
-                            feedbacks.map((item, index) => (
+                            feebackList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
                                     <TableCell className="text-[13px] font-medium whitespace-nowrap">
                                         {index + 1 + (currentPage - 1) * perPage}
@@ -127,7 +89,7 @@ export default function FeedbackPageTable() {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => setSelectedFeedback({ isOpen: true, data: item })}
+                                            onClick={() => {}}
                                             className="border-green-200 text-green-600 hover:bg-green-50"
                                         >
                                             <EyeIcon size={14} />
@@ -139,42 +101,10 @@ export default function FeedbackPageTable() {
                     </TableBody>
                 </Table>
             </div>
-
-            <FilterDialog
-                isOpen={isFilterOpened}
-                onClose={() => {
-                    setIsFilterOpened(false);
-                }}
-                filters={[
-                    { title: 'Message', sub: 'message' },
-                    { title: 'Date Reported', sub: 'created_at' },
-                ]}
-                currentFilter={currentFilter}
-                onApply={(selectedFilter) => {
-                    setCurrentFilter(selectedFilter);
-                    if (selectedFilter) {
-                        handleSort(selectedFilter?.sub);
-                    }
-                }}
-            />
-
             {/* PAGINATION */}
             <div className="border-t bg-white py-4">
-                <PaginationView
-                    currentPage={currentPage}
-                    totalPages={lastPage}
-                    totalItems={totalItems}
-                    itemsPerPage={perPage}
-                    onPageChange={handlePageChange}
-                />
+                <PaginationView currentPage={currentPage} totalPages={lastPage} totalItems={totalItems} itemsPerPage={perPage} />
             </div>
-
-            {/* DIALOGS */}
-            <ViewFeedbackDialog
-                isOpen={selectedFeedback.isOpen}
-                data={selectedFeedback.data}
-                onClose={() => setSelectedFeedback({ isOpen: false, data: null })}
-            />
 
             <LoadingDialog isOpen={isLoading} />
         </div>

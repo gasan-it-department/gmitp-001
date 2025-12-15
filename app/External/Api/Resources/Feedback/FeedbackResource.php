@@ -15,15 +15,24 @@ class FeedbackResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+
             'id' => $this->id,
+
             'message' => $this->message,
+
             'feedback_target' => $this->feedback_target,
+
             'department_id' => $this->department_id,
+
             'rating' => $this->rating,
+
             'sender_name' => $this->sender_name,
+
             'employee_name' => $this->employee_name,
+
             'created_at' => $this->created_at,
-            // 'attachments' => FeedbackFilesResource::collection($this->whenLoaded('how')),
+
+            'attachments' => FeedbackFileResource::collection($this->whenLoaded('attachments')),
         ];
     }
 }
