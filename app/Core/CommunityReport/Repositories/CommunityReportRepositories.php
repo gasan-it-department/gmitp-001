@@ -41,8 +41,6 @@ class CommunityReportRepositories
 
             'public_id' => $reportFile['public_id'],
 
-            'file_url' => $reportFile['file_url'],
-
             'file_size' => $reportFile['file_size'],
 
         ]);

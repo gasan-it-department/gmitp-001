@@ -9,14 +9,18 @@ class FeedbackFiles extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
+
         'id',
+
         'feedback_id',
+
         'original_name',
-        'file_path',
-        'file_type',
+
         'file_size',
-        'file_url',
-        'mime_type'
+
+        'public_id',
+
+        'mime_type',
     ];
 
     public function feedback()

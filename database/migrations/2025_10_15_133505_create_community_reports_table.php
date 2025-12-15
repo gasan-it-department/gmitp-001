@@ -47,22 +47,23 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
-            $table->string('file_url')->nullable();
+            $table->foreignUlid('report_id')
+                ->references('id')
+                ->on('community_reports')
+                ->onDelete('cascade');
 
             $table->string('public_id')->nullable();
 
-            $table->string('original_name')->nullable();
-
             $table->string('mime_type')->nullable();
+
+            $table->string('resource_type')->nullable();
+
+            $table->string('original_name')->nullable();
 
             $table->unsignedBigInteger('file_size')->nullable();
 
             $table->timestamps();
 
-            $table->foreignUlid('report_id')
-                ->references('id')
-                ->on('community_reports')
-                ->onDelete('cascade');
         });
     }
 

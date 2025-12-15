@@ -2,6 +2,8 @@
 
 namespace App\Core\Feedback\Dto;
 
+use Illuminate\Http\UploadedFile;
+
 class CreateFeedbackDto
 {
     public function __construct(

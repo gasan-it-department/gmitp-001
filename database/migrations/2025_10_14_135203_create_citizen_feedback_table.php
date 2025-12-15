@@ -36,19 +36,26 @@ return new class extends Migration {
         });
 
         Schema::create('feedback_files', function (Blueprint $table) {
+
             $table->ulid('id')->primary();
-            $table->string('file_type')->nullable();
-            $table->string('original_name')->nullable();
-            $table->string('file_url')->nullable();
-            $table->string('file_path')->nullable();
-            $table->string('mime_type')->nullable();
-            $table->unsignedBigInteger('file_size')->nullable();
-            $table->timestamps();
 
             $table->foreignUlid('feedback_id')
                 ->references('id')
                 ->on('citizen_feedback')
                 ->onDelete('cascade');
+
+            $table->string('public_id');
+
+            $table->string('mime_type')->nullable();
+
+            $table->string('resource_type')->default('image');
+
+            $table->string('original_name')->nullable();
+
+            $table->unsignedBigInteger('file_size')->nullable();
+
+            $table->timestamps();
+
         });
     }
 
@@ -57,7 +64,9 @@ return new class extends Migration {
      */
     public function down(): void
     {
+
         Schema::dropIfExists('feedback_files');
+
         Schema::dropIfExists('citizen_feedback');
 
     }

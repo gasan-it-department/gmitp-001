@@ -67,6 +67,8 @@ return new class extends Migration {
 
             $table->string('file_name'); // e.g., "Invitation_to_Bid.pdf" (Original name)
 
+            $table->unsignedBigInteger('file_size')->nullable();
+
             $table->timestamps();
         });
 

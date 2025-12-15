@@ -29,18 +29,24 @@ class FeedbackRepositories
         ]);
     }
 
-    public function saveFile(CreateFeedbackFilesDto $dto): FeedbackFiles
+    public function saveFile(array $fileData, string $fileId, string $feedbackId): FeedbackFiles
     {
+
         $feedbackFiles = FeedbackFiles::create(
             [
-                'id' => $dto->id,
-                'feedback_id' => $dto->feedbackId,
-                'file_path' => $dto->cloudinaryId,
-                'mime_type' => $dto->mimeType,
-                'file_size' => $dto->fileSize,
-                'file_url' => $dto->secureUrl,
-                'original_name' => $dto->originalName,
-                'file_type' => $dto->fileType,
+
+                'id' => $fileId,
+
+                'feedback_id' => $feedbackId,
+
+                'mime_type' => $fileData['mime_type'],
+
+                'file_size' => $fileData['file_size'],
+
+                'public_id' => $fileData['public_id'],
+
+                'original_name' => $fileData['original_name'],
+
             ]
         );
         return $feedbackFiles;

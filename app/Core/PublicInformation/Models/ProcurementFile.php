@@ -21,6 +21,9 @@ class ProcurementFile extends Model
         'type',
 
         'resource_type',
+
+        'file_size',
+
     ];
 
     public function procurement(): BelongsTo

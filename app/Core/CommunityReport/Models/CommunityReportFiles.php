@@ -17,11 +17,9 @@ class CommunityReportFiles extends Model
 
         'id',
 
-        'original_name',
-
         'report_id',
 
-        'file_url',
+        'original_name',
 
         'public_id',
 
