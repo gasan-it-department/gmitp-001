@@ -20,11 +20,13 @@ class ProcurementsController
     {
         $dto = StoreProcurementsDto::fromRequest($request);
 
-        $this->storeProcurementsUseCase->execute($dto);
+        $procurement = $this->storeProcurementsUseCase->execute($dto);
 
         return response()->json([
 
             'message' => 'Procurement created successfully',
+
+            'procurement' => $procurement,
 
         ], 200);
 

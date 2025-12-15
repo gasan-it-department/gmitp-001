@@ -27,9 +27,9 @@ class StoreProcurementsUseCase
     {
         $procurementId = $this->idGenerator->generate();
 
-        DB::transaction(function () use ($dto, $procurementId) {
+        return DB::transaction(function () use ($dto, $procurementId) {
 
-            $this->procurementsRepo->save($dto, $procurementId);
+            return $this->procurementsRepo->save($dto, $procurementId);
 
             if (!empty($dto->files)) {
 
