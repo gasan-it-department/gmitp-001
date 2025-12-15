@@ -22,7 +22,7 @@ export type CommunityReportData = {
     created_at: string;
     status: string;
     resolved_at?: string;
-    attachements: CommunityReportAttachments[];
+    attachments: CommunityReportAttachments[];
 }
 
 export interface CommunityReportAttachments {
