@@ -11,11 +11,13 @@ Route::prefix('{municipality}/community-report')
 
         Route::get('/admin', 'index')->name('page');
 
+        Route::get('/show/{id}', 'show')->name('show');
+
     });
 
 
 Route::prefix('api/community-report')
-    ->middleware(['municipalityContext'])
+    ->middleware(['municipalityContext', 'auth:sanctum'])
     ->name('communityReport')
     ->controller(CommunityReportController::class)
     ->group(function () {
@@ -24,8 +26,6 @@ Route::prefix('api/community-report')
             ->group(function () {
 
                 Route::get('/', 'fetch')->name('fetch');
-
-                Route::get('/admin', 'show')->name('show');
 
             });
 

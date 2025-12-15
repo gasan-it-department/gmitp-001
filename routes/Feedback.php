@@ -25,7 +25,7 @@ Route::prefix('{municipality}')
 
 
 Route::prefix('api/feedback')
-    ->middleware(['municipalityContext'])
+    ->middleware(['municipalityContext', 'auth:sanctum'])
     ->as('feedback.')
     ->controller(FeedbackController::class)
     ->group(function () {

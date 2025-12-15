@@ -1,4 +1,3 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -8,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { dummy_departments } from '@/pages/Utility/Offices';
 import axios from 'axios';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import StarRating from './StarRatingBar';
-import {dummy_departments } from '@/pages/Utility/Offices';
 
 interface FeedbackDialogProps {
     open: boolean;
@@ -115,17 +114,17 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
             setFiles([]);
             setError(null);
             onOpenChange(false);
-            onStatusChange?.("success", "Thank you for your feedback! We appreciate you taking the time to help us improve.");
+            onStatusChange?.('success', 'Thank you for your feedback! We appreciate you taking the time to help us improve.');
         } catch (err) {
             console.error('Error submitting feedback:', err);
             setIsSubmitting(false);
             if (axios.isAxiosError(err)) {
                 const errorMessage = err.response?.data?.message || 'Failed to submit feedback. Please try again.';
                 setError(errorMessage);
-                onStatusChange?.("failed", err.response?.data?.message || 'Failed to submit feedback. Please try again.');
+                onStatusChange?.('failed', err.response?.data?.message || 'Failed to submit feedback. Please try again.');
             } else {
                 setError('An unexpected error occurred. Please try again.');
-                onStatusChange?.("failed", "An unexpected error occurred. Please try again.");
+                onStatusChange?.('failed', 'An unexpected error occurred. Please try again.');
             }
         }
     };
@@ -134,29 +133,19 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="
-                    /* MOBILE (Default: Full Screen) */
-                    flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0
-                    
-                    /* DESKTOP/LAPTOP (sm: breakpoint and above) */
-                    sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border
-                    lg:max-w-2xl 
-                    
-                    bg-white p-0
-                ">
+                className="/* MOBILE (Default: Full Screen) */ /* DESKTOP/LAPTOP (sm: breakpoint and above) */ flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0 bg-white p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border lg:max-w-2xl"
+            >
                 {/* HEADER */}
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8 sticky top-0 z-50">
+                <div className="sticky top-0 z-50 bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-white">
-                            Citizen Feedback Form
-                        </DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-white">Citizen Feedback Form</DialogTitle>
                     </DialogHeader>
                 </div>
 
-                <div className="px-6 py-6 sm:px-8 sm:py-8 space-y-8 overflow-auto">
+                <div className="space-y-8 overflow-auto px-6 py-6 sm:px-8 sm:py-8">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                         {/* SECTION CARD */}
-                        <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-4">
+                        <div className="space-y-4 rounded-xl border border-red-200/40 bg-white p-5 shadow-sm">
                             <Label className="text-base font-semibold text-gray-800">
                                 Feedback About <span className="text-red-500">*</span>
                             </Label>
@@ -165,11 +154,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                 control={control}
                                 name="feedback_target"
                                 render={({ field }) => (
-                                    <RadioGroup
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        className="flex gap-6 pt-2"
-                                    >
+                                    <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-6 pt-2">
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="employee" id="employee" />
                                             <Label htmlFor="employee" className="cursor-pointer">
@@ -189,19 +174,13 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                         </div>
 
                         {/* FULL NAME */}
-                        <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-2">
-                            <Label className="font-semibold text-gray-800">
-                                Your Full Name (Optional)
-                            </Label>
-                            <Input
-                                placeholder="Enter your full name"
-                                {...register('sender_name')}
-                                className="focus:ring-red-400"
-                            />
+                        <div className="space-y-2 rounded-xl border border-red-200/40 bg-white p-5 shadow-sm">
+                            <Label className="font-semibold text-gray-800">Your Full Name (Optional)</Label>
+                            <Input placeholder="Enter your full name" {...register('sender_name')} className="focus:ring-red-400" />
                         </div>
 
                         {/* EMPLOYEE or DEPARTMENT FIELD */}
-                        <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-2">
+                        <div className="space-y-2 rounded-xl border border-red-200/40 bg-white p-5 shadow-sm">
                             {feedback_target === 'department' ? (
                                 <>
                                     <Label className="font-semibold text-gray-800">
@@ -221,10 +200,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                                     clearErrors('department_id');
                                                 }}
                                             >
-                                                <SelectTrigger
-                                                    className={`w-full text-sm ${errors.department_id ? 'border-red-500' : ''
-                                                        }`}
-                                                >
+                                                <SelectTrigger className={`w-full text-sm ${errors.department_id ? 'border-red-500' : ''}`}>
                                                     <SelectValue placeholder="-- Select Department --" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -237,9 +213,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                             </Select>
                                         )}
                                     />
-                                    {errors.department_id && (
-                                        <p className="text-sm text-red-500">{errors.department_id.message}</p>
-                                    )}
+                                    {errors.department_id && <p className="text-sm text-red-500">{errors.department_id.message}</p>}
                                 </>
                             ) : (
                                 <>
@@ -253,30 +227,24 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                         })}
                                         className={errors.employee_name ? 'border-red-500' : ''}
                                     />
-                                    {errors.employee_name && (
-                                        <p className="text-sm text-red-500">
-                                            {errors.employee_name.message}
-                                        </p>
-                                    )}
+                                    {errors.employee_name && <p className="text-sm text-red-500">{errors.employee_name.message}</p>}
                                 </>
                             )}
                         </div>
 
                         {/* RATING */}
                         {feedback_target === 'department' && department_id && (
-                            <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm">
+                            <div className="rounded-xl border border-red-200/40 bg-white p-5 shadow-sm">
                                 <Controller
                                     control={control}
                                     name="rating"
-                                    render={({ field }) => (
-                                        <StarRating value={field.value} onChange={field.onChange} />
-                                    )}
+                                    render={({ field }) => <StarRating value={field.value} onChange={field.onChange} />}
                                 />
                             </div>
                         )}
 
                         {/* MESSAGE */}
-                        <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-2">
+                        <div className="space-y-2 rounded-xl border border-red-200/40 bg-white p-5 shadow-sm">
                             <Label className="font-semibold text-gray-800">
                                 Feedback Message <span className="text-red-500">*</span>
                             </Label>
@@ -286,13 +254,11 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                 {...register('feedback_message', { required: 'Feedback message is required' })}
                                 className={errors.feedback_message ? 'border-red-500' : ''}
                             />
-                            {errors.feedback_message && (
-                                <p className="text-sm text-red-500">{errors.feedback_message.message}</p>
-                            )}
+                            {errors.feedback_message && <p className="text-sm text-red-500">{errors.feedback_message.message}</p>}
                         </div>
 
                         {/* UPLOAD */}
-                        <div className="rounded-xl bg-white border border-red-200/40 p-5 shadow-sm space-y-3">
+                        <div className="space-y-3 rounded-xl border border-red-200/40 bg-white p-5 shadow-sm">
                             <Label className="font-semibold text-gray-800">Upload Evidence (Optional)</Label>
                             <p className="text-sm text-gray-600">
                                 Upload up to <b>5 files</b>, total size must not exceed <b>50MB</b>.
@@ -312,7 +278,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                             <input id="evidence" type="file" multiple accept="image/*,video/*," onChange={handleFileChange} className="hidden" />
 
                             {error && (
-                                <div className="flex items-center gap-2 rounded-md bg-red-100 p-2 text-sm text-red-600 border border-red-300">
+                                <div className="flex items-center gap-2 rounded-md border border-red-300 bg-red-100 p-2 text-sm text-red-600">
                                     <AlertTriangle className="h-4 w-4" />
                                     {error}
                                 </div>
@@ -323,17 +289,15 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                     {files.map((file, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-center justify-between gap-2 bg-orange-50 px-3 py-2 text-sm border border-orange-200 rounded-md"
+                                            className="flex items-center justify-between gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm"
                                         >
-                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <div className="flex min-w-0 flex-1 items-center gap-2">
                                                 <FileIcon className="h-4 w-4 text-orange-600" />
 
                                                 {/* File name with ellipsis */}
-                                                <span className="truncate max-w-[140px] sm:max-w-[200px]">
-                                                    {file.name}
-                                                </span>
+                                                <span className="max-w-[140px] truncate sm:max-w-[200px]">{file.name}</span>
 
-                                                <span className="text-xs text-gray-500 whitespace-nowrap">
+                                                <span className="text-xs whitespace-nowrap text-gray-500">
                                                     ({(file.size / 1024 / 1024).toFixed(1)} MB)
                                                 </span>
                                             </div>
@@ -343,7 +307,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => removeFile(index)}
-                                                className="h-6 w-6 p-0 text-gray-500 hover:text-red-500 flex-shrink-0"
+                                                className="h-6 w-6 flex-shrink-0 p-0 text-gray-500 hover:text-red-500"
                                             >
                                                 <X className="h-4 w-4" />
                                             </Button>
@@ -367,7 +331,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
 
                             <Button
                                 type="submit"
-                                className="flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90 rounded-xl"
+                                className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
@@ -378,5 +342,4 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
             </DialogContent>
         </Dialog>
     );
-
 }

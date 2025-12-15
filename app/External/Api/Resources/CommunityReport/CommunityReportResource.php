@@ -34,6 +34,8 @@ class CommunityReportResource extends JsonResource
 
             'location' => $this->location,
 
+            'created_at' => $this->created_at,
+
             'resolved_at' => $this->resolved_at,
 
         ];

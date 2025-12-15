@@ -1,35 +1,19 @@
 import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
-import CommunityReportPageTable from '@/pages/BulletinBoard/Admin/Components/CommunityReportPageTable';
-
-interface PaginatedReports {
-    data: CommunityReportData;
-    links: {
-        first: string;
-        last: string;
-        prev: string;
-        next: string;
-    };
-    meta: {
-        current_page: number;
-        from: number;
-        last_page: number;
-        total: number;
-    };
-}
+import CommunityReportPageTable from './Components/CommunityReportsTable';
 
 interface CommunityReportPageProps {
-    reports: PaginatedReports;
+    reports: PaginatedResponse<CommunityReportData>;
 }
 
 export default function CommunityReportPage({ reports }: CommunityReportPageProps) {
-    console.log(reports.meta.current_page);
     return (
         <AdminLayout>
             <section className="">
                 <div className="m-5 mt-0 flex bg-white">
                     <div className="w-full">
-                        <CommunityReportPageTable />
+                        <CommunityReportPageTable reports={reports} />
                     </div>
                 </div>
             </section>

@@ -25,7 +25,7 @@ class MunicipalityResource extends JsonResource
             'zip_code' => $this->zip_code,
             'municipal_code' => $this->municipal_code,
             'settings' => [
-                'logo_url' => $this->settings->logo_url,
+                'logo_url' => $this->settings?->logo_url,
             ],
         ];
 

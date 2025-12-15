@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\CommunityReport;
 
+use App\Core\CommunityReport\UseCases\ShowReportDetailsUseCase;
 use App\External\Api\Resources\CommunityReport\CommunityReportResource;
 use inertia\Inertia;
 use App\Http\Controllers\Controller;
@@ -21,10 +22,22 @@ class CommunityReportAdminController extends Controller
 
         $reports = $getCommunityReportUseCase->execute($dto, $municipalId);
 
-        return Inertia::render('CitizenReport/Admin/CommunityReportsPage', [
+        return Inertia::render('CitizenReport/Admin/List/CommunityReportsPage', [
 
             'reports' => CommunityReportResource::collection($reports),
 
+        ]);
+
+    }
+
+    public function show($reportId, ShowReportDetailsUseCase $showReportDetailsUseCase)
+    {
+        $municipalId = app('municipal_id');
+
+        $report = $showReportDetailsUseCase->execute($municipalId, $$reportId);
+
+        return Inertia::render('CitizenReport/Admin/Details/ReportDetails', [
+            'report' => $report
         ]);
 
     }

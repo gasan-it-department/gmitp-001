@@ -58,4 +58,13 @@ class CommunityReportRepositories
             ->paginate($dto->perPage);
 
     }
+
+    public function findByIdAndMunicipality(string $reportId, string $municipalId): CommunityReport
+    {
+
+        return CommunityReport::with('attachments')
+            ->where('municipal_id', $municipalId)
+            ->findOrFail($reportId);
+
+    }
 }

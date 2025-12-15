@@ -1,6 +1,14 @@
-export type Feedback = {
-    id: string
-
+export type FeedbackData = {
+    id: string;
+    feedback_target: string;
+    employee_name?: string;
+    rating?: number;
+    sender_name?: string;
+    message?: string;
+    is_anonymous: boolean;
+    user_agent?: string;
+    ip_address?: string;
+    created_at: string;
 }
 
 export interface Department {
