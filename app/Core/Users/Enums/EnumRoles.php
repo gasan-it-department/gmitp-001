@@ -4,11 +4,11 @@ namespace App\Core\Users\Enums;
 
 enum EnumRoles: string
 {
-    case CLIENT = '0';
+    case CLIENT = 'client';
 
-    case ADMIN = '1';
+    case ADMIN = 'admin';
 
-    case SUPER_ADMIN = '2';
+    case SUPER_ADMIN = 'super_admin';
 
     public static function fromString(string $value): self
     {

@@ -31,8 +31,6 @@ class RegisterUserUseCase
 
             $password = $this->hash->hash($dto->password);
 
-            $role = EnumRoles::CLIENT->value;
-
             $user = $this->userRepository->save([
                 'id' => $userId,
                 'firstName' => $dto->firstName,
@@ -41,8 +39,9 @@ class RegisterUserUseCase
                 'userName' => $dto->userName,
                 'phone' => $dto->phone,
                 'password' => $password,
-                'role' => $role,
             ]);
+
+            $user->assignRole(EnumRoles::CLIENT->value);
 
             $session = $this->cookieSessionService->createAuthenticatedSession($userId);
 

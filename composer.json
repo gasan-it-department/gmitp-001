@@ -20,6 +20,7 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.12",
         "meilisearch/meilisearch-php": "^1.16",
+        "spatie/laravel-permission": "^6.24",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {

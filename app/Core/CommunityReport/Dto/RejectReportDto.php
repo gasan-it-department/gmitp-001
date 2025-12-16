@@ -19,7 +19,7 @@ class RejectReportDto
     }
 
 
-    public static function fromRequest(Request $request, $reportId)
+    public static function fromRequest(Request $request, $reportId): RejectReportDto
     {
 
         return new self(

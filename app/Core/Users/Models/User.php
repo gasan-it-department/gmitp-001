@@ -4,14 +4,15 @@ namespace App\Core\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
-use App\Core\Users\Contracts\HasRole;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
 
-class User extends Authenticatable implements HasRole
+class User extends Authenticatable
 {
+    use HasRoles;
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
     public $incrementing = false;
@@ -43,7 +44,6 @@ class User extends Authenticatable implements HasRole
         'middle_name',
         'phone',
         'user_name',
-        'role',
         'password',
 
     ];
