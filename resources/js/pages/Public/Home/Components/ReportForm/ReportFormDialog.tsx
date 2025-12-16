@@ -214,9 +214,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                                 render={({ field }) => (
                                     <ReportTypeOption
                                         // 1. When user clicks a button, update React Hook Form
-                                        onSelect={(value) => {
-                                            field.onChange(value); // Update form value
-                                        }}
+                                        onSelect={field.onChange}
                                         // 2. Pass the current form value so the button highlights
                                         selectedValue={field.value}
                                     />
