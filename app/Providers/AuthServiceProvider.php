@@ -2,18 +2,21 @@
 
 namespace App\Providers;
 
+use App\Core\Users\Enums\EnumRoles;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use App\Core\Auth\Interfaces\PasswordHasherInterface;
-use App\Core\Auth\Services\LaravelPasswordHasher;
 
-use App\Core\Auth\Interfaces\TokenServiceInterface;
+use App\Core\Auth\Services\LaravelRateLimiter;
 use App\Core\Auth\Services\SanctumTokenService;
 
-use App\Core\Auth\Interfaces\RateLimiterInterface;
-use App\Core\Auth\Services\LaravelRateLimiter;
-
-use \App\Core\Auth\Interfaces\CookieSessionInterface;
+use App\Core\Auth\Services\LaravelPasswordHasher;
 use \App\Core\Auth\Services\LaravelSessionService;
+
+use App\Core\Auth\Interfaces\RateLimiterInterface;
+use App\Core\Auth\Interfaces\TokenServiceInterface;
+use \App\Core\Auth\Interfaces\CookieSessionInterface;
+use App\Core\Auth\Interfaces\PasswordHasherInterface;
+
 class AuthServiceProvider extends ServiceProvider
 {
     /**
@@ -48,6 +51,10 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::before(function ($user, $ability) {
+            if ($user->hasRole(EnumRoles::SUPER_ADMIN->value)) {
+                return true;
+            }
+        });
     }
 }
