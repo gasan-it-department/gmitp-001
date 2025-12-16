@@ -2,6 +2,8 @@
 
 namespace App\External\Api\Controllers\CommunityReport;
 
+use App\Core\CommunityReport\Dto\RejectReportDto;
+use App\Core\CommunityReport\UseCases\RejectReportUseCase;
 use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -22,6 +24,8 @@ class CommunityReportController extends Controller
         private GetCommunityReportUseCase $getCommunityReportUseCase,
 
         private ResolvedReportUseCase $resolvedReportUseCase,
+
+        private RejectReportUseCase $rejectReportUseCase,
 
     ) {
     }
@@ -120,8 +124,35 @@ class CommunityReportController extends Controller
 
                 'message' => $e->getMessage()
 
-            ]);
+            ], 200);
         }
 
     }
+
+    public function reject($reportId, Request $request)
+    {
+
+        try {
+
+            $dto = RejectReportDto::fromRequest($request, $reportId);
+
+            $this->rejectReportUseCase->execute($dto);
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'message' => 'Report Rejected'
+
+            ], 200);
+
+        } catch (Exception $e) {
+
+
+
+        }
+
+    }
+
 }

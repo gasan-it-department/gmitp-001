@@ -2,6 +2,7 @@
 
 namespace App\Core\CommunityReport\UseCases;
 
+use App\Core\CommunityReport\Enums\CommunityReportStatus;
 use App\Core\CommunityReport\Repositories\CommunityReportRepositories;
 use Exception;
 
@@ -18,7 +19,7 @@ class ResolvedReportUseCase
 
         $report = $this->communityReportRepo->findByIdAndMunicipality($reportId, $municipalId);
 
-        if ($report->status === 'resolved' || $report->resolved_at !== null) {
+        if ($report->status === CommunityReportStatus::RESOLVED || $report->resolved_at !== null) {
 
             throw new Exception("This report has already been marked as resolved.");
 
@@ -26,7 +27,7 @@ class ResolvedReportUseCase
 
         $report->update([
             'resolved_at' => now(),
-            'status' => 'resolved',
+            'status' => CommunityReportStatus::RESOLVED,
         ]);
 
         return $report;

@@ -18,12 +18,12 @@ return new class extends Migration {
 
             $table->text('description');
 
-            $table->string('latitude');
+            $table->string('latitude')->nullable();
 
             $table->foreignUlid('user_id')
                 ->nullable();
 
-            $table->string('longitude');
+            $table->string('longitude')->nullable();
 
             $table->string('status')->nullable();
 
@@ -32,6 +32,8 @@ return new class extends Migration {
             $table->string('contact')->nullable();
 
             $table->string('location');
+
+            $table->text('remarks')->nullable();
 
             $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')

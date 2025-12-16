@@ -2,6 +2,7 @@
 
 namespace App\Core\CommunityReport\UseCases;
 
+use App\Core\CommunityReport\Enums\CommunityReportStatus;
 use Illuminate\Support\Facades\DB;
 use App\Shared\IdGenerator\Services\IdGenerator;
 use App\Core\CommunityReport\Dto\CreateReportDto;
@@ -28,7 +29,9 @@ class CreateReportUseCase
 
             $reportId = $this->idGenerate->generate();
 
-            $this->communityReportRepo->save($municipalId, $dto, $reportId);
+            $status = CommunityReportStatus::PENDING;
+
+            $this->communityReportRepo->save($municipalId, $dto, $reportId, $status);
 
             if (!empty($dto->reportFiles)) {
 

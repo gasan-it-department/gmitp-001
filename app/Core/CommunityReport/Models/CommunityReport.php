@@ -4,6 +4,7 @@ namespace App\Core\CommunityReport\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Core\CommunityReport\Enums\CommunityReportStatus;
 
 class CommunityReport extends Model
 {
@@ -45,7 +46,9 @@ class CommunityReport extends Model
 
         'sender_name' => 'encrypted',
 
-        'contact' => 'encrypted'
+        'contact' => 'encrypted',
+
+        'status' => CommunityReportStatus::class,
 
     ];
 

@@ -10,7 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class CommunityReportRepositories
 {
-    public function save(string $municipalId, CreateReportDto $dto, $reportId)
+    public function save(string $municipalId, CreateReportDto $dto, string $reportId, $status)
     {
         return CommunityReport::create([
             'id' => $reportId,
@@ -23,6 +23,7 @@ class CommunityReportRepositories
             'location' => $dto->location,
             'municipal_id' => $municipalId,
             'user_id' => $dto->userId,
+            'status' => $status
         ]);
     }
 
