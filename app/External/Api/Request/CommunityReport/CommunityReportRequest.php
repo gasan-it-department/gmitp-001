@@ -33,9 +33,9 @@ class CommunityReportRequest extends FormRequest
 
             'description' => ['required', 'string'],
 
-            'latitude' => ['required', 'numeric'],
+            'latitude' => ['nullable', 'numeric'],
 
-            'longitude' => ['required', 'numeric'],
+            'longitude' => ['nullable', 'numeric'],
 
             'files' => ['nullable', 'array', 'max:5'],
 

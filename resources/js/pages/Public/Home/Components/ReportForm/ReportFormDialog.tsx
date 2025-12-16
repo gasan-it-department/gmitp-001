@@ -2,17 +2,17 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { CommunityReportApi } from '@/Core/Api/CommunityReport/CommunityReportApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import MapCoordinates from './MapCoordinates';
-import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import { ReportTypeOption } from './ReportType';
 
 interface ReportFormDialogProps {
     open: boolean;
@@ -24,7 +24,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmiting] = useState({
         isOpen: false,
-        title: "Loading, please wait..."
+        title: 'Loading, please wait...',
     });
     const [isGettingCoordinates, setIsGettingCoordinates] = useState(false);
     const [classicDialog, setClassicDialog] = useState({
@@ -166,15 +166,15 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         setIsSubmiting((prev) => ({
             ...prev,
             isOpen: true,
-            title: "Submitting..."
-        }))
+            title: 'Submitting...',
+        }));
         const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
         if (response.success) {
             setIsSubmiting((prev) => ({
-            ...prev,
-            isOpen: false,
-            title: "Submitting..."
-        }))
+                ...prev,
+                isOpen: false,
+                title: 'Submitting...',
+            }));
             onOpenChange(false);
             reset();
             onSuccess();
@@ -190,16 +190,8 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={true}
-                className="
-                    /* MOBILE (Default: Full Screen) */
-                    flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0
-                    
-                    /* DESKTOP/LAPTOP (sm: breakpoint and above) */
-                    sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border
-                    lg:max-w-2xl 
-                    
-                    bg-white p-0
-                ">
+                className="/* MOBILE (Default: Full Screen) */ /* DESKTOP/LAPTOP (sm: breakpoint and above) */ flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0 bg-white p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border lg:max-w-2xl"
+            >
                 {/* HEADER */}
                 <div className="sticky top-0 z-50 bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8">
                     <DialogHeader>
@@ -207,7 +199,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                     </DialogHeader>
                 </div>
 
-                <div className="overflow-auto space-y-10 px-6 py-6 sm:px-8 sm:py-8">
+                <div className="space-y-10 overflow-auto px-6 py-6 sm:px-8 sm:py-8">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
                         {/* ISSUE TYPE */}
                         <div className="space-y-4">
@@ -220,23 +212,14 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                                 name="issue_type"
                                 rules={{ required: 'Please select an issue type.' }}
                                 render={({ field }) => (
-                                    <RadioGroup
-                                        value={field.value}
-                                        onValueChange={(value) => {
-                                            field.onChange(value);
-                                            clearErrors('issue_type');
+                                    <ReportTypeOption
+                                        // 1. When user clicks a button, update React Hook Form
+                                        onSelect={(value) => {
+                                            field.onChange(value); // Update form value
                                         }}
-                                        className="flex flex-wrap gap-6 pt-1"
-                                    >
-                                        {['Road Damage', 'Streetlight', 'Garbage', 'Water Leak', 'Others'].map((issue) => (
-                                            <div key={issue} className="flex items-center space-x-2">
-                                                <RadioGroupItem value={issue.toLowerCase()} id={issue} />
-                                                <Label htmlFor={issue} className="cursor-pointer">
-                                                    {issue}
-                                                </Label>
-                                            </div>
-                                        ))}
-                                    </RadioGroup>
+                                        // 2. Pass the current form value so the button highlights
+                                        selectedValue={field.value}
+                                    />
                                 )}
                             />
 
@@ -405,7 +388,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                         open={classicDialog.isShowing}
                     />
 
-                    <LoadingDialog isOpen={isSubmitting.isOpen} title={isSubmitting.title}/>
+                    <LoadingDialog isOpen={isSubmitting.isOpen} title={isSubmitting.title} />
                 </div>
             </DialogContent>
         </Dialog>

@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\CommunityReport\CommunityReportController;
+use App\External\Api\Controllers\CommunityReport\CommunityReportTypeController;
 use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
 
 Route::prefix('{municipality}/community-report')
@@ -32,5 +33,8 @@ Route::prefix('api/community-report')
             });
 
         Route::post('/', 'store')->name('store');
+
+        Route::get('/report-type', [CommunityReportTypeController::class, 'getCommunityReportType'])
+            ->name('reportType');
 
     });

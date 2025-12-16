@@ -32,26 +32,9 @@ class CommunityReportController extends Controller
 
     public function store(CommunityReportRequest $request)
     {
-        $userId = auth()->id();
-
         $municipalId = app('municipal_id');
 
-        $validated = $request->validated();
-
-        $files = $request->hasFile('files') ? $request->file('files') : [];
-
-        $dto = new CreateReportDto(
-            $validated['issue_type'],
-            $validated['description'],
-            $validated['latitude'] ?? null,
-            $validated['longitude'] ?? null,
-            $validated['sender_name'] ?? null,
-            $validated['contact'] ?? null,
-            $validated['location'],
-            $files,
-            $userId ?? null,
-
-        );
+        $dto = CreateReportDto::fromRequest($request);
 
         $report = $this->createReport->execute($municipalId, $dto);
 

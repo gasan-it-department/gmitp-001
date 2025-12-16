@@ -18,6 +18,8 @@ class CommunityReportResource extends JsonResource
 
             'id' => $this->id,
 
+            'status' => $this->status,
+
             'type' => $this->type,
 
             'sender_name' => $this->sender_name,
@@ -27,8 +29,6 @@ class CommunityReportResource extends JsonResource
             'latitude' => $this->latitude,
 
             'longitude' => $this->longitude,
-
-            'status' => $this->status,
 
             'contact' => $this->contact,
 

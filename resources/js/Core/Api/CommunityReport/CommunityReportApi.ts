@@ -66,6 +66,18 @@ export const CommunityReportApi = {
 
         return data;
 
+    },
+
+    async getReportType(municipalSlug: string) {
+        const { url, method } = CommunityReport.CommunityReportTypeController.getCommunityReportType();
+
+        const { data } = await axios({
+
+            url, method, headers: { 'X-Municipality-Slug': municipalSlug }
+
+        });
+
+        return data;
     }
 
 
