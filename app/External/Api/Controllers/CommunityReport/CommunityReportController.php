@@ -2,13 +2,15 @@
 
 namespace App\External\Api\Controllers\CommunityReport;
 
-use App\Core\CommunityReport\Dto\CommunityReportQueryDto;
-use App\Core\CommunityReport\Dto\CreateReportDto;
-use App\Core\CommunityReport\UseCases\CreateReportUseCase;
-use App\Core\CommunityReport\UseCases\GetCommunityReportUseCase;
-use App\Http\Controllers\Controller;
-use App\External\Api\Request\CommunityReport\CommunityReportRequest;
+use Exception;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Core\CommunityReport\Dto\CreateReportDto;
+use App\Core\CommunityReport\Dto\CommunityReportQueryDto;
+use App\Core\CommunityReport\UseCases\CreateReportUseCase;
+use App\Core\CommunityReport\UseCases\ResolvedReportUseCase;
+use App\Core\CommunityReport\UseCases\GetCommunityReportUseCase;
+use App\External\Api\Request\CommunityReport\CommunityReportRequest;
 
 class CommunityReportController extends Controller
 {
@@ -18,6 +20,8 @@ class CommunityReportController extends Controller
         protected CreateReportUseCase $createReport,
 
         private GetCommunityReportUseCase $getCommunityReportUseCase,
+
+        private ResolvedReportUseCase $resolvedReportUseCase,
 
     ) {
     }
@@ -90,6 +94,34 @@ class CommunityReportController extends Controller
 
     public function destroy()
     {
+
+    }
+
+    public function resolve($reportId)
+    {
+        try {
+
+            $municipalId = app('municipal_id');
+
+            $this->resolvedReportUseCase->execute($reportId, $municipalId);
+
+            return response()->json([
+
+                'success' => true,
+
+                'message' => 'Report Resolve'
+
+            ]);
+        } catch (Exception $e) {
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => $e->getMessage()
+
+            ]);
+        }
 
     }
 }

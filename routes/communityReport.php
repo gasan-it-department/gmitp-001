@@ -27,6 +27,8 @@ Route::prefix('api/community-report')
 
                 Route::get('/', 'fetch')->name('fetch');
 
+                Route::patch('/resolve/{id}', 'resolve')->name('resolve');
+
             });
 
         Route::post('/', 'store')->name('store');

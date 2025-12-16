@@ -67,4 +67,5 @@ class CommunityReportRepositories
             ->findOrFail($reportId);
 
     }
+
 }

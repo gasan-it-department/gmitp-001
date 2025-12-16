@@ -41,6 +41,20 @@ export const CommunityReportApi = {
 
     async getCommunityReport(municipalSlug: string) {
         const { url, method, } = CommunityReport.CommunityReportController.fetch();
+        const { data } = await axios({
+            url,
+            method,
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+
+        return data;
+
+    },
+
+    async resolveReport(id: string, municipalSlug: string) {
+        const { url, method } = CommunityReport.CommunityReportController.resolve(id);
 
         const { data } = await axios({
             url,
