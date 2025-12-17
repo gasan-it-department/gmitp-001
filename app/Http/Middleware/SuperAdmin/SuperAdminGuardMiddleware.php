@@ -24,7 +24,7 @@ class SuperAdminGuardMiddleware
     {
         $user = request()->user();
         if (!$user) {
-            return redirect()->route('landingPage.show');
+            return redirect()->route('landing');
         }
 
         if (!$this->userRoleCheckerService->isSuperAdmin($user)) {

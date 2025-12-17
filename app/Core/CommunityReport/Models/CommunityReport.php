@@ -39,6 +39,8 @@ class CommunityReport extends Model
 
         'resolved_at',
 
+        'remarks',
+
         'user_id'
 
     ];

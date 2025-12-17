@@ -84,13 +84,18 @@ class CommunityReportController extends Controller
 
     }
 
-    public function resolve($reportId)
+    public function resolve($reportId, Request $request)
     {
         try {
+            $validated = $request->validate([
+
+                'remarks' => ['required', 'string', 'max:1000']
+
+            ]);
 
             $municipalId = app('municipal_id');
 
-            $this->resolvedReportUseCase->execute($reportId, $municipalId);
+            $this->resolvedReportUseCase->execute($reportId, $municipalId, $validated['remarks']);
 
             return response()->json([
 
@@ -99,6 +104,7 @@ class CommunityReportController extends Controller
                 'message' => 'Report Resolve'
 
             ]);
+
         } catch (Exception $e) {
 
             return response()->json([

@@ -27,11 +27,6 @@ class User extends Authenticatable
         return \Database\Factories\UserFactory::new();
     }
 
-    public function getRole(): string
-    {
-        return $this->role;
-    }
-
     /**
      * The attributes that are mass assignable.
      *

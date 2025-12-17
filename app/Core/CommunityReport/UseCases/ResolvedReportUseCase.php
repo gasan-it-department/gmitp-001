@@ -14,7 +14,7 @@ class ResolvedReportUseCase
     ) {
     }
 
-    public function execute(string $reportId, string $municipalId)
+    public function execute(string $reportId, string $municipalId, string $remarks)
     {
 
         $report = $this->communityReportRepo->findByIdAndMunicipality($reportId, $municipalId);
@@ -28,6 +28,7 @@ class ResolvedReportUseCase
         $report->update([
             'resolved_at' => now(),
             'status' => CommunityReportStatus::RESOLVED,
+            'remarks' => $remarks,
         ]);
 
         return $report;

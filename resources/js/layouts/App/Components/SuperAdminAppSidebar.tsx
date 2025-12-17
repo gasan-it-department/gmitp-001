@@ -11,6 +11,8 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { landing } from '@/routes';
 import municipality from '@/routes/municipality';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -188,6 +190,33 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
                     <span>Exit Admin</span>
                 </Button>
             </div>
+
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                open={classicDialog.isOpen}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }));
+
+                    switch (classicDialog.action) {
+                        case 'exit':
+                            router.visit(landing.url());
+                            break;
+                    }
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }));
+                }}
+            />
         </Sidebar>
     );
 }

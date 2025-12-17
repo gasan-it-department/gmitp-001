@@ -53,12 +53,13 @@ export const CommunityReportApi = {
 
     },
 
-    async resolveReport(id: string, municipalSlug: string) {
+    async resolveReport(id: string, municipalSlug: string, remarks: string) {
         const { url, method } = CommunityReport.CommunityReportController.resolve(id);
 
         const { data } = await axios({
             url,
             method,
+            data: { remarks: remarks },
             headers: {
                 'X-Municipality-Slug': municipalSlug
             }

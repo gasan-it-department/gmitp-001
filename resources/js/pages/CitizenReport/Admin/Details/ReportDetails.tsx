@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
-import AdminLayout from '@/layouts/App/AppLayout';
 import ImageViewerDialog from '@/pages/Utility/ImageViewerModal';
 import { Calendar, ExternalLink, MapPin, Phone, User } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -14,20 +13,19 @@ interface Props {
 }
 
 export default function ReportDetails({ report, onClose, onUpdate }: Props) {
-    if (report === null) return (
-        <div>
-            <a>SOMETHING WENT WRONG!</a>
-        </div>
-    );
+    if (report === null)
+        return (
+            <div>
+                <a>SOMETHING WENT WRONG!</a>
+            </div>
+        );
 
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const dragStart = useRef({ x: 0, y: 0 });
     const hasCoordinates = report.latitude !== null && report.longitude !== null;
-    const googleMapsUrl = hasCoordinates
-        ? `https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}`
-        : null;
+    const googleMapsUrl = hasCoordinates ? `https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}` : null;
 
     const formatDate = (dateString: string) =>
         new Date(dateString).toLocaleDateString('en-US', {
@@ -71,9 +69,7 @@ export default function ReportDetails({ report, onClose, onUpdate }: Props) {
                                         Coordinates: Lat: {report.latitude}, Long: {report.longitude}
                                     </p>
                                 ) : (
-                                    <p className="mt-1 text-sm text-gray-400 italic">
-                                        Coordinates not available
-                                    </p>
+                                    <p className="mt-1 text-sm text-gray-400 italic">Coordinates not available</p>
                                 )}
                             </div>
 
@@ -82,13 +78,11 @@ export default function ReportDetails({ report, onClose, onUpdate }: Props) {
                                 target="_blank"
                                 rel="noreferrer"
                                 aria-disabled={!hasCoordinates}
-                                className={`
-                inline-flex w-full items-center justify-center rounded-md px-4 py-2
-                text-sm font-medium text-white shadow-sm transition
-                ${hasCoordinates
+                                className={`inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition ${
+                                    hasCoordinates
                                         ? 'bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600'
-                                        : 'cursor-not-allowed bg-gray-300'}
-            `}
+                                        : 'cursor-not-allowed bg-gray-300'
+                                } `}
                                 onClick={(e) => {
                                     if (!hasCoordinates) e.preventDefault();
                                 }}
@@ -98,7 +92,6 @@ export default function ReportDetails({ report, onClose, onUpdate }: Props) {
                             </a>
                         </CardContent>
                     </Card>
-
 
                     <Card>
                         <CardHeader>
@@ -164,7 +157,7 @@ export default function ReportDetails({ report, onClose, onUpdate }: Props) {
                         <CardContent className="space-y-4">
                             <div className="flex gap-3">
                                 <Calendar className="h-4 w-4 text-gray-400" />
-                                <p className="text-sm">This is a hard coded remark sample.</p>
+                                <p className="text-sm">{report.remarks}</p>
                             </div>
                         </CardContent>
                     </Card>
