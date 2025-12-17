@@ -1,8 +1,10 @@
 <?php
 
-use App\External\Api\Controllers\Auth\CreateUserController;
 use Illuminate\Support\Facades\Route;
+use App\External\Api\Controllers\Auth\CreateUserController;
 use App\External\Api\Controllers\Auth\AuthenticateUserController;
+use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
+use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 
 Route::prefix('api/auth')
     ->middleware(['guest', 'municipalityContext'])
@@ -20,4 +22,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthenticateUserController::class, 'logout'])->name('logout');
 
 });
+
+//super admin create user
+Route::middleware('superAdmin')
+    ->prefix('super-admin')
+    ->as('superAdmin.')
+    ->group(function () {
+        Route::get('/dashboard', [SuperAdminController::class, 'showDashboard'])
+            ->name('dashboard');
+
+        Route::get('/user-management', [UserManagementController::class, 'index'])
+            ->name('users.page');
+    });
 

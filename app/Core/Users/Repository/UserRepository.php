@@ -29,4 +29,10 @@ class UserRepository
     {
         return User::where('phone', $phone)->first();
     }
+
+    public function getAll()
+    {
+
+        return User::with(['roles', 'permissions'])->get();
+    }
 }
