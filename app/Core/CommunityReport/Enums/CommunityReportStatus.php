@@ -7,6 +7,7 @@ enum CommunityReportStatus: string
 
     case PENDING = 'pending';
     case RESOLVED = 'resolve';
+    case IN_PROGRESS = 'in_progress';
     case REJECTED = 'rejected';
     case ARCHIVED = 'archived';
 
@@ -19,7 +20,9 @@ enum CommunityReportStatus: string
 
             self::RESOLVED => 'Resolved',
 
-            self::REJECTED => 'Declined'
+            self::REJECTED => 'Declined',
+
+            self::IN_PROGRESS => 'In Progress',
 
         };
 
@@ -35,6 +38,8 @@ enum CommunityReportStatus: string
             self::RESOLVED => 'green',
 
             self::REJECTED => 'red',
+
+            self::IN_PROGRESS => 'blue',
 
         };
 

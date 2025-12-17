@@ -26,7 +26,9 @@ class SuperAdminSeeder extends Seeder
                 'first_name' => 'super',
                 'last_name' => 'admin',
                 'phone' => '09000000000',
-                'email' => 'superhero@gmail.com',
+                'phone_verified_at' => now(),
+                'email' => 'gasanmarinduque.itdepartment@gmail.com',
+                'email_verified_at' => now(),
                 'password' => Hash::make('password'),
             ]
 
