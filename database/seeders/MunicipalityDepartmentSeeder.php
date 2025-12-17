@@ -19,6 +19,18 @@ class MunicipalityDepartmentSeeder extends Seeder
             ['name' => 'BUSINESS PERMITS AND LICENSING OFFICE (BPLO)', 'description' => null],
             ['name' => 'ENGINEERING OFFICE', 'description' => null],
             ['name' => 'MUNICIPAL PLANNING AND DEVELOPMENT OFFICE (MPDO)', 'description' => null],
+
+            ['name' => 'MUNICIPAL SOCIAL WELFARE AND DEVELOPMENT OFFICE (MSWDO)', 'description' => null], //
+            ['name' => 'SANGGUNIANG BAYAN', 'description' => null], //
+            ['name' => 'RURAL HEALTH OFFICE (RHU)', 'description' => null], //
+            ['name' => 'MUNICIPAL AGRICULTURE OFFICE (MAO)', 'description' => null], //
+            ['name' => 'MUNICIPAL TREASURER\'S OFFICE (MTO)', 'description' => null], //
+            ['name' => 'MUNICIPAL ASSESSOR\'S OFFICE (MAO)', 'description' => null], //
+            ['name' => 'MUNICIPAL CIVIL REGISTRAR\'S OFFICE (MCRO)', 'description' => null], //
+            ['name' => 'MUNICIPAL TOURISM OFFICE', 'description' => null], //
+            
+            // ['name' => 'MUNICIPAL INFORMATION AND COMMUNICATIONS TECHNOLOGY OFFICE (MICTO)', 'description' => null],
+            // ['name' => 'MUNICIPAL ENVIRONMENT AND NATURAL RESOURCES OFFICE (MENRO)', 'description' => null],
         ];
 
         foreach ($departments as $data) {

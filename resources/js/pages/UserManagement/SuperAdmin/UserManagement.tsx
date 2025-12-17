@@ -11,7 +11,7 @@ export default function UserManagement({ users }: Props) {
     return (
         <BaseLayout>
             <div className="w-full">
-                <UsersTable users={users} />
+                <UsersTable users={userList} />
             </div>
         </BaseLayout>
     );

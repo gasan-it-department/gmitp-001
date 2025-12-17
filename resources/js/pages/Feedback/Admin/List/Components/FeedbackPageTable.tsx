@@ -9,8 +9,12 @@ import Utility from '@/pages/Utility/Utility';
 import feedback from '@/routes/feedback';
 import { router } from '@inertiajs/react';
 import { EyeIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import FeedbackPageTableHeader from './FeedbackPageTableHeader';
+import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import PaginationView from '@/pages/Utility/PaginationView';
 
 interface Props {
     feedbacks: PaginatedResponse<FeedbackData>;
@@ -26,6 +30,66 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
     const [lastPage, setLastPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
+    const meta = feedbacks.meta;
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    const handleSort = (currentSelectedSort: string | null) => {
+        console.log('Feedback selected filter: ', currentSelectedSort);
+        // Implement server-side filtering here in the future
+    };
+
+    console.log("Feedback List: ", feedbacks);
+    //feedbacks.meta.current_page
+    //feedbacks.meta.last_page
+    //feedbacks.meta.per_page
+    //feedbacks.meta.total
+
+    useEffect(() => {
+        setCurrentPage(meta.current_page);
+        setLastPage(meta.last_page);
+        setPerPage(meta.per_page);
+        setTotalItems(meta.total);
+    }, [feedbacks.meta]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 200);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
+    };
+
+
+    const handlePageChange = (page: number) => {
+        if (page < 1 || page > lastPage) return;
+
+        setIsLoading(true);
+
+        router.get(
+            feedback.admin.index.url({
+                municipality: currentMunicipality.slug,
+            }),
+            {
+                page,
+                ...(currentFilter ? { sort: currentFilter.sub } : {}),
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onFinish: () => setIsLoading(false),
+            }
+        );
+    };
+
 
     return (
         <div className="flex h-full flex-col">
@@ -33,11 +97,11 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Community Feedback</h1>
                 <FeedbackPageTableHeader
-                    onSearch={() => {}}
+                    onSearch={() => { }}
                     onFilterButtonClicked={() => {
                         setIsFilterOpened(true);
                     }}
-                    onExportButtonClicked={() => {}}
+                    onExportButtonClicked={() => { }}
                 />
             </div>
 
@@ -96,10 +160,54 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
             </div>
             {/* PAGINATION */}
             <div className="border-t bg-white py-4">
-                {/* <PaginationView currentPage={currentPage} totalPages={lastPage} totalItems={totalItems} itemsPerPage={perPage} /> */}
+                {lastPage > 1 && (
+                    <PaginationView
+                        currentPage={currentPage}
+                        totalPages={lastPage}
+                        totalItems={totalItems}
+                        itemsPerPage={perPage}
+                        onPageChange={handlePageChange}
+                    />
+                )}
             </div>
 
             <LoadingDialog isOpen={isLoading} />
+
+            <FilterDialog
+                isOpen={isFilterOpened}
+                onClose={function (): void {
+                    setIsFilterOpened(false);
+                }}
+                filters={[
+                    { title: 'Target Party (a-z)', sub: 'target_party' },
+                    { title: 'Message', sub: 'message' },
+                    { title: 'Date Reported (latest)', sub: 'date_reported' },
+                ]}
+                currentFilter={currentFilter}
+                onApply={(selectedFilter) => {
+                    setCurrentFilter(selectedFilter);
+
+                    if (selectedFilter) {
+                        handleSort(selectedFilter?.sub);
+                    }
+                }}
+            />
+
+            <ClassicDialog
+                title={''}
+                message={''}
+                open={false} />
+
+            {showScrollTop && (
+                <Button
+                    size="icon"
+                    onClick={scrollToTop}
+                    className="fixed bottom-6 right-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
+                    aria-label="Scroll to top"
+                >
+                    ↑
+                </Button>
+            )}
         </div>
     );
 }

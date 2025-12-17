@@ -14,7 +14,6 @@ use App\Core\Users\Domains\Exceptions\InvalidUserInputException;
 
 class CreateUserController extends Controller
 {
-
     public function __construct(
         private RegisterUserUseCase $registerUserCase,
     ) {
@@ -34,7 +33,7 @@ class CreateUserController extends Controller
                 middleName: $validated['middle_name'],
                 lastName: $validated['last_name'],
                 userName: $validated['user_name'],
-                phone: $validated['user_name'],
+                phone: $validated['phone'],
                 password: $validated['password'],
             );
 

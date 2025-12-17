@@ -32,6 +32,7 @@ export default function RegisterPage({ onClose }: SignUpPageProps) {
         watch,
         setError,
         clearErrors,
+        setValue,
         formState: { errors, isSubmitting },
     } = useForm<RegisterFormValues>({
         defaultValues: {
@@ -160,7 +161,7 @@ export default function RegisterPage({ onClose }: SignUpPageProps) {
             // ======================================= CREATE ACCOUNT ======================================= //
 
             await AuthApi.storeAccount(currentMunicipality.slug, data);
-            toast.success('Account created successfully!');
+            console.log('Account created successfully:', data);
         } catch (error: any) {
             const backendMessage =
                 error.response?.data?.message ||

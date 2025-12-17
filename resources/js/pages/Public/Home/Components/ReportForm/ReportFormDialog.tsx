@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import MapCoordinates from './MapCoordinates';
 import { ReportTypeOption } from './ReportType';
+import { usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 
 interface ReportFormDialogProps {
     open: boolean;
@@ -22,6 +24,7 @@ interface ReportFormDialogProps {
 
 export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDialogProps) {
     const { currentMunicipality } = useMunicipality();
+    const { auth } = usePage<SharedData>().props;
     const [isSubmitting, setIsSubmiting] = useState({
         isOpen: false,
         title: 'Loading, please wait...',
@@ -184,6 +187,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
     useEffect(() => {
         setValue('latitude', '');
         setValue('longitude', '');
+        setValue('contact', auth.user?.phone || "");
     }, [open]);
 
     const handleClearCoordinates = () => {
