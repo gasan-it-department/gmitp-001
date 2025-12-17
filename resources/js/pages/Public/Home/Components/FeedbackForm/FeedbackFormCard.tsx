@@ -1,15 +1,18 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, MessageSquare } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FeedbackFormDialog } from './FeedbackFormDialog';
-import ToastProvider from '@/pages/Utility/ToastShower';
-import { stat } from 'fs';
-import { toast } from 'sonner';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
+import { set } from 'date-fns';
 
 export default function FeedbackUi() {
+    const { auth } = usePage<SharedData>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: "",
@@ -19,6 +22,12 @@ export default function FeedbackUi() {
         hideNegativeButton: false,
         action: ""
     });
+
+    useEffect(() => {
+        if(auth.user !== null) {
+            setLogInSignUpDialogVisible(false);
+        }
+    }, [auth.user])
 
     return (
         <Card
@@ -67,7 +76,14 @@ export default function FeedbackUi() {
           hover:from-red-600 hover:to-orange-600 hover:shadow-md
           active:scale-[0.98]
         "
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={() => {
+                            if (auth.user === null) {
+                                setLogInSignUpDialogVisible(true);
+                                return;
+                            }
+
+                            setIsDialogOpen(true)
+                        }}
                     >
                         Submit Feedback
                         <ArrowRight size={18} className="sm:size-5" />
@@ -101,6 +117,7 @@ export default function FeedbackUi() {
                             }))
                         }
                     }} />
+
                 <ClassicDialog
                     title={classicDialogOpen.title}
                     message={classicDialogOpen.message}
@@ -123,6 +140,10 @@ export default function FeedbackUi() {
                         }))
                     }}
                 />
+
+                <LogInSignUpDialog
+                    isOpen={isLogInSignUpDialogVisible}
+                    onClose={() => setLogInSignUpDialogVisible(false)} />
             </CardContent>
         </Card>
 

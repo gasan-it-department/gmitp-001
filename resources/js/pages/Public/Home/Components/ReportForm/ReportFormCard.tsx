@@ -2,11 +2,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { ReportFormDialog } from "./ReportFormDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ClassicDialog from "@/pages/Utility/ClassicDialog";
+import { usePage } from "@inertiajs/react";
+import { SharedData } from "@/types";
+import LogInSignUpDialog from "@/pages/Auth/LogInSignUpDialog";
 
 export default function ReportIssueCard() {
+    const { auth } = usePage<SharedData>().props;
     const [isReportDialogShown, setIsReportDialogShown] = useState(false);
+    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
         title: "",
@@ -15,6 +20,12 @@ export default function ReportIssueCard() {
         negativeButtonText: "",
         isNegativeButtonHidden: false,
     });
+
+    useEffect(() => {
+        if (auth.user !== null) {
+            setLogInSignUpDialogVisible(false);
+        }
+    }, [auth.user])
 
     return (
         <Card
@@ -58,7 +69,13 @@ export default function ReportIssueCard() {
                           hover:from-red-600 hover:to-orange-600 hover:shadow-md
                           active:scale-[0.98]
                         "
-                        onClick={() => setIsReportDialogShown(true)}
+                        onClick={() => {
+                            if (auth.user === null) {
+                                setLogInSignUpDialogVisible(true);
+                                return;
+                            }
+                            setIsReportDialogShown(true)
+                        }}
                     >
                         Submit Report
                         <ArrowRight size={18} className="sm:size-5" />
@@ -120,6 +137,10 @@ export default function ReportIssueCard() {
                         isOpen: false,
                     }))
                 }} />
+
+            <LogInSignUpDialog
+                isOpen={isLogInSignUpDialogVisible}
+                onClose={() => setLogInSignUpDialogVisible(false)} />
         </Card>
 
     );

@@ -214,7 +214,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
 
 
     return (
-        <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
             <h1 className="mb-2 text-3xl font-extrabold text-gray-900 dark:text-gray-100">CMS Editor Panel</h1>
             <p className="mb-6 text-gray-600 dark:text-gray-400">Manage featured banners, municipal hotlines, and site branding.</p>
 

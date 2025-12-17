@@ -14,10 +14,13 @@ type FormData = {
     remember_me: boolean;
 };
 
-export default function LoginForm() {
+interface LoginFormProps {
+    onClose?: () => void;
+}
+
+export default function LoginForm({ onClose }: LoginFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const { currentMunicipality } = useMunicipality();
-
     const {
         register,
         handleSubmit,
@@ -60,7 +63,7 @@ export default function LoginForm() {
                         <User className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
                         <Input
                             id="user_identifier"
-                            placeholder="Enter your username"
+                            placeholder=""
                             className={`pl-9 ${errors.user_identifier ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                             {...register('user_identifier', { required: 'Username or Phone is required' })}
                         />
@@ -83,7 +86,6 @@ export default function LoginForm() {
                         <Input
                             id="password"
                             type={showPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
                             className={`pr-10 pl-9 ${errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                             {...register('password', { required: 'Password is required' })}
                             autoComplete="current-password"
@@ -100,7 +102,7 @@ export default function LoginForm() {
                 </div>
 
                 {/* REMEMBER ME */}
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 pb-5">
                     <Controller
                         name="remember_me"
                         control={control}
@@ -121,11 +123,27 @@ export default function LoginForm() {
             </div>
 
             {/* ACTION BUTTON */}
-            <div className="mt-8">
+
+            <div className="pb-5 flex gap-3">
+                {/* Cancel Button (hidden on desktop) */}
+                <Button
+                    disabled={isSubmitting}
+                    type="button"
+                    className="flex-1 h-11 border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 md:hidden"
+                    onClick={() => {
+                        if (onClose !== undefined) {
+                            onClose();
+                        }
+                    }}
+                >
+                    Cancel
+                </Button>
+
+                {/* Submit Button */}
                 <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="h-11 w-full transform bg-gradient-to-r from-red-500 to-orange-500 text-base font-medium text-white shadow-md transition-all duration-300 ease-in-out hover:from-red-600 hover:to-orange-600 active:scale-[0.98]"
+                    className="flex-1 h-11 bg-gradient-to-r from-red-500 to-orange-500 text-white"
                 >
                     {isSubmitting ? (
                         <span className="flex items-center gap-2">

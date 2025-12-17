@@ -73,9 +73,9 @@ export default function GeneralAnnouncement() {
     }
 
     return (
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:flex-row lg:px-10">
+        <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
             <div className="flex flex-1 flex-col">
-                <div className="px-2 sm:px-4">
+                <div>
                     <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">General Announcements</h2>
                     <p className="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
                         Stay updated with important notices, reminders, and community information.

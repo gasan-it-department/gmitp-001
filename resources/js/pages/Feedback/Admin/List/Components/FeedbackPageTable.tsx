@@ -63,7 +63,7 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                                     <TableCell className="text-center text-[13px] font-medium whitespace-nowrap">
                                         {index + 1 + (currentPage - 1) * perPage}
                                     </TableCell>
-                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">{item.feedback_target}</TableCell>
+                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">{item.employee_name}</TableCell>
 
                                     <TableCell className="max-w-0 text-[12px]">
                                         <span className="block overflow-hidden">{item.message}</span>

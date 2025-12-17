@@ -295,6 +295,7 @@ export default function EventPageTable() {
                             <TableHead className="w-12">
                                 <div className="flex items-center justify-center p-2">
                                     <input
+                                        disabled={eventList.length === 0}
                                         type="checkbox"
                                         className="h-4 w-4 cursor-pointer"
                                         checked={selectedItems.length === eventList.length && eventList.length > 0}

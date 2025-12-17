@@ -144,7 +144,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden bg-white p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl lg:max-w-2xl"
+                className="/* MOBILE (Default: Full Screen) */ /* DESKTOP/LAPTOP (sm: breakpoint and above) */ flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0 bg-white p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border lg:max-w-2xl"
             >
                 {/* HEADER */}
                 <div className="sticky top-0 z-50 bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8">
@@ -326,7 +326,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                 className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
                                 disabled={isSubmitting.isOpen}
                             >
-                                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                                {isSubmitting.isOpen ? 'Submitting...' : 'Submit Feedback'}
                             </Button>
                         </div>
                     </form>

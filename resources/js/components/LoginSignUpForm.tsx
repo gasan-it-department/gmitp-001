@@ -20,14 +20,6 @@ export function LogInSignUpForm() {
             </Button>
             <ToastProvider />
             <LogInSignUpDialog
-                onSignedIn={() => {
-                    toast.success("Account successfully created");
-                    window.location.reload();
-                }}
-                onLoggedIn={(redirectionLink) => {
-                    toast.success("Successfully Logged In");
-                    window.location.href = redirectionLink;
-                }}
                 isOpen={isLogInSignUpDialogVisible}
                 onClose={() => setLogInSignUpDialogVisible(false)} />
         </div>

@@ -1,5 +1,4 @@
 import { LucideIcon } from 'lucide-react';
-// import type { Config } from 'ziggy-js';
 
 export interface Auth {
     user: User;
@@ -32,7 +31,6 @@ export interface SharedData {
     app_name: string;
     quote: { message: string; author: string };
     auth: Auth;
-    // ziggy: Config & { location: string };
     sidebarOpen: boolean;
     [key: string]: unknown;
 }
@@ -50,5 +48,5 @@ export interface User {
     avatar?: string;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown;
 }

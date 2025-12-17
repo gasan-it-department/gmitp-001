@@ -246,16 +246,20 @@ export default function AnnouncementPageTable() {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-8">
-                                <input
-                                    type="checkbox"
-                                    disabled={announcementList.length === 0}
-                                    checked={
-                                        selectedItems.length ===
-                                        announcementList.length &&
-                                        announcementList.length > 0
-                                    }
-                                    onChange={toggleSelectAll}
-                                />
+                                <div className="flex items-center justify-center p-2">
+                                    <input
+                                        className="h-4 w-4 cursor-pointer"
+                                        type="checkbox"
+                                        disabled={announcementList.length === 0}
+                                        checked={
+                                            selectedItems.length ===
+                                            announcementList.length &&
+                                            announcementList.length > 0
+                                        }
+                                        onChange={toggleSelectAll}
+                                    />
+                                </div>
+
                             </TableHead>
                             <TableHead>No.</TableHead>
                             <TableHead>Title</TableHead>
@@ -283,17 +287,20 @@ export default function AnnouncementPageTable() {
                                 return (
                                     <TableRow key={item.id}>
                                         <TableCell>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedItems.includes(
-                                                    item.id
-                                                )}
-                                                onChange={() =>
-                                                    toggleSelectItem(
+                                            <div className="flex items-center justify-center p-2">
+                                                <input
+                                                    className="h-4 w-4 cursor-pointer"
+                                                    type="checkbox"
+                                                    checked={selectedItems.includes(
                                                         item.id
-                                                    )
-                                                }
-                                            />
+                                                    )}
+                                                    onChange={() =>
+                                                        toggleSelectItem(
+                                                            item.id
+                                                        )
+                                                    }
+                                                />
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-center">
                                             {rowNumber}

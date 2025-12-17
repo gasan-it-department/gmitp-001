@@ -21,9 +21,11 @@ export default function FeedbackDetails({ feedback }: Props) {
         return 'bg-red-50 text-red-700 border-red-200';
     };
 
+    console.log("ANONYMOUS: ", feedback.is_anonymous);
+
     return (
         <AdminLayout>
-            <div className="mx-auto max-w-5xl space-y-6 p-6">
+            <div className="p-8">
                 {/* --- HEADER --- */}
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
@@ -33,7 +35,7 @@ export default function FeedbackDetails({ feedback }: Props) {
                         >
                             <ArrowLeft className="mr-1 h-4 w-4" /> Back to Feedbacks
                         </button>
-                        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
+                        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900 p-3">
                             Feedback Details
                             <Badge variant="outline" className="font-mono text-xs font-normal text-gray-500">
                                 #{feedback.id}
@@ -66,20 +68,22 @@ export default function FeedbackDetails({ feedback }: Props) {
                                     <div>
                                         <p className="mb-1 text-sm font-medium text-gray-500">Feedback Target</p>
                                         <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                                            {feedback.feedback_target}
-                                            {feedback.employee_name && (
-                                                <span className="text-base font-normal text-gray-400">/ {feedback.employee_name}</span>
-                                            )}
+                                            {feedback.feedback_target.toUpperCase()}
+                                            <span className="text-base font-normal text-gray-400">/ {feedback.employee_name ?? "Unknown department"}</span>
                                         </h2>
                                     </div>
-                                    <div
-                                        className={`flex flex-col items-center justify-center rounded-lg border px-4 py-2 ${getSentimentColor(feedback.rating)}`}
-                                    >
-                                        <StarRating rating={feedback.rating} />
-                                        <span className="mt-1 text-xs font-bold tracking-wide uppercase">
-                                            {feedback.rating ? `${feedback.rating} / 5 Rating` : 'No Rating'}
-                                        </span>
-                                    </div>
+                                    {
+                                        feedback.feedback_target === "department" && (
+                                            <div
+                                                className={`flex flex-col items-center justify-center rounded-lg border px-4 py-2 ${getSentimentColor(feedback.rating)}`}
+                                            >
+                                                <StarRating rating={feedback.rating} />
+                                                <span className="mt-1 text-xs font-bold tracking-wide uppercase">
+                                                    {feedback.rating ? `${feedback.rating} / 5 Rating` : 'No Rating'}
+                                                </span>
+                                            </div>
+                                        )
+                                    }
                                 </div>
                             </CardHeader>
                             <Separator />
@@ -164,7 +168,7 @@ export default function FeedbackDetails({ feedback }: Props) {
                         </Card>
 
                         {/* 2. TECHNICAL INFO (Using Child Component) */}
-                        <FeedbackMetaCard ip={feedback.ip_address} userAgent={feedback.user_agent} />
+                        {/* <FeedbackMetaCard ip={feedback.ip_address} userAgent={feedback.user_agent} /> */}
 
                         {/* 3. ACTIONS (Admin Control) */}
                         <Card>

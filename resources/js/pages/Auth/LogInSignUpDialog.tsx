@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
-
 import LoginForm from './Login';
 import SignUp from './SignUp';
 
@@ -14,8 +13,8 @@ export default function LogInSignUpDialog({ isOpen, onClose }: Props) {
     const [activeTab, setActiveTab] = useState('login');
 
     const titles = {
-        login: { title: 'Welcome Back', desc: 'Enter your credentials to access your account.' },
-        signup: { title: 'Create an Account', desc: 'Join us today by filling out the information below.' },
+        login: { title: 'Sign up', desc: 'Enter your credentials to access your account.' },
+        signup: { title: 'Create account', desc: 'Join us today by filling out the information below.' },
     };
 
     return (
@@ -56,11 +55,11 @@ export default function LogInSignUpDialog({ isOpen, onClose }: Props) {
                     {/* Scrollable Content Area */}
                     <div className="flex-1 overflow-y-auto px-6 pt-2 pb-6">
                         <TabsContent value="login" className="mt-0 h-full focus-visible:outline-none">
-                            <LoginForm />
+                            <LoginForm onClose={() => onClose()}/>
                         </TabsContent>
 
                         <TabsContent value="signup" className="mt-0 h-full focus-visible:outline-none">
-                            <SignUp />
+                            <SignUp onClose={() => onClose()}/>
                         </TabsContent>
                     </div>
                 </Tabs>

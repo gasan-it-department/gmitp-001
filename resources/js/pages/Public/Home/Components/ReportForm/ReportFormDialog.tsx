@@ -186,6 +186,11 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
         setValue('longitude', '');
     }, [open]);
 
+    const handleClearCoordinates = () => {
+        setValue('latitude', '');
+        setValue('longitude', '');
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
@@ -249,15 +254,28 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                                 </div>
                             )}
 
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="border-red-300 text-red-600 hover:bg-red-50"
-                                onClick={handleGetLocation}
-                                disabled={isGettingCoordinates}
-                            >
-                                {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
-                            </Button>
+                            <div className="flex flex-wrap gap-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-red-300 text-red-600 hover:bg-red-50"
+                                    onClick={handleGetLocation}
+                                    disabled={isGettingCoordinates}
+                                >
+                                    {isGettingCoordinates ? 'Getting coordinates...' : 'Get GPS Coordinates'}
+                                </Button>
+
+                                {watch('latitude') && watch('longitude') && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-gray-300 text-gray-600 hover:bg-gray-100"
+                                        onClick={handleClearCoordinates}
+                                    >
+                                        Clear Coordinates
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         {/* DESCRIPTION */}

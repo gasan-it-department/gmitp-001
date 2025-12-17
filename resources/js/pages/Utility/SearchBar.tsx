@@ -8,9 +8,7 @@ interface Props {
 }
 
 const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
-  // State to hold the current input value
   const [query, setQuery] = useState("");
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(query);
@@ -18,24 +16,26 @@ const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
 
   const handleClear = () => {
     setQuery("");
-    onSearch(""); // Clear the search results immediately
+    onSearch("");
   };
 
   return (
-    // Removed outer space-x-2, made form flex-1 to occupy available space
     <form onSubmit={handleSearch} className="flex flex-1 w-full">
       <div className="relative flex-1 min-w-[200px] flex items-center">
-        {/* Search Input Container */}
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={searchBarHint}
-          // Increased right padding (pr-20) to ensure space for both X and Search buttons
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onSearch(query);
+            }
+          }}
           className="flex-1 w-full p-2 pl-4 pr-20 border border-gray-300 dark:border-neutral-700 rounded-lg outline-none focus:ring-2 focus:ring-red-400 dark:bg-neutral-900 dark:text-gray-100 transition-shadow"
         />
 
-        {/* Clear Button (inside the input field, positioned left of the Search Button) */}
         {query && (
           <button
             type="button"
