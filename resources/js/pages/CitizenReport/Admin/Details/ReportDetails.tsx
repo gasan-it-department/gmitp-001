@@ -149,18 +149,20 @@ export default function ReportDetails({ report, onClose, onUpdate }: Props) {
                             </div>
                         </CardContent>
                     </Card>
+                    {report.remarks && report.remarks.trim() !== '' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xs font-bold tracking-wider text-gray-500 uppercase">Remarks</CardTitle>
+                            </CardHeader>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-xs font-bold tracking-wider text-gray-500 uppercase">Remarks</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex gap-3">
-                                <Calendar className="h-4 w-4 text-gray-400" />
-                                <p className="text-sm">{report.remarks}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            <CardContent className="space-y-4">
+                                <div className="flex gap-3">
+                                    <Calendar className="h-4 w-4 text-gray-400" />
+                                    <p className="text-sm">{report.remarks}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <Card>
                         <CardHeader>

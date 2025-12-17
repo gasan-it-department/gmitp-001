@@ -40,6 +40,7 @@ class RejectReportUseCase
         $report->update([
             'status' => CommunityReportStatus::REJECTED,
             'remarks' => $dto->remarks,
+            'rejected_at' => now(),
             'resolved_at' => null,
         ]);
 

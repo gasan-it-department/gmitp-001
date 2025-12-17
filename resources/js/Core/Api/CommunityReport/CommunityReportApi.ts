@@ -79,6 +79,20 @@ export const CommunityReportApi = {
         });
 
         return data;
+    },
+
+    async reject({ id, municipalSlug, remarks }: { id: string, municipalSlug: string, remarks: string }) {
+        const { url, method } = CommunityReport.CommunityReportController.reject(id);
+
+        const { data } = await axios({
+            url,
+            method,
+            data: { remarks: remarks },
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            }
+        });
+        return data;
     }
 
 

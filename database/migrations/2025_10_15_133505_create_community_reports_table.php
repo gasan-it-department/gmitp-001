@@ -41,6 +41,8 @@ return new class extends Migration {
 
             $table->timestamp('resolved_at')->nullable();
 
+            $table->timestamp('rejected_at')->nullable();
+
             $table->timestamps();
 
         });

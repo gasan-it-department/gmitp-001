@@ -30,6 +30,8 @@ Route::prefix('api/community-report')
 
                 Route::patch('/resolve/{id}', 'resolve')->name('resolve');
 
+                Route::patch('/reject/{id}', 'reject')->name('reject');
+
             });
 
         Route::post('/', 'store')->name('store');

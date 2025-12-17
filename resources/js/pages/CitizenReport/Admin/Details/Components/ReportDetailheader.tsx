@@ -5,7 +5,7 @@ import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityR
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { router } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import CommunityReportStatusDialog from '../../List/Components/CommunityReportStatusDialog';
@@ -19,46 +19,74 @@ interface Props {
 export function ReportDetailsHeader({ report, onClose }: Props) {
     const { currentMunicipality } = useMunicipality();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Dialog state
     const [updateResultDialog, setUpdateResultDialog] = useState({
         isOpen: false,
         reportId: '',
-        status: '',
+        status: '', // This will be 'resolve' or 'failed'
     });
-    const [isResolved, setIsResolved] = useState(false);
-    const [statusLabel, setStatusLabel] = useState('Pending');
-    const badgeColorClass = isResolved ? 'border-green-300 bg-green-50 text-green-700' : 'border-orange-300 bg-orange-50 text-orange-700';
+
+    const [currentStatus, setCurrentStatus] = useState(report.status);
 
     useEffect(() => {
-        setIsResolved(report.status === 'resolve');
-        setStatusLabel(report.status);
+        setCurrentStatus(report.status);
     }, [report]);
 
-    const handleResolve = async (id: string, remarks: string, status: string) => {
+    // 1. Single Handler for BOTH Resolve and Reject
+    const handleStatusUpdate = async (id: string, remarks: string, status: string) => {
         try {
-            // UPDATE THE REMARKS TO THE DATABASE.
-            // UPDATE THE STATUS OF THE
-            console.log('Remarks: ', remarks);
             setIsLoading(true);
-            let response: { success: boolean };
+            let response;
+
+            // 2. Switch logic based on the status passed from the Dialog
             if (status === 'failed') {
-                // CALL FAILED API HERE
-                // response = await CommunityReportApi.failReport(id, currentMunicipality.slug);
+                // ✅ REJECT LOGIC (Using the object syntax we fixed)
+                response = await CommunityReportApi.reject({
+                    id: id,
+                    municipalSlug: currentMunicipality.slug,
+                    remarks: remarks,
+                });
             } else {
+                // ✅ RESOLVE LOGIC
                 response = await CommunityReportApi.resolveReport(id, currentMunicipality.slug, remarks);
             }
 
-            if (response!.success) {
-                toast.success(status === 'failed' ? 'Report marked as failed' : 'Report resolved');
+            // 3. Handle Success
+            if (response && response.success) {
+                const message = status === 'failed' ? 'Report rejected successfully' : 'Report resolved successfully';
+                toast.success(message);
+
+                // Update local state to reflect change immediately
+                setCurrentStatus(status);
+
+                // Refresh data
                 router.reload({ only: ['reports'] });
-                setIsResolved(true);
-                setStatusLabel('resolve');
             }
         } catch (error) {
-            toast.error('Failed to resolve report.');
+            console.error(error);
+            toast.error('Failed to update report status.');
         } finally {
             setIsLoading(false);
+            // Close dialog
+            setUpdateResultDialog((prev) => ({ ...prev, isOpen: false }));
         }
     };
+
+    // Helper to determine badge color
+    const getBadgeColor = () => {
+        switch (currentStatus) {
+            case 'resolve':
+                return 'border-green-300 bg-green-50 text-green-700';
+            case 'failed':
+                return 'border-red-300 bg-red-50 text-red-700';
+            default:
+                return 'border-orange-300 bg-orange-50 text-orange-700';
+        }
+    };
+
+    // Helper to check if actions should be hidden (if resolved OR failed)
+    const isProcessed = currentStatus === 'resolve' || currentStatus === 'failed';
 
     return (
         <div>
@@ -69,26 +97,25 @@ export function ReportDetailsHeader({ report, onClose }: Props) {
                 </Button>
 
                 <div className="flex items-center gap-3">
-                    <div className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold ${badgeColorClass}`}>
-                        {isResolved ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                        {statusLabel === 'resolve'
-                            ? 'Resolved'
-                            : statusLabel === 'failed'
-                              ? 'Failed'
-                              : statusLabel === 'pending'
-                                ? 'Pending'
-                                : 'Unknown'}
+                    {/* Status Badge */}
+                    <div className={`flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-bold ${getBadgeColor()}`}>
+                        {currentStatus === 'resolve' && <CheckCircle className="h-4 w-4" />}
+                        {currentStatus === 'failed' && <XCircle className="h-4 w-4" />}
+                        {currentStatus === 'pending' && <AlertTriangle className="h-4 w-4" />}
+
+                        {currentStatus === 'resolve' ? 'Resolved' : currentStatus === 'failed' ? 'Rejected' : 'Pending'}
                     </div>
-                    {!isResolved && (
+
+                    {/* Action Buttons - Only show if Pending */}
+                    {!isProcessed && (
                         <div className="flex gap-2">
                             <Button
                                 onClick={() =>
-                                    setUpdateResultDialog((prev) => ({
-                                        ...prev,
+                                    setUpdateResultDialog({
                                         isOpen: true,
                                         reportId: report.id,
-                                        status: 'failed',
-                                    }))
+                                        status: 'failed', // Sets mode to Reject
+                                    })
                                 }
                                 disabled={isLoading}
                                 variant="outline"
@@ -99,12 +126,11 @@ export function ReportDetailsHeader({ report, onClose }: Props) {
 
                             <Button
                                 onClick={() =>
-                                    setUpdateResultDialog((prev) => ({
-                                        ...prev,
+                                    setUpdateResultDialog({
                                         isOpen: true,
                                         reportId: report.id,
-                                        status: 'resolve',
-                                    }))
+                                        status: 'resolve', // Sets mode to Resolve
+                                    })
                                 }
                                 disabled={isLoading}
                                 className="bg-gradient-to-r from-emerald-600 to-green-500 text-white shadow-sm hover:from-emerald-700 hover:to-green-600"
@@ -112,7 +138,7 @@ export function ReportDetailsHeader({ report, onClose }: Props) {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Resolving...
+                                        Processing...
                                     </>
                                 ) : (
                                     'Resolve'
@@ -122,11 +148,13 @@ export function ReportDetailsHeader({ report, onClose }: Props) {
                     )}
                 </div>
 
+                {/* Shared Dialog for Both Actions */}
                 <CommunityReportStatusDialog
                     status={updateResultDialog.status}
                     isOpen={updateResultDialog.isOpen}
                     onUpdateButtonClicked={(remarks) => {
-                        handleResolve(updateResultDialog.reportId, remarks, updateResultDialog.status);
+                        // Calls the shared handler
+                        handleStatusUpdate(updateResultDialog.reportId, remarks, updateResultDialog.status);
                     }}
                     onClose={() =>
                         setUpdateResultDialog((prev) => ({
@@ -139,7 +167,6 @@ export function ReportDetailsHeader({ report, onClose }: Props) {
             </div>
 
             <ToastProvider />
-
             <LoadingDialog isOpen={isLoading} />
         </div>
     );
