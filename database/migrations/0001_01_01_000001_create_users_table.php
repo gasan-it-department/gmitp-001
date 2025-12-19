@@ -15,10 +15,16 @@ return new class extends Migration {
             $table->string('user_name')->unique();
             $table->string('first_name');
             $table->string('middle_name')->nullable();
+
+            $table->foreignUlid('municipal_id')
+                ->nullable()
+                ->constrained('municipalities')
+                ->nullOnDelete();
+
             $table->string('last_name');
+            $table->string('otp')->nullable();
             $table->string('phone')->unique();
             $table->string('email')->nullable();
-            $table->string('municipality')->nullable();
             $table->timestamp('phone_verified_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

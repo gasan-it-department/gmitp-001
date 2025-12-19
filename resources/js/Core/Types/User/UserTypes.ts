@@ -10,3 +10,9 @@ export interface User {
     direct_permission: string[];
     all_permission: string[];
 }
+
+export interface Permission {
+    id: string;
+    value: string;
+    label: string;
+}

@@ -14,6 +14,7 @@ import {
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { landing } from '@/routes';
 import municipality from '@/routes/municipality';
+import superAdmin from '@/routes/superAdmin';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { Building, FileText, LogOut, Map, Settings, User, Users } from 'lucide-react';
@@ -56,7 +57,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
         {
             title: 'USERS',
             icon: Users,
-            items: [{ title: 'Administrators', url: '/super-admin/dashboard', icon: User }],
+            items: [{ title: 'Administrators', url: superAdmin.users.page.url(), icon: User }],
         },
         {
             title: 'LOCAL GOVERNMENTS',
@@ -92,8 +93,8 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
         setClassicDialog({
             ...classicDialog,
             isOpen: true,
-            title: 'Exit admin panel',
-            message: 'Are you sure you want to exit the admin panel?',
+            title: 'Exit super admin panel',
+            message: 'Are you sure you want to exit the super admin panel?',
             positiveButtonText: 'Exit',
             negativeButtonText: 'Cancel',
             isNegativeButtonHidden: false,
@@ -187,7 +188,7 @@ export function SuperAdminAppSidebar({ ...props }: React.ComponentProps<typeof S
                     className="flex w-full items-center gap-3 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white"
                 >
                     <LogOut size={18} />
-                    <span>Exit Admin</span>
+                    <span>Exit Super Admin</span>
                 </Button>
             </div>
 

@@ -7,6 +7,7 @@ class CommunityReportQueryDto
 {
     public function __construct(
         public ?int $perPage = 10,
+        public ?int $page = 1, // Add this
         public ?string $orderBy = 'created_at',
         public ?string $direction = 'desc',
     ) {
@@ -18,6 +19,8 @@ class CommunityReportQueryDto
         return new self(
 
             perPage: $request->get('per_page', $defaultPerPage),
+
+            page: (int) $request->get('page', 1), // Capture the page number
 
             orderBy: $request->get('order_by', 'created_at'),
 

@@ -27,7 +27,7 @@ class PermissionSeeder extends Seeder
 
             'feedback.access',
 
-            'municipality.access',
+            'municipality_settings.access',
 
             'public_information.access',
 

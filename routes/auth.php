@@ -33,5 +33,7 @@ Route::middleware('superAdmin')
 
         Route::get('/user-management', [UserManagementController::class, 'index'])
             ->name('users.page');
+
+        Route::get('/user-registry', [UserManagementController::class, 'register'])->name('registry.page');
     });
 
