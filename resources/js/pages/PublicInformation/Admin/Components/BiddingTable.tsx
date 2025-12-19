@@ -31,7 +31,7 @@ export default function BiddingTable() {
                     onSearch={() => { }}
                     onFilterButtonClicked={() => { setIsFilterDialogVisible(true) }}
                     onExportButtonClicked={() => { }}
-                    onAddNewButtonClicked={() => { setIsAddEditDialogVisible(true) }}
+                    onAddNewButtonClicked={() => setIsAddEditDialogVisible(true)}
                 />
             </div>
 

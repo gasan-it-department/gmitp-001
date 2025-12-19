@@ -1,7 +1,11 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AwardsData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
-import AwardsHeader from './AwardsHeader';
+import AwardsHeader from './BidsAndAwardsHeader';
+import BidsAndAwardsHeader from './BidsAndAwardsHeader';
+import { useState } from 'react';
+import BidsAndAwardsDialog from './AddEditBidsAndAwardsDialog';
+import { is } from 'date-fns/locale';
 
 interface Props {
     data: AwardsData[];
@@ -9,6 +13,7 @@ interface Props {
 }
 
 export default function AwardsTable({ data = [] }: Props) {
+    const [bidsAndAwardsDialogVisible, setBidsAndAwardsDialogVisible] = useState(false);
     // Helper to format money (PHP)
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-PH', {
@@ -46,7 +51,8 @@ export default function AwardsTable({ data = [] }: Props) {
             {/* Header with Create Button */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Procurements</h1>
-                <AwardsHeader onSearch={() => {}} />
+                <BidsAndAwardsHeader onSearch={() => { }}
+                    onCreateNewButtonClicked={() => setBidsAndAwardsDialogVisible(true)} />
             </div>
 
             {/* TABLE CONTAINER */}
@@ -128,6 +134,13 @@ export default function AwardsTable({ data = [] }: Props) {
                     </TableBody>
                 </Table>
             </div>
+
+            <BidsAndAwardsDialog
+                isOpen={bidsAndAwardsDialogVisible}
+                onClose={() => setBidsAndAwardsDialogVisible(false)}
+                onSuccess={() => {
+
+                }} />
 
             {/* Optional: Add Pagination controls at the bottom using `pagination` prop */}
         </div>

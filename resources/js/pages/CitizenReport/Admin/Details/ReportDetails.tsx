@@ -44,6 +44,14 @@ export default function ReportDetails({ report, onClose, onUpdate }: Props) {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-2">
                     <Card>
+
+                        <CardHeader>
+                            <CardTitle className="text-lg">Issue Title</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="leading-relaxed whitespace-pre-wrap text-gray-700">{report.type === "street_light" ? "STREET LIGHT" : report.type === "road_damage" ? "ROAD DAMAGE" : report.type === "water_leak" ? "WATER LEAK" : report.type.toUpperCase()}</p>
+                        </CardContent>
+
                         <CardHeader>
                             <CardTitle className="text-lg">Issue Description</CardTitle>
                         </CardHeader>

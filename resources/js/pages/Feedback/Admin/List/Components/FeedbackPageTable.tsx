@@ -39,12 +39,6 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
         // Implement server-side filtering here in the future
     };
 
-    console.log("Feedback List: ", feedbacks);
-    //feedbacks.meta.current_page
-    //feedbacks.meta.last_page
-    //feedbacks.meta.per_page
-    //feedbacks.meta.total
-
     useEffect(() => {
         setCurrentPage(meta.current_page);
         setLastPage(meta.last_page);
@@ -92,7 +86,7 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
 
 
     return (
-        <div className="flex h-full flex-col">
+        <div>
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Community Feedback</h1>
@@ -105,8 +99,8 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                 />
             </div>
 
-            {/* TABLE WRAPPER */}
-            <div className="flex w-full flex-1 flex-col overflow-hidden rounded-lg border">
+            {/* TABLE */}
+            <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200">
                 <Table className="min-w-full table-fixed">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>

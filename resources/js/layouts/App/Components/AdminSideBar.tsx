@@ -172,11 +172,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: awardsAdminPage.page.url({ municipality: currentMunicipality.slug }),
                     icon: Hand,
                 },
-                {
-                    title: "Citizen's Charter",
-                    url: citizenCharter.page.url({ municipality: currentMunicipality.slug }),
-                    icon: User,
-                },
+                // {
+                //     title: "Citizen's Charter",
+                //     url: citizenCharter.page.url({ municipality: currentMunicipality.slug }),
+                //     icon: User,
+                // },
             ],
         },
         {
@@ -188,16 +188,16 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: executiveOrders.page.url({ municipality: currentMunicipality.slug }),
                     icon: FileSignature,
                 },
-                {
-                    title: 'Officials',
-                    url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
-                    icon: BadgeCheck,
-                },
-                {
-                    title: 'Offices',
-                    url: officesAdmin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Building2,
-                },
+                // {
+                //     title: 'Officials',
+                //     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
+                //     icon: BadgeCheck,
+                // },
+                // {
+                //     title: 'Offices',
+                //     url: officesAdmin.page.url({ municipality: currentMunicipality.slug }),
+                //     icon: Building2,
+                // },
             ],
         },
     ];

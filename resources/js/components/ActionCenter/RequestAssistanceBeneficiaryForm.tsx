@@ -156,7 +156,28 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
             <DialogContent
                 showCloseButton={false}
                 // ✅ APPLIED: Mobile full screen, flex-col structure
-                className="flex h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 bg-background p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-lg sm:rounded-xl sm:border"
+                className="
+    flex
+    h-[100dvh]
+    w-full
+    max-w-none
+    flex-col
+    gap-0
+    overflow-hidden
+    rounded-none
+    border-0
+    bg-background
+    p-0
+
+    sm:h-auto
+    sm:max-h-[90vh]
+    sm:w-[1100px]
+    sm:max-w-none
+    sm:rounded-2xl
+    sm:border
+"
+
+
             >
                 {/* Header Section (Fixed/Non-scrollable) */}
                 <div className="shrink-0 bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:rounded-t-xl">

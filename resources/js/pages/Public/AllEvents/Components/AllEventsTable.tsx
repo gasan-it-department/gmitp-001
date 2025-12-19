@@ -27,18 +27,25 @@ export default function AllEvenntsTable() {
 
     useEffect(() => {
         loadEvents(currentPage);
-    }, [])
+    }, [currentPage])
 
     const loadEvents = async (currentPage: number = 1) => {
         try {
             setIsLoading(true);
-            // TEST API FOR VIEWING DATA
-            const response = await EventsApi.getPublished(currentMunicipality.slug);
+            const response = await EventsApi.getPublished(currentMunicipality.slug, currentPage);
             if (response.success) {
                 console.log("Response data: ", response);
                 setEventList(response.data)
             }
 
+            setLastPage(response.last_page);
+            setPerPage(response.per_page);
+            setTotalItems(response.total);
+
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
         } catch (error: any) {
 
         } finally {
@@ -145,41 +152,41 @@ export default function AllEvenntsTable() {
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* PAGINATION */}
-            <div className="mt-2">
-                <PaginationView
-                    currentPage={currentPage}
-                    totalPages={lastPage}
-                    totalItems={totalItems}
-                    itemsPerPage={perPage}
-                    onPageChange={setCurrentPage}
-                />
+                {/* PAGINATION */}
+                <div className="mt-2">
+                    <PaginationView
+                        currentPage={currentPage}
+                        totalPages={lastPage}
+                        totalItems={totalItems}
+                        itemsPerPage={perPage}
+                        onPageChange={setCurrentPage}
+                    />
+                </div>
             </div>
 
             <ViewEventDetails isOpen={isEventDetailDialogShowing} data={selectedEventData} onClose={() => setIsEventDialogShowing(false)} />
 
             {/* <ClassicDialog
-                title={classicDialg.title}
-                message={classicDialg.message}
-                positiveButtonText={classicDialg.positiveButtonText}
-                negativeButtonText={classicDialg.negativeButtonText}
-                hideNegativeButton={classicDialg.isNegativeButtonHidden}
-                open={classicDialg.isOpen}
-                onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
-            /> */}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                title={classicDialg.title}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                message={classicDialg.message}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                positiveButtonText={classicDialg.positiveButtonText}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                negativeButtonText={classicDialg.negativeButtonText}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                hideNegativeButton={classicDialg.isNegativeButtonHidden}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                open={classicDialg.isOpen}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                onPositiveClick={() => {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    setClassicDialog((prev) => ({
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ...prev,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        isOpen: false,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }));
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                onNegativeClick={() => {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    setClassicDialog((prev) => ({
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ...prev,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        isOpen: false,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }));
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            /> */}
         </div>
     );
 }

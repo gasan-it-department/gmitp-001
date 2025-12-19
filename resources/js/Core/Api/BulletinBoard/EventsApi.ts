@@ -45,7 +45,7 @@ export const EventsApi = {
             params: { page },
             headers: {
                 'X-Municipality-Slug': municipalSlug
-            }
+            },
         })
 
 

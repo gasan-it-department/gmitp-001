@@ -171,6 +171,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                 className="scrollbar-hide m-0 flex h-auto w-full max-w-none flex-col rounded-none bg-gradient-to-b from-white via-orange-50 to-rose-50 p-4 shadow-xl sm:m-auto sm:h-auto sm:max-w-[720px] sm:rounded-2xl lg:h-[90vh]"
             >
                 <DialogTitle className="text-2xl font-bold text-gray-800">{editData ? 'Edit Record' : 'Add New Record'}</DialogTitle>
+
                 {/* Header */}
                 <DialogHeader className="border-b border-orange-100 pb-3 text-center">
                     <p className="text-sm text-gray-500">Please fill in the required information carefully.</p>
@@ -181,6 +182,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                     <Card className="rounded-xl border-0 bg-white/90 shadow-md">
                         <CardContent className="space-y-8 p-6">
                             <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
+                                
                                 {/* Personal Info */}
                                 <section>
                                     <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">

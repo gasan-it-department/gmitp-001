@@ -47,12 +47,13 @@ export default function EventPageTable() {
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
+    const [perPage, setPerPage] = useState(30);
     const [totalItems, setTotalItems] = useState(0);
 
     const { currentMunicipality } = useMunicipality();
     const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
     const [isFilterOpened, setIsFilterOpened] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
 
     const [addEventDialog, setAddEventDialog] = useState({
         isOpen: false,
@@ -83,12 +84,29 @@ export default function EventPageTable() {
         loadEvents(currentPage);
     }, [currentPage]);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 200);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
+    };
+
     // 2. FIXED: Logic to handle the API Resource Structure
     const loadEvents = async (page: number = 1) => {
         try {
             setIsLoading(true);
             const response = await EventsApi.fetch(currentMunicipality.slug, page);
             const apiData: Apiresponse = response;
+            console.log('Fetched Events:', apiData);
             setEventList(apiData.data);
             setCurrentPage(apiData.meta.current_page);
             setLastPage(apiData.meta.last_page);
@@ -288,7 +306,7 @@ export default function EventPageTable() {
             </div>
 
             {/* TABLE */}
-            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200">
+            <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200">
                 <Table className="w-full table-auto">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50">
                         <TableRow>
@@ -448,6 +466,17 @@ export default function EventPageTable() {
             />
 
             <LoadingDialog isOpen={isLoading} />
+
+            {showScrollTop && (
+                <Button
+                    size="icon"
+                    onClick={scrollToTop}
+                    className="fixed bottom-6 right-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
+                    aria-label="Scroll to top"
+                >
+                    ↑
+                </Button>
+            )}
         </div>
     );
 }

@@ -104,6 +104,17 @@ export default function ReportIssueCard() {
                 <ReportFormDialog
                     open={isReportDialogShown}
                     onOpenChange={setIsReportDialogShown}
+                    onFailed={(errorMessage) => {
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: true,
+                            title: "Failed to Submit Report",
+                            message: errorMessage,
+                            positiveButtonText: "OK",
+                            negativeButtonText: "",
+                            isNegativeButtonHidden: true,
+                        }))
+                    }}
                     onSuccess={() => {
                         setClassicDialog((prev) => ({
                             ...prev,

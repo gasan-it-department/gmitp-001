@@ -77,7 +77,7 @@ class EventController extends Controller
         $municipalId = app('municipal_id');
 
         $dto = new EventsQueryDto(
-            perPage: $request->input('per_page', 10),
+            perPage: $request->input('per_page', 30),
             orderBy: $request->input('order_by', 'created_at'),
             direction: $request->input('direction', 'desc'),
             search: $request->input('search')
@@ -99,7 +99,7 @@ class EventController extends Controller
             $municipalId = app('municipal_id');
 
             $dto = new EventsQueryDto(
-                perPage: $request->input('per_page', 10),
+                perPage: $request->input('per_page', 15),
                 orderBy: $request->input('order_by', 'created_at'),
                 direction: $request->input('direction', 'desc'),
                 search: $request->input('search')

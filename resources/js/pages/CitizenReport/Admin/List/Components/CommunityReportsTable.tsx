@@ -147,7 +147,7 @@ export default function CommunityReportPageTable({ reports }: Props) {
                                             {/* 3. CALCULATE ROW NUMBER USING META PROPS */}
                                             <TableCell>{meta.from + index}</TableCell>
 
-                                            <TableCell>{item.type.toUpperCase() || 'Concerned Citizen'}</TableCell>
+                                            <TableCell>{item.type === "street_light" ? "STREET LIGHT" : item.type === "road_damage" ? "ROAD DAMAGE" : item.type === "water_leak" ? "WATER LEAK" : item.type.toUpperCase() || 'UNKNOWN'}</TableCell>
                                             <TableCell>{item.location}</TableCell>
                                             <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
                                             <TableCell>{StatusBadge(item.status)}</TableCell>

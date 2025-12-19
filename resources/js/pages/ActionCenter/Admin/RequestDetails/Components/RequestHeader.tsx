@@ -26,12 +26,16 @@ export default function RequestHeader({ request, onProcess, onPrintClicked }: Pr
             </div>
 
             <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2"
-                    onClick={() => {
-                        onPrintClicked();
-                    }}>
-                    <Printer size={16} /> Print
-                </Button>
+                {
+                    request.status === 'approved' && (
+                        <Button variant="outline" size="sm" className="gap-2"
+                            onClick={() => {
+                                onPrintClicked();
+                            }}>
+                            <Printer size={16} /> Print
+                        </Button>
+                    )
+                }
 
                 {/* LOGIC: Only show "Process" if it's Pending */}
                 {/* {request.status === 'pending' && (

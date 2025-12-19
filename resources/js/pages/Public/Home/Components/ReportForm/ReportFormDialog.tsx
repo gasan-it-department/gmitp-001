@@ -20,9 +20,10 @@ interface ReportFormDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
+    onFailed?: (errorMessage: string) => void;
 }
 
-export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDialogProps) {
+export function ReportFormDialog({ open, onOpenChange, onSuccess, onFailed }: ReportFormDialogProps) {
     const { currentMunicipality } = useMunicipality();
     const { auth } = usePage<SharedData>().props;
     const [isSubmitting, setIsSubmiting] = useState({
@@ -123,7 +124,6 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                 },
                 (error) => {
                     let message = 'Unable to get coordinates.';
-
                     if (error.code === error.PERMISSION_DENIED) {
                         message = 'Location permission denied. Please allow permission and try again.';
                     }
@@ -140,7 +140,7 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
                     setIsGettingCoordinates(false);
                 },
             );
-        } catch (err) {
+        } catch (err: any) {
             console.log('Permission API error:', err);
             // Fallback if the browser doesn't support Permission API
             navigator.geolocation.getCurrentPosition(
@@ -165,23 +165,37 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess }: ReportFormDi
     };
 
     const onSubmit = async (data: CommunityReportFormData) => {
-        console.log('Report Submitted:', data);
-        setIsSubmiting((prev) => ({
-            ...prev,
-            isOpen: true,
-            title: 'Submitting...',
-        }));
-        const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
-        if (response.success) {
+        try {
+            console.log('Report Submitted:', data);
+            setIsSubmiting((prev) => ({
+                ...prev,
+                isOpen: true,
+                title: 'Submitting...',
+            }));
+            const response = await CommunityReportApi.storeCommunityReport(currentMunicipality.slug, data);
+            if (response.success) {
+                setIsSubmiting((prev) => ({
+                    ...prev,
+                    isOpen: false,
+                    title: 'Submitting...',
+                }));
+                onOpenChange(false);
+                reset();
+                onSuccess();
+            }
+        } catch (error: any) {
+            if (onFailed !== undefined) {
+                onFailed(error);
+                onOpenChange(false);
+            }
+        } finally {
             setIsSubmiting((prev) => ({
                 ...prev,
                 isOpen: false,
                 title: 'Submitting...',
             }));
-            onOpenChange(false);
-            reset();
-            onSuccess();
         }
+
     };
 
     useEffect(() => {

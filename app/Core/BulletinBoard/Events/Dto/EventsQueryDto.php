@@ -6,7 +6,7 @@ class EventsQueryDto
 {
     public function __construct(
 
-        public readonly ?int $perPage = 10,
+        public readonly ?int $perPage = 30,
 
         public readonly ?string $orderBy = 'created_at',
 

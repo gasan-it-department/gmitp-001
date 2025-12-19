@@ -11,7 +11,7 @@ interface Props {
     onCreateNewButtonClicked: () => void;
 }
 
-export default function AwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked}: Props) {
+export default function BidsAndAwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked}: Props) {
     // 1. Consuming the context here is the clean, correct way
     const { currentMunicipality } = useMunicipality();
     const handleCreateClick = () => {

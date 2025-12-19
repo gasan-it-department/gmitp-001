@@ -16,7 +16,7 @@ import PaginationView from "@/pages/Utility/PaginationView";
 export default function AllAnnouncementTable() {
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
     const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
-    const { currentMunicipality } = useMunicipality();
+    const {currentMunicipality } = useMunicipality();
     const [currentPage, setCurrentPage] = useState(1);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -46,17 +46,21 @@ export default function AllAnnouncementTable() {
 
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [currentPage]);
 
     const loadAnnouncements = async (currentPage: number = 1) => {
         try {
             setIsLoadingDialogVisible(true);
-            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
+            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug, currentPage);
             if (response.success) {
                 console.log("All announcement response: ", response);
                 setAnnouncementList(response.data);
                 setIsLoadingDialogVisible(false);
             }
+
+            setLastPage(response.meta.last_page);
+            setPerPage(response.meta.per_page);
+            setTotalItems(response.meta.total);
         } catch (error: any) {
 
         } finally {

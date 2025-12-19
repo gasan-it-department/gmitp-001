@@ -16,6 +16,8 @@ use App\Core\BulletinBoard\Announcement\Dto\AnnouncementQueryDto;
 use App\Core\BulletinBoard\Announcement\Dto\CreateAnnouncementDto;
 use App\External\Api\Resources\BulletinBoard\AnnouncementResource;
 use App\Core\BulletinBoard\Announcement\Services\PublishAnnouncementService;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AnnouncementController
 {
@@ -76,7 +78,7 @@ class AnnouncementController
 
         $dto = new AnnouncementQueryDto(
 
-            perPage: $request->input('per_page', 10),
+            perPage: $request->input('per_page', 30),
 
             orderBy: $request->input('order_by', 'created_at'),
 
