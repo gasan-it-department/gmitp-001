@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Api\Controllers\Auth\CreateAdminController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\Auth\CreateUserController;
 use App\External\Api\Controllers\Auth\AuthenticateUserController;
@@ -23,7 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-//super admin create user
+//super admin user management
 Route::middleware('superAdmin')
     ->prefix('super-admin')
     ->as('superAdmin.')
@@ -37,3 +38,11 @@ Route::middleware('superAdmin')
         Route::get('/user-registry', [UserManagementController::class, 'register'])->name('registry.page');
     });
 
+Route::prefix('api/user-management')
+    ->name('user.management.')
+    ->middleware(['superAdmin', 'auth:sanctum'])
+    ->controller(CreateAdminController::class)
+    ->group(function () {
+        // Resulting Name: 'user.management.createAdmin'
+        Route::post('/create-admin', 'store')->name('createAdmin');
+    });

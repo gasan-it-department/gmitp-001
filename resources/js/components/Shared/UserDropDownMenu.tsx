@@ -11,7 +11,6 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { account } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
-import admin from '@/routes/admin';
 import superAdmin from '@/routes/superAdmin';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -22,6 +21,8 @@ export function UserDropdownMenu() {
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const { currentMunicipality } = useMunicipality();
+
+    const adminMunicipalSlug = auth.user.municipality?.slug;
 
     const handleLogout = async () => {
         try {
@@ -55,11 +56,11 @@ export function UserDropdownMenu() {
                         {auth.user?.first_name} {auth.user?.last_name}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {auth.roles?.isAdmin && (
+                    {auth.roles?.isAdmin && adminMunicipalSlug && (
                         <DropdownMenuItem
                             onClick={() => {
-                                localStorage.setItem('activeSidebarUrl', "/gasan-4905/action-center/admin");
-                                router.visit(actionCenter.admin.index.url({ municipality: currentMunicipality.slug }));
+                                // localStorage.setItem('activeSidebarUrl', "/gasan-4905/action-center/admin");
+                                router.visit(actionCenter.admin.index.url({ municipality: adminMunicipalSlug }));
                             }}
                         >
                             Admin Panel

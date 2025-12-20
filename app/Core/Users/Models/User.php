@@ -6,6 +6,8 @@ namespace App\Core\Users\Models;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use App\Core\Municipality\Models\Municipality;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
@@ -33,6 +35,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+
         'id',
         'first_name',
         'last_name',
@@ -40,6 +43,7 @@ class User extends Authenticatable
         'phone',
         'email',
         'user_name',
+        'municipal_id',
         'password',
 
     ];
@@ -69,5 +73,12 @@ class User extends Authenticatable
     public function assistanceRequests()
     {
         return $this->hasMany(AssistanceRequest::class, 'user_id');
+    }
+
+    public function municipality(): BelongsTo
+    {
+
+        return $this->belongsTo(Municipality::class, 'municipal_id');
+
     }
 }

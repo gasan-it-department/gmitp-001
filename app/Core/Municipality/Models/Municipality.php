@@ -2,6 +2,7 @@
 
 namespace App\Core\Municipality\Models;
 
+use App\Core\Users\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -34,6 +35,13 @@ class Municipality extends Model
     {
 
         return $this->hasMany(MunicipalityBanner::class, 'municipal_id');
+
+    }
+
+    public function users()
+    {
+
+        return $this->hasMany(User::class);
 
     }
 

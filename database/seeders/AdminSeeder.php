@@ -31,6 +31,10 @@ class AdminSeeder extends Seeder
 
             'user_name' => 'harvey',
 
+            'email_verified_at' => now(),
+
+            'phone_verified_at' => now(),
+
             'password' => Hash::make('capstone'),
 
         ]);

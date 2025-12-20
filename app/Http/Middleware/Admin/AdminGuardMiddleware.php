@@ -23,6 +23,9 @@ class AdminGuardMiddleware
     {
 
         $user = request()->user();
+
+        $currentMunicipality = app('current_municipality');
+
         if (!$user) {
             // abort(401, 'Unauthorized');
             return redirect()->route('landing');
@@ -31,6 +34,18 @@ class AdminGuardMiddleware
         if (!$this->userRoleCkerService->isAdmin($user)) {
             return redirect()->route('landing');
         }
+
+        if ($user->municipal_id !== $currentMunicipality->id) {
+
+            abort(403, 'You do not have jurisdiction over this municipality.');
+
+            $user->load('municipality');
+            // return redirect()->to(
+            //     route('admin.dashboard', ['municipality' => $user->municipality->slug])
+            // )->with('error', 'Redirected to your assigned jurisdiction.');
+
+        }
+
 
         return $next($request);
     }

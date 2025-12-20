@@ -2,15 +2,16 @@ import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { Permission } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
 import { Link, useForm } from '@inertiajs/react';
-import { MunicipalitySelect } from './Components/MunicipalitySelect';
 import { PermissionSelector } from './Components/Permission';
 
 // UI Components
+import CreateAdminController from '@/actions/App/External/Api/Controllers/Auth/CreateAdminController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Save } from 'lucide-react';
+import { MunicipalitySelect } from './Components/MunicipalitySelect';
 
 interface Props {
     data: {
@@ -27,13 +28,15 @@ export default function UserRegistry({ data }: Props) {
         processing,
         errors,
     } = useForm({
-        firstName: '',
-        lastName: '',
-        middleName: '',
-        userName: '',
+        first_name: '',
+        last_name: '',
+        middle_name: '',
+        user_name: '',
         email: '',
         phone: '',
-        municipality_id: '',
+        municipal_id: '',
+        password: '',
+        password_confirmation: '',
         permission: [] as string[],
     });
 
@@ -45,7 +48,7 @@ export default function UserRegistry({ data }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('admin.users.store'));
+        post(CreateAdminController.store.url());
     };
 
     return (
@@ -97,37 +100,38 @@ export default function UserRegistry({ data }: Props) {
                                 <div className="space-y-2">
                                     <Label>First Name</Label>
                                     <Input
-                                        value={formData.firstName}
-                                        onChange={(e) => setData('firstName', e.target.value)}
+                                        value={formData.first_name}
+                                        onChange={(e) => setData('first_name', e.target.value)}
                                         placeholder="e.g. Juan"
                                     />
-                                    {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
+                                    {errors.first_name && <p className="text-xs text-red-500">{errors.first_name}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Last Name</Label>
                                     <Input
-                                        value={formData.lastName}
-                                        onChange={(e) => setData('lastName', e.target.value)}
+                                        value={formData.last_name}
+                                        onChange={(e) => setData('last_name', e.target.value)}
                                         placeholder="e.g. Dela Cruz"
                                     />
-                                    {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
+                                    {errors.last_name && <p className="text-xs text-red-500">{errors.last_name}</p>}
                                 </div>
                             </div>
 
-                            {/* Row 2: Username & Municipality */}
+                            {/* Row 2: user_name & Municipality */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Username</Label>
-                                    <Input value={formData.userName} onChange={(e) => setData('userName', e.target.value)} />
-                                    {errors.userName && <p className="text-xs text-red-500">{errors.userName}</p>}
+                                    <Input value={formData.user_name} onChange={(e) => setData('user_name', e.target.value)} />
+                                    {errors.user_name && <p className="text-xs text-red-500">{errors.user_name}</p>}
                                 </div>
-
-                                <MunicipalitySelect
-                                    municipalities={data.municipality}
-                                    selectedId={formData.municipality_id}
-                                    errorMessage={errors.municipality_id}
-                                    onChange={(val) => setData('municipality_id', val)}
-                                />
+                                <div>
+                                    <MunicipalitySelect
+                                        municipalities={data.municipality}
+                                        selectedId={formData.municipal_id}
+                                        errorMessage={errors.municipal_id}
+                                        onChange={(val) => setData('municipal_id', val)}
+                                    />
+                                </div>
                             </div>
 
                             <Separator className="my-2" />
@@ -135,12 +139,40 @@ export default function UserRegistry({ data }: Props) {
                             {/* Row 3: Contact (Optional) */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Email (Optional)</Label>
+                                    <Label>Email (Required)</Label>
                                     <Input value={formData.email} onChange={(e) => setData('email', e.target.value)} />
+                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Phone (Optional)</Label>
+                                    <Label>Phone (Required)</Label>
                                     <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} />
+                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => setData('password', e.target.value)}
+                                    />
+                                    {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                    <Input
+                                        id="password_confirmation"
+                                        type="password"
+                                        value={formData.password_confirmation}
+                                        onChange={(e) => setData('password_confirmation', e.target.value)}
+                                    />
+                                    {/* Laravel's 'confirmed' rule will send errors here if they don't match */}
+                                    {errors.password && !formData.password_confirmation && (
+                                        <p className="text-xs text-red-500">Please confirm the password.</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

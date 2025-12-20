@@ -17,6 +17,8 @@ class UserRepository
             'user_name' => $data['userName'],
             'phone' => $data['phone'],
             'password' => $data['password'],
+            'municipal_id' => $data['municipalId'] ?? null,
+            'email' => $data['email'] ?? null,
         ]);
     }
 

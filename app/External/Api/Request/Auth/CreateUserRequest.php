@@ -38,6 +38,13 @@ class CreateUserRequest extends FormRequest
                 'unique:users,user_name'
             ],
 
+            'email' => [
+                'nullable',
+                'email:rfc,dns',
+                'unique:users,email',
+                'ends_with:@gmail.com,@yahoo.com,@outlook.com,@hotmail.com',
+            ],
+
             'phone' => ['required', 'min:11', 'max:11', 'unique:users,phone', 'regex:/^(09\d{9}|\+639\d{9}|9\d{9})$/'],
 
             'password' => ['required', 'string', 'min:8', 'confirmed'],

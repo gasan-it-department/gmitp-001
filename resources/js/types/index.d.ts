@@ -1,4 +1,6 @@
 import { LucideIcon } from 'lucide-react';
+import { User } from '@/Core/Types/User/UserTypes';
+
 
 export interface Auth {
     user: User;
@@ -34,18 +36,18 @@ export interface SharedData {
     [key: string]: unknown;
 }
 
-export interface User {
-    id: string;
-    first_name: string;
-    last_name: string;
-    middle_name?: string;
-    email: string;
-    user_name: string;
-    phone: string;
-    roles: number;
-    role_name: 'client' | 'admin' | 'superadmin';
-    avatar?: string;
-    created_at: string;
-    updated_at: string;
-    [key: string]: unknown;
-}
+// export interface User {
+//     id: string;
+//     first_name: string;
+//     last_name: string;
+//     middle_name?: string;
+//     email: string;
+//     user_name: string;
+//     phone: string;
+//     roles: number;
+//     role_name: 'client' | 'admin' | 'supera_dmin';
+//     avatar?: string;
+//     created_at: string;
+//     updated_at: string;
+//     [key: string]: unknown;
+// }
