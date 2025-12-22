@@ -26,7 +26,7 @@ class AssistanceQueryDto
     }
 
 
-    public static function fromRequest(Request $request, int $defaultPerPage = 2)
+    public static function fromRequest(Request $request, int $defaultPerPage = 30)
     {
 
         return new self(

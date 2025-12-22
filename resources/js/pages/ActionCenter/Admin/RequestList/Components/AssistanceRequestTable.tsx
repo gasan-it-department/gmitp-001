@@ -4,7 +4,6 @@ import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
-import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
@@ -13,7 +12,7 @@ import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
 import ActionCenter from '@/routes/actionCenter/admin';
 import { router } from '@inertiajs/react';
-import { Eye, Printer } from 'lucide-react';
+import { Eye, Pencil, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import AssistanceRequestDetails from '../../RequestDetails/AssistanceRequestsDetails';
@@ -114,7 +113,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
     const handleSort = (sortValue: string) => {
         console.log('Sorting by:', sortValue);
-    }
+    };
 
     const handleReload = () => {
         router.reload({ only: ['requests'] });
@@ -159,7 +158,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
                 <Header
                     className="flex justify-end"
-                    onSortSelected={((value) => handleSort(value))}
+                    onSortSelected={(value) => handleSort(value)}
                     sortList={[
                         { label: 'Name', value: 'first_name' },
                         { label: 'Date', value: 'created_at' },
@@ -170,7 +169,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                         setIsAddNewRecordDialogOpen((prev) => ({
                             ...prev,
                             isOpen: true,
-                            editData: null
+                            editData: null,
                         }));
                     }}
                     onExportButtonClicked={() => {
@@ -267,11 +266,11 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                                             variant="ghost"
                                                             className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
                                                             onClick={() => {
-                                                                console.log("Edit request:", req.id);
+                                                                console.log('Edit request:', req.id);
                                                                 setIsAddNewRecordDialogOpen((prev) => ({
                                                                     ...prev,
                                                                     isOpen: true,
-                                                                    editData: req
+                                                                    editData: req,
                                                                 }));
                                                             }}
                                                         >
@@ -331,7 +330,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                     setIsAddNewRecordDialogOpen((prev) => ({
                         ...prev,
                         isOpen: false,
-                        editData: null
+                        editData: null,
                     }));
                 }}
                 onSubmitSuccess={(title, message) => {
@@ -346,7 +345,9 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                     }));
                     // 2. Reload the table data to show the new record
                     handleReload();
-                }} editData={isAddNewRecordDialogOpen.editData} />
+                }}
+                editData={isAddNewRecordDialogOpen.editData}
+            />
 
             <ClassicDialog
                 open={classicDialog.isOpen}
