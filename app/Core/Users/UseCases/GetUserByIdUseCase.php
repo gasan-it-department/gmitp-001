@@ -2,22 +2,21 @@
 
 namespace App\Core\Users\UseCases;
 
-use App\Core\Users\Dto\UserQueryDto;
 use App\Core\Users\Repository\UserRepository;
 
-class GetAllUsersUseCase
+class GetUserByIdUseCase
 {
-
     public function __construct(
+
         protected UserRepository $userRepo,
+
     ) {
     }
 
-    public function execute(UserQueryDto $dto)
+    public function execute(string $userId)
     {
 
-        return $this->userRepo->getAll($dto);
+        return $this->userRepo->findById($userId);
 
     }
-
 }

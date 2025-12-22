@@ -1,7 +1,11 @@
+import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User } from '@/Core/Types/User/UserTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import superAdmin from '@/routes/superAdmin';
+import { router } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
 
 interface Props {
     users: User[];
@@ -32,6 +36,10 @@ export const UsersTable = ({ users }: Props) => {
             className: 'bg-gray-100 text-gray-700 border-gray-200',
         },
     };
+
+    const handleViewUser = (id: string) => {
+        router.visit(superAdmin.show.user.url(id));
+    };
     return (
         <div>
             {/* TABLE */}
@@ -43,8 +51,7 @@ export const UsersTable = ({ users }: Props) => {
                             <TableHead className="text-xs font-bold text-gray-700">Name</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Roles</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Phone</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Status</TableHead>
-                            {/* <TableHead className="text-center text-xs font-bold text-gray-700">Actions</TableHead> */}
+                            <TableHead className="text-center text-xs font-bold text-gray-700">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
@@ -79,7 +86,18 @@ export const UsersTable = ({ users }: Props) => {
                                                     })}
                                                 </TableCell>
                                                 <TableCell className="text-xs text-gray-600">{item.phone}</TableCell>
-                                                <TableCell className="text-xs text-gray-600">Activated</TableCell>
+                                                <TableCell className="text-center text-xs text-gray-600">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
+                                                        onClick={() => {
+                                                            router.visit(superAdmin.show.user.url(item.id));
+                                                        }}
+                                                    >
+                                                        <Eye size={16} />
+                                                    </Button>
+                                                </TableCell>
                                             </TableRow>
                                         </ContextMenuTrigger>
                                     </ContextMenu>

@@ -36,6 +36,9 @@ Route::middleware('superAdmin')
             ->name('users.page');
 
         Route::get('/user-registry', [UserManagementController::class, 'register'])->name('registry.page');
+
+        Route::get('/user-view/{id}', [UserManagementController::class, 'show'])->name('show.user');
+
     });
 
 Route::prefix('api/user-management')

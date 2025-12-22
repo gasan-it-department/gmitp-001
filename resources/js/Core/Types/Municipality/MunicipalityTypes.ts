@@ -7,3 +7,8 @@ export interface MunicipalityType {
     is_active?: boolean;
     settings?: any
 }
+
+export interface MunicipalResponse {
+    name: string;
+    code: string;
+}

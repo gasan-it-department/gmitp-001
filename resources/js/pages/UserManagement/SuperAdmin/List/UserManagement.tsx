@@ -6,16 +6,18 @@ import { UsersTable } from './Components/UsersTable';
 
 interface Props {
     users: { data: User[] };
+    filters: any;
 }
 
-export default function UserManagement({ users }: Props) {
+export default function UserManagement({ users, filters }: Props) {
     const userList: User[] = users.data;
+    console.log(filters);
     return (
         <BaseLayout>
             <div className="m-5 mt-0 grid grid-cols-1 bg-white">
                 <div className="my-5 flex justify-between">
                     <PageHeaderTitle />
-                    <UserListHeader className="flex justify-end" />
+                    <UserListHeader filters={filters} className="flex justify-end" />
                 </div>
                 <div>
                     <UsersTable users={userList} />
