@@ -13,6 +13,7 @@ enum EnumPermissions: string
     case PUBLIC_INFORMATION_ACCESS = 'public_information.access';
     case TOURISM_ACCESS = 'tourism.access';
     case USERS_ACCESS = 'users.access';
+    case WEDDING_ACCESS = 'wedding.access';
 
     public function label(): string
     {
@@ -25,6 +26,7 @@ enum EnumPermissions: string
             self::PUBLIC_INFORMATION_ACCESS => 'Awards & Public Info',
             self::TOURISM_ACCESS => 'Tourism Module',
             self::USERS_ACCESS => 'User Management',
+            self::WEDDING_ACCESS => 'Wedding Management',
         };
     }
 

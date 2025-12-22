@@ -8,7 +8,7 @@ import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
-import { CheckCircle2, Clock, Pencil, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Pencil, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AddEditEventsDialog from './AddEditEventsDialog';
 import EventPageHeader from './EventPageHeader';
@@ -181,7 +181,7 @@ export default function EventPageTable() {
         try {
             if (!ids || ids.length === 0) return;
             setIsLoading(true);
-            console.log("List of Ids: ", ids);
+            console.log('List of Ids: ', ids);
 
             // Call delete API
             const response = await EventsApi.deleteEvent(ids, currentMunicipality.slug);
@@ -221,11 +221,7 @@ export default function EventPageTable() {
 
         if (isEdit) {
             // Update existing item
-            setEventList((prevList) =>
-                prevList.map((item) =>
-                    item.id === data.id ? { ...item, ...data } : item
-                )
-            );
+            setEventList((prevList) => prevList.map((item) => (item.id === data.id ? { ...item, ...data } : item)));
         } else {
             // Add new item at the beginning with created_at
             const newItem: EventDataList = {
@@ -479,7 +475,7 @@ export default function EventPageTable() {
                 <Button
                     size="icon"
                     onClick={scrollToTop}
-                    className="fixed bottom-6 right-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
+                    className="fixed right-6 bottom-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
                     aria-label="Scroll to top"
                 >
                     ↑

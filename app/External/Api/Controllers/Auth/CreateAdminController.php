@@ -19,7 +19,7 @@ class CreateAdminController extends Controller
         $createAdminUseCase->execute($dto);
 
         return redirect()
-            ->route('superAdmin.index')
+            ->route('superAdmin.users.page')
             ->with('success', 'Administrator created successfully');
 
     }

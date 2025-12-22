@@ -43,7 +43,7 @@ class CreateAdminRequest extends FormRequest
             'password' => ['required', 'confirmed', Password::defaults()],
 
             'permission' => ['required', 'array'],
-            'permission.*' => ['string', 'exists:permissions,name'],
+            'permission.*' => ['string'],
         ];
     }
 

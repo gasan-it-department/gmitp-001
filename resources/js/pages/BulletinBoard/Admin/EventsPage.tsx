@@ -1,5 +1,4 @@
 import AdminLayout from '@/layouts/App/AppLayout';
-import AddEditEventsDialog from './Components/AddEditEventsDialog';
 import EventPageTable from './Components/EventPageTable';
 
 export default function () {

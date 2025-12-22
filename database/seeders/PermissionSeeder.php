@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Core\Users\Enums\EnumPermissions;
 use Illuminate\Database\Seeder;
 use App\Core\Users\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
@@ -17,29 +18,9 @@ class PermissionSeeder extends Seeder
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $permissions = [
+        foreach (EnumPermissions::cases() as $permission) {
 
-            'action_center.access',
-
-            'bulletin_board.access',
-
-            'community_report.access',
-
-            'feedback.access',
-
-            'municipality_settings.access',
-
-            'public_information.access',
-
-            'tourism.access',
-
-            'users.access',
-
-        ];
-
-        foreach ($permissions as $permission) {
-
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission->value]);
 
         }
 

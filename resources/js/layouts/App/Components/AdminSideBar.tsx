@@ -16,21 +16,15 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
 import awardsAdminPage from '@/routes/awardsAdminPage';
-import biddingAdminPage from '@/routes/biddingAdminPage';
 import bulletinBoard from '@/routes/bulletin-board';
-import citizenCharter from '@/routes/citizenCharter';
 import communityReport from '@/routes/communityReport';
 import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
-import officesAdmin from '@/routes/officesAdmin';
-import officialsEditor from '@/routes/officialsEditor';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
-    BadgeCheck,
-    Building2,
     CalendarDays,
     ClipboardList,
     FileSignature,
@@ -45,12 +39,10 @@ import {
     MessageCircleIcon,
     Plane,
     Sparkle,
-    Trophy,
-    User,
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { auth, url } = usePage<SharedData>().props;
@@ -77,7 +69,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
 
     const handleLinkClick = (linkUrl: string) => {
         localStorage.setItem('activeSidebarUrl', linkUrl);
-        console.log("Active URL: ", linkUrl);
         router.visit(linkUrl);
     };
 
@@ -103,16 +94,24 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         }
     }, [url]);
 
-    const AdminSidebarItems = [
+    // 1. HELPER: Check if user has permission
+    const hasPermission = (permission?: string) => {
+        if (!permission) return true; // No permission required = visible to all
+        if (auth.roles?.isSuperAdmin) return true; // Super Admin sees everything
+        return auth.user?.all_permission?.includes(permission);
+    };
+
+    // 2. DATA: Add 'permission' keys to your items
+    const RawSidebarItems = [
         {
             title: 'ACTION CENTER',
             icon: ClipboardList,
             items: [
-
                 {
                     title: 'Requests',
                     url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }),
-                    icon: FileText
+                    icon: FileText,
+                    permission: 'action_center.access', // 🔒 Tagged
                 },
             ],
         },
@@ -124,21 +123,25 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Announcement',
                     url: bulletinBoard.announcement.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Megaphone,
+                    permission: 'bulletin_board.access',
                 },
                 {
                     title: 'Events',
                     url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }),
-                    icon: CalendarDays
+                    icon: CalendarDays,
+                    permission: 'bulletin_board.access',
                 },
                 {
                     title: 'Feedbacks',
                     url: feedback.admin.index.url({ municipality: currentMunicipality.slug }),
-                    icon: MessageCircleIcon
+                    icon: MessageCircleIcon,
+                    permission: 'feedback.access', // Make sure this exists in your DB
                 },
                 {
-                    title: 'Comunity Reports',
+                    title: 'Community Reports',
                     url: communityReport.page.url({ municipality: currentMunicipality.slug }),
-                    icon: UsersIcon
+                    icon: UsersIcon,
+                    permission: 'community_report.access',
                 },
             ],
         },
@@ -149,12 +152,14 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 {
                     title: 'CMS',
                     url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: FlagIcon
+                    icon: FlagIcon,
+                    permission: 'municipality_settings.access',
                 },
                 {
                     title: 'Travel Editor',
                     url: travelEditor.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Plane
+                    icon: Plane,
+                    permission: 'tourism.access',
                 },
             ],
         },
@@ -162,21 +167,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             title: 'BIDS AND AWARDS',
             icon: Medal,
             items: [
-                // {
-                //     title: 'Invitation to Bid',
-                //     url: biddingAdminPage.page.url({ municipality: currentMunicipality.slug }),
-                //     icon: Hand,
-                // },
                 {
                     title: 'Biddings',
                     url: awardsAdminPage.page.url({ municipality: currentMunicipality.slug }),
                     icon: Hand,
+                    permission: 'public_information.access',
                 },
-                // {
-                //     title: "Citizen's Charter",
-                //     url: citizenCharter.page.url({ municipality: currentMunicipality.slug }),
-                //     icon: User,
-                // },
             ],
         },
         {
@@ -187,24 +183,25 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Executive Orders',
                     url: executiveOrders.page.url({ municipality: currentMunicipality.slug }),
                     icon: FileSignature,
+                    permission: 'executive_orders.access',
                 },
-                // {
-                //     title: 'Officials',
-                //     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
-                //     icon: BadgeCheck,
-                // },
-                // {
-                //     title: 'Offices',
-                //     url: officesAdmin.page.url({ municipality: currentMunicipality.slug }),
-                //     icon: Building2,
-                // },
             ],
         },
     ];
 
+    // 3. LOGIC: Filter the groups
+    const VisibleSidebarItems = RawSidebarItems.map((group) => {
+        // Filter the children items first
+        const visibleSubItems = group.items.filter((item) => hasPermission(item.permission));
+
+        // Return the group with only visible children
+        return { ...group, items: visibleSubItems };
+    })
+        // Remove the group entirely if it has no children left
+        .filter((group) => group.items.length > 0);
+
     return (
         <Sidebar {...props} className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm">
-            {/* HEADER */}
             <SidebarHeader className="border-b border-gray-100 pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -230,36 +227,31 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 </SidebarMenu>
             </SidebarHeader>
 
-            {/* NAVIGATION */}
             <SidebarContent className="py-4">
                 <SidebarGroup>
                     <SidebarMenu className="space-y-5">
-                        {AdminSidebarItems.map((group) => (
+                        {/* 4. RENDER: Use the filtered list */}
+                        {VisibleSidebarItems.map((group) => (
                             <SidebarMenuItem key={group.title}>
-                                {/* SECTION TITLE */}
                                 <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                                     <group.icon size={14} className="text-orange-500" />
                                     {group.title}
                                 </div>
 
-                                {/* SUBMENU */}
                                 <SidebarMenuSub className="space-y-1 border-l border-gray-100 pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
                                         const isActive = isRouteActive(sub.url);
 
                                         return (
-                                            <SidebarMenuSubItem
-                                                key={sub.title}
-                                                // 3. Attach the ref to the active item's container
-                                                ref={isActive ? activeItemRef : null}
-                                            >
+                                            <SidebarMenuSubItem key={sub.title} ref={isActive ? activeItemRef : null}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
-                                                        ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
-                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                        }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
+                                                        isActive
+                                                            ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
+                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                    }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -267,10 +259,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${isActive
-                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                                }`}
+                                                            className={`transition-all duration-200 ease-out ${
+                                                                isActive
+                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                            }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>
@@ -285,8 +278,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 </SidebarGroup>
             </SidebarContent>
 
-            {/* FOOTER */}
+            {/* Footer remains unchanged... */}
             <div className="mt-auto border-t border-gray-100 px-3 py-3">
+                {/* ... Exit Button ... */}
                 <Button
                     variant="default"
                     onClick={handleExitAdminClick}
@@ -298,6 +292,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             </div>
 
             <ClassicDialog
+                // ... props
                 title={classicDialog.title}
                 message={classicDialog.message}
                 open={classicDialog.isOpen}
@@ -305,23 +300,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 negativeButtonText={classicDialog.negativeButtonText}
                 hideNegativeButton={classicDialog.isNegativeButtonHidden}
                 onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-
-                    switch (classicDialog.action) {
-                        case 'exit':
-                            router.visit(home.url({ municipality: currentMunicipality.slug }));
-                            break;
+                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
+                    if (classicDialog.action === 'exit') {
+                        router.visit(home.url({ municipality: currentMunicipality.slug }));
                     }
                 }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
+                onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
             />
         </Sidebar>
     );

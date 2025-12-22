@@ -13,12 +13,12 @@ import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
 import ActionCenter from '@/routes/actionCenter/admin';
 import { router } from '@inertiajs/react';
-import { Eye, Pencil, Printer } from 'lucide-react';
+import { Eye, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import AssistanceRequestDetails from '../../RequestDetails/AssistanceRequestsDetails';
 import Header from './Header';
 import PrintView from './PrintView';
-import AssistanceRequestDetails from '../../RequestDetails/AssistanceRequestsDetails';
 
 interface PaginationMeta {
     current_page: number;
@@ -56,7 +56,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         isOpen: boolean;
     }>({
         data: null,
-        isOpen: false
+        isOpen: false,
     });
 
     const [printDialogState, setPrintDialogState] = useState<{
@@ -143,9 +143,10 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                     setDetailsView((prev) => ({
                         ...prev,
                         isOpen: false,
-                        data: null
+                        data: null,
                     }));
-                }} />
+                }}
+            />
         );
     }
 
@@ -254,7 +255,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                                                 setDetailsView((prev) => ({
                                                                     ...prev,
                                                                     isOpen: true,
-                                                                    data: req
+                                                                    data: req,
                                                                 }));
                                                             }}
                                                         >

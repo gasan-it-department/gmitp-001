@@ -8,7 +8,6 @@ interface Props {
 }
 
 export const UsersTable = ({ users }: Props) => {
-    console.log('table:', users);
     const usersList = users;
 
     // You can put this in a separate file like `constants/roleStyles.ts`

@@ -19,8 +19,8 @@ Route::prefix('{municipality}/bulletin-board')
             Route::get('/', 'index')->name('page');
         });
 
-        // ADMIN DASHBOARD (web page)
-        Route::middleware('admin')
+        // ANNOUNCEMENTS (admin pages)
+        Route::middleware(['auth', 'admin', 'permission:bulletin_board.access'])
             ->prefix('announcement')
             ->as('announcement.admin.')
             ->controller(AnnouncementAdminController::class)
