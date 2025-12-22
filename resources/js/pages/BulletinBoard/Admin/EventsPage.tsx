@@ -5,7 +5,7 @@ import EventPageTable from './Components/EventPageTable';
 export default function () {
     return (
         <AdminLayout>
-            <section className="">
+            <section>
                 <div className="m-5 mt-0 flex bg-white">
                     <div className="w-full">
                         <EventPageTable />

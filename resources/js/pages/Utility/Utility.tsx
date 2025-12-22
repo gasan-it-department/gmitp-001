@@ -204,6 +204,20 @@ export default function Utility() {
         }).format(numberValue);
     }
 
+    function formatPhoneNumber(mobile: string): string {
+        if (!mobile) return mobile;
+
+        const trimmed = mobile.trim();
+
+        // 09XXXXXXXXX → +63XXXXXXXXX
+        if (trimmed.startsWith("09") && trimmed.length === 11) {
+            return "+63" + trimmed.slice(1);
+        }
+
+        return trimmed;
+    }
+
+
     // Example of how to use it in your component structure:
     // <TableCell className="text-[12px]">{formatCurrency(req.amount)}</TableCell>
 
@@ -217,6 +231,7 @@ export default function Utility() {
         formatToReadableDateNoTime,
         formatAndAddDaysNoTime,
         linkify,
-        formatCurrency
+        formatCurrency,
+        formatPhoneNumber
     };
 }

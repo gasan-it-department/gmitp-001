@@ -16,9 +16,10 @@ type FormData = {
 
 interface LoginFormProps {
     onClose?: () => void;
+    onForgotPasswordClick?: () => void;
 }
 
-export default function LoginForm({ onClose }: LoginFormProps) {
+export default function LoginForm({ onClose, onForgotPasswordClick }: LoginFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const { currentMunicipality } = useMunicipality();
     const {
@@ -77,10 +78,21 @@ export default function LoginForm({ onClose }: LoginFormProps) {
                         <Label htmlFor="password" className="text-sm font-medium">
                             Password
                         </Label>
-                        <a href="#" className="text-xs font-medium text-primary transition-colors hover:text-red-500 hover:underline">
+
+                        <Button
+                            type="button"
+                            variant="link"
+                            className="h-auto p-0 text-xs font-medium text-primary hover:underline hover:text-primary/80"
+                            onClick={() => {
+                                if (onForgotPasswordClick) {
+                                    onForgotPasswordClick();
+                                }
+                            }}
+                        >
                             Forgot password?
-                        </a>
+                        </Button>
                     </div>
+
                     <div className="relative">
                         <Lock className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
                         <Input

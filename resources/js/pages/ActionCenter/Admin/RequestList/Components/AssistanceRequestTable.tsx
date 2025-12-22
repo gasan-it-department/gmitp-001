@@ -42,7 +42,14 @@ interface Props {
 
 export function AssistanceRequestTable({ data, filters }: Props) {
     const { currentMunicipality } = useMunicipality();
-    const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState(false);
+    const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState<{
+        isOpen: boolean;
+        editData: AssistanceRequest | null;
+    }>({
+        isOpen: false,
+        editData: null,
+    });
+
     const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
     const [detailsView, setDetailsView] = useState<{
         data: AssistanceRequest | null;
@@ -101,13 +108,13 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         router.visit(targetUrl);
     };
 
-    const handleSearchOrSort = (params: object) => {
-        const targetUrl = ActionCenter.index.url({
-            municipality: currentMunicipality.slug,
-        });
-
-        // router.get(targetUrl, { ...filters, ...params, page: 1 }, { preserveState: true, preserveScroll: true, only: ['requests', 'filters'] });
+    const handleSearchOrSort = (searchValue: string) => {
+        console.log('Searching:', searchValue);
     };
+
+    const handleSort = (sortValue: string) => {
+        console.log('Sorting by:', sortValue);
+    }
 
     const handleReload = () => {
         router.reload({ only: ['requests'] });
@@ -151,7 +158,20 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
                 <Header
                     className="flex justify-end"
-                    onAddNewButtonClicked={() => setIsAddNewRecordDialogOpen(true)}
+                    onSortSelected={((value) => handleSort(value))}
+                    sortList={[
+                        { label: 'Name', value: 'first_name' },
+                        { label: 'Date', value: 'created_at' },
+                        { label: 'Transaction', value: 'transaction_number' },
+                        { label: 'Status', value: 'status' },
+                    ]}
+                    onAddNewButtonClicked={() => {
+                        setIsAddNewRecordDialogOpen((prev) => ({
+                            ...prev,
+                            isOpen: true,
+                            editData: null
+                        }));
+                    }}
                     onExportButtonClicked={() => {
                         if (requestList.length === 0) return toast('No data to export');
                         setClassicDialog({
@@ -164,8 +184,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                             action: 'file_export',
                         });
                     }}
-                    onFilterButtonClicked={() => setIsSortSelectionDialogOpen(true)}
-                    onSearch={(query) => handleSearchOrSort({ search: query })}
+                    onSearch={(query) => handleSearchOrSort(query)}
                 />
             </div>
 
@@ -245,6 +264,22 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
+                                                            className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
+                                                            onClick={() => {
+                                                                console.log("Edit request:", req.id);
+                                                                setIsAddNewRecordDialogOpen((prev) => ({
+                                                                    ...prev,
+                                                                    isOpen: true,
+                                                                    editData: req
+                                                                }));
+                                                            }}
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </Button>
+
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
                                                             disabled={req.status === 'pending'}
                                                             className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
                                                             onClick={() => setPrintDialogState({ isVisible: true, request: req })}
@@ -275,7 +310,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
             <ToastProvider />
 
-            <FilterDialog
+            {/* <FilterDialog
                 isOpen={isSortSelectionDialogOpen}
                 currentFilter={null}
                 onClose={() => setIsSortSelectionDialogOpen(false)}
@@ -286,12 +321,18 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                     { title: 'Status', sub: 'status' },
                 ]}
                 onApply={(selectedFilter) => handleSearchOrSort({ sort: selectedFilter?.sub })}
-            />
+            /> */}
 
             {/* ✅ NEW: ActionCenterForm Implementation */}
             <ActionCenterForm
-                isOpen={isAddNewRecordDialogOpen}
-                onClose={() => setIsAddNewRecordDialogOpen(false)}
+                isOpen={isAddNewRecordDialogOpen.isOpen}
+                onClose={() => {
+                    setIsAddNewRecordDialogOpen((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                        editData: null
+                    }));
+                }}
                 onSubmitSuccess={(title, message) => {
                     // 1. Show the success dialog
                     setClassicDialog((prev) => ({
@@ -304,8 +345,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                     }));
                     // 2. Reload the table data to show the new record
                     handleReload();
-                }}
-            />
+                }} editData={isAddNewRecordDialogOpen.editData} />
 
             <ClassicDialog
                 open={classicDialog.isOpen}

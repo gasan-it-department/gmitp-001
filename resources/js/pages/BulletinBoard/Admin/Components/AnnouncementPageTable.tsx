@@ -193,6 +193,7 @@ export default function AnnouncementPageTable() {
         }
     };
 
+    
     /* ================= RENDER ================= */
 
     return (
@@ -207,13 +208,20 @@ export default function AnnouncementPageTable() {
                     onFilterButtonClicked={() =>
                         setIsFilterDialogVisible(true)
                     }
-                    onExportButtonClicked={() => { }}
                     onAddNewButtonClicked={() =>
                         setAddEditDialog({
                             isOpened: true,
                             editData: null,
                         })
                     }
+                    sortList={[
+                        { label: 'Title', value: 'title' },
+                        { label: 'Message', value: 'message' },
+                        { label: 'Date Posted', value: 'created_at' },
+                    ]}
+                    onSortSelected={() => {
+
+                    }}
                 />
             </div>
 

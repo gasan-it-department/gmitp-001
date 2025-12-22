@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import { cn } from '@/lib/utils';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Control, Controller, ControllerProps, FieldErrors, Path, useForm } from 'react-hook-form';
 
 const assistanceOptions = ['Medical Assistance', 'Food Assistance', 'Transportation Assistance', 'Financial Assistance', 'Burial Assistance'];
@@ -23,6 +24,7 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     onSubmitSuccess: (title: string, message: string) => void;
+    editData: AssistanceRequest | null;
 }
 
 interface FormData {
@@ -43,7 +45,7 @@ interface FormData {
 // MAIN FORM COMPONENT
 // ----------------------------------------------------------------------
 
-export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
+export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }: Props) {
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [classicDialog, setClassicDialog] = useState<{
@@ -151,6 +153,23 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
         }
     };
 
+    useEffect(() => {
+        console.log("Edit Data in Form:", editData);
+        if(editData !== null && editData.beneficiary !== undefined) {
+            setValue('first_name', editData.beneficiary.first_name);
+            setValue('middle_name', editData.beneficiary.middle_name);
+            setValue('last_name', editData.beneficiary.last_name);
+            setValue('suffix', editData.beneficiary.suffix);
+            setValue('contact_number', editData.beneficiary.contact_number);
+            setValue('assistance_type', editData.assistance_type);
+            setValue('description', editData.description);
+            setValue('birth_date', editData.beneficiary.birth_date || '');
+            setValue('province', editData.beneficiary.province || '');
+            setValue('municipality', editData.beneficiary.municipality || '');
+            setValue('barangay', editData.beneficiary.barangay || '');
+        }
+    }, [isOpen]);
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
@@ -207,7 +226,11 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
                         {/* ADDRESS DROPDOWN */}
                         <div className="space-y-4">
                             <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Address</h3>
-                            <AddressDropdown onAddressChange={handleAddressChange} />
+                            <AddressDropdown 
+                            editProvince={editData?.beneficiary?.province || ''}
+                            editMunicipality={editData?.beneficiary?.municipality || ''}
+                            editBarangay={editData?.beneficiary?.barangay || ''}
+                            onAddressChange={handleAddressChange} />
                         </div>
 
                         {/* ASSISTANCE TYPE */}
@@ -284,6 +307,7 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess }: Props) {
                     </form>
 
                     <ToastProvider />
+
                     <ClassicDialog
                         title={classicDialog.title}
                         message={classicDialog.message}

@@ -113,19 +113,27 @@ export default function EventPageTable() {
             setPerPage(apiData.meta.per_page);
             setTotalItems(apiData.meta.total);
         } catch (error: any) {
-            console.error('Failed to load events', error);
+            console.error('Error fetching events:', error);
+
+            // Better error handling for Axios or fetch
+            const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                'Failed to load events.';
+
             setEventList([]);
+
             setClassicDialog((prev) => ({
                 ...prev,
                 isOpen: true,
                 title: 'An error occurred!',
-                message: error,
+                message: `Request failed with status code ${error.response?.status || 'unknown'}: ${errorMessage}`,
                 positiveButtonText: 'Close',
                 isNegativeButtonHidden: true,
                 payload: null,
                 action: 'none',
                 selectedItemId: null,
-            }))
+            }));
         } finally {
             setIsLoading(false);
         }
