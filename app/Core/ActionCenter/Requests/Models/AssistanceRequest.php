@@ -2,14 +2,16 @@
 
 namespace App\Core\ActionCenter\Requests\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Core\Users\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Database\Factories\AssistanceRequestFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Core\ActionCenter\Beneficiaries\Models\Beneficiary;
 
 class AssistanceRequest extends Model
 {
 
+    use HasFactory;
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -45,6 +47,11 @@ class AssistanceRequest extends Model
         'amount' => 'encrypted',
 
     ];
+
+    protected static function newFactory()
+    {
+        return AssistanceRequestFactory::new();
+    }
 
     public function beneficiary()
     {

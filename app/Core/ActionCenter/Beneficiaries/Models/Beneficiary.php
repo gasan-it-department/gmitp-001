@@ -3,9 +3,10 @@
 namespace App\Core\ActionCenter\Beneficiaries\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Database\Factories\BeneficiaryFactory;
+use Laravel\Scout\Searchable; // 1. Import Scout
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
-use Laravel\Scout\Searchable; // 1. Import Scout
 
 class Beneficiary extends Model
 {
@@ -57,6 +58,11 @@ class Beneficiary extends Model
         'email' => 'encrypted',
 
     ];
+
+    protected static function newFactory()
+    {
+        return BeneficiaryFactory::new();
+    }
 
     public function toSearchableArray()
     {

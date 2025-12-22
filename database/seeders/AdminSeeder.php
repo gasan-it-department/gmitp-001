@@ -7,6 +7,7 @@ use App\Core\Users\Models\User;
 use Illuminate\Database\Seeder;
 use App\Core\Users\Enums\EnumRoles;
 use Illuminate\Support\Facades\Hash;
+use App\Core\Municipality\Models\Municipality;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class AdminSeeder extends Seeder
@@ -16,10 +17,16 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
+        $municipalities = Municipality::all();
+
+        $randomMunicipal = $municipalities->random();
+
 
         $admin = User::firstOrCreate([
 
             'id' => Str::ulid(),
+
+            'municipal_id' => $randomMunicipal->id,
 
             'first_name' => 'harvey',
 
@@ -29,7 +36,7 @@ class AdminSeeder extends Seeder
 
             'email' => 'layrart8@gmail.com',
 
-            'user_name' => 'harvey',
+            'user_name' => 'oneman',
 
             'email_verified_at' => now(),
 
