@@ -67,6 +67,6 @@ class UserRepository
             });
         }
 
-        return $query->paginate(10)->withQueryString();
+        return $query->paginate(2)->withQueryString();
     }
 }

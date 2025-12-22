@@ -1,7 +1,7 @@
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { Permission } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { PermissionSelector } from './Components/Permission';
 
 // UI Components
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { MunicipalitySelect } from './Components/MunicipalitySelect';
 
 interface Props {
@@ -58,9 +58,6 @@ export default function UserRegistry({ data }: Props) {
                 <div className="sticky top-0 z-10 border-b bg-white/80 px-8 py-4 backdrop-blur-md">
                     <div className="mx-auto flex max-w-5xl items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Link href="/admin/users" className="rounded-full p-2 hover:bg-gray-100">
-                                <ArrowLeft size={20} className="text-gray-600" />
-                            </Link>
                             <div>
                                 <h1 className="text-xl font-bold text-gray-900">Create Administrator</h1>
                                 <p className="text-xs text-gray-500">New Account Entry</p>

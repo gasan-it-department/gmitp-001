@@ -28,7 +28,6 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
     const handleAddAdmin = () => {
         router.visit(superAdmin.registry.page.url());
     };
-
     useEffect(() => {
         if (!isMounted.current) {
             isMounted.current = true;
