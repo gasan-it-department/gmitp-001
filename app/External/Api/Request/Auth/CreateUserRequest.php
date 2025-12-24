@@ -45,7 +45,15 @@ class CreateUserRequest extends FormRequest
                 'ends_with:@gmail.com,@yahoo.com,@outlook.com,@hotmail.com',
             ],
 
-            'phone' => ['required', 'min:11', 'max:11', 'unique:users,phone', 'regex:/^(09\d{9}|\+639\d{9}|9\d{9})$/'],
+            'phone' => [
+                'required',
+                'string',
+                // Strict regex: Must start with 09 and have 9 digits after
+                'regex:/^09\d{9}$/',
+                // Since the regex enforces exact digits, you don't actually need min/max, 
+                // but keeping them doesn't hurt.
+                'size:11'
+            ],
 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
 

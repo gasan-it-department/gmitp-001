@@ -26,9 +26,12 @@ class SmsService
     public function send(string $phoneNumber, string $message): ?array
     {
         try {
+
+            $formattedNumber = str_replace('+', '', $phoneNumber);
+
             $response = Http::post($this->baseUrl, [
                 'apikey' => $this->apiKey,
-                'number' => $phoneNumber,
+                'number' => $formattedNumber,
                 'message' => $message,
                 'sendername' => $this->senderName,
             ]);

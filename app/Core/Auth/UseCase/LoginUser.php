@@ -35,7 +35,7 @@ class LoginUser
         // Create a unique key for the rate limiter based on IP and identifier
         $identifierKey = hash('sha256', $dto->identifier);
 
-        $rateLimitKey = "login:ip:" . request()->ip();
+        $rateLimitKey = "login:ip:" . request()->ip() . ':' . $identifierKey;
 
         if ($this->rateLimiter->tooManyAttempts($rateLimitKey, self::RATE_LIMIT_ATTEMPTS)) {
             $remainingSeconds = $this->rateLimiter->availableIn($rateLimitKey);
@@ -63,14 +63,11 @@ class LoginUser
         //give token to logged the user
         $sessionData = $this->cookieSessionService->createAuthenticatedSession($users->id, $dto->rememberMe);
 
-        $redirect = $this->loginRedirectionService->redirectUser($users, $slug);
-
         return new LoginResponseDto(
             'login successful',
             null,
             'Session',
             $sessionData['expires_in'],
-            $redirect,
             $users,
         );
 

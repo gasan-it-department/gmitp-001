@@ -44,7 +44,6 @@ class AuthenticateUserController extends Controller
                 [
                     'success' => true,
                     'result' => $result,
-                    'redirect' => $result->redirect,
                     // 'csrfToken' => csrf_token(),
                 ],
                 200

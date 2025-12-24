@@ -37,6 +37,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'municipalityContext' => SetMunicipalityContext::class,
         ]);
     })
+
+    ->withEvents(discover: [
+        base_path('app/Core/*/Listeners'),
+    ])
+
     ->withExceptions(using: function (Exceptions $exceptions) {
         //
     })->create();

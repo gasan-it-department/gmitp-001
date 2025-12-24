@@ -16,4 +16,11 @@ class AuthController extends Controller
     {
         return Inertia::render('Auth/Register');
     }
+
+    public function showOtpPage()
+    {
+
+        return Inertia::render('Auth/OtpVerification');
+
+    }
 }

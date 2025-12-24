@@ -9,7 +9,6 @@ class LoginResponseDto
         public readonly ?string $accessToken,
         public readonly string $tokenType,
         public readonly int $expiresIn,
-        public readonly string $redirect,
         public readonly object $user,
     ) {
     }

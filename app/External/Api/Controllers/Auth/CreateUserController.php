@@ -2,20 +2,20 @@
 
 namespace App\External\Api\Controllers\Auth;
 
-use App\Core\Users\Dto\RegisterUserDto;
-use App\Core\Users\Repository\UserRepository;
-use App\Core\Users\UseCases\RegisterUserUseCase;
 use App\Http\Controllers\Controller;
+use App\Core\Users\Dto\RegisterUserDto;
+use App\Core\Users\UseCases\RegisterUserUseCase;
+use App\Core\Auth\Interfaces\CookieSessionInterface;
 use App\External\Api\Request\Auth\CreateUserRequest;
-use Illuminate\Http\Request;
-
-use App\Core\Users\Domains\Exceptions\InvalidUserInputException;
+use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
 
 
 class CreateUserController extends Controller
 {
     public function __construct(
         private RegisterUserUseCase $registerUserCase,
+        private CookieSessionInterface $cookieSessionService,
+
     ) {
     }
 
@@ -37,25 +37,20 @@ class CreateUserController extends Controller
                 password: $validated['password'],
             );
 
-            $result = $this->registerUserCase->execute($dto, $municipality->slug);
+            $user = $this->registerUserCase->execute($dto, $municipality->slug);
 
-            return response()->json([
-                'message' => 'User created successfully',
-                'redirect' => $result['redirect'],
+            $this->cookieSessionService->createAuthenticatedSession($user->id);
+
+            return redirect()->route('otp.verification.page');
+
+        } catch (UserAlreadyExistExceptions $event) {
+
+            return back()->withErrors([
+
+                $event->field => $event->getMessage()
+
             ]);
 
-        } catch (InvalidUserInputException $event) {
-
-            return response()->json(
-
-                [
-                    'message' => 'failed registry',
-                    'errors' => [
-                        $event->getField() => [$event->getMessage()]
-                    ]
-                ],
-                200
-            );
         }
     }
 }

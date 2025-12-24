@@ -45,6 +45,7 @@ class User extends Authenticatable
         'user_name',
         'municipal_id',
         'password',
+        'phone_verified_at'
 
     ];
 

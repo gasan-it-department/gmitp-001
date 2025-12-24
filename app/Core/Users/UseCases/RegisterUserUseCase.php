@@ -4,13 +4,15 @@ declare(Strict_types=1);
 
 namespace App\Core\Users\UseCases;
 
-use App\Core\Auth\Interfaces\CookieSessionInterface;
-use App\Core\Auth\Services\LoginRedirectionService;
+use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
+use App\Core\Users\ValueObjects\Phone;
 use Illuminate\Support\Facades\DB;
 use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Dto\RegisterUserDto;
+use App\Core\Users\Events\UserRegistered;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Users\Services\PasswordHasherService;
+use App\Core\Auth\Services\LoginRedirectionService;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
 class RegisterUserUseCase
@@ -19,7 +21,6 @@ class RegisterUserUseCase
         private UserRepository $userRepository,
         private IdGeneratorInterface $idGenerator,
         private PasswordHasherService $hash,
-        private CookieSessionInterface $cookieSessionService,
         private LoginRedirectionService $loginRedirectionService,
     ) {
     }
@@ -31,39 +32,42 @@ class RegisterUserUseCase
 
             $password = $this->hash->hash($dto->password);
 
+            $phoneNumber = new Phone($dto->phone);
+
+            $this->ensureUserDoesNotExist($dto->userName, $phoneNumber->toString());
+
             $user = $this->userRepository->save([
                 'id' => $userId,
                 'firstName' => $dto->firstName,
                 'middleName' => $dto->middleName,
                 'lastName' => $dto->lastName,
                 'userName' => $dto->userName,
-                'phone' => $dto->phone,
+                'phone' => $phoneNumber->toString(),
                 'password' => $password,
             ]);
 
             $user->assignRole(EnumRoles::CLIENT->value);
 
-            $session = $this->cookieSessionService->createAuthenticatedSession($userId);
+            UserRegistered::dispatch($user);
 
-            $redirect = $this->loginRedirectionService->redirectUser($user, $slug);
-
-            return [
-                'result' => $session,
-                'redirect' => $redirect,
-            ];
+            return $user;
         });
 
     }
 
 
-    // private function ensureUserDoesNotExist(UserName $userName, Phone $phone): void
-    // {
-    //     if ($this->userRepository->findByUsername($userName) !== null) {
-    //         throw UserAlreadyExistExceptions::withUserName($userName->getValue());
-    //     }
+    private function ensureUserDoesNotExist(string $userName, string $phone): void
+    {
+        if ($this->userRepository->findByUsername($userName) !== null) {
 
-    //     if ($this->userRepository->findByPhone($phone) !== null) {
-    //         throw UserAlreadyExistExceptions::withPhone($phone->getValue());
-    //     }
-    // }
+            throw UserAlreadyExistExceptions::withUserName($userName);
+
+        }
+
+        if ($this->userRepository->findByPhone($phone) !== null) {
+
+            throw UserAlreadyExistExceptions::withPhone($phone);
+
+        }
+    }
 }

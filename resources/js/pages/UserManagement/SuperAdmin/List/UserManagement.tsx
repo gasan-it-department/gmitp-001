@@ -21,12 +21,7 @@ interface Props {
             last_page: number;
             total: number;
             to: number;
-            // ✅ THIS is the array you need for the UI loop
-            links: {
-                url: string | null;
-                label: string;
-                active: boolean;
-            }[];
+            links: any[];
         };
     };
     filters: any;
