@@ -20,7 +20,9 @@ class VerificationSenderService
 
         $code = $this->otpService->generate($phoneNumber, 'sms');
 
-        $message = "Your Verification Code is: {$code}. Do not share this with anyone.";
+        $senderName = config('app.sms_sender_name');
+
+        $message = "{$senderName}: Your Verification Code is: {$code}. Do not share this with anyone.";
 
         // $this->smsService->send($phoneNumber, $message);
 

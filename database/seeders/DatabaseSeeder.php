@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             MunicipalitySeeder::class,
             SuperAdminSeeder::class,
-            AdminSeeder::class,
+            // AdminSeeder::class,
         ]);
 
         $this->call([

@@ -2,6 +2,7 @@
 
 namespace App\Core\Auth\Services;
 
+use App\Core\Auth\Exceptions\OtpThrottledException;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Exception;
 use Carbon\Carbon;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class OtpService
 {
+    const OTP_EXPIRY_MINUTES = 10;
+    const THROTTLE_SECONDS = 60;
 
     public function __construct(
 
@@ -27,7 +30,7 @@ class OtpService
 
             $seconds = RateLimiter::availableIn($key);
 
-            throw new Exception("Please wait {$seconds} seconds before requesting a new code.");
+            throw new OtpThrottledException($seconds);
 
         }
 
@@ -49,12 +52,20 @@ class OtpService
 
             'code' => $code,
 
-            'expires_at' => Carbon::now()->addMinutes(10),
+            'expires_at' => Carbon::now()->addMinutes(self::OTP_EXPIRY_MINUTES),
 
         ]);
 
+        RateLimiter::hit($key, self::THROTTLE_SECONDS);
 
         return (string) $code;
+
+    }
+
+    public function getTimeRemaining(string $phoneNumber): int
+    {
+        return RateLimiter::availableIn('otp-limit:' . $phoneNumber);
+
     }
 
     public function resend(string $phoneNumber, string $channel = 'sms')

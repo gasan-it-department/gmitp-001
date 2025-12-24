@@ -21,6 +21,7 @@ interface LoginFormProps {
 
 export default function LoginForm({ onClose, onForgotPasswordClick }: LoginFormProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
     const { currentMunicipality } = useMunicipality();
     const {
         register,
@@ -34,6 +35,7 @@ export default function LoginForm({ onClose, onForgotPasswordClick }: LoginFormP
         try {
             // API handles redirection/reload internally
             await AuthApi.login(currentMunicipality.slug, data);
+            setIsRedirecting(true);
         } catch (error: any) {
             if (error.response?.data) {
                 const { errors: validationErrors, message } = error.response.data;
@@ -82,7 +84,7 @@ export default function LoginForm({ onClose, onForgotPasswordClick }: LoginFormP
                         <Button
                             type="button"
                             variant="link"
-                            className="h-auto p-0 text-xs font-medium text-primary hover:underline hover:text-primary/80"
+                            className="h-auto p-0 text-xs font-medium text-primary hover:text-primary/80 hover:underline"
                             onClick={() => {
                                 if (onForgotPasswordClick) {
                                     onForgotPasswordClick();
@@ -136,12 +138,12 @@ export default function LoginForm({ onClose, onForgotPasswordClick }: LoginFormP
 
             {/* ACTION BUTTON */}
 
-            <div className="pb-5 flex gap-3">
+            <div className="flex gap-3 pb-5">
                 {/* Cancel Button (hidden on desktop) */}
                 <Button
                     disabled={isSubmitting}
                     type="button"
-                    className="flex-1 h-11 border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 md:hidden"
+                    className="h-11 flex-1 border border-gray-400 bg-transparent text-gray-700 hover:bg-gray-100 md:hidden"
                     onClick={() => {
                         if (onClose !== undefined) {
                             onClose();
@@ -154,13 +156,13 @@ export default function LoginForm({ onClose, onForgotPasswordClick }: LoginFormP
                 {/* Submit Button */}
                 <Button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 h-11 bg-gradient-to-r from-red-500 to-orange-500 text-white"
+                    disabled={isSubmitting || isRedirecting}
+                    className="h-11 flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white"
                 >
-                    {isSubmitting ? (
+                    {isSubmitting || isRedirecting ? (
                         <span className="flex items-center gap-2">
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                            Logging in...
+                            {isRedirecting ? 'Redirecting...' : 'Logging in...'}
                         </span>
                     ) : (
                         'Sign In'

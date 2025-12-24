@@ -2,13 +2,15 @@
 
 namespace App\External\Api\Controllers\Auth;
 
-use App\Core\Auth\Dto\VerifyPhoneDto;
-use App\Core\Auth\Exceptions\InvalidOtpExceptions;
-use App\Core\Auth\Services\OtpService;
-use App\Core\Auth\UseCase\VerifyUserUseCase;
 use Exception;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Core\Auth\Dto\VerifyPhoneDto;
+use App\Core\Auth\Services\OtpService;
+use App\Core\Auth\UseCase\VerifyUserUseCase;
+use Illuminate\Validation\ValidationException;
+use App\Core\Auth\Exceptions\InvalidOtpExceptions;
+use App\Core\Auth\Exceptions\OtpThrottledException;
 
 class VerifiyPhoneController extends Controller
 {
@@ -56,14 +58,15 @@ class VerifiyPhoneController extends Controller
 
         try {
 
-            $code = $this->otpService->resend($phone, 'sms');
+            $this->otpService->resend($phone, 'sms');
 
-            return response()->json(['message' => 'Code resent successfully']);
+            return redirect()->back()->with('success', 'Code resent successfully');
 
-        } catch (Exception $e) {
+        } catch (OtpThrottledException $e) {
 
-            return response()->json(['message' => $e->getMessage()], 429);
-
+            throw ValidationException::withMessages([
+                'otp' => $e->getMessage(),
+            ]);
         }
 
     }

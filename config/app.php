@@ -15,6 +15,7 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'sms_sender_name' => env('SMS_SENDER_NAME'),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

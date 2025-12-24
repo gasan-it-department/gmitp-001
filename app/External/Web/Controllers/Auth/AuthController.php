@@ -2,11 +2,13 @@
 
 namespace App\External\Web\Controllers\Auth;
 
+use App\Core\Auth\Services\OtpService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 class AuthController extends Controller
 {
+
     public function showLoginPage()
     {
         return Inertia::render('Auth/Login');
@@ -17,10 +19,19 @@ class AuthController extends Controller
         return Inertia::render('Auth/Register');
     }
 
-    public function showOtpPage()
+    public function showOtpPage(OtpService $otpService)
     {
+        $user = request()->user();
 
-        return Inertia::render('Auth/OtpVerification');
+        $seconds = $otpService->getTimeRemaining($user->phone);
+
+        return Inertia::render('Auth/OtpVerification', [
+
+            'secondsRemaining' => $seconds,
+
+            'phoneNumber' => $user->phone,
+
+        ]);
 
     }
 }

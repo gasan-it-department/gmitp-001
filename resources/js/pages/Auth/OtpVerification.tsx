@@ -9,25 +9,41 @@ import { useEffect, useState } from 'react';
 // Optional: Pass the masked phone number from the backend
 interface Props {
     phoneNumber?: string;
+    secondsRemaining: number;
 }
 
-export default function OtpVerification({ phoneNumber = '+63 9** *** **89' }: Props) {
+export default function OtpVerification({ secondsRemaining, phoneNumber }: Props) {
     // destructure 'post' from useForm to handle submission automatically
     const { data, setData, post, processing, errors, reset } = useForm({
         otp: '',
     });
-
     // 1. Timer Logic for Resend
-    const [timeLeft, setTimeLeft] = useState(5);
+    const [timeLeft, setTimeLeft] = useState(secondsRemaining);
     const [canResend, setCanResend] = useState(false);
 
     useEffect(() => {
-        if (timeLeft > 0) {
-            const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-            return () => clearTimeout(timerId);
-        } else {
+        // Stop if we are already at 0
+        if (timeLeft <= 0) {
             setCanResend(true);
+            return;
         }
+
+        // Ensure button is hidden while counting
+        setCanResend(false);
+
+        const timerId = setInterval(() => {
+            setTimeLeft((prevTime) => {
+                if (prevTime <= 1) {
+                    clearInterval(timerId);
+                    setCanResend(true); // Enable the button immediately when we hit 0
+                    return 0;
+                }
+                // FIX: This return statement must be INSIDE the braces
+                return prevTime - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timerId);
     }, [timeLeft]);
 
     const handleResend = () => {
@@ -45,8 +61,9 @@ export default function OtpVerification({ phoneNumber = '+63 9** *** **89' }: Pr
         // FIX: Use the 'post' helper from useForm.
         // It automatically sends the 'data' object.
         // Ensure you have this named route in your web.php: Route::post('/verify-otp', ...)->name('otp.verify');
-        const otpVerify = verify.url();
-        router.post(otpVerify, data);
+        post(verify.url(), {
+            onFinish: () => reset('otp'), // Optional: clear input on failure/finish
+        });
     };
 
     return (
@@ -60,11 +77,13 @@ export default function OtpVerification({ phoneNumber = '+63 9** *** **89' }: Pr
                         <ShieldCheck size={32} />
                     </div>
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">Verify your phone</h2>
-                    <p className="mt-2 text-sm text-gray-500">
-                        We sent a 6-digit code to <span className="font-semibold text-gray-900">{phoneNumber}</span>.
-                        <br />
-                        Enter it below to confirm your identity.
-                    </p>
+                    {phoneNumber && (
+                        <p className="mt-2 text-sm text-gray-500">
+                            We sent a 6-digit code to <span className="font-semibold text-gray-900">{phoneNumber}</span>.
+                            <br />
+                            Enter it below to confirm your identity.
+                        </p>
+                    )}
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
