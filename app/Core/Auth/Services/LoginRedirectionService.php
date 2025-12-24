@@ -12,10 +12,12 @@ class LoginRedirectionService
     }
     public function redirectUser(object $user, string $slug)
     {
-        return match (true) {
-            $this->roleChecker->isClient($user) => 'BACK',
-            $this->roleChecker->isAdmin($user) => route('admin.dashboard', ['municipality' => $slug]),
-            $this->roleChecker->isSuperAdmin($user) => route('superAdmin.dashboard'),
-        };
+
+        if (is_null($user->phone_verified_at)) {
+
+            return route('otp.verification.page');
+
+        }
+
     }
 }

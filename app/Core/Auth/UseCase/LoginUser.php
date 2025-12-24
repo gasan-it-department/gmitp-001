@@ -8,12 +8,12 @@ use App\Core\Auth\Exceptions\AccountLockedExceptions;
 use App\Core\Auth\Exceptions\InvalidCredentialsExceptions;
 use App\Core\Auth\Exceptions\InvalidPasswordException;
 use App\Core\Auth\Services\LoginRedirectionService;
+use App\Core\Auth\Services\VerificationSenderService;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Auth\Interfaces\PasswordHasherInterface;
 use App\Core\Auth\Interfaces\TokenServiceInterface;
 use App\Core\Auth\Interfaces\RateLimiterInterface;
 use App\Core\Auth\Interfaces\CookieSessionInterface;
-use App\Core\Auth\Services\LaravelSessionService;
 class LoginUser
 {
 
@@ -28,6 +28,7 @@ class LoginUser
         private RateLimiterInterface $rateLimiter,
         private CookieSessionInterface $cookieSessionService,
         private LoginRedirectionService $loginRedirectionService,
+        private VerificationSenderService $verificationSenderService
     ) {
     }
     public function execute(LoginRequestDto $dto, $slug): LoginResponseDto
@@ -63,11 +64,21 @@ class LoginUser
         //give token to logged the user
         $sessionData = $this->cookieSessionService->createAuthenticatedSession($users->id, $dto->rememberMe);
 
+        $redirectUrl = $this->loginRedirectionService->redirectUser($users, $slug);
+
+        if (is_null($users->phone_verified_at)) {
+
+            $this->verificationSenderService->send($users->phone);
+
+        }
+
+
         return new LoginResponseDto(
             'login successful',
             null,
             'Session',
             $sessionData['expires_in'],
+            $redirectUrl,
             $users,
         );
 

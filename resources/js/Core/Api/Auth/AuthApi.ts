@@ -1,6 +1,7 @@
 import Auth from "@/actions/App/External/Api/Controllers/Auth"
 import axios from "@/lib/axios"
 import { router } from "@inertiajs/react"
+import { resolve } from "path"
 
 export const AuthApi = {
     async login(municipalSlug: string, formData: any) {
@@ -17,13 +18,11 @@ export const AuthApi = {
 
         });
 
-        if (response.data.redirect === "BACK") {
+        const backendRedirectUrl = response.data.redirect
 
+        if (backendRedirectUrl && backendRedirectUrl.includes('otp')) {
             // router.reload();
-            router.visit(window.location.href, {
-                preserveScroll: true,
-                preserveState: true,
-            });
+            router.visit(backendRedirectUrl);
 
         } else {
 

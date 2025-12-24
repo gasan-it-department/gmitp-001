@@ -8,13 +8,22 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsurePhoneIsVerified
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
+
     public function handle(Request $request, Closure $next): Response
     {
+
+        $user = request()->user();
+
+        if (!$user) {
+            return redirect()->route('landing');
+        }
+
+        if (is_null($user->phone_verified_at)) {
+
+            return redirect()->route('otp.verification.page');
+
+        }
+
         return $next($request);
     }
 }
