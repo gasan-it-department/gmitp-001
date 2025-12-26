@@ -24,7 +24,7 @@ class VerificationSenderService
 
         $message = "{$senderName}: Your Verification Code is: {$code}. Do not share this with anyone.";
 
-        // $this->smsService->send($phoneNumber, $message);
+        $this->smsService->send($phoneNumber, $message);
 
         Log::info("VerificationSender: Sent OTP {$code} to {$phoneNumber}");
 
