@@ -109,6 +109,14 @@ export default function CommunityReportPageTable({ reports }: Props) {
         );
     }
 
+    const handleSearch = (searchValue: string) => {
+        console.log("Searching for " + searchValue);
+    }
+
+    const handleSort = (sortValue: string) => {
+        console.log("Sorting by " + sortValue);
+    }
+
     return (
         <div className="flex h-full flex-col">
             {/* HEADER ... */}
@@ -117,8 +125,16 @@ export default function CommunityReportPageTable({ reports }: Props) {
                     Community Reports
                 </h1>
                 <CommunityReportHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
+                    onSearch={(searchValue) => handleSearch(searchValue)}
+                    sortList={
+                        [
+                            { label: 'Type', value: 'type'},
+                            { label: 'Date Reported', value: 'created_at' },
+                            { label: 'Status', value: 'status'},
+                            { label: 'Location', value: 'location'}
+                        ]
+                    }
+                    onSortSelected={((sortValue) => handleSort(sortValue))}
                     onExportButtonClicked={() => { }}
 
                 />

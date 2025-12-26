@@ -18,7 +18,6 @@ type SortListType = {
 interface Props {
     className?: string;
     onAddNewButtonClicked: () => void;
-    onFilterButtonClicked?: () => void;
     onSearch?: (search: string) => void;
     sortList?: SortListType[];
     onSortSelected?: (value: string) => void;
@@ -27,7 +26,6 @@ interface Props {
 export default function AnnouncementPageHeader({
     className,
     onAddNewButtonClicked,
-    onFilterButtonClicked,
     onSearch,
     sortList = [],
     onSortSelected,
@@ -35,6 +33,7 @@ export default function AnnouncementPageHeader({
     const [selectedSort, setSelectedSort] = useState<SortListType | null>(null);
 
     const handleSortSelect = (item: SortListType) => {
+        if(selectedSort?.value === item.value) return;
         setSelectedSort(item);
         onSortSelected?.(item.value);
     };

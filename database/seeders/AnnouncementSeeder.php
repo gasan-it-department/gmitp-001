@@ -24,7 +24,7 @@ class AnnouncementSeeder extends Seeder
         // Create 10 announcements linked to real data
         foreach ($municipalities as $municipal) {
             Announcement::factory()
-                ->count(50)
+                ->count(300)
                 ->create([
                     'user_id' => $user->id,          // Override with real User ID
                     'municipal_id' => $municipal->id // Override with real Municipal ID

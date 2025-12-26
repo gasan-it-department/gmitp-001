@@ -271,15 +271,26 @@ export default function EventPageTable() {
         // Implement server-side filtering here in the future
     };
 
+    const handleSearch = (searchValue: string) => {
+        console.log('Searching for: ', searchValue);
+    }
+
     return (
         <div>
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Event List</h1>
                 <EventPageHeader
-                    onFilterButtonClicked={() => {
-                        setIsFilterOpened(true);
-                    }}
+                    onSearch={(searchValue) => handleSearch(searchValue)}
+                    sortList={
+                        [
+                            { label: 'Title', value: 'title' },
+                            { label: 'Description', value: 'description' },
+                            { label: 'Event Date', value: 'event_date' },
+                            { label: 'Date Created', value: 'created_at' },
+                        ]
+                    }
+                    onSortSelected={(value) => handleSort(value)}
                     onAddNewButtonClicked={() => setAddEventDialog({ isOpen: true, editData: null })}
                 />
             </div>
@@ -423,7 +434,7 @@ export default function EventPageTable() {
                 />
             </div>
 
-            <FilterDialog
+            {/* <FilterDialog
                 isOpen={isFilterOpened}
                 onClose={function (): void {
                     setIsFilterOpened(false);
@@ -442,7 +453,7 @@ export default function EventPageTable() {
                         handleSort(selectedFilter?.sub);
                     }
                 }}
-            />
+            /> */}
 
             {/* Add/Edit */}
             <AddEditEventsDialog
