@@ -58,7 +58,7 @@ class VerifiyPhoneController extends Controller
 
         try {
 
-            $this->otpService->resend($phone, 'sms');
+            $this->otpService->resend($phone, OtpService::PURPOSE_REGISTER);
 
             return redirect()->back()->with('success', 'Code resent successfully');
 

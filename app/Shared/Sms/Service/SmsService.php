@@ -2,10 +2,11 @@
 
 namespace App\Shared\Sms\Service;
 
+use App\Shared\Sms\Contracts\SmsProviderInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
-class SmsService
+class SmsService implements SmsProviderInterface
 {
     protected string $baseUrl = 'https://api.semaphore.co/api/v4/messages';
     protected string $apiKey;

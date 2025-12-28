@@ -50,7 +50,7 @@ export default function OtpVerification({ secondsRemaining, phoneNumber }: Props
         router.post(resend.otp.url());
 
         console.log('Resending code...');
-        setTimeLeft(60);
+        setTimeLeft(secondsRemaining);
         setCanResend(false);
         reset('otp');
     };

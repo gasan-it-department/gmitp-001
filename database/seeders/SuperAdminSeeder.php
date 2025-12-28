@@ -25,7 +25,7 @@ class SuperAdminSeeder extends Seeder
                 'id' => Str::ulid(),
                 'first_name' => 'super',
                 'last_name' => 'admin',
-                'phone' => '09000000000',
+                'phone' => '+639994587693',
                 'phone_verified_at' => now(),
                 'email' => 'gasanmarinduque.itdepartment@gmail.com',
                 'email_verified_at' => now(),

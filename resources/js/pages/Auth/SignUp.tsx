@@ -28,7 +28,7 @@ interface SignUpPageProps {
 export default function RegisterPage({ onClose }: SignUpPageProps) {
     const { currentMunicipality } = useMunicipality();
     const [showPassword, setShowPassword] = useState(false);
-
+    const [isRedirecting, setIsRedirecting] = useState(false);
     // Dialog state for critical failures (optional)
     const [classicDialog, setClassicDialog] = useState({
         isDialogShowing: false,
@@ -59,26 +59,35 @@ export default function RegisterPage({ onClose }: SignUpPageProps) {
     const onSubmit = (data: RegisterFormValues) => {
         const postUrl = Auth.CreateUserController.createUser.url();
 
-        router.post(
-            postUrl,
-            data, // 👈 No more red squiggly line!
-            {
-                headers: {
-                    'X-Municipality-Slug': currentMunicipality.slug,
-                },
-                onError: (serverErrors) => {
-                    Object.keys(serverErrors).forEach((key) => {
-                        setError(key as any, {
-                            type: 'server',
-                            message: serverErrors[key],
-                        });
-                    });
-                },
-                onSuccess: () => {
-                    if (onClose) onClose();
-                },
+        // Use router.post with Inertia's lifecycle hooks
+        router.post(postUrl, data, {
+            headers: {
+                'X-Municipality-Slug': currentMunicipality.slug,
             },
-        );
+            // 1. Set loading state when the request starts
+            onStart: () => {
+                setIsRedirecting(true);
+            },
+            onError: (serverErrors) => {
+                // 2. Turn off loading if there is a validation error
+                setIsRedirecting(false);
+                Object.keys(serverErrors).forEach((key) => {
+                    setError(key as any, {
+                        type: 'server',
+                        message: serverErrors[key],
+                    });
+                });
+            },
+            onSuccess: () => {
+                // Keep isRedirecting true here because we are actually moving pages
+                if (onClose) onClose();
+            },
+            // 3. Ensure loading is turned off if the request completely fails/cancels
+            onFinish: () => {
+                // Only set to false if we didn't succeed (otherwise it flickers)
+                // setIsRedirecting(false);
+            },
+        });
     };
     return (
         <div className="h-full p-1">
@@ -172,8 +181,20 @@ export default function RegisterPage({ onClose }: SignUpPageProps) {
                     </Button>
 
                     {/* Submit Button */}
-                    <Button disabled={isSubmitting} type="submit" className="h-11 flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white">
-                        {isSubmitting ? 'Creating Account…' : 'Create Account'}
+                    <Button
+                        disabled={isSubmitting || isRedirecting}
+                        type="submit"
+                        className="h-11 flex-1 bg-gradient-to-r from-red-500 to-orange-500 text-white"
+                    >
+                        {isSubmitting || isRedirecting ? (
+                            <span className="flex items-center gap-2">
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+
+                                {isRedirecting ? 'Redirecting...' : 'Registering...'}
+                            </span>
+                        ) : (
+                            'Register'
+                        )}
                     </Button>
                 </div>
             </form>

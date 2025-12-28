@@ -11,6 +11,8 @@ class VerificationCode extends Model
 
         'id',
 
+        'purpose',
+
         'receiver',
 
         'channel',

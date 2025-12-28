@@ -1,14 +1,19 @@
 <?php
 
+use App\External\Api\Controllers\Auth\ResetPasswordController;
+use Illuminate\Support\Facades\Route;
+use App\External\Web\Controllers\Auth\AuthController;
+use App\External\Api\Controllers\Auth\CreateUserController;
 use App\External\Api\Controllers\Auth\CreateAdminController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
-use App\External\Web\Controllers\Auth\AuthController;
-use Illuminate\Support\Facades\Route;
-use App\External\Api\Controllers\Auth\CreateUserController;
+use App\External\Api\Controllers\Auth\ForgotPasswordController;
 use App\External\Api\Controllers\Auth\AuthenticateUserController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
+use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 
+
+//for unauthenticated users
 Route::prefix('api/auth')
     ->middleware(['guest'])
     ->group(function () {
@@ -24,6 +29,8 @@ Route::prefix('api/auth')
 
     });
 
+
+// Basically for auth related pls read the URI and NAMES    
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthenticateUserController::class, 'logout'])->name('logout');
@@ -32,9 +39,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
 
+    Route::get('otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
+
 });
 
-Route::get('otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
+
+//CRITICAL: for forgot password routings (if any issue ask harvey)
+Route::middleware(['guest'])
+    ->group(function () {
+
+        //
+        Route::get('/forgot-password', [ForgotPasswordViewController::class, 'index'])->name('password.request');
+
+        Route::post('/forgot-password', [ForgotPasswordController::class, 'requestPassword'])->name('password.phone');
+
+        //for forgot password otp
+        Route::get('/forgot-password/verify', [ForgotPasswordViewController::class, 'showOtpForm'])->name('password.otp.verify');
+
+        Route::post('/forgot-password/verify', [ForgotPasswordController::class, 'verifyForgetPasswordOtp'])->name('password.otp.submit');
+
+        Route::get('/reset-password/{phone}', [ForgotPasswordViewController::class, 'showResetForm'])->name('password.reset.form')->middleware('signed');
+
+        Route::post('/reset-password/{phone}', [ResetPasswordController::class, 'store'])
+            ->name('password.update')
+            ->middleware('signed');
+    });
 
 //super admin user management
 Route::middleware('superAdmin')

@@ -38,8 +38,15 @@ class Phone
     }
 
 
-    public function __tostring()
+    public function __toString()
     {
         return $this->value;
+    }
+
+    public function getValue()
+    {
+
+        return $this->value;
+
     }
 }

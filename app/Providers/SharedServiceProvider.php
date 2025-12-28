@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Support\ServiceProvider;
 
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -14,6 +15,10 @@ class SharedServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(IdGeneratorInterface::class, IdGenerator::class);
+
+        $this->app->singleton(PhoneFormatterService::class, function ($app) {
+            return new PhoneFormatterService();
+        });
     }
 
     /**

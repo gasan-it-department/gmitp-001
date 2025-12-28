@@ -3,14 +3,13 @@
 namespace App\Core\Auth\Services;
 
 use Illuminate\Support\Facades\Log;
-use App\Shared\Sms\Service\SmsService;
+use App\Shared\Sms\Contracts\SmsProviderInterface;
 
 class VerificationSenderService
 {
     public function __construct(
 
         protected OtpService $otpService,
-        protected SmsService $smsService,
 
     ) {
     }
@@ -18,15 +17,10 @@ class VerificationSenderService
     public function send(string $phoneNumber)
     {
 
-        $code = $this->otpService->generate($phoneNumber, 'sms');
-
-        $senderName = config('app.sms_sender_name');
-
-        $message = "{$senderName}: Your Verification Code is: {$code}. Do not share this with anyone.";
-
-        $this->smsService->send($phoneNumber, $message);
-
-        Log::info("VerificationSender: Sent OTP {$code} to {$phoneNumber}");
+        $this->otpService->generate(
+            $phoneNumber,
+            OtpService::PURPOSE_REGISTER
+        );
 
     }
 }

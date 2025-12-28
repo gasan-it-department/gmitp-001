@@ -7,5 +7,6 @@ return [
     App\Providers\BulletinBoardProviders::class,
     App\Providers\RouteServiceProvider::class,
     App\Providers\SharedServiceProvider::class,
+    App\Providers\SmsServiceProvider::class,
     App\Providers\UserServiceProvider::class,
 ];

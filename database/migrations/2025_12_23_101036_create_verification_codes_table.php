@@ -14,13 +14,15 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
+            $table->string('code');
+
             // Stores the Email ("john@example.com") OR Phone ("0917...")
             $table->string('receiver')->index();
 
+            $table->string('purpose', 20)->nullable();
+
             // Defines the type: 'sms' or 'email'
             $table->string('channel');
-
-            $table->string('code');
 
             $table->timestamp('expires_at');
 

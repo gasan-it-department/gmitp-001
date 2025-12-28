@@ -2,15 +2,19 @@
 
 namespace App\Core\Auth\Services;
 
-use App\Core\Auth\Exceptions\OtpThrottledException;
-use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Exception;
 use Carbon\Carbon;
 use App\Core\Auth\Models\VerificationCode;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Shared\Sms\Contracts\SmsProviderInterface;
+use App\Core\Auth\Exceptions\OtpThrottledException;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
 class OtpService
 {
+    const PURPOSE_REGISTER = 'account_register';
+    const PURPOSE_FORGOT_PASSWORD = 'reset_password';
+    const UPDATE_PHONE_NUMBER = 'update_phone';
     const OTP_EXPIRY_MINUTES = 10;
     const THROTTLE_SECONDS = 60;
 
@@ -18,13 +22,15 @@ class OtpService
 
         protected IdGeneratorInterface $idGeneratorInterface,
 
+        protected SmsProviderInterface $smsProvider, // 1. Inject SMS Provider here
+
     ) {
     }
 
-    public function generate(string $phoneNumber, string $channel): string
+    public function generate(string $phoneNumber, string $purpose, string $channel = 'sms'): string
     {
 
-        $key = 'otp-limit:' . $phoneNumber;
+        $key = "otp-limit:{$purpose}:{$phoneNumber}";
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
 
@@ -35,16 +41,19 @@ class OtpService
         }
 
         VerificationCode::where('receiver', $phoneNumber)
-            ->where('channel', $channel)
+            ->where('purpose', $purpose)
             ->delete();
 
         $code = random_int(100000, 999999);
 
         $otpId = $this->idGeneratorInterface->generate();
 
+
         VerificationCode::create([
 
             'id' => $otpId,
+
+            'purpose' => $purpose,
 
             'receiver' => $phoneNumber,
 
@@ -58,28 +67,32 @@ class OtpService
 
         RateLimiter::hit($key, self::THROTTLE_SECONDS);
 
-        return (string) $code;
+        $this->sendOtpSms($phoneNumber, $code, $purpose);
+
+        return $code;
 
     }
 
-    public function getTimeRemaining(string $phoneNumber): int
+    public function getTimeRemaining(string $phoneNumber, string $purpose): int
     {
-        return RateLimiter::availableIn('otp-limit:' . $phoneNumber);
+        $key = "otp-limit:{$purpose}:{$phoneNumber}";
 
+        return RateLimiter::availableIn($key);
     }
 
-    public function resend(string $phoneNumber, string $channel = 'sms')
+    public function resend(string $phoneNumber, string $purpose, string $channel = 'sms', )
     {
 
-        return $this->generate($phoneNumber, $channel);
+        return $this->generate($phoneNumber, $purpose, $channel);
 
     }
 
-    public function validate(string $phoneNumber, string $inputCode, string $channel = 'sms'): bool
+    public function validate(string $phoneNumber, string $inputCode, string $purpose, string $channel = 'sms'): bool
     {
 
         $record = VerificationCode::where('receiver', $phoneNumber)
             ->where('channel', $channel)
+            ->where('purpose', $purpose)
             ->first();
 
         if (!$record) {
@@ -98,6 +111,23 @@ class OtpService
         $record->delete();
 
         return true;
+
+    }
+
+    public function sendOtpSms(string $phone, string $code, string $purpose)
+    {
+
+        $senderName = config('app.sms_sender_name');
+
+        $message = match ($purpose) {
+
+            self::PURPOSE_REGISTER => "{$senderName}: Your Verification Code is: {$code}. Do not share this with anyone.",
+            self::PURPOSE_FORGOT_PASSWORD => "{$senderName}: Your password reset code is: {$code}. Valid for 10 minutes.",
+            self::UPDATE_PHONE_NUMBER => "Secure Code: {$code} to verify your new number.",
+
+        };
+
+        // $this->smsProvider->send($phone, $message);
 
     }
 

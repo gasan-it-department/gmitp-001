@@ -18,7 +18,7 @@ class VerifyUserUseCase
     public function execute(VerifyPhoneDto $dto)
     {
 
-        if (!$this->otpService->validate($dto->phoneNumber, $dto->otp)) {
+        if (!$this->otpService->validate($dto->phoneNumber, $dto->otp, OtpService::PURPOSE_REGISTER)) {
 
             throw InvalidOtpExceptions::create();
 
