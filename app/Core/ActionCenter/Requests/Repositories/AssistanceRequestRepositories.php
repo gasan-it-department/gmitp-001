@@ -77,4 +77,14 @@ class AssistanceRequestRepositories
         return AssistanceRequest::with('beneficiary')->findOrFail($id);
 
     }
+
+    public function getByUserId(string $userId)
+    {
+
+        return AssistanceRequest::query()
+            ->where('user_id', $userId)
+            ->latest()
+            ->paginate(10);
+    }
+
 }

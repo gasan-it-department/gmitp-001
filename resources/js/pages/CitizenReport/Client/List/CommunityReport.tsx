@@ -66,7 +66,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function CommunityReport({ reports }: { reports: any }) {
     console.log(reports);
     return (
-        <PublicLayout>
+        <PublicLayout title="" description="">
             <Head title="Community Reports" />
             <div className="py-12">
                 <div className="mx-auto max-w-5xl sm:px-6 lg:px-8">

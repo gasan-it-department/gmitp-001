@@ -1,10 +1,11 @@
 <?php
 
-use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
+use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
 
-use Illuminate\Support\Facades\Route;
+use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
+use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 
 Route::prefix('{municipality}/action-center')
     ->middleware(['auth:sanctum', 'municipalityContext'])
@@ -26,9 +27,7 @@ Route::prefix('{municipality}/action-center')
         });
 
         //eg. https://gasan-4905/action-center/beneficiary
-        // Route::get('/', [ClientActionCenterController::class, 'index'])->name('index'); uncomment later for client view for action center
-    
-
+        Route::get('/', [ClientActionCenterController::class, 'index'])->name('index');
 
     });
 
