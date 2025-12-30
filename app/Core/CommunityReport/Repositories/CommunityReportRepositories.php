@@ -69,4 +69,17 @@ class CommunityReportRepositories
 
     }
 
+    public function getByUserId(CommunityReportQueryDto $dto, string $userId)
+    {
+
+        $query = CommunityReport::query()
+            ->where('user_id', $userId)
+            ->with('attachments')
+            ->orderBy($dto->orderBy, $dto->direction)
+            ->paginate($dto->perPage);
+
+        return $query;
+
+    }
+
 }

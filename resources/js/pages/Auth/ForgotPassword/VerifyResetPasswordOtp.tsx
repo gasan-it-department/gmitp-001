@@ -134,7 +134,7 @@ export default function VerifyResetPasswordOtp({ phone, initialSecondsRemaining 
                 {/* Back Button */}
                 <div className="text-center">
                     <Link
-                        // href={route('password.request')} // Go back to enter phone again
+                        href={password.request()} // Go back to enter phone again
                         className="group inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
                     >
                         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />

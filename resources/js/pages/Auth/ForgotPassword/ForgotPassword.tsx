@@ -89,7 +89,7 @@ export default function ForgotPassword() {
                         className="gap-2 pl-0 transition-colors hover:bg-transparent hover:text-blue-600"
                     >
                         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                        Back to log in
+                        Back to home
                     </Button>
                 </div>
             </div>

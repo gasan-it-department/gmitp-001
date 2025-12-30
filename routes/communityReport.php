@@ -3,6 +3,7 @@
 use App\External\Api\Controllers\CommunityReport\CommunityReportController;
 use App\External\Api\Controllers\CommunityReport\CommunityReportTypeController;
 use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
+use App\External\Web\Controllers\CommunityReport\Client\CommunityReportClientController;
 
 Route::prefix('{municipality}/community-report')
     ->middleware(['municipalityContext', 'admin'])
@@ -38,5 +39,17 @@ Route::prefix('api/community-report')
 
         Route::get('/report-type', [CommunityReportTypeController::class, 'getCommunityReportType'])
             ->name('reportType');
+
+    });
+
+Route::prefix('{municipality}/community-report')
+    ->middleware(['municipalityContext', 'auth:sanctum'])
+    ->name('communityReport.')
+    ->controller(CommunityReportClientController::class)
+    ->group(function () {
+
+        Route::get('/client', 'index')->name('client.page');
+
+        Route::get('/show/{id}', 'show')->name('show');
 
     });
