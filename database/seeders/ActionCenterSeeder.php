@@ -46,7 +46,7 @@ class ActionCenterSeeder extends Seeder
             AssistanceRequest::factory()->create([
                 'user_id' => $user->id,
                 'municipal_id' => $randomMunicipal->id, // ✅ USING PERSISTED ID
-                'beneficiary_id' => $beneficiary->id,
+                'assistance_beneficiary_id' => $beneficiary->id,
             ]);
         }
     }
