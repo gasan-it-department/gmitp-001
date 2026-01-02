@@ -4,9 +4,10 @@ namespace App\Shared\FileUploader;
 
 use Cloudinary\Cloudinary;
 use Illuminate\Http\UploadedFile;
+use App\Shared\FileUploader\Interface\FileUploadInterface;
 
 
-class CloudinaryFileUploadService
+class CloudinaryFileUploadService implements FileUploadInterface
 {
 
     protected Cloudinary $cloudinary;

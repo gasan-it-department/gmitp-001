@@ -2,10 +2,14 @@
 
 namespace App\Core\ActionCenter\Requests\UseCase;
 
-use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
-use App\Core\ActionCenter\Requests\Repositories\AssistanceRequestRepositories;
-use App\Core\ActionCenter\Requests\Services\TransactionNumberGenerator;
+use App\Core\ActionCenter\Requests\Repositories\AssistanceRequestFilesRepositories;
+use App\Shared\FileUploader\Interface\FileUploadInterface;
+use Illuminate\Support\Facades\DB;
 use App\Shared\IdGenerator\Services\IdGenerator;
+use App\Core\ActionCenter\Requests\Enums\RequestStatus;
+use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
+use App\Core\ActionCenter\Requests\Services\TransactionNumberGenerator;
+use App\Core\ActionCenter\Requests\Repositories\AssistanceRequestRepositories;
 
 class CreateAssistanceRequestUseCase
 {
@@ -17,29 +21,56 @@ class CreateAssistanceRequestUseCase
 
         protected TransactionNumberGenerator $transactionNumber,
 
+        protected FileUploadInterface $fileUploadInterface,
+
+        protected AssistanceRequestFilesRepositories $assistanceRequestFilesRepo,
+
     ) {
     }
 
     public function execute(CreateAssistanceDto $dto, string $municipalId)
     {
 
-        $assistanceId = $this->idGenerator->generate();
+        return DB::transaction(function () use ($dto, $municipalId) {
 
-        $transactionNumber = $this->transactionNumber->generate();
+            $assistanceId = $this->idGenerator->generate();
 
-        $assistance = $this->assistanceRepo->save(
+            $transactionNumber = $this->transactionNumber->generate();
 
-            dto: $dto,
+            $status = RequestStatus::PENDING;
 
-            assistanceId: $assistanceId,
+            $assistance = $this->assistanceRepo->save(
 
-            transactionNumber: $transactionNumber,
+                status: $status,
 
-            municipalId: $municipalId,
+                dto: $dto,
 
-        );
+                assistanceId: $assistanceId,
 
-        return $assistance;
+                transactionNumber: $transactionNumber,
+
+                municipalId: $municipalId,
+
+            );
+
+            if (!empty($dto->files)) {
+
+                $folder = 'assistance_files/' . $assistanceId;
+
+                foreach ($dto->files as $file) {
+
+                    $fileData = $this->fileUploadInterface->uploadFiles($file, $folder);
+
+                    $this->assistanceRequestFilesRepo->create($fileData, $assistanceId);
+
+                }
+
+            }
+
+
+            return $assistance;
+
+        });
 
     }
 

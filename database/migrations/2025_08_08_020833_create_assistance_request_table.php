@@ -50,7 +50,7 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
-            $table->foreignUlid('beneficiary_id')
+            $table->foreignUlid('assistance_beneficiary_id')
                 ->constrained('assistance_beneficiaries')
                 ->onDelete('cascade');
 

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Core\Users\UseCases;
 
-use App\Core\Users\Dto\CreateAdminDto;
 use App\Core\Users\Enums\EnumRoles;
+use App\Core\Users\Dto\CreateAdminDto;
 use App\Core\Users\Repository\UserRepository;
-use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\Users\Services\PasswordHasherService;
+use App\Shared\Phone\Services\PhoneFormatterService;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
 class CreateAdminUseCase
 {
@@ -18,7 +19,9 @@ class CreateAdminUseCase
 
         protected IdGeneratorInterface $idGenerator,
 
-        protected PasswordHasherService $passwordHasherService
+        protected PasswordHasherService $passwordHasherService,
+
+        protected PhoneFormatterService $phoneFormatterService,
 
     ) {
     }
@@ -29,6 +32,8 @@ class CreateAdminUseCase
         $adminId = $this->idGenerator->generate();
 
         $password = $this->passwordHasherService->hash($dto->password);
+
+        $normalizePhone = $this->phoneFormatterService->normalize($dto->phone);
 
         $admin = $this->userRepo->save([
 
@@ -42,7 +47,7 @@ class CreateAdminUseCase
 
             'userName' => $dto->userName,
 
-            'phone' => $dto->phone,
+            'phone' => $normalizePhone,
 
             'password' => $password,
 

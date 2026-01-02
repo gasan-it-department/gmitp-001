@@ -37,4 +37,11 @@ class BeneficiaryRepositories
 
     }
 
+    public function getBeneficiaryById(string $beneficiaryId)
+    {
+
+        return Beneficiary::findOrFail($beneficiaryId);
+
+    }
+
 }

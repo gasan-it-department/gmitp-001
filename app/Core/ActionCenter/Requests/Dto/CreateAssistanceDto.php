@@ -14,6 +14,8 @@ class CreateAssistanceDto
 
         public string $beneficiaryId,
 
+        public ?array $files,
+
     ) {
     }
 }

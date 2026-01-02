@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
-use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\BeneficiaryFlagController;
 
+use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 
@@ -46,6 +47,8 @@ Route::prefix('/api/action-center')
 
                 Route::put('/set-amount/{id}', [AssistanceRequestController::class, 'setAmount'])->name('setAmount');
 
+                Route::post('/beneficiaries/{id}/flag', [BeneficiaryFlagController::class, 'store'])
+                    ->name('beneficiaries.flag');
 
             });
 
@@ -58,7 +61,8 @@ Route::prefix('/api/action-center')
 
                 Route::put('/{id}', 'update')->name('update');
 
-                Route::delete('/{id}', 'destroy')->name('destroy');
+                Route::post('/{municipality}/action-center/requests/{id}/cancel', [AssistanceRequestController::class, 'cancel'])
+                    ->name('citizen.action-center.cancel');
 
                 Route::get('/{id}', 'show')->name('show');
 

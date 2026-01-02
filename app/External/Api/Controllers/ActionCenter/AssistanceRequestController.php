@@ -2,16 +2,20 @@
 
 namespace App\External\Api\Controllers\ActionCenter;
 
-use App\Core\ActionCenter\Requests\Dto\SetAssistanceAmountDto;
-use App\Core\ActionCenter\Requests\UseCase\SetAssistanceAmountUseCase;
+use Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Redirect;
+use App\Core\ActionCenter\Requests\Dto\SetAssistanceAmountDto;
+use App\Core\ActionCenter\Requests\UseCase\SetAssistanceAmountUseCase;
+use App\Core\ActionCenter\Requests\UseCase\CancelAssistanceRequestUseCase;
 
 class AssistanceRequestController extends Controller
 {
 
     public function __construct(
-        private SetAssistanceAmountUseCase $setAssistanceAmountUseCase
+        private SetAssistanceAmountUseCase $setAssistanceAmountUseCase,
+        private CancelAssistanceRequestUseCase $cancelAssistanceRequestUseCase,
     ) {
     }
 
@@ -57,6 +61,28 @@ class AssistanceRequestController extends Controller
 
         ], 200);
 
+    }
+
+    public function cancel(Request $request, $requestId)
+    {
+        try {
+            $userId = Auth::id();
+
+            $this->cancelAssistanceRequestUseCase->execute($requestId, $userId);
+
+            return Redirect::back()->with('flash', [
+                'type' => 'success',
+                'title' => 'Request Cancelled',
+                'message' => 'Your assistance request has been successfully cancelled.'
+            ]);
+
+        } catch (\Exception $e) {
+            return Redirect::back()->with('flash', [
+                'type' => 'error',
+                'title' => 'Cancellation Failed',
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
 }

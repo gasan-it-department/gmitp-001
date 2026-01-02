@@ -23,7 +23,7 @@ class AuthController extends Controller
     {
         $user = request()->user();
 
-        $seconds = $otpService->getTimeRemaining($user->phone);
+        $seconds = $otpService->getTimeRemaining($user->phone, OtpService::PURPOSE_REGISTER);
 
         return Inertia::render('Auth/OtpVerification', [
 

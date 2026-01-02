@@ -3,17 +3,20 @@
 namespace App\Core\ActionCenter\Requests\Repositories;
 
 use App\Core\ActionCenter\Requests\Dto\AssistanceQueryDto;
+use App\Core\ActionCenter\Requests\Enums\RequestStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
 
 class AssistanceRequestRepositories
 {
-    public function save(CreateAssistanceDto $dto, string $assistanceId, string $transactionNumber, string $municipalId)
+    public function save(CreateAssistanceDto $dto, string $assistanceId, string $transactionNumber, string $municipalId, RequestStatus $status)
     {
         return AssistanceRequest::create([
 
             'id' => $assistanceId,
+
+            'status' => $status,
 
             'transaction_number' => $transactionNumber,
 
@@ -21,7 +24,7 @@ class AssistanceRequestRepositories
 
             'description' => $dto->description,
 
-            'beneficiary_id' => $dto->beneficiaryId,
+            'assistance_beneficiary_id' => $dto->beneficiaryId,
 
             'user_id' => $dto->userId,
 
@@ -68,6 +71,15 @@ class AssistanceRequestRepositories
     {
 
         return AssistanceRequest::find($id);
+
+    }
+
+    public function findOwnedRequest(string $userId, string $requesId)
+    {
+
+        return AssistanceRequest::where('id', $requesId)
+            ->where('user_id', $userId)
+            ->first();
 
     }
 
