@@ -5,9 +5,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEffect, useState } from 'react';
 
-export function AssistanceOptions({ onChange }: { onChange?: (value: string) => void }) {
+interface Props {
+    value: string;
+    onChange: (value: string) => void;
+    error?: string;
+}
+
+export function AssistanceOptions({ value, onChange, error }: Props) {
     const [options, setOptions] = useState<AssistanceOption[]>([]);
-    const [selected, setSelected] = useState('');
     const [loading, setLoading] = useState(true);
     const { currentMunicipality } = useMunicipality();
     useEffect(() => {
@@ -27,18 +32,13 @@ export function AssistanceOptions({ onChange }: { onChange?: (value: string) => 
         fetchOptions();
     }, []);
 
-    const handleSelect = (value: string) => {
-        setSelected(value);
-        onChange?.(value);
-    };
-
     return (
         <div className="space-y-2">
             <Label htmlFor="assistanceType" className="text-sm font-semibold text-gray-700">
                 Type of Assistance
             </Label>
 
-            <Select value={selected} onValueChange={handleSelect} disabled={loading}>
+            <Select value={value} onValueChange={onChange} disabled={loading}>
                 <SelectTrigger className="w-full font-medium text-gray-600">
                     <SelectValue placeholder={loading ? 'Loading...' : 'Select Assistance Type'} />
                 </SelectTrigger>

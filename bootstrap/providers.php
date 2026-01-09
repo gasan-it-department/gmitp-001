@@ -8,5 +8,6 @@ return [
     App\Providers\RouteServiceProvider::class,
     App\Providers\SharedServiceProvider::class,
     App\Providers\SmsServiceProvider::class,
+    App\Providers\UploadServiceProvider::class,
     App\Providers\UserServiceProvider::class,
 ];

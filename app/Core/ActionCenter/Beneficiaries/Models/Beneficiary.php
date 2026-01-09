@@ -31,10 +31,6 @@ class Beneficiary extends Model
 
         'birth_date',
 
-        'contact_number',
-
-        'email',
-
         'province',
 
         'municipality',
@@ -52,10 +48,6 @@ class Beneficiary extends Model
         'middle_name' => 'encrypted',
 
         'suffix' => 'encrypted',
-
-        'contact_number' => 'encrypted',
-
-        'email' => 'encrypted',
 
     ];
 

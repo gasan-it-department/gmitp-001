@@ -39,8 +39,6 @@ class BeneficiaryRequest extends FormRequest
 
             'birth_date' => ['required', 'date'],
 
-            'contact_number' => ['required', 'string', 'min:10', 'max:15'],
-
             'province' => ['nullable', 'string', 'max:255'],
 
             'municipality' => ['nullable', 'string', 'max:255'],

@@ -2,10 +2,11 @@
 
 namespace App\External\Api\Controllers\ActionCenter;
 
-use App\Core\ActionCenter\Requests\Dto\AssistanceQueryDto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Core\ActionCenter\Requests\Services\StatusList;
+use App\Core\ActionCenter\Requests\Dto\AssistanceQueryDto;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\External\Api\Request\ActionCenter\AssistanceRequest;
 use App\External\Api\Request\ActionCenter\BeneficiaryRequest;
@@ -37,66 +38,37 @@ class ActionCenterController extends Controller
     }
 
 
-    public function store(AssistanceRequest $assistance, BeneficiaryRequest $beneficiary)
+    public function store(AssistanceRequest $assistanceRequest, BeneficiaryRequest $beneficiaryRequest)
     {
-
-        $validatedAssistance = $assistance->validated();
-
-        $validatedBeneficiary = $beneficiary->validated();
-
-        $userId = auth()->id();
 
         $municipalId = app('municipal_id');
 
-        $beneficiaryDto = new CreateBeneficiaryDto(
+        try {
 
-            $validatedBeneficiary['first_name'],
+            $result = DB::transaction(function () use ($assistanceRequest, $beneficiaryRequest, $municipalId) {
 
-            $validatedBeneficiary['last_name'],
+                $beneficiaryDto = CreateBeneficiaryDto::fromRequest($beneficiaryRequest);
 
-            $validatedBeneficiary['middle_name'],
+                $beneficiary = $this->createBeneficiary->execute($beneficiaryDto);
 
-            $validatedBeneficiary['suffix'],
+                $assistanceDto = CreateAssistanceDto::fromRequest($assistanceRequest, $beneficiary->id);
 
-            $validatedBeneficiary['birth_date'],
+                $assistance = $this->createAssistance->execute($assistanceDto, $municipalId);
 
-            $validatedBeneficiary['contact_number'],
+                return [
+                    'assistance' => $assistance,
+                    'beneficiary' => $beneficiary
+                ];
+            });
 
-            $validatedBeneficiary['province'],
+            return redirect()->back()->with('success', 'Request submitted successfully.');
 
-            $validatedBeneficiary['municipality'],
 
-            $validatedBeneficiary['barangay'],
-
-        );
-
-        $beneficiary = $this->createBeneficiary->execute($beneficiaryDto);
-
-        $assistanceDto = new CreateAssistanceDto(
-
-            $validatedAssistance['assistance_type'],
-
-            $validatedAssistance['description'],
-
-            $userId,
-
-            $beneficiary->id,
-
-        );
-
-        $assistance = $this->createAssistance->execute($assistanceDto, $municipalId);
-
-        return response()->json([
-
-            'message' => 'request created',
-            'success' => true,
-            'data' => [
-                'assistance' => $assistance,
-                'beneficiary' => $beneficiary
-            ],
-
-        ], 200);
-
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => 'An unexpected error occurred. Please try again later.'
+            ]);
+        }
     }
 
     public function fetch(Request $request)

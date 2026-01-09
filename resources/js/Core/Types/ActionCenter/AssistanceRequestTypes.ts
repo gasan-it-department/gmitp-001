@@ -17,19 +17,30 @@ export interface Beneficiary {
     name: string;
     first_name: string;
     last_name: string;
-    contact_number: string;
+    middle_name: string;
+    suffix: string;
     email?: string;
+    // address?: string;
     barangay: string;
     municipality: string;
     province: string;
+    birth_date: string;
+    source: string;
+}
 
-    // ISOLATED ADDITION
+export interface ActionCenterFormData {
+    first_name: string;
+    last_name: string;
     middle_name: string;
     suffix: string;
     birth_date: string;
-    description: string;
+    address: string;
+    province: string;
+    municipality: string;
+    barangay: string;
     assistance_type: string;
-    source: string;
+    description?: string;
+    documents: File[];
 }
 
 export interface AssistanceRequestResponse {

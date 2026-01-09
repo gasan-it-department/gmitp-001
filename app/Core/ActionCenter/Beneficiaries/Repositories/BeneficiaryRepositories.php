@@ -25,8 +25,6 @@ class BeneficiaryRepositories
 
             'birth_date' => $dto->birthDate,
 
-            'contact_number' => $dto->contactNumber,
-
             'province' => $dto->province,
 
             'municipality' => $dto->municipality,

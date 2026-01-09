@@ -67,7 +67,7 @@ class OtpService
 
         RateLimiter::hit($key, self::THROTTLE_SECONDS);
 
-        $this->sendOtpSms($phoneNumber, $code, $purpose);
+        // $this->sendOtpSms($phoneNumber, $code, $purpose);
 
         return $code;
 

@@ -28,7 +28,6 @@ class BeneficiaryFactory extends Factory
             'middle_name' => fake()->lastName(), // Optional
             'suffix' => fake()->randomElement(['', 'Jr.', 'Sr.', 'III']),
             'birth_date' => fake()->date('Y-m-d', '-18 years'), // Adults only
-            'contact_number' => '09' . fake()->numerify('#########'), // PH Format
             'province' => 'Marinduque', // Hardcoded context
             'municipality' => fake()->randomElement(['Boac', 'Gasan', 'Mogpog', 'Torrijos', 'Buenavista', 'Santa Cruz']),
             'barangay' => 'Barangay ' . fake()->word(),

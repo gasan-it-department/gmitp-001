@@ -1,252 +1,188 @@
-import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectTrigger,
-    SelectValue,
-    SelectContent,
-    SelectItem,
-} from "@/components/ui/select";
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, MapPin } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
-type LocationItem = { code: string; name: string };
+// Hardcoded for Marinduque context
+const PROVINCE_CODE = '174000000';
+const PROVINCE_NAME = 'Marinduque';
+const BASE_API = 'https://psgc.gitlab.io/api';
 
-type AddressData = {
-    provinceCode: string;
-    municipalityCode: string;
-    barangayCode: string;
-    provinceName: string;
-    municipalityName: string;
-    barangayName: string;
-};
+interface AddressData {
+    province: string;
+    municipality: string;
+    barangay: string;
+}
 
 interface AddressDropdownProps {
-    editProvince?: string;
+    // These are NAMES now (e.g. "Gasan", "Pinggan")
     editMunicipality?: string;
     editBarangay?: string;
     onAddressChange: (address: AddressData | null) => void;
 }
 
-const PROVINCES: LocationItem[] = [{ code: "174000000", name: "Marinduque" }];
+type LocationItem = { code: string; name: string };
 
-export function AddressDropdown({
-    onAddressChange,
-    editProvince,
-    editMunicipality,
-    editBarangay,
-}: AddressDropdownProps) {
-    const BASE = "https://psgc.gitlab.io/api";
-    const [provinces] = useState<LocationItem[]>(PROVINCES);
+export function AddressDropdown({ onAddressChange, editMunicipality, editBarangay }: AddressDropdownProps) {
     const [municipalities, setMunicipalities] = useState<LocationItem[]>([]);
     const [barangays, setBarangays] = useState<LocationItem[]>([]);
-    const [selectedProvince, setSelectedProvince] = useState("");
-    const [selectedMunicipality, setSelectedMunicipality] = useState("");
-    const [selectedBarangay, setSelectedBarangay] = useState("");
+
+    // We still track CODES internally to make the API work, but we output NAMES
+    const [selectedMuniCode, setSelectedMuniCode] = useState<string>('');
+    const [selectedBrgyCode, setSelectedBrgyCode] = useState<string>('');
+
     const [isLoading, setIsLoading] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
 
-    const fetchMunicipalities = useCallback(async (provinceCode: string) => {
-        if (!provinceCode) return [];
+    // --- API HANDLERS ---
+
+    const fetchMunicipalities = useCallback(async () => {
         try {
-            const res = await fetch(`${BASE}/provinces/${provinceCode}/municipalities/`);
+            const res = await fetch(`${BASE_API}/provinces/${PROVINCE_CODE}/municipalities/`);
             const data: LocationItem[] = await res.json();
-            const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
-            setMunicipalities(sorted);
-            return sorted;
+            return data.sort((a, b) => a.name.localeCompare(b.name));
         } catch (error) {
-            console.error("Failed to fetch municipalities", error);
+            console.error('Failed to fetch municipalities', error);
             return [];
         }
     }, []);
 
-    const fetchBarangays = useCallback(async (municipalityCode: string) => {
-        if (!municipalityCode) return [];
+    const fetchBarangays = useCallback(async (muniCode: string) => {
+        if (!muniCode) return [];
         try {
-            const res = await fetch(`${BASE}/municipalities/${municipalityCode}/barangays/`);
+            const res = await fetch(`${BASE_API}/municipalities/${muniCode}/barangays/`);
             const data: LocationItem[] = await res.json();
-            const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
-            setBarangays(sorted);
-            return sorted;
+            return data.sort((a, b) => a.name.localeCompare(b.name));
         } catch (error) {
-            console.error("Failed to fetch barangays", error);
+            console.error('Failed to fetch barangays', error);
             return [];
         }
     }, []);
 
-    const init = useCallback(async () => {
-        // If we are not in edit mode, initialize immediately
-        if (!editProvince) {
-            setIsInitialized(true);
-            return;
-        }
+    // --- INITIALIZATION (Reverse Lookup: Name -> Code) ---
+    useEffect(() => {
+        const init = async () => {
+            setIsLoading(true);
 
-        setIsLoading(true);
-        try {
-            // 1. Set State Immediately
-            setSelectedProvince(editProvince);
-            setSelectedMunicipality(editMunicipality || "");
-            setSelectedBarangay(editBarangay || "");
+            // 1. Get all Munis
+            const muniList = await fetchMunicipalities();
+            setMunicipalities(muniList);
 
-            // 2. Fetch Data
-            await fetchMunicipalities(editProvince);
-
+            // 2. Handle Edit Mode (Map Name "Gasan" -> Code "174003000")
             if (editMunicipality) {
-                await fetchBarangays(editMunicipality);
+                const matchMuni = muniList.find((m) => m.name === editMunicipality);
+
+                if (matchMuni) {
+                    setSelectedMuniCode(matchMuni.code);
+
+                    // 3. Get Barangays for found Muni
+                    const brgyList = await fetchBarangays(matchMuni.code);
+                    setBarangays(brgyList);
+
+                    // 4. Handle Brgy Edit (Map Name "Pinggan" -> Code)
+                    if (editBarangay) {
+                        const matchBrgy = brgyList.find((b) => b.name === editBarangay);
+                        if (matchBrgy) setSelectedBrgyCode(matchBrgy.code);
+                    }
+                }
             }
-
-        } catch (error) {
-            console.error("Init Error", error);
-        } finally {
             setIsLoading(false);
-            // ⭐️ Crucial: Mark as initialized only after all async operations complete
-            setIsInitialized(true);
-        }
-    }, [editProvince, editMunicipality, editBarangay, fetchMunicipalities, fetchBarangays]);
+        };
 
-    useEffect(() => {
         init();
-    }, [init]);
+    }, [editMunicipality, editBarangay, fetchMunicipalities, fetchBarangays]);
 
-    // Handlers (remain the same for user interaction)
-    const handleProvinceChange = async (code: string) => {
-        setSelectedProvince(code);
-        setSelectedMunicipality("");
-        setSelectedBarangay("");
-        setMunicipalities([]);
-        setBarangays([]);
-        await fetchMunicipalities(code);
-    };
+    // --- USER INTERACTION HANDLERS ---
 
-    const handleMunicipalityChange = async (code: string) => {
-        setSelectedMunicipality(code);
-        setSelectedBarangay("");
-        setBarangays([]);
-        await fetchBarangays(code);
-    };
+    const handleMuniChange = async (code: string) => {
+        setSelectedMuniCode(code);
+        setSelectedBrgyCode(''); // Reset barangay
 
-    const handleBarangayChange = (code: string) => {
-        setSelectedBarangay(code);
-    };
+        // Fetch new barangays
+        const brgyList = await fetchBarangays(code);
+        setBarangays(brgyList);
 
-    // Output Effect (Remains the same)
-    useEffect(() => {
-        if (!isInitialized || isLoading) {
-            onAddressChange(null);
-            return;
-        }
+        // Find Name to send to parent
+        const muniName = municipalities.find((m) => m.code === code)?.name || '';
 
-        if (!selectedProvince) {
-            onAddressChange(null);
-            return;
-        }
-
-        const provinceName = provinces.find(p => String(p.code) === String(selectedProvince))?.name || "";
-        const municipalityName = municipalities.find(m => String(m.code) === String(selectedMunicipality))?.name || "";
-        const barangayName = barangays.find(b => String(b.code) === String(selectedBarangay))?.name || "";
-
+        // Update Parent immediately with partial address
         onAddressChange({
-            provinceCode: selectedProvince,
-            municipalityCode: selectedMunicipality,
-            barangayCode: selectedBarangay,
-            provinceName,
-            municipalityName,
-            barangayName,
+            province: PROVINCE_NAME,
+            municipality: muniName,
+            barangay: '',
         });
-    }, [selectedProvince, selectedMunicipality, selectedBarangay, onAddressChange, provinces, municipalities, barangays, isLoading, isInitialized]);
+    };
 
-    // Manual Name Lookups (Memoized and String Safe)
-    const currentMuniName = useMemo(() =>
-        municipalities.find(m => String(m.code) === String(selectedMunicipality))?.name,
-        [municipalities, selectedMunicipality]);
+    const handleBrgyChange = (code: string) => {
+        setSelectedBrgyCode(code);
 
-    const currentBrgyName = useMemo(() =>
-        barangays.find(b => String(b.code) === String(selectedBarangay))?.name,
-        [barangays, selectedBarangay]);
+        const muniName = municipalities.find((m) => m.code === selectedMuniCode)?.name || '';
+        const brgyName = barangays.find((b) => b.code === code)?.name || '';
+
+        // Update Parent with full address NAMES
+        onAddressChange({
+            province: PROVINCE_NAME,
+            municipality: muniName,
+            barangay: brgyName,
+        });
+    };
+
+    // --- RENDER ---
 
     const LoadingPlaceholder = ({ text }: { text: string }) => (
-        <div className="flex h-10 w-full items-center justify-start rounded-md border border-input bg-background px-3 py-2 text-sm opacity-50">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="text-muted-foreground">Loading {text}...</span>
+        <div className="flex h-11 w-full items-center justify-start rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm opacity-60">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-400" />
+            <span className="text-slate-500 italic">Loading {text}...</span>
         </div>
     );
 
-    // 🛑 Render nothing but the placeholder if we are in edit mode and haven't initialized
-    if (editProvince && !isInitialized) {
-        return (
-            <div className="space-y-3">
-                <LoadingPlaceholder text="Address Data" />
-                <LoadingPlaceholder text="Address Data" />
-                <LoadingPlaceholder text="Address Data" />
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-3">
-            {/* Province - Always rendered after init */}
-            <div className="space-y-1">
-                <Label>Province</Label>
-                <Select value={selectedProvince} onValueChange={handleProvinceChange} disabled={isLoading}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a Province">
-                            {provinces.find(p => String(p.code) === String(selectedProvince))?.name}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60 overflow-y-auto">
-                        {provinces.map((p) => (
-                            <SelectItem key={p.code} value={p.code}>{p.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {/* 1. PROVINCE (Static) */}
+            <div className="space-y-1.5">
+                <Label className="ml-1 text-[10px] font-black tracking-widest text-slate-400 uppercase">Province</Label>
+                <div className="flex h-11 w-full items-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 text-sm font-bold text-slate-600 select-none">
+                    <MapPin size={14} className="text-orange-500" />
+                    {PROVINCE_NAME}
+                </div>
             </div>
 
-            {/* Municipality */}
-            <div className="space-y-1">
-                <Label>Municipality</Label>
-                {isLoading && !currentMuniName ? ( // Show placeholder if loading AND no name found (prevents flicker)
+            {/* 2. MUNICIPALITY */}
+            <div className="space-y-1.5">
+                <Label className="ml-1 text-[10px] font-black tracking-widest text-slate-400 uppercase">Municipality</Label>
+                {isLoading && municipalities.length === 0 ? (
                     <LoadingPlaceholder text="Municipalities" />
                 ) : (
-                    <Select
-                        // Key forces remount if list changes size or value changes
-                        key={`muni-${municipalities.length}-${selectedMunicipality}`}
-                        value={selectedMunicipality}
-                        onValueChange={handleMunicipalityChange}
-                        disabled={municipalities.length === 0}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder={!selectedProvince ? "Select a Province first" : "Select a Municipality"}>
-                                {currentMuniName}
-                            </SelectValue>
+                    <Select value={selectedMuniCode} onValueChange={handleMuniChange}>
+                        <SelectTrigger className="h-11 font-semibold">
+                            <SelectValue placeholder="Select Municipality" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
+                        <SelectContent className="max-h-60 font-semibold text-gray-600">
                             {municipalities.map((m) => (
-                                <SelectItem key={m.code} value={m.code}>{m.name}</SelectItem>
+                                <SelectItem key={m.code} value={m.code}>
+                                    {m.name}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 )}
             </div>
 
-            {/* Barangay */}
-            <div className="space-y-1">
-                <Label>Barangay</Label>
-                {isLoading && !currentBrgyName ? (
+            {/* 3. BARANGAY */}
+            <div className="space-y-1.5">
+                <Label className="ml-1 text-[10px] font-black tracking-widest text-slate-400 uppercase">Barangay</Label>
+                {/* Show loading state if municipalities loaded but we are fetching barangays */}
+                {!barangays.length && selectedMuniCode ? (
                     <LoadingPlaceholder text="Barangays" />
                 ) : (
-                    <Select
-                        key={`brgy-${barangays.length}-${selectedBarangay}`}
-                        value={selectedBarangay}
-                        onValueChange={handleBarangayChange}
-                        disabled={barangays.length === 0}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder={!selectedMunicipality ? "Select a Municipality first" : "Select a Barangay"}>
-                                {currentBrgyName}
-                            </SelectValue>
+                    <Select value={selectedBrgyCode} onValueChange={handleBrgyChange} disabled={!selectedMuniCode || barangays.length === 0}>
+                        <SelectTrigger className="h-11 font-semibold">
+                            <SelectValue placeholder={!selectedMuniCode ? 'Select Municipality first' : 'Select Barangay'} />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
+                        <SelectContent className="max-h-60 font-semibold text-gray-600">
                             {barangays.map((b) => (
-                                <SelectItem key={b.code} value={b.code}>{b.name}</SelectItem>
+                                <SelectItem key={b.code} value={b.code}>
+                                    {b.name}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

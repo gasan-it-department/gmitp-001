@@ -28,10 +28,6 @@ return new class extends Migration {
 
             $table->date('birth_date');
 
-            $table->string('contact_number');
-
-            $table->string('email')->nullable();
-
             $table->string('province');
 
             $table->string('municipality');

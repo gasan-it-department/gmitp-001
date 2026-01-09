@@ -22,11 +22,10 @@ class AssistanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-
-            'assistance_type' => ['required', 'string', 'max:255'],
-
-            'description' => ['required', 'string', 'max:255'],
-
+            'assistance_type' => 'required|string',
+            'description' => 'required|string',
+            'documents' => 'required|array',
+            'documents.*' => 'file|mimes:pdf,jpg,png|max:5120',
         ];
     }
 }
