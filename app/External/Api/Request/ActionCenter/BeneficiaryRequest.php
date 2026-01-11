@@ -33,17 +33,17 @@ class BeneficiaryRequest extends FormRequest
 
             'last_name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
 
-            'middle_name' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
+            'middle_name' => ['nullable', 'string', 'max:255', 'min:2', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
 
             'suffix' => ['nullable', 'string', 'max:255', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
 
             'birth_date' => ['required', 'date'],
 
-            'province' => ['nullable', 'string', 'max:255'],
+            'province' => ['required', 'string', 'max:255',],
 
-            'municipality' => ['nullable', 'string', 'max:255'],
+            'municipality' => ['required', 'string', 'max:255'],
 
-            'barangay' => ['nullable', 'string', 'max:255'],
+            'barangay' => ['required', 'string', 'max:255'],
 
         ];
     }

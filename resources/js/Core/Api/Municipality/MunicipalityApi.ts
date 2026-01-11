@@ -26,10 +26,10 @@ export const MunicipalitiesApi = {
         const { data } = await axios({
             url,
             method,
-            data: formData, // Pass the FormData here
+            data: formData,
             headers: {
                 'X-Municipality-Slug': municipalSlug,
-                'Content-Type': 'multipart/form-data', // Explicitly set content type
+                'Content-Type': 'multipart/form-data',
             }
         });
 
@@ -39,7 +39,7 @@ export const MunicipalitiesApi = {
     async savebanner(municipalSlug: string, formData: FormData) {
         const { url, method } = Municipality.MunicipalitySettingsController.storeBanner();
 
-
+        console.log(municipalSlug);
         const { data } = await axios({
             url,
             method,

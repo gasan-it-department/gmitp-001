@@ -15,21 +15,24 @@ interface AddressData {
 }
 
 interface AddressDropdownProps {
-    // These are NAMES now (e.g. "Gasan", "Pinggan")
     editMunicipality?: string;
     editBarangay?: string;
     onAddressChange: (address: AddressData | null) => void;
+
+    errorMunicipality?: string;
+    errorBarangay?: string;
 }
 
 type LocationItem = { code: string; name: string };
 
-export function AddressDropdown({ onAddressChange, editMunicipality, editBarangay }: AddressDropdownProps) {
+export function AddressDropdown({ onAddressChange, editMunicipality, editBarangay, errorMunicipality, errorBarangay }: AddressDropdownProps) {
     const [municipalities, setMunicipalities] = useState<LocationItem[]>([]);
     const [barangays, setBarangays] = useState<LocationItem[]>([]);
 
     // We still track CODES internally to make the API work, but we output NAMES
     const [selectedMuniCode, setSelectedMuniCode] = useState<string>('');
     const [selectedBrgyCode, setSelectedBrgyCode] = useState<string>('');
+    const [isFetchingBrgy, setIsFetchingBrgy] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -96,11 +99,12 @@ export function AddressDropdown({ onAddressChange, editMunicipality, editBaranga
     const handleMuniChange = async (code: string) => {
         setSelectedMuniCode(code);
         setSelectedBrgyCode(''); // Reset barangay
+        setIsFetchingBrgy(true);
 
         // Fetch new barangays
         const brgyList = await fetchBarangays(code);
         setBarangays(brgyList);
-
+        setIsFetchingBrgy(false);
         // Find Name to send to parent
         const muniName = municipalities.find((m) => m.code === code)?.name || '';
 
@@ -153,7 +157,9 @@ export function AddressDropdown({ onAddressChange, editMunicipality, editBaranga
                     <LoadingPlaceholder text="Municipalities" />
                 ) : (
                     <Select value={selectedMuniCode} onValueChange={handleMuniChange}>
-                        <SelectTrigger className="h-11 font-semibold">
+                        <SelectTrigger
+                            className={`h-11 font-semibold ${errorMunicipality ? 'border-red-500 ring-2 ring-red-100' : 'border-slate-300'}`}
+                        >
                             <SelectValue placeholder="Select Municipality" />
                         </SelectTrigger>
                         <SelectContent className="max-h-60 font-semibold text-gray-600">
@@ -165,17 +171,18 @@ export function AddressDropdown({ onAddressChange, editMunicipality, editBaranga
                         </SelectContent>
                     </Select>
                 )}
+                {errorMunicipality && <span className="animate-pulse text-sm text-red-500">{errorMunicipality}</span>}
             </div>
 
             {/* 3. BARANGAY */}
             <div className="space-y-1.5">
                 <Label className="ml-1 text-[10px] font-black tracking-widest text-slate-400 uppercase">Barangay</Label>
                 {/* Show loading state if municipalities loaded but we are fetching barangays */}
-                {!barangays.length && selectedMuniCode ? (
+                {isFetchingBrgy ? (
                     <LoadingPlaceholder text="Barangays" />
                 ) : (
                     <Select value={selectedBrgyCode} onValueChange={handleBrgyChange} disabled={!selectedMuniCode || barangays.length === 0}>
-                        <SelectTrigger className="h-11 font-semibold">
+                        <SelectTrigger className={`h-11 font-semibold ${errorBarangay ? 'border-red-500 ring-2 ring-red-100' : 'border-slate-300'}`}>
                             <SelectValue placeholder={!selectedMuniCode ? 'Select Municipality first' : 'Select Barangay'} />
                         </SelectTrigger>
                         <SelectContent className="max-h-60 font-semibold text-gray-600">
@@ -187,6 +194,7 @@ export function AddressDropdown({ onAddressChange, editMunicipality, editBaranga
                         </SelectContent>
                     </Select>
                 )}
+                {errorBarangay && <span className="animate-pulse text-sm text-red-500">{errorBarangay}</span>}
             </div>
         </div>
     );

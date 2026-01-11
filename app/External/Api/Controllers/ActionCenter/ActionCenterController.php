@@ -10,6 +10,7 @@ use App\Core\ActionCenter\Requests\Dto\AssistanceQueryDto;
 use App\Core\ActionCenter\Requests\Dto\CreateAssistanceDto;
 use App\External\Api\Request\ActionCenter\AssistanceRequest;
 use App\External\Api\Request\ActionCenter\BeneficiaryRequest;
+use App\External\Api\Request\ActionCenter\ActionCenterRequest;
 use App\External\Api\Resources\ActionCenter\AssistanceResource;
 use App\Core\ActionCenter\Requests\Services\AssistanceTypesList;
 use App\Core\ActionCenter\Beneficiaries\Dto\CreateBeneficiaryDto;
@@ -38,20 +39,18 @@ class ActionCenterController extends Controller
     }
 
 
-    public function store(AssistanceRequest $assistanceRequest, BeneficiaryRequest $beneficiaryRequest)
+    public function store(ActionCenterRequest $request)
     {
 
         $municipalId = app('municipal_id');
-
         try {
+            $result = DB::transaction(function () use ($request, $municipalId) {
 
-            $result = DB::transaction(function () use ($assistanceRequest, $beneficiaryRequest, $municipalId) {
-
-                $beneficiaryDto = CreateBeneficiaryDto::fromRequest($beneficiaryRequest);
+                $beneficiaryDto = CreateBeneficiaryDto::fromRequest($request);
 
                 $beneficiary = $this->createBeneficiary->execute($beneficiaryDto);
 
-                $assistanceDto = CreateAssistanceDto::fromRequest($assistanceRequest, $beneficiary->id);
+                $assistanceDto = CreateAssistanceDto::fromRequest($request, $beneficiary->id);
 
                 $assistance = $this->createAssistance->execute($assistanceDto, $municipalId);
 
@@ -66,7 +65,7 @@ class ActionCenterController extends Controller
 
         } catch (\Exception $e) {
             return back()->withErrors([
-                'error' => 'An unexpected error occurred. Please try again later.'
+                'error' => $e->getMessage()
             ]);
         }
     }

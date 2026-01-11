@@ -29,6 +29,7 @@ class MunicipalitySettingsController
 
     public function store(Request $request)
     {
+        $municipality = app('current_municipality');
 
         $userId = auth()->id();
 

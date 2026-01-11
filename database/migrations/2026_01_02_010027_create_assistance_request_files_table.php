@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('assistance_request_files', function (Blueprint $table) {
-            $table->ulid()->primary();
+            $table->ulid('id')->primary();
 
             $table->foreignUlid('assistance_request_id')
                 ->constrained('assistance_requests')

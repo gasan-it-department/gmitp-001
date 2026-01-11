@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
             // AdminSeeder::class,
         ]);
 
-        $this->call([
-            ActionCenterSeeder::class,
-        ]);
+        // $this->call([
+        //     ActionCenterSeeder::class,
+        // ]);
     }
 }

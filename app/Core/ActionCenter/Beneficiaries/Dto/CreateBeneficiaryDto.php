@@ -27,14 +27,14 @@ class CreateBeneficiaryDto
         $data = method_exists($request, 'validated') ? $request->validated() : $request->all();
 
         return new self(
-            firstName: $data['first_name'],
-            lastName: $data['last_name'],
-            middleName: $data['middle_name'] ?? null,
-            suffix: $data['suffix'] ?? null,
+            firstName: strtoupper($data['first_name']),
+            lastName: strtoupper($data['last_name']),
+            middleName: strToUpper($data['middle_name'] ?? null),
+            suffix: strtoupper($data['suffix'] ?? null),
             birthDate: $data['birth_date'],
-            province: $data['province'],
-            municipality: $data['municipality'],
-            barangay: $data['barangay'],
+            province: strToupper($data['province']),
+            municipality: strToUpper($data['municipality']),
+            barangay: strToUpper($data['barangay']),
         );
     }
 }

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { AlertCircle, FileText, Trash2, UploadCloud } from 'lucide-react';
+import { FileText, Trash2, UploadCloud } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
 interface FileUploaderProps {
@@ -126,8 +126,7 @@ export function FileUploader({
 
             {/* Error Message */}
             {(error || localError) && (
-                <div className="flex items-center gap-2 rounded-md border border-red-100 bg-red-50 p-3 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="flex animate-pulse items-center gap-2 rounded-md border border-red-100 bg-red-50 p-3 text-sm text-red-600">
                     <p>{localError || error}</p>
                 </div>
             )}

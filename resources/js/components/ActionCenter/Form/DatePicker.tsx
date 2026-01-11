@@ -43,7 +43,7 @@ export function DatePickerField({ label, value, onChange, error, required }: Dat
                         className={cn(
                             'h-11 w-full justify-between text-left font-semibold shadow-sm',
                             !value && 'font-normal text-slate-400',
-                            error && 'border-red-500 ring-1 ring-red-500',
+                            error && 'border-red-500 ring-1 ring-red-100',
                         )}
                     >
                         <div className="flex items-center">
@@ -74,7 +74,7 @@ export function DatePickerField({ label, value, onChange, error, required }: Dat
                 </PopoverContent>
             </Popover>
 
-            {error && <p className="ml-1 animate-pulse text-[11px] font-bold text-red-500 italic">{error}</p>}
+            {error && <span className="animate-pulse text-sm text-red-500">{error}</span>}
         </div>
     );
 }

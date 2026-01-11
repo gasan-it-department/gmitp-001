@@ -126,7 +126,7 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                                     value={data.first_name}
                                     onChange={handleTextChange('first_name')}
                                     error={errors.first_name}
-                                    required
+                                    isUppercase={true}
                                 />
                                 <InertiaInput
                                     label="Last Name *"
@@ -134,7 +134,7 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                                     value={data.last_name}
                                     onChange={handleTextChange('last_name')}
                                     error={errors.last_name}
-                                    required
+                                    isUppercase={true}
                                 />
                                 <InertiaInput
                                     label="Middle Name"
@@ -142,11 +142,19 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                                     value={data.middle_name}
                                     onChange={handleTextChange('middle_name')}
                                     error={errors.middle_name}
+                                    isUppercase={true}
                                 />
-                                <InertiaInput label="Suffix" id="suffix" value={data.suffix} onChange={handleTextChange('suffix')} />
+                                <InertiaInput
+                                    label="Suffix"
+                                    id="suffix"
+                                    value={data.suffix}
+                                    onChange={handleTextChange('suffix')}
+                                    isUppercase={true}
+                                />
                                 <DatePickerField
                                     label="Birth Date"
                                     value={data.birth_date}
+                                    error={errors.birth_date}
                                     onChange={(date) => setData('birth_date', date)}
                                     required
                                 />
@@ -159,6 +167,8 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                             <AddressDropdown
                                 editMunicipality={editData?.municipality || ''}
                                 editBarangay={editData?.barangay || ''}
+                                errorBarangay={errors.barangay}
+                                errorMunicipality={errors.municipality}
                                 onAddressChange={handleAddressChange}
                             />
                         </div>
@@ -190,11 +200,11 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                                 <FileUploader
                                     files={data.documents}
                                     onFilesChange={(newFiles) => setData('documents', newFiles)}
-                                    error={errors.documents} // Server-side errors (e.g., mime type invalid)
+                                    error={errors.documents}
                                     maxFiles={5}
                                     label="Attach Supporting Documents"
                                     description="Please attach photos of your Valid ID, Indigency, or other requirements."
-                                />{' '}
+                                />
                             </div>
                         </div>
 

@@ -53,7 +53,7 @@ Route::prefix('{municipality}/municipality-editor')
 
 //api for municipality settings
 Route::prefix('api/municipality')
-    ->middleware(['admin', 'municipalityContext'])
+    ->middleware(['municipalityContext', 'admin'])
     ->name('municipality.admin')
     ->controller(MunicipalitySettingsController::class)
     ->group(function () {
