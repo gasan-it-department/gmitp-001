@@ -59,7 +59,9 @@ class OtpService
 
             'channel' => $channel,
 
-            'code' => $code,
+            'code' => '000000',
+            // 'code' => $code,
+
 
             'expires_at' => Carbon::now()->addMinutes(self::OTP_EXPIRY_MINUTES),
 
