@@ -54,12 +54,4 @@ class CreateUserController extends Controller
         }
     }
 
-    public function updateContactInfo()
-    {
-
-        $user = auth()->user();
-
-
-
-    }
 }

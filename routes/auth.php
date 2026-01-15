@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\Auth\ResetPasswordController;
+use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use Illuminate\Support\Facades\Route;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Api\Controllers\Auth\CreateUserController;
@@ -41,6 +42,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
 
+    Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
+
 });
 
 
@@ -60,7 +63,7 @@ Route::middleware(['guest'])
 
         Route::get('/reset-password/{phone}', [ForgotPasswordViewController::class, 'showResetForm'])->name('password.reset.form')->middleware('signed');
 
-        Route::post('/reset-password/{phone}', [ResetPasswordController::class, 'store'])
+        Route::post('/reset-password/{phone}', [ResetPasswordController::class, 'update'])
             ->name('password.update')
             ->middleware('signed');
     });

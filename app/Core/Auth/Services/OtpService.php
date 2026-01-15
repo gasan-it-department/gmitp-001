@@ -127,7 +127,7 @@ class OtpService
 
         };
 
-        $this->smsProvider->send($phone, $message);
+        // $this->smsProvider->send($phone, $message);
 
     }
 
