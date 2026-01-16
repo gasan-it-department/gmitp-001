@@ -1,6 +1,7 @@
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -12,8 +13,10 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { account } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
 import superAdmin from '@/routes/superAdmin';
+import transaction from '@/routes/transaction';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
+import { FileText, LayoutDashboard, LogOut, ShieldCheck, User } from 'lucide-react';
 import { useState } from 'react';
 
 export function UserDropdownMenu() {
@@ -36,68 +39,92 @@ export function UserDropdownMenu() {
         <>
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
-                    <div className="flex cursor-pointer items-center gap-2">
-                        <div className="rounded-full p-1 transition-colors duration-200 hover:bg-gray-200">
-                            <img
-                                src={
-                                    auth.user?.avatarUrl === 'string' && auth.user?.avatarUrl
-                                        ? auth.user?.avatarUrl
-                                        : 'https://www.gravatar.com/avatar/?d=mp'
-                                }
-                                alt="User Avatar"
-                                className="h-10 w-10 rounded-full"
-                            />
-                        </div>
-                    </div>
+                    <button className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-transparent transition-all hover:border-gray-300 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">
+                        <img
+                            src={
+                                auth.user?.avatarUrl && auth.user.avatarUrl !== 'string'
+                                    ? auth.user.avatarUrl
+                                    : 'https://www.gravatar.com/avatar/?d=mp'
+                            }
+                            alt={auth.user?.first_name || 'User'}
+                            className="h-full w-full object-cover"
+                        />
+                    </button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="font-bold">
-                    <DropdownMenuLabel className="p-1 text-[13px] italic">
-                        {auth.user?.first_name} {auth.user?.last_name}
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                    {/* User Header */}
+                    <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                            <p className="text-sm leading-none font-medium">
+                                {auth.user?.first_name} {auth.user?.last_name}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground opacity-70">{auth.user?.email}</p>
+                        </div>
                     </DropdownMenuLabel>
+
                     <DropdownMenuSeparator />
-                    {auth.roles?.isAdmin && adminMunicipalSlug && (
+
+                    {/* Administrative Group */}
+                    <DropdownMenuGroup>
+                        {auth.roles?.isAdmin && adminMunicipalSlug && (
+                            <DropdownMenuItem
+                                onClick={() => router.visit(actionCenter.admin.index.url({ municipality: adminMunicipalSlug }))}
+                                className="cursor-pointer"
+                            >
+                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                <span>Admin Panel</span>
+                            </DropdownMenuItem>
+                        )}
+
+                        {auth.roles?.isSuperAdmin && (
+                            <DropdownMenuItem onClick={() => router.visit(superAdmin.dashboard.url())} className="cursor-pointer">
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                <span>S-Admin Panel</span>
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuGroup>
+
+                    {(auth.roles?.isAdmin || auth.roles?.isSuperAdmin) && <DropdownMenuSeparator />}
+
+                    {/* Personal Group */}
+                    <DropdownMenuGroup>
+                        <DropdownMenuItem
+                            onClick={() => router.visit(account.url({ municipality: currentMunicipality.slug }))}
+                            className="cursor-pointer"
+                        >
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </DropdownMenuItem>
+
                         <DropdownMenuItem
                             onClick={() => {
-                                // localStorage.setItem('activeSidebarUrl', "/gasan-4905/action-center/admin");
-                                router.visit(actionCenter.admin.index.url({ municipality: adminMunicipalSlug }));
+                                // Updated to visit a page instead of opening logout dialog
+                                router.visit(transaction.index.url(currentMunicipality.slug)); // Update this to your actual route
                             }}
+                            className="cursor-pointer"
                         >
-                            Admin Panel
+                            <FileText className="mr-2 h-4 w-4" />
+                            <span>My Transactions</span>
                         </DropdownMenuItem>
-                    )}
+                    </DropdownMenuGroup>
 
-                    {auth.roles?.isSuperAdmin && (
-                        <DropdownMenuItem
-                            onClick={() => {
-                                router.visit(superAdmin.dashboard.url());
-                            }}
-                        >
-                            S-Admin Panel
-                        </DropdownMenuItem>
-                    )}
+                    <DropdownMenuSeparator />
 
-                    <DropdownMenuItem
-                        onClick={() => {
-                            router.visit(account.url({ municipality: currentMunicipality.slug }));
-                        }}
-                    >
-                        Profile
-                    </DropdownMenuItem>
-
-                    {/* Log out opens dialog */}
+                    {/* Destructive Group (Logout) */}
                     <DropdownMenuItem
                         onClick={() => {
                             setOpenLogoutDialog(true);
                             setMenuOpen(false);
                         }}
+                        className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
                     >
-                        Log out
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Confirmation dialog */}
             <ClassicDialog
                 title="Confirm Logout"
                 message="Are you sure you want to log out?"

@@ -27,6 +27,8 @@ require __DIR__ . '/executive_orders_admin_page.php';
 require __DIR__ . '/officials_admin_page.php';
 require __DIR__ . '/offices_admin_page.php';
 require __DIR__ . '/public_information.php';
+require __DIR__ . '/transaction.php';
+
 
 
 
