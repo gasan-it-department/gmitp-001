@@ -12,7 +12,7 @@ Route::prefix('{municipality}')
         Route::get('/municipal-admin', [PublicController::class, 'showMunicipalAdminPage'])->name('admin');
         Route::get('/action-center/create', [PublicController::class, 'showActionCenterPage'])->name('actionCenter');
         Route::get('/action-center/request-list', [PublicController::class, 'showActionCenterRequestPage'])->name('requests');
-        Route::get('/my-account', [PublicController::class, 'showMyAccountPage'])->name('account');
+        Route::get('/my-account', [PublicController::class, 'showMyAccountPage'])->name('account')->middleware('auth');
         Route::get('/contact-us', [PublicController::class, 'showContactUsPage'])->name('contact');
         Route::get('/travel', [PublicController::class, 'showTravelPage'])->name('travel');
         Route::get('/executive-orders', [PublicController::class, 'showExecutiveOrdersPage'])->name('executiveOrders');

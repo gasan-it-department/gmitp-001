@@ -94,6 +94,7 @@ class AssistanceRequestRepositories
     {
 
         return AssistanceRequest::query()
+            ->with('beneficiary')
             ->where('user_id', $userId)
             ->latest()
             ->paginate(10);

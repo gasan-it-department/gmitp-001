@@ -3,7 +3,7 @@
 use App\External\Web\Controllers\Transaction\TransactionController;
 
 Route::prefix('{municipality}/transaction')
-    ->middleware(['auth:sanctum', 'municipalityContext'])
+    ->middleware(['municipalityContext', 'auth'])
     ->name('transaction.')
     ->group(function () {
 

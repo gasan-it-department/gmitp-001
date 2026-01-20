@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\BeneficiaryFlagController;
@@ -67,6 +68,8 @@ Route::prefix('/api/action-center')
                 Route::get('/{id}', 'show')->name('show');
 
                 Route::get('/assistance/types', 'getAssistanceTypesList')->name('assistanceTypes');
+
+                Route::put('/cancel/{id}', CancelAssistanceRequestController::class)->name('assistance.cancel');
 
             });
 

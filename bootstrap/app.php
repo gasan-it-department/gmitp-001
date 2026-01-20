@@ -11,7 +11,7 @@ use App\Http\Middleware\Client\ClientGuardMiddleware;
 use App\Http\Middleware\Municipality\SetMunicipalityContext;
 use App\Http\Middleware\SuperAdmin\SuperAdminGuardMiddleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
-
+use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
@@ -21,8 +21,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        $middleware->redirectGuestsTo(function (Request $request) {
+
+            if ($request->expectsJson()) {
+                return null;
+            }
+
+            return route('landing');
+
+        });
 
         $middleware->web(append: [
+            \Illuminate\Session\Middleware\AuthenticateSession::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);

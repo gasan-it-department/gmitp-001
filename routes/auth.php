@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\Auth\ResetPasswordController;
+use App\External\Api\Controllers\Auth\UpdatePasswordController;
 use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use Illuminate\Support\Facades\Route;
 use App\External\Web\Controllers\Auth\AuthController;
@@ -32,7 +33,7 @@ Route::prefix('api/auth')
 
 
 // Basically for auth related pls read the URI and NAMES    
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthenticateUserController::class, 'logout'])->name('logout');
 
@@ -43,6 +44,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
 
     Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
+
+    //Updating the password Via profile
+    Route::put('/password/update', UpdatePasswordController::class)->name('password.change');
 
 });
 
@@ -87,7 +91,7 @@ Route::middleware('superAdmin')
 
 Route::prefix('api/user-management')
     ->name('user.management.')
-    ->middleware(['superAdmin', 'auth:sanctum'])
+    ->middleware(['superAdmin', 'auth'])
     ->controller(CreateAdminController::class)
     ->group(function () {
         // Resulting Name: 'user.management.createAdmin'
