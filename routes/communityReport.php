@@ -19,12 +19,12 @@ Route::prefix('{municipality}/community-report')
 
 
 Route::prefix('api/community-report')
-    ->middleware(['municipalityContext', 'auth:sanctum'])
+    ->middleware(['municipalityContext', 'auth'])
     ->name('communityReport')
     ->controller(CommunityReportController::class)
     ->group(function () {
 
-        Route::middleware(['admin', 'auth:sanctum', 'municipalityContext'])
+        Route::middleware(['admin', 'auth', 'municipalityContext'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name('fetch');
@@ -43,7 +43,7 @@ Route::prefix('api/community-report')
     });
 
 Route::prefix('{municipality}/community-report')
-    ->middleware(['municipalityContext', 'auth:sanctum'])
+    ->middleware(['municipalityContext', 'auth'])
     ->name('communityReport.')
     ->controller(CommunityReportClientController::class)
     ->group(function () {

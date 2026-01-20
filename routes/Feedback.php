@@ -27,13 +27,13 @@ Route::prefix('{municipality}')
 
 
 Route::prefix('api/feedback')
-    ->middleware(['municipalityContext', 'auth:sanctum'])
+    ->middleware(['municipalityContext', 'auth'])
     ->as('feedback.')
     ->controller(FeedbackController::class)
     ->group(function () {
 
 
-        Route::middleware(['admin', 'auth:sanctum'])
+        Route::middleware(['admin', 'auth'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name('fetch');

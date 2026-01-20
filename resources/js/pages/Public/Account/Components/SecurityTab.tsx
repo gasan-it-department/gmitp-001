@@ -2,15 +2,30 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import password from '@/routes/password';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
+import { CircleCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { PasswordInput } from './PasswordInput';
 
 export default function SecurityTab() {
+    const { flash } = usePage().props as any;
+    const [showMessage, setShowMessage] = useState(false);
     const { data, setData, put, processing, errors, reset } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
     });
+
+    useEffect(() => {
+        if (flash.success) {
+            setShowMessage(true);
+            const timer = setTimeout(() => {
+                setShowMessage(false);
+            }, 4000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [flash.success]);
 
     function handleSave(e: React.FormEvent) {
         e.preventDefault();
@@ -29,6 +44,12 @@ export default function SecurityTab() {
     return (
         <Card className="flex h-full w-full flex-1 flex-col rounded-none shadow-sm">
             <CardHeader className="border-b bg-white px-6 py-4">
+                {showMessage && flash.success && (
+                    <div className="mx-8 mt-8 mb-6 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-4 text-green-700">
+                        <CircleCheck className="h-5 w-5" />
+                        <p className="text-sm font-medium">{flash.success}</p>
+                    </div>
+                )}
                 <CardTitle className="text-2xl font-semibold">Security</CardTitle>
                 <p className="text-sm text-muted-foreground">Update your password to protect your account.</p>
             </CardHeader>

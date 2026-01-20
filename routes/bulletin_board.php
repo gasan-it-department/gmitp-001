@@ -49,7 +49,7 @@ Route::prefix('api/announcement/')
     ->controller(AnnouncementController::class)
     ->group(function () {
 
-        Route::middleware(['admin', 'auth:sanctum'])
+        Route::middleware(['admin', 'auth'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name('fetch');
@@ -74,7 +74,7 @@ Route::prefix('/api/events')
     ->controller(EventController::class)
     ->group(function () {
 
-        Route::middleware(['auth:sanctum', 'admin'])
+        Route::middleware(['auth', 'admin'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name("fetch")->middleware('municipalityContext');

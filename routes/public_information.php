@@ -34,7 +34,7 @@ Route::prefix('api/public-information')
     ->controller(ProcurementsController::class)
     ->group(function () {
 
-        Route::middleware(['admin', 'auth:sanctum', 'municipalityContext'])
+        Route::middleware(['admin', 'auth', 'municipalityContext'])
             ->group(function () {
 
                 Route::post('/store', 'store')->name('store');

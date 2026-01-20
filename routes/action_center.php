@@ -10,7 +10,7 @@ use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 
 Route::prefix('{municipality}/action-center')
-    ->middleware(['auth:sanctum', 'municipalityContext'])
+    ->middleware(['auth', 'municipalityContext'])
     ->name('actionCenter.')
     ->group(function () {
 
@@ -53,7 +53,7 @@ Route::prefix('/api/action-center')
 
             });
 
-        Route::middleware(['auth:sanctum', 'municipalityContext'])
+        Route::middleware(['auth', 'municipalityContext'])
             ->group(function () {
 
                 Route::get('/mine', 'fetchMine')->name('mine');

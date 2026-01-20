@@ -40,6 +40,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
 
             // Keep only the essential auth data
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ],
             'app_name' => config('app.name'),
             'auth' => [
                 'user' => $user ? (new UserResource($user))->resolve() : null,
