@@ -29,4 +29,11 @@ final class UserAlreadyExistExceptions extends Exception
         return new self("This '{$phone}' is already registered.", 'phone');
 
     }
+
+    public static function withEmail(string $email)
+    {
+
+        return new self("This '{$email} is already taken.", 'email');
+
+    }
 }

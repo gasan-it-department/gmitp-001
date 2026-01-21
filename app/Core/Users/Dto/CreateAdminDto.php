@@ -34,9 +34,9 @@ class CreateAdminDto
         $validated = $request->validated();
 
         return new self(
-            firstName: $validated['first_name'],
-            middleName: $validated['middle_name'] ?? null,
-            lastName: $validated['last_name'],
+            firstName: strtoupper($validated['first_name']),
+            middleName: strtoupper($validated['middle_name'] ?? null),
+            lastName: strtoupper($validated['last_name']),
             userName: $validated['user_name'],
             phone: $validated['phone'],
             email: $validated['email'],

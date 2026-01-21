@@ -1,8 +1,10 @@
 import { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { Head, Link } from '@inertiajs/react';
 import { AlertCircle, Calendar, CheckCircle2, ChevronRight, Clock, FileText, User, XCircle } from 'lucide-react';
+import { useState } from 'react';
 
 interface Props {
     assistance: PaginatedResponse<AssistanceRequest>;
@@ -44,7 +46,24 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
 
 export default function AssistanceList({ assistance }: Props) {
     const requests = assistance.data;
-
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [classicDialog, setClassicDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        positiveButtonText: string;
+        negativeButtonText: string;
+        isNegativeButtonHidden: boolean;
+        action: string | null;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        positiveButtonText: '',
+        negativeButtonText: '',
+        isNegativeButtonHidden: false,
+        action: null,
+    });
     const getStyle = (status: string) => STATUS_STYLES[status.toLowerCase()] || STATUS_STYLES.default;
 
     return (
@@ -123,12 +142,28 @@ export default function AssistanceList({ assistance }: Props) {
                             </div>
                             <h3 className="mt-4 text-lg font-semibold text-gray-900">No requests found</h3>
                             <p className="mt-2 max-w-sm text-gray-500">You haven't submitted any assistance requests yet.</p>
-                            <Link
-                                href="/assistance/create"
-                                className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+                            {/* <Button
+                                size="lg"
+                                className="bg-orange-500 font-semibold text-white hover:bg-orange-600"
+                                onClick={() => setIsDialogOpen(true)}
                             >
-                                Create First Request
-                            </Link>
+                                Request Assistance
+                            </Button>
+
+                            <ActionCenterForm
+                                onSubmitSuccess={(title, message) => {
+                                    setClassicDialog((prev) => ({
+                                        ...prev,
+                                        isOpen: true,
+                                        title: title,
+                                        message: message,
+                                        positiveButtonText: 'Close',
+                                        isNegativeButtonHidden: true,
+                                    }));
+                                }}
+                                isOpen={isDialogOpen}
+                                onClose={() => setIsDialogOpen(false)}
+                            /> */}
                         </div>
                     )}
 
@@ -163,6 +198,28 @@ export default function AssistanceList({ assistance }: Props) {
                     )}
                 </div>
             </div>
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                open={classicDialog.isOpen}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        action: null,
+                        isOpen: false,
+                    }));
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        action: null,
+                        isOpen: false,
+                    }));
+                }}
+            />
         </PublicLayout>
     );
 }

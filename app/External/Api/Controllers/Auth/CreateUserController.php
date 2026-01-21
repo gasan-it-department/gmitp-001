@@ -26,16 +26,7 @@ class CreateUserController extends Controller
         try {
             $municipality = app('current_municipality');
 
-            $validated = $request->validated();
-
-            $dto = new RegisterUserDto(
-                firstName: $validated['first_name'],
-                middleName: $validated['middle_name'],
-                lastName: $validated['last_name'],
-                userName: $validated['user_name'],
-                phone: $validated['phone'],
-                password: $validated['password'],
-            );
+            $dto = RegisterUserDto::fromRequest($request);
 
             $user = $this->registerUserCase->execute($dto, $municipality->slug);
 

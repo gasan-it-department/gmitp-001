@@ -35,6 +35,13 @@ class UserRepository
         return User::where('user_name', $userName)->first();
     }
 
+    public function findByEmail(string $email): ?User
+    {
+
+        return User::where('email', $email)->first();
+
+    }
+
     public function findByPhone($phone): ?User
     {
         return User::where('phone', $phone)->first();
@@ -67,6 +74,6 @@ class UserRepository
             });
         }
 
-        return $query->paginate(2)->withQueryString();
+        return $query->paginate(20)->withQueryString();
     }
 }

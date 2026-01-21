@@ -8,12 +8,12 @@ enum RequestStatus: string
     case IN_REVIEW = 'in_review';
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
-    case WAITING = 'waiting';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
     case EXPIRED = 'expired';
     case ARCHIVED = 'archived';
     case HOLD = 'hold';
+    case UNDER_EVALUATION = 'under_review';
 
     public function label(): string
     {
@@ -27,8 +27,6 @@ enum RequestStatus: string
 
             self::REJECTED => 'Rejected',
 
-            self::WAITING => 'Waiting',
-
             self::COMPLETED => 'Completed',
 
             self::CANCELLED => 'Cancelled',
@@ -38,6 +36,8 @@ enum RequestStatus: string
             self::ARCHIVED => 'Archived',
 
             self::HOLD => 'Hold',
+
+            self::UNDER_EVALUATION => 'Under Evaluation'
 
         };
     }

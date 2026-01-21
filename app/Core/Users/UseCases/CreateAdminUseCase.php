@@ -9,6 +9,7 @@ use App\Core\Users\Dto\CreateAdminDto;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Users\Services\PasswordHasherService;
 use App\Shared\Phone\Services\PhoneFormatterService;
+use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
 class CreateAdminUseCase
@@ -34,6 +35,8 @@ class CreateAdminUseCase
         $password = $this->passwordHasherService->hash($dto->password);
 
         $normalizePhone = $this->phoneFormatterService->normalize($dto->phone);
+
+        $this->ensureUserDoesNotExist($dto->userName, $normalizePhone, $dto->email);
 
         $admin = $this->userRepo->save([
 
@@ -65,5 +68,26 @@ class CreateAdminUseCase
 
         return $admin;
 
+    }
+
+    private function ensureUserDoesNotExist(string $userName, string $phone, string $email): void
+    {
+        if ($this->userRepo->findByUsername($userName) !== null) {
+
+            throw UserAlreadyExistExceptions::withUserName($userName);
+
+        }
+
+        if ($this->userRepo->findByPhone($phone) !== null) {
+
+            throw UserAlreadyExistExceptions::withPhone($phone);
+
+        }
+
+        if ($this->userRepo->findByEmail($email)) {
+
+            throw UserAlreadyExistExceptions::withEmail($email);
+
+        }
     }
 }
