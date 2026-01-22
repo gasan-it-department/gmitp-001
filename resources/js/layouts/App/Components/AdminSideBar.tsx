@@ -17,6 +17,7 @@ import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
 import awardsAdminPage from '@/routes/awardsAdminPage';
 import bulletinBoard from '@/routes/bulletin-board';
+import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
 import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
@@ -26,6 +27,8 @@ import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     CalendarDays,
+    ChartBarStacked,
+    Church,
     ClipboardList,
     FileSignature,
     FileText,
@@ -184,6 +187,18 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: executiveOrders.page.url({ municipality: currentMunicipality.slug }),
                     icon: FileSignature,
                     permission: 'executive_orders.access',
+                },
+            ],
+        },
+        {
+            title: 'CEMETERY',
+            icon: Church,
+            items: [
+                {
+                    title: 'Dashboard',
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
+                    icon: ChartBarStacked,
+                    permission: 'cemetery.access',
                 },
             ],
         },
