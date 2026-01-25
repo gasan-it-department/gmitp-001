@@ -1,6 +1,5 @@
-import { LucideIcon, Folders, House, Phone, FolderKanban, Newspaper, MapPinned, Landmark, ShieldCheck, Heart } from "lucide-react";
-import { travel, home, landing, government, executiveOrders, contact } from '@/routes';
-import municipality from "@/routes/municipality";
+import { LucideIcon, Folders, House, Phone, MapPinned, Landmark, ShieldCheck } from "lucide-react";
+import { travel, home, government, executiveOrders, contact } from '@/routes';
 import transparency from "@/routes/transparency";
 
 export type NavigationItem = {

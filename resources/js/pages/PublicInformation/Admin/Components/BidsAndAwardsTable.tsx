@@ -6,6 +6,8 @@ import BidsAndAwardsHeader from './BidsAndAwardsHeader';
 import { useState } from 'react';
 import BidsAndAwardsDialog from './AddEditBidsAndAwardsDialog';
 import { is } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { Edit, Eye } from 'lucide-react';
 
 interface Props {
     data: AwardsData[];
@@ -60,13 +62,13 @@ export default function AwardsTable({ data = [] }: Props) {
                 <Table className="min-w-full">
                     <TableHeader className="bg-gray-50/50">
                         <TableRow>
-                            <TableHead className="w-[150px]">Ref No.</TableHead>
-                            <TableHead className="w-[300px]">Project Title</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>ABC (Budget)</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Closing Date</TableHead>
-                            <TableHead className="w-[120px] text-center">Actions</TableHead>
+                            <TableHead className="w-[180px]">Ref No.</TableHead>
+                            <TableHead className="w-[400px]">Project Title</TableHead>
+                            <TableHead className="w-[180px]">Category</TableHead>
+                            <TableHead className="w-[180px]">ABC (Budget)</TableHead>
+                            <TableHead className="w-[180px]">Status</TableHead>
+                            <TableHead className="w-[180px]">Closing Date</TableHead>
+                            <TableHead className="w-[180px] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
@@ -106,7 +108,7 @@ export default function AwardsTable({ data = [] }: Props) {
 
                                     {/* 7. Actions */}
                                     <TableCell>
-                                        {/* <div className="flex justify-center gap-2">
+                                        <div className="flex justify-center gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="icon"
@@ -116,7 +118,7 @@ export default function AwardsTable({ data = [] }: Props) {
                                                 <Edit className="h-4 w-4" />
                                             </Button>
 
-                                            {item.files?.length > 0 && (
+                                            {/* {item.files?.length > 0 && (
                                                 <Button
                                                     variant="outline"
                                                     size="icon"
@@ -125,8 +127,8 @@ export default function AwardsTable({ data = [] }: Props) {
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
-                                            )}
-                                        </div> */}
+                                            )} */}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

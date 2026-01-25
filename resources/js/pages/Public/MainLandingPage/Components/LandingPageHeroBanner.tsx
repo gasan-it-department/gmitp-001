@@ -55,14 +55,11 @@ export default function LandingPageHeroBanner() {
                     <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full border border-red-200/40 bg-rose-50/40 backdrop-blur-sm"></div>
 
                     {/* Map Frame */}
-                    <div className="relative z-10 h-full w-full overflow-hidden rounded-2xl border border-orange-100 bg-gradient-to-b from-orange-50/40 via-white/40 to-red-50/40 shadow-xl">
-                        <img
-                            src="/assets/marinduque_map.jpg"
-                            className="h-full w-full object-cover"
-                            alt="Marinduque Map"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
-                    </div>
+                    <img
+                        src="https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png"
+                        className="h-full w-full"
+                        alt="Marinduque Map"
+                    />
                 </div>
             </div>
 
