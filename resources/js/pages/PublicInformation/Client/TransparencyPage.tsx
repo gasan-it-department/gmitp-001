@@ -1,6 +1,5 @@
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { BidsAndAwards } from './Components/BidsAndAwards';
-import { CitizensCharter } from './Components/CitizenCharter';
 
 export default function Transparency({ procurements }: any) {
     console.log(procurements);
@@ -12,7 +11,7 @@ export default function Transparency({ procurements }: any) {
                     <Officials />
                     <FinancialDocuments /> */}
                     <BidsAndAwards data={procurements.data} metaData={procurements.meta}/>
-                    <CitizensCharter />
+                    {/* <CitizensCharter /> */}
                     {/* <ReportsAndAudits />
                     <ProgramsAndProjects />
                     <PublicNotices />

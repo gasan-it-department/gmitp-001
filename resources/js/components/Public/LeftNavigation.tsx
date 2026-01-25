@@ -4,7 +4,7 @@ import transaction from '@/routes/transaction';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar';
-import { Activity, HomeIcon, Menu } from 'lucide-react'; // Added Activity Icon
+import { Activity, HomeIcon, Menu } from 'lucide-react';
 import { LogInSignUpForm } from '../LoginSignUpForm';
 import { Button } from '../ui/button';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
@@ -72,11 +72,11 @@ export function LeftNavigation() {
                                 <span className="mb-3 block text-sm font-bold tracking-wider text-gray-500 uppercase">My Activity</span>
                                 <SheetClose asChild>
                                     <a
-                                        onClick={() => router.visit(transaction.index.url(currentMunicipality.slug))} // Change to your actual route
-                                        className="flex items-center gap-4 rounded-xl bg-blue-50 p-4 text-blue-900 transition hover:bg-blue-100"
+                                        onClick={() => router.visit(transaction.index.url(currentMunicipality.slug))}
+                                        className="flex items-center gap-4 rounded-xl p-3 text-gray-700 transition hover:bg-gray-100 hover:text-black"
                                     >
-                                        <Activity size={28} className="text-blue-600" />
-                                        <span className="text-lg font-semibold">My Transactions</span>
+                                        <Activity size={28} />
+                                        <span className="text-lg font-semibold">Transactions</span>
                                     </a>
                                 </SheetClose>
                             </div>

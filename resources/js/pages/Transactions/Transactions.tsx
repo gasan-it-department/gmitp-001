@@ -2,16 +2,21 @@ import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import actionCenter from '@/routes/actionCenter'; // Assuming this is your route helper
 import communityReport from '@/routes/communityReport';
 import { Link, usePage } from '@inertiajs/react'; // <--- 1. Import usePage
-import { Activity, ChevronRight, FileWarning, HandHeart } from 'lucide-react';
+import {
+    HandHeart,
+    FileWarning,
+    AlertTriangle,
+    Layers,
+    Activity,
+    ChevronRight
+} from "lucide-react";
 
-// Define the shape of your global props if not already defined globally
 type SharedProps = {
     currentMunicipality: {
         id: number;
         slug: string;
         name: string;
     };
-    // ... auth, etc
 };
 
 interface Props {
@@ -22,29 +27,55 @@ interface Props {
 }
 
 export default function TransactionHub({ counts = { assistance: 0, reports: 0 } }: Props) {
-    // 2. Get the global data directly from Inertia
-    // This works anywhere, inside or outside the Layout
     const { currentMunicipality } = usePage<SharedProps>().props;
-
     const modules = [
         {
             title: 'Action Center Assistance',
             description: 'Medical, burial, financial, and other municipal aid requests.',
-            icon: <HandHeart className="h-8 w-8 text-white" />,
+            icon: (
+                <div className="rounded-2xl bg-gradient-to-br from-red-600 to-red-500 p-3 shadow-lg">
+                    <HandHeart className="h-8 w-8 text-white" />
+                </div>
+            ),
             href: actionCenter.index.url(currentMunicipality.slug),
-
-            color: 'bg-blue-600',
-            hoverColor: 'group-hover:text-blue-600',
+            hoverColor: 'group-hover:text-red-600',
             pendingCount: counts.assistance,
         },
         {
             title: 'Community Reports',
             description: 'Incident reports, road damages, and waste management concerns.',
-            icon: <FileWarning className="h-8 w-8 text-white" />,
+            icon: (
+                <div className="rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 p-3 shadow-lg">
+                    <FileWarning className="h-8 w-8 text-white" />
+                </div>
+            ),
             href: communityReport.client.page.url(currentMunicipality.slug),
-            color: 'bg-orange-500',
-            hoverColor: 'group-hover:text-orange-500',
+            hoverColor: 'group-hover:text-orange-600',
             pendingCount: counts.reports,
+        },
+        {
+            title: 'Feedbacks',
+            description: 'Review, validate, and resolve reported incidents or issues submitted.',
+            icon: (
+                <div className="rounded-2xl bg-gradient-to-br from-orange-600 to-orange-500 p-3 shadow-lg">
+                    <AlertTriangle className="h-8 w-8 text-white" />
+                </div>
+            ),
+            href: communityReport.client.page.url(currentMunicipality.slug), // NO HREF AT THE MOMENT
+            hoverColor: 'group-hover:text-orange-600',
+            pendingCount: 0,
+        },
+        {
+            title: 'Other Transactions',
+            description: 'Non-emergency service requests, permits, and miscellaneous municipal transactions.',
+            icon: (
+                <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 p-3 shadow-lg">
+                    <Layers className="h-8 w-8 text-white" />
+                </div>
+            ),
+            href: communityReport.client.page.url(currentMunicipality.slug), // NO HREF AT THE MOMENT
+            hoverColor: 'group-hover:text-orange-500',
+            pendingCount: 0,
         },
     ];
 
@@ -55,7 +86,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                     {/* Header */}
                     <div className="mb-10 text-center md:text-left">
                         <h1 className="flex items-center justify-center gap-3 text-3xl font-bold text-gray-900 md:justify-start">
-                            <Activity className="h-8 w-8 text-blue-600" />
+                        
                             My Transactions
                         </h1>
                         <p className="mt-2 text-gray-500">
@@ -72,7 +103,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                                 className="group relative flex transform flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 hover:shadow-xl"
                             >
                                 <div>
-                                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl shadow-md ${item.color}`}>
+                                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl shadow-md`}>
                                         {item.icon}
                                     </div>
                                     <h3 className={`text-xl font-bold text-gray-900 transition-colors ${item.hoverColor}`}>{item.title}</h3>

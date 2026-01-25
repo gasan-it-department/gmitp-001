@@ -146,14 +146,15 @@ export default function CommunityReportPageTable({ reports }: Props) {
                         <Table className="min-w-full table-auto">
                             <TableHeader className="sticky top-0 z-10 bg-gray-50">
                                 <TableRow>
-                                    <TableHead className="text-[12px] font-bold">No.</TableHead>
-                                    <TableHead className="text-[12px] font-bold">Type</TableHead>
-                                    <TableHead className="text-[12px] font-bold">Location</TableHead>
-                                    <TableHead className="text-[12px] font-bold">Date Reported</TableHead>
-                                    <TableHead className="text-[12px] font-bold">Status</TableHead>
-                                    <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
+                                    <TableHead className="w-[150px]">No.</TableHead>
+                                    <TableHead className="w-[200px]">Type</TableHead>
+                                    <TableHead className="w-[390px]">Location</TableHead>
+                                    <TableHead className="w-[200px]">Date Reported</TableHead>
+                                    <TableHead className="w-[180px]">Status</TableHead>
+                                    <TableHead className="w-[180px]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
+                            
                             <TableBody>
                                 {reportList.length === 0 ? (
                                     <AdminEmptyListItem colSpan={7} title="No report yet" message="Community reports will appear here." />
@@ -167,8 +168,8 @@ export default function CommunityReportPageTable({ reports }: Props) {
                                             <TableCell>{item.location}</TableCell>
                                             <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
                                             <TableCell>{StatusBadge(item.status)}</TableCell>
-                                            <TableCell className="flex justify-center gap-2">
-                                                <Button
+                                            <TableCell className="flex gap-2">
+                                                <Button 
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => {

@@ -26,6 +26,7 @@ export interface Beneficiary {
     province: string;
     birth_date: string;
     source: string;
+    contact_number?: string;
 }
 
 export interface ActionCenterFormData {
@@ -34,7 +35,7 @@ export interface ActionCenterFormData {
     middle_name: string;
     suffix: string;
     birth_date: string;
-    address: string;
+    // address: string;
     province: string;
     municipality: string;
     barangay: string;

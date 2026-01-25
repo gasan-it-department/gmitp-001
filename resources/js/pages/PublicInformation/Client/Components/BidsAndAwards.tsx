@@ -2,8 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input'; // Needed for SearchBar mock
+import { bind } from 'leaflet';
 import { Award, ExternalLink, FileText, Gavel, FileCheck, Banknote, Clock, Tag, DollarSign, Search, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import BidFiles from './BidFiles';
 
 // --- MOCK SEARCH BAR COMPONENT (No changes needed, already responsive) ---
 interface SearchBarProps {
@@ -135,6 +137,11 @@ const findFileUrl = (files: AwardsFormData['files'], type: string): string | und
 export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
     const [activeTab, setActiveTab] = useState('biddings');
     const [searchQuery, setSearchQuery] = useState('');
+    const [bidFilesVisible, setBidFilesVisible] = useState({
+        isOpen: false,
+        files: [] as string[],
+        projectName: ""
+    });
 
     // Filter the raw data based on the active tab and search query
     const { filteredAndSlicedBids, fullFilteredCount } = useMemo(() => {
@@ -160,7 +167,7 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
         }
 
         const fullFilteredCount = list.length;
-        const filteredAndSlicedBids = list.slice(0, MAX_ITEMS_DISPLAY); // Apply the limit
+        const filteredAndSlicedBids = list.slice(0, MAX_ITEMS_DISPLAY);
 
         return { filteredAndSlicedBids, fullFilteredCount };
     }, [activeTab, data, searchQuery]);
@@ -246,11 +253,19 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
                                     ? 'bg-orange-600 text-white hover:bg-orange-700'
                                     : bid.status === 'AWARDED'
                                         ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                        : 'bg-gray-400 text-white hover:bg-gray-500'; // CLOSED status style
+                                        : 'bg-gray-400 text-white hover:bg-gray-500';
 
                             return (
                                 <div
                                     key={bid.id}
+                                    onClick={() => {
+                                        console.log("Ref no.: " + bid.files);
+                                        setBidFilesVisible(() => ({
+                                            isOpen: true,
+                                            files: bid.files ? bid.files.map(file => file.view_url) : [],
+                                            projectName: bid.title
+                                        }))
+                                    }}
                                     className={`
                                         space-y-3 rounded-xl border border-red-200/60 dark:border-red-900/40 p-4 transition-all duration-300 cursor-pointer
                                         bg-gradient-to-br from-red-50/70 via-orange-50/70 to-amber-100/70
@@ -261,7 +276,9 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
                                         {/* Title and Details (Container) */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="mb-1 font-bold text-lg text-red-900 dark:text-orange-100 truncate w-full">{bid.title}</h3>
+                                            <h3 className="mb-1 font-bold text-lg text-red-900 dark:text-orange-100 line-clamp-2 w-full">
+                                                {bid.title}
+                                            </h3>
 
                                             {/* Details Row - Use flex-wrap for horizontal stacking on wide screens, wrapping on small screens */}
                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-orange-800/80 dark:text-orange-200/80">
@@ -308,41 +325,6 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
                                             {bid.status}
                                         </Badge>
                                     </div>
-
-                                    {/* Action Buttons - key change: added flex-wrap for responsiveness */}
-                                    <div className="flex flex-wrap gap-2 pt-2">
-
-                                        {/* View Invitation PDF Button (Use INVITATION type) */}
-                                        {invitationUrl && (
-                                            <Button size="sm" variant="outline" asChild className={`gap-2 bg-white dark:bg-neutral-900 border-red-500 ${primaryText} hover:bg-red-50/50`}>
-                                                <a href={invitationUrl} target="_blank" rel="noopener noreferrer">
-                                                    <FileText className="h-4 w-4" />
-                                                    View Invitation PDF
-                                                </a>
-                                            </Button>
-                                        )}
-
-                                        {/* Bid Documents Button (If Open or Evaluation) */}
-                                        {(bid.status === 'OPEN' || bid.status === 'EVALUATION') && bidDocumentsUrl && (
-                                            <Button size="sm" asChild className="gap-2 bg-yellow-600 text-white hover:bg-yellow-700">
-                                                <a href={bidDocumentsUrl} target="_blank" rel="noopener noreferrer">
-                                                    <FileCheck className="h-4 w-4" />
-                                                    Bid Documents
-                                                </a>
-                                            </Button>
-                                        )}
-
-                                        {/* Notice of Award Button (Only if Awarded) */}
-                                        {bid.status === 'AWARDED' && noticeOfAwardUrl && (
-                                            <Button size="sm" asChild className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-                                                <a href={noticeOfAwardUrl} target="_blank" rel="noopener noreferrer">
-                                                    <Award className="h-4 w-4" />
-                                                    Notice of Award
-                                                </a>
-                                            </Button>
-                                        )}
-
-                                    </div>
                                 </div>
                             );
                         })
@@ -351,17 +333,14 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
                             {activeTab === 'biddings' ? 'No active procurement bids at this time.' : 'No recent awards issued.'}
                         </div>
                     )}
-                </div>
 
-                {/* Footer Link */}
-                <div className="border-t border-gray-200 dark:border-neutral-700 pt-4">
-                    <Button
-                        variant="outline"
-                        className={`w-full gap-2 bg-white dark:bg-neutral-900 sm:w-auto border-red-500 ${primaryText} hover:bg-red-50/50`}
-                    >
-                        <ExternalLink className="h-4 w-4" />
-                        View All Bids on PhilGEPS
-                    </Button>
+                    <BidFiles
+                        isOpen={bidFilesVisible.isOpen}
+                        files={bidFilesVisible.files}
+                        projectName={bidFilesVisible.projectName}
+                        onClose={() => {
+                            setBidFilesVisible({ isOpen: false, files: [], projectName: "" });
+                        }} />
                 </div>
             </CardContent>
         </Card>
