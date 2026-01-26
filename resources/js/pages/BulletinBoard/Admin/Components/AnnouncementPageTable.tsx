@@ -97,10 +97,7 @@ export default function AnnouncementPageTable() {
     const loadAnnouncement = async (page = 1) => {
         setIsLoading(true);
         try {
-            const response = await AnnouncementApi.getAnnouncement(
-                currentMunicipality.slug,
-                page
-            );
+            const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug, page);
 
             const apiData = response as unknown as AnnouncementApiResponse;
 
@@ -124,17 +121,13 @@ export default function AnnouncementPageTable() {
         setAddEditDialog({ isOpened: false, editData: null });
 
         if (isEdit) {
-            setAnnouncementList(prev =>
-                prev.map(item => (item.id === data.id ? data : item))
-            );
+            setAnnouncementList((prev) => prev.map((item) => (item.id === data.id ? data : item)));
             toast.success('Announcement updated successfully');
         } else {
-            setTotalItems(prev => prev + 1);
+            setTotalItems((prev) => prev + 1);
 
             if (currentPage === 1) {
-                setAnnouncementList(prev =>
-                    [data, ...prev].slice(0, perPage)
-                );
+                setAnnouncementList((prev) => [data, ...prev].slice(0, perPage));
             }
             toast.success('Announcement created successfully');
         }
@@ -147,10 +140,7 @@ export default function AnnouncementPageTable() {
 
         setIsLoading(true);
         try {
-            const response = await AnnouncementApi.deleteMultiple(
-                ids,
-                currentMunicipality.slug
-            );
+            const response = await AnnouncementApi.deleteMultiple(ids, currentMunicipality.slug);
 
             if (response.success) {
                 toast.success('Successfully deleted');
@@ -158,12 +148,7 @@ export default function AnnouncementPageTable() {
                 const remaining = announcementList.length - ids.length;
                 let pageToLoad = currentPage;
 
-                if (
-                    remaining <= 0 &&
-                    currentPage > 1 &&
-                    totalItems - ids.length <=
-                    (currentPage - 1) * perPage
-                ) {
+                if (remaining <= 0 && currentPage > 1 && totalItems - ids.length <= (currentPage - 1) * perPage) {
                     pageToLoad = currentPage - 1;
                 }
 
@@ -178,36 +163,27 @@ export default function AnnouncementPageTable() {
     /* ========= SELECT ========= */
 
     const toggleSelectItem = (id: string) => {
-        setSelectedItems(prev =>
-            prev.includes(id)
-                ? prev.filter(i => i !== id)
-                : [...prev, id]
-        );
+        setSelectedItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
     };
 
     const toggleSelectAll = () => {
         if (selectedItems.length === announcementList.length) {
             setSelectedItems([]);
         } else {
-            setSelectedItems(announcementList.map(i => i.id));
+            setSelectedItems(announcementList.map((i) => i.id));
         }
     };
 
-    
     /* ================= RENDER ================= */
 
     return (
         <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold">
-                    Announcement List
-                </h1>
+                <h1 className="text-3xl font-bold">Announcement List</h1>
                 <AnnouncementPageHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() =>
-                        setIsFilterDialogVisible(true)
-                    }
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => setIsFilterDialogVisible(true)}
                     onAddNewButtonClicked={() =>
                         setAddEditDialog({
                             isOpened: true,
@@ -219,9 +195,7 @@ export default function AnnouncementPageTable() {
                         { label: 'Message', value: 'message' },
                         { label: 'Date Posted', value: 'created_at' },
                     ]}
-                    onSortSelected={() => {
-
-                    }}
+                    onSortSelected={() => {}}
                 />
             </div>
 
@@ -232,7 +206,7 @@ export default function AnnouncementPageTable() {
                     disabled={selectedItems.length === 0}
                     className="bg-red-600 text-white hover:bg-red-700"
                     onClick={() =>
-                        setClassicDialog(prev => ({
+                        setClassicDialog((prev) => ({
                             ...prev,
                             isOpen: true,
                             title: 'Confirm',
@@ -259,15 +233,10 @@ export default function AnnouncementPageTable() {
                                         className="h-4 w-4 cursor-pointer"
                                         type="checkbox"
                                         disabled={announcementList.length === 0}
-                                        checked={
-                                            selectedItems.length ===
-                                            announcementList.length &&
-                                            announcementList.length > 0
-                                        }
+                                        checked={selectedItems.length === announcementList.length && announcementList.length > 0}
                                         onChange={toggleSelectAll}
                                     />
                                 </div>
-
                             </TableHead>
                             <TableHead>No.</TableHead>
                             <TableHead>Title</TableHead>
@@ -278,19 +247,11 @@ export default function AnnouncementPageTable() {
                     </TableHeader>
 
                     <TableBody>
-                        {announcementList.length === 0 &&
-                            !isLoading ? (
-                            <AdminEmptyListItem
-                                colSpan={6}
-                                title="No announcement yet"
-                                message="Your announcements will appear here."
-                            />
+                        {announcementList.length === 0 && !isLoading ? (
+                            <AdminEmptyListItem colSpan={6} title="No announcement yet" message="Your announcements will appear here." />
                         ) : (
                             announcementList.map((item, index) => {
-                                const rowNumber =
-                                    (currentPage - 1) * perPage +
-                                    index +
-                                    1;
+                                const rowNumber = (currentPage - 1) * perPage + index + 1;
 
                                 return (
                                     <TableRow key={item.id}>
@@ -299,41 +260,23 @@ export default function AnnouncementPageTable() {
                                                 <input
                                                     className="h-4 w-4 cursor-pointer"
                                                     type="checkbox"
-                                                    checked={selectedItems.includes(
-                                                        item.id
-                                                    )}
-                                                    onChange={() =>
-                                                        toggleSelectItem(
-                                                            item.id
-                                                        )
-                                                    }
+                                                    checked={selectedItems.includes(item.id)}
+                                                    onChange={() => toggleSelectItem(item.id)}
                                                 />
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-center">
-                                            {rowNumber}
-                                        </TableCell>
-                                        <TableCell>
-                                            {item.title}
-                                        </TableCell>
-                                        <TableCell className="max-w-[500px] truncate">
-                                            {item.message}
-                                        </TableCell>
-                                        <TableCell>
-                                            {Utility().formatToReadableDate(
-                                                item.created_at
-                                            )}
-                                        </TableCell>
+                                        <TableCell className="text-center">{rowNumber}</TableCell>
+                                        <TableCell>{item.title}</TableCell>
+                                        <TableCell className="max-w-[500px] truncate">{item.message}</TableCell>
+                                        <TableCell>{Utility().formatToReadableDate(item.created_at)}</TableCell>
                                         <TableCell>
                                             <Button
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() =>
                                                     setAddEditDialog({
-                                                        isOpened:
-                                                            true,
-                                                        editData:
-                                                            item,
+                                                        isOpened: true,
+                                                        editData: item,
                                                     })
                                                 }
                                             >
@@ -381,17 +324,15 @@ export default function AnnouncementPageTable() {
                 open={classicDialog.isOpen}
                 onPositiveClick={() => {
                     if (classicDialog.action === 'delete') {
-                        handleDelete(
-                            classicDialog.selectedItemId
-                        );
+                        handleDelete(classicDialog.selectedItemId);
                     }
-                    setClassicDialog(prev => ({
+                    setClassicDialog((prev) => ({
                         ...prev,
                         isOpen: false,
                     }));
                 }}
                 onNegativeClick={() =>
-                    setClassicDialog(prev => ({
+                    setClassicDialog((prev) => ({
                         ...prev,
                         isOpen: false,
                     }))

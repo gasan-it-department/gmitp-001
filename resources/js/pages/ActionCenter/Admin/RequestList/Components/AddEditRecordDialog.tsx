@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ActionCenterApi } from '@/Core/Api/ActionCenter/AssistanceRequestApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import type { AssistanceRequest, Beneficiary } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { useQueryClient } from '@tanstack/react-query';
 import moment from 'moment';
@@ -56,8 +56,8 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
             province: '',
             municipality: '',
             barangay: '',
-            description: ''
-        }
+            description: '',
+        },
     });
 
     // 1. FIXED: Data not displaying in edit mode
@@ -73,25 +73,25 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
 
                 // Set GeoData for the AddressDropdown component
                 setGeoData({
-                    editProvince: b?.province ?? "",
-                    editMunicipality: b?.municipality ?? "",
-                    editBarangay: b?.barangay ?? "",
+                    editProvince: b?.province ?? '',
+                    editMunicipality: b?.municipality ?? '',
+                    editBarangay: b?.barangay ?? '',
                 });
 
                 // Use reset with a small timeout to ensure inputs are registered
                 const timer = setTimeout(() => {
                     reset({
-                        first_name: b?.first_name ?? "",
-                        last_name: b?.last_name ?? "",
-                        middle_name: b?.middle_name ?? "",
-                        suffix: b?.suffix ?? "",
-                        contact_number: b?.contact_number ?? "",
-                        birth_date: b?.birth_date ?? "",
-                        assistance_type: editData.assistance_type ?? "",
-                        description: editData.description ?? "",
-                        province: b?.province ?? "",
-                        municipality: b?.municipality ?? "",
-                        barangay: b?.barangay ?? "",
+                        first_name: b?.first_name ?? '',
+                        last_name: b?.last_name ?? '',
+                        middle_name: b?.middle_name ?? '',
+                        suffix: b?.suffix ?? '',
+                        contact_number: b?.contact_number ?? '',
+                        birth_date: b?.birth_date ?? '',
+                        assistance_type: editData.assistance_type ?? '',
+                        description: editData.description ?? '',
+                        province: b?.province ?? '',
+                        municipality: b?.municipality ?? '',
+                        barangay: b?.barangay ?? '',
                     });
                 }, 0);
 
@@ -109,7 +109,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                     province: '',
                     municipality: '',
                     barangay: '',
-                    description: ''
+                    description: '',
                 });
                 setAssistanceType('');
                 setSelectedDate(undefined);
@@ -138,7 +138,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                 handleReset();
             } else {
                 // Logic for update would go here
-                toast.info("Update logic not yet implemented");
+                toast.info('Update logic not yet implemented');
             }
         } catch (error) {
             console.error('Error submitting form:', error);
@@ -170,9 +170,7 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                 onInteractOutside={(e) => e.preventDefault()}
                 className="scrollbar-hide m-0 flex h-auto w-full max-w-none flex-col rounded-none bg-gradient-to-b from-white via-orange-50 to-rose-50 p-4 shadow-xl sm:m-auto sm:h-auto sm:max-w-[720px] sm:rounded-2xl lg:h-[90vh]"
             >
-                <DialogTitle className="text-2xl font-bold text-gray-800">
-                    {editData ? 'Edit Record' : 'Add New Record'}
-                </DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-gray-800">{editData ? 'Edit Record' : 'Add New Record'}</DialogTitle>
 
                 <DialogHeader className="border-b border-orange-100 pb-3 text-center">
                     <p className="text-sm text-gray-500">Please fill in the required information carefully.</p>
@@ -182,22 +180,52 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                     <Card className="rounded-xl border-0 bg-white/90 shadow-md">
                         <CardContent className="space-y-8 p-6">
                             <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
-
                                 {/* Personal Info */}
                                 <section>
                                     <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">
                                         Personal Information
                                     </h3>
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                        <FormField label="First Name *" id="first_name" register={register} name="first_name" requiredMsg="First name is required" errors={errors} />
-                                        <FormField label="Last Name *" id="last_name" register={register} name="last_name" requiredMsg="Last name is required" errors={errors} />
+                                        <FormField
+                                            label="First Name *"
+                                            id="first_name"
+                                            register={register}
+                                            name="first_name"
+                                            requiredMsg="First name is required"
+                                            errors={errors}
+                                        />
+                                        <FormField
+                                            label="Last Name *"
+                                            id="last_name"
+                                            register={register}
+                                            name="last_name"
+                                            requiredMsg="Last name is required"
+                                            errors={errors}
+                                        />
                                         <FormField label="Middle Name" id="middle_name" register={register} name="middle_name" errors={errors} />
-                                        <FormField label="Jr./Suffix" id="suffix" register={register} name="suffix" placeholder="Jr., Sr., III, etc." errors={errors} />
-                                        <FormField label="Contact Number *" id="contact_number" register={register} name="contact_number" type="tel" requiredMsg="Contact number is required" errors={errors} />
+                                        <FormField
+                                            label="Jr./Suffix"
+                                            id="suffix"
+                                            register={register}
+                                            name="suffix"
+                                            placeholder="Jr., Sr., III, etc."
+                                            errors={errors}
+                                        />
+                                        <FormField
+                                            label="Contact Number *"
+                                            id="contact_number"
+                                            register={register}
+                                            name="contact_number"
+                                            type="tel"
+                                            requiredMsg="Contact number is required"
+                                            errors={errors}
+                                        />
 
                                         {/* Birth Date */}
                                         <div className="space-y-2">
-                                            <Label htmlFor="birth_date" className="text-sm font-semibold text-gray-700">Birth Date *</Label>
+                                            <Label htmlFor="birth_date" className="text-sm font-semibold text-gray-700">
+                                                Birth Date *
+                                            </Label>
                                             <input type="hidden" {...register('birth_date', { required: 'Birth date is required' })} />
                                             <DatePicker
                                                 value={selectedDate}
@@ -217,10 +245,15 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
 
                                 {/* Assistance Section */}
                                 <section>
-                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600"> Assistance Information </h3>
+                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">
+                                        {' '}
+                                        Assistance Information{' '}
+                                    </h3>
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="assistance_type" className="text-sm font-semibold text-gray-700">Assistance Needed *</Label>
+                                            <Label htmlFor="assistance_type" className="text-sm font-semibold text-gray-700">
+                                                Assistance Needed *
+                                            </Label>
                                             <Select
                                                 value={assistanceType}
                                                 onValueChange={(value) => {
@@ -228,12 +261,16 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                                                     setValue('assistance_type', value, { shouldValidate: true });
                                                 }}
                                             >
-                                                <SelectTrigger className={`rounded-md border font-medium text-gray-600 transition-colors ${errors.assistance_type ? 'border-red-500' : 'border-gray-300'}`}>
+                                                <SelectTrigger
+                                                    className={`rounded-md border font-medium text-gray-600 transition-colors ${errors.assistance_type ? 'border-red-500' : 'border-gray-300'}`}
+                                                >
                                                     <SelectValue placeholder="Select assistance type" />
                                                 </SelectTrigger>
                                                 <SelectContent className="font-medium text-gray-700">
                                                     {assistanceOptions.map((option) => (
-                                                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                                                        <SelectItem key={option} value={option}>
+                                                            {option}
+                                                        </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
@@ -252,7 +289,6 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
                                     <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">Address Details</h3>
                                     <AddressDropdown
                                         onAddressChange={handleAddressChange}
-
                                         editMunicipality={geoData.editMunicipality}
                                         editBarangay={geoData.editBarangay}
                                     />
@@ -260,7 +296,9 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
 
                                 {/* Description */}
                                 <section>
-                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">Description / Reason</h3>
+                                    <h3 className="mb-3 border-b border-orange-100 pb-1 text-base font-semibold text-orange-600">
+                                        Description / Reason
+                                    </h3>
                                     <div className="space-y-2">
                                         <Textarea
                                             autoComplete="off"
@@ -279,10 +317,19 @@ export default function AddEditRecordDialog({ isOpen, onClose, editData, onSucce
 
                                 {/* Buttons */}
                                 <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:justify-end">
-                                    <Button type="button" variant="outline" onClick={handleReset} className="flex-1 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 sm:flex-none">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleReset}
+                                        className="flex-1 rounded-md border-gray-300 text-gray-700 hover:bg-gray-100 sm:flex-none"
+                                    >
                                         Cancel
                                     </Button>
-                                    <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:opacity-50 sm:flex-none">
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="flex-1 rounded-md bg-gradient-to-r from-orange-500 to-red-500 font-medium text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg disabled:opacity-50 sm:flex-none"
+                                    >
                                         {isSubmitting ? 'Submitting...' : editData ? 'Update Record' : 'Add Record'}
                                     </Button>
                                 </div>
@@ -309,8 +356,9 @@ function FormField({ label, id, register, name, requiredMsg, type = 'text', plac
                 autoComplete="off"
                 placeholder={placeholder}
                 {...register(name, requiredMsg ? { required: requiredMsg } : {})}
-                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors?.[name] ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                    errors?.[name] ? 'border-red-500' : 'border-gray-300'
+                }`}
             />
             {errors?.[name]?.message && (
                 <p className="text-sm text-red-600" role="alert">

@@ -10,10 +10,10 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { InertiaInput } from '../InputField';
 import { AssistanceOptions } from './AssistanceOptionsDropdown';
 import { DatePickerField } from './Form/DatePicker';
 import { FileUploader } from './Form/FileUploader';
-import { InertiaInput } from './Form/InputField';
 
 interface Props {
     isOpen: boolean;

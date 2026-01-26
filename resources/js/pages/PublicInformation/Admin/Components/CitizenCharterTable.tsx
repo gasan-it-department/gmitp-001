@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { BiddingData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import { EyeIcon } from "lucide-react";
-import CitizenCharterHeader from "./CitizenCharterHeader";
-import AddEditCitizenCharterDialog from "./AddEditCitizenCharterDialog";
-import SortDialog from "@/pages/BulletinBoard/Admin/Components/FilterDialog";
-import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BiddingData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import SortDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import { EyeIcon } from 'lucide-react';
+import { useState } from 'react';
+import AddEditCitizenCharterDialog from './AddEditCitizenCharterDialog';
+import CitizenCharterHeader from './CitizenCharterHeader';
 
 export default function CitizenCharterTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -22,25 +22,30 @@ export default function CitizenCharterTable() {
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Citizen's Charter</h1>
                 <CitizenCharterHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { setIsSortingDialogVisible(true) }}
-                    onExportButtonClicked={() => { }}
-                    onAddNewButtonClicked={() => { setIsAddEditDialogVisible(true) }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {
+                        setIsSortingDialogVisible(true);
+                    }}
+                    onExportButtonClicked={() => {}}
+                    onAddNewButtonClicked={() => {
+                        setIsAddEditDialogVisible(true);
+                    }}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <div>
                     <Button
                         size="sm"
                         disabled={selectedItems.length <= 0}
-                        className="bg-red-600 hover:bg-red-700 text-white border-none"
-                        onClick={() => { }
+                        className="border-none bg-red-600 text-white hover:bg-red-700"
+                        onClick={
+                            () => {}
                             // setClassicDialog((prev) => ({
                             //     ...prev,
                             //     isOpen: true,
@@ -84,10 +89,7 @@ export default function CitizenCharterTable() {
 
                     <TableBody>
                         {biddingList.length === 0 ? (
-                            <AdminEmptyListItem
-                                colSpan={7}
-                                title='No charter yet'
-                                message='Charters will appear here once you create one.' />
+                            <AdminEmptyListItem colSpan={7} title="No charter yet" message="Charters will appear here once you create one." />
                         ) : (
                             biddingList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
@@ -178,9 +180,8 @@ export default function CitizenCharterTable() {
             <AddEditCitizenCharterDialog
                 isOpen={isAddEditDialogVisible}
                 onClose={() => setIsAddEditDialogVisible(false)}
-                onSuccess={(data, isEditMode) => {
-
-                }} />
+                onSuccess={(data, isEditMode) => {}}
+            />
         </div>
     );
 }

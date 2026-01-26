@@ -1,13 +1,14 @@
 <?php
 
-use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\BeneficiaryFlagController;
-
-use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
+use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
 use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
+
+use App\External\Web\Controllers\ActionCenter\Client\AssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
+use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
 
 Route::prefix('{municipality}/action-center')
     ->middleware(['auth', 'municipalityContext'])
@@ -30,6 +31,10 @@ Route::prefix('{municipality}/action-center')
 
         //eg. https://gasan-4905/action-center/beneficiary
         Route::get('/', [ClientActionCenterController::class, 'index'])->name('index');
+
+        Route::get('/household', [HouseholdController::class, 'index'])->name('household.index');
+
+        Route::get('/create-request', [AssistanceRequestController::class, 'create'])->name('create.request');
 
     });
 

@@ -1,14 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import SearchBar from '@/pages/Utility/SearchBar';
-import { List, UploadIcon, ChevronDown, Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Check, ChevronDown, List, UploadIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 type SortListType = {
     label: string;
@@ -38,9 +33,7 @@ export default function CommunityReportHeader({
     useEffect(() => {
         if (!sortList.length) return;
 
-        const found = sortList.find(
-            (item) => item.value === selectedSortValue
-        );
+        const found = sortList.find((item) => item.value === selectedSortValue);
 
         setSelectedSort(found || sortList[0]);
     }, [sortList, selectedSortValue]);
@@ -53,10 +46,7 @@ export default function CommunityReportHeader({
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             {/* Search */}
-            <SearchBar
-                onSearch={(keyword) => onSearch?.(keyword)}
-                searchBarHint="Search..."
-            />
+            <SearchBar onSearch={(keyword) => onSearch?.(keyword)} searchBarHint="Search..." />
 
             <div className="ml-2" />
 
@@ -79,25 +69,17 @@ export default function CommunityReportHeader({
                     >
                         <List className="h-4 w-4" />
                         {selectedSort?.label ?? 'Sort'}
-                        <ChevronDown className="h-4 w-4 ml-1" />
+                        <ChevronDown className="ml-1 h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent className="w-44">
-                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                        Sort by
-                    </div>
+                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Sort by</div>
 
                     {sortList.map((item) => (
-                        <DropdownMenuItem
-                            key={item.value}
-                            onClick={() => handleSortSelect(item)}
-                            className="flex items-center justify-between"
-                        >
+                        <DropdownMenuItem key={item.value} onClick={() => handleSortSelect(item)} className="flex items-center justify-between">
                             {item.label}
-                            {selectedSort?.value === item.value && (
-                                <Check className="h-4 w-4 text-primary" />
-                            )}
+                            {selectedSort?.value === item.value && <Check className="h-4 w-4 text-primary" />}
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>

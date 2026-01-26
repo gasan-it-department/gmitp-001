@@ -27,6 +27,8 @@ class AssistanceRequestFile extends Model
 
         'file_size',
 
+        'document_type',
+
     ];
 
     public function request()

@@ -1,13 +1,11 @@
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AwardsData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
-import AwardsHeader from './BidsAndAwardsHeader';
-import BidsAndAwardsHeader from './BidsAndAwardsHeader';
+import { Edit } from 'lucide-react';
 import { useState } from 'react';
 import BidsAndAwardsDialog from './AddEditBidsAndAwardsDialog';
-import { is } from 'date-fns/locale';
-import { Button } from '@/components/ui/button';
-import { Edit, Eye } from 'lucide-react';
+import BidsAndAwardsHeader from './BidsAndAwardsHeader';
 
 interface Props {
     data: AwardsData[];
@@ -53,8 +51,7 @@ export default function AwardsTable({ data = [] }: Props) {
             {/* Header with Create Button */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Procurements</h1>
-                <BidsAndAwardsHeader onSearch={() => { }}
-                    onCreateNewButtonClicked={() => setBidsAndAwardsDialogVisible(true)} />
+                <BidsAndAwardsHeader onSearch={() => {}} onCreateNewButtonClicked={() => setBidsAndAwardsDialogVisible(true)} />
             </div>
 
             {/* TABLE CONTAINER */}
@@ -137,12 +134,7 @@ export default function AwardsTable({ data = [] }: Props) {
                 </Table>
             </div>
 
-            <BidsAndAwardsDialog
-                isOpen={bidsAndAwardsDialogVisible}
-                onClose={() => setBidsAndAwardsDialogVisible(false)}
-                onSuccess={() => {
-
-                }} />
+            <BidsAndAwardsDialog isOpen={bidsAndAwardsDialogVisible} onClose={() => setBidsAndAwardsDialogVisible(false)} onSuccess={() => {}} />
 
             {/* Optional: Add Pagination controls at the bottom using `pagination` prop */}
         </div>

@@ -55,10 +55,6 @@ return new class extends Migration {
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->foreignUlid('municipal_id')
-                ->constrained('municipalities')
-                ->restrictOnDelete();
-
             $table->text('amount')->nullable(); // Text is safer for long encrypted strings
 
             $table->string('transaction_number')->unique();
@@ -68,6 +64,16 @@ return new class extends Migration {
             $table->string('status')->default('pending');
 
             $table->text('description')->nullable();
+
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
+            $table->string('province');
+
+            $table->string('municipality');
+
+            $table->string('barangay');
 
             $table->timestamps();
 

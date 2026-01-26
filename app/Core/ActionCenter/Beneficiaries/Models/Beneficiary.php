@@ -39,18 +39,6 @@ class Beneficiary extends Model
 
     ];
 
-    protected $casts = [
-
-        'first_name' => 'encrypted',
-
-        'last_name' => 'encrypted',
-
-        'middle_name' => 'encrypted',
-
-        'suffix' => 'encrypted',
-
-    ];
-
     protected static function newFactory()
     {
         return BeneficiaryFactory::new();
