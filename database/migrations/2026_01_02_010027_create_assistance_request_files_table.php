@@ -17,6 +17,8 @@ return new class extends Migration {
                 ->constrained('assistance_requests')
                 ->cascadeOnDelete();
 
+            $table->string('document_type')->nullable();
+
             $table->string('public_id')->nullable();
 
             $table->string('mime_type')->nullable();

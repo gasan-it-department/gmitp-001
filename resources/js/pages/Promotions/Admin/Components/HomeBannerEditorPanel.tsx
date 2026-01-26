@@ -3,13 +3,13 @@ import { Card } from '@/components/ui/card';
 import { MunicipalitiesApi } from '@/Core/Api/Municipality/MunicipalityApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { Image as ImageIcon, Loader2, Phone, Plus, X } from 'lucide-react';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import ToastProvider from '@/pages/Utility/ToastShower';
+import { Image as ImageIcon, Loader2, Plus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
 import LogoEditor from './LogoEditor';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
-import ToastProvider from '@/pages/Utility/ToastShower';
 
 // --- TYPES ---
 export interface Banner {
@@ -64,7 +64,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState({
         isOpened: false,
-        title: "Loading..."
+        title: 'Loading...',
     });
 
     const [hotlines, setHotlines] = useState<Hotline[]>([
@@ -106,16 +106,16 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             setIsLoadingDialogVisible((prev) => ({
                 ...prev,
                 isOpened: true,
-                title: "Uploading, please wait..."
-            }))
+                title: 'Uploading, please wait...',
+            }));
 
             const response = await MunicipalitiesApi.savebanner(municipalSlug, formData);
 
             setIsLoadingDialogVisible((prev) => ({
                 ...prev,
                 isOpened: false,
-                title: "Loading..."
-            }))
+                title: 'Loading...',
+            }));
 
             toast.success('Banner uploaded successfully!');
             const newId = response.data?.id || Date.now().toString();
@@ -165,8 +165,8 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 setIsLoadingDialogVisible((prev) => ({
                     ...prev,
                     isOpened: true,
-                    title: "Deleting, please wait..."
-                }))
+                    title: 'Deleting, please wait...',
+                }));
                 await MunicipalitiesApi.deleteBanner(municipalSlug, bannerId);
                 setBanners((prev) => prev.filter((b) => b.id !== bannerId));
                 if (selectedBannerId === bannerId) setSelectedBannerId(null);
@@ -179,8 +179,8 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 setIsDeleting(false);
                 setIsLoadingDialogVisible((prev) => ({
                     ...prev,
-                    isOpened: false
-                }))
+                    isOpened: false,
+                }));
             }
         }
     };
@@ -211,7 +211,6 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     // --- GRADIENT CLASS CONSTANT ---
     const ACTIVE_GRADIENT_CLASS = 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:opacity-90';
     const HOVER_TEXT_COLOR = 'hover:text-red-600';
-
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
@@ -254,7 +253,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             {activeTab === 'banners' && (
                 <div className="space-y-8">
                     {/* Preview */}
-                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+                    <div className="border-l-4 border-yellow-500 bg-yellow-100 p-4 text-yellow-700" role="alert">
                         <p className="font-bold">Image Dimensions</p>
                         <p>Image size required for a perfect fit: 1600px by 800px.</p>
                     </div>
@@ -278,14 +277,17 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                     <div>
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300">Active Banners ({banners.length}/10)</h2>
-                            {banners.length === 0 || banners.length < 10 && (
-                                <Button onClick={handlePickImage} disabled={isUploading}
-                                    // THEME CHANGE: Use gradient for Add button
-                                    className={`gap-2 ${ACTIVE_GRADIENT_CLASS}`}
-                                >
-                                    <Plus className="h-4 w-4" /> Add Banner
-                                </Button>
-                            )}
+                            {banners.length === 0 ||
+                                (banners.length < 10 && (
+                                    <Button
+                                        onClick={handlePickImage}
+                                        disabled={isUploading}
+                                        // THEME CHANGE: Use gradient for Add button
+                                        className={`gap-2 ${ACTIVE_GRADIENT_CLASS}`}
+                                    >
+                                        <Plus className="h-4 w-4" /> Add Banner
+                                    </Button>
+                                ))}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -299,10 +301,8 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={() => handleDrop(index)}
                                     onClick={() => setSelectedBannerId(banner.id)}
-                                    className={`relative cursor-pointer p-2 transition-all 
-                                        ${selectedBannerId === banner.id ? 'ring-2 ring-red-500' : 'hover:border-red-300'} 
-                                        ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
-                                // Ring and hover border uses red/orange tone for selection emphasis
+                                    className={`relative cursor-pointer p-2 transition-all ${selectedBannerId === banner.id ? 'ring-2 ring-red-500' : 'hover:border-red-300'} ${dragOverIndex === index ? 'scale-105 opacity-50' : ''}`}
+                                    // Ring and hover border uses red/orange tone for selection emphasis
                                 >
                                     <img src={banner.bannerUrl} className="mb-2 h-24 w-full rounded-lg bg-gray-100 object-cover" />
                                     <div className="flex items-center justify-between px-1">
@@ -363,15 +363,15 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 onPositiveClick={() => {
                     setClassicDialog((prev) => ({
                         ...prev,
-                        isOpen: false
-                    }))
+                        isOpen: false,
+                    }));
                     handleConfirmAction();
                 }}
                 onNegativeClick={() => {
                     setClassicDialog((prev) => ({
                         ...prev,
-                        isOpen: false
-                    }))
+                        isOpen: false,
+                    }));
                     resetDialog();
                 }}
                 hideNegativeButton={classicDialog.negativeButtonHidden}

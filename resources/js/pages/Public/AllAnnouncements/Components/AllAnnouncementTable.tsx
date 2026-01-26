@@ -1,22 +1,20 @@
-import ClassicDialog from "@/pages/Utility/ClassicDialog";
-import { ViewAnnouncementDetails } from "../../Home/Components/ViewAnnouncementDetails";
-import LoadingSpinner from "@/pages/Utility/LoadingSpinner";
-import { useEffect, useState } from "react";
-import { AnnouncementData } from "@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes";
-import { AnnouncementApi } from "@/Core/Api/BulletinBoard/AnnouncementApi";
-import { useMunicipality } from "@/Core/Context/MunicipalityContext";
-import { Pagination } from "@/components/ui/pagination";
-import { Card } from "@/components/ui/card";
-import Utility from "@/pages/Utility/Utility";
-import { router } from "@inertiajs/react";
-import { home } from "@/routes";
-import { ArrowUp } from "lucide-react"; // Travel/arrow icon
-import PaginationView from "@/pages/Utility/PaginationView";
+import { Card } from '@/components/ui/card';
+import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
+import PaginationView from '@/pages/Utility/PaginationView';
+import Utility from '@/pages/Utility/Utility';
+import { home } from '@/routes';
+import { router } from '@inertiajs/react';
+import { ArrowUp } from 'lucide-react'; // Travel/arrow icon
+import { useEffect, useState } from 'react';
+import { ViewAnnouncementDetails } from '../../Home/Components/ViewAnnouncementDetails';
 
 export default function AllAnnouncementTable() {
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
     const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
-    const {currentMunicipality } = useMunicipality();
+    const { currentMunicipality } = useMunicipality();
     const [currentPage, setCurrentPage] = useState(1);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -44,8 +42,8 @@ export default function AllAnnouncementTable() {
             }
         };
 
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, [currentPage]);
 
     const loadAnnouncements = async (currentPage: number = 1) => {
@@ -53,7 +51,7 @@ export default function AllAnnouncementTable() {
             setIsLoadingDialogVisible(true);
             const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug, currentPage);
             if (response.success) {
-                console.log("All announcement response: ", response);
+                console.log('All announcement response: ', response);
                 setAnnouncementList(response.data);
                 setIsLoadingDialogVisible(false);
             }
@@ -62,7 +60,6 @@ export default function AllAnnouncementTable() {
             setPerPage(response.meta.per_page);
             setTotalItems(response.meta.total);
         } catch (error: any) {
-
         } finally {
             setIsLoadingDialogVisible(false);
         }
@@ -81,9 +78,7 @@ export default function AllAnnouncementTable() {
 
                 {/* Header */}
                 <div className="px-2 sm:px-4">
-                    <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">
-                        General Announcements
-                    </h2>
+                    <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">General Announcements</h2>
                     <p className="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
                         Stay updated with important notices, reminders, and community information.
                     </p>
@@ -102,7 +97,7 @@ export default function AllAnnouncementTable() {
                                     {announcementList.map((item, index) => (
                                         <Card
                                             key={index}
-                                            className="cursor-pointer relative overflow-hidden rounded-xl border-l-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-amber-100/70 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl sm:p-5 dark:from-red-950 dark:via-orange-950 dark:to-amber-900"
+                                            className="relative cursor-pointer overflow-hidden rounded-xl border-l-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-amber-100/70 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl sm:p-5 dark:from-red-950 dark:via-orange-950 dark:to-amber-900"
                                             onClick={() => {
                                                 setAnnouncementDetailsDialog((prev) => ({
                                                     ...prev,
@@ -171,8 +166,8 @@ export default function AllAnnouncementTable() {
                 {/* Floating Scroll-to-Top Button */}
                 {showScrollTop && (
                     <button
-                        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                        className="fixed bottom-6 right-6 z-50 rounded-full bg-gradient-to-r from-red-500 to-orange-500 p-3 text-white shadow-lg transition hover:scale-110"
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        className="fixed right-6 bottom-6 z-50 rounded-full bg-gradient-to-r from-red-500 to-orange-500 p-3 text-white shadow-lg transition hover:scale-110"
                         aria-label="Scroll to top"
                     >
                         <ArrowUp className="h-5 w-5" />

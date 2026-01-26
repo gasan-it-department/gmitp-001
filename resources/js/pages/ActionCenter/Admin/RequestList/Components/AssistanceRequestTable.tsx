@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import type { AssistanceRequest, ActionCenterFormData } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import type { ActionCenterFormData, AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
@@ -108,21 +108,21 @@ export function AssistanceRequestTable({ data, filters }: Props) {
 
     const getStatusBadgeColor = (status: string) => {
         switch (status.toLowerCase()) {
-            case 'approved': return 'bg-green-100 text-green-700';
-            case 'rejected': return 'bg-red-100 text-red-700';
-            case 'in_review': return 'bg-blue-100 text-blue-700';
-            case 'completed': return 'bg-emerald-100 text-emerald-700';
-            default: return 'bg-yellow-100 text-yellow-700';
+            case 'approved':
+                return 'bg-green-100 text-green-700';
+            case 'rejected':
+                return 'bg-red-100 text-red-700';
+            case 'in_review':
+                return 'bg-blue-100 text-blue-700';
+            case 'completed':
+                return 'bg-emerald-100 text-emerald-700';
+            default:
+                return 'bg-yellow-100 text-yellow-700';
         }
     };
 
     if (detailsView.isOpen) {
-        return (
-            <AssistanceRequestDetails
-                data={detailsView.data}
-                onBackPressed={() => setDetailsView({ isOpen: false, data: null })}
-            />
-        );
+        return <AssistanceRequestDetails data={detailsView.data} onBackPressed={() => setDetailsView({ isOpen: false, data: null })} />;
     }
 
     return (
@@ -183,30 +183,52 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                             <TableRow className="group transition-colors hover:bg-gray-50">
                                                 <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
                                                 <TableCell className="text-xs font-medium text-gray-900 capitalize">
-                                                    {req.beneficiary ? `${req.beneficiary.first_name} ${req.beneficiary.last_name}` : <span className="text-gray-400 italic">No Beneficiary</span>}
+                                                    {req.beneficiary ? (
+                                                        `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">No Beneficiary</span>
+                                                    )}
                                                 </TableCell>
-                                                <TableCell className="text-xs text-gray-600">{Utility().formatToReadableDateNoTime(req.created_at)}</TableCell>
+                                                <TableCell className="text-xs text-gray-600">
+                                                    {Utility().formatToReadableDateNoTime(req.created_at)}
+                                                </TableCell>
                                                 <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
                                                 <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
                                                 <TableCell>
-                                                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}>
+                                                    <span
+                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
+                                                    >
                                                         {req.status.replace('_', ' ')}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell className="text-xs font-semibold text-gray-700">{Utility().formatCurrency(req.amount)}</TableCell>
+                                                <TableCell className="text-xs font-semibold text-gray-700">
+                                                    {Utility().formatCurrency(req.amount)}
+                                                </TableCell>
                                                 <TableCell>
                                                     <div className="flex justify-center gap-2">
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:bg-blue-50" 
-                                                            onClick={() => setDetailsView({ isOpen: true, data: req })}>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                            onClick={() => setDetailsView({ isOpen: true, data: req })}
+                                                        >
                                                             <Eye size={16} />
                                                         </Button>
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:bg-green-50" 
-                                                            onClick={() => setIsAddNewRecordDialogOpen({ isOpen: true, editData: req })}>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                            onClick={() => setIsAddNewRecordDialogOpen({ isOpen: true, editData: req })}
+                                                        >
                                                             <Pencil size={16} />
                                                         </Button>
-                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600 hover:bg-green-50" 
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
                                                             disabled={req.status === 'pending'}
-                                                            onClick={() => setPrintDialogState({ isVisible: true, request: req })}>
+                                                            onClick={() => setPrintDialogState({ isVisible: true, request: req })}
+                                                        >
                                                             <Printer size={16} />
                                                         </Button>
                                                     </div>
@@ -222,7 +244,13 @@ export function AssistanceRequestTable({ data, filters }: Props) {
             </div>
 
             <div className="mt-4">
-                <PaginationView currentPage={meta.current_page} totalPages={meta.last_page} totalItems={meta.total} itemsPerPage={meta.per_page} onPageChange={handlePageChange} />
+                <PaginationView
+                    currentPage={meta.current_page}
+                    totalPages={meta.last_page}
+                    totalItems={meta.total}
+                    itemsPerPage={meta.per_page}
+                    onPageChange={handlePageChange}
+                />
             </div>
 
             {/* MODALS */}
@@ -237,7 +265,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                         positiveButtonText: 'Close',
                         negativeButtonText: '',
                         isNegativeButtonHidden: true,
-                        action: null
+                        action: null,
                     });
                     handleReload();
                 }}
@@ -266,7 +294,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 onClose={() => setPrintDialogState({ isVisible: false, request: null })}
                 data={printDialogState.request}
             />
-            
+
             <ToastProvider />
         </div>
     );

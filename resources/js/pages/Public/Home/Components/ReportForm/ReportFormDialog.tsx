@@ -8,13 +8,13 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { CommunityReportFormData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import MapCoordinates from './MapCoordinates';
 import { ReportTypeOption } from './ReportType';
-import { usePage } from '@inertiajs/react';
-import { SharedData } from '@/types';
 
 interface ReportFormDialogProps {
     open: boolean;
@@ -195,13 +195,12 @@ export function ReportFormDialog({ open, onOpenChange, onSuccess, onFailed }: Re
                 title: 'Submitting...',
             }));
         }
-
     };
 
     useEffect(() => {
         setValue('latitude', '');
         setValue('longitude', '');
-        setValue('contact', auth.user?.phone || "");
+        setValue('contact', auth.user?.phone || '');
     }, [open]);
 
     const handleClearCoordinates = () => {

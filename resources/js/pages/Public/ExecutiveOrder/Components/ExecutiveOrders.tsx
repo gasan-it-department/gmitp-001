@@ -3,13 +3,12 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, FileSignature, Search, ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { ViewOrderDialog } from './ViewExecutiveOrderDialog';
 import { ExecutiveOrder } from '@/Core/Types/ExecutiveOrders/ExecutiveOrders';
 import SearchBar from '@/pages/Utility/SearchBar';
+import { Calendar, ChevronRight, FileSignature, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ViewOrderDialog } from './ViewExecutiveOrderDialog';
 
 // Mock Data
 const executiveOrders: ExecutiveOrder[] = [
@@ -85,46 +84,40 @@ export function ExecutiveOrders() {
         console.log(`Downloading ${orderNumber}`);
         alert(`Downloading ${orderNumber}.pdf`);
     };
-    const primaryGradient = "bg-gradient-to-r from-red-500 to-orange-500";
-    const textGradient = "bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent";
+    const primaryGradient = 'bg-gradient-to-r from-red-500 to-orange-500';
+    const textGradient = 'bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent';
 
     const handleSearchQuery = async (query: string) => {
-        try{
-            if(query === ""){
+        try {
+            if (query === '') {
                 // CALL API TO LOAD THE DEFAULT LIST HERE. GO BACK TO ORIGINAL LIST.
                 // const response = await ExecutiveOrderApi.loadExecutiveOrders( page: 1);
                 // if(response.success){
                 //     // REFRESH LIST
                 // }
-            }else{
+            } else {
                 // CALL API TO SEARCH FOR QUERY
                 // const response = await ExecutiveOrderApi.searchFor(query);
                 // if(response.success){
                 //     // REFRESH LIST
                 // }
             }
-        }catch(error: any){
-
-        }
-    }
+        } catch (error: any) {}
+    };
 
     return (
         <div className="min-h-screen bg-white dark:bg-neutral-950">
-
             {/* HEADER SECTION */}
             <header className="border-b border-orange-100 bg-orange-50/30 dark:border-neutral-800 dark:bg-neutral-900/50">
                 <div className="container mx-auto px-4 py-10 md:py-12">
-                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                        <div className={`p-4 rounded-2xl ${primaryGradient} shadow-lg text-white`}>
+                    <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
+                        <div className={`rounded-2xl p-4 ${primaryGradient} text-white shadow-lg`}>
                             <FileSignature className="h-8 w-8" />
                         </div>
                         <div>
-                            <h1 className={`text-3xl md:text-4xl font-black tracking-tight ${textGradient} dark:text-white`}>
-                                Executive Orders
-                            </h1>
+                            <h1 className={`text-3xl font-black tracking-tight md:text-4xl ${textGradient} dark:text-white`}>Executive Orders</h1>
                             <p className="mt-2 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-gray-400">
-                                Access official directives issued by the Municipal Mayor guiding local policies,
-                                programs, and public services.
+                                Access official directives issued by the Municipal Mayor guiding local policies, programs, and public services.
                             </p>
                         </div>
                     </div>
@@ -132,13 +125,15 @@ export function ExecutiveOrders() {
             </header>
 
             <main className="container mx-auto px-4 py-8 md:py-12">
-
                 {/* FILTERS & SEARCH */}
-                <div className="mb-8 space-y-4 rounded-2xl bg-white border border-gray-200 p-5 shadow-sm dark:bg-neutral-900 dark:border-neutral-800">
+                <div className="mb-8 space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
                     <div className="flex flex-col gap-4 md:flex-row">
-                        <SearchBar onSearch={(keyword) => {
-                            handleSearchQuery(keyword);
-                        }} searchBarHint={'Search transactions, ID or type'} />
+                        <SearchBar
+                            onSearch={(keyword) => {
+                                handleSearchQuery(keyword);
+                            }}
+                            searchBarHint={'Search transactions, ID or type'}
+                        />
                         <div className="flex gap-3">
                             <Select value={selectedYear} onValueChange={setSelectedYear}>
                                 <SelectTrigger className="w-[140px] border-gray-300 focus:ring-orange-200 dark:border-neutral-700">
@@ -146,15 +141,19 @@ export function ExecutiveOrders() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Years</SelectItem>
-                                    {years.filter((y) => y !== 'all').map((year) => (
-                                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                                    ))}
+                                    {years
+                                        .filter((y) => y !== 'all')
+                                        .map((year) => (
+                                            <SelectItem key={year} value={year}>
+                                                {year}
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400 pt-2">
+                    <div className="flex items-center justify-between pt-2 text-xs font-medium text-gray-500 dark:text-gray-400">
                         <span>Showing {filteredOrders.length} results</span>
                         {(searchQuery || selectedYear !== 'all' || selectedCategory !== 'all') && (
                             <Button
@@ -165,7 +164,7 @@ export function ExecutiveOrders() {
                                     setSelectedYear('all');
                                     setSelectedCategory('all');
                                 }}
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50 h-auto p-0"
+                                className="h-auto p-0 text-red-500 hover:bg-red-50 hover:text-red-600"
                             >
                                 Clear filters
                             </Button>
@@ -179,33 +178,39 @@ export function ExecutiveOrders() {
                         <Card
                             key={order.number}
                             onClick={() => handleViewOrder(order)}
-                            className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer dark:bg-neutral-900 dark:border-neutral-800"
+                            className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
                         >
                             {/* Decorative Top Border */}
                             <div className={`h-1.5 w-full ${primaryGradient}`} />
 
-                            <CardHeader className="pb-3 flex-1">
+                            <CardHeader className="flex-1 pb-3">
                                 <div className="mb-3 flex items-start justify-between gap-2">
-                                    <Badge variant="secondary" className="font-mono text-xs font-bold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+                                    <Badge
+                                        variant="secondary"
+                                        className="bg-orange-100 font-mono text-xs font-bold text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
+                                    >
                                         {order.number}
                                     </Badge>
-                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                    <span className="flex items-center gap-1 text-xs text-gray-400">
                                         <Calendar className="h-3 w-3" /> {order.dateIssued}
                                     </span>
                                 </div>
-                                <CardTitle className="text-lg font-bold leading-tight text-gray-800 group-hover:text-red-600 transition-colors dark:text-gray-100 dark:group-hover:text-orange-400">
+                                <CardTitle className="text-lg leading-tight font-bold text-gray-800 transition-colors group-hover:text-red-600 dark:text-gray-100 dark:group-hover:text-orange-400">
                                     {order.title}
                                 </CardTitle>
                             </CardHeader>
 
                             {/* Description CardContent REMOVED for cleaner, more compact look */}
 
-                            <CardFooter className="border-t border-gray-100 bg-gray-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900 mt-auto">
+                            <CardFooter className="mt-auto border-t border-gray-100 bg-gray-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
                                 <div className="flex w-full items-center justify-between">
-                                    <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 bg-white dark:bg-neutral-800 dark:border-neutral-700">
+                                    <Badge
+                                        variant="outline"
+                                        className="border-gray-200 bg-white text-[10px] text-gray-500 dark:border-neutral-700 dark:bg-neutral-800"
+                                    >
                                         {order.category}
                                     </Badge>
-                                    <div className="flex items-center text-xs font-semibold text-red-600 group-hover:translate-x-1 transition-transform">
+                                    <div className="flex items-center text-xs font-semibold text-red-600 transition-transform group-hover:translate-x-1">
                                         Read More <ChevronRight className="ml-1 h-3 w-3" />
                                     </div>
                                 </div>
@@ -216,12 +221,12 @@ export function ExecutiveOrders() {
 
                 {/* EMPTY STATE */}
                 {filteredOrders.length === 0 && (
-                    <div className="py-20 text-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 dark:bg-neutral-900 dark:border-neutral-800">
+                    <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-20 text-center dark:border-neutral-800 dark:bg-neutral-900">
                         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/20">
                             <Search className="h-8 w-8 text-orange-500" />
                         </div>
                         <h3 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">No results found</h3>
-                        <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                        <p className="mx-auto max-w-sm text-gray-500 dark:text-gray-400">
                             We couldn't find any Executive Orders matching your current filters.
                         </p>
                         <Button
@@ -240,12 +245,7 @@ export function ExecutiveOrders() {
             </main>
 
             {/* VIEW ORDER DIALOG */}
-            <ViewOrderDialog
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                order={selectedOrder}
-                onDownload={handleDownload}
-            />
+            <ViewOrderDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} order={selectedOrder} onDownload={handleDownload} />
         </div>
     );
 }

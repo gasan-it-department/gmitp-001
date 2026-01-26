@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import SearchBar from "@/pages/Utility/SearchBar";
-import { Filter, List, PlusIcon, UploadIcon } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import SearchBar from '@/pages/Utility/SearchBar';
+import { List, UploadIcon } from 'lucide-react';
 
 interface Props {
     className?: string;
@@ -15,10 +15,13 @@ export default function FeedbackPage({ className, onFilterButtonClicked, onSearc
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             {/* <h1 className="w-full justify-items-center text-3xl font-extrabold tracking-wide text-balance">Request List</h1> */}
-            <SearchBar onSearch={(keyword) => {
-                console.log("Searching for " + keyword);
-                onSearch?.(keyword);
-            }} searchBarHint={'Search...'} />
+            <SearchBar
+                onSearch={(keyword) => {
+                    console.log('Searching for ' + keyword);
+                    onSearch?.(keyword);
+                }}
+                searchBarHint={'Search...'}
+            />
 
             <div className="ml-2" />
 

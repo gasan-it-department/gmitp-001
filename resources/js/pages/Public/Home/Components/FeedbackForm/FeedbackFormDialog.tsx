@@ -7,13 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { FeedbackApi } from '@/Core/Api/Feedback/FeedbackApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import { dummy_departments } from '@/pages/Utility/Offices';
 import axios from 'axios';
 import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import StarRating from './StarRatingBar';
-import LoadingDialog from '@/pages/Utility/LoadingDialog';
 
 interface FeedbackDialogProps {
     open: boolean;
@@ -55,7 +55,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
     const { currentMunicipality } = useMunicipality();
     const [isSubmitting, setIsSubmitting] = useState({
         isOpen: false,
-        title: "Loading..."
+        title: 'Loading...',
     });
     const [files, setFiles] = useState<File[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
         setIsSubmitting((prev) => ({
             ...prev,
             isOpen: true,
-            title:"Submitting..."
+            title: 'Submitting...',
         }));
         setError(null);
 
@@ -131,12 +131,12 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                 setError('An unexpected error occurred. Please try again.');
                 onStatusChange?.('failed', 'An unexpected error occurred. Please try again.');
             }
-        }finally{
+        } finally {
             setIsSubmitting((prev) => ({
-            ...prev,
-            isOpen: false,
-            title:"Submitting..."
-        }));
+                ...prev,
+                isOpen: false,
+                title: 'Submitting...',
+            }));
         }
     };
 
@@ -167,11 +167,15 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                     <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-6 pt-2">
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="employee" id="employee" />
-                                            <Label htmlFor="employee" className="cursor-pointer">Employee</Label>
+                                            <Label htmlFor="employee" className="cursor-pointer">
+                                                Employee
+                                            </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="department" id="department" />
-                                            <Label htmlFor="department" className="cursor-pointer">Office/Department</Label>
+                                            <Label htmlFor="department" className="cursor-pointer">
+                                                Office/Department
+                                            </Label>
                                         </div>
                                     </RadioGroup>
                                 )}
@@ -209,7 +213,9 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {dummy_departments.map((dept) => (
-                                                        <SelectItem key={dept.id} value={dept.id.toString()}>{dept.name}</SelectItem>
+                                                        <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                            {dept.name}
+                                                        </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>

@@ -11,7 +11,7 @@ interface Props {
     onCreateNewButtonClicked: () => void;
 }
 
-export default function BidsAndAwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked}: Props) {
+export default function BidsAndAwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked }: Props) {
     // 1. Consuming the context here is the clean, correct way
     const { currentMunicipality } = useMunicipality();
     const handleCreateClick = () => {
@@ -21,7 +21,7 @@ export default function BidsAndAwardsHeader({ className, onFilterButtonClicked, 
 
         // router.visit(awardsAdminPage.addEditPage.url(currentMunicipality.slug));
     };
-    
+
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             <SearchBar

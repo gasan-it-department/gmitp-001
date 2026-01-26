@@ -19,7 +19,7 @@ class ResetPasswordController extends Controller
     ) {
     }
 
-    public function store(Request $request, string $phone)
+    public function update(Request $request, string $phone)
     {
 
         $request->validate([

@@ -1,35 +1,36 @@
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import { EyeIcon } from "lucide-react";
-import ExecutiveOrdersHeader from "./ExecutiveOrdersHeader";
-import { useState } from "react";
-import { ExecutiveOrdersData } from "@/Core/Types/LocalGovernment/ExecutiveOrdersTypes";
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ExecutiveOrdersData } from '@/Core/Types/LocalGovernment/ExecutiveOrdersTypes';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import { EyeIcon } from 'lucide-react';
+import { useState } from 'react';
+import ExecutiveOrdersHeader from './ExecutiveOrdersHeader';
 
 export default function ExecutiveOrdersTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [executiveOrdersList, setExecutiveOrdersList] = useState<ExecutiveOrdersData[]>([]);
-    
+
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Executive Orders</h1>
                 <ExecutiveOrdersHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { }}
-                    onExportButtonClicked={() => { }}
-                    onAddNewButtonClicked={() => {  }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {}}
+                    onExportButtonClicked={() => {}}
+                    onAddNewButtonClicked={() => {}}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <div>
                     <Button
                         size="sm"
                         disabled={selectedItems.length <= 0}
-                        className="bg-red-600 hover:bg-red-700 text-white border-none"
-                        onClick={() => { }
+                        className="border-none bg-red-600 text-white hover:bg-red-700"
+                        onClick={
+                            () => {}
                             // setClassicDialog((prev) => ({
                             //     ...prev,
                             //     isOpen: true,
@@ -75,8 +76,9 @@ export default function ExecutiveOrdersTable() {
                         {executiveOrdersList.length === 0 ? (
                             <AdminEmptyListItem
                                 colSpan={7}
-                                title='No executive orders yet'
-                                message='Executive orders will appear here once you add.' />
+                                title="No executive orders yet"
+                                message="Executive orders will appear here once you add."
+                            />
                         ) : (
                             executiveOrdersList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
@@ -146,8 +148,6 @@ export default function ExecutiveOrdersTable() {
                     </TableBody>
                 </Table>
             </div>
-
-            
         </div>
     );
 }
