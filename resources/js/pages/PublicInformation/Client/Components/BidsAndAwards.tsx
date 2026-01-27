@@ -139,7 +139,7 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [bidFilesVisible, setBidFilesVisible] = useState({
         isOpen: false,
-        files: [] as string[],
+        files: [] as AwardFile[],
         projectName: ""
     });
 
@@ -262,7 +262,7 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
                                         console.log("Ref no.: " + bid.files);
                                         setBidFilesVisible(() => ({
                                             isOpen: true,
-                                            files: bid.files ? bid.files.map(file => file.view_url) : [],
+                                            files: bid.files || [],
                                             projectName: bid.title
                                         }))
                                     }}

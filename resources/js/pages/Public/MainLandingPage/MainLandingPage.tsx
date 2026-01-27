@@ -2,7 +2,7 @@ import LandingPageHeroBanner from '@/pages/Public/MainLandingPage/Components/Lan
 
 export default function MainLandingPage() {
     return (
-        <div className="p-0">
+        <div className="bg-red-500 w-full max-w-[2800px] mx-auto">
             <LandingPageHeroBanner />
         </div>
     );
