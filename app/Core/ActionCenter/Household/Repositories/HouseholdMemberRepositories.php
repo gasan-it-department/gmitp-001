@@ -7,6 +7,9 @@ class HouseholdMemberRepositories
 
     public function store()
     {
+
+
+
     }
 
 }

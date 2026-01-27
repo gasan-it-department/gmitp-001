@@ -26,6 +26,25 @@ class ProcurementFile extends Model
 
     ];
 
+    public function getViewUrlAttribute()
+    {
+        $cloudName = config('cloudinary.cloud_name');
+
+        $extension = $this->extension ? ".{$this->extension}" : '';
+
+        return "https://res.cloudinary.com/{$cloudName}/{$this->resource_type}/upload/{$this->public_id}{$extension}";
+    }
+
+    public function getDownloadUrlAttribute()
+    {
+        $cloudName = config('cloudinary.cloud_name');
+
+        $extension = $this->extension ? ".{$this->extension}" : '';
+
+        return "https://res.cloudinary.com/{$cloudName}/{$this->resource_type}/upload/fl_attachment/{$this->public_id}{$extension}";
+    }
+
+
     public function procurement(): BelongsTo
     {
 

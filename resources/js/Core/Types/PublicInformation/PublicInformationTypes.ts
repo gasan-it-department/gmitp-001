@@ -44,6 +44,8 @@ export interface AwardsData {
 }
 
 export interface ProcurementFormData {
+    [key: string]: any;
+
     reference_number: string;
     title: string;
     category: string;
@@ -54,6 +56,7 @@ export interface ProcurementFormData {
     closing_date?: string | null;
     award_date?: string | null;
     winning_bidder?: string | null;
+    attachments: any[];
 }
 
 

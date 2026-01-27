@@ -179,18 +179,21 @@ export default function ProcurementForm({ editData }: Props) {
             toast.error('Failed to save record');
         }
     };
+
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            window.history.back();
+        }
+    };
     return (
         <>
             {/* --- TOP HEADER (Sticky) --- */}
             <div className="sticky top-0 z-30 border-b border-gray-200 bg-white/80 px-6 py-4 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/80">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link
-                            href={`/admin/${currentMunicipality.slug}/procurements`}
-                            className="rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-neutral-800"
-                        >
+                        <Button onClick={handleBack} className="rounded-full bg-white p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-neutral-800">
                             <ArrowLeft className="h-5 w-5" />
-                        </Link>
+                        </Button>
                         <div>
                             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {editData ? 'Edit Procurement Record' : 'Create New Procurement'}
