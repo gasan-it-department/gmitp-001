@@ -55,7 +55,7 @@ export default function TravelPage() {
 
     return (
         <MunicipalityProvider>
-            <div>
+            <div className="max-w-[2000px] mx-auto">
                 <TravelHeader />
                 <PromotionPage />
                 <LeaftfletMapView destinationList={destinations} />

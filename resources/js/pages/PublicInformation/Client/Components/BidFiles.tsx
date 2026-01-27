@@ -8,11 +8,19 @@ import {
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { FileText, Download, Eye, Files } from "lucide-react";
 
+interface AwardFile {
+    id: number;
+    name: string;
+    type: string;
+    view_url: string;
+    download_url: string;
+}
+
 interface BidFilesProps {
     isOpen: boolean;
     onClose: () => void;
-    files: string[];
-    projectName: string; // Added project name to props
+    files: AwardFile[];
+    projectName: string;
 }
 
 export default function BidFiles({ isOpen, onClose, files, projectName }: BidFilesProps) {
@@ -21,10 +29,10 @@ export default function BidFiles({ isOpen, onClose, files, projectName }: BidFil
             <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
                 {/* Header with Gradient and Project Name */}
                 <DialogHeader className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
-                    <div className="space-y-1">
+                    <div className="space-y-1 items-start justify-items-start">
                         <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
                             <FileText className="h-5 w-5" />
-                            sBid Documents
+                            Bid Documents
                         </DialogTitle>
                         {/* Project Name Subtitle */}
                         <p className="text-orange-100 text-sm font-medium line-clamp-1">
@@ -38,7 +46,6 @@ export default function BidFiles({ isOpen, onClose, files, projectName }: BidFil
                     {files.length > 0 ? (
                         <ul className="space-y-3">
                             {files.map((file, index) => {
-                                const fileName = file.split('/').pop() || `Document-${index + 1}`;
 
                                 return (
                                     <li
@@ -49,20 +56,25 @@ export default function BidFiles({ isOpen, onClose, files, projectName }: BidFil
                                             <div className="rounded-md bg-white p-2 shadow-sm">
                                                 <FileText className="h-4 w-4 text-orange-500" />
                                             </div>
-                                            <span className="truncate text-sm font-medium text-gray-700">
-                                                {fileName}
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className="truncate text-sm font-medium text-gray-700 text-[14px] p-1">
+                                                    {file.name}
+                                                </span>
+                                                <span className="truncate text-gray-700 text-[10px] p-1">
+                                                    {file.type}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-2">
                                             <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-blue-600 hover:bg-blue-50">
-                                                <a href={file} target="_blank" rel="noopener noreferrer">
+                                                <a href={file.view_url} target="_blank" rel="noopener noreferrer">
                                                     <Eye className="h-4 w-4" />
                                                 </a>
                                             </Button>
 
                                             <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-green-600 hover:bg-green-50">
-                                                <a href={file} download={fileName}>
+                                                <a href={file.download_url} download={file.name}>
                                                     <Download className="h-4 w-4" />
                                                 </a>
                                             </Button>
