@@ -22,13 +22,8 @@ class ProcurementsController
 
         $procurement = $this->storeProcurementsUseCase->execute($dto);
 
-        return response()->json([
+        return redirect()->back()->with('success', 'Procurement Added.');
 
-            'message' => 'Procurement created successfully',
-
-            'procurement' => $procurement,
-
-        ], 200);
 
     }
 

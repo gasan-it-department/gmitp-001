@@ -7,14 +7,16 @@ use App\External\Web\Controllers\PublicInformation\Client;
 
 Route::prefix('{municipality}/awards')
     ->middleware(['municipalityContext', 'admin'])
-    ->name('awardsAdminPage.')
+    ->name('procurement.admin.')
     ->controller(ProcurementsPageController::class)
     ->group(function () {
 
         Route::get('/admin', 'index')->name('page');
 
-        Route::get('/admin/add-edit-procurement', 'addEditShow')->name('addEditPage');
-
+        //test page remove later and use the name('creation);
+        // Route::get('/admin/add-edit-procurement', 'addEditShow')->name('create');
+    
+        Route::get('create-procurement', 'create')->name('create');
     });
 
 Route::prefix('{municipality}/transparency')

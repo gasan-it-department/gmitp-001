@@ -15,13 +15,13 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
-import awardsAdminPage from '@/routes/awardsAdminPage';
 import bulletinBoard from '@/routes/bulletin-board';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
 import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
+import procurement from '@/routes/procurement';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -172,7 +172,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             items: [
                 {
                     title: 'Biddings',
-                    url: awardsAdminPage.page.url({ municipality: currentMunicipality.slug }),
+                    url: procurement.admin.page.url({ municipality: currentMunicipality.slug }),
                     icon: Hand,
                     permission: 'public_information.access',
                 },

@@ -5,7 +5,7 @@ namespace App\External\Web\Controllers\ActionCenter\Client;
 use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 
-class AssistanceRequestController extends Controller
+class AssistanceRequestPageController extends Controller
 {
 
     public function create()

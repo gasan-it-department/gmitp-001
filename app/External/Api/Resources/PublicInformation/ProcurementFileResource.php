@@ -27,9 +27,10 @@ class ProcurementFileResource extends JsonResource
 
             'type' => $this->type,
 
-            'view_url' => "{$baseUrl}/{$publicId}.{$extension}",
+            'view_url' => $this->view_url,
 
-            'download_url' => "{$baseUrl}/fl_attachment/{$publicId}.{$extension}",
+            'download_url' => $this->download_url,
+
         ];
     }
 }

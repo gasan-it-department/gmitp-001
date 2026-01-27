@@ -4,10 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\BeneficiaryFlagController;
 use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
-use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
+use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
 
-use App\External\Web\Controllers\ActionCenter\Client\AssistanceRequestController;
+use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
+use App\External\Web\Controllers\ActionCenter\Client\AssistanceRequestPageController;
 use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
 
 Route::prefix('{municipality}/action-center')
@@ -34,7 +35,7 @@ Route::prefix('{municipality}/action-center')
 
         Route::get('/household', [HouseholdController::class, 'index'])->name('household.index');
 
-        Route::get('/create-request', [AssistanceRequestController::class, 'create'])->name('create.request');
+        Route::get('/create-request', [AssistanceRequestPageController::class, 'create'])->name('create.request');
 
     });
 
