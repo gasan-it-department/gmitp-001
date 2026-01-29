@@ -292,7 +292,6 @@ export function BidsAndAwards({ data, metaData }: BidsAndAwardsProps) {
                                                 {/* Budget/Contract Amount */}
                                                 <span className="text-gray-400">•</span>
                                                 <span className="flex items-center gap-1 font-medium">
-                                                    <DollarSign className="h-3 w-3 text-red-500" />
                                                     {bid.status === 'AWARDED' ? 'Contract Amount' : 'Approved Budget'}: {formatCurrency(bid.approved_budget)}
                                                 </span>
 

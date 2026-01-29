@@ -1,144 +1,205 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import PublicLayout from "@/layouts/Public/wrapper/PublicLayoutTemplate";
+import ToastProvider from "@/pages/Utility/ToastShower";
 
 export default function GovernmentPage() {
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+
     const officials = [
         {
             name: "Hon. James Marty L. Lim",
             position: "Municipal Mayor",
-            image: "https://scontent.fmnl4-3.fna.fbcdn.net/v/t39.30808-6/550656754_815149738128259_7419807359012882333_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeHSd3L6MzdZylKmYfkFs5gDun_g4mrkGIG6f-DiauQYgbyRFWHBV3ENeq9TpR5o3GkfS06h43ZAU-SLGjr7qW1o&_nc_ohc=_hxEv-B9ytgQ7kNvwEGdSJl&_nc_oc=AdnLsAFAstnNmR6B92LiSjTnn6rtNs6VZaAIMQ5EjnlGyVPAwA_w1-Ns16PVVsXZndk&_nc_zt=23&_nc_ht=scontent.fmnl4-3.fna&_nc_gid=LjUbekQBXAg9ADv9gG9iSA&oh=00_AflDueldBaoZPw_Gz3I0TztlprTOgDmqmfdZ_HhT0aRy2A&oe=69356406",
+            image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654278/1_dx3kpm.png",
             description:
                 "As the chief executive of the Municipality of Gasan, the Municipal Mayor oversees the implementation of development programs, ensures efficient delivery of public services, and upholds transparent and accountable governance for every Gasanon.",
         },
         {
             name: "Hon. Lidany A. Lao-Baldo",
             position: "Municipal Vice Mayor",
-            image: "https://scontent.fmnl4-3.fna.fbcdn.net/v/t39.30808-6/514499976_710701225046712_1071594883676977387_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeHrBD73o8u357-tc9bSjAnzNL33JvDs-Kw0vfcm8Oz4rKvw5PzOxZ6-a5FublObtQ1cG0BWpMn5m1Pj_OxeWtWz&_nc_ohc=Vchjky7YBPYQ7kNvwHNgRc8&_nc_oc=AdkTmJXcjF9I_atZCyyH81EHlF_ssXgPOBDHTg-9Wb02kWfnpVSpcgg3cAbhKBxtWuY&_nc_zt=23&_nc_ht=scontent.fmnl4-3.fna&_nc_gid=Hh_DRx7FRIixQLLItw06Aw&oh=00_AfmafFJIVH2rL8Y9u4ITWrhmk4vWneZaHkg3aQkm4ADEeA&oe=693563C5",
+            image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654277/2_gkkwyd.png",
             description:
                 "The Municipal Vice Mayor presides over the Sangguniang Bayan and supports the Mayor in ensuring effective legislative and executive coordination for the welfare of the community.",
         },
-        { name: "Hon. Ricardo F. Macunat", position: "Municipal Councilor", image: "https://scontent.fmnl4-3.fna.fbcdn.net/v/t39.30808-6/514413954_710699061713595_5992977258682643732_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEOPTcsKS0Z-x8pInyxBxmEQH-0iZDUPxZAf7SJkNQ_FhDf65Lzcq5QEBUG7LPTNJMu5rBYf7vPIPjgpTglh4eN&_nc_ohc=4EFUkG36HvEQ7kNvwEA9_7n&_nc_oc=AdldbsO_g57HuBkevXWi1vmqGycuKjNd05XHkcvOAGdJ8x_Hm9mHAspkv6aOVFDxUBU&_nc_zt=23&_nc_ht=scontent.fmnl4-3.fna&_nc_gid=Uit8TGi7JbulFpgwAA7hPw&oh=00_AfldxqzHUE2vFpeYyd7HT708Qq_PKX0qkazWOGBVojR8zQ&oe=6935524D" },
-        { name: "Hon. Dunne Melton S. Motol", position: "Municipal Councilor", image: "https://scontent.fmnl4-3.fna.fbcdn.net/v/t39.30808-6/514601849_710699065046928_5174553878583697667_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeFcBM9p8jGhmwoj4gRldlpbZPk9w1GHFsFk-T3DUYcWwaXDFODLTueCG7OHKvoL2d71sZPqt2Cf4EY6r3KRjf48&_nc_ohc=rX59GS_PXAEQ7kNvwHfT2c-&_nc_oc=Adm80XWjwragiQyZ3rQ48RCuGL5Bc8jr9E2HVK-328KqY9QYG_u1DEDUDLikB70NjjU&_nc_zt=23&_nc_ht=scontent.fmnl4-3.fna&_nc_gid=r20wbHLvEc70GJl9N63yfw&oh=00_AflyMNPnFpWkfUOq1Q6LflvV3BYBouaB8aV46XLNnM1mtQ&oe=6935620B" },
-        { name: "Hon. Reynaldo M. Maming", position: "Municipal Councilor", image: "https://scontent.fmnl4-2.fna.fbcdn.net/v/t39.30808-6/514647434_710699071713594_4289868672478160387_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEnboECA9sY8-GvBW-7x4EQJwM75oV35F8nAzvmhXfkXzA9VduWB6oZgqlgw-1U-8qbNFUX7Of_rZlvZBpq-qrS&_nc_ohc=rguMiUGxL5IQ7kNvwHFbh24&_nc_oc=AdlcyvR-v9_xLZRZlap-xyWJ_ZR6g-AFiULFgDMRnFe3LIRiVt-cl0NwQiNcJoy4fa8&_nc_zt=23&_nc_ht=scontent.fmnl4-2.fna&_nc_gid=5IFnyoIOdS-u4pBsf_NB1Q&oh=00_Afk8LCMi3l6b-Awn9nKuAiohMaDtM05To0WzTTbL7CF6CQ&oe=6935736D" },
-        { name: "Hon. Mary Kris Tolentino", position: "Municipal Councilor", image: "https://scontent.fmnl4-6.fna.fbcdn.net/v/t39.30808-6/515041702_710699191713582_6006854631222912150_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeHKNc9I-iZRbf-DLQeNhU8zm5OmHr9X2bObk6Yev1fZs-v7FKPwKwdMkam3stjhR1sYSTxDg2801XqDogbUv0_Q&_nc_ohc=zgJJZE9GzXMQ7kNvwH5wWAE&_nc_oc=Adlrm59Awz2hURtQfqcey2GB1xCgfZ3tFOdKc4jVLJcZL3bNsBF6qXCMWhfzRP90AW4&_nc_zt=23&_nc_ht=scontent.fmnl4-6.fna&_nc_gid=GvL2I9m2AmW2wc60DOVqTw&oh=00_AfmuUwdeaYu8tKLTLmIe_BzIFCRX3Am1zem6yghJO46tcw&oe=693548A8" },
-        { name: "Hon. Maria Merlie Soberano-Selda", position: "Municipal Councilor", image: "https://scontent.fmnl4-6.fna.fbcdn.net/v/t39.30808-6/515319219_711317601651741_4863559060463655908_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeEV5q7rgjls_QMKAbFlVES35Z6C4yJoLtblnoLjImgu1tzQXqLSmN2dJx2g5W3zhAPFhyX7ZvLOQ0_9m-Pitrio&_nc_ohc=SEwMXX_f-zoQ7kNvwE3Dp53&_nc_oc=AdlV12nuOyFavJBk-CR_QdykzdQPGFycznO0GSeSLHO2a6gqIICYrelVnI2jr5KbdWM&_nc_zt=23&_nc_ht=scontent.fmnl4-6.fna&_nc_gid=yXsl6bb3pDymtXuD397Xcw&oh=00_AfkEHjiogbyY6zEiRrE7e27eDs9rs20wjiK-N4GQ3REdMw&oe=6935514C" },
-        { name: "Hon. Servillano M. Balitaan", position: "Municipal Councilor", image: "https://scontent.fmnl4-6.fna.fbcdn.net/v/t39.30808-6/514320409_710699198380248_4379646378771987371_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeHcgXyGEAZeWvJzDgmKY45YlYsJofEkEzqViwmh8SQTOgH5tSwpkPkOKv3l6GNno5g8kPsqeICGSbLEPdroeKJe&_nc_ohc=pat0xLdPM9kQ7kNvwESrM7i&_nc_oc=Adlt4ZBrNg34NOc8-CcBhwQmKKU5JTrdcFguj6j2e3teYLwpXiQ2nqglhcB0L_hgiEc&_nc_zt=23&_nc_ht=scontent.fmnl4-6.fna&_nc_gid=Zg8E62jCDr4AXqhlnpaM-A&oh=00_AfnKDywjc9xWJBWothdxHAVQjn2fagfjWVRF58p0jkkwtA&oe=693563BC" },
-        { name: "Hon. Harold K. Lim", position: "Municipal Councilor", image: "https://scontent.fmnl4-7.fna.fbcdn.net/v/t39.30808-6/514411799_710699285046906_254425484772528954_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeFjfGTDK90HpSxRUUwkk4dxBTV-FhJ7z14FNX4WEnvPXrMoexG3PYBT39LFsk8cgdtcE5K7Gm3ilmqO33ImDMYe&_nc_ohc=847Cm_wViEEQ7kNvwFWOmlM&_nc_oc=AdmK9jUl8ogdqMO21FIpJPeE6dHL2BVctjCvXo9FA0gD5W1WeyP3pmaWUglrNY1Kxco&_nc_zt=23&_nc_ht=scontent.fmnl4-7.fna&_nc_gid=ymxFmwJ-OILA4gWMKXlBOA&oh=00_Aflm6nWbvlurjgZaNoQFQF7uKmwgsF827lo5P3vB1Sjbtw&oe=69355367" },
-        { name: "Hon. Constancio W. Saludo", position: "Municipal Councilor", image: "https://scontent.fmnl4-7.fna.fbcdn.net/v/t39.30808-6/514317161_710699298380238_901660718128282282_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeH5hBbMJX0Y6Uj6QZwdcCZRhgY_tiwVxR6GBj-2LBXFHuNto6-nMXVbU0lXx9jyampSC9LhKdSYu6qQOuO9KvJ5&_nc_ohc=_lGtTtdIn6oQ7kNvwEpQmxl&_nc_oc=AdlBW0PF4-EO9oHlfmbPLIytmcP9gSPyCnpqxC-xj5etq-328JYvSQ1Zm-cAuSXHh90&_nc_zt=23&_nc_ht=scontent.fmnl4-7.fna&_nc_gid=mrXR4Yf6Y0-jBIMVZBs_KA&oh=00_AfmAJ1VnPXhIvxulHrTZZGKwfgVPIMfuJkwk_0uWL9UTmA&oe=69353CAF" },
+        { name: "Hon. Ricardo F. Macunat", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654277/3_fyqluf.png" },
+        { name: "Hon. Dunne Melton S. Motol", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654278/4_qmpmsx.png" },
+        { name: "Hon. Reynaldo M. Maming", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654278/5_fqsuhk.png" },
+        { name: "Hon. Mary Kris Tolentino", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654279/6_ayzauk.png" },
+        { name: "Hon. Maria Merlie Soberano-Selda", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654279/7_p0brvz.png" },
+        { name: "Hon. Servillano M. Balitaan", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654277/8_atppzz.png" },
+        { name: "Hon. Harold K. Lim", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654277/9_himsyv.png" },
+        { name: "Hon. Constancio W. Saludo", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654277/10_dxetgg.png" },
+        { name: "Hon. Karin-An M. De Villena", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654277/11_bn72lg.png" },
+        { name: "Hon. Marck Jhun Zoleta", position: "Municipal Councilor", image: "https://res.cloudinary.com/drhkb0ubf/image/upload/v1769654278/12_zqzkgk.png" },
     ];
 
     const mayor = officials.find((o) => o.position === "Municipal Mayor");
     const viceMayor = officials.find((o) => o.position === "Municipal Vice Mayor");
     const councilors = officials.filter((o) => o.position === "Municipal Councilor");
 
+    const availableYears = ["2026"];
+
     return (
         <PublicLayout
             title="Government Officials"
-            description="Meet the dedicated officials serving the Municipality of Gasan, Marinduque."
+            description="The Elective Officials of the Municipality of Gasan"
         >
-            <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-                <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
+            <div className="min-h-screen bg-[#fcfcfc] dark:bg-zinc-950">
+                <div className="h-1.5 bg-gradient-to-r from-blue-900 via-orange-500 to-blue-900 w-full" />
+
+                <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
                     {/* Header */}
-                    <header className="text-center pb-8 border-b border-gray-300">
-                        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
+                    <header className="text-center mb-20">
+                        <h2 className="text-orange-600 dark:text-orange-500 font-bold tracking-[0.25em] uppercase text-xs mb-4">
+                            Republic of the Philippines
+                        </h2>
+                        <h1 className="text-4xl md:text-6xl font-serif font-extrabold text-slate-900 dark:text-gray-100">
                             Municipality of Gasan
                         </h1>
-                        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 tracking-wide">
-                            Province of Marinduque
-                        </p>
+                        <div className="flex items-center justify-center gap-4 mt-3">
+                            <div className="h-[1px] w-12 bg-slate-300" />
+                            <p className="text-lg text-slate-600 dark:text-gray-400 font-medium italic">
+                                Province of Marinduque
+                            </p>
+                            <div className="h-[1px] w-12 bg-slate-300" />
+                        </div>
                     </header>
 
-                    {/* Mayor Section */}
-                    {mayor && (
-                        <section className="mt-10 border-b border-gray-300 pb-10">
-                            <h2 className="text-center text-lg sm:text-xl font-semibold uppercase text-gray-700 dark:text-gray-300 mb-8 tracking-wider">
-                                Municipal Mayor
-                            </h2>
-
-                            <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-center gap-8">
-                                <Card className="w-full max-w-xs sm:max-w-sm text-center border border-gray-200 bg-white rounded-2xl p-6 sm:p-8 shadow-md dark:border-gray-800 dark:bg-zinc-900">
-                                    <img
-                                        src={mayor.image}
-                                        alt={mayor.name}
-                                        className="h-36 w-36 sm:h-44 sm:w-44 rounded-full object-cover border-4 border-orange-400 mx-auto"
-                                    />
-                                    <h3 className="mt-5 text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">
-                                        {mayor.name}
-                                    </h3>
-                                    <p className="text-sm sm:text-base text-orange-700 dark:text-orange-400 font-medium">
-                                        {mayor.position}
-                                    </p>
-                                </Card>
-
-                                <div className="max-w-xl text-justify text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed border-t lg:border-t-0 lg:border-l border-gray-300 pt-4 lg:pt-0 lg:pl-6">
-                                    {mayor.description}
+                    <div className="space-y-32">
+                        {/* 1. MUNICIPAL MAYOR */}
+                        {mayor && (
+                            <section className="relative">
+                                <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                                    <div className="relative shrink-0">
+                                        <div className="absolute -inset-4 border border-slate-200 dark:border-zinc-800 rounded-2xl -z-10" />
+                                        <img 
+                                            src={mayor.image} 
+                                            alt={mayor.name} 
+                                            className="h-72 w-72 sm:h-96 sm:w-96 rounded-xl object-cover shadow-2xl border-4 border-white dark:border-zinc-900" 
+                                        />
+                                    </div>
+                                    <div className="flex-1 space-y-6 text-center lg:text-left">
+                                        <div className="inline-block px-4 py-1 bg-slate-900 dark:bg-white dark:text-black text-white text-xs font-bold uppercase tracking-[0.2em]">
+                                            Chief Executive
+                                        </div>
+                                        <h2 className="text-4xl sm:text-5xl font-serif font-black text-slate-900 dark:text-white leading-tight">
+                                            {mayor.name}
+                                        </h2>
+                                        <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">
+                                            Municipal Mayor
+                                        </p>
+                                        <p className="text-lg text-slate-700 dark:text-gray-300 leading-relaxed font-light italic border-l-4 border-orange-500 pl-6 text-justify lg:text-left">
+                                            "{mayor.description}"
+                                        </p>
+                                    </div>
                                 </div>
+                            </section>
+                        )}
+
+                        {/* 2. MUNICIPAL VICE MAYOR */}
+                        {viceMayor && (
+                            <section className="bg-slate-50 dark:bg-zinc-900/50 p-8 md:p-16 rounded-[2.5rem] border border-slate-200 dark:border-zinc-800 shadow-sm">
+                                <div className="flex flex-col md:flex-row items-center justify-center gap-12">
+                                    <div className="text-center md:text-right order-2 md:order-1 flex-1">
+                                        <h3 className="text-3xl font-serif font-bold text-slate-900 dark:text-white">
+                                            {viceMayor.name}
+                                        </h3>
+                                        <p className="text-orange-700 dark:text-orange-400 font-bold uppercase tracking-widest text-sm mb-4">
+                                            Municipal Vice Mayor
+                                        </p>
+                                        <p className="text-slate-600 dark:text-gray-400 text-sm md:text-base italic leading-relaxed">
+                                            {viceMayor.description}
+                                        </p>
+                                    </div>
+                                    <div className="order-1 md:order-2">
+                                        <img 
+                                            src={viceMayor.image} 
+                                            alt={viceMayor.name} 
+                                            className="h-56 w-56 rounded-full object-cover shadow-xl border-4 border-white dark:border-zinc-900 ring-1 ring-slate-200 dark:ring-zinc-700" 
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* 3. COUNCILORS GRID */}
+                        <section className="pt-10">
+                            <div className="text-center mb-16">
+                                <h2 className="text-2xl font-serif font-bold text-slate-800 dark:text-gray-200 uppercase tracking-[0.3em]">
+                                    Sangguniang Bayan Members
+                                </h2>
+                                <p className="text-xs text-slate-500 mt-2 uppercase tracking-widest">
+                                    Legislative Body of Gasan ({selectedYear})
+                                </p>
+                                <div className="h-1 w-20 bg-orange-500 mx-auto mt-4" />
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-16 gap-x-8 px-4">
+                                {councilors.map((c, i) => (
+                                    <div key={i} className="group flex flex-col items-center">
+                                        <div className="relative mb-6">
+                                            <div className="absolute -inset-2 border border-slate-200 dark:border-zinc-800 rounded-lg group-hover:border-orange-400 transition-colors duration-300" />
+                                            <img 
+                                                src={c.image} 
+                                                alt={c.name} 
+                                                className="relative h-40 w-40 sm:h-48 sm:w-48 rounded-md object-cover shadow-md group-hover:shadow-xl transition-all duration-300" 
+                                            />
+                                        </div>
+                                        <div className="text-center">
+                                            <h4 className="font-serif font-bold text-slate-900 dark:text-gray-100 leading-tight">
+                                                {c.name}
+                                            </h4>
+                                            <div className="mt-2 flex flex-col items-center">
+                                                <div className="h-0.5 w-8 bg-slate-200 dark:bg-zinc-800 group-hover:w-12 group-hover:bg-orange-500 transition-all mb-2" />
+                                                <p className="text-[10px] uppercase font-bold text-slate-500 dark:text-orange-500 tracking-tighter">
+                                                    Municipal Councilor
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </section>
-                    )}
+                    </div>
 
-                    {/* Vice Mayor Section */}
-                    {viceMayor && (
-                        <section className="mt-10 border-b border-gray-300 pb-10">
-                            <h2 className="text-center text-lg sm:text-xl font-semibold uppercase text-gray-700 dark:text-gray-300 mb-8 tracking-wider">
-                                Municipal Vice Mayor
-                            </h2>
+                    {/* FOOTER & YEAR SELECTION */}
+                    <footer className="mt-32 pt-12 border-t border-slate-200 dark:border-zinc-800 text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] mb-6">
+                            Official Directory • Municipality of Gasan
+                        </p>
 
-                            <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-center gap-8">
-                                <Card className="w-full max-w-xs sm:max-w-sm text-center border border-gray-200 bg-white rounded-2xl p-6 sm:p-8 shadow-md dark:border-gray-800 dark:bg-zinc-900">
-                                    <img
-                                        src={viceMayor.image}
-                                        alt={viceMayor.name}
-                                        className="h-36 w-36 sm:h-40 sm:w-40 rounded-full object-cover border-4 border-orange-400 mx-auto"
-                                    />
-                                    <h3 className="mt-5 text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">
-                                        {viceMayor.name}
-                                    </h3>
-                                    <p className="text-sm sm:text-base text-orange-700 dark:text-orange-400 font-medium">
-                                        {viceMayor.position}
-                                    </p>
-                                </Card>
-
-                                <div className="max-w-xl text-justify text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed border-t lg:border-t-0 lg:border-l border-gray-300 pt-4 lg:pt-0 lg:pl-6">
-                                    {viceMayor.description}
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Councilors Section */}
-                    <section className="mt-12">
-                        <h2 className="text-center text-lg sm:text-xl font-semibold uppercase text-gray-700 dark:text-gray-300 mb-8 tracking-wider">
-                            Councilors
-                        </h2>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 sm:gap-6">
-                            {councilors.map((c, i) => (
-                                <Card
-                                    key={i}
-                                    className="flex flex-col items-center text-center border border-gray-200 bg-white rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition dark:border-gray-800 dark:bg-zinc-900"
+                        <div className="flex flex-col items-center justify-center gap-3 mb-8">
+                            <label htmlFor="year-select" className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                                Select Administrative Year
+                            </label>
+                            <div className="relative">
+                                <select 
+                                    id="year-select"
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                    className="appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-md px-10 py-2 text-sm font-serif font-bold text-slate-800 dark:text-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
                                 >
-                                    <img
-                                        src={c.image}
-                                        alt={c.name}
-                                        className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover border-2 border-orange-400 mb-3 sm:mb-4"
-                                    />
-                                    <h4 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-gray-100">
-                                        {c.name}
-                                    </h4>
-                                    <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 font-medium">
-                                        {c.position}
-                                    </p>
-                                </Card>
-                            ))}
+                                    {availableYears.map(year => (
+                                        <option key={year} value={year}>{year}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
-                    </section>
 
-                    {/* Footer */}
-                    <footer className="mt-14 pt-6 border-t border-gray-300 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                        © {new Date().getFullYear()} Municipality of Gasan, Marinduque. All rights reserved.
+                        <p className="text-[9px] text-slate-400 italic">
+                            Data provided for the administrative period of {selectedYear}
+                        </p>
+                        <p className="text-[9px] text-slate-300 dark:text-zinc-700 mt-4 uppercase tracking-[0.2em]">
+                            © {new Date().getFullYear()} Gasan Marinduque Local Government Unit
+                        </p>
                     </footer>
                 </div>
+
+                <ToastProvider/>
             </div>
         </PublicLayout>
     );

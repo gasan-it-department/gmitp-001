@@ -21,6 +21,7 @@ import communityReport from '@/routes/communityReport';
 import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
+import officialsEditor from '@/routes/officialsEditor';
 import procurement from '@/routes/procurement';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
@@ -40,8 +41,10 @@ import {
     Medal,
     Megaphone,
     MessageCircleIcon,
+    PersonStandingIcon,
     Plane,
     Sparkle,
+    UserCheck,
     UsersIcon,
 } from 'lucide-react';
 import * as React from 'react';
@@ -183,10 +186,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             icon: Landmark,
             items: [
                 {
-                    title: 'Executive Orders',
-                    url: executiveOrders.page.url({ municipality: currentMunicipality.slug }),
-                    icon: FileSignature,
-                    permission: 'executive_orders.access',
+                    title: 'Public Officials',
+                    url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
+                    icon: UserCheck,
+                    permission: 'public_information.access',
                 },
             ],
         },

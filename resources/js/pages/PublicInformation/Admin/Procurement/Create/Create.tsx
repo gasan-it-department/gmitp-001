@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { ProcurementFormData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react'; // Icons make it look premium
+import { ArrowLeft } from 'lucide-react';
 import { Attachments } from './Components/Attachments';
 import { AwardInformation } from './Components/AwardInformation';
 import { BudgetAndSchedule } from './Components/BudgetAndSchedule';
