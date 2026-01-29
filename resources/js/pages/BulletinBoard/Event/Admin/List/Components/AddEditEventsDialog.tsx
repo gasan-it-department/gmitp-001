@@ -69,8 +69,8 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
                     description: response.data.description,
                     event_date: response.data.event_date.date,
                     event_created_at: response.data.created_at.date,
-                }
-                console.log("Response data:", response.data);
+                };
+                console.log('Response data:', response.data);
                 onSuccess!(reconstructedResponse, false);
             }
             reset();
@@ -89,16 +89,15 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
                 });
             } else {
                 setServerError('Something went wrong. Please try again.');
-
             }
         }
     };
 
     function toDateInputValue(dateString: string) {
         const d = new Date(dateString);
-        if (isNaN(d.getTime())) return ""; // invalid date fallback
+        if (isNaN(d.getTime())) return ''; // invalid date fallback
 
-        return d.toISOString().split("T")[0];
+        return d.toISOString().split('T')[0];
     }
 
     return (
@@ -120,8 +119,9 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
                                 id="title"
                                 placeholder="Enter event title"
                                 {...register('title', { required: 'Title is required' })}
-                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.title ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                    errors.title ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             />
                             {errors.title && <p className="text-sm text-red-600">{errors.title.message}</p>}
                         </div>
@@ -136,8 +136,9 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
                                 placeholder="Enter event description"
                                 rows={4}
                                 {...register('description', { required: 'Description is required' })}
-                                className={`min-h-[150px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.description ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`min-h-[150px] rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                    errors.description ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             />
                             {errors.description && <p className="text-sm text-red-600">{errors.description.message}</p>}
                         </div>
@@ -151,8 +152,9 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
                                 type="date"
                                 id="event_date"
                                 {...register('event_date', { required: 'Date is required' })}
-                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${errors.event_date ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`rounded-md border font-medium text-gray-600 transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200 ${
+                                    errors.event_date ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             />
                             {errors.event_date && <p className="text-sm text-red-600">{errors.event_date.message}</p>}
                         </div>

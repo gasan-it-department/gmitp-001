@@ -29,7 +29,8 @@ enum EnumPermissions: string
             self::TOURISM_ACCESS => 'Tourism Module',
             self::USERS_ACCESS => 'User Management',
             self::WEDDING_ACCESS => 'Wedding Management',
-            self::CEMETERY_ACCESS => 'Cemetery Management'
+            self::CEMETERY_ACCESS => 'Cemetery Management',
+            self::GOVERNMENT_ACCESS => 'Government Management',
         };
     }
 

@@ -3,13 +3,15 @@
 namespace App\Core\BulletinBoard\Events\Models;
 
 use App\Core\Users\Models\User;
+use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Events extends Model
+class Event extends Model
 {
     // protected $table = 'events';
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     public $incrementing = false;
 
@@ -24,6 +26,11 @@ class Events extends Model
         'event_date',
         'is_published'
     ];
+
+    protected static function newFactory()
+    {
+        return EventFactory::new();
+    }
 
     public function user()
     {

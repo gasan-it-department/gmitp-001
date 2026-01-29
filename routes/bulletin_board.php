@@ -74,7 +74,7 @@ Route::prefix('/api/events')
     ->controller(EventController::class)
     ->group(function () {
 
-        Route::middleware(['auth', 'admin'])
+        Route::middleware(['auth', 'municipalityContext', 'admin'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name("fetch")->middleware('municipalityContext');
@@ -83,7 +83,7 @@ Route::prefix('/api/events')
 
                 Route::put('/{id}', 'update')->name("update")->middleware('municipalityContext');
 
-                Route::post('/delete', 'destroy')->name('destroy')->middleware('municipalityContext');
+                Route::delete('/delete', 'destroy')->name('destroy')->middleware('municipalityContext');
 
             });
 
