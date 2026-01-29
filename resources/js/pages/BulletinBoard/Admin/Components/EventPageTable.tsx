@@ -10,7 +10,7 @@ import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import { CheckCircle2, Clock, Pencil, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import AddEditEventsDialog from './AddEditEventsDialog';
+import AddEditEventsDialog from '../../Event/Admin/List/Components/AddEditEventsDialog';
 import EventPageHeader from './EventPageHeader';
 
 // 1. Defined types based on your JSON structure

@@ -31,8 +31,8 @@ export function Pagination({ links }: Props) {
                     <Link
                         key={index}
                         href={link.url}
-                        preserveScroll // 👈 CRITICAL: Keeps scroll position
-                        preserveState // 👈 CRITICAL: Keeps your filter states
+                        preserveScroll //  Keeps scroll position
+                        preserveState // Keeps your filter states
                         className={cn(
                             'rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
                             link.active

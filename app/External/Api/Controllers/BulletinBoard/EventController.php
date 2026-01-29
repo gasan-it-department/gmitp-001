@@ -195,10 +195,7 @@ class EventController extends Controller
             }
 
             // 3. Return Success
-            return response()->json([
-                'success' => true,
-                'message' => "$count event(s) deleted successfully.",
-            ], 200);
+            return redirect()->back()->with('success', 'Successfully deleted.');
 
         } catch (\Exception $e) {
             return response()->json([

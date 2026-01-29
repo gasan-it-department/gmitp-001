@@ -4,16 +4,16 @@ namespace App\Core\BulletinBoard\Events\Repositories;
 
 use App\Core\BulletinBoard\Events\Dto\EventsQueryDto;
 use App\Core\BulletinBoard\Events\Dto\UpdateEventDto;
-use App\Core\BulletinBoard\Events\Models\Events;
+use App\Core\BulletinBoard\Events\Models\Event;
 use App\Core\BulletinBoard\Events\Dto\CreateEventDto;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class EventRepository
 {
-    public function save(CreateEventDto $dto, string $eventId, string $municipalId): Events
+    public function save(CreateEventDto $dto, string $eventId, string $municipalId): Event
     {
-        return Events::create([
+        return Event::create([
             'id' => $eventId,
             'title' => $dto->title,
             'description' => $dto->description,
@@ -24,17 +24,17 @@ class EventRepository
         ]);
     }
 
-    public function findById(string $id): Events
+    public function findById(string $id): Event
     {
 
-        return Events::findOrFail($id);
+        return Event::findOrFail($id);
 
     }
 
     //for admin usage 
     public function getAllByMunicipalId(string $municipalId, EventsQueryDto $dto): LengthAwarePaginator
     {
-        $query = Events::query()
+        $query = Event::query()
             ->where('municipal_id', $municipalId)
             ->where('is_published', $dto->isPublished)
             ->with('user')
@@ -55,7 +55,7 @@ class EventRepository
 
     public function getPublished(string $municipalId, bool $isPublished, EventsQueryDto $dto): LengthAwarePaginator
     {
-        $query = Events::query()
+        $query = Event::query()
             ->where('municipal_id', $municipalId)
             ->where('is_published', $isPublished)
             ->with('user')
@@ -79,14 +79,14 @@ class EventRepository
     public function destroy(array $ids)
     {
 
-        return Events::destroy($ids);
+        return Event::destroy($ids);
 
     }
 
 
     public function update(string $id, UpdateEventDto $dto)
     {
-        $event = Events::findOrFail($id);
+        $event = Event::findOrFail($id);
 
         $updates = [];
 
