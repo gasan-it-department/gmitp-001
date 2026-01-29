@@ -15,6 +15,7 @@ enum EnumPermissions: string
     case USERS_ACCESS = 'users.access';
     case WEDDING_ACCESS = 'wedding.access';
     case CEMETERY_ACCESS = 'cemetery.access';
+    case GOVERNMENT_ACCESS = 'government.access';
 
     public function label(): string
     {
