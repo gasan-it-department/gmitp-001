@@ -32,7 +32,7 @@ export default function CreateProcurement() {
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        post(PublicInformation.ProcurementsController.store.url(), {
+        post(PublicInformation.StoreProcurementsController.url(), {
             forceFormData: true,
             // 2. Inject the Header here
             headers: {

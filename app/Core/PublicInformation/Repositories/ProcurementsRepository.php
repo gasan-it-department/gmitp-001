@@ -72,13 +72,22 @@ class ProcurementsRepository
 
     }
 
+    public function findByIdAndMunicipality(string $procurementId, string $municipalId)
+    {
+
+        return Procurement::with('files')
+            ->where('municipal_id', $municipalId)
+            ->find($procurementId);
+
+    }
+
     public function getAllPermunicipality(string $municipalId)
     {
 
         return Procurement::query()
             ->where('municipal_id', $municipalId)
             ->with('files')
-            ->paginate(10);
+            ->paginate(50);
 
     }
 
