@@ -1,10 +1,19 @@
 import PublicInformation from '@/actions/App/External/Api/Controllers/PublicInformation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { ProcurementFormData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { 
+    ArrowLeft, 
+    FilePlus2, 
+    Gavel, 
+    Wallet, 
+    Paperclip, 
+    Info,
+    CheckCircle2
+} from 'lucide-react';
 import { Attachments } from './Components/Attachments';
 import { AwardInformation } from './Components/AwardInformation';
 import { BudgetAndSchedule } from './Components/BudgetAndSchedule';
@@ -25,116 +34,191 @@ const initialValues: ProcurementFormData = {
 };
 
 export default function CreateProcurement() {
-    // const { currentMunicipality } = useMunicipality();
     const { currentMunicipality } = usePage<any>().props;
+    
+    // Explicitly typing the useForm hook helps resolve 'never' errors
     const { data, setData, post, processing, errors } = useForm<ProcurementFormData>(initialValues);
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         post(PublicInformation.StoreProcurementsController.url(), {
             forceFormData: true,
-            // 2. Inject the Header here
             headers: {
                 'X-Municipality-Slug': currentMunicipality?.slug || '',
-            },
-            onSuccess: () => {
-                console.log('Success!');
             },
         });
     };
 
-    // Assuming you have a route to go back to the list
-    const handleBack = () => {
-        window.history.back(); // Simple browser back, or use Inertia visit()
-    };
+    const handleBack = () => window.history.back();
+
+    const isAwarded = data.status?.toUpperCase() === 'AWARDED';
 
     return (
         <AppLayout>
-            {/* Main Container - Adjusted padding for dashboard feel */}
-            <div className="mx-auto min-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-                {/* 1. PAGE HEADER: Sits outside the white box */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2 h-8 w-8 p-0">
-                                <ArrowLeft className="h-4 w-4" />
+            <div className="flex min-h-screen w-full flex-col bg-slate-50/50">
+                
+                {/* --- STICKY HEADER --- */}
+                <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-sm shadow-sm">
+                    <div className="flex items-center justify-between px-6 py-4 lg:px-10">
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
+                                <ArrowLeft className="h-5 w-5 text-slate-600" />
                             </Button>
-                            <span className="text-sm font-medium">Back to Procurements</span>
+                            <Separator orientation="vertical" className="h-8" />
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-xl font-extrabold tracking-tight text-slate-900">Create Procurement</h1>
+                                    <Badge variant={isAwarded ? "default" : "outline"} className={isAwarded ? "bg-emerald-600 hover:bg-emerald-600" : ""}>
+                                        {data.status}
+                                    </Badge>
+                                </div>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+                                    {currentMunicipality?.name || 'Municipality'} Portal
+                                </p>
+                            </div>
                         </div>
-                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Create New Procurement</h1>
-                        <p className="text-sm text-muted-foreground">Publish a new bidding opportunity to the transparency portal.</p>
-                    </div>
-                </div>
 
-                {/* 2. THE FORM PANEL: Clean white background, no floating margins */}
-                <form onSubmit={onSubmit} className="rounded-xl border bg-white shadow-sm">
-                    {/* SECTION 1: PROJECT DETAILS */}
-                    <div className="p-6 md:p-8">
-                        <div className="mb-6">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">Project Information</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">Basic identification details for the project.</p>
+                        <div className="flex items-center gap-3">
+                            <Button type="button" variant="ghost" onClick={handleBack} disabled={processing}>
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={onSubmit} 
+                                disabled={processing} 
+                                className="bg-blue-600 px-6 font-bold hover:bg-blue-700 shadow-lg shadow-blue-200"
+                            >
+                                {processing ? 'Publishing...' : 'Publish Procurement'}
+                            </Button>
                         </div>
-                        <ProjectDetails data={data} setData={setData} errors={errors} processing={processing} />
                     </div>
+                </header>
 
-                    <Separator />
+                {/* --- MAIN CONTENT --- */}
+                <main className="flex-1 px-6 py-8 lg:px-10">
+                    <form onSubmit={onSubmit} className="mx-auto w-full">
+                        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+                            
+                            {/* LEFT COLUMN: PRIMARY DATA */}
+                            <div className="space-y-8 lg:col-span-8">
+                                
+                                {/* 1. Project Details */}
+                                <section className="overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md">
+                                    <div className="flex items-center gap-4 border-b bg-slate-50/50 px-8 py-5">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
+                                            <FilePlus2 className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Project Identification</h3>
+                                            <p className="text-sm text-slate-500">Essential reference numbers and categorization.</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-8">
+                                        <ProjectDetails data={data} setData={setData} errors={errors} processing={processing} />
+                                    </div>
+                                </section>
 
-                    {/* SECTION 2: BUDGET & SCHEDULE */}
-                    <div className="p-6 md:p-8">
-                        <div className="mb-6">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">Financials & Timeline</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">Budget allocation and key procurement dates.</p>
+                                {/* 2. Financials */}
+                                <section className="overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md">
+                                    <div className="flex items-center gap-4 border-b bg-slate-50/50 px-8 py-5">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white shadow-md">
+                                            <Wallet className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Financials & Timeline</h3>
+                                            <p className="text-sm text-slate-500">Approved budget and key bidding milestones.</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-8">
+                                        <BudgetAndSchedule data={data} setData={setData} errors={errors} processing={processing} />
+                                    </div>
+                                </section>
+
+                                {/* 3. Award Information (CONDITIONAL) */}
+                                {isAwarded ? (
+                                    <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <div className="flex items-center gap-4 border-b bg-emerald-50/50 px-8 py-5">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md">
+                                                <Gavel className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-900">Award Details</h3>
+                                                <p className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                                                    <CheckCircle2 className="h-3 w-3" /> Project status is set to Awarded
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="p-8">
+                                            <AwardInformation data={data} setData={setData} errors={errors} processing={processing} />
+                                        </div>
+                                    </section>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center bg-slate-50/30 transition-all">
+                                        <Gavel className="mx-auto h-10 w-10 text-slate-300 mb-3 opacity-50" />
+                                        <h4 className="text-slate-900 font-bold text-lg">Award Details are Locked</h4>
+                                        <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">
+                                            This section becomes available when the project status is updated to <span className="font-bold text-blue-600">AWARDED</span>.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* RIGHT COLUMN: SIDEBAR */}
+                            <div className="lg:col-span-4">
+                                <div className="sticky top-28 space-y-6">
+                                    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                                        <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
+                                                <Paperclip className="h-4 w-4" />
+                                            </div>
+                                            <h3 className="font-bold text-slate-900">Attachments</h3>
+                                        </div>
+                                        <div className="p-6">
+                                            <Attachments
+                                                attachments={data.attachments}
+                                                // FIXED: Using function pattern to avoid TypeScript 'never' error
+                                                onFilesChange={(newFiles) => setData((prev) => ({ ...prev, attachments: newFiles }))}
+                                                error={(errors as any)?.attachments}
+                                                disabled={processing}
+                                            />
+                                            
+                                            {/* File Error Display */}
+                                            <div className="mt-4 space-y-1">
+                                                {Object.keys(errors).map((key) => {
+                                                    if (key.startsWith('attachments.')) {
+                                                        return (
+                                                            <div key={key} className="flex items-center gap-2 rounded-md bg-red-50 p-2 text-xs font-semibold text-red-600">
+                                                                <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
+                                                                {(errors as any)[key]}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })}
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    {/* <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6">
+                                        <div className="flex items-start gap-3 text-blue-700">
+                                            <div className="rounded-full bg-blue-100 p-1">
+                                                <Info className="h-4 w-4 shrink-0" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-bold">Portal Guidelines</p>
+                                                <ul className="list-inside list-disc space-y-1.5 text-xs opacity-80 leading-relaxed">
+                                                    <li>PhilGEPS reference is required for public biddings.</li>
+                                                    <li>All monetary values must be in PHP.</li>
+                                                    <li>Attachments are visible to the public.</li>
+                                                    <li>Closing dates must be set in the future.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div> */}
+                                </div>
+                            </div>
                         </div>
-                        <BudgetAndSchedule data={data} setData={setData} errors={errors} processing={processing} />
-                    </div>
-                    <Separator />
-
-                    {/* SECTION 3: AWARD INFO */}
-                    {/* Optional: You could wrap this in {data.status === 'AWARDED' && (...)} to hide it automatically */}
-                    <div className="bg-gray-50/50 p-6 md:p-8">
-                        <div className="mb-6">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">Award Details</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">Fill this section only if the project has been awarded.</p>
-                        </div>
-                        <AwardInformation data={data} setData={setData} errors={errors} processing={processing} />
-                    </div>
-
-                    <div className="p-6 md:p-8">
-                        <h3 className="mb-6 text-lg leading-6 font-medium text-gray-900">Documents</h3>
-                        <Attachments
-                            attachments={data.attachments}
-                            onFilesChange={(newFiles) => setData((currentData) => ({ ...currentData, attachments: newFiles }))}
-                            error={(errors as any)?.attachments}
-                            disabled={processing}
-                        />
-                        {/* Handle specific file errors from Laravel (attachments.0, attachments.1) */}
-                        {Object.keys(errors).map((key) => {
-                            if (key.startsWith('attachments.')) {
-                                // 👇 THE FIX: Cast 'errors' to 'any' just for this line
-                                // This stops TypeScript from checking if 'attachments.0' exists in your Interface (it doesn't)
-                                const errorMessage = (errors as any)[key];
-
-                                return (
-                                    <p key={key} className="mt-1 text-sm text-red-500">
-                                        {errorMessage}
-                                    </p>
-                                );
-                            }
-                            return null;
-                        })}
-                    </div>
-
-                    {/* FOOTER: Fixed action bar feeling */}
-                    <div className="flex items-center justify-end gap-3 rounded-b-xl border-t bg-gray-50 px-6 py-4">
-                        <Button type="button" variant="outline" onClick={handleBack} disabled={processing}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={processing}>
-                            {processing ? 'Publishing...' : 'Publish Procurement'}
-                        </Button>
-                    </div>
-                </form>
+                    </form>
+                </main>
             </div>
         </AppLayout>
     );
