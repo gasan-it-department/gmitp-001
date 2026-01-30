@@ -21,19 +21,28 @@ class FeedbackQueryDto
     }
 
 
-    public static function fromRequest(Request $request, int $defaultPerPge = 30)
+    public static function fromRequest(Request $request, int $defaultPerPage = 30)
     {
 
+        $allowedSorts = [
+            'created_at',
+            'sender_name',
+            'employee_name',
+            'message',
+            'rating'
+        ];
+
+        $requestedSort = $request->get('order_by');
+
+        $orderBy = in_array($requestedSort, $allowedSorts) ? $requestedSort : 'created_at';
+
+        $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+
         return new self(
-
-            perPage: $request->get('per_page', $defaultPerPge),
-
-            orderBy: $request->get('order_by', 'created_at'),
-
-            direction: $request->get('direction', 'desc'),
-
+            perPage: (int) $request->get('per_page', $defaultPerPage),
+            orderBy: $orderBy,
+            direction: $direction,
             search: $request->get('search')
-
         );
 
     }

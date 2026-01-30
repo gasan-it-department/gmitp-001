@@ -29,6 +29,30 @@ class FeedbackRepositories
         ]);
     }
 
+    public function getByUserId(string $userId, string $municipalId, FeedbackQueryDto $dto)
+    {
+
+        $query = Feedback::query()
+            ->with('attachments')
+            ->where('user_id', $userId)
+            ->where('municipal_id', $municipalId);
+
+        if ($dto->search) {
+
+            $query->where(function ($q) use ($dto) {
+                $q->where('sender_name', 'like', "%{$dto->search}%")
+                    ->orWhere('employee_name', 'like', "%{$dto->search}%")
+                    ->orWhere('message', 'like', "%{$dto->search}%");
+
+            });
+
+        }
+
+        $query->orderBy($dto->orderBy, $dto->direction);
+
+        return $query->paginate($dto->perPage);
+    }
+
     public function saveFile(array $fileData, string $fileId, string $feedbackId): FeedbackFiles
     {
 
@@ -74,5 +98,7 @@ class FeedbackRepositories
             ->findOrFail($feedbackId);
 
     }
+
+
 
 }

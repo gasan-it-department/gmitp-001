@@ -30,7 +30,7 @@ class FeedbackResource extends JsonResource
 
             'employee_name' => $this->employee_name,
 
-            'created_at' => $this->created_at,
+            'created_at' => $this->created_at->format('M d, Y'),
 
             'attachments' => $this->whenLoaded('attachments', function () {
 

@@ -1,15 +1,9 @@
+import ListFeedbackController from '@/actions/App/External/Web/Controllers/Feedback/Client/ListFeedbackController';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import actionCenter from '@/routes/actionCenter'; // Assuming this is your route helper
 import communityReport from '@/routes/communityReport';
 import { Link, usePage } from '@inertiajs/react'; // <--- 1. Import usePage
-import {
-    HandHeart,
-    FileWarning,
-    AlertTriangle,
-    Layers,
-    Activity,
-    ChevronRight
-} from "lucide-react";
+import { AlertTriangle, ChevronRight, FileWarning, HandHeart, Layers } from 'lucide-react';
 
 type SharedProps = {
     currentMunicipality: {
@@ -61,7 +55,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                     <AlertTriangle className="h-8 w-8 text-white" />
                 </div>
             ),
-            href: communityReport.client.page.url(currentMunicipality.slug), // NO HREF AT THE MOMENT
+            href: ListFeedbackController.url(currentMunicipality.slug), // NO HREF AT THE MOMENT
             hoverColor: 'group-hover:text-orange-600',
             pendingCount: 0,
         },
@@ -85,10 +79,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                 <div className="mx-auto max-w-4xl">
                     {/* Header */}
                     <div className="mb-10 text-center md:text-left">
-                        <h1 className="flex items-center justify-center gap-3 text-3xl font-bold text-gray-900 md:justify-start">
-                        
-                            My Transactions
-                        </h1>
+                        <h1 className="flex items-center justify-center gap-3 text-3xl font-bold text-gray-900 md:justify-start">My Transactions</h1>
                         <p className="mt-2 text-gray-500">
                             Viewing activity for <span className="font-semibold">{currentMunicipality.name}</span>.
                         </p>
@@ -103,9 +94,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                                 className="group relative flex transform flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 hover:shadow-xl"
                             >
                                 <div>
-                                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl shadow-md`}>
-                                        {item.icon}
-                                    </div>
+                                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl shadow-md`}>{item.icon}</div>
                                     <h3 className={`text-xl font-bold text-gray-900 transition-colors ${item.hoverColor}`}>{item.title}</h3>
                                     <p className="mt-2 text-sm leading-relaxed text-gray-500">{item.description}</p>
                                 </div>
