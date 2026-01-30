@@ -54,19 +54,19 @@ class EventController extends Controller
 
             $event = $this->eventCreateUseCase->execute($dto, $municipalId);
 
-            return response()->json([
-                'successs' => true,
-                'message' => 'Event created successfully',
-                'data' => $event,
-            ], 200);
+            return redirect()->back()->with('success', 'Event created successfully.');
 
         } catch (\Throwable $e) {
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create event',
-                'error' => $e->getMessage(),
-            ], 200);
+            return redirect()->back()
+                ->with('error', 'Failed to create event: ' . $e->getMessage())
+                ->withInput();
+
+            // return response()->json([
+            //     'success' => false,
+            //     'message' => 'Failed to create event',
+            //     'error' => $e->getMessage(),
+            // ], 200);
 
         }
     }
@@ -162,7 +162,7 @@ class EventController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Announcement not found.',
+                'message' => 'Event not found.',
             ], 404);
 
         } catch (\Exception $e) {
@@ -198,10 +198,8 @@ class EventController extends Controller
             return redirect()->back()->with('success', 'Successfully deleted.');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete events: ' . $e->getMessage(),
-            ], 500);
+            return redirect()->back()->with('error', 'An error occured please try again later.');
+
         }
     }
 

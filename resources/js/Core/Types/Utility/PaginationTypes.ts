@@ -1,8 +1,15 @@
-// A Generic Interface for any paginated resource
+export interface MetaLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
 export interface PaginationMeta {
     current_page: number;
     from: number;
     last_page: number;
+    links: MetaLink[];
+    path: string;
     per_page: number;
     to: number;
     total: number;
@@ -17,6 +24,6 @@ export interface PaginationLinks {
 
 export interface PaginatedResponse<T> {
     data: T[];
-    meta: PaginationMeta;
     links: PaginationLinks;
+    meta: PaginationMeta;
 }

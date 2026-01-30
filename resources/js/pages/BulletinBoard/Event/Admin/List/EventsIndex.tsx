@@ -1,4 +1,5 @@
 import { destroy } from '@/actions/App/External/Api/Controllers/BulletinBoard/EventController';
+import { FlashMessage } from '@/components/Shared/FlashMessage';
 import { Pagination } from '@/components/Shared/Pagination';
 import { EventData, EventFormData } from '@/Core/Types/BulletinBoard/Events';
 import BaseLayout from '@/layouts/App/AppLayout';
@@ -62,7 +63,7 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
     // 2. Handle Add/Edit Success
     const handleSuccess = () => {
         // Since we are using Inertia, we refresh the page to get the latest data from the server
-        router.reload({ only: ['events'] });
+        // router.reload({ only: ['events'] });
         setAddEventDialog({ isOpen: false, editData: null });
     };
 
@@ -145,6 +146,8 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
                 onPositiveClick={confirmDialog.action}
                 onNegativeClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
             />
+            {/* for displaying flash messages */}
+            <FlashMessage />
         </BaseLayout>
     );
 }
