@@ -45,7 +45,7 @@ Route::prefix('/api/action-center')
     ->controller(ActionCenterController::class)
     ->group(function () {
 
-        Route::middleware(['admin', 'municipalityContext'])
+        Route::middleware(['municipalityContext', 'admin'])
             ->group(function () {
 
                 Route::get('/', 'fetch')->name('fetch');

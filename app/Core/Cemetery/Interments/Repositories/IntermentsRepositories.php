@@ -8,10 +8,10 @@ use App\Core\Cemetery\Interments\Models\Interment;
 class IntermentsRepositories
 {
 
-    public function save(AddIntermentsDto $dto)
+    public function save(AddIntermentsDto $dto, string $intermentId)
     {
 
-        return Interment::updateOrCreate($dto->toArray());
+        return Interment::updateOrCreate(['id' => $intermentId], $dto->toArray());
 
     }
 

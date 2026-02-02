@@ -38,7 +38,7 @@ export default function UserDetails({ user }: Props) {
             <Head title={`${userData.first_name} ${userData.last_name}`} />
 
             <div className="mx-auto max-w-5xl p-6">
-                {/* 4. Updated Back Button */}
+                {/* 4. Updated Back Button */}man
                 <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                     {' '}
                     <Button
@@ -51,7 +51,6 @@ export default function UserDetails({ user }: Props) {
                     </Button>
                     <UserDetailsActionMenu userId={userData.id} userName={userData.first_name} />
                 </div>
-
                 {/* 1. HEADER CARD */}
                 <div className="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                     <div className="h-32 bg-gradient-to-r from-slate-800 to-slate-900"></div>
@@ -91,7 +90,6 @@ export default function UserDetails({ user }: Props) {
                         </div>
                     </div>
                 </div>
-
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
                         {/* Personal Information */}

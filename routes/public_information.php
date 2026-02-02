@@ -1,6 +1,7 @@
 <?php
 
 
+use App\External\Web\Controllers\PublicInformation\Admin\EditProcurementController;
 use App\External\Web\Controllers\PublicInformation\Admin\ShowProcurementController;
 use App\External\Web\Controllers\PublicInformation\Client;
 use App\External\Api\Controllers\PublicInformation\StoreProcurementsController;
@@ -20,6 +21,8 @@ Route::prefix('{municipality}/procurements')
         Route::get('create-procurement', 'create')->name('create');
 
         Route::get('/view/{id}', ShowProcurementController::class)->name('show');
+
+        Route::get('/edit/{id}', EditProcurementController::class)->name('edit');
 
     });
 
