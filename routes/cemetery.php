@@ -1,7 +1,7 @@
 <?php
 
 use App\External\Web\Controllers\Cemetery\CemeteryController;
-use App\External\Web\Controllers\Cemetery\CreateIntermentController;
+use App\External\Web\Controllers\Cemetery\Interements\CreateIntermentController;
 use App\External\Api\Controllers\Cemetery\Interments\RegisterIntermentsController;
 
 Route::prefix('/{municipality}/cemetery')
@@ -16,8 +16,29 @@ Route::prefix('/{municipality}/cemetery')
 
                 Route::get('/dashbord', [CemeteryController::class, 'index'])->name('dashboard');
 
-                Route::get('/interments/create', CreateIntermentController::class)->name('index');
 
+                //interments page routings
+                Route::prefix('/interments')
+                    ->name('interments.')
+                    ->group(function () {
+
+                    Route::get('/create', CreateIntermentController::class)->name('index');
+
+                });
+
+
+                Route::prefix('/apartments')
+                    ->name('apartments.')
+                    ->group(function () {
+
+
+                    });
+
+                Route::prefix('/plots')
+                    ->name('plots.')
+                    ->group(function () {
+
+                    });
             });
 
     });
