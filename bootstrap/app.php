@@ -40,7 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-
+            'phone.verified' => EnsurePhoneIsVerified::class,
             'admin' => AdminGuardMiddleware::class,
             'superAdmin' => SuperAdminGuardMiddleware::class,
             'client' => ClientGuardMiddleware::class,
