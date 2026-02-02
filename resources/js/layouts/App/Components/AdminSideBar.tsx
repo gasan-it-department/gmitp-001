@@ -203,6 +203,24 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     icon: ChartBarStacked,
                     permission: 'cemetery.access',
                 },
+                {
+                    title: 'Interments',
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }), //
+                    icon: ChartBarStacked,
+                    permission: 'cemetery.access',
+                },
+                {
+                    title: 'Plots',
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }), //
+                    icon: ChartBarStacked,
+                    permission: 'cemetery.access',
+                },
+                {
+                    title: 'Apartments',
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }), //
+                    icon: ChartBarStacked,
+                    permission: 'cemetery.access',
+                },
             ],
         },
     ];
