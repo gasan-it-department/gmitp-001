@@ -17,7 +17,7 @@ class RegisterIntermentsController extends Controller
     ) {
     }
 
-    public function store(IntermentRequest $request)
+    public function __invoke(IntermentRequest $request)
     {
 
         $dto = AddIntermentsDto::fromRequest($request);
@@ -25,10 +25,8 @@ class RegisterIntermentsController extends Controller
 
         $interment = $this->addIntermentUseCase->execute($dto);
 
-        return response()->json([
-            'message' => 'Interment record added successfully.',
-            'data' => $interment
-        ]);
+        return redirect()->route('landing');
+
 
     }
 

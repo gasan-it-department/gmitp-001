@@ -1,7 +1,8 @@
 <?php
 
 use App\External\Web\Controllers\Cemetery\CemeteryController;
-use App\External\Web\Controllers\Cemetery\IntermentsPageController;
+use App\External\Web\Controllers\Cemetery\CreateIntermentController;
+use App\External\Api\Controllers\Cemetery\Interments\RegisterIntermentsController;
 
 Route::prefix('/{municipality}/cemetery')
     ->middleware(['auth', 'municipalityContext'])
@@ -15,8 +16,22 @@ Route::prefix('/{municipality}/cemetery')
 
                 Route::get('/dashbord', [CemeteryController::class, 'index'])->name('dashboard');
 
-                Route::get('/interments/index', [IntermentsPageController::class, 'index'])->name('index');
+                Route::get('/interments/create', CreateIntermentController::class)->name('index');
 
             });
+
+    });
+
+Route::prefix('api/interments')
+    ->name('interments.')
+    ->group(function () {
+
+        Route::middleware(['municipalityContext', 'admin', 'auth',])
+            ->group(function () {
+
+                Route::post('/store', RegisterIntermentsController::class)->name('store');
+
+            });
+
 
     });
