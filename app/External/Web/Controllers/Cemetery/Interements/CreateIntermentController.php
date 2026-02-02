@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Web\Controllers\Cemetery;
+namespace App\External\Web\Controllers\Cemetery\Interements;
 
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
