@@ -69,11 +69,11 @@ return new class extends Migration {
                 ->constrained('municipalities')
                 ->restrictOnDelete();
 
-            $table->string('province');
+            $table->string('province')->nullable();
 
-            $table->string('municipality');
+            $table->string('municipality')->nullable();
 
-            $table->string('barangay');
+            $table->string('barangay')->nullable();
 
             $table->timestamps();
 

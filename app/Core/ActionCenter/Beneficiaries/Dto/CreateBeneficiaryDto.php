@@ -29,12 +29,12 @@ class CreateBeneficiaryDto
         return new self(
             firstName: strtoupper($data['first_name']),
             lastName: strtoupper($data['last_name']),
-            middleName: strToUpper($data['middle_name'] ?? null),
+            middleName: strtoupper($data['middle_name'] ?? null),
             suffix: strtoupper($data['suffix'] ?? null),
             birthDate: $data['birth_date'],
-            province: strToupper($data['province']),
-            municipality: strToUpper($data['municipality']),
-            barangay: strToUpper($data['barangay']),
+            province: strtoupper($data['province']),
+            municipality: strtoupper($data['municipality']),
+            barangay: strtoupper($data['barangay']),
         );
     }
 }
