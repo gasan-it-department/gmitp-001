@@ -126,13 +126,6 @@ export default function AwardsTable({ data = [] }: Props) {
                                                     <Eye className="h-4 w-4" />
                                                 </Link>
                                             </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
 
                                             {/* {item.files?.length > 0 && (
                                                 <Button
