@@ -27,25 +27,28 @@ import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
-    CalendarDays,
-    ChartBarStacked,
-    Church,
     ClipboardList,
-    FileSignature,
-    FileText,
-    FlagIcon,
-    Hand,
-    Info,
-    Landmark,
-    LogOut,
-    Medal,
+    FileInput,
     Megaphone,
-    MessageCircleIcon,
-    PersonStandingIcon,
-    Plane,
-    Sparkle,
-    UserCheck,
-    UsersIcon,
+    CalendarDays,
+    MessageSquareText,
+    Siren,
+    Palmtree,
+    LayoutTemplate,
+    Gavel,
+    ScrollText,
+    Users,
+    History,
+    Flower, // Represents Cemetery/Memorial
+    LayoutDashboard,
+    BookOpen,
+    MapPinned,
+    Grid3X3,
+    LogOut,
+    List,
+    Landmark,
+    CalendarRange,
+    Contact
 } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
@@ -110,115 +113,121 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
     // 2. DATA: Add 'permission' keys to your items
     const RawSidebarItems = [
         {
-            title: 'ACTION CENTER',
+            title: 'CITIZEN SERVICES', // More descriptive than "Action Center"
             icon: ClipboardList,
             items: [
                 {
-                    title: 'Requests',
+                    title: 'Service Requests', // Clearer than just "Requests"
                     url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }),
-                    icon: FileText,
-                    permission: 'action_center.access', // 🔒 Tagged
+                    icon: FileInput, // Represents submitting a form/request
+                    permission: 'action_center.access',
                 },
             ],
         },
         {
-            title: 'NOTICES & ADVISORIES',
-            icon: Info,
+            title: 'COMMUNICATION', // Broader coverage for notices, events, and reports
+            icon: Megaphone,
             items: [
                 {
-                    title: 'Announcement',
+                    title: 'Announcements', // Pluralized
                     url: bulletinBoard.announcement.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Megaphone,
                     permission: 'bulletin_board.access',
                 },
                 {
-                    title: 'Events',
+                    title: 'Events Calendar',
                     url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: CalendarDays,
                     permission: 'bulletin_board.access',
                 },
                 {
-                    title: 'Feedbacks',
+                    title: 'Citizen Feedback', // "Feedbacks" is grammatically incorrect
                     url: feedback.admin.index.url({ municipality: currentMunicipality.slug }),
-                    icon: MessageCircleIcon,
-                    permission: 'feedback.access', // Make sure this exists in your DB
+                    icon: MessageSquareText,
+                    permission: 'feedback.access',
                 },
                 {
-                    title: 'Community Reports',
+                    title: 'Incident Reports', // "Community Reports" is vague; Incident implies action needed
                     url: communityReport.page.url({ municipality: currentMunicipality.slug }),
-                    icon: UsersIcon,
+                    icon: Siren, // Represents alert/emergency/report
                     permission: 'community_report.access',
                 },
             ],
         },
         {
-            title: 'PROMOTIONS',
-            icon: Sparkle,
+            title: 'TOURISM & CONTENT', // Replaces "Promotions"
+            icon: Palmtree,
             items: [
                 {
-                    title: 'CMS',
+                    title: 'Site Pages (CMS)',
                     url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: FlagIcon,
+                    icon: LayoutTemplate, // Represents web layout
                     permission: 'municipality_settings.access',
                 },
                 {
-                    title: 'Travel Editor',
+                    title: 'Tourism Spots', // "Travel Editor" is a tool name; "Tourism Spots" is the object managed
                     url: travelEditor.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Plane,
+                    icon: Palmtree,
                     permission: 'tourism.access',
                 },
             ],
         },
         {
-            title: 'BIDS AND AWARDS',
-            icon: Medal,
+            title: 'PROCUREMENT', // Standard government term for Bids & Awards
+            icon: Gavel, // Represents bidding/auction
             items: [
                 {
-                    title: 'Biddings',
+                    title: 'Bid Opportunities', // More professional than "Biddings"
                     url: procurement.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Hand,
+                    icon: ScrollText, // Represents legal documents/contracts
                     permission: 'public_information.access',
                 },
             ],
         },
         {
-            title: 'LOCAL GOVERNMENT',
-            icon: Landmark,
+            title: 'GOVERNANCE',
+            icon: Landmark, // 'Landmark' represents the institution/government building better than 'Users'
             items: [
                 {
-                    title: 'Public Officials',
+                    title: 'Terms of Office', // Clearer than "Roster History". Implies managing year ranges (e.g. 2025-2028).
                     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
-                    icon: UserCheck,
+                    icon: CalendarRange, // Visually represents a start and end date/period.
+                    permission: 'public_information.access',
+                },
+                {
+                    title: 'Officials Directory', // More professional than "Officials List". Implies a structured record of people.
+                    url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
+                    icon: Contact, // Represents a directory/address book. Alternatively use 'UserCheck'.
                     permission: 'public_information.access',
                 },
             ],
         },
         {
-            title: 'CEMETERY',
-            icon: Church,
+            title: 'CEMETERY OPERATIONS',
+            icon: Flower, // A respectful icon for cemetery management
             items: [
                 {
-                    title: 'Dashboard',
+                    title: 'Overview',
                     url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
-                    icon: ChartBarStacked,
+                    icon: LayoutDashboard,
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Interments',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }), //
-                    icon: ChartBarStacked,
+                    title: 'Burial Records', // Replaces "Interments" (easier to read)
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
+                    icon: BookOpen, // Represents a registry
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Plots',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }), //
-                    icon: ChartBarStacked,
+                    title: 'Plot Mapping',
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
+                    icon: MapPinned,
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Apartments',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }), //
-                    icon: ChartBarStacked,
+                    title: 'Niches & Mausoleums', // "Apartments" is colloquial; Niches is technical
+                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
+                    icon: Grid3X3, // Represents the structure of niches
                     permission: 'cemetery.access',
                 },
             ],
@@ -283,11 +292,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSubItem key={sub.title} ref={isActive ? activeItemRef : null}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
-                                                        isActive
-                                                            ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
-                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                    }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
+                                                        ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
+                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                        }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -295,11 +303,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${
-                                                                isActive
-                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                            }`}
+                                                            className={`transition-all duration-200 ease-out ${isActive
+                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                                }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>

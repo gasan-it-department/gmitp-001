@@ -10,7 +10,7 @@ class OfficialsController extends Controller
 
     public function index()
     {
-        return Inertia::render('LocalGovernment/Admin/OfficialsPage');
+        return Inertia::render('LocalGovernment/Admin/PublicOfficials/OfficialsPage');
     }
 
 }
