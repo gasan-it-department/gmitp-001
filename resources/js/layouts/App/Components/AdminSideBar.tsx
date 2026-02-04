@@ -18,7 +18,6 @@ import actionCenter from '@/routes/actionCenter';
 import bulletinBoard from '@/routes/bulletin-board';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
-import executiveOrders from '@/routes/executiveOrders';
 import feedback from '@/routes/feedback';
 import municipality from '@/routes/municipality';
 import officialsEditor from '@/routes/officialsEditor';
@@ -27,28 +26,25 @@ import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
-    ClipboardList,
-    FileInput,
-    Megaphone,
-    CalendarDays,
-    MessageSquareText,
-    Siren,
-    Palmtree,
-    LayoutTemplate,
-    Gavel,
-    ScrollText,
-    Users,
-    History,
-    Flower, // Represents Cemetery/Memorial
-    LayoutDashboard,
     BookOpen,
-    MapPinned,
-    Grid3X3,
-    LogOut,
-    List,
-    Landmark,
+    CalendarDays,
     CalendarRange,
-    Contact
+    ClipboardList,
+    Contact,
+    FileInput,
+    Flower,
+    Gavel,
+    Grid3X3,
+    Landmark, // Represents Cemetery/Memorial
+    LayoutDashboard,
+    LayoutTemplate,
+    LogOut,
+    MapPinned,
+    Megaphone,
+    MessageSquareText,
+    Palmtree,
+    ScrollText,
+    Siren,
 } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
@@ -292,10 +288,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSubItem key={sub.title} ref={isActive ? activeItemRef : null}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
-                                                        ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
-                                                        : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                        }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
+                                                        isActive
+                                                            ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
+                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
+                                                    }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -303,10 +300,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${isActive
-                                                                ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                                }`}
+                                                            className={`transition-all duration-200 ease-out ${
+                                                                isActive
+                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
+                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
+                                                            }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>
