@@ -40,21 +40,37 @@ const MOCK_TERMS: YearTerm[] = [
 
 export default function YearTermsList() {
     const [terms, setTerms] = useState<YearTerm[]>(MOCK_TERMS);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    
+    // Dialog States
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [termToEdit, setTermToEdit] = useState<YearTerm | null>(null);
     const [termToDelete, setTermToDelete] = useState<string | null>(null);
 
+    // Fix sticky pointer-events
     useEffect(() => {
-        if (!termToDelete && !isCreateOpen) {
+        if (!termToDelete && !isDialogOpen) {
             const timer = setTimeout(() => {
                 document.body.style.pointerEvents = '';
                 document.body.style.overflow = '';
             }, 300);
             return () => clearTimeout(timer);
         }
-    }, [termToDelete, isCreateOpen]);
+    }, [termToDelete, isDialogOpen]);
 
-    const handleEdit = (id: string) => console.log('Edit', id);
-    const handleManage = (id: string) => console.log('Manage Officials', id);
+    // --- HANDLERS ---
+
+    const handleEdit = (id: string) => {
+        const term = terms.find(t => t.id === id);
+        if (term) {
+            setTermToEdit(term);
+            setIsDialogOpen(true);
+        }
+    };
+
+    const handleCreateClick = () => {
+        setTermToEdit(null); // Ensure no edit data is present for create mode
+        setIsDialogOpen(true);
+    }
 
     const handleDeleteClick = (id: string) => {
         setTermToDelete(id); 
@@ -62,40 +78,68 @@ export default function YearTermsList() {
 
     const confirmDelete = () => {
         if (termToDelete) {
-            // ============= CALL API TO DELETE TERM HERE =============
-            // For now, just remove from local state
             setTerms(prev => prev.filter(term => term.id !== termToDelete));
             setTermToDelete(null); 
         }
     };
 
-    const handleCreateTerm = async (data: TermFormData) => {
-        // ============= CALL API TO CREATE OR UPDATE TERM HERE =============
-        await new Promise(resolve => setTimeout(resolve, 800));
+    const handleManage = (id: string) => console.log('Manage Officials', id);
 
-        const newTerm: YearTerm = {
-            id: Date.now().toString(),
-            start_year: data.start_year,
-            end_year: data.end_year,
-            label: data.label || undefined,
-            is_active: data.is_active,
-            officials_count: 0 
-        };
+    // --- SAVE LOGIC (CREATE OR UPDATE) ---
+    const handleSaveTerm = async (data: TermFormData) => {
+        
+        // 1. Fake API Delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        setTerms(prev => {
-            let updatedTerms = [...prev];
-            if (newTerm.is_active) {
-                updatedTerms = updatedTerms.map(t => ({ ...t, is_active: false }));
-            }
-            return [newTerm, ...updatedTerms];
-        });
+        // 2. Logic Separation
+        if (termToEdit) {
+            // ================== UPDATE API CALL PLACEHOLDER ==================
+
+            console.log("Updating existing term...", termToEdit.id, data);
+            setTerms(prev => {
+                let updatedList = [...prev];
+                if (data.is_active) {
+                    updatedList = updatedList.map(t => ({ ...t, is_active: false }));
+                }
+
+                return updatedList.map(t => t.id === termToEdit.id ? {
+                    ...t,
+                    start_year: data.start_year,
+                    end_year: data.end_year,
+                    label: data.label || undefined,
+                    is_active: data.is_active
+                } : t);
+            });
+
+        } else {
+            // ================== CREATE API CALL PLACEHOLDER ==================
+            
+            console.log("Creating new term...", data);
+            const newTerm: YearTerm = {
+                id: Date.now().toString(),
+                start_year: data.start_year,
+                end_year: data.end_year,
+                label: data.label || undefined,
+                is_active: data.is_active,
+                officials_count: 0 
+            };
+
+            setTerms(prev => {
+                let updatedList = [...prev];
+                
+                // Deactivate others if this is set to active
+                if (newTerm.is_active) {
+                    updatedList = updatedList.map(t => ({ ...t, is_active: false }));
+                }
+                
+                updatedList.unshift(newTerm);
+                return updatedList;
+            });
+        }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50 relative">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-
+        <div className="min-h-screen bg-slate-50/30 relative">
             <div className="relative mx-auto max-w-4xl p-8">
                 
                 {/* --- HEADER --- */}
@@ -118,7 +162,7 @@ export default function YearTermsList() {
                     </div>
 
                     <button 
-                        onClick={() => setIsCreateOpen(true)}
+                        onClick={handleCreateClick}
                         className="group flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-orange-600 hover:shadow-orange-600/30 active:scale-95 whitespace-nowrap"
                     >
                         <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
@@ -140,7 +184,7 @@ export default function YearTermsList() {
                                 Get started by creating the first term year range for your municipality.
                             </p>
                             <button 
-                                onClick={() => setIsCreateOpen(true)}
+                                onClick={handleCreateClick}
                                 className="mt-6 text-sm font-bold text-orange-600 hover:text-orange-700 hover:underline underline-offset-4"
                             >
                                 Create a Term
@@ -246,11 +290,20 @@ export default function YearTermsList() {
                 </div>
             </div>
 
-            {/* --- CREATE DIALOG --- */}
+            {/* --- CREATE / EDIT DIALOG --- */}
             <CreateTermDialog 
-                isOpen={isCreateOpen} 
-                onClose={() => setIsCreateOpen(false)} 
-                onSubmit={handleCreateTerm} 
+                isOpen={isDialogOpen} 
+                onClose={() => {
+                    setIsDialogOpen(false);
+                    setTermToEdit(null);
+                }}
+                onSubmit={handleSaveTerm} 
+                initialData={termToEdit ? {
+                    start_year: termToEdit.start_year,
+                    end_year: termToEdit.end_year,
+                    label: termToEdit.label || '',
+                    is_active: termToEdit.is_active
+                } : null}
             />
 
             {/* --- DELETE CONFIRMATION DIALOG --- */}
