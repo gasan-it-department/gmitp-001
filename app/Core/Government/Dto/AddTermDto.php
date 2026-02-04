@@ -18,6 +18,8 @@ class AddTermDto
 
         public ?bool $isCurrent = false,
 
+        public string $municipalId,
+
     ) {
     }
 
@@ -31,6 +33,7 @@ class AddTermDto
             statutoryStart: Carbon::parse($data['statutory_start']),
             statutoryEnd: Carbon::parse($data['statutory_end']),
             isCurrent: (bool) ($data['is_current']),
+            municipalId: app('municipal_id'),
         );
 
     }

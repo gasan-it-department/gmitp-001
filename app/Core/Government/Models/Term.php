@@ -25,6 +25,8 @@ class Term extends Model
 
         'is_current',
 
+        'municipal_id'
+
     ];
 
 }

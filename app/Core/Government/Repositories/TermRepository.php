@@ -12,23 +12,36 @@ class TermRepository
     {
 
         if ($dto->isCurrent) {
-            Term::query()->update(['is_current' => false]);
+            Term::where('municipal_id', $dto->municipalId)
+                ->update(['is_current' => false]);
         }
 
-        Term::Create([
+        $term = Term::Create([
 
             'id' => $termId,
 
             'name' => $dto->name,
 
-            'statutory_date' => $dto->statutoryStart,
+            'statutory_start' => $dto->statutoryStart,
 
             'statutory_end' => $dto->statutoryEnd,
 
             'is_current' => $dto->isCurrent,
 
+            'municipal_id' => $dto->municipalId,
+
         ]);
 
+        return $term;
+
     }
+
+    public function getByMunicipality(string $municipalId)
+    {
+
+        return Term::where('municipal_id', $municipalId)->get();
+
+    }
+
 
 }

@@ -24,7 +24,7 @@ class CreateTermUseCase
 
         $termId = $this->idGeneratorInterface->generate();
 
-        $term = $this->termRepo->save($termId, $dto);
+        return $this->termRepo->save($termId, $dto);
 
     }
 
