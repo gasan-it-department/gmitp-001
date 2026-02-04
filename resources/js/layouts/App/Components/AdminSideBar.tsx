@@ -19,8 +19,8 @@ import bulletinBoard from '@/routes/bulletin-board';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
 import feedback from '@/routes/feedback';
+import government from '@/routes/government';
 import municipality from '@/routes/municipality';
-import officialsEditor from '@/routes/officialsEditor';
 import procurement from '@/routes/procurement';
 import travelEditor from '@/routes/travelEditor';
 import { SharedData } from '@/types';
@@ -30,7 +30,6 @@ import {
     CalendarDays,
     CalendarRange,
     ClipboardList,
-    Contact,
     FileInput,
     Flower,
     Gavel,
@@ -186,16 +185,16 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             items: [
                 {
                     title: 'Terms of Office', // Clearer than "Roster History". Implies managing year ranges (e.g. 2025-2028).
-                    url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
+                    url: government.admin.terms.page.url({ municipality: currentMunicipality.slug }),
                     icon: CalendarRange, // Visually represents a start and end date/period.
                     permission: 'public_information.access',
                 },
-                {
-                    title: 'Officials Directory', // More professional than "Officials List". Implies a structured record of people.
-                    url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Contact, // Represents a directory/address book. Alternatively use 'UserCheck'.
-                    permission: 'public_information.access',
-                },
+                // {
+                //     title: 'Officials Directory', // More professional than "Officials List". Implies a structured record of people.
+                //     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
+                //     icon: Contact, // Represents a directory/address book. Alternatively use 'UserCheck'.
+                //     permission: 'public_information.access',
+                // },
             ],
         },
         {

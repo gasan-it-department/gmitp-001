@@ -1,32 +1,16 @@
-import { useState, useEffect } from 'react';
-import { 
-    CalendarRange, 
-    Plus, 
-    MoreVertical, 
-    Pencil, 
-    Trash2, 
-    ChevronRight, 
-    CalendarClock, 
-    History,
-    CheckCircle2,
-    Users
-} from 'lucide-react';
-import { 
-    DropdownMenu, 
-    DropdownMenuContent, 
-    DropdownMenuItem, 
-    DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import CreateTermDialog, { TermFormData } from '../Create/CreateTermDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { CalendarClock, CalendarRange, CheckCircle2, ChevronRight, History, MoreVertical, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import CreateTermDialog, { TermFormData } from '../Create/CreateTermDialog';
 
 // --- TYPES ---
 interface YearTerm {
     id: string;
     start_year: string;
     end_year: string;
-    label?: string; 
-    is_active: boolean; 
+    label?: string;
+    is_active: boolean;
     officials_count: number;
 }
 
@@ -40,7 +24,7 @@ const MOCK_TERMS: YearTerm[] = [
 
 export default function YearTermsList() {
     const [terms, setTerms] = useState<YearTerm[]>(MOCK_TERMS);
-    
+
     // Dialog States
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [termToEdit, setTermToEdit] = useState<YearTerm | null>(null);
@@ -60,7 +44,7 @@ export default function YearTermsList() {
     // --- HANDLERS ---
 
     const handleEdit = (id: string) => {
-        const term = terms.find(t => t.id === id);
+        const term = terms.find((t) => t.id === id);
         if (term) {
             setTermToEdit(term);
             setIsDialogOpen(true);
@@ -70,16 +54,16 @@ export default function YearTermsList() {
     const handleCreateClick = () => {
         setTermToEdit(null); // Ensure no edit data is present for create mode
         setIsDialogOpen(true);
-    }
+    };
 
     const handleDeleteClick = (id: string) => {
-        setTermToDelete(id); 
+        setTermToDelete(id);
     };
 
     const confirmDelete = () => {
         if (termToDelete) {
-            setTerms(prev => prev.filter(term => term.id !== termToDelete));
-            setTermToDelete(null); 
+            setTerms((prev) => prev.filter((term) => term.id !== termToDelete));
+            setTermToDelete(null);
         }
     };
 
@@ -87,51 +71,53 @@ export default function YearTermsList() {
 
     // --- SAVE LOGIC (CREATE OR UPDATE) ---
     const handleSaveTerm = async (data: TermFormData) => {
-        
         // 1. Fake API Delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         // 2. Logic Separation
         if (termToEdit) {
             // ================== UPDATE API CALL PLACEHOLDER ==================
 
-            console.log("Updating existing term...", termToEdit.id, data);
-            setTerms(prev => {
+            console.log('Updating existing term...', termToEdit.id, data);
+            setTerms((prev) => {
                 let updatedList = [...prev];
                 if (data.is_active) {
-                    updatedList = updatedList.map(t => ({ ...t, is_active: false }));
+                    updatedList = updatedList.map((t) => ({ ...t, is_active: false }));
                 }
 
-                return updatedList.map(t => t.id === termToEdit.id ? {
-                    ...t,
-                    start_year: data.start_year,
-                    end_year: data.end_year,
-                    label: data.label || undefined,
-                    is_active: data.is_active
-                } : t);
+                return updatedList.map((t) =>
+                    t.id === termToEdit.id
+                        ? {
+                              ...t,
+                              start_year: data.start_year,
+                              end_year: data.end_year,
+                              label: data.label || undefined,
+                              is_active: data.is_active,
+                          }
+                        : t,
+                );
             });
-
         } else {
             // ================== CREATE API CALL PLACEHOLDER ==================
-            
-            console.log("Creating new term...", data);
+
+            console.log('Creating new term...', data);
             const newTerm: YearTerm = {
                 id: Date.now().toString(),
                 start_year: data.start_year,
                 end_year: data.end_year,
                 label: data.label || undefined,
                 is_active: data.is_active,
-                officials_count: 0 
+                officials_count: 0,
             };
 
-            setTerms(prev => {
+            setTerms((prev) => {
                 let updatedList = [...prev];
-                
+
                 // Deactivate others if this is set to active
                 if (newTerm.is_active) {
-                    updatedList = updatedList.map(t => ({ ...t, is_active: false }));
+                    updatedList = updatedList.map((t) => ({ ...t, is_active: false }));
                 }
-                
+
                 updatedList.unshift(newTerm);
                 return updatedList;
             });
@@ -139,31 +125,28 @@ export default function YearTermsList() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/30 relative">
+        <div className="relative min-h-screen bg-slate-50/30">
             <div className="relative mx-auto max-w-4xl p-8">
-                
                 {/* --- HEADER --- */}
-                <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                     <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="inline-flex items-center justify-center rounded-lg bg-orange-100 p-1.5 text-orange-600 shadow-sm border border-orange-200">
+                        <div className="mb-2 flex items-center gap-2">
+                            <span className="inline-flex items-center justify-center rounded-lg border border-orange-200 bg-orange-100 p-1.5 text-orange-600 shadow-sm">
                                 <History className="h-4 w-4" />
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-orange-700">
-                                Records
-                            </span>
+                            <span className="text-[10px] font-black tracking-widest text-orange-700 uppercase">Records</span>
                         </div>
-                        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                            Term <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">History</span>
+                        <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+                            Term <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">History</span>
                         </h1>
-                        <p className="text-slate-500 font-medium mt-2 max-w-md text-sm sm:text-base">
+                        <p className="mt-2 max-w-md text-sm font-medium text-slate-500 sm:text-base">
                             Create and manage legislative periods to organize your official rosters.
                         </p>
                     </div>
 
-                    <button 
+                    <button
                         onClick={handleCreateClick}
-                        className="group flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-orange-600 hover:shadow-orange-600/30 active:scale-95 whitespace-nowrap"
+                        className="group flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold whitespace-nowrap text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-orange-600 hover:shadow-orange-600/30 active:scale-95"
                     >
                         <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
                         New Term
@@ -172,20 +155,19 @@ export default function YearTermsList() {
 
                 {/* --- LIST CONTAINER --- */}
                 <div className="space-y-4">
-                    
                     {terms.length === 0 ? (
                         /* Empty State */
                         <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white/50 py-24 text-center">
-                            <div className="rounded-full bg-slate-100 p-5 mb-4 shadow-inner">
+                            <div className="mb-4 rounded-full bg-slate-100 p-5 shadow-inner">
                                 <CalendarRange className="h-10 w-10 text-slate-300" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900">No terms found</h3>
-                            <p className="text-slate-500 max-w-xs mx-auto mt-2 text-sm">
+                            <p className="mx-auto mt-2 max-w-xs text-sm text-slate-500">
                                 Get started by creating the first term year range for your municipality.
                             </p>
-                            <button 
+                            <button
                                 onClick={handleCreateClick}
-                                className="mt-6 text-sm font-bold text-orange-600 hover:text-orange-700 hover:underline underline-offset-4"
+                                className="mt-6 text-sm font-bold text-orange-600 underline-offset-4 hover:text-orange-700 hover:underline"
                             >
                                 Create a Term
                             </button>
@@ -193,52 +175,52 @@ export default function YearTermsList() {
                     ) : (
                         /* Terms List */
                         terms.map((term) => (
-                            <div 
+                            <div
                                 key={term.id}
                                 onClick={() => handleManage(term.id)}
-                                className={`
-                                    group relative flex flex-col sm:flex-row items-center gap-5 rounded-2xl border p-1 pr-3 transition-all duration-300 cursor-pointer
-                                    ${term.is_active 
-                                        ? 'bg-gradient-to-br from-white to-blue-50/50 border-blue-200 shadow-lg shadow-blue-500/5 ring-1 ring-blue-500/10' 
-                                        : 'bg-white border-slate-200 hover:border-orange-200 hover:shadow-md hover:shadow-orange-500/5'
-                                    }
-                                `}
+                                className={`group relative flex cursor-pointer flex-col items-center gap-5 rounded-2xl border p-1 pr-3 transition-all duration-300 sm:flex-row ${
+                                    term.is_active
+                                        ? 'border-blue-200 bg-gradient-to-br from-white to-blue-50/50 shadow-lg ring-1 shadow-blue-500/5 ring-blue-500/10'
+                                        : 'border-slate-200 bg-white hover:border-orange-200 hover:shadow-md hover:shadow-orange-500/5'
+                                } `}
                             >
                                 {/* Left Visual */}
-                                <div className={`
-                                    hidden sm:flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-xl border ml-2 my-2
-                                    ${term.is_active 
-                                        ? 'bg-blue-600 border-blue-500 text-white shadow-md' 
-                                        : 'bg-slate-50 border-slate-100 text-slate-400 group-hover:bg-white group-hover:border-orange-100 group-hover:text-orange-500 transition-colors'
-                                    }
-                                `}>
-                                    <CalendarClock className="h-7 w-7 mb-1" />
+                                <div
+                                    className={`my-2 ml-2 hidden h-20 w-20 flex-shrink-0 flex-col items-center justify-center rounded-xl border sm:flex ${
+                                        term.is_active
+                                            ? 'border-blue-500 bg-blue-600 text-white shadow-md'
+                                            : 'border-slate-100 bg-slate-50 text-slate-400 transition-colors group-hover:border-orange-100 group-hover:bg-white group-hover:text-orange-500'
+                                    } `}
+                                >
+                                    <CalendarClock className="mb-1 h-7 w-7" />
                                 </div>
 
                                 {/* Content Details */}
-                                <div className="flex-1 w-full p-4 sm:p-0">
-                                    <div className="flex items-center justify-between mb-1">
+                                <div className="w-full flex-1 p-4 sm:p-0">
+                                    <div className="mb-1 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             {term.is_active && (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-blue-700">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black tracking-wide text-blue-700 uppercase">
                                                     <CheckCircle2 className="h-3 w-3" />
                                                     Current Term
                                                 </span>
                                             )}
                                             {term.label && (
-                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                                                    {term.label}
-                                                </span>
+                                                <span className="text-xs font-bold tracking-wide text-slate-400 uppercase">{term.label}</span>
                                             )}
                                         </div>
                                     </div>
 
                                     <div className="flex items-end justify-between">
                                         <div>
-                                            <h3 className={`text-2xl sm:text-3xl font-black tracking-tight leading-none ${term.is_active ? 'text-slate-900' : 'text-slate-700'}`}>
-                                                {term.start_year}<span className="text-slate-300 mx-1 font-light">/</span>{term.end_year}
+                                            <h3
+                                                className={`text-2xl leading-none font-black tracking-tight sm:text-3xl ${term.is_active ? 'text-slate-900' : 'text-slate-700'}`}
+                                            >
+                                                {term.start_year}
+                                                <span className="mx-1 font-light text-slate-300">/</span>
+                                                {term.end_year}
                                             </h3>
-                                            <div className="flex items-center gap-1.5 mt-2 text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors">
+                                            <div className="mt-2 flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors group-hover:text-slate-700">
                                                 <Users className="h-3.5 w-3.5" />
                                                 <span>{term.officials_count} Officials</span>
                                             </div>
@@ -247,14 +229,11 @@ export default function YearTermsList() {
                                 </div>
 
                                 {/* Right Actions */}
-                                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end px-4 sm:px-0 pb-4 sm:pb-0 border-t sm:border-0 border-slate-100 pt-3 sm:pt-0">
-                                    <span className="text-xs font-bold text-slate-400 sm:hidden uppercase tracking-wider">Actions</span>
+                                <div className="flex w-full items-center justify-between gap-2 border-t border-slate-100 px-4 pt-3 pb-4 sm:w-auto sm:justify-end sm:border-0 sm:px-0 sm:pt-0 sm:pb-0">
+                                    <span className="text-xs font-bold tracking-wider text-slate-400 uppercase sm:hidden">Actions</span>
                                     <div className="flex items-center gap-2">
-                                        <div 
-                                            className={`
-                                                hidden sm:flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:translate-x-1
-                                                ${term.is_active ? 'text-blue-500 bg-blue-50' : 'text-slate-300 group-hover:text-orange-500'}
-                                            `}
+                                        <div
+                                            className={`hidden h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:translate-x-1 sm:flex ${term.is_active ? 'bg-blue-50 text-blue-500' : 'text-slate-300 group-hover:text-orange-500'} `}
                                         >
                                             <ChevronRight className="h-5 w-5" />
                                         </div>
@@ -262,19 +241,22 @@ export default function YearTermsList() {
                                         <div onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <button className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none">
+                                                    <button className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none">
                                                         <MoreVertical className="h-4 w-4" />
                                                     </button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 shadow-xl border-slate-100">
-                                                    <DropdownMenuItem onClick={() => handleEdit(term.id)} className="cursor-pointer font-medium py-2.5">
+                                                <DropdownMenuContent align="end" className="w-48 border-slate-100 shadow-xl">
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleEdit(term.id)}
+                                                        className="cursor-pointer py-2.5 font-medium"
+                                                    >
                                                         <Pencil className="mr-2 h-4 w-4 text-slate-400" />
                                                         Edit Details
                                                     </DropdownMenuItem>
                                                     <div className="my-1 h-px bg-slate-50" />
-                                                    <DropdownMenuItem 
-                                                        onClick={() => handleDeleteClick(term.id)} 
-                                                        className="cursor-pointer font-medium text-red-600 focus:text-red-700 focus:bg-red-50 py-2.5"
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleDeleteClick(term.id)}
+                                                        className="cursor-pointer py-2.5 font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" />
                                                         Delete Term
@@ -291,23 +273,27 @@ export default function YearTermsList() {
             </div>
 
             {/* --- CREATE / EDIT DIALOG --- */}
-            <CreateTermDialog 
-                isOpen={isDialogOpen} 
+            <CreateTermDialog
+                isOpen={isDialogOpen}
                 onClose={() => {
                     setIsDialogOpen(false);
                     setTermToEdit(null);
                 }}
-                onSubmit={handleSaveTerm} 
-                initialData={termToEdit ? {
-                    start_year: termToEdit.start_year,
-                    end_year: termToEdit.end_year,
-                    label: termToEdit.label || '',
-                    is_active: termToEdit.is_active
-                } : null}
+                onSubmit={handleSaveTerm}
+                initialData={
+                    termToEdit
+                        ? {
+                              start_year: termToEdit.start_year,
+                              end_year: termToEdit.end_year,
+                              label: termToEdit.label || '',
+                              is_active: termToEdit.is_active,
+                          }
+                        : null
+                }
             />
 
             {/* --- DELETE CONFIRMATION DIALOG --- */}
-            <ClassicDialog 
+            <ClassicDialog
                 open={!!termToDelete}
                 title="Delete Term"
                 message="Are you sure you want to delete this term? All associated official records will be permanently removed."

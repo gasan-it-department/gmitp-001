@@ -14,6 +14,10 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->string('name');
 
             $table->date('statutory_start');
