@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
     CalendarPlus, 
+    CalendarCog, 
     AlertCircle, 
     Loader2, 
     CheckCircle2,
-    CalendarClock
+    CalendarClock,
+    Save
 } from 'lucide-react';
 import { 
     Dialog, 
@@ -20,12 +22,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch"; 
 
 // --- PROPS INTERFACE ---
-interface CreateTermDialogProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (data: TermFormData) => Promise<void>;
-}
-
 export interface TermFormData {
     start_year: string;
     end_year: string;
@@ -33,31 +29,48 @@ export interface TermFormData {
     is_active: boolean;
 }
 
-export default function CreateTermDialog({ isOpen, onClose, onSubmit }: CreateTermDialogProps) {
+interface CreateTermDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (data: TermFormData) => Promise<void>;
+    initialData?: TermFormData | null;
+}
+
+export default function CreateTermDialog({ isOpen, onClose, onSubmit, initialData }: CreateTermDialogProps) {
     // --- STATE ---
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isEditMode = !!initialData;
     
     // Form State
     const [formData, setFormData] = useState<TermFormData>({
-        start_year: new Date().getFullYear().toString(),
-        end_year: (new Date().getFullYear() + 3).toString(),
+        start_year: '',
+        end_year: '',
         label: '',
         is_active: false,
     });
 
-    // Reset form when dialog opens
+    // Reset or Populate form
     useEffect(() => {
         if (isOpen) {
-            setFormData({
-                start_year: new Date().getFullYear().toString(),
-                end_year: (new Date().getFullYear() + 3).toString(),
-                label: '',
-                is_active: false,
-            });
+            if (initialData) {
+                setFormData({
+                    start_year: initialData.start_year,
+                    end_year: initialData.end_year,
+                    label: initialData.label,
+                    is_active: initialData.is_active,
+                });
+            } else {
+                setFormData({
+                    start_year: new Date().getFullYear().toString(),
+                    end_year: (new Date().getFullYear() + 3).toString(),
+                    label: '',
+                    is_active: false,
+                });
+            }
             setError(null);
         }
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     // --- HANDLERS ---
     const handleChange = (field: keyof TermFormData, value: string | boolean) => {
@@ -68,7 +81,6 @@ export default function CreateTermDialog({ isOpen, onClose, onSubmit }: CreateTe
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Basic Validation
         const start = parseInt(formData.start_year);
         const end = parseInt(formData.end_year);
 
@@ -87,7 +99,7 @@ export default function CreateTermDialog({ isOpen, onClose, onSubmit }: CreateTe
             await onSubmit(formData);
             onClose();
         } catch (err) {
-            setError("Failed to create term. Please try again.");
+            setError("Failed to save term. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -97,19 +109,19 @@ export default function CreateTermDialog({ isOpen, onClose, onSubmit }: CreateTe
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
                 
-                {/* Header with Theme Styling */}
+                {/* Header - Unified Theme (Always Orange/Slate) */}
                 <div className="bg-white px-6 pt-8 pb-6 border-b border-slate-100">
                     <DialogHeader>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 border border-orange-100 text-orange-600">
-                                <CalendarPlus className="h-5 w-5" />
+                                {isEditMode ? <CalendarCog className="h-5 w-5" /> : <CalendarPlus className="h-5 w-5" />}
                             </div>
                             <DialogTitle className="text-2xl font-black tracking-tight text-slate-900">
-                                New <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Term</span>
+                                {isEditMode ? 'Edit' : 'New'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Term</span>
                             </DialogTitle>
                         </div>
                         <DialogDescription className="text-slate-500 font-medium">
-                            Define a new legislative period to manage your roster.
+                            {isEditMode ? 'Update the details of this legislative period.' : 'Define a new legislative period to manage your roster.'}
                         </DialogDescription>
                     </DialogHeader>
                 </div>
@@ -221,8 +233,8 @@ export default function CreateTermDialog({ isOpen, onClose, onSubmit }: CreateTe
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                                 <>
-                                    Create Term
-                                    <CheckCircle2 className="ml-2 h-4 w-4" />
+                                    {isEditMode ? 'Update Term' : 'Create Term'}
+                                    {isEditMode ? <Save className="ml-2 h-4 w-4" /> : <CheckCircle2 className="ml-2 h-4 w-4" />}
                                 </>
                             )}
                         </Button>

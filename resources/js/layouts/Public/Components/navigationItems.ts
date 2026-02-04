@@ -13,7 +13,6 @@ export type NavigationItem = {
   }[];
 };
 
-// Returns a static array of nav items, route may be a Wayfinder function
 export const useNavigation = (): NavigationItem[] => [
   {
     title: "Home",
@@ -39,10 +38,5 @@ export const useNavigation = (): NavigationItem[] => [
     title: "Executive Orders",
     route: executiveOrders,
     icon: Folders,
-  },
-  {
-    title: "Contact Us",
-    route: contact,
-    icon: Phone,
   },
 ];
