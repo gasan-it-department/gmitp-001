@@ -187,7 +187,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Terms of Office', // Clearer than "Roster History". Implies managing year ranges (e.g. 2025-2028).
                     url: government.admin.terms.page.url({ municipality: currentMunicipality.slug }),
                     icon: CalendarRange, // Visually represents a start and end date/period.
-                    permission: 'public_information.access',
+                    permission: 'government.access',
                 },
                 // {
                 //     title: 'Officials Directory', // More professional than "Officials List". Implies a structured record of people.
