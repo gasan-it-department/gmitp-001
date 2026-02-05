@@ -1,36 +1,51 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { usePage } from '@inertiajs/react';
 import { CalendarClock, CalendarRange, CheckCircle2, ChevronRight, History, MoreVertical, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import CreateTermDialog, { TermFormData } from '../Create/CreateTermDialog';
+import CreateTermDialog from '../Create/CreateTermDialog';
 
 // --- TYPES ---
-interface YearTerm {
+interface TermResource {
     id: string;
-    start_year: string;
-    end_year: string;
-    label?: string;
-    is_active: boolean;
-    officials_count: number;
+    name: string;
+    statutory_start: string; // "2026-06-30"
+    statutory_end: string;   // "2029-06-30"
+    label: string;
+    is_active?: boolean;
+    officials_count?: number;
 }
 
-// --- MOCK DATA ---
-const MOCK_TERMS: YearTerm[] = [
-    { id: '1', start_year: '2025', end_year: '2028', label: 'Current Administration', is_active: true, officials_count: 12 },
-    { id: '2', start_year: '2022', end_year: '2025', is_active: false, officials_count: 12 },
-    { id: '3', start_year: '2019', end_year: '2022', is_active: false, officials_count: 11 },
-    { id: '4', start_year: '2016', end_year: '2019', is_active: false, officials_count: 10 },
-];
+interface PageProps {
+    sample: {
+        data: TermResource[];
+    };
+    [key: string]: any;
+}
 
-export default function YearTermsList() {
-    const [terms, setTerms] = useState<YearTerm[]>(MOCK_TERMS);
+export default function YearTermsList( ) {
+    const { sample } = usePage<PageProps>().props;
+    const processData = (data: TermResource[]) => {
+        const sorted = [...data].sort((a, b) =>
+            b.statutory_start.localeCompare(a.statutory_start)
+        );
 
-    // Dialog States
+        return sorted.map(term => ({
+            ...term,
+            is_active: term.label.toLowerCase().includes('(current)'),
+            officials_count: 0
+        }));
+    };
+
+    const [terms, setTerms] = useState<TermResource[]>(() => processData(sample.data));
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [termToEdit, setTermToEdit] = useState<YearTerm | null>(null);
+    const [termToEdit, setTermToEdit] = useState<TermResource | null>(null);
     const [termToDelete, setTermToDelete] = useState<string | null>(null);
+    
+    useEffect(() => {
+        setTerms(processData(sample.data));
+    }, [sample.data]);
 
-    // Fix sticky pointer-events
     useEffect(() => {
         if (!termToDelete && !isDialogOpen) {
             const timer = setTimeout(() => {
@@ -41,8 +56,6 @@ export default function YearTermsList() {
         }
     }, [termToDelete, isDialogOpen]);
 
-    // --- HANDLERS ---
-
     const handleEdit = (id: string) => {
         const term = terms.find((t) => t.id === id);
         if (term) {
@@ -52,7 +65,7 @@ export default function YearTermsList() {
     };
 
     const handleCreateClick = () => {
-        setTermToEdit(null); // Ensure no edit data is present for create mode
+        setTermToEdit(null);
         setIsDialogOpen(true);
     };
 
@@ -61,6 +74,7 @@ export default function YearTermsList() {
     };
 
     const confirmDelete = () => {
+        // API call to delete would go here
         if (termToDelete) {
             setTerms((prev) => prev.filter((term) => term.id !== termToDelete));
             setTermToDelete(null);
@@ -68,65 +82,13 @@ export default function YearTermsList() {
     };
 
     const handleManage = (id: string) => console.log('Manage Officials', id);
-
-    // --- SAVE LOGIC (CREATE OR UPDATE) ---
-    const handleSaveTerm = async (data: TermFormData) => {
-        // 1. Fake API Delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        // 2. Logic Separation
-        if (termToEdit) {
-            // ================== UPDATE API CALL PLACEHOLDER ==================
-
-            console.log('Updating existing term...', termToEdit.id, data);
-            setTerms((prev) => {
-                let updatedList = [...prev];
-                if (data.is_active) {
-                    updatedList = updatedList.map((t) => ({ ...t, is_active: false }));
-                }
-
-                return updatedList.map((t) =>
-                    t.id === termToEdit.id
-                        ? {
-                              ...t,
-                              start_year: data.start_year,
-                              end_year: data.end_year,
-                              label: data.label || undefined,
-                              is_active: data.is_active,
-                          }
-                        : t,
-                );
-            });
-        } else {
-            // ================== CREATE API CALL PLACEHOLDER ==================
-
-            console.log('Creating new term...', data);
-            const newTerm: YearTerm = {
-                id: Date.now().toString(),
-                start_year: data.start_year,
-                end_year: data.end_year,
-                label: data.label || undefined,
-                is_active: data.is_active,
-                officials_count: 0,
-            };
-
-            setTerms((prev) => {
-                let updatedList = [...prev];
-
-                // Deactivate others if this is set to active
-                if (newTerm.is_active) {
-                    updatedList = updatedList.map((t) => ({ ...t, is_active: false }));
-                }
-
-                updatedList.unshift(newTerm);
-                return updatedList;
-            });
-        }
-    };
+    const getYear = (dateStr: string) => dateStr.split('-')[0];
 
     return (
-        <div className="relative min-h-screen bg-slate-50/30">
-            <div className="relative mx-auto max-w-4xl p-8">
+        <div className="relative min-h-screen w-full bg-slate-50/30">
+            {/* CHANGED: Removed max-w-4xl and mx-auto, added w-full */}
+            <div className="relative w-full p-6 md:p-10">
+                
                 {/* --- HEADER --- */}
                 <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                     <div>
@@ -216,13 +178,13 @@ export default function YearTermsList() {
                                             <h3
                                                 className={`text-2xl leading-none font-black tracking-tight sm:text-3xl ${term.is_active ? 'text-slate-900' : 'text-slate-700'}`}
                                             >
-                                                {term.start_year}
+                                                {getYear(term.statutory_start)}
                                                 <span className="mx-1 font-light text-slate-300">/</span>
-                                                {term.end_year}
+                                                {getYear(term.statutory_end)}
                                             </h3>
                                             <div className="mt-2 flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors group-hover:text-slate-700">
                                                 <Users className="h-3.5 w-3.5" />
-                                                <span>{term.officials_count} Officials</span>
+                                                <span>{term.officials_count || 0} Officials</span>
                                             </div>
                                         </div>
                                     </div>
@@ -279,14 +241,14 @@ export default function YearTermsList() {
                     setIsDialogOpen(false);
                     setTermToEdit(null);
                 }}
-                onSubmit={handleSaveTerm}
                 initialData={
                     termToEdit
                         ? {
-                              start_year: termToEdit.start_year,
-                              end_year: termToEdit.end_year,
-                              label: termToEdit.label || '',
-                              is_active: termToEdit.is_active,
+                              id: termToEdit.id,
+                              statutoryStart: termToEdit.statutory_start,
+                              statutoryEnd: termToEdit.statutory_end,
+                              name: termToEdit.name,
+                              isCurrent: termToEdit.is_active,
                           }
                         : null
                 }

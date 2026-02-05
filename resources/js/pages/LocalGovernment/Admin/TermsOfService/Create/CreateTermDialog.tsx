@@ -9,17 +9,7 @@ import { useForm } from '@inertiajs/react';
 import { AlertCircle, CalendarClock, CalendarCog, CalendarPlus, CheckCircle2, Loader2, Save } from 'lucide-react';
 import { useEffect } from 'react';
 
-// --- TYPES ---
-// This is what the DB expects (snake_case)
-interface TermPayload {
-    name: string;
-    statutory_start: string; // YYYY-MM-DD
-    statutory_end: string; // YYYY-MM-DD
-    is_current: boolean;
-}
-
-// This is what the UI Form uses (cleaner state)
-interface TermFormState {
+interface TermData {
     start_year: string;
     end_year: string;
     label: string;
@@ -29,27 +19,25 @@ interface TermFormState {
 interface CreateTermDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    initialData?: any; // Replace 'any' with your TermResource type if available
+    initialData?: any;
 }
 
 export default function CreateTermDialog({ isOpen, onClose, initialData }: CreateTermDialogProps) {
     const isEditMode = !!initialData;
     const { currentMunicipality } = useMunicipality();
-    // --- INERTIA FORM ---
-    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<TermFormState>({
+
+    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm({
         start_year: new Date().getFullYear().toString(),
         end_year: (new Date().getFullYear() + 3).toString(),
         label: '',
-        is_active: false,
+        is_active: false as boolean, 
     });
+    const safeErrors = errors as any; 
 
-    // --- EFFECT: SYNC DATA ON OPEN ---
     useEffect(() => {
         if (isOpen) {
             clearErrors();
             if (initialData) {
-                // Parse the existing full dates back to years for the UI
-                // Example: "2022-06-30" -> "2022"
                 setData({
                     start_year: initialData.statutoryStart.split('-')[0],
                     end_year: initialData.statutoryEnd.split('-')[0],
@@ -57,7 +45,6 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                     is_active: initialData.isCurrent,
                 });
             } else {
-                // Reset to defaults for "Create New"
                 reset();
             }
         }
@@ -66,19 +53,15 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
     // --- SUBMIT HANDLER ---
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // 1. Transform the data before it leaves the form
-        transform((data) => ({
+        transform((data: TermData) => ({
             name: data.label.trim() || `${data.start_year}-${data.end_year} TERM`,
             statutory_start: `${data.start_year}-06-30`,
             statutory_end: `${data.end_year}-06-30`,
             is_current: data.is_active,
         }));
 
-        // 2. Define your URL using Wayfinder
-        const url = isEditMode ? government.admin.terms.update.url({ id: initialData.id }) : government.admin.terms.store.url();
+        const url = isEditMode ? "" : government.admin.terms.store.url();
 
-        // 3. Merge headers into the options object
         const requestOptions = {
             headers: {
                 'X-Municipality-Slug': currentMunicipality.slug,
@@ -88,10 +71,8 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                 reset();
             },
             preserveScroll: true,
-            // Add any other existing options here
         };
 
-        // 4. Execute the call (Inertia only takes TWO arguments)
         if (isEditMode) {
             put(url, requestOptions);
         } else {
@@ -135,14 +116,14 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                                     type="number"
                                     min="1900"
                                     max="2100"
-                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${errors.statutory_start ? 'border-red-500 bg-red-50' : ''}`}
+                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${safeErrors.statutory_start ? 'border-red-500 bg-red-50' : ''}`}
                                     value={data.start_year}
                                     onChange={(e) => setData('start_year', e.target.value)}
                                     required
                                 />
                             </div>
-                            {/* Show backend validation error for statutory_start here */}
-                            {errors.statutory_start && <p className="text-xs font-medium text-red-500">{errors.statutory_start}</p>}
+                            {/* Use safeErrors to access backend keys */}
+                            {safeErrors.statutory_start && <p className="text-xs font-medium text-red-500">{safeErrors.statutory_start}</p>}
                         </div>
 
                         <div className="space-y-2">
@@ -156,13 +137,13 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                                     type="number"
                                     min="1900"
                                     max="2100"
-                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${errors.statutory_end ? 'border-red-500 bg-red-50' : ''}`}
+                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${safeErrors.statutory_end ? 'border-red-500 bg-red-50' : ''}`}
                                     value={data.end_year}
                                     onChange={(e) => setData('end_year', e.target.value)}
                                     required
                                 />
                             </div>
-                            {errors.statutory_end && <p className="text-xs font-medium text-red-500">{errors.statutory_end}</p>}
+                            {safeErrors.statutory_end && <p className="text-xs font-medium text-red-500">{safeErrors.statutory_end}</p>}
                         </div>
                     </div>
 
@@ -178,7 +159,7 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                             value={data.label}
                             onChange={(e) => setData('label', e.target.value)}
                         />
-                        {errors.name && <p className="text-xs font-medium text-red-500">{errors.name}</p>}
+                        {safeErrors.name && <p className="text-xs font-medium text-red-500">{safeErrors.name}</p>}
                     </div>
 
                     {/* Active Toggle Card */}
@@ -201,7 +182,7 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                         />
                     </div>
 
-                    {/* Global Form Error (if any) */}
+                    {/* Global Form Error */}
                     {Object.keys(errors).length > 0 && (
                         <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600 animate-in fade-in slide-in-from-top-1">
                             <AlertCircle className="h-4 w-4 shrink-0" />
