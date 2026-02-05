@@ -67,9 +67,9 @@ export default function ProfileTab() {
 
     useEffect(() => {
         if (auth.user) {
-            setValue('first_name', auth.user.first_name || 'Sample First Name');
-            setValue('middle_name', auth.user.middle_name || 'Sample Middle Name');
-            setValue('last_name', auth.user.last_name || 'Sample Last Name');
+            setValue('first_name', auth.user.first_name || '');
+            setValue('middle_name', auth.user.middle_name || '');
+            setValue('last_name', auth.user.last_name || '');
             setValue('user_name', auth.user.user_name || '');
             setValue('phone', auth.user.phone || '');
             setUserAvatarURL(null);
@@ -132,10 +132,10 @@ export default function ProfileTab() {
 
     return (
         <div className="min-h-screen bg-slate-50/30">
-            <div className="relative mx-auto max-w-5xl p-8">
+            <div className="relative mx-auto max-w-5xl px-2 py-4 md:p-8">
                 
                 {/* --- PAGE HEADER --- */}
-                <div className="mb-8 flex items-end justify-between">
+                <div className="mb-4 md:mb-8 px-2 flex items-end justify-between">
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="inline-flex items-center justify-center rounded-lg bg-orange-100 p-1.5 text-orange-600 shadow-sm border border-orange-200">
@@ -145,10 +145,10 @@ export default function ProfileTab() {
                                 Settings
                             </span>
                         </div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
                             My <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Profile</span>
                         </h1>
-                        <p className="text-slate-500 font-medium mt-2">
+                        <p className="text-slate-500 font-medium mt-1 md:mt-2 text-sm md:text-base">
                             Update your personal details and manage account security.
                         </p>
                     </div>
@@ -179,15 +179,15 @@ export default function ProfileTab() {
                         <div className="grid grid-cols-1 md:grid-cols-12 min-h-[400px]">
                             
                             {/* LEFT COLUMN: AVATAR & SIDEBAR */}
-                            <div className="md:col-span-4 bg-slate-50 border-r border-slate-100 p-8 flex flex-col items-center">
+                            <div className="md:col-span-4 bg-slate-50 border-r border-slate-100 p-4 md:p-8 flex flex-col items-center">
                                 
                                 {/* Avatar Uploader */}
                                 <div className="relative group cursor-pointer mb-6" onClick={() => fileInputRef.current?.click()}>
-                                    <div className="relative h-40 w-40 rounded-full ring-4 ring-white shadow-xl overflow-hidden transition-all group-hover:ring-orange-200 group-hover:shadow-2xl">
+                                    <div className="relative h-32 w-32 md:h-40 md:w-40 rounded-full ring-4 ring-white shadow-xl overflow-hidden transition-all group-hover:ring-orange-200 group-hover:shadow-2xl">
                                         <Avatar className="h-full w-full">
                                             <AvatarImage src={userAvatarURL || ''} alt="avatar" className="object-cover" />
                                             <AvatarFallback className="bg-slate-200 text-slate-400">
-                                                <User className="h-16 w-16" />
+                                                <User className="h-14 w-14 md:h-16 md:w-16" />
                                             </AvatarFallback>
                                         </Avatar>
                                         
@@ -238,9 +238,9 @@ export default function ProfileTab() {
                                 )}
 
                                 <div className="w-full space-y-4">
-                                    <div className="p-5 rounded-2xl bg-white border border-blue-100 shadow-sm">
+                                    <div className="p-4 md:p-5 rounded-2xl bg-white border border-blue-100 shadow-sm">
                                         <h4 className="text-xs font-black text-blue-700 uppercase tracking-widest mb-2">Administrator Details</h4>
-                                        <p className="text-sm text-slate-600 font-medium">
+                                        <p className="text-sm text-slate-600 font-medium break-all">
                                             Account ID: <span className="font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1">{auth.user?.id || '---'}</span>
                                         </p>
                                     </div>
@@ -248,37 +248,40 @@ export default function ProfileTab() {
                             </div>
 
                             {/* RIGHT COLUMN: FORM DATA */}
-                            <div className="md:col-span-8 p-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div className="md:col-span-8 p-4 md:p-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
                                     
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5 md:space-y-2">
                                         <Label htmlFor="first_name" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name</Label>
-                                        <Input id="first_name" {...register('first_name')} className="h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700" />
+                                        <Input id="first_name" {...register('first_name')} className="h-10 md:h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700 text-sm md:text-base" />
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5 md:space-y-2">
                                         <Label htmlFor="middle_name" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Middle Name</Label>
-                                        <Input id="middle_name" {...register('middle_name')} className="h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700" />
+                                        <Input id="middle_name" {...register('middle_name')} className="h-10 md:h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700 text-sm md:text-base" />
                                     </div>
 
-                                    <div className="space-y-2 md:col-span-2">
+                                    <div className="space-y-1.5 md:space-y-2 md:col-span-2">
                                         <Label htmlFor="last_name" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name</Label>
-                                        <Input id="last_name" {...register('last_name')} className="h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700" />
+                                        <Input id="last_name" {...register('last_name')} className="h-10 md:h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700 text-sm md:text-base" />
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5 md:space-y-2">
                                         <Label htmlFor="user_name" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Username</Label>
-                                        <Input id="user_name" disabled {...register('user_name')} className="h-11 bg-slate-50 text-slate-400 font-mono border-slate-200 shadow-none cursor-not-allowed" />
+                                        <Input id="user_name" disabled {...register('user_name')} className="h-10 md:h-11 bg-slate-50 text-slate-400 font-mono border-slate-200 shadow-none cursor-not-allowed text-sm md:text-base" />
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5 md:space-y-2">
                                         <Label htmlFor="phone" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Mobile Number</Label>
-                                        <Input id="phone" {...register('phone')} placeholder="09XXXXXXXXX" className="h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700" />
+                                        <Input id="phone" {...register('phone')} placeholder="09XXXXXXXXX" className="h-10 md:h-11 bg-white border-slate-200 focus-visible:ring-blue-500 font-bold text-slate-700 text-sm md:text-base" />
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-100">
-                                    {/* Mobile Logout */}
+                                {/* --- UPDATED FOOTER LAYOUT --- */}
+                                {/* flex-col-reverse (mobile) -> flex-row (desktop) */}
+                                <div className="flex flex-col-reverse md:flex-row items-center justify-end gap-3 md:gap-4 pt-6 border-t border-slate-100">
+                                    
+                                    {/* Mobile Logout - Full width on mobile */}
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -291,14 +294,16 @@ export default function ProfileTab() {
                                             currentAction: 'logout',
                                             isOpen: true,
                                         })}
-                                        className="md:hidden text-red-600 font-bold"
+                                        className="md:hidden text-red-600 font-bold h-10 md:h-11 w-full"
                                     >
+                                        <LogOut className="mr-2 h-4 w-4" />
                                         Logout
                                     </Button>
 
+                                    {/* Save Button - Full width on mobile */}
                                     <Button 
                                         type="submit" 
-                                        className="h-11 min-w-[140px] bg-slate-900 text-white hover:bg-orange-600 shadow-lg shadow-slate-900/20 transition-all active:scale-95 font-bold rounded-xl"
+                                        className="h-10 md:h-11 w-full md:w-auto min-w-[140px] bg-slate-900 text-white hover:bg-orange-600 shadow-lg shadow-slate-900/20 transition-all active:scale-95 font-bold rounded-xl text-sm md:text-base"
                                     >
                                         Save Changes
                                         <Save className="ml-2 h-4 w-4" />
@@ -312,18 +317,18 @@ export default function ProfileTab() {
 
             {/* --- CROP DIALOG --- */}
             <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
-                <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
-                    <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white">
+                <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-0 shadow-2xl rounded-2xl w-[95vw]">
+                    <DialogHeader className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-100 bg-white">
                         <div className="flex items-center gap-2">
                             <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
                                 <ImageIcon className="h-5 w-5" />
                             </div>
-                            <DialogTitle className="text-xl font-bold text-slate-900">Adjust Photo</DialogTitle>
+                            <DialogTitle className="text-lg md:text-xl font-bold text-slate-900">Adjust Photo</DialogTitle>
                         </div>
                     </DialogHeader>
                     
-                    <div className="p-6 bg-slate-50">
-                        <div className="relative h-80 w-full overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-900 shadow-inner">
+                    <div className="p-4 md:p-6 bg-slate-50">
+                        <div className="relative h-64 md:h-80 w-full overflow-hidden rounded-xl border-2 border-slate-200 bg-slate-900 shadow-inner">
                             <Cropper
                                 image={selectedImage!}
                                 crop={crop}
@@ -353,11 +358,11 @@ export default function ProfileTab() {
                         </div>
                     </div>
 
-                    <DialogFooter className="px-6 py-4 bg-white border-t border-slate-100">
-                        <Button variant="ghost" onClick={() => setIsCropDialogOpen(false)} className="font-bold text-slate-500">
+                    <DialogFooter className="px-4 py-3 md:px-6 md:py-4 bg-white border-t border-slate-100 flex-row gap-2 justify-end">
+                        <Button variant="ghost" onClick={() => setIsCropDialogOpen(false)} className="font-bold text-slate-500 h-10">
                             Cancel
                         </Button>
-                        <Button onClick={handleCropSave} className="bg-slate-900 hover:bg-orange-600 text-white font-bold rounded-xl px-6">
+                        <Button onClick={handleCropSave} className="bg-slate-900 hover:bg-orange-600 text-white font-bold rounded-xl px-4 h-10">
                             Apply Photo
                         </Button>
                     </DialogFooter>
