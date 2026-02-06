@@ -12,10 +12,10 @@ class TermRepository
     public function save(string $termId, TermDto $dto)
     {
 
-        if ($dto->isCurrent) {
-            Term::where('municipal_id', $dto->municipalId)
-                ->update(['is_current' => false]);
-        }
+        // if ($dto->isCurrent) {
+        //     Term::where('municipal_id', $dto->municipalId)
+        //         ->update(['is_current' => false]);
+        // }
 
         $term = Term::Create([
 
@@ -42,6 +42,7 @@ class TermRepository
 
         DB::table('terms')
             ->where('municipal_id', $municipalId)
+            ->where('is_current', true)
             ->update(['is_current' => false]);
 
     }
