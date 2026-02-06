@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Request\Government;
 
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class TermRequest extends FormRequest
@@ -21,27 +22,40 @@ class TermRequest extends FormRequest
      */
     public function rules(): array
     {
+        $municipalId = app('municipal_id');
+        // If you are editing, you need the current term ID to ignore it
+        $termId = $this->route('term');
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:100',
-                'unique:terms,name' // Prevents creating "2022-2025" twice
+                // Check uniqueness ONLY within the same municipality
+                Rule::unique('terms', 'name')
+                    ->where('municipal_id', $municipalId)
+                    ->ignore($termId)
             ],
 
             'statutory_start' => [
                 'required',
-                'date'
+                'date',
+                // Allow multiple towns to have the same date, but block it within ONE town
+                Rule::unique('terms', 'statutory_start')
+                    ->where('municipal_id', $municipalId)
+                    ->ignore($termId)
             ],
+
             'statutory_end' => [
                 'required',
                 'date',
-                'after:statutory_start' // Validation: End MUST be after start
+                'after:statutory_start',
+                Rule::unique('terms', 'statutory_end')
+                    ->where('municipal_id', $municipalId)
+                    ->ignore($termId)
             ],
 
-            'is_current' => [
-                'boolean'
-            ],
+            'is_current' => ['boolean'],
         ];
     }
 

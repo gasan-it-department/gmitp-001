@@ -5,7 +5,7 @@ namespace App\Core\Government\Dto;
 use Carbon\Carbon;
 use App\External\Api\Request\Government\TermRequest;
 
-class AddTermDto
+class TermDto
 {
 
     public function __construct(

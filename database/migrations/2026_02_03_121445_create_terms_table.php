@@ -28,6 +28,7 @@ return new class extends Migration {
 
             $table->timestamps();
 
+            // $table->unique(['municipal_id', 'name', 'statutory_date', 'statutory_end'], 'unique_term_index');
         });
     }
 

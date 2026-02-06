@@ -1,6 +1,8 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { usePage } from '@inertiajs/react';
+import government from '@/routes/government';
+import { Link, usePage } from '@inertiajs/react';
 import { CalendarClock, CalendarRange, CheckCircle2, ChevronRight, History, MoreVertical, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import CreateTermDialog from '../Create/CreateTermDialog';
@@ -10,7 +12,7 @@ interface TermResource {
     id: string;
     name: string;
     statutory_start: string; // "2026-06-30"
-    statutory_end: string;   // "2029-06-30"
+    statutory_end: string; // "2029-06-30"
     label: string;
     is_active?: boolean;
     officials_count?: number;
@@ -23,17 +25,16 @@ interface PageProps {
     [key: string]: any;
 }
 
-export default function YearTermsList( ) {
+export default function YearTermsList() {
     const { sample } = usePage<PageProps>().props;
+    const { currentMunicipality } = useMunicipality();
     const processData = (data: TermResource[]) => {
-        const sorted = [...data].sort((a, b) =>
-            b.statutory_start.localeCompare(a.statutory_start)
-        );
+        const sorted = [...data].sort((a, b) => b.statutory_start.localeCompare(a.statutory_start));
 
-        return sorted.map(term => ({
+        return sorted.map((term) => ({
             ...term,
             is_active: term.label.toLowerCase().includes('(current)'),
-            officials_count: 0
+            officials_count: 0,
         }));
     };
 
@@ -41,7 +42,7 @@ export default function YearTermsList( ) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [termToEdit, setTermToEdit] = useState<TermResource | null>(null);
     const [termToDelete, setTermToDelete] = useState<string | null>(null);
-    
+
     useEffect(() => {
         setTerms(processData(sample.data));
     }, [sample.data]);
@@ -88,7 +89,6 @@ export default function YearTermsList( ) {
         <div className="relative min-h-screen w-full bg-slate-50/30">
             {/* CHANGED: Removed max-w-4xl and mx-auto, added w-full */}
             <div className="relative w-full p-6 md:p-10">
-                
                 {/* --- HEADER --- */}
                 <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                     <div>
@@ -194,11 +194,15 @@ export default function YearTermsList( ) {
                                 <div className="flex w-full items-center justify-between gap-2 border-t border-slate-100 px-4 pt-3 pb-4 sm:w-auto sm:justify-end sm:border-0 sm:px-0 sm:pt-0 sm:pb-0">
                                     <span className="text-xs font-bold tracking-wider text-slate-400 uppercase sm:hidden">Actions</span>
                                     <div className="flex items-center gap-2">
-                                        <div
+                                        <Link
+                                            href={government.admin.officials.termspage.url({
+                                                municipality: currentMunicipality.slug,
+                                                termId: term.id,
+                                            })}
                                             className={`hidden h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:translate-x-1 sm:flex ${term.is_active ? 'bg-blue-50 text-blue-500' : 'text-slate-300 group-hover:text-orange-500'} `}
                                         >
                                             <ChevronRight className="h-5 w-5" />
-                                        </div>
+                                        </Link>
 
                                         <div onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>

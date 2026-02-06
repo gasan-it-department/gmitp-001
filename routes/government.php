@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\Government\Terms\CreateTermController;
+use App\External\Api\Controllers\Government\Terms\UpdateTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowAppointOfficialController;
 
@@ -48,6 +49,8 @@ Route::prefix('api/government')
             ->group(function () {
 
                 Route::post('store-terms', CreateTermController::class)->name('store');
+
+                Route::put('update-terms/{termId}', UpdateTermController::class)->name('update');
 
             });
 
