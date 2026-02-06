@@ -30,7 +30,6 @@ export default function YearTermsList() {
     const { currentMunicipality } = useMunicipality();
     const processData = (data: TermResource[]) => {
         const sorted = [...data].sort((a, b) => b.statutory_start.localeCompare(a.statutory_start));
-
         return sorted.map((term) => ({
             ...term,
             is_active: term.label.toLowerCase().includes('(current)'),
@@ -38,6 +37,7 @@ export default function YearTermsList() {
         }));
     };
 
+    // --- STATE ---
     const [terms, setTerms] = useState<TermResource[]>(() => processData(sample.data));
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [termToEdit, setTermToEdit] = useState<TermResource | null>(null);
@@ -47,6 +47,7 @@ export default function YearTermsList() {
         setTerms(processData(sample.data));
     }, [sample.data]);
 
+    // Fix sticky pointer-events
     useEffect(() => {
         if (!termToDelete && !isDialogOpen) {
             const timer = setTimeout(() => {
@@ -57,6 +58,7 @@ export default function YearTermsList() {
         }
     }, [termToDelete, isDialogOpen]);
 
+    // --- HANDLERS ---
     const handleEdit = (id: string) => {
         const term = terms.find((t) => t.id === id);
         if (term) {
@@ -75,7 +77,7 @@ export default function YearTermsList() {
     };
 
     const confirmDelete = () => {
-        // API call to delete would go here
+        // API call to delete would go here (Inertia delete request)
         if (termToDelete) {
             setTerms((prev) => prev.filter((term) => term.id !== termToDelete));
             setTermToDelete(null);
@@ -87,7 +89,6 @@ export default function YearTermsList() {
 
     return (
         <div className="relative min-h-screen w-full bg-slate-50/30">
-            {/* CHANGED: Removed max-w-4xl and mx-auto, added w-full */}
             <div className="relative w-full p-6 md:p-10">
                 {/* --- HEADER --- */}
                 <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">

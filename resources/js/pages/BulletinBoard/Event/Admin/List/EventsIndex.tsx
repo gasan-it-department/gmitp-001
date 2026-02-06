@@ -9,6 +9,7 @@ import { useState } from 'react';
 import AddEditEventsDialog from './Components/AddEditEventsDialog';
 import { EventsListHeader } from './Components/EventsListHeader';
 import { EventsTable } from './Components/EventsTable';
+import { Button } from '@/components/ui/button';
 
 interface Props {
     events: {
@@ -42,7 +43,7 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
         isOpen: false,
         title: '',
         message: '',
-        action: () => {},
+        action: () => { },
     });
 
     // --- Handlers ---
@@ -104,9 +105,22 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
                     <EventsListHeader
                         onSearch={(term) => router.get(route(route().current()!), { search: term }, { preserveState: true, replace: true })}
                         onAdd={() => setAddEventDialog({ isOpen: true, editData: null })}
-                        onDeleteSelected={() => initiateDelete(selectedItems)}
                         selectedCount={selectedItems.length}
                     />
+                </div>
+
+                {/* BULK DELETE */}
+                <div className="mb-2">
+                    <Button
+                        size="sm"
+                        disabled={selectedItems.length === 0}
+                        className="bg-red-600 text-white hover:bg-red-700"
+                        onClick={() =>
+                            initiateDelete(selectedItems)
+                        }
+                    >
+                        Delete ({selectedItems.length}) items
+                    </Button>
                 </div>
 
                 <div>

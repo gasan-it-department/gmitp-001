@@ -57,7 +57,8 @@ export function EventsTable({ data, from, selectedItems, onToggleSelect, onSelec
     };
 
     return (
-        <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200">
+        <div>
+            <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200">
             <Table className="w-full table-auto">
                 <TableHeader className="sticky top-0 z-10 bg-gray-50">
                     <TableRow>
@@ -135,5 +136,7 @@ export function EventsTable({ data, from, selectedItems, onToggleSelect, onSelec
                 </TableBody>
             </Table>
         </div>
+        </div>
+        
     );
 }

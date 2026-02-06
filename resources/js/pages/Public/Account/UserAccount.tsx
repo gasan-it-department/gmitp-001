@@ -13,7 +13,7 @@ export default function UserAccount() {
                             <TabsTrigger value="account" className="p-5 text-[16px]">
                                 Account
                             </TabsTrigger>
-                            <TabsTrigger value="securityy" className="p-5 text-[16px]">
+                            <TabsTrigger value="security" className="p-5 text-[16px]">
                                 Security
                             </TabsTrigger>
                             {/* <TabsTrigger value="transactions" className="p-5 text-[16px]">
@@ -26,7 +26,7 @@ export default function UserAccount() {
                         <ProfileTab />
                     </TabsContent>
 
-                    <TabsContent value="securityy">
+                    <TabsContent value="security">
                         <SecurityTab />
                     </TabsContent>
 

@@ -1,9 +1,10 @@
-
 export default function LoadingSpinner() {
     return (
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/20">
+        // Theme Update: Uses 'bg-secondary' for the circle background
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
             <svg
-                className="h-8 w-8 animate-spin text-orange-600 dark:text-orange-400"
+                // Theme Update: Uses 'text-primary' for the spinner color
+                className="h-8 w-8 animate-spin text-primary"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"

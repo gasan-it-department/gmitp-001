@@ -14,7 +14,6 @@ import { useEffect, useState } from 'react';
 import { ViewEventDetails } from './ViewEventDetails';
 
 export default function EventsCalendarUi() {
-    const [seasonalTheme, setSeasonalTheme] = useState(true);
     const [dashboardList, setDashboardList] = useState<EventData[]>([]);
     const [isEventDetailDialogShowing, setIsEventDialogShowing] = useState(false);
     const [selectedEventData, setSelectedEventData] = useState<EventData | null>(null);
@@ -73,8 +72,8 @@ export default function EventsCalendarUi() {
         <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
             <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
-                    <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">Upcoming Events</h2>
-                    <p className="text-sm text-gray-600 sm:text-base dark:text-gray-400">Stay updated on upcoming municipal events and activities.</p>
+                    <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Upcoming Events</h2>
+                    <p className="text-sm text-muted-foreground sm:text-base">Stay updated on upcoming municipal events and activities.</p>
                 </div>
             </div>
 
@@ -85,14 +84,10 @@ export default function EventsCalendarUi() {
                     </div>
                 ) : dashboardList.length > 0 ? (
                     dashboardList.slice(0, 5).map((item, index) => {
-                        const month = moment(item.event_date).format('MM');
-                        const isDecember = month === '12' && seasonalTheme;
-                        const isNovember = month === '11' && seasonalTheme;
-
                         return (
                             <motion.div
                                 key={item.id}
-                                className="cursor-pointer transition-transform duration-200 ease-in-out hover:scale-[1.02] active:scale-[0.97]"
+                                className="cursor-pointer transition-transform duration-200 ease-in-out hover:scale-[1.01] active:scale-[0.99]"
                                 initial={{ opacity: 0, y: 50 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, amount: 0.2 }}
@@ -107,37 +102,18 @@ export default function EventsCalendarUi() {
                                         setSelectedEventData(item);
                                         setIsEventDialogShowing(true);
                                     }}
-                                    className={`relative overflow-hidden rounded-xl p-5 shadow-md transition-all duration-300 ${
-                                        isDecember
-                                            ? 'bg-gradient-to-br from-green-700 via-green-600 to-green-500'
-                                            : isNovember
-                                              ? 'bg-gradient-to-br from-[#2e0233] via-[#3c063d] to-[#5e1a00]'
-                                              : 'bg-gradient-to-br from-red-50 via-orange-50 to-amber-100 dark:from-red-950 dark:via-orange-950 dark:to-amber-900'
-                                    }`}
+                                    // Theme Update: 'bg-card' and 'border-border'
+                                    className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md"
                                 >
-                                    <div
-                                        className={`absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-sm ${
-                                            isDecember
-                                                ? 'bg-red-600 text-white'
-                                                : isNovember
-                                                  ? 'bg-orange-600 text-black'
-                                                  : 'bg-gradient-to-r from-red-500 to-orange-500 text-white'
-                                        }`}
-                                    >
+                                    {/* Days Remaining Badge: 'bg-secondary' with 'text-secondary-foreground' */}
+                                    <div className="absolute top-2 right-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground uppercase shadow-sm">
                                         {Utility().calculateArrivingDays(item.event_date)}
                                     </div>
 
                                     <div className="flex items-center gap-3 sm:gap-4">
-                                        <div
-                                            className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border font-semibold shadow-md sm:h-14 sm:w-14 ${
-                                                isDecember
-                                                    ? 'border-green-900 bg-green-800 text-white'
-                                                    : isNovember
-                                                      ? 'border-orange-800 bg-gradient-to-br from-orange-700 to-black text-orange-200'
-                                                      : 'border-red-300 bg-gradient-to-br from-red-400 to-orange-400 text-white dark:border-orange-800'
-                                            }`}
-                                        >
-                                            <span className="text-xs leading-none uppercase sm:text-sm">
+                                        {/* Date Box: Primary theme color */}
+                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary text-primary-foreground font-semibold shadow-sm sm:h-14 sm:w-14">
+                                            <span className="text-xs leading-none uppercase opacity-80 sm:text-sm">
                                                 {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('MMM')}
                                             </span>
                                             <span className="text-lg leading-none font-bold sm:text-xl">
@@ -146,28 +122,16 @@ export default function EventsCalendarUi() {
                                         </div>
 
                                         <div className="flex min-w-0 flex-grow flex-col">
-                                            <span
-                                                className={`text-xs font-semibold sm:text-sm ${
-                                                    isDecember ? 'text-red-100' : isNovember ? 'text-orange-300' : 'text-red-700 dark:text-amber-400'
-                                                }`}
-                                            >
+                                            <span className="text-xs font-semibold text-muted-foreground sm:text-sm">
                                                 {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('YYYY')}
                                             </span>
-                                            <h3
-                                                className={`truncate text-base font-semibold sm:text-lg ${
-                                                    isDecember ? 'text-white' : isNovember ? 'text-orange-200' : 'text-red-900 dark:text-orange-100'
-                                                }`}
-                                            >
+                                            <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">
                                                 {item.title}
                                             </h3>
                                         </div>
                                     </div>
 
-                                    <p
-                                        className={`mt-3 line-clamp-3 text-sm sm:text-base ${
-                                            isDecember ? 'text-white/90' : isNovember ? 'text-orange-100' : 'text-orange-800 dark:text-orange-200'
-                                        }`}
-                                    >
+                                    <p className="mt-3 line-clamp-3 text-sm text-muted-foreground sm:text-base">
                                         {item.description}
                                     </p>
                                 </Card>
@@ -175,7 +139,7 @@ export default function EventsCalendarUi() {
                         );
                     })
                 ) : (
-                    <div className="rounded-lg border bg-gray-50 p-4 text-center text-sm text-gray-500 sm:text-base dark:bg-gray-800 dark:text-gray-400">
+                    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center text-sm text-muted-foreground sm:text-base">
                         No events yet
                     </div>
                 )}

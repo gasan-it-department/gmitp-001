@@ -30,11 +30,12 @@ import {
     CalendarDays,
     CalendarRange,
     ClipboardList,
+    Contact,
     FileInput,
     Flower,
     Gavel,
     Grid3X3,
-    Landmark, // Represents Cemetery/Memorial
+    Landmark,
     LayoutDashboard,
     LayoutTemplate,
     LogOut,
@@ -100,31 +101,31 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
 
     // 1. HELPER: Check if user has permission
     const hasPermission = (permission?: string) => {
-        if (!permission) return true; // No permission required = visible to all
-        if (auth.roles?.isSuperAdmin) return true; // Super Admin sees everything
+        if (!permission) return true;
+        if (auth.roles?.isSuperAdmin) return true;
         return auth.user?.all_permission?.includes(permission);
     };
 
-    // 2. DATA: Add 'permission' keys to your items
+    // 2. DATA
     const RawSidebarItems = [
         {
-            title: 'CITIZEN SERVICES', // More descriptive than "Action Center"
+            title: 'CITIZEN SERVICES',
             icon: ClipboardList,
             items: [
                 {
-                    title: 'Service Requests', // Clearer than just "Requests"
+                    title: 'Service Requests',
                     url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }),
-                    icon: FileInput, // Represents submitting a form/request
+                    icon: FileInput,
                     permission: 'action_center.access',
                 },
             ],
         },
         {
-            title: 'COMMUNICATION', // Broader coverage for notices, events, and reports
+            title: 'COMMUNICATION',
             icon: Megaphone,
             items: [
                 {
-                    title: 'Announcements', // Pluralized
+                    title: 'Announcements',
                     url: bulletinBoard.announcement.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Megaphone,
                     permission: 'bulletin_board.access',
@@ -136,31 +137,31 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     permission: 'bulletin_board.access',
                 },
                 {
-                    title: 'Citizen Feedback', // "Feedbacks" is grammatically incorrect
+                    title: 'Citizen Feedback',
                     url: feedback.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: MessageSquareText,
                     permission: 'feedback.access',
                 },
                 {
-                    title: 'Incident Reports', // "Community Reports" is vague; Incident implies action needed
+                    title: 'Incident Reports',
                     url: communityReport.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Siren, // Represents alert/emergency/report
+                    icon: Siren,
                     permission: 'community_report.access',
                 },
             ],
         },
         {
-            title: 'TOURISM & CONTENT', // Replaces "Promotions"
+            title: 'TOURISM & CONTENT',
             icon: Palmtree,
             items: [
                 {
                     title: 'Site Pages (CMS)',
                     url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: LayoutTemplate, // Represents web layout
+                    icon: LayoutTemplate,
                     permission: 'municipality_settings.access',
                 },
                 {
-                    title: 'Tourism Spots', // "Travel Editor" is a tool name; "Tourism Spots" is the object managed
+                    title: 'Tourism Spots',
                     url: travelEditor.page.url({ municipality: currentMunicipality.slug }),
                     icon: Palmtree,
                     permission: 'tourism.access',
@@ -168,38 +169,38 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             ],
         },
         {
-            title: 'PROCUREMENT', // Standard government term for Bids & Awards
-            icon: Gavel, // Represents bidding/auction
+            title: 'PROCUREMENT',
+            icon: Gavel,
             items: [
                 {
-                    title: 'Bid Opportunities', // More professional than "Biddings"
+                    title: 'Bid Opportunities',
                     url: procurement.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: ScrollText, // Represents legal documents/contracts
+                    icon: ScrollText,
                     permission: 'public_information.access',
                 },
             ],
         },
         {
             title: 'GOVERNANCE',
-            icon: Landmark, // 'Landmark' represents the institution/government building better than 'Users'
+            icon: Landmark,
             items: [
                 {
-                    title: 'Terms of Office', // Clearer than "Roster History". Implies managing year ranges (e.g. 2025-2028).
+                    title: 'Terms of Office',
                     url: government.admin.terms.page.url({ municipality: currentMunicipality.slug }),
-                    icon: CalendarRange, // Visually represents a start and end date/period.
+                    icon: CalendarRange,
                     permission: 'government.access',
                 },
-                // {
-                //     title: 'Officials Directory', // More professional than "Officials List". Implies a structured record of people.
-                //     url: officialsEditor.page.url({ municipality: currentMunicipality.slug }),
-                //     icon: Contact, // Represents a directory/address book. Alternatively use 'UserCheck'.
-                //     permission: 'public_information.access',
-                // },
+                {
+                    title: 'Officials Directory',
+                    url: government.admin.terms.page.url({ municipality: currentMunicipality.slug }),
+                    icon: Contact,
+                    permission: 'public_information.access',
+                },
             ],
         },
         {
             title: 'CEMETERY OPERATIONS',
-            icon: Flower, // A respectful icon for cemetery management
+            icon: Flower,
             items: [
                 {
                     title: 'Overview',
@@ -208,9 +209,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Burial Records', // Replaces "Interments" (easier to read)
+                    title: 'Burial Records',
                     url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
-                    icon: BookOpen, // Represents a registry
+                    icon: BookOpen,
                     permission: 'cemetery.access',
                 },
                 {
@@ -220,9 +221,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Niches & Mausoleums', // "Apartments" is colloquial; Niches is technical
+                    title: 'Niches & Mausoleums',
                     url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
-                    icon: Grid3X3, // Represents the structure of niches
+                    icon: Grid3X3,
                     permission: 'cemetery.access',
                 },
             ],
@@ -231,33 +232,32 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
 
     // 3. LOGIC: Filter the groups
     const VisibleSidebarItems = RawSidebarItems.map((group) => {
-        // Filter the children items first
         const visibleSubItems = group.items.filter((item) => hasPermission(item.permission));
-
-        // Return the group with only visible children
         return { ...group, items: visibleSubItems };
-    })
-        // Remove the group entirely if it has no children left
-        .filter((group) => group.items.length > 0);
+    }).filter((group) => group.items.length > 0);
 
     return (
-        <Sidebar {...props} className="border-r border-gray-200 bg-gradient-to-b from-white to-gray-50 shadow-sm">
-            <SidebarHeader className="border-b border-gray-100 pb-3">
+        // Theme Update: 'bg-sidebar', 'border-sidebar-border'
+        <Sidebar {...props} className="border-r border-sidebar-border bg-sidebar shadow-none">
+            <SidebarHeader className="border-b border-sidebar-border pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-orange-50">
+                        {/* Hover state uses sidebar-accent variables */}
+                        <SidebarMenuButton size="lg" asChild className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <a href="#" className="flex items-center gap-3">
-                                <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md">
+                                {/* Icon Box: Uses 'sidebar-primary' (Usually Dark/Black) */}
+                                <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
                                     <span className="text-lg font-semibold">
                                         {auth.user?.first_name?.[0]}
                                         {auth.user?.last_name?.[0]}
                                     </span>
                                 </div>
                                 <div className="flex flex-col leading-none">
-                                    <span className="font-medium text-gray-900">
+                                    {/* Text: Uses 'sidebar-foreground' */}
+                                    <span className="font-semibold text-sidebar-foreground">
                                         {auth.user?.first_name} {auth.user?.last_name}
                                     </span>
-                                    <span className="mt-1 mb-1 text-xs text-gray-500">
+                                    <span className="mt-1 mb-1 text-xs text-muted-foreground">
                                         {userRole?.isAdmin ? 'Administrator' : userRole?.isSuperAdmin ? 'Super-Admin' : 'User'}
                                     </span>
                                 </div>
@@ -270,15 +270,16 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             <SidebarContent className="py-4">
                 <SidebarGroup>
                     <SidebarMenu className="space-y-5">
-                        {/* 4. RENDER: Use the filtered list */}
                         {VisibleSidebarItems.map((group) => (
                             <SidebarMenuItem key={group.title}>
-                                <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                    <group.icon size={14} className="text-orange-500" />
+                                {/* Group Title: Muted foreground */}
+                                <div className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold tracking-wide text-muted-foreground/70 uppercase">
+                                    {/* Icon: Primary color */}
+                                    <group.icon size={14} className="text-sidebar-primary" />
                                     {group.title}
                                 </div>
 
-                                <SidebarMenuSub className="space-y-1 border-l border-gray-100 pl-4">
+                                <SidebarMenuSub className="space-y-1 border-l border-sidebar-border pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
                                         const isActive = isRouteActive(sub.url);
@@ -287,11 +288,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                             <SidebarMenuSubItem key={sub.title} ref={isActive ? activeItemRef : null}>
                                                 <SidebarMenuSubButton
                                                     asChild
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
-                                                        isActive
-                                                            ? 'bg-orange-100 font-semibold text-orange-700 shadow-sm'
-                                                            : 'text-gray-700 hover:translate-x-[2px] hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-50 hover:text-orange-700 hover:shadow-md'
-                                                    }`}
+                                                    // Active/Inactive Logic updated to Sidebar Theme
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
+                                                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm'
+                                                            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-[2px]'
+                                                        }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -299,11 +300,10 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${
-                                                                isActive
-                                                                    ? 'scale-110 stroke-orange-600 text-orange-600'
-                                                                    : 'stroke-orange-500 text-orange-500 group-hover:scale-110 group-hover:stroke-orange-600'
-                                                            }`}
+                                                            className={`transition-all duration-200 ease-out ${isActive
+                                                                    ? 'scale-110 text-sidebar-primary'
+                                                                    : 'text-muted-foreground group-hover:text-sidebar-primary group-hover:scale-110'
+                                                                }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>
@@ -318,13 +318,13 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 </SidebarGroup>
             </SidebarContent>
 
-            {/* Footer remains unchanged... */}
-            <div className="mt-auto border-t border-gray-100 px-3 py-3">
-                {/* ... Exit Button ... */}
+            {/* Footer */}
+            <div className="mt-auto border-t border-sidebar-border px-3 py-3">
                 <Button
                     variant="default"
                     onClick={handleExitAdminClick}
-                    className="flex w-full items-center justify-start gap-3 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md transition-all duration-200 hover:from-orange-600 hover:to-red-600 hover:shadow-lg"
+                    // Uses 'primary' color from global theme (typically slate-900/black)
+                    className="flex w-full items-center justify-start gap-3 rounded-lg bg-primary text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90"
                 >
                     <LogOut size={18} className="flex-shrink-0" />
                     <span className="font-medium">Exit Admin</span>
@@ -332,7 +332,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             </div>
 
             <ClassicDialog
-                // ... props
                 title={classicDialog.title}
                 message={classicDialog.message}
                 open={classicDialog.isOpen}

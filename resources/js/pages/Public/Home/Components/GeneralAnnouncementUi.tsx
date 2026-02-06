@@ -40,7 +40,6 @@ export default function GeneralAnnouncement() {
     async function loadAnnouncement() {
         try {
             setIsLoading(true);
-            // const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
             if (response.success) {
                 const sorted = [...response.data].sort((a, b) => {
@@ -76,8 +75,9 @@ export default function GeneralAnnouncement() {
         <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
             <div className="flex flex-1 flex-col">
                 <div>
-                    <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">General Announcements</h2>
-                    <p className="mt-1 text-sm text-gray-600 sm:text-base dark:text-gray-400">
+                    {/* Updated to use semantic text colors */}
+                    <h2 className="text-xl font-semibold text-foreground sm:text-2xl">General Announcements</h2>
+                    <p className="mt-1 text-sm text-muted-foreground sm:text-base">
                         Stay updated with important notices, reminders, and community information.
                     </p>
                 </div>
@@ -89,7 +89,7 @@ export default function GeneralAnnouncement() {
                         </div>
                     ) : (
                         <>
-                            {/* ANNOUNCEMENTS */}
+                            {/* ANNOUNCEMENTS LIST */}
                             {announcementList.length > 0 ? (
                                 <div className="flex flex-col space-y-4">
                                     {announcementList.slice(0, 5).map((item, index) => (
@@ -102,7 +102,7 @@ export default function GeneralAnnouncement() {
                                                     data: item,
                                                 }));
                                             }}
-                                            className="cursor-pointer transition-transform active:scale-[0.98]"
+                                            className="cursor-pointer transition-transform active:scale-[0.99]"
                                             initial={{ opacity: 0, x: -80 }}
                                             whileInView={{ opacity: 1, x: 0 }}
                                             viewport={{ once: true, amount: 0.2 }}
@@ -112,25 +112,34 @@ export default function GeneralAnnouncement() {
                                                 ease: [0.25, 0.1, 0.25, 1],
                                             }}
                                         >
-                                            <Card className="relative overflow-hidden rounded-xl border-l-4 border-red-500 bg-gradient-to-br from-red-50 via-orange-50 to-amber-100/70 p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl sm:p-5 dark:from-red-950 dark:via-orange-950 dark:to-amber-900">
-                                                <div className="absolute top-2 right-2 rounded-full bg-gradient-to-r from-red-500 to-orange-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow-sm sm:top-3 sm:right-3 sm:text-xs">
+                                            {/* Updates:
+                                                1. Removed red gradients.
+                                                2. Added 'bg-card' and 'border-border'.
+                                                3. Used 'border-l-primary' for the accent line on the left.
+                                            */}
+                                            <Card className="relative overflow-hidden rounded-xl border border-border border-l-4 border-l-primary bg-card p-4 transition-all duration-300 hover:shadow-md sm:p-5">
+                                                {/* Time Badge: Uses 'secondary' background for subtle contrast */}
+                                                <div className="absolute top-2 right-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground shadow-sm sm:top-3 sm:right-3 sm:text-xs">
                                                     {Utility().formatTimeAgo(item.created_at)}
                                                 </div>
 
                                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                                                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-orange-300 bg-gradient-to-br from-red-400 to-orange-400 shadow-md sm:h-12 sm:w-12">
+                                                    {/* Icon Container: Uses 'muted' background */}
+                                                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-muted shadow-sm sm:h-12 sm:w-12">
                                                         <img
                                                             src="/assets/announcement.png"
                                                             alt="Notice Icon"
-                                                            className="h-5 w-5 opacity-95 drop-shadow-[0_0_2px_rgba(255,255,255,0.6)] sm:h-6 sm:w-6"
+                                                            className="h-5 w-5 opacity-80 sm:h-6 sm:w-6"
                                                         />
                                                     </div>
 
                                                     <div className="flex min-w-0 flex-grow flex-col">
-                                                        <h3 className="truncate text-base font-semibold text-red-900 sm:text-lg dark:text-orange-100">
+                                                        {/* Title: Primary Foreground color */}
+                                                        <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">
                                                             {item.title.length > 100 ? `${item.title.slice(0, 100)}…` : item.title}
                                                         </h3>
-                                                        <p className="mt-1 line-clamp-2 text-sm leading-snug text-orange-800 sm:text-[13px] dark:text-orange-200">
+                                                        {/* Body: Muted text color */}
+                                                        <p className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground sm:text-[13px]">
                                                             {item.message.length > 100 ? `${item.message.slice(0, 100)}…` : item.message}
                                                         </p>
                                                     </div>
@@ -140,8 +149,9 @@ export default function GeneralAnnouncement() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="rounded-lg border border-orange-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 text-center text-[12px] text-red-500 sm:text-sm dark:from-red-950 dark:to-orange-950 dark:text-orange-300">
-                                    No announcement yet
+                                /* Empty State: Neutral styling */
+                                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center text-sm text-muted-foreground">
+                                    No announcements yet
                                 </div>
                             )}
 
@@ -150,7 +160,7 @@ export default function GeneralAnnouncement() {
                                 <div className="mt-6 flex w-full justify-end">
                                     <Button
                                         variant="outline"
-                                        className="text-sm sm:text-base"
+                                        className="text-sm sm:text-base hover:bg-secondary/80"
                                         onClick={() => {
                                             router.visit(announcements.url(currentMunicipality.slug));
                                         }}
@@ -166,7 +176,7 @@ export default function GeneralAnnouncement() {
                 <ViewAnnouncementDetails
                     isOpen={announcementDetailsDialog.isOpen}
                     data={announcementDetailsDialog.data}
-                    onClose={function (): void {
+                    onClose={() => {
                         setAnnouncementDetailsDialog((prev) => ({
                             ...prev,
                             isOpen: false,
@@ -181,7 +191,7 @@ export default function GeneralAnnouncement() {
                     positiveButtonText={classicDialog.positiveButtonText}
                     negativeButtonText={classicDialog.negativeButtonText}
                     hideNegativeButton={classicDialog.isNegativeButtonHidden}
-                    open={false}
+                    open={classicDialog.isOpen}
                     onPositiveClick={() => {
                         setClassicDialog((prev) => ({
                             ...prev,
