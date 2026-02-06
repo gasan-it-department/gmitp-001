@@ -2,7 +2,7 @@
 
 namespace App\External\Api\Controllers\Government\Terms;
 
-use App\Core\Government\Dto\AddTermDto;
+use App\Core\Government\Dto\TermDto;
 use App\Core\Government\UseCase\CreateTermUseCase;
 use App\External\Api\Request\Government\TermRequest;
 use App\Http\Controllers\Controller;
@@ -18,8 +18,7 @@ class CreateTermController extends Controller
 
     public function __invoke(TermRequest $request)
     {
-
-        $dto = AddTermDto::fromRequest($request);
+        $dto = TermDto::fromRequest($request);
 
         $this->createTermUseCase->execute($dto);
 

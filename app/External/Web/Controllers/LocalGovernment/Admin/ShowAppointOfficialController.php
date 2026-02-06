@@ -17,7 +17,7 @@ class ShowAppointOfficialController extends Controller
     ) {
     }
 
-    public function __invoke(string $termId)
+    public function __invoke(string $municipalId, string $termId)
     {
 
         $term = $this->getTermDetailsUseCase->execute($termId, app('municipal_id'));

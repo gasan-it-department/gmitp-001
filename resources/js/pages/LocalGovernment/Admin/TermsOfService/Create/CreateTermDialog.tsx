@@ -30,9 +30,9 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
         start_year: new Date().getFullYear().toString(),
         end_year: (new Date().getFullYear() + 3).toString(),
         label: '',
-        is_active: false as boolean, 
+        is_active: false as boolean,
     });
-    const safeErrors = errors as any; 
+    const safeErrors = errors as any;
 
     useEffect(() => {
         if (isOpen) {
@@ -60,7 +60,7 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
             is_current: data.is_active,
         }));
 
-        const url = isEditMode ? "" : government.admin.terms.store.url();
+        const url = isEditMode ? government.admin.terms.update.url('00') : government.admin.terms.store.url();
 
         const requestOptions = {
             headers: {
