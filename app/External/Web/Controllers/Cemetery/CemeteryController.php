@@ -10,7 +10,6 @@ class CemeteryController extends Controller
 
     public function index()
     {
-
         return Inertia::render('Cemetery/Admin/Cemetery');
 
     }

@@ -9,6 +9,7 @@ import { useForm } from '@inertiajs/react';
 import { AlertCircle, CalendarClock, CalendarCog, CalendarPlus, CheckCircle2, Loader2, Save } from 'lucide-react';
 import { useEffect } from 'react';
 
+// Interface for the data transformation only
 interface TermData {
     start_year: string;
     end_year: string;
@@ -32,8 +33,11 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
         label: '',
         is_active: false as boolean,
     });
+
+    // Helper to safely access backend errors
     const safeErrors = errors as any;
 
+    // --- SYNC DATA ON OPEN ---
     useEffect(() => {
         if (isOpen) {
             clearErrors();
@@ -48,19 +52,19 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                 reset();
             }
         }
-    }, [isOpen, initialData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]); 
 
     // --- SUBMIT HANDLER ---
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         transform((data: TermData) => ({
             name: data.label.trim() || `${data.start_year}-${data.end_year} TERM`,
             statutory_start: `${data.start_year}-06-30`,
             statutory_end: `${data.end_year}-06-30`,
             is_current: data.is_active,
         }));
-
-        const url = isEditMode ? government.admin.terms.update.url('00') : government.admin.terms.store.url();
 
         const requestOptions = {
             headers: {
@@ -74,9 +78,9 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
         };
 
         if (isEditMode) {
-            put(url, requestOptions);
+            put(government.admin.terms.update.url(initialData.id), requestOptions);
         } else {
-            post(url, requestOptions);
+            post(government.admin.terms.store.url(), requestOptions);
         }
     };
 
@@ -116,13 +120,13 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                                     type="number"
                                     min="1900"
                                     max="2100"
-                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${safeErrors.statutory_start ? 'border-red-500 bg-red-50' : ''}`}
+                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${safeErrors.statutory_start ? 'border-red-500 bg-red-50 ring-2 ring-red-100' : ''}`}
                                     value={data.start_year}
                                     onChange={(e) => setData('start_year', e.target.value)}
                                     required
                                 />
                             </div>
-                            {/* Use safeErrors to access backend keys */}
+                            {/* Inline Error */}
                             {safeErrors.statutory_start && <p className="text-xs font-medium text-red-500">{safeErrors.statutory_start}</p>}
                         </div>
 
@@ -137,12 +141,13 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                                     type="number"
                                     min="1900"
                                     max="2100"
-                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${safeErrors.statutory_end ? 'border-red-500 bg-red-50' : ''}`}
+                                    className={`h-11 border-slate-200 bg-white pl-9 text-lg font-bold focus-visible:ring-blue-500 ${safeErrors.statutory_end ? 'border-red-500 bg-red-50 ring-2 ring-red-100' : ''}`}
                                     value={data.end_year}
                                     onChange={(e) => setData('end_year', e.target.value)}
                                     required
                                 />
                             </div>
+                            {/* Inline Error */}
                             {safeErrors.statutory_end && <p className="text-xs font-medium text-red-500">{safeErrors.statutory_end}</p>}
                         </div>
                     </div>
@@ -181,14 +186,6 @@ export default function CreateTermDialog({ isOpen, onClose, initialData }: Creat
                             className="data-[state=checked]:bg-blue-600"
                         />
                     </div>
-
-                    {/* Global Form Error */}
-                    {Object.keys(errors).length > 0 && (
-                        <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600 animate-in fade-in slide-in-from-top-1">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            <span>Please correct the errors above.</span>
-                        </div>
-                    )}
 
                     <DialogFooter className="pt-2">
                         <Button type="button" variant="ghost" onClick={onClose} className="h-11 font-bold text-slate-500 hover:text-slate-900">
