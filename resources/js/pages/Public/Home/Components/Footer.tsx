@@ -3,105 +3,124 @@ import { SiFacebook, SiInstagram, SiX, SiYoutube } from 'react-icons/si';
 
 export default function Footer() {
     return (
-        <footer className="bg-gradient-to-r from-red-600 via-red-500 to-orange-400 p-6 sm:p-8">
-            <div className="mx-auto flex max-w-screen-xl flex-col gap-8 px-4 text-white">
+        // Updated Background: Uses 'bg-primary' (Dark Slate) instead of red gradient
+        <footer className="bg-primary px-6 py-10 text-primary-foreground sm:px-8">
+            <div className="mx-auto flex max-w-screen-xl flex-col gap-10 px-4">
                 {/* 1. Main Content Columns (flex-row on desktop) */}
-                <div className="flex flex-col gap-8 md:flex-row">
-                    {/* SOCIAL MEDIA */}
-                    <div className="flex flex-1 flex-col items-start">
-                        <span className="mt-8 mb-3 text-[25px] font-bold">SOCIAL MEDIA</span>
-                        <div className="flex flex-row items-center gap-6">
-                            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white p-2">
-                                <SiFacebook className="h-6 w-6 text-red-600" />
+                <div className="flex flex-col gap-10 md:flex-row md:justify-between">
+                    {/* SOCIAL MEDIA & CONTACT */}
+                    <div className="flex flex-1 flex-col items-start space-y-4">
+                        <span className="text-lg font-bold tracking-wide uppercase">Social Media</span>
+                        <div className="flex flex-row items-center gap-4">
+                            <a
+                                href="https://facebook.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                // Icons: Use 'bg-primary-foreground' (White) and 'text-primary' (Slate)
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-primary transition-transform hover:scale-110"
+                            >
+                                <SiFacebook className="h-5 w-5" />
                             </a>
-                            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white p-2">
-                                <SiX className="h-6 w-6 text-red-600" />
+                            <a
+                                href="https://twitter.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-primary transition-transform hover:scale-110"
+                            >
+                                <SiX className="h-5 w-5" />
                             </a>
-                            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white p-2">
-                                <SiInstagram className="h-6 w-6 text-red-600" />
+                            <a
+                                href="https://instagram.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-primary transition-transform hover:scale-110"
+                            >
+                                <SiInstagram className="h-5 w-5" />
                             </a>
-                            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white p-2">
-                                <SiYoutube className="h-6 w-6 text-red-600" />
+                            <a
+                                href="https://youtube.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground text-primary transition-transform hover:scale-110"
+                            >
+                                <SiYoutube className="h-5 w-5" />
                             </a>
                         </div>
 
-                        <span className="mt-5">
-                            Barangay Dos, Gasan, Marinduque, Philippines 4905 <br />
-                            officeofthemayor.gasan@gmail.com
-                            <br />
-                            (042) 342-1074
-                        </span>
+                        <div className="mt-4 flex flex-col space-y-1 text-sm text-primary-foreground/80">
+                            <span>Barangay Dos, Gasan, Marinduque, Philippines 4905</span>
+                            <a href="mailto:officeofthemayor.gasan@gmail.com" className="hover:text-white">
+                                officeofthemayor.gasan@gmail.com
+                            </a>
+                            <a href="tel:0423421074" className="hover:text-white">
+                                (042) 342-1074
+                            </a>
+                        </div>
                     </div>
 
                     {/* NATIONAL AGENCIES */}
-                    <div className="flex flex-1 flex-col items-start">
-                        <span className="mt-8 mb-3 text-[25px] font-bold">NATIONAL AGENCIES</span>
+                    <div className="flex flex-1 flex-col items-start space-y-4">
+                        <span className="text-lg font-bold tracking-wide uppercase">National Agencies</span>
 
-                        <div className="flex flex-row items-center gap-2">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white">
-                                <img src="/assets/republika_ng_pilipinas.png" alt="Agency Icon" className="h-11 w-16 object-contain" />
+                        <div className="flex flex-row items-center gap-4">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white p-2 shadow-sm">
+                                <img src="/assets/republika_ng_pilipinas.png" alt="Republic of the Philippines" className="h-full w-full object-contain" />
                             </div>
 
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white">
-                                <img src="/assets/dilg_logo.png" alt="Agency Icon" className="h-16 w-16 object-contain" />
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white p-1 shadow-sm">
+                                <img src="/assets/dilg_logo.png" alt="DILG" className="h-full w-full object-contain" />
                             </div>
 
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white">
-                                <img src="/assets/pnp_logo.png" alt="Agency Icon" className="h-11 w-16 object-contain" />
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white p-2 shadow-sm">
+                                <img src="/assets/pnp_logo.png" alt="PNP" className="h-full w-full object-contain" />
                             </div>
+                        </div>
+                        
+                        {/* Bagong Pilipinas Logo (Moved here for better grouping) */}
+                        <div className="mt-4">
+                             <img
+                                src="/assets/bagong_pilipinas_logo.png"
+                                alt="Bagong Pilipinas Logo"
+                                className="h-16 w-16 object-contain brightness-0 invert" // Inverted to white for dark footer
+                            />
                         </div>
                     </div>
 
                     {/* EMERGENCY HOTLINE */}
-                    <div className="flex flex-1 flex-col items-start">
-                        <span className="mt-8 mb-3 text-[25px] font-bold">EMERGENCY HOTLINE</span>
-                        <div className="flex flex-col md:flex-col">
-                            <span className="text-[14px] font-bold">MDRRMO</span>
-                            <a href="tel:0423320833" className="pt-0.5 pb-0.5 text-[13px] text-white">
-                                (042) 332-0833
-                            </a>
-                            <a href="tel:09091099922" className="pt-0.5 pb-0.5 text-[13px] text-white">
-                                09091099922 - SMART
-                            </a>
-                            <a href="tel:09190046" className="pt-0.5 pb-0.5 text-[13px] text-white">
-                                09190046 - SMART
-                            </a>
+                    <div className="flex flex-1 flex-col items-start space-y-4">
+                        <span className="text-lg font-bold tracking-wide uppercase">Emergency Hotlines</span>
+                        <div className="flex flex-col space-y-4 text-sm">
+                            <div className="flex flex-col space-y-1">
+                                <span className="font-bold text-white">MDRRMO</span>
+                                <a href="tel:0423320833" className="text-primary-foreground/80 hover:text-white">(042) 332-0833</a>
+                                <a href="tel:09091099922" className="text-primary-foreground/80 hover:text-white">0909-109-9922 (SMART)</a>
+                                <a href="tel:09190046" className="text-primary-foreground/80 hover:text-white">0919-004-6 (SMART)</a>
+                            </div>
 
-                            <hr className="mt-3 mb-3 border-red-200" />
+                            <div className="h-px w-full bg-primary-foreground/20" />
 
-                            <span className="text-[14px] font-bold">Gasan Police Station</span>
-                            <a href="tel:09123456789" className="pt-0.5 pb-0.5 text-[13px] text-white">
-                                0912-345-6789
-                            </a>
+                            <div className="flex flex-col space-y-1">
+                                <span className="font-bold text-white">Gasan Police Station</span>
+                                <a href="tel:09123456789" className="text-primary-foreground/80 hover:text-white">0912-345-6789</a>
+                            </div>
 
-                            <hr className="mt-3 mb-3 border-red-200" />
+                            <div className="h-px w-full bg-primary-foreground/20" />
 
-                            <span className="text-[14px] font-bold">Bureau of Fire Protection</span>
-                            <a href="tel:09123456789" className="pt-0.5 pb-0.5 text-[13px] text-white">
-                                0912-345-6789
-                            </a>
+                            <div className="flex flex-col space-y-1">
+                                <span className="font-bold text-white">Bureau of Fire Protection</span>
+                                <a href="tel:09123456789" className="text-primary-foreground/80 hover:text-white">0912-345-6789</a>
+                            </div>
                         </div>
                     </div>
-
-                    {/* 2. New Centered Logo Section */}
-                    <div className="mt-10 flex justify-center">
-                        <img
-                            src="/assets/bagong_pilipinas_logo.png"
-                            alt="Bagong Pilipinas Logo"
-                            height={55}
-                            width={55}
-                            className="h-16 w-16" // Added utility classes for consistent sizing
-                        />
-                    </div>
                 </div>
-            </div>
-            {/* 3. Footer Bottom Text */}
-            <div className="mt-15" /> {/* The original spacing div */}
-            <span className="flex flex-1 justify-center text-[12px] text-white">© 2025 All Rights Reserved | Developed by Gasan IT Section</span>
-            <div className="flex flex-row">
-                <Link href="/privacy-policy" className="flex flex-1 justify-center text-[12px] text-white underline">
-                    Privacy Policy
-                </Link>
+
+                {/* Footer Bottom */}
+                <div className="mt-8 flex flex-col items-center justify-between border-t border-primary-foreground/10 pt-6 text-xs text-primary-foreground/60 sm:flex-row">
+                    <span>© 2025 All Rights Reserved | Developed by Gasan IT Section</span>
+                    <Link href="/privacy-policy" className="mt-2 underline hover:text-white sm:mt-0">
+                        Privacy Policy
+                    </Link>
+                </div>
             </div>
         </footer>
     );

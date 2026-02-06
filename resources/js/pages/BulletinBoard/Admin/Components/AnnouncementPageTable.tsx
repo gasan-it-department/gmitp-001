@@ -183,7 +183,6 @@ export default function AnnouncementPageTable() {
                 <h1 className="text-3xl font-bold">Announcement List</h1>
                 <AnnouncementPageHeader
                     onSearch={() => {}}
-                    onFilterButtonClicked={() => setIsFilterDialogVisible(true)}
                     onAddNewButtonClicked={() =>
                         setAddEditDialog({
                             isOpened: true,

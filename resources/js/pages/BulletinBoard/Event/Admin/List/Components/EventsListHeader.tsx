@@ -6,11 +6,10 @@ import { useState } from 'react';
 interface Props {
     onSearch: (term: string) => void;
     onAdd: () => void;
-    onDeleteSelected: () => void;
     selectedCount: number;
 }
 
-export function EventsListHeader({ onSearch, onAdd, onDeleteSelected, selectedCount }: Props) {
+export function EventsListHeader({ onSearch, onAdd, selectedCount }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -35,14 +34,6 @@ export function EventsListHeader({ onSearch, onAdd, onDeleteSelected, selectedCo
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Delete Selected Button - Only shows when items are selected */}
-                {selectedCount > 0 && (
-                    <Button variant="destructive" size="sm" onClick={onDeleteSelected} className="gap-2">
-                        <Trash2 size={16} />
-                        Delete ({selectedCount})
-                    </Button>
-                )}
-
                 {/* Add New Button */}
                 <Button
                     onClick={onAdd}

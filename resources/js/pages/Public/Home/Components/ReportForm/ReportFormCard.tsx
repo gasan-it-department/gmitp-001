@@ -28,27 +28,30 @@ export default function ReportIssueCard() {
     }, [auth.user]);
 
     return (
-        <Card className="m-3 flex h-full flex-col rounded-2xl border border-red-200/60 bg-gradient-to-br from-red-50 via-orange-50 to-orange-100 p-6 shadow-md transition-all duration-300 hover:shadow-lg sm:p-7 dark:border-red-900/40 dark:from-red-900/30 dark:via-orange-900/20 dark:to-gray-900">
+        <Card className="m-3 flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
                 {/* Header + Description */}
-                <div className="flex items-center gap-4">
-                    <div className="items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 p-3 text-white shadow-lg">
-                        <AlertTriangle className="h-8 w-8" />
+                <div className="flex items-start gap-4">
+                    {/* Icon Box: Slate background for a professional look */}
+                    <div className="flex items-center justify-center rounded-lg bg-slate-100 p-3 text-slate-700">
+                        <AlertTriangle className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <h2 className="text-2xl font-bold text-red-800 dark:text-orange-100">Report Community Issue</h2>
-                        <p className="text-sm text-orange-800/80 italic dark:text-orange-200/80">
-                            {' '}
-                            Help keep our community safe and clean — report damaged roads, broken street lights, garbage, and other local issues.{' '}
+                        {/* Title: Dark Slate (Official/Serious) */}
+                        <h2 className="text-xl font-bold text-slate-900">Report Community Issue</h2>
+                        
+                        {/* Description: Muted Slate text */}
+                        <p className="mt-1 text-sm text-slate-500 leading-relaxed">
+                            Help keep our community safe and clean — report damaged roads, broken street lights, garbage, and other local issues.
                         </p>
                     </div>
                 </div>
 
                 {/* Footer Button (stays bottom right) */}
-                <div className="mt-auto flex justify-end pt-6">
+                <div className="mt-6 flex justify-end">
                     <Button
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border-none bg-gradient-to-r from-red-500 to-orange-500 px-6 py-3 font-medium text-white transition-all duration-300 hover:from-red-600 hover:to-orange-600 hover:shadow-md active:scale-[0.98] sm:w-auto sm:px-8 sm:py-3"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
                         onClick={() => {
                             if (auth.user === null) {
                                 setLogInSignUpDialogVisible(true);
@@ -58,28 +61,9 @@ export default function ReportIssueCard() {
                         }}
                     >
                         Submit Report
-                        <ArrowRight size={18} className="sm:size-5" />
+                        <ArrowRight size={16} />
                     </Button>
                 </div>
-                {/* <div className="flex justify-end mt-auto pt-6">
-                    <Button
-                        className="
-          flex items-center justify-center gap-2
-          rounded-lg border-none
-          bg-gradient-to-r from-red-500 to-orange-500
-          text-white font-medium
-          px-6 py-3 sm:px-8 sm:py-3
-          transition-all duration-300
-          hover:from-red-600 hover:to-orange-600 hover:shadow-md
-          active:scale-[0.98]
-          self-end
-        "
-                        onClick={() => setIsReportDialogShown(true)}
-                    >
-                        Report Issue
-                        <ArrowRight size={18} className="sm:size-5" />
-                    </Button>
-                </div> */}
 
                 <ReportFormDialog
                     open={isReportDialogShown}
