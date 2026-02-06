@@ -3,6 +3,7 @@
 namespace App\Core\Government\Officials\Repositories;
 
 use App\Core\Government\Dto\AppointOfficialDto;
+use App\Core\Government\Models\Official;
 use Illuminate\Support\Facades\DB;
 
 class OfficialRepositories
@@ -40,6 +41,35 @@ class OfficialRepositories
             'profile_public_id',
         ]);
 
+    }
+
+    public function getAll(string $municipalId)
+    {
+
+        $query = Official::query();
+
+        if ($municipalId) {
+            $query->where('municipal_id', $municipalId);
+
+        }
+
+        return $query->get();
+
+    }
+
+    public function search(string $query, string $municipalId)
+    {
+
+        return DB::table('officials')
+            ->where('municipal_id', $municipalId)
+            ->where(function ($q) use ($query) {
+                $q->where('first_name', 'like', "%{$query}%")
+                    ->orWhere('last_name', 'like', "%{$query}%")
+                    ->orWhere('middle_name', 'like', "%{$query}%");
+            })
+            ->limit(10)
+            ->orderBy('last_name', 'asc')
+            ->get(['id', 'first_name', 'last_name', 'middle_name']);
     }
 
 }
