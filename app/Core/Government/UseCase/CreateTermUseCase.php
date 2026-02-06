@@ -26,6 +26,8 @@ class CreateTermUseCase
             throw new \Exception("A term with this name and duration already exists for your municipality.");
         }
 
+        $this->termRepo->markAllAsInactive($dto->municipalId);
+
         $termId = $this->idGeneratorInterface->generate();
 
         return $this->termRepo->save($termId, $dto);

@@ -21,7 +21,7 @@ class UpdateTermController
 
         $dto = TermDto::fromRequest($request);
 
-        $this->updateTermUseCase->execute();
+        $this->updateTermUseCase->execute($termId, $dto);
 
         return redirect()
             ->back()

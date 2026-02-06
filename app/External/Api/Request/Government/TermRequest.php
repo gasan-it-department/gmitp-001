@@ -24,7 +24,7 @@ class TermRequest extends FormRequest
     {
         $municipalId = app('municipal_id');
         // If you are editing, you need the current term ID to ignore it
-        $termId = $this->route('term');
+        $termId = $this->route('termId');
 
         return [
             'name' => [
