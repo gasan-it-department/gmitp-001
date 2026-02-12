@@ -2,13 +2,13 @@
 
 namespace App\External\Web\Controllers\LocalGovernment\Admin;
 
+use Inertia\Inertia;
+use App\Http\Controllers\Controller;
 use App\Core\Government\UseCase\GetPositionsUseCase;
 use App\Core\Government\UseCase\GetTermDetailsUseCase;
 use App\External\Api\Resources\Government\TermResource;
-use Inertia\Inertia;
-use App\Http\Controllers\Controller;
 
-class ShowAppointOfficialController extends Controller
+class ShowTermController extends Controller
 {
 
     public function __construct(
@@ -16,11 +16,9 @@ class ShowAppointOfficialController extends Controller
         private GetTermDetailsUseCase $getTermDetailsUseCase,
 
         private GetPositionsUseCase $getPositionsUseCase,
-
     ) {
     }
-
-    public function __invoke(string $municipalitySlug, string $termId)
+    public function __invoke(string $municipalId, string $termId)
     {
         $municipality = app('current_municipality');
 
@@ -28,14 +26,13 @@ class ShowAppointOfficialController extends Controller
 
         $positions = $this->getPositionsUseCase->execute();
 
-        return Inertia::render('LocalGovernment/Admin/AppointOfficial/AppointOfficial', [
-            'municipality' => $municipality,
+        return Inertia::render('LocalGovernment/Admin/TermsOfService/Details/TermDetails', [
 
             'term' => new TermResource($term),
 
-            'positions' => $positions
+            'positions' => $positions,
+
+            'municipality' => $municipality
         ]);
-
     }
-
 }

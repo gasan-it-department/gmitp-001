@@ -196,7 +196,7 @@ export default function YearTermsList() {
                                     <span className="text-xs font-bold tracking-wider text-slate-400 uppercase sm:hidden">Actions</span>
                                     <div className="flex items-center gap-2">
                                         <Link
-                                            href={government.admin.officials.termspage.url({
+                                            href={government.admin.terms.details.url({
                                                 municipality: currentMunicipality.slug,
                                                 termId: term.id,
                                             })}

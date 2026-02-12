@@ -29,4 +29,9 @@ class Term extends Model
 
     ];
 
+    protected $casts = [
+        'statutory_start' => 'date',
+        'statutory_end' => 'date',
+    ];
+
 }
