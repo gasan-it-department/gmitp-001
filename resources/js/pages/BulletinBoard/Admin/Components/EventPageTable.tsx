@@ -289,29 +289,27 @@ export default function EventPageTable() {
                 />
             </div>
 
-            <div className="mb-2 flex items-center justify-between">
-                <div>
-                    <Button
-                        size="sm"
-                        disabled={selectedItems.length <= 0}
-                        className="border-none bg-red-600 text-white hover:bg-red-700"
-                        onClick={() =>
-                            setClassicDialog((prev) => ({
-                                ...prev,
-                                isOpen: true,
-                                title: 'Confirm',
-                                message: `Are you sure you want to delete ${selectedItems.length} selected announcement(s)?`,
-                                positiveButtonText: 'Delete',
-                                negativeButtonText: 'Cancel',
-                                payload: selectedItems,
-                                action: 'delete', // Ensure action is set
-                                selectedItemId: selectedItems, // Ensure IDs are passed
-                            }))
-                        }
-                    >
-                        Delete ({selectedItems.length}) items
-                    </Button>
-                </div>
+            {/* BULK DELETE */}
+            <div className="mb-2">
+                <Button
+                    size="sm"
+                    disabled={selectedItems.length === 0}
+                    className="bg-red-600 text-white hover:bg-red-700"
+                    onClick={() =>
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: true,
+                            title: 'Confirm',
+                            message: `Delete ${selectedItems.length} selected events(s)?`,
+                            positiveButtonText: 'Delete',
+                            negativeButtonText: 'Cancel',
+                            action: 'delete',
+                            selectedItemId: selectedItems,
+                        }))
+                    }
+                >
+                    Delete ({selectedItems.length}) items
+                </Button>
             </div>
 
             {/* TABLE */}

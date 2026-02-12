@@ -31,9 +31,9 @@ class SetMunicipalityContext
         $municipality = $this->municipalityContextService->execute($slug, $isActive);
 
         if (!$municipality) {
-
-            abort(404, 'Invalid url');
-
+             return Inertia::render('Public/RestrictedAccess/MunicipalityNoAccess')
+                ->toResponse($request)
+                ->setStatusCode(403);
         }
 
         $this->setContext($municipality);

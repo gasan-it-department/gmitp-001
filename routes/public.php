@@ -3,7 +3,7 @@
 use App\External\Web\Controllers\Public\PublicController;
 
 Route::prefix('{municipality}')
-    ->middleware('municipalityContext')
+    ->middleware(['municipalityContext', 'phone.verified'])
     ->group(function () {
         // Route::get('/services', [PublicController::class, 'showServicePage'])->name('services');
         Route::get('/home', [PublicController::class, 'showHomePage'])->name('home');

@@ -144,12 +144,12 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="/* MOBILE (Default: Full Screen) */ /* DESKTOP/LAPTOP (sm: breakpoint and above) */ flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0 bg-white p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border lg:max-w-2xl"
+                className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none border-0 bg-background p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-xl sm:rounded-2xl sm:border sm:border-border lg:max-w-2xl"
             >
-                {/* HEADER */}
-                <div className="sticky top-0 z-50 bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5 sm:px-8">
+                {/* HEADER - Updated to Theme */}
+                <div className="sticky top-0 z-50 border-b border-border bg-background px-6 py-5 sm:px-8">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-white">Citizen Feedback Form</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-foreground">Citizen Feedback Form</DialogTitle>
                     </DialogHeader>
                 </div>
 
@@ -157,8 +157,8 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         {/* FEEDBACK TARGET */}
                         <div>
-                            <Label className="text-base font-semibold text-gray-800">
-                                Feedback About <span className="text-red-500">*</span>
+                            <Label className="text-base font-semibold text-foreground">
+                                Feedback About <span className="text-destructive">*</span>
                             </Label>
                             <Controller
                                 control={control}
@@ -166,14 +166,14 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                 render={({ field }) => (
                                     <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-6 pt-2">
                                         <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="employee" id="employee" />
-                                            <Label htmlFor="employee" className="cursor-pointer">
+                                            <RadioGroupItem value="employee" id="employee" className="border-primary text-primary" />
+                                            <Label htmlFor="employee" className="cursor-pointer text-foreground">
                                                 Employee
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="department" id="department" />
-                                            <Label htmlFor="department" className="cursor-pointer">
+                                            <RadioGroupItem value="department" id="department" className="border-primary text-primary" />
+                                            <Label htmlFor="department" className="cursor-pointer text-foreground">
                                                 Office/Department
                                             </Label>
                                         </div>
@@ -184,16 +184,16 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
 
                         {/* FULL NAME */}
                         <div>
-                            <Label className="font-semibold text-gray-800">Your Full Name (Optional)</Label>
-                            <Input placeholder="Enter your full name" {...register('sender_name')} className="focus:ring-red-400" />
+                            <Label className="font-semibold text-foreground">Your Full Name (Optional)</Label>
+                            <Input placeholder="Enter your full name" {...register('sender_name')} className="bg-background text-foreground" />
                         </div>
 
                         {/* EMPLOYEE or DEPARTMENT FIELD */}
                         <div>
                             {feedback_target === 'department' ? (
                                 <>
-                                    <Label className="font-semibold text-gray-800">
-                                        Select Department <span className="text-red-500">*</span>
+                                    <Label className="font-semibold text-foreground">
+                                        Select Department <span className="text-destructive">*</span>
                                     </Label>
                                     <Controller
                                         control={control}
@@ -208,7 +208,9 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                                     clearErrors('department_id');
                                                 }}
                                             >
-                                                <SelectTrigger className={`w-full text-sm ${errors.department_id ? 'border-red-500' : ''}`}>
+                                                <SelectTrigger
+                                                    className={`w-full text-sm ${errors.department_id ? 'border-destructive' : ''}`}
+                                                >
                                                     <SelectValue placeholder="-- Select Department --" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -221,19 +223,23 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                             </Select>
                                         )}
                                     />
-                                    {errors.department_id && <p className="text-sm text-red-500">{errors.department_id.message}</p>}
+                                    {errors.department_id && (
+                                        <p className="text-sm text-destructive">{errors.department_id.message}</p>
+                                    )}
                                 </>
                             ) : (
                                 <>
-                                    <Label className="font-semibold text-gray-800">
-                                        Employee Name <span className="text-red-500">*</span>
+                                    <Label className="font-semibold text-foreground">
+                                        Employee Name <span className="text-destructive">*</span>
                                     </Label>
                                     <Input
                                         placeholder="Enter employee name"
                                         {...register('employee_name', { required: 'Employee name is required' })}
-                                        className={errors.employee_name ? 'border-red-500' : ''}
+                                        className={errors.employee_name ? 'border-destructive' : ''}
                                     />
-                                    {errors.employee_name && <p className="text-sm text-red-500">{errors.employee_name.message}</p>}
+                                    {errors.employee_name && (
+                                        <p className="text-sm text-destructive">{errors.employee_name.message}</p>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -249,22 +255,24 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
 
                         {/* MESSAGE */}
                         <div>
-                            <Label className="font-semibold text-gray-800">
-                                Feedback Message <span className="text-red-500">*</span>
+                            <Label className="font-semibold text-foreground">
+                                Feedback Message <span className="text-destructive">*</span>
                             </Label>
                             <Textarea
                                 rows={5}
                                 placeholder="Share your compliments, suggestions, or complaints..."
                                 {...register('feedback_message', { required: 'Feedback message is required' })}
-                                className={errors.feedback_message ? 'border-red-500' : ''}
+                                className={errors.feedback_message ? 'border-destructive' : ''}
                             />
-                            {errors.feedback_message && <p className="text-sm text-red-500">{errors.feedback_message.message}</p>}
+                            {errors.feedback_message && (
+                                <p className="text-sm text-destructive">{errors.feedback_message.message}</p>
+                            )}
                         </div>
 
                         {/* UPLOAD */}
                         <div>
-                            <Label className="font-semibold text-gray-800">Upload Evidence (Optional)</Label>
-                            <p className="text-sm text-gray-600">
+                            <Label className="font-semibold text-foreground">Upload Evidence (Optional)</Label>
+                            <p className="text-sm text-muted-foreground">
                                 Upload up to <b>5 files</b>, total size must not exceed <b>50MB</b>.
                             </p>
 
@@ -272,30 +280,39 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                 type="button"
                                 variant="outline"
                                 onClick={() => document.getElementById('evidence')?.click()}
-                                className="border-red-300 text-red-600 hover:bg-red-50"
+                                className="mt-2"
                                 disabled={files.length >= MAX_FILES}
                             >
                                 <Upload className="mr-2 h-4 w-4" />
                                 {files.length >= MAX_FILES ? 'Max Files Reached' : 'Choose Files'}
                             </Button>
 
-                            <input id="evidence" type="file" multiple accept="image/*,video/*," onChange={handleFileChange} className="hidden" />
+                            <input
+                                id="evidence"
+                                type="file"
+                                multiple
+                                accept="image/*,video/*,"
+                                onChange={handleFileChange}
+                                className="hidden"
+                            />
 
+                            {/* Error Alert - Theme Updated */}
                             {error && (
-                                <div className="flex items-center gap-2 rounded-md border border-red-300 bg-red-100 p-2 text-sm text-red-600">
+                                <div className="mt-2 flex items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-2 text-sm text-destructive">
                                     <AlertTriangle className="h-4 w-4" />
                                     {error}
                                 </div>
                             )}
 
+                            {/* Files List - Theme Updated */}
                             {files.length > 0 && (
-                                <div className="space-y-2">
+                                <div className="mt-2 space-y-2">
                                     {files.map((file, index) => (
-                                        <div key={index} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                                        <div key={index} className="flex items-center justify-between gap-2 rounded-md border border-border bg-secondary/30 px-3 py-2 text-sm">
                                             <div className="flex min-w-0 flex-1 items-center gap-2">
-                                                <FileIcon className="h-4 w-4 text-orange-600" />
-                                                <span className="max-w-[200px] truncate">{file.name}</span>
-                                                <span className="text-xs whitespace-nowrap text-gray-500">
+                                                <FileIcon className="h-4 w-4 text-primary" />
+                                                <span className="max-w-[200px] truncate text-foreground">{file.name}</span>
+                                                <span className="whitespace-nowrap text-xs text-muted-foreground">
                                                     ({(file.size / 1024 / 1024).toFixed(1)} MB)
                                                 </span>
                                             </div>
@@ -305,7 +322,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => removeFile(index)}
-                                                className="h-6 w-6 flex-shrink-0 p-0 text-gray-500 hover:text-red-500"
+                                                className="h-6 w-6 flex-shrink-0 p-0 text-muted-foreground hover:text-destructive"
                                             >
                                                 <X className="h-4 w-4" />
                                             </Button>
@@ -321,7 +338,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
                                 type="button"
                                 variant="outline"
                                 onClick={() => onOpenChange(false)}
-                                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
+                                className="flex-1"
                                 disabled={isSubmitting.isOpen}
                             >
                                 Cancel
@@ -329,7 +346,8 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange }: Feedb
 
                             <Button
                                 type="submit"
-                                className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90"
+                                // Uses Primary Theme Color
+                                className="flex-1 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                                 disabled={isSubmitting.isOpen}
                             >
                                 {isSubmitting.isOpen ? 'Submitting...' : 'Submit Feedback'}

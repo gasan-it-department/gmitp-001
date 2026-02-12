@@ -37,24 +37,25 @@ export function MunicipalityCard() {
         fetchMunicipalities();
     }, []);
 
-    if (isLoading) return <p className="animate-pulse p-5 text-center text-lg font-medium text-gray-400">Loading municipalities...</p>;
+    if (isLoading) return <p className="animate-pulse p-5 text-center text-lg font-medium text-muted-foreground">Loading municipalities...</p>;
 
-    if (error) return <p className="p-5 text-center font-semibold text-red-500">{error}</p>;
+    if (error) return <p className="p-5 text-center font-semibold text-destructive">{error}</p>;
 
     return (
         <section className="relative mt-16 w-full px-4 sm:px-6 md:px-10">
-            {/* ✨ Gradient glow background */}
-            <div className="absolute inset-x-0 top-0 -z-10 h-52 bg-gradient-to-r from-orange-100/40 via-transparent to-red-100/40 blur-3xl" />
+            {/* ✨ Gradient glow background - Updated to Theme */}
+            <div className="absolute inset-x-0 top-0 -z-10 h-52 bg-gradient-to-r from-secondary/40 via-transparent to-primary/10 blur-3xl" />
 
             {/* Title header */}
             <div className="mb-10 flex flex-col items-center text-center">
-                <h2 className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent sm:text-3xl md:text-4xl">
+                <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl md:text-4xl">
                     Municipalities of Marinduque
                 </h2>
-                <p className="mt-2 max-w-lg text-sm text-gray-500 sm:text-base">
+                <p className="mt-2 max-w-lg text-sm text-muted-foreground sm:text-base">
                     Explore each municipality’s profile and connect with local services.
                 </p>
-                <div className="mt-4 h-1 w-28 rounded-full bg-gradient-to-r from-orange-400 to-red-400 sm:w-36"></div>
+                {/* Divider Line: 'bg-primary' */}
+                <div className="mt-4 h-1 w-28 rounded-full bg-primary sm:w-36"></div>
             </div>
 
             {/* Responsive grid layout */}
@@ -74,37 +75,41 @@ export function MunicipalityCard() {
                                 transition={{ delay: index * 0.1, duration: 0.5, ease: 'easeOut' }}
                                 className="w-full max-w-[20rem]"
                             >
-                                <Card className="group relative flex flex-col items-center rounded-[1.8rem] border border-orange-200/40 bg-gradient-to-b from-white/70 via-orange-50/20 to-red-50/20 p-6 text-center shadow-md backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-orange-300/70 hover:shadow-xl sm:p-7">
+                                {/* Theme Update: 'bg-card', 'border-border' */}
+                                <Card className="group relative flex flex-col items-center rounded-[1.8rem] border border-border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-primary/50 hover:shadow-xl sm:p-7">
                                     {/* 🧭 Icon or Logo */}
                                     {/* Added overflow-hidden to ensure image stays circular */}
-                                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white bg-gradient-to-br shadow-inner sm:h-16 sm:w-16">
+                                    {/* Theme Update: 'bg-secondary' for placeholder background */}
+                                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-secondary shadow-inner sm:h-16 sm:w-16">
                                         {hasLogo ? (
                                             <img src={logoUrl || ''} alt={`${municipality.name} Logo`} className="h-full w-full object-cover" />
                                         ) : (
-                                            <MapPin className="h-6 w-6 text-orange-600 sm:h-7 sm:w-7" />
+                                            <MapPin className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
                                         )}
                                     </div>
 
                                     {/* 🏙️ Municipality name */}
-                                    <h3 className="mt-4 text-[20px] font-bold text-gray-800 transition-colors duration-300 group-hover:text-orange-600 sm:text-[22px]">
+                                    {/* Theme Update: 'text-foreground', hover: 'text-primary' */}
+                                    <h3 className="mt-4 text-[20px] font-bold text-foreground transition-colors duration-300 group-hover:text-primary sm:text-[22px]">
                                         {municipality.name}
                                     </h3>
 
                                     {/* 📮 Zip Code */}
-                                    <p className="mt-1 text-sm text-gray-500">
-                                        Zip Code: <span className="font-medium">{municipality.zip_code || '—'}</span>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Zip Code: <span className="font-medium text-foreground">{municipality.zip_code || '—'}</span>
                                     </p>
 
                                     {/* 🔗 CTA */}
                                     <Link
                                         href={home({ municipality: municipality.slug })}
-                                        className="mt-5 inline-block w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:from-orange-600 hover:to-red-600 hover:shadow-lg focus:ring-2 focus:ring-orange-300 focus:ring-offset-2"
+                                        // Theme Update: 'bg-primary', 'text-primary-foreground'
+                                        className="mt-5 inline-block w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-300 hover:bg-primary/90 hover:shadow-lg focus:ring-2 focus:ring-primary focus:ring-offset-2"
                                     >
                                         View Details
                                     </Link>
 
-                                    {/* ✨ Hover glow */}
-                                    <div className="absolute inset-0 -z-10 scale-105 rounded-[1.8rem] bg-gradient-to-br from-orange-200/40 via-transparent to-red-200/40 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
+                                    {/* ✨ Hover glow - Updated to subtle primary glow */}
+                                    <div className="absolute inset-0 -z-10 scale-105 rounded-[1.8rem] bg-primary/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
                                 </Card>
                             </motion.div>
                         );

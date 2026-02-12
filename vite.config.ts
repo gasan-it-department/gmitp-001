@@ -6,6 +6,12 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    // server: {
+    //     host: '0.0.0.0', // Allow external connections
+    //     hmr: {
+    //         protocol: 'wss', // Use secure web sockets
+    //     },
+    // },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],

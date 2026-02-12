@@ -6,9 +6,6 @@ Route::prefix('{municipality}/transaction')
     ->middleware(['municipalityContext', 'auth'])
     ->name('transaction.')
     ->group(function () {
-
         Route::get('/', [TransactionController::class, 'index'])->name('index');
-
-
     });
 

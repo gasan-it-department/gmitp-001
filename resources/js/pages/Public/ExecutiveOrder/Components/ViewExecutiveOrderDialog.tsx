@@ -72,10 +72,9 @@ export function ViewOrderDialog({ isOpen, onOpenChange, order, onDownload }: Vie
                             </Button>
 
                             <Button
-                                onClick={() => onDownload(order.number)}
+                                onClick={() => {onOpenChange(false);}}
                                 className={`gap-2 text-white shadow-lg hover:shadow-xl transition-all ${primaryGradient} hover:opacity-90`}
                             >
-                                <Download className="h-4 w-4" />
                                 Close
                             </Button>
                         </div>

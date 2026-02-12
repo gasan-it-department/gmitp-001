@@ -42,9 +42,10 @@ export default function ClassicDialog({
       <DialogContent
         showCloseButton={false}
         onInteractOutside={(e) => e.preventDefault()}
+        // Theme Update: 'bg-background', 'border-border'
         className="
-          max-w-lg w-[90vw] p-6 rounded-2xl border
-          shadow-2xl bg-white dark:bg-neutral-900
+          max-w-lg w-[90vw] p-6 rounded-2xl border border-border
+          shadow-2xl bg-background
           transition-all duration-300
         "
       >
@@ -55,13 +56,15 @@ export default function ClassicDialog({
 
         {/* Visible header */}
         <DialogHeader>
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          {/* Theme Update: 'text-foreground' */}
+          <h2 className="text-2xl font-semibold text-foreground">
             {title}
           </h2>
           <DialogDescription
+            // Theme Update: 'text-muted-foreground'
             className="
               mt-4 max-h-[65vh] overflow-y-auto 
-              text-gray-700 dark:text-gray-300 
+              text-muted-foreground
               leading-relaxed whitespace-pre-line pr-2
             "
           >
@@ -75,10 +78,10 @@ export default function ClassicDialog({
             <Button
               variant="outline"
               onClick={onNegativeClick}
+              // Theme Update: Uses muted text that darkens on hover
               className="
                 px-6 py-2.5 text-base font-medium rounded-lg
-                bg-gray-100 hover:bg-gray-200
-                dark:bg-gray-800 dark:hover:bg-gray-700
+                border-border text-muted-foreground hover:bg-secondary hover:text-foreground
                 transition-colors duration-200
               "
             >
@@ -88,14 +91,13 @@ export default function ClassicDialog({
 
           <Button
             onClick={onPositiveClick}
+            // Theme Update: 'bg-primary', 'text-primary-foreground'
             className="
               px-6 py-2.5 text-base font-medium
               rounded-lg transition-all duration-200
-              bg-gradient-to-r from-red-600 to-orange-500 
-              hover:from-red-700 hover:to-orange-600
-              text-white shadow-md
-              focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 
-              dark:focus:ring-offset-neutral-900
+              bg-primary text-primary-foreground 
+              hover:bg-primary/90 shadow-md
+              focus:ring-2 focus:ring-ring focus:ring-offset-2
             "
           >
             {positiveButtonText}
