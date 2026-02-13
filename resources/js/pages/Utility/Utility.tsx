@@ -217,6 +217,11 @@ export default function Utility() {
         return trimmed;
     }
 
+    function getCurrentWebsiteVersion(): string{
+        const version = import.meta.env.VITE_APP_VERSION;
+        return version ? version : "Version not set";
+    }
+
 
     // Example of how to use it in your component structure:
     // <TableCell className="text-[12px]">{formatCurrency(req.amount)}</TableCell>
@@ -232,6 +237,7 @@ export default function Utility() {
         formatAndAddDaysNoTime,
         linkify,
         formatCurrency,
-        formatPhoneNumber
+        formatPhoneNumber,
+        getCurrentWebsiteVersion
     };
 }

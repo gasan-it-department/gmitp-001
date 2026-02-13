@@ -8,6 +8,7 @@ import { Activity, HomeIcon, Menu } from 'lucide-react';
 import { LogInSignUpForm } from '../LoginSignUpForm';
 import { Button } from '../ui/button';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
+import { cn } from "@/lib/utils"; // Ensure you have this utility
 
 type Municipality = {
     id: string;
@@ -17,28 +18,32 @@ type Municipality = {
 };
 
 export function LeftNavigation() {
+    // 1. Get URL for active state checking
+    const { url } = usePage();
     const navItems = useNavigation();
     const { auth } = usePage<SharedData>().props;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
+    // 2. Helper to normalize paths (remove trailing slashes & query params)
+    const normalize = (path: string) => path.split('?')[0].replace(/\/$/, "");
+    const currentPath = normalize(url);
+
     return (
         <Sheet>
-            {/* 1. ACCESSIBILITY: Larger Trigger Button */}
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="mr-2 h-12 w-12 hover:bg-gray-100">
-                    <Menu className="h-8 w-8 text-gray-800" />
+                <Button variant="ghost" size="icon" className="mr-2 h-12 w-12 hover:bg-muted/50">
+                    <Menu className="h-8 w-8 text-foreground" />
                 </Button>
             </SheetTrigger>
 
             <SheetContent
                 side="left"
-                // 2. ACCESSIBILITY: Wider drawer (w-64 -> w-80) for larger text
-                className="flex h-full w-80 flex-col justify-between bg-white text-gray-900 shadow-xl"
+                className="flex h-full w-80 flex-col justify-between bg-background text-foreground shadow-2xl"
             >
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 
-                <SheetHeader className="border-b border-gray-200 px-5 py-4">
-                    <h2 className="text-xl font-bold text-gray-900">Menu</h2>
+                <SheetHeader className="border-b border-border px-5 py-6 bg-muted/10">
+                    <h2 className="text-xl font-black uppercase tracking-widest text-primary text-left">Menu</h2>
                 </SheetHeader>
 
                 <div className="flex flex-1 flex-col overflow-y-auto py-2">
@@ -46,7 +51,7 @@ export function LeftNavigation() {
                     {auth?.user ? (
                         <div className="px-4 py-4">
                             <Link href={account.url({ municipality: currentMunicipality.slug })}>
-                                <div className="flex cursor-pointer items-center rounded-2xl border border-gray-100 bg-gray-50 p-4 transition hover:border-blue-200 hover:bg-blue-50">
+                                <div className="flex cursor-pointer items-center rounded-2xl border border-border bg-muted/20 p-4 transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-sm">
                                     <Avatar className="h-16 w-16 flex-shrink-0">
                                         <AvatarImage
                                             src={
@@ -59,28 +64,31 @@ export function LeftNavigation() {
                                         />
                                     </Avatar>
                                     <div className="ml-4 min-w-0">
-                                        {/* 3. ACCESSIBILITY: Larger Name */}
-                                        <span className="block truncate text-lg font-bold text-gray-900">{auth.user?.first_name}</span>
-                                        <span className="text-sm font-medium text-gray-600">View Profile</span>
+                                        <span className="block truncate text-lg font-bold text-foreground">{auth.user?.first_name}</span>
+                                        <span className="text-sm font-medium text-muted-foreground">View Profile</span>
                                     </div>
                                 </div>
                             </Link>
 
-                            {/* --- INSERTED: MY TRANSACTIONS LINK --- */}
-                            {/* This is the best place: Right after profile, before general menu */}
-                            <div className="mt-6 border-b border-gray-100 pb-6">
-                                <span className="mb-3 block text-sm font-bold tracking-wider text-gray-500 uppercase">My Activity</span>
+                            {/* --- TRANSACTIONS LINK --- */}
+                            <div className="mt-6 border-b border-border pb-6">
+                                <span className="mb-3 block text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase">My Activity</span>
                                 <SheetClose asChild>
                                     <a
                                         onClick={() => router.visit(transaction.index.url(currentMunicipality.slug))}
-                                        className="flex items-center gap-4 rounded-xl p-3 text-gray-700 transition hover:bg-gray-100 hover:text-black"
+                                        className={cn(
+                                            "flex items-center gap-4 rounded-xl p-3 transition-all duration-200 cursor-pointer",
+                                            // Active Logic for Transactions
+                                            currentPath.includes('transaction')
+                                                ? "bg-primary/10 text-primary font-black shadow-sm" 
+                                                : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground"
+                                        )}
                                     >
-                                        <Activity size={28} />
-                                        <span className="text-lg font-semibold">Transactions</span>
+                                        <Activity size={28} className={currentPath.includes('transaction') ? "text-primary" : ""} />
+                                        <span className="text-lg">Transactions</span>
                                     </a>
                                 </SheetClose>
                             </div>
-                            {/* -------------------------------------- */}
                         </div>
                     ) : (
                         <div className="px-5 py-6">
@@ -90,24 +98,46 @@ export function LeftNavigation() {
 
                     {/* Main Navigation */}
                     <div className="px-4">
-                        <span className="mb-3 block text-sm font-bold tracking-wider text-gray-500 uppercase">Services</span>
+                        <span className="mb-3 block text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase">Services</span>
 
-                        <nav className="flex flex-col space-y-3">
+                        <nav className="flex flex-col space-y-2">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
                                 const href =
                                     typeof item.route === 'function' ? item.route({ municipality: currentMunicipality.slug }).url : item.route;
 
+                                // --- ACTIVE STATE LOGIC ---
+                                const targetPath = normalize(href);
+                                const isActive = item.id === 'home' 
+                                    ? currentPath === targetPath
+                                    : currentPath.startsWith(targetPath);
+
                                 return (
                                     <SheetClose asChild key={item.title}>
                                         <a
                                             onClick={() => router.visit(href)}
-                                            // 4. ACCESSIBILITY: Large padding (p-4), Large text (text-lg)
-                                            className="flex items-center gap-4 rounded-xl p-3 text-gray-700 transition hover:bg-gray-100 hover:text-black"
+                                            className={cn(
+                                                "flex items-center gap-4 rounded-xl p-3 transition-all duration-200 cursor-pointer group",
+                                                isActive
+                                                    ? "bg-primary/10 text-primary font-black shadow-sm" // Active Style
+                                                    : "text-muted-foreground font-medium hover:bg-muted hover:text-foreground" // Default Style
+                                            )}
                                         >
-                                            {/* Larger Icons */}
-                                            {Icon ? <Icon size={26} strokeWidth={2} /> : <HomeIcon size={26} />}
-                                            <span className="text-lg font-medium">{item.title}</span>
+                                            {/* Icon Logic: Highlight if active */}
+                                            {Icon ? (
+                                                <Icon 
+                                                    size={26} 
+                                                    strokeWidth={isActive ? 2.5 : 2} 
+                                                    className={cn("transition-transform group-hover:scale-110", isActive ? "text-primary" : "")} 
+                                                />
+                                            ) : (
+                                                <HomeIcon 
+                                                    size={26} 
+                                                    className={isActive ? "text-primary" : ""}
+                                                />
+                                            )}
+                                            
+                                            <span className="text-lg">{item.title}</span>
                                         </a>
                                     </SheetClose>
                                 );
@@ -117,7 +147,7 @@ export function LeftNavigation() {
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-gray-200 p-6 text-center text-sm text-gray-500">
+                <div className="border-t border-border bg-muted/10 p-6 text-center text-sm text-muted-foreground">
                     © {new Date().getFullYear()} {currentMunicipality.name}
                 </div>
             </SheetContent>
