@@ -59,18 +59,13 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
             hoverColor: 'group-hover:text-orange-600',
             pendingCount: 0,
         },
-        {
-            title: 'Other Transactions',
-            description: 'Non-emergency service requests, permits, and miscellaneous municipal transactions.',
-            icon: (
-                <div className="rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 p-3 shadow-lg">
-                    <Layers className="h-8 w-8 text-white" />
-                </div>
-            ),
-            href: communityReport.client.page.url(currentMunicipality.slug), // NO HREF AT THE MOMENT
-            hoverColor: 'group-hover:text-orange-500',
-            pendingCount: 0,
-        },
+        // {
+        //     title: 'Other Transactions',
+        //     description: 'Non-emergency service requests, permits, and miscellaneous municipal transactions.',
+        //     icon: Layers,
+        //     href: communityReport.client.page.url(currentMunicipality.slug), // Placeholder route
+        //     pendingCount: 0,
+        // },
     ];
 
     return (
@@ -99,7 +94,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                                     <p className="mt-2 text-sm leading-relaxed text-gray-500">{item.description}</p>
                                 </div>
 
-                                <div className="mt-8 flex items-center justify-between border-t border-gray-50 pt-4">
+                                {/* <div className="mt-8 flex items-center justify-between border-t border-border pt-4">
                                     <div>
                                         {item.pendingCount > 0 ? (
                                             <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
@@ -113,7 +108,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                                     <div className="rounded-full bg-gray-50 p-2 transition-colors group-hover:bg-gray-100">
                                         <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-900" />
                                     </div>
-                                </div>
+                                </div> */}
                             </Link>
                         ))}
                     </div>

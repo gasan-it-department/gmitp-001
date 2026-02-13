@@ -21,7 +21,7 @@ interface ReportDetailsDialogProps {
     report: any; 
 }
 
-// Helper: Status Badge
+// Helper: Status Badge (Themed)
 const DialogStatusBadge = ({ status }: { status: string }) => {
     const styles: Record<string, string> = {
         pending: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -44,12 +44,12 @@ const DialogStatusBadge = ({ status }: { status: string }) => {
         rejected: 'Declined',
     };
 
-    const currentStyle = styles[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+    const currentStyle = styles[status] || 'bg-muted text-muted-foreground border-border';
     const label = labels[status] || status;
     const Icon = icons[status] || AlertCircle;
 
     return (
-        <span className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold tracking-wide uppercase shadow-sm ${currentStyle}`}>
+        <span className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black tracking-wide uppercase shadow-sm ${currentStyle}`}>
             <Icon className="h-3 w-3" />
             {label}
         </span>
@@ -109,14 +109,12 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
             .join(' ');
     };
 
-    // --- NEW: Get ALL Images ---
+    // --- Get ALL Images ---
     const getImages = (attachments: any[]) => {
         if (!attachments || attachments.length === 0) return [];
-        
-        // Map through all attachments and return valid URLs
         return attachments.map((file) => {
              return file.view_url || file.url || file.path || file.download_url;
-        }).filter(Boolean); // Remove null/undefined
+        }).filter(Boolean);
     };
 
     const images = getImages(report.attachments);
@@ -138,61 +136,61 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
         : null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             
             {/* Backdrop / Overlay */}
             <div 
-                className="absolute inset-0 bg-black/60 transition-opacity" 
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
                 onClick={onClose}
             ></div>
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-2xl transform overflow-hidden rounded-xl bg-background shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200 border border-border flex flex-col max-h-[90vh]">
                 
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-orange-100 bg-gradient-to-r from-red-50 to-orange-50 px-6 py-4">
+                {/* Header (Themed) */}
+                <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/30 px-6 py-4">
                     <div>
-                        <h3 className="text-xl font-bold text-red-900">Report Details</h3>
-                        <p className="text-xs font-medium text-orange-800/60">ID: #{report.id}</p>
+                        <h3 className="text-xl font-black uppercase tracking-widest text-primary">Report Details</h3>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ID: #{report.id}</p>
                     </div>
                     <button 
                         onClick={onClose}
-                        className="rounded-full p-2 text-orange-400 hover:bg-white hover:text-red-600 hover:shadow-sm transition-all"
+                        className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                     >
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
                 {/* Scrollable Body */}
-                <div className="max-h-[80vh] overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
                     
                     {/* Status & Date Row */}
-                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-6">
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-6">
                         <DialogStatusBadge status={report.status} />
-                        <span className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-100">
-                            <Calendar className="h-4 w-4 text-orange-500" />
+                        <span className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground border border-border">
+                            <Calendar className="h-3.5 w-3.5 text-primary" />
                             {formatDate(report.created_at)}
                         </span>
                     </div>
 
                     {/* --- IMAGE CAROUSEL SECTION --- */}
                     {hasImages ? (
-                        <div className="group mb-8 relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-900 shadow-sm">
+                        <div className="group mb-8 relative overflow-hidden rounded-xl border border-border bg-black shadow-sm">
                             
                             {/* Image Counter Pill */}
                             <div className="absolute top-3 left-3 z-10">
-                                <span className="inline-flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                    <ImageIcon className="h-3.5 w-3.5" />
+                                <span className="inline-flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm border border-white/10">
+                                    <ImageIcon className="h-3 w-3" />
                                     {currentImageIndex + 1} / {images.length}
                                 </span>
                             </div>
 
                             {/* Main Image */}
-                            <div className="aspect-video w-full flex items-center justify-center bg-gray-100">
+                            <div className="aspect-video w-full flex items-center justify-center bg-black/90">
                                 <img 
                                     src={images[currentImageIndex]} 
                                     alt={`Evidence ${currentImageIndex + 1}`} 
-                                    className="h-full w-full object-contain max-h-[400px]"
+                                    className="h-full w-full object-contain max-h-[300px] sm:max-h-[400px]"
                                 />
                             </div>
 
@@ -201,13 +199,13 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                                 <>
                                     <button 
                                         onClick={prevImage}
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:scale-110 active:scale-95"
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white shadow-md backdrop-blur-sm border border-white/10 transition-all hover:bg-black/70 hover:scale-110 active:scale-95"
                                     >
                                         <ChevronLeft className="h-5 w-5" />
                                     </button>
                                     <button 
                                         onClick={nextImage}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-gray-800 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:scale-110 active:scale-95"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white shadow-md backdrop-blur-sm border border-white/10 transition-all hover:bg-black/70 hover:scale-110 active:scale-95"
                                     >
                                         <ChevronRight className="h-5 w-5" />
                                     </button>
@@ -220,8 +218,8 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                                     {images.map((_, idx) => (
                                         <div 
                                             key={idx}
-                                            className={`h-1.5 rounded-full transition-all duration-300 ${
-                                                idx === currentImageIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/50'
+                                            className={`h-1 rounded-full transition-all duration-300 ${
+                                                idx === currentImageIndex ? 'w-6 bg-primary' : 'w-1.5 bg-white/30'
                                             }`}
                                         />
                                     ))}
@@ -230,11 +228,11 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                         </div>
                     ) : (
                         // No Image Placeholder
-                        <div className="mb-8 flex h-32 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400">
-                            <div className="rounded-full bg-gray-100 p-3">
-                                <FileText className="h-5 w-5 text-gray-300" />
+                        <div className="mb-8 flex h-32 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/10 text-muted-foreground">
+                            <div className="rounded-full bg-muted p-3">
+                                <FileText className="h-5 w-5 text-muted-foreground/50" />
                             </div>
-                            <span className="text-sm font-medium">No photo evidence attached</span>
+                            <span className="text-xs font-bold uppercase tracking-wide opacity-70">No photo evidence attached</span>
                         </div>
                     )}
 
@@ -243,11 +241,11 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                         
                         {/* Title/Type */}
                         <div>
-                            <label className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <label className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                 <Tag className="h-3.5 w-3.5" />
                                 Issue Category
                             </label>
-                            <div className="text-lg font-bold text-gray-900">
+                            <div className="text-lg font-black uppercase tracking-tight text-foreground">
                                 {formatType(report.type)}
                             </div>
                         </div>
@@ -255,34 +253,34 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                         {/* Location & Coordinates Grid */}
                         <div className="grid gap-6 sm:grid-cols-2">
                             {/* Location Name */}
-                            <div className="flex flex-col">
-                                <label className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <div className="flex flex-col h-full">
+                                <label className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                     <MapPin className="h-3.5 w-3.5" />
                                     Location
                                 </label>
-                                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 h-full">
-                                    <p className="font-medium text-gray-800 leading-snug">
+                                <div className="rounded-xl border border-border bg-card p-4 flex-1">
+                                    <p className="font-bold text-foreground leading-snug text-sm">
                                         {report.location}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Coordinates */}
-                            <div className="flex flex-col">
-                                <label className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <div className="flex flex-col h-full">
+                                <label className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                     <Globe className="h-3.5 w-3.5" />
                                     GPS Coordinates
                                 </label>
                                 
                                 {hasCoordinates ? (
-                                    <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-3 h-full flex flex-col justify-between gap-3">
+                                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex-1 flex flex-col justify-between gap-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="rounded-lg bg-white p-2 shadow-sm border border-blue-100 text-blue-500">
+                                            <div className="rounded-lg bg-background p-2 shadow-sm border border-border text-primary">
                                                 <Globe className="h-5 w-5" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] uppercase font-bold text-blue-400">Lat / Long</span>
-                                                <span className="font-mono text-sm font-semibold text-gray-700">
+                                                <span className="text-[10px] uppercase font-black tracking-wider text-primary">Lat / Long</span>
+                                                <span className="font-mono text-xs font-bold text-foreground">
                                                     {parseFloat(report.latitude).toFixed(6)}, {parseFloat(report.longitude).toFixed(6)}
                                                 </span>
                                             </div>
@@ -292,17 +290,17 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                                             href={googleMapsUrl!} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white border border-gray-200 py-2 text-xs font-bold text-gray-700 shadow-sm transition-all hover:border-red-200 hover:text-red-600 hover:shadow-md active:scale-[0.98]"
+                                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-background border border-border py-2 text-[10px] font-black uppercase tracking-widest text-foreground shadow-sm transition-all hover:border-primary hover:text-primary hover:shadow-md active:scale-[0.98]"
                                         >
-                                            <ExternalLink className="h-3.5 w-3.5" />
+                                            <ExternalLink className="h-3 w-3" />
                                             Open in Maps
                                         </a>
                                     </div>
                                 ) : (
-                                    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-4 h-full flex flex-col items-center justify-center text-center gap-2">
-                                        <Globe className="h-5 w-5 text-gray-300" />
-                                        <span className="text-xs font-medium text-gray-400">
-                                            No GPS data available
+                                    <div className="rounded-xl border border-dashed border-border bg-muted/10 p-4 flex-1 flex flex-col items-center justify-center text-center gap-2">
+                                        <Globe className="h-5 w-5 text-muted-foreground/40" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/60">
+                                            No GPS data
                                         </span>
                                     </div>
                                 )}
@@ -311,11 +309,11 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
 
                         {/* Description */}
                         <div>
-                            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                                 Description
                             </label>
-                            <div className="rounded-xl border border-orange-100 bg-orange-50/30 p-5">
-                                <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap break-words">
+                            <div className="rounded-xl border border-border bg-muted/20 p-5">
+                                <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words font-medium">
                                     {report.description}
                                 </p>
                             </div>
@@ -324,11 +322,11 @@ export default function ReportDetailsDialog({ isOpen, onClose, report }: ReportD
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="border-t border-gray-100 bg-gray-50 px-6 py-4 flex justify-end">
+                {/* Footer (Themed) */}
+                <div className="shrink-0 border-t border-border bg-muted/10 px-6 py-4 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-gray-900 active:scale-[0.98]"
+                        className="rounded-lg border border-border bg-background px-6 py-2.5 text-xs font-black uppercase tracking-widest text-foreground shadow-sm transition-all hover:bg-muted hover:text-primary active:scale-[0.98]"
                     >
                         Close
                     </button>

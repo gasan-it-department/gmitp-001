@@ -40,12 +40,12 @@ const StatusBadge = ({ status }: { status: string }) => {
         rejected: 'Declined',
     };
 
-    const currentStyle = styles[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+    const currentStyle = styles[status] || 'bg-muted text-muted-foreground border-border';
     const label = labels[status] || status;
     const Icon = icons[status] || AlertCircle;
 
     return (
-        <span className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold tracking-wide uppercase shadow-sm ${currentStyle}`}>
+        <span className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-black tracking-wide uppercase shadow-sm ${currentStyle}`}>
             <Icon className="h-3 w-3" />
             {label}
         </span>
@@ -59,11 +59,9 @@ export default function CommunityReport({ reports }: { reports: any }) {
     const reportList = reports?.data || [];
     const totalCount = reports?.meta?.total || reportList.length || 0;
 
-    // --- State for Dialog ---
+    // --- State ---
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedReport, setSelectedReport] = useState<any>(null);
-    
-    // --- State for Scroll Top ---
     const [showScrollTop, setShowScrollTop] = useState(false);
 
     // --- Handlers ---
@@ -74,7 +72,7 @@ export default function CommunityReport({ reports }: { reports: any }) {
 
     const handleCloseDialog = () => {
         setIsDialogOpen(false);
-        setTimeout(() => setSelectedReport(null), 300); // Clear data after animation
+        setTimeout(() => setSelectedReport(null), 300);
     };
 
     const scrollToTop = () => {
@@ -118,45 +116,53 @@ export default function CommunityReport({ reports }: { reports: any }) {
     return (
         <PublicLayout title="" description="">
             <Head title="Community Reports" />
-            <div className="py-12">
+            <div className="py-12 bg-muted/30 min-h-screen">
                 <div className="mx-auto max-w-5xl sm:px-6 lg:px-8">
                     
-                    {/* Back Button */}
-                    <div className="mb-6">
-                        <button
-                            onClick={() => window.history.back()}
-                            className="group flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-medium text-orange-800/80 transition-colors hover:bg-red-50 hover:text-red-700"
-                        >
-                            <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                            Back
-                        </button>
-                    </div>
-
                     {/* Main Card Container */}
-                    <div className="rounded-2xl shadow-xl border border-red-200/60 bg-white overflow-hidden">
+                    <div className="rounded-xl shadow-sm border border-border bg-card overflow-hidden">
                         
-                        {/* Card Header */}
-                        <div className="border-b border-orange-200 p-6 bg-white">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-md flex-shrink-0">
-                                    <Megaphone className="h-6 w-6" />
+                        {/* THEMED CARD HEADER (Integrated Toolbar) */}
+                        <div className="border-b border-border p-5 bg-card/50 backdrop-blur-sm sticky top-0 z-20">
+                            <div className="flex items-center gap-4">
+                                
+                                {/* 1. Integrated Back Button */}
+                                <button
+                                    onClick={() => window.history.back()}
+                                    className="group flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background transition-all hover:border-primary hover:text-primary active:scale-95"
+                                    title="Go Back"
+                                >
+                                    <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+                                </button>
+
+                                {/* Divider */}
+                                <div className="h-8 w-px bg-border" />
+
+                                {/* Icon */}
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+                                    <Megaphone className="h-5 w-5" />
                                 </div>
-                                <div>
+                                
+                                {/* Title Text */}
+                                <div className="flex flex-col">
                                     <div className="flex items-center gap-3">
-                                        <h3 className="text-2xl font-extrabold text-red-800">Community Reports</h3>
-                                        <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-sm font-bold text-red-600 border border-red-200">
+                                        <h3 className="text-xl font-black uppercase tracking-widest text-foreground hidden sm:block">Community Reports</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-widest text-foreground sm:hidden">Reports</h3>
+                                        
+                                        {/* Count Badge */}
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary border border-primary/20">
                                             {totalCount}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-orange-800/90 mt-1">
-                                        Report damage, issues, or concerns in your barangay.
+                                    <p className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:block">
+                                        Report damage and issues in your area
                                     </p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Card Content */}
-                        <div className="p-6 space-y-6">
+                        <div className="p-4 sm:p-6 space-y-4">
                             
                             {/* Grid of Reports */}
                             <div className="grid gap-4">
@@ -164,15 +170,15 @@ export default function CommunityReport({ reports }: { reports: any }) {
                                     <div
                                         key={report.id}
                                         className={`
-                                            group flex flex-col gap-6 rounded-xl border border-red-200/60 p-4 transition-all duration-300 sm:p-5
-                                            bg-gradient-to-br from-red-50/70 via-orange-50/70 to-amber-100/70
-                                            hover:shadow-lg hover:border-red-400
+                                            group flex flex-col gap-6 rounded-xl border border-border p-4 transition-all duration-300 sm:p-5
+                                            bg-card hover:shadow-lg hover:border-primary/50 hover:-translate-y-1 cursor-pointer
                                         `}
+                                        onClick={() => handleViewDetails(report)}
                                     >
                                         <div className="flex flex-1 flex-col justify-between">
                                             <div>
                                                 <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                                    <h4 className="text-lg font-bold text-red-900 group-hover:text-red-700 transition-colors">
+                                                    <h4 className="text-lg font-black uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
                                                         {formatType(report.type)}
                                                     </h4>
                                                     <div>
@@ -180,25 +186,28 @@ export default function CommunityReport({ reports }: { reports: any }) {
                                                     </div>
                                                 </div>
 
-                                                <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-orange-800/80">
-                                                    <MapPin className="h-4 w-4 text-red-500" />
+                                                <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                                                    <MapPin className="h-4 w-4 text-primary" />
                                                     {report.location}
                                                 </p>
 
-                                                <p className="line-clamp-2 text-sm text-gray-600">
-                                                    {report.description}
+                                                <p className="line-clamp-2 text-sm text-muted-foreground italic bg-muted/30 p-3 rounded-lg border border-border">
+                                                    "{report.description}"
                                                 </p>
                                             </div>
 
-                                            <div className="mt-4 flex items-center justify-between border-t border-red-200/50 pt-3">
-                                                <span className="flex items-center gap-1.5 text-xs font-medium text-orange-800/60">
+                                            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                                                <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
                                                     <Calendar className="h-3.5 w-3.5" />
                                                     Submitted: {formatDate(report.created_at)}
                                                 </span>
 
                                                 <button
-                                                    onClick={() => handleViewDetails(report)}
-                                                    className="group flex items-center gap-1 text-sm font-bold text-red-600 hover:text-red-800 hover:underline decoration-2 underline-offset-4 transition-all"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent double trigger
+                                                        handleViewDetails(report);
+                                                    }}
+                                                    className="group flex items-center gap-1 text-xs font-black uppercase tracking-wide text-primary hover:underline decoration-2 underline-offset-4 transition-all"
                                                 >
                                                     View Details 
                                                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -211,16 +220,16 @@ export default function CommunityReport({ reports }: { reports: any }) {
 
                             {/* Empty State */}
                             {reportList.length === 0 && (
-                                <div className="rounded-xl border border-dashed border-red-200 bg-red-50/30 py-20 text-center">
+                                <div className="rounded-xl border border-dashed border-border bg-muted/30 py-20 text-center">
                                     <div className="mb-2 flex justify-center">
-                                        <div className="rounded-full bg-red-100 p-3">
-                                            <Megaphone className="h-6 w-6 text-red-400" />
+                                        <div className="rounded-full bg-muted p-4">
+                                            <Megaphone className="h-6 w-6 text-muted-foreground" />
                                         </div>
                                     </div>
-                                    <p className="text-lg font-medium text-red-900">
+                                    <p className="text-lg font-black uppercase tracking-wide text-foreground">
                                         You haven't reported any issues yet.
                                     </p>
-                                    <p className="text-sm text-orange-800/70">
+                                    <p className="text-sm font-medium text-muted-foreground">
                                         See a problem in your area? Let us know!
                                     </p>
                                 </div>
@@ -234,12 +243,12 @@ export default function CommunityReport({ reports }: { reports: any }) {
                     </div>
                 </div>
 
-                {/* SCROLL TO TOP FLOATING BUTTON - REDUCED SIZE */}
+                {/* SCROLL TO TOP FLOATING BUTTON */}
                 <button
                     onClick={scrollToTop}
                     className={`
-                        fixed bottom-8 right-8 z-40 rounded-full bg-gradient-to-r from-orange-500 to-red-600 p-2 text-white shadow-lg shadow-orange-500/30 
-                        transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-orange-600/50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                        fixed bottom-8 right-8 z-40 rounded-full bg-primary p-3 text-primary-foreground shadow-lg shadow-primary/30 
+                        transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
                         ${showScrollTop ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}
                     `}
                     aria-label="Scroll to top"
