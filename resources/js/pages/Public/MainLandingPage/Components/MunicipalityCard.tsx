@@ -105,7 +105,7 @@ export function MunicipalityCard() {
                                         // Theme Update: 'bg-primary', 'text-primary-foreground'
                                         className="mt-5 inline-block w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-300 hover:bg-primary/90 hover:shadow-lg focus:ring-2 focus:ring-primary focus:ring-offset-2"
                                     >
-                                        View Details
+                                        View
                                     </Link>
 
                                     {/* ✨ Hover glow - Updated to subtle primary glow */}
