@@ -1,3 +1,4 @@
+
 interface Official {
 
     id: string;
@@ -32,5 +33,8 @@ interface Term {
 interface Position {
     id: string;
     title: string;
+
+    official?: Official | null;
+    appointment?: Appointment | null;
 
 }

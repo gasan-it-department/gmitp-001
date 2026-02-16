@@ -1,12 +1,13 @@
 <?php
 
-use App\Core\Government\UseCase\SearchOfficialsUseCase;
 use App\External\Api\Controllers\Government\Official\SearchOfficialsController;
+use App\External\Api\Controllers\Government\Official\StoreOfficialController;
 use App\External\Api\Controllers\Government\Terms\CreateTermController;
 use App\External\Api\Controllers\Government\Terms\UpdateTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListTermController;
-use App\External\Web\Controllers\LocalGovernment\Admin\ShowTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowAppointOfficialController;
+use App\External\Web\Controllers\LocalGovernment\Admin\ShowTermController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('{municipality}/government')
     ->name('government.admin.')
@@ -65,7 +66,7 @@ Route::prefix('api/government')
             ->name('officials.')
             ->group(function () {
 
-                Route::post('/')->name('store');
+                Route::post('/', StoreOfficialController::class)->name('store');
 
                 Route::get('/search-official', SearchOfficialsController::class)->name('search');
 

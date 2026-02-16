@@ -2,6 +2,7 @@
 
 namespace App\Core\Government\Models;
 
+use App\Core\Government\Models\OfficialTerm;
 use Illuminate\Database\Eloquent\Model;
 
 class Official extends Model
@@ -28,6 +29,8 @@ class Official extends Model
         'gender',
 
         'biography',
+
+        'municipal_id'
 
     ];
 

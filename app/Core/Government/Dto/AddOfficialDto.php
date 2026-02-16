@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\Government\Officials\Dto;
+namespace App\Core\Government\Dto;
 
 use App\External\Api\Request\Government\OfficialRequest;
 
@@ -21,6 +21,8 @@ class AddOfficialDto
 
         public ?string $gender = null,
 
+        public string $municipalId,
+
     ) {
     }
 
@@ -30,13 +32,21 @@ class AddOfficialDto
         $data = $request->validated();
 
         return new self(
-            $data['first_name'],
-            $data['last_name'],
-            $data['middle_name'],
-            $data['suffix'],
-            $data['biography'],
-            $data['gender'],
+            firstName: self::sanitize($data['first_name']),
+            lastName: self::sanitize($data['last_name']),
+            middleName: self::sanitize($data['middle_name']),
+            suffix: self::sanitize($data['suffix']),
+            biography: $data['biography'],
+            gender: $data['gender'],
+            municipalId: app('municipal_id'),
         );
+
+    }
+
+    public static function sanitize($value): string
+    {
+
+        return strtoupper(trim($value ?? ''));
 
     }
 

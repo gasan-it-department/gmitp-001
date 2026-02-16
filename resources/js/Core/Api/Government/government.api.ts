@@ -1,4 +1,5 @@
 import Government from "@/actions/App/External/Api/Controllers/Government"
+import { government } from "@/routes";
 import axios from "axios";
 
 export const GovernmentApi = {
@@ -15,5 +16,24 @@ export const GovernmentApi = {
 
         return response.data.data;
 
+    },
+
+    async StoreOfficial(formData: any, municipalSlug: string) {
+
+        const { url, method } = Government.Official.StoreOfficialController();
+
+        const { data } = await axios({
+            url,
+            method,
+            data: formData,
+
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'X-Municipality-Slug': municipalSlug,
+
+            }
+        });
+
+        return data;
     }
 }
