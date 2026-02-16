@@ -2,8 +2,8 @@
 
 namespace App\External\Api\Controllers\Government\Official;
 
-use App\Core\Government\Officials\Dto\AddOfficialDto;
-use App\Core\Government\Officials\UseCase\AddOfficialUseCase;
+use App\Core\Government\Dto\AddOfficialDto;
+use App\Core\Government\UseCase\AddOfficialUseCase;
 use App\External\Api\Request\Government\OfficialRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -22,6 +22,14 @@ class StoreOfficialController extends Controller
         $dto = AddOfficialDto::fromRequest($request);
 
         $official = $this->addOfficialUseCase->execute($dto);
+
+        return response()->json([
+            'success' => true,
+
+            'data' => $official,
+
+            'message' => 'Official created successfully'
+        ]);
 
     }
 

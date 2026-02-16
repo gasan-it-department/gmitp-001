@@ -1,16 +1,18 @@
 <?php
 
-namespace App\Core\Government\Officials\UseCase;
+namespace App\Core\Government\UseCase;
 
-use App\Core\Government\Officials\Dto\AddOfficialDto;
-use App\Core\Government\Officials\Repositories\OfficialRepositories;
+use App\Core\Government\Dto\AddOfficialDto;
+use App\Core\Government\Repositories\OfficialRepository;
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
 class AddOfficialUseCase
 {
 
     public function __construct(
 
-        protected OfficialRepositories $officialRepo,
+        protected OfficialRepository $officialRepo,
+        protected IdGeneratorInterface $idGenerator,
 
     ) {
     }
@@ -18,9 +20,9 @@ class AddOfficialUseCase
     public function execute(AddOfficialDto $dto)
     {
 
-        dd($dto);
+        $officialId = $this->idGenerator->generate();
 
-        return $this->officialRepo->save();
+        return $this->officialRepo->addOfficial($dto, $officialId);
 
     }
 

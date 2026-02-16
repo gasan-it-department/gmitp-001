@@ -30,6 +30,10 @@ return new class extends Migration {
 
             $table->text('biography')->nullable();
 
+            $table->string('profile_url')->nullable();
+
+            $table->string('profile_public_id')->nullable();
+
             $table->timestamps();
 
         });

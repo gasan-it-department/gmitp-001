@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Core\Government\Officials\Repositories;
+namespace App\Core\Government\Repositories;
 
+use App\Core\Government\Dto\AddOfficialDto;
 use App\Core\Government\Dto\AppointOfficialDto;
 use App\Core\Government\Models\Official;
 use Illuminate\Support\Facades\DB;
 
-class OfficialRepositories
+class OfficialRepository
 {
 
-    public function createProfile(AppointOfficialDto $dto, string $officialId)
+    public function addOfficial(AddOfficialDto $dto, string $officialId)
     {
 
-        DB::table('officials')->insert([
+        return Official::create([
             'id' => $officialId,
             'first_name' => $dto->firstName,
             'last_name' => $dto->lastName,
@@ -20,6 +21,7 @@ class OfficialRepositories
             'suffix' => $dto->suffix,
             'gender' => $dto->gender,
             'municipal_id' => $dto->municipalId,
+            'biography' => $dto->biography,
         ]);
 
     }

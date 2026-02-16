@@ -2,6 +2,9 @@
 
 namespace App\Core\Government\Models;
 
+use App\Core\Government\Models\Official;
+use App\Core\Government\Models\Position;
+use App\Core\Government\Models\Term;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
