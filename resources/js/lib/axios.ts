@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const apiAxios = axios.create({
+const api = axios.create({
+    baseURL: '/api',
     withCredentials: true,
     headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -8,4 +9,19 @@ const apiAxios = axios.create({
 
 });
 
-export default axios
+api.interceptors.response.use(
+    (response) => {
+
+        return response;
+
+    },
+
+    (error) => {
+        const message = error.response?.data?.message || 'Something went wrong.';
+
+
+    }
+
+);
+
+export default api;
