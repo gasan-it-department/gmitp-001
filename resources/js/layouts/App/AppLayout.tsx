@@ -3,6 +3,7 @@ import { AdminSidebar } from '@/layouts/App/Components/AdminSideBar';
 import { AppContent } from '@/layouts/App/Components/AppContent';
 import { AppHeader } from '@/layouts/App/Components/AppHeader';
 import { AppShell } from '@/layouts/App/Components/AppShell';
+import ToastProvider from '@/pages/Utility/ToastShower';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
@@ -32,6 +33,7 @@ export default function BaseLayout({ children }: PropsWithChildren) {
                     </AppContent>
                 </>
             )}
+            <ToastProvider />
         </AppShell>
     );
 }
