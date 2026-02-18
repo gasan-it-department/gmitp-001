@@ -29,6 +29,7 @@ class OfficialRequest extends FormRequest
             'suffix' => ['nullable', 'string', 'max:50'], // e.g., Jr., III
             'biography' => ['nullable', 'string'],
             'gender' => ['nullable', 'string', Rule::in(['Male', 'Female', 'male', 'female'])],
+            'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
         ];
     }
 

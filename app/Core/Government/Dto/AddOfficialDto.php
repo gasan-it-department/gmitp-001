@@ -3,6 +3,7 @@
 namespace App\Core\Government\Dto;
 
 use App\External\Api\Request\Government\OfficialRequest;
+use Illuminate\Http\UploadedFile;
 
 class AddOfficialDto
 {
@@ -23,6 +24,10 @@ class AddOfficialDto
 
         public string $municipalId,
 
+        public ?UploadedFile $profileImage,
+
+        public string $municipalName,
+
     ) {
     }
 
@@ -30,6 +35,8 @@ class AddOfficialDto
     {
 
         $data = $request->validated();
+
+        $municipality = app('current_municipality');
 
         return new self(
             firstName: self::sanitize($data['first_name']),
@@ -39,6 +46,8 @@ class AddOfficialDto
             biography: $data['biography'],
             gender: $data['gender'],
             municipalId: app('municipal_id'),
+            profileImage: $request->file('profile_image'),
+            municipalName: $municipality->name,
         );
 
     }

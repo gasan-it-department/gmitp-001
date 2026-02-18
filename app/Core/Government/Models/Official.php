@@ -30,7 +30,11 @@ class Official extends Model
 
         'biography',
 
-        'municipal_id'
+        'municipal_id',
+
+        'profile_url',
+
+        'profile_public_id',
 
     ];
 
