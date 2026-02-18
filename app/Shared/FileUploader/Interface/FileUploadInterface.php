@@ -6,7 +6,7 @@ use Illuminate\Http\UploadedFile;
 
 interface FileUploadInterface
 {
-    public function uploadFiles(UploadedFile $file, string $folder): array;
+    public function uploadFiles(UploadedFile $file, string $folder, string $filename, bool $overwrite = false): array;
 
     public function delete(string $publicId);
 

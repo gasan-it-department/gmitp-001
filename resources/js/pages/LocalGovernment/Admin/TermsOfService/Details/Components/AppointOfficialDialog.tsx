@@ -27,7 +27,6 @@ export const AppointOfficialDialog = ({ isOpen, onClose, position }: Props) => {
     return (
         <Dialog open={isOpen} onOpenChange={handleFullClose}>
             <DialogContent className="sm:max-w-[600px]">
-                {' '}
                 {/* Increased width slightly for the form */}
                 <DialogHeader>
                     <DialogTitle>{step === 'search' ? `Appoint ${position.title}` : 'Create New Official'}</DialogTitle>

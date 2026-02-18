@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class OfficialRepository
 {
 
-    public function addOfficial(AddOfficialDto $dto, string $officialId)
+    public function addOfficial(AddOfficialDto $dto, string $officialId, string $profileUrl, string $imgPublicId)
     {
 
         return Official::create([
@@ -22,6 +22,8 @@ class OfficialRepository
             'gender' => $dto->gender,
             'municipal_id' => $dto->municipalId,
             'biography' => $dto->biography,
+            'profile_url' => $profileUrl,
+            'profile_public_id' => $imgPublicId,
         ]);
 
     }

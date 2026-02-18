@@ -18,7 +18,6 @@ class AppointOfficialController
 
     public function __invoke(AppointOfficialRequest $request)
     {
-
         $dto = AppointOfficialDto::fromRequest($request);
 
         $this->appointOfficialUseCase->execute($dto);

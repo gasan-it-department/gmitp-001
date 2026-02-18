@@ -1,4 +1,5 @@
 import Auth from "@/actions/App/External/Api/Controllers/Auth"
+import api from "@/lib/axios"
 import axios from "@/lib/axios"
 import { router } from "@inertiajs/react"
 import { resolve } from "path"
@@ -8,7 +9,7 @@ export const AuthApi = {
 
         const { url, method } = Auth.AuthenticateUserController.login()
 
-        const response = await axios({
+        const response = await api({
             url,
             method,
             data: formData,

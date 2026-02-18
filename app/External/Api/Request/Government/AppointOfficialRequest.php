@@ -28,7 +28,7 @@ class AppointOfficialRequest extends FormRequest
             'position_id' => ['required', 'string', 'exists:positions,id'],
             'actual_start_date' => ['required', 'date'],
             'political_party' => ['nullable', 'string', 'max:100'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
 
             // --- The "Logic Switch" ---
             // If official_id is present, we use an existing person.
