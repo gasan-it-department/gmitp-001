@@ -26,7 +26,8 @@ class FeedbackController extends Controller
             //validate the inputs via request
             $validated = $request->validated();
 
-            $municipalId = app('municipal_id');
+
+            $municipality = app('current_municipality');
 
             //ternary check if file exist in the request 
             $files = $request->hasFile('feedback_files') ? $request->file('feedback_files') : [];
@@ -41,8 +42,9 @@ class FeedbackController extends Controller
                 message: $validated['feedback_message'],
                 feedbackFiles: $files,
                 ipAddress: $request->ip(),
-                municipalId: $municipalId,
+                municipalId: $municipality->id,
                 userAgent: $request->userAgent(),
+                municipalName: $municipality->name,
             );
             // call the service to process the feedback of citizen
             $feedback = $this->feedbackService->execute($dto);

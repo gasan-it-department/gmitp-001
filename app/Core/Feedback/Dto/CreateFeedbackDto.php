@@ -18,6 +18,7 @@ class CreateFeedbackDto
         public string $ipAddress,
         public string $userAgent,
         public string $municipalId,
+        public string $municipalName,
         public ?string $id = null,
 
     ) {
