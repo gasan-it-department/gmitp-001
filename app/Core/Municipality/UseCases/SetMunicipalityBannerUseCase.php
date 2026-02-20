@@ -36,9 +36,13 @@ class SetMunicipalityBannerUseCase
 
         if ($dto->homeBanners) {
 
+            $folder = $this->fileUplaod->getFolderPath($dto->municipalId, 'municipal-settings');
+
             $uploadResults = $this->fileUplaod->uploadFiles(
                 $dto->homeBanners,
-                'municipal_banners'
+                $folder,
+                null,
+                false,
             );
 
             $bannerId = $this->idGenerator->generate();
