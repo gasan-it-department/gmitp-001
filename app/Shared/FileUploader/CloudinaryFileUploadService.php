@@ -59,6 +59,18 @@ class CloudinaryFileUploadService implements FileUploadInterface
 
     }
 
+    public function getFolderPath(string $municipalId, string $module, ?string $subFolderId = null): string
+    {
+        $root = config('filesystems.disks.cloudinary.root');
+        $path = "{$root}/municipal-id-{$municipalId}/{$module}";
+
+        if ($subFolderId) {
+            $path .= "/{$subFolderId}";
+        }
+
+        return $path;
+    }
+
     public function delete(string $publicId)
     {
 

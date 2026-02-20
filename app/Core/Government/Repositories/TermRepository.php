@@ -91,7 +91,7 @@ class TermRepository
     public function findById(string $termId)
     {
 
-        return Term::find($termId);
+        return Term::findOrFail($termId);
 
     }
 

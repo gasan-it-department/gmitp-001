@@ -1,10 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
+use App\External\Api\Controllers\Municipality\Logo\SetMunicipalityLogoController;
+use App\External\Api\Controllers\Municipality\Logo\UpdateMunicipalityLogoController;
 use App\External\Api\Controllers\Municipality\MunicipalityController;
-use App\External\Web\Controllers\Municipality\MunicipalityAdminController;
 use App\External\Api\Controllers\Municipality\MunicipalitySettingsController;
+use App\External\Web\Controllers\Municipality\MunicipalityAdminController;
+use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('municipality')
     ->as('municipality.')
@@ -54,10 +56,15 @@ Route::prefix('{municipality}/municipality-editor')
 //api for municipality settings
 Route::prefix('api/municipality')
     ->middleware(['municipalityContext', 'admin'])
-    ->name('municipality.admin')
+    ->name('municipality.admin.')
     ->controller(MunicipalitySettingsController::class)
     ->group(function () {
 
+        //for logo create and update route
+        Route::post('/store-logo', SetMunicipalityLogoController::class)->name('store.logo');
+        Route::post('/update-logo', UpdateMunicipalityLogoController::class)->name('update.logo');
+        //
+    
         Route::post('/', 'store')->name('setSettings');
 
         Route::patch('/update/{id}', 'updateSettings')->name('updateSettings');
