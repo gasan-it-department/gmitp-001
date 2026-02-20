@@ -2,12 +2,12 @@
 
 namespace App\Core\Municipality\UseCases;
 
-use App\Core\Municipality\Dto\SetMunicipalitySettingDto;
+use App\Core\Municipality\Dto\SetMunicipalityLogoDto;
 use App\Core\Municipality\Repositories\MunicipalitySettingRepository;
 use App\Shared\FileUploader\CloudinaryFileUploadService;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 
-class SetMunicipalitySettingsUseCase
+class SetMunicipalityLogoUseCase
 {
 
     public function __construct(
@@ -21,26 +21,24 @@ class SetMunicipalitySettingsUseCase
     ) {
     }
 
-    public function execute(SetMunicipalitySettingDto $dto)
+    public function execute(SetMunicipalityLogoDto $dto)
     {
-
         $municipalitSettingsId = $this->idGenerator->generate();
-
 
         $fileData = null;
 
-        if ($dto->municiplaLogo) {
+        if ($dto->municipalLogo) {
+            // RECOMMENDATION: Keep the 'muni-id-' prefix for clarity in dashboard
+            $folder = $this->cloudinaryFileUploadService->getFolderPath($dto->municipalId, 'municipal-settings');
 
             $fileData = $this->cloudinaryFileUploadService->uploadFiles(
-                $dto->municiplaLogo,
-                'municipal_logo'
+                $dto->municipalLogo,
+                $folder,
+                'logo',
+                true
             );
-
         }
 
-        $this->municipalitySettingRepository->save($dto, $municipalitSettingsId, $fileData);
-
-
+        $this->municipalitySettingRepository->saveLogo($dto, $municipalitSettingsId, $fileData);
     }
-
 }

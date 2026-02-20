@@ -2,40 +2,35 @@
 
 namespace App\Core\Municipality\Repositories;
 
+use App\Core\Municipality\Dto\SetMunicipalityLogoDto;
 use App\Core\Municipality\Dto\UpdateMunicipalitySettingsDto;
 use App\Core\Municipality\Models\MunicipalitySettings;
-use App\Core\Municipality\Dto\SetMunicipalitySettingDto;
 
 class MunicipalitySettingRepository
 {
 
-    public function save(SetMunicipalitySettingDto $dto, string $municipalSettingsId, array $fileData)
+    // FIX 1: Add '?' before array to allow nulls
+    public function saveLogo(SetMunicipalityLogoDto $dto, string $municipalSettingsId, ?array $fileData)
     {
-
         $settings = MunicipalitySettings::firstOrNew([
-
             'municipal_id' => $dto->municipalId
-
         ]);
 
         if (!$settings->exists) {
-
             $settings->id = $municipalSettingsId;
-
         }
 
         $settings->user_id = $dto->userId;
 
-        if (!empty($fileData['public_id'])) {
-
+        // FIX 2: Check if fileData exists, then save BOTH fields
+        if ($fileData) {
             $settings->logo_public_id = $fileData['public_id'];
-
+            $settings->logo_secure_url = $fileData['secure_url'];
         }
 
         $settings->save();
 
         return $settings;
-
     }
 
     public function findById(string $settingsId)

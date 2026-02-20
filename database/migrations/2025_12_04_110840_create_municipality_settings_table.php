@@ -20,9 +20,11 @@ return new class extends Migration {
 
             $table->foreignUlid('user_id')
                 ->constrained('users')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
 
             $table->string('logo_public_id')->nullable();
+
+            $table->string('logo_secure_url')->nullable();
 
             $table->timestamps();
         });
@@ -34,6 +36,10 @@ return new class extends Migration {
             $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')
                 ->cascadeOnDelete();
+
+            $table->foreignUlid('user_id')
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->string('public_id');
 

@@ -27,15 +27,18 @@ class MunicipalitySettings extends Model
 
     public function getLogoUrlAttribute(): ?string
     {
-
         if (!$this->logo_public_id) {
-
             return null;
-
         }
+
+        // We add ?t= and the updated_at timestamp. 
+        // When the row updates, the 't' changes, and the browser refreshes the image.
+        $timestamp = $this->updated_at ? $this->updated_at->timestamp : time();
+
         return "https://res.cloudinary.com/" . config('cloudinary.cloud_name') .
             "/image/upload/f_auto,q_auto,w_500,c_limit/" .
-            $this->logo_public_id;
+            $this->logo_public_id .
+            "?t=" . $timestamp;
 
     }
 

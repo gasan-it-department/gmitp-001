@@ -24,6 +24,8 @@ class MunicipalityBanner extends Model
 
         'position',
 
+        'user_id',
+
     ];
 
     public function getBannerUrlAttribute(): ?string

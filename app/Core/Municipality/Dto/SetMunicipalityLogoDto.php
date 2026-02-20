@@ -1,9 +1,10 @@
 <?php
 
 namespace App\Core\Municipality\Dto;
+
 use Illuminate\Http\UploadedFile;
 
-class SetMunicipalitySettingDto
+class SetMunicipalityLogoDto
 {
 
     public function __construct(
@@ -12,7 +13,9 @@ class SetMunicipalitySettingDto
 
         public string $userId,
 
-        public ?UploadedFile $municiplaLogo = null,
+        public ?UploadedFile $municipalLogo = null,
+
+        // public ?string $settingsId = null,
 
     ) {
     }

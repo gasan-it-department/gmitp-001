@@ -13,7 +13,9 @@ class UpdateMunicipalitySettingsDto
 
         public string $userId,
 
-        public ?UploadedFile $logoImage = null
+        public ?UploadedFile $logoImage = null,
+
+        public string $municipalId,
 
     ) {
     }

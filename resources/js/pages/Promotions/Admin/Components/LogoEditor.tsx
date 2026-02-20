@@ -9,9 +9,9 @@ import { toast } from 'sonner';
 
 export default function LogoEditor() {
     const logoInputRef = useRef<HTMLInputElement>(null);
-
     // Get settingsId from context (it will be undefined/null on fresh deploy)
     const { currentMunicipality, logoUrl: persistedLogoUrl, settingsId } = useMunicipality();
+    console.log(persistedLogoUrl);
 
     const [localLogoUrl, setLocalLogoUrl] = useState<string | null>(persistedLogoUrl);
     const [isUploading, setIsUploading] = useState(false);
@@ -43,7 +43,7 @@ export default function LogoEditor() {
             if (settingsId) {
                 // CASE A: UPDATE (Settings exist, we have an ID)
                 console.log('Updating existing logo...');
-                await MunicipalitiesApi.updateMunicipalitySettings(currentMunicipality.slug, settingsId, { logo: file });
+                await MunicipalitiesApi.updateMunicipalityLogo(currentMunicipality.slug, { logo: file });
             } else {
                 // CASE B: CREATE (Fresh deploy, no ID yet)
                 console.log('Uploading fresh logo...');
@@ -52,7 +52,7 @@ export default function LogoEditor() {
                 // Ensure this key ('logo') matches what your Store Controller expects!
                 formData.append('logo', file);
 
-                await MunicipalitiesApi.uploadMunicipalSettings(currentMunicipality.slug, formData);
+                await MunicipalitiesApi.uploadMunicipalLogo(currentMunicipality.slug, formData);
             }
 
             // ---------------------------------------------------------
