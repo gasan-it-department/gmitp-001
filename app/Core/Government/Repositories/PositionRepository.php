@@ -12,7 +12,7 @@ class PositionRepository
 
         return DB::table('positions')
             ->orderBy('rank', 'asc')
-            ->get(['id', 'title']);
+            ->get();
 
     }
 

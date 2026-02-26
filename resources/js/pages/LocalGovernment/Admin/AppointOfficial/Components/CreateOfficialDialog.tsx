@@ -17,7 +17,7 @@ interface CreateOfficialForm {
 
 interface Props {
     onCancel: (reason: string) => void;
-    onSuccess: (official: any) => void;
+    onSuccess: (official: Official) => void;
     prefillName?: string;
 }
 
@@ -25,7 +25,6 @@ export const CreateOfficialDialog = ({ onSuccess, onCancel, prefillName }: Props
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const { currentMunicipality } = useMunicipality();
-
     const {
         register,
         handleSubmit,
@@ -70,8 +69,7 @@ export const CreateOfficialDialog = ({ onSuccess, onCancel, prefillName }: Props
 
             const response = await GovernmentApi.StoreOfficial(formData, currentMunicipality.slug);
 
-            console.log(response);
-            onSuccess(response);
+            onSuccess(response.data);
         } catch (error) {
             console.error('Failed to create official', error);
         }
@@ -186,6 +184,7 @@ export const CreateOfficialDialog = ({ onSuccess, onCancel, prefillName }: Props
             {/* FOOTER ACTIONS */}
             <div className="flex items-center justify-end gap-3 border-t pt-6">
                 <button
+                    disabled={isSubmitting}
                     type="button"
                     onClick={() => {
                         onCancel('User clicked back');

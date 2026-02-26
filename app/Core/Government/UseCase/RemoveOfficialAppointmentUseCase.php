@@ -4,21 +4,18 @@ namespace App\Core\Government\UseCase;
 
 use App\Core\Government\Repositories\OfficialTermRepository;
 
-class GetOfficialTermUseCase
+class RemoveOfficialAppointmentUseCase
 {
 
     public function __construct(
-
         private OfficialTermRepository $officialTermRepo,
-
-
     ) {
     }
 
-    public function execute(string $termId)
+    public function execute(string $id, string $municipalId)
     {
 
-        return $this->officialTermRepo->getRosterByTerm($termId);
+        return $this->officialTermRepo->delete($id, $municipalId);
 
     }
 

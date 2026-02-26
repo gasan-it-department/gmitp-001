@@ -192,7 +192,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Officials Directory',
-                    url: government.admin.terms.page.url({ municipality: currentMunicipality.slug }),
+                    url: government.admin.officials.page.url({ municipality: currentMunicipality.slug }),
                     icon: Contact,
                     permission: 'public_information.access',
                 },
@@ -243,7 +243,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 <SidebarMenu>
                     <SidebarMenuItem>
                         {/* Hover state uses sidebar-accent variables */}
-                        <SidebarMenuButton size="lg" asChild className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="w-full rounded-xl pt-8 pb-8 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        >
                             <a href="#" className="flex items-center gap-3">
                                 {/* Icon Box: Uses 'sidebar-primary' (Usually Dark/Black) */}
                                 <div className="flex aspect-square size-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
@@ -289,10 +293,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                 <SidebarMenuSubButton
                                                     asChild
                                                     // Active/Inactive Logic updated to Sidebar Theme
-                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${isActive
-                                                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm'
-                                                            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-[2px]'
-                                                        }`}
+                                                    className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
+                                                        isActive
+                                                            ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm'
+                                                            : 'text-sidebar-foreground/80 hover:translate-x-[2px] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                                                    }`}
                                                 >
                                                     <a
                                                         onClick={() => handleLinkClick(sub.url)}
@@ -300,10 +305,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     >
                                                         <SubIcon
                                                             size={14}
-                                                            className={`transition-all duration-200 ease-out ${isActive
+                                                            className={`transition-all duration-200 ease-out ${
+                                                                isActive
                                                                     ? 'scale-110 text-sidebar-primary'
-                                                                    : 'text-muted-foreground group-hover:text-sidebar-primary group-hover:scale-110'
-                                                                }`}
+                                                                    : 'text-muted-foreground group-hover:scale-110 group-hover:text-sidebar-primary'
+                                                            }`}
                                                         />
                                                         <span>{sub.title}</span>
                                                     </a>

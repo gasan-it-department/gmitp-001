@@ -3,7 +3,7 @@ import { usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner'; // Assuming you use a toast library like Sonner or React-Hot-Toast
 
-export const FlashMessage = () => {
+export const FlashHandler = () => {
     // 1. Get the flash data shared from Laravel
     const { flash } = usePage<any>().props;
 

@@ -2,8 +2,11 @@
 
 use App\External\Api\Controllers\Government\Official\SearchOfficialsController;
 use App\External\Api\Controllers\Government\Official\StoreOfficialController;
+use App\External\Api\Controllers\Government\OfficialTerms\AppointOfficialController;
+use App\External\Api\Controllers\Government\OfficialTerms\RemoveOfficialAppointmentController;
 use App\External\Api\Controllers\Government\Terms\CreateTermController;
 use App\External\Api\Controllers\Government\Terms\UpdateTermController;
+use App\External\Web\Controllers\LocalGovernment\Admin\ListOfficialsController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowAppointOfficialController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowTermController;
@@ -38,8 +41,8 @@ Route::prefix('{municipality}/government')
             ->name('officials.')
             ->group(function () {
 
-            // Route::get('/', )->name('page');
-    
+            Route::get('/', ListOfficialsController::class)->name('page');
+
         });
 
 
@@ -69,6 +72,10 @@ Route::prefix('api/government')
                 Route::post('/', StoreOfficialController::class)->name('store');
 
                 Route::get('/search-official', SearchOfficialsController::class)->name('search');
+
+                Route::post('appoint-official', AppointOfficialController::class)->name('appoint');
+
+                Route::delete('delete/appointed-official/{id}', RemoveOfficialAppointmentController::class)->name('delete');
 
             });
 

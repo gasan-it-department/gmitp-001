@@ -5,6 +5,7 @@ namespace App\External\Api\Controllers\Government\Official;
 use App\Core\Government\Dto\AddOfficialDto;
 use App\Core\Government\UseCase\AddOfficialUseCase;
 use App\External\Api\Request\Government\OfficialRequest;
+use App\External\Api\Resources\Government\OfficialResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -26,7 +27,7 @@ class StoreOfficialController extends Controller
         return response()->json([
             'success' => true,
 
-            'data' => $official,
+            'data' => new OfficialResource($official),
 
             'message' => 'Official created successfully'
         ]);

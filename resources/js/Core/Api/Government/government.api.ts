@@ -4,14 +4,17 @@ import axios from "axios";
 
 export const GovernmentApi = {
 
-    async SearhOfficial(query: string) {
+    async SearhOfficial(query: string, municipalSlug: string) {
 
         const { url, method } = Government.Official.SearchOfficialsController();
-
+        console.log(url);
         const response = await axios({
             url,
             method,
-            params: { query }
+            params: { query },
+            headers: {
+                'X-Municipality-Slug': municipalSlug
+            },
         })
 
         return response.data.data;
@@ -21,7 +24,6 @@ export const GovernmentApi = {
     async StoreOfficial(formData: any, municipalSlug: string) {
 
         const { url, method } = Government.Official.StoreOfficialController();
-
         const { data } = await axios({
             url,
             method,

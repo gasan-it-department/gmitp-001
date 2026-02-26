@@ -8,7 +8,6 @@ import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
-import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
 import { Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -298,9 +297,6 @@ export default function AnnouncementPageTable() {
                 itemsPerPage={perPage}
                 onPageChange={setCurrentPage}
             />
-
-            <ToastProvider />
-
             {/* DIALOGS */}
             <AddEditAnnouncementDialog
                 editData={addEditDialog.editData}

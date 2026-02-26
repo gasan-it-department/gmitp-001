@@ -3,29 +3,34 @@ import AppLayout from '@/layouts/App/AppLayout';
 import { Building2, Calendar, CheckCircle2, History, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { AppointOfficialDialog } from './Components/AppointOfficialDialog';
+import { ManageAppointmentDialog } from './Components/ManageAppointmentDialog';
 import { RosterCard } from './Components/RosterCard';
 
 // Assuming you have these dialogs or will create them next
 
 interface Props {
     term: { data: Term };
-    positions: Position[];
+    positions: { data: Position[] };
     municipality: MunicipalityType;
+    appointment: { data: OfficialTerm[] };
 }
 
-export default function TermDetails({ term, positions, municipality }: Props) {
+export default function TermDetails({ term, positions, municipality, appointment }: Props) {
     const termDetails = term.data;
+    const positionsData = positions.data;
+    const roster = appointment.data;
 
     // --- STATE: The "Context" for our Modal ---
     const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
     const [isAppointOpen, setIsAppointOpen] = useState(false);
+    const [isManageOpen, setIsManageOpen] = useState(false);
 
     // --- LOGIC: Sort the Roster (The "Org Chart" Logic) ---
     // This assumes standard naming. Adjust filters if your DB titles are different.
-    const mayor = positions.find((p) => p.title.includes('Mayor') && !p.title.includes('Vice'));
-    const viceMayor = positions.find((p) => p.title.includes('Vice Mayor'));
-    const councilors = positions.filter((p) => p.title.includes('Sangguniang') || p.title.includes('Councilor'));
-    const exOfficios = positions.filter((p) => p.title.includes('ABC') || p.title.includes('SK'));
+    const mayor = positionsData.find((p) => p.title.includes('Mayor') && !p.title.includes('Vice'));
+    const viceMayor = positionsData.find((p) => p.title.includes('Vice Mayor'));
+    const councilors = positionsData.filter((p) => p.title.includes('Sangguniang') || p.title.includes('Councilor'));
+    const exOfficios = positionsData.filter((p) => p.title.includes('ABC') || p.title.includes('SK'));
 
     // --- HELPER: Date Formatter ---
     const formatDate = (dateString: string) => {
@@ -38,6 +43,26 @@ export default function TermDetails({ term, positions, municipality }: Props) {
 
     const handleRosterCardClick = (pos: Position) => {
         console.log('Chef received order for:', pos.title);
+    };
+
+    const getAppointmentForPosition = (positionId: string) => {
+        return roster.find((appt) => appt.position?.id === positionId) || null;
+    };
+
+    const getOfficialForPosition = (positionId: string) => {
+        const appointment = roster.find((appt) => appt.position?.id === positionId);
+        return appointment?.official;
+    };
+    const handleCardClick = (pos: Position) => {
+        setSelectedPosition(pos);
+        const isOccupied = getOfficialForPosition(pos.id);
+        if (isOccupied) {
+            setIsManageOpen(true);
+            setIsAppointOpen(false);
+        } else {
+            setIsAppointOpen(true);
+            setIsManageOpen(false);
+        }
     };
     return (
         <AppLayout>
@@ -91,7 +116,7 @@ export default function TermDetails({ term, positions, municipality }: Props) {
                                 <UserPlus className="h-5 w-5" />
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-gray-900">{positions.length}</p>
+                        <p className="text-2xl font-bold text-gray-900">{positionsData.length}</p>
                     </div>
                 </div>
                 {/* --- 3. THE ROSTER GRID (The "Command Center") --- */}
@@ -109,15 +134,7 @@ export default function TermDetails({ term, positions, municipality }: Props) {
                     <div className="flex justify-center">
                         <div className="w-full max-w-md">
                             {mayor && (
-                                <RosterCard
-                                    position={mayor}
-                                    official={mayor?.official}
-                                    onClick={(pos) => {
-                                        setSelectedPosition(pos);
-                                        setIsAppointOpen(true);
-                                        handleRosterCardClick(pos);
-                                    }}
-                                />
+                                <RosterCard position={mayor} official={getOfficialForPosition(mayor.id)} onClick={() => handleCardClick(mayor)} />
                             )}
                         </div>
                     </div>
@@ -139,12 +156,8 @@ export default function TermDetails({ term, positions, municipality }: Props) {
                             {viceMayor && (
                                 <RosterCard
                                     position={viceMayor}
-                                    official={viceMayor?.official}
-                                    onClick={(pos) => {
-                                        handleRosterCardClick(pos);
-                                        setSelectedPosition(pos);
-                                        setIsAppointOpen(true);
-                                    }}
+                                    official={getOfficialForPosition(viceMayor.id)}
+                                    onClick={() => handleCardClick(viceMayor)}
                                 />
                             )}
                         </div>
@@ -152,12 +165,12 @@ export default function TermDetails({ term, positions, municipality }: Props) {
                         {/* Councilors Grid */}
                         <div className="w-full">
                             <div className="mb-4 text-center text-xs font-medium text-gray-400">Sangguniang Bayan Members</div>
-                            {/* <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-                                {councilors.map((pos) => (
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+                                {/* {councilors.map((pos) => (
                                     // <RosterCard key={pos.id} position={pos} />
                                     <div></div>
-                                ))}
-                            </div> */}
+                                ))} */}
+                            </div>
                         </div>
 
                         {/* Ex-Officios */}
@@ -176,15 +189,8 @@ export default function TermDetails({ term, positions, municipality }: Props) {
                     </div>
                 </div>
                 {/* --- 4. THE MODAL LOGIC (Hidden) --- */}
-                {/* When this logic is ready, it will look like this: */}
-                {/* <AppointOfficialDialog 
-                    isOpen={isAppointOpen}
-                    onClose={() => setIsAppointOpen(false)}
-                    position={selectedPosition} // It knows we clicked "Mayor"
-                    term={termDetails}
-                /> 
-                */}
                 <AppointOfficialDialog
+                    term={termDetails}
                     isOpen={isAppointOpen}
                     onClose={() => {
                         setIsAppointOpen(false);
@@ -192,6 +198,16 @@ export default function TermDetails({ term, positions, municipality }: Props) {
                     }}
                     position={selectedPosition}
                 />
+                {selectedPosition && getAppointmentForPosition(selectedPosition.id) && (
+                    <ManageAppointmentDialog
+                        isOpen={isManageOpen}
+                        appointment={getAppointmentForPosition(selectedPosition.id)!}
+                        onClose={() => {
+                            setIsManageOpen(false);
+                            setSelectedPosition(null);
+                        }}
+                    />
+                )}
             </div>
         </AppLayout>
     );

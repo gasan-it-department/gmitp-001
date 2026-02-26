@@ -4,8 +4,8 @@ namespace App\External\Api\Controllers\Government\OfficialTerms;
 
 use App\Core\Government\Dto\AppointOfficialDto;
 use App\Core\Government\UseCase\AppointOfficialUseCase;
-use App\Http\Requests\AppointOfficialRequest;
-use Illuminate\Http\RedirectResponse;
+use App\External\Api\Request\Government\AppointOfficialRequest;
+
 class AppointOfficialController
 {
 
@@ -18,6 +18,7 @@ class AppointOfficialController
 
     public function __invoke(AppointOfficialRequest $request)
     {
+
         $dto = AppointOfficialDto::fromRequest($request);
 
         $this->appointOfficialUseCase->execute($dto);

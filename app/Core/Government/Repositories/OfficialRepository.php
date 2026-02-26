@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class OfficialRepository
 {
 
-    public function addOfficial(AddOfficialDto $dto, string $officialId, string $profileUrl, string $imgPublicId)
+    public function addOfficial(AddOfficialDto $dto, string $officialId, ?string $profileUrl, ?string $imgPublicId)
     {
 
         return Official::create([
@@ -24,25 +24,6 @@ class OfficialRepository
             'biography' => $dto->biography,
             'profile_url' => $profileUrl,
             'profile_public_id' => $imgPublicId,
-        ]);
-
-    }
-
-    public function appoint(AppointOfficialDto $dto, string $appointRecordId, $officialId)
-    {
-
-        DB::table('official_terms')->insert([
-            'id',
-            'municipal_id',
-            'term_id',
-            'official_id',
-            'position_id',
-            'actual_start_date',
-            'actual_end_date',
-            'status',
-            'political_party',
-            'profile_url',
-            'profile_public_id',
         ]);
 
     }
@@ -63,17 +44,21 @@ class OfficialRepository
 
     public function search(string $query, string $municipalId)
     {
+        $terms = array_filter(explode(' ', trim($query)));
 
-        return DB::table('officials')
-            ->where('municipal_id', $municipalId)
-            ->where(function ($q) use ($query) {
-                $q->where('first_name', 'like', "%{$query}%")
-                    ->orWhere('last_name', 'like', "%{$query}%")
-                    ->orWhere('middle_name', 'like', "%{$query}%");
+        return Official::query()
+            ->where('municipal_id', $municipalId) // Don't forget the tenant isolation!
+            ->where(function ($q) use ($terms) {
+                foreach ($terms as $term) {
+                    $q->where(function ($sub) use ($term) {
+                        $sub->where('first_name', 'like', "%{$term}%")
+                            ->orWhere('last_name', 'like', "%{$term}%")
+                            ->orWhere('middle_name', 'like', "%{$term}%");
+                    });
+                }
             })
-            ->limit(10)
             ->orderBy('last_name', 'asc')
-            ->get(['id', 'first_name', 'last_name', 'middle_name']);
+            ->limit(10)
+            ->get();
     }
-
 }
