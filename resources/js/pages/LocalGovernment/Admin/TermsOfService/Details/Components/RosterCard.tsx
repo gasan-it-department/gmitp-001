@@ -41,7 +41,7 @@ export const RosterCard = ({ position, official, className = '', onClick }: Rost
                         <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-blue-50 shadow-sm ring-1 ring-gray-100">
                             {/* Replace with <img src={official.photo} /> if available */}
                             {official?.profile_url ? (
-                                <img src={official.profile_url} alt={official.full_name} className="h-full w-full object-cover" />
+                                <img src={official.profile_url} alt={official.formatted_name} className="h-full w-full object-cover" />
                             ) : (
                                 <User className="h-8 w-8 text-blue-600" />
                             )}
@@ -63,7 +63,7 @@ export const RosterCard = ({ position, official, className = '', onClick }: Rost
                     <>
                         <span className="line-clamp-1 px-2 text-sm font-bold text-gray-900">
                             {/* Assuming official has a full_name field, fallback to parts */}
-                            {official?.full_name || `${official?.first_name} ${official?.last_name}`}
+                            {official?.formatted_name || `${official?.first_name} ${official?.last_name}`}
                         </span>
                         <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
                             Active

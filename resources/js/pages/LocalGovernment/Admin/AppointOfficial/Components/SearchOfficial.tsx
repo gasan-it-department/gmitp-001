@@ -1,4 +1,6 @@
-import { ChevronRight, Search, User, UserPlus, X } from 'lucide-react';
+import { GovernmentApi } from '@/Core/Api/Government/government.api';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { ChevronRight, Loader2, Search, User, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 // import { GovernmentApi } from '@/actions/App/External/Api/Controllers/Government'; // Enable this when ready
 
@@ -11,26 +13,41 @@ export const SearchOfficial = ({ onSelect, onCreate }: Props) => {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [results, setResults] = useState<Official[]>([]); // Use real state
-
-    // --- TEMPORARY MOCK DATA (Replace with GovernmentApi call later) ---
-    const mockDatabase = [
-        { id: '1', first_name: 'Juan', last_name: 'Dela Cruz', full_name: 'Juan Dela Cruz', municipality: 'Boac' },
-        { id: '2', first_name: 'Maria', last_name: 'Santos', full_name: 'Maria Santos', municipality: 'Gasan' },
-    ];
+    const { currentMunicipality } = useMunicipality();
+    //for loading effects while searching
+    const [isLoading, setIsLoading] = useState(false);
 
     // Simulating API Search
     useEffect(() => {
         if (!query) {
             setResults([]);
+            setIsLoading(false);
             return;
         }
-        // In real app: const data = await GovernmentApi.searchOfficial(query);
-        const filtered = mockDatabase.filter((p) => p.full_name.toLowerCase().includes(query.toLowerCase()));
-        setResults(filtered as any);
+
+        setIsLoading(true);
+
+        const delayDebounceFn = setTimeout(() => {
+            const fetchOfficials = async () => {
+                try {
+                    const data = await GovernmentApi.SearhOfficial(query, currentMunicipality.slug);
+                    console.log(data.data);
+
+                    setResults(data);
+                } catch (error) {
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            fetchOfficials();
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
     }, [query]);
 
     return (
-        <div className="mx-auto w-full max-w-xl space-y-2">
+        <div className="mx-auto h-full w-full max-w-xl space-y-2">
             <label className="text-sm font-medium text-gray-700">Select Official</label>
 
             <div className="group relative">
@@ -74,31 +91,49 @@ export const SearchOfficial = ({ onSelect, onCreate }: Props) => {
 
                         <ul className="max-h-60 overflow-y-auto">
                             {/* OPTION A: Select Existing */}
-                            {results.map((person) => (
-                                <li key={person.id}>
-                                    <button
-                                        type="button"
-                                        className="group/item flex w-full items-center px-4 py-3 text-left transition-colors hover:bg-blue-50"
-                                        onClick={() => {
-                                            setQuery(person.full_name); // Set input to name
-                                            setIsOpen(false); // Close dropdown
-                                            onSelect(person); // TELL PARENT!
-                                        }}
-                                    >
-                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-100 font-bold text-blue-600">
-                                            <User className="h-5 w-5" />
-                                        </div>
-                                        <div className="ml-4 flex-1">
-                                            <p className="text-sm font-semibold text-gray-900 group-hover/item:text-blue-700">{person.full_name}</p>
-                                            <p className="text-xs text-gray-500">{person.municipality}</p>
-                                        </div>
-                                        <ChevronRight className="h-4 w-4 text-gray-300 group-hover/item:text-blue-400" />
-                                    </button>
+
+                            {isLoading && (
+                                <li className="flex justify-center p-6 text-blue-500">
+                                    <Loader2 className="h-6 w-6 animate-spin" />
                                 </li>
-                            ))}
+                            )}
+
+                            {!isLoading &&
+                                results.map((person) => (
+                                    <li key={person.id}>
+                                        <button
+                                            type="button"
+                                            className="group/item flex w-full items-center px-4 py-3 text-left transition-colors hover:bg-blue-50"
+                                            onClick={() => {
+                                                setQuery(person.formatted_name); // Set input to name
+                                                setIsOpen(false); // Close dropdown
+                                                onSelect(person); // TELL PARENT!
+                                            }}
+                                        >
+                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-100 font-bold text-blue-600">
+                                                {person.profile_url ? (
+                                                    <img
+                                                        src={person.profile_url}
+                                                        alt={person.formatted_name}
+                                                        className="h-full w-full rounded-full object-cover transition-transform duration-300 group-hover/item:scale-110"
+                                                    />
+                                                ) : (
+                                                    <User className="h-5 w-5 text-blue-400" />
+                                                )}
+                                            </div>
+                                            <div className="ml-4 flex-1">
+                                                <p className="text-sm font-semibold text-gray-900 group-hover/item:text-blue-700">
+                                                    {person.formatted_name}
+                                                </p>
+                                                <p className="text-xs text-gray-500">{person.municipality}</p>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 text-gray-300 group-hover/item:text-blue-400" />
+                                        </button>
+                                    </li>
+                                ))}
 
                             {/* OPTION B: Create New */}
-                            {results.length === 0 && (
+                            {!isLoading && results.length === 0 && (
                                 <li className="p-2">
                                     <button
                                         type="button"

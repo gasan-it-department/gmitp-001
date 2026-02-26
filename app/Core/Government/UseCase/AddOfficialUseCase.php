@@ -39,7 +39,7 @@ class AddOfficialUseCase
             $publicId = $result['public_id'];
         }
 
-        return $this->officialRepo->addOfficial($dto, $officialId, $publicId, $profileUrl);
+        return $this->officialRepo->addOfficial($dto, $officialId, $profileUrl, $publicId);
 
     }
 

@@ -8,7 +8,7 @@ interface Official {
     middle_name?: string;
     suffix?: string
     profile_url?: string;
-    full_name?: string;
+    formatted_name: string;
 
 }
 
@@ -21,20 +21,34 @@ interface Appointment {
     actual_end_date: string;
 }
 
+interface OfficialTerm {
+    id: string;
+    status: string | null;
+    actual_start_date: string;
+    actual_end_date: string | null;
+    official?: Official;
+    position?: Position;
+
+}
+
 interface Term {
     id: string;
     municipality?: string | null;
     name: string;
     statutory_start: string;
     statutory_end: string;
-    is_current: boolean;
+    readable_start: string;
+    readable_end: string;
+    is_current?: boolean;
+    label: string;
+    officials_count?: number;
 }
 
 interface Position {
     id: string;
     title: string;
 
-    official?: Official | null;
-    appointment?: Appointment | null;
+    // official?: Official | null;
+    // appointment?: Appointment | null;
 
 }

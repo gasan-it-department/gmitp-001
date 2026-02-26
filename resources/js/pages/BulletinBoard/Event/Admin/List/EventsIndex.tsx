@@ -1,6 +1,6 @@
 import { destroy } from '@/actions/App/External/Api/Controllers/BulletinBoard/EventController';
-import { FlashMessage } from '@/components/Shared/FlashMessage';
 import { Pagination } from '@/components/Shared/Pagination';
+import { Button } from '@/components/ui/button';
 import { EventData, EventFormData } from '@/Core/Types/BulletinBoard/Events';
 import BaseLayout from '@/layouts/App/AppLayout';
 import ClassicDialog from '@/pages/Utility/ClassicDialog'; // Ensure you have this component
@@ -9,7 +9,6 @@ import { useState } from 'react';
 import AddEditEventsDialog from './Components/AddEditEventsDialog';
 import { EventsListHeader } from './Components/EventsListHeader';
 import { EventsTable } from './Components/EventsTable';
-import { Button } from '@/components/ui/button';
 
 interface Props {
     events: {
@@ -43,7 +42,7 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
         isOpen: false,
         title: '',
         message: '',
-        action: () => { },
+        action: () => {},
     });
 
     // --- Handlers ---
@@ -115,9 +114,7 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
                         size="sm"
                         disabled={selectedItems.length === 0}
                         className="bg-red-600 text-white hover:bg-red-700"
-                        onClick={() =>
-                            initiateDelete(selectedItems)
-                        }
+                        onClick={() => initiateDelete(selectedItems)}
                     >
                         Delete ({selectedItems.length}) items
                     </Button>
@@ -161,7 +158,6 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
                 onNegativeClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
             />
             {/* for displaying flash messages */}
-            <FlashMessage />
         </BaseLayout>
     );
 }

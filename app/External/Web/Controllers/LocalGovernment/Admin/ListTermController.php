@@ -22,11 +22,13 @@ class ListTermController extends Controller
 
         $municipalId = app('municipal_id');
 
+        $municipality = app('current_municipality');
+
         $terms = $this->listTermUseCase->execute($municipalId);
 
-        return Inertia::render('LocalGovernment/Admin/PublicOfficials/OfficialsPage', [
+        return Inertia::render('LocalGovernment/Admin/TermsOfService/List/YearTermsList', [
 
-            'sample' => TermResource::collection($terms),
+            'terms' => TermResource::collection($terms),
 
         ]);
     }

@@ -2,10 +2,9 @@
 
 namespace App\Core\Government\Dto;
 
-use App\Core\Municipality\Models\Municipality;
-use App\Http\Requests\AppointOfficialRequest;
-use Illuminate\Http\Request;
+use App\External\Api\Request\Government\AppointOfficialRequest;
 use GuzzleHttp\Psr7\UploadedFile;
+use Illuminate\Http\Request;
 
 class AppointOfficialDto
 {
@@ -18,13 +17,7 @@ class AppointOfficialDto
 
         public string $positionId,
 
-        public ?string $existingOfficialId,
-
-        public ?string $firstName,
-        public ?string $lastName,
-        public ?string $middleName,
-        public ?string $suffix,
-        public ?string $gender,
+        public string $officialId,
 
 
         public string $actualStartDate,
@@ -32,13 +25,6 @@ class AppointOfficialDto
         public ?UploadedFile $photo,
 
     ) {
-    }
-
-    public function isNewOfficial(): bool
-    {
-
-        return $this->existingOfficialId === null;
-
     }
 
     public static function fromRequest(AppointOfficialRequest $request)
@@ -52,17 +38,7 @@ class AppointOfficialDto
 
             positionId: $data['position_id'],
 
-            existingOfficialId: $data['official_id'] ?? null,
-
-            firstName: $data['first_name'] ?? null,
-
-            lastName: $data['last_name'] ?? null,
-
-            middleName: $data['middle_name'] ?? null,
-
-            suffix: $data['suffix'] ?? null,
-
-            gender: $data['gender'] ?? null,
+            officialId: $data['official_id'] ?? null,
 
             actualStartDate: $data['actual_start_date'],
 

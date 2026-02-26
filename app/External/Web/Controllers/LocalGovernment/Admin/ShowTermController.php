@@ -2,11 +2,15 @@
 
 namespace App\External\Web\Controllers\LocalGovernment\Admin;
 
-use Inertia\Inertia;
-use App\Http\Controllers\Controller;
+use App\Core\Government\UseCase\GetOfficialTermUseCase;
 use App\Core\Government\UseCase\GetPositionsUseCase;
 use App\Core\Government\UseCase\GetTermDetailsUseCase;
+use App\External\Api\Resources\Government\OfficialTermResource;
+use App\External\Api\Resources\Government\PositionResource;
 use App\External\Api\Resources\Government\TermResource;
+use App\External\Api\Resources\Municipality\MunicipalityResource;
+use App\Http\Controllers\Controller;
+use Inertia\Inertia;
 
 class ShowTermController extends Controller
 {
@@ -16,6 +20,8 @@ class ShowTermController extends Controller
         private GetTermDetailsUseCase $getTermDetailsUseCase,
 
         private GetPositionsUseCase $getPositionsUseCase,
+
+        private GetOfficialTermUseCase $getOfficialTermUseCase
     ) {
     }
     public function __invoke(string $municipalId, string $termId)
@@ -26,13 +32,17 @@ class ShowTermController extends Controller
 
         $positions = $this->getPositionsUseCase->execute();
 
+        $appointment = $this->getOfficialTermUseCase->execute($termId);
+
         return Inertia::render('LocalGovernment/Admin/TermsOfService/Details/TermDetails', [
 
             'term' => new TermResource($term),
 
-            'positions' => $positions,
+            'positions' => PositionResource::collection($positions),
 
-            'municipality' => $municipality
+            'appointment' => OfficialTermResource::collection($appointment),
+
+            'municipality' => new MunicipalityResource($municipality)
         ]);
     }
 }

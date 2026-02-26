@@ -73,7 +73,7 @@ class TermRepository
 
         return Term::where('municipal_id', $municipalId)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
 
     }
 

@@ -2,14 +2,15 @@
 
 namespace App\Core\Government\UseCase;
 
-use App\Core\Government\Officials\Repositories\OfficialRepositories;
+use App\Core\Government\Repositories\OfficialRepository;
 
-class SearchOfficialsUseCase
+
+class SearchOfficialUseCase
 {
 
     public function __construct(
 
-        private OfficialRepositories $officialRepo,
+        private OfficialRepository $officialRepo,
 
     ) {
     }

@@ -21,13 +21,13 @@ class TermResource extends JsonResource
 
             'name' => $this->name,
 
-            'readable_start' => $this->statutory_start->format('Y-m-d'),
+            'readable_start' => $this->statutory_start->format('M d Y'),
 
-            'readable_end' => $this->statutory_end->format('Y-m-d'),
+            'readable_end' => $this->statutory_end->format('M d Y'),
 
-            'statutory_start' => $this->statutory_start,
+            'statutory_start' => $this->statutory_start->format('Y-m-d'),
 
-            'statutory_end' => $this->statutory_end,
+            'statutory_end' => $this->statutory_end->format('Y-m-d'),
 
             'label' => $this->name . ($this->is_current ? ' (Current)' : ''),
 

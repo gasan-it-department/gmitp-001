@@ -3,6 +3,7 @@
 namespace App\Core\Government\Models;
 
 use App\Core\Government\Models\OfficialTerm;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Official extends Model
@@ -45,10 +46,25 @@ class Official extends Model
 
     }
 
-    public function getFullNameAttribute()
+    public function fullNameWithTitle(): Attribute
     {
 
-        return trim("{$this->first_name} {$this->middle_name} {$this->last_name} {$this->suffix}");
+        return Attribute::make(
+            get: function () {
+
+                $title = 'HON.';
+
+                $parts = array_filter([
+                    $this->first_name,
+                    $this->middle_name ? substr($this->middle_name, 0, 1) . '.' : null,
+                    $this->last_name,
+                    $this->suffix,
+                ]);
+
+                return $title . ' ' . implode(' ', $parts);
+            }
+
+        );
 
     }
 

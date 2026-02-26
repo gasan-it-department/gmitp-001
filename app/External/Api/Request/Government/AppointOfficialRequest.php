@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\External\Api\Request\Government;
 
-use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AppointOfficialRequest extends FormRequest
@@ -26,7 +25,7 @@ class AppointOfficialRequest extends FormRequest
             // --- Context Fields (Always Required) ---
             'term_id' => ['required', 'string', 'exists:terms,id'],
             'position_id' => ['required', 'string', 'exists:positions,id'],
-            'actual_start_date' => ['required', 'date'],
+            'actual_start_date' => ['nullable', 'date'],
             'political_party' => ['nullable', 'string', 'max:100'],
             'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
 
@@ -35,26 +34,6 @@ class AppointOfficialRequest extends FormRequest
             // If it is NOT present, the name fields become mandatory.
             'official_id' => ['nullable', 'string', 'exists:officials,id'],
 
-            'first_name' => [
-                'required_without:official_id',
-                'nullable',
-                'string',
-                'max:100'
-            ],
-            'last_name' => [
-                'required_without:official_id',
-                'nullable',
-                'string',
-                'max:100'
-            ],
-            'middle_name' => ['nullable', 'string', 'max:100'],
-            'suffix' => ['nullable', 'string', 'max:10'],
-            'gender' => [
-                'required_without:official_id',
-                'nullable',
-                'string',
-                Rule::in(['male', 'female', 'other'])
-            ],
         ];
     }
 
@@ -64,9 +43,6 @@ class AppointOfficialRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'first_name.required_without' => 'Please provide a first name or select an existing official.',
-            'last_name.required_without' => 'Please provide a last name if this is a new official.',
-            'gender.required_without' => 'Gender is required for new officials.',
             'term_id.exists' => 'The selected term is invalid.',
             'position_id.exists' => 'The selected position is invalid.',
         ];
