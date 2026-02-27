@@ -1,13 +1,30 @@
+import ConcludeOfficialTermController from '@/actions/App/External/Api/Controllers/Government/OfficialTerms/ConcludeOfficialTermController';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { useForm } from '@inertiajs/react';
 import { PowerOff, TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
 
-export const ConcludeServiceForm = ({ appointment }: { appointment: any }) => {
-    const [endDate, setEndDate] = useState(new Date().toISOString().substring(0, 10));
-    const [reason, setReason] = useState('resigned');
+interface Props {
+    appointment: OfficialTerm;
+    onSuccess: () => void;
+}
 
+export const ConcludeServiceForm = ({ appointment, onSuccess }: Props) => {
+    const { data, setData, put, processing, errors } = useForm({
+        actual_end_date: new Date().toISOString().substring(0, 10),
+        status: 'resigned',
+    });
+
+    const { currentMunicipality } = useMunicipality();
     const handleConclude = () => {
-        // TODO: Call router.put() to ConcludeOfficialTermController
-        console.log('Concluding service:', { endDate, reason });
+        const url = ConcludeOfficialTermController.url(appointment.id);
+
+        put(url, {
+            headers: { 'X-Municipality-Slug': currentMunicipality.slug },
+            onSuccess: () => {
+                onSuccess();
+            },
+        });
+        // console.log('Concluding service:', { endDate, reason });
     };
 
     return (
@@ -27,24 +44,27 @@ export const ConcludeServiceForm = ({ appointment }: { appointment: any }) => {
                     <label className="text-xs font-bold tracking-widest text-slate-500 uppercase">Effective End Date</label>
                     <input
                         type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
+                        value={data.actual_end_date}
+                        onChange={(e) => setData('actual_end_date', e.target.value)}
                         className="w-full rounded-xl border border-slate-200 p-3 text-sm transition-all outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10"
                     />
+                    {errors.actual_end_date && <p className="mt-1 text-xs font-bold text-red-500">{errors.actual_end_date}</p>}
                 </div>
 
                 <div className="space-y-2">
                     <label className="text-xs font-bold tracking-widest text-slate-500 uppercase">Reason for Leaving</label>
                     <select
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
+                        value={data.status}
+                        onChange={(e) => setData('status', e.target.value)}
                         className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm transition-all outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10"
                     >
                         <option value="resigned">Resigned</option>
                         <option value="promoted">Promoted / Transferred</option>
                         <option value="deceased">Deceased</option>
                         <option value="removed">Removed from Office</option>
+                        <option value="others">Others</option>
                     </select>
+                    {errors.status && <p className="mt-1 text-xs font-bold text-red-500">{errors.status}</p>}
                 </div>
             </div>
 

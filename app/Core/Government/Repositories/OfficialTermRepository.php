@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\DB;
 class OfficialTermRepository
 {
 
+    public function findScoped(string $id, string $municipalId)
+    {
+
+        return OfficialTerm::query()
+            ->where('municipal_id', $municipalId)
+            ->findOrFail($id);
+
+    }
+
     public function appoint(AppointOfficialDto $dto, string $appointRecordId)
     {
         return OfficialTerm::create([
@@ -50,5 +59,17 @@ class OfficialTermRepository
             ->delete();
 
     }
+
+    public function update(string $id, string $municipalId, array $data)
+    {
+
+        $officialTerm = $this->findScoped($id, $municipalId);
+
+        $officialTerm->update($data);
+
+        return $officialTerm;
+
+    }
+
 
 }

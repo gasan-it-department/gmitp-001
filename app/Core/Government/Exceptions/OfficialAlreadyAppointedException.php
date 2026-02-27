@@ -2,28 +2,26 @@
 
 namespace App\Core\Government\Exceptions;
 
-use DomainException;
-use Illuminate\Validation\ValidationException;
+use App\Shared\Exceptions\Interfaces\DomainException;
+
+
 class OfficialAlreadyAppointedException extends DomainException
 {
 
-    public function __construct()
-    {
-
-        parent::__construct("Official already assigned to this term.");
-
+    public function __construct(
+        string $message = "This official is already assigned to this term."
+    ) {
+        parent::__construct($message);
     }
 
-    public function render($request)
+    public function status(): int
     {
+        return 409;
+    }
 
-        if ($request->header('X-Inertia')) {
-            throw ValidationException::withMessages([
-                'official_id' => $this->getMessage(),
-            ]);
-        }
-
-        return false;
+    public function errorCode(): string
+    {
+        return 'OFFICIAL_ALREADY_APPOINTED';
     }
 
 }

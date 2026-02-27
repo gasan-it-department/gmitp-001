@@ -81,7 +81,7 @@ export const ManageAppointmentDialog = ({ isOpen, onClose, appointment }: Props)
                         <div className="flex-1 overflow-y-auto p-6">
                             {view === 'overview' && <AppointmentOverview appointment={appointment} />}
                             {view === 'edit' && <EditAppointmentForm appointment={appointment} />}
-                            {view === 'conclude' && <ConcludeServiceForm appointment={appointment} />}
+                            {view === 'conclude' && <ConcludeServiceForm appointment={appointment} onSuccess={onClose} />}
                         </div>
                     </div>
                 </div>
