@@ -4,7 +4,6 @@ namespace App\Core\Government\Repositories;
 
 use App\Core\Government\Dto\AppointOfficialDto;
 use App\Core\Government\Models\OfficialTerm;
-use Illuminate\Support\Facades\DB;
 
 class OfficialTermRepository
 {

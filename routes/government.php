@@ -5,6 +5,8 @@ use App\External\Api\Controllers\Government\Official\StoreOfficialController;
 use App\External\Api\Controllers\Government\OfficialTerms\AppointOfficialController;
 use App\External\Api\Controllers\Government\OfficialTerms\ConcludeOfficialTermController;
 use App\External\Api\Controllers\Government\OfficialTerms\RemoveOfficialAppointmentController;
+use App\External\Api\Controllers\Government\OfficialTerms\UpdateActiveAppointmentController;
+use App\External\Api\Controllers\Government\OfficialTerms\UpdateHistoricalAppointmentController;
 use App\External\Api\Controllers\Government\Terms\CreateTermController;
 use App\External\Api\Controllers\Government\Terms\UpdateTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListOfficialsController;
@@ -79,6 +81,11 @@ Route::prefix('api/government')
                 Route::delete('delete/appointed-official/{id}', RemoveOfficialAppointmentController::class)->name('delete');
 
                 Route::put('conclude-official/{id}', ConcludeOfficialTermController::class)->name('conclude');
+
+                Route::put('update-appointment-history/{id}', UpdateHistoricalAppointmentController::class)->name('update.history');
+
+                Route::patch('update-active-appointment/{id}', UpdateActiveAppointmentController::class)->name('update.active.appointment');
+
             });
 
     });

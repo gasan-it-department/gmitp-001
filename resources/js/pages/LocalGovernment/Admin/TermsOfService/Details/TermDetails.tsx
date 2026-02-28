@@ -32,6 +32,11 @@ export default function TermDetails({ term, positions, municipality, appointment
     const councilors = positionsData.filter((p) => p.title.includes('Sangguniang') || p.title.includes('Councilor'));
     const exOfficios = positionsData.filter((p) => p.title.includes('ABC') || p.title.includes('SK'));
 
+    const getOrdinalRank = (n: number) => {
+        const s = ['th', 'st', 'nd', 'rd'];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
     // --- HELPER: Date Formatter ---
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -41,21 +46,9 @@ export default function TermDetails({ term, positions, municipality, appointment
         });
     };
 
-    const handleRosterCardClick = (pos: Position) => {
-        console.log('Chef received order for:', pos.title);
-    };
-
-    const getAppointmentForPosition = (positionId: string) => {
-        return roster.find((appt) => appt.position?.id === positionId) || null;
-    };
-
-    const getOfficialForPosition = (positionId: string) => {
-        const appointment = roster.find((appt) => appt.position?.id === positionId);
-        return appointment?.official;
-    };
     const handleCardClick = (pos: Position) => {
         setSelectedPosition(pos);
-        const isOccupied = getOfficialForPosition(pos.id);
+        const isOccupied = getActiveAppointment(pos.id);
         if (isOccupied) {
             setIsManageOpen(true);
             setIsAppointOpen(false);
@@ -63,6 +56,21 @@ export default function TermDetails({ term, positions, municipality, appointment
             setIsAppointOpen(true);
             setIsManageOpen(false);
         }
+    };
+
+    //this func for RosterCard just read the code
+    const getActiveAppointment = (positionId: string) => {
+        return roster.find((appt) => appt.position?.id === positionId && appt.actual_end_date === null);
+    };
+    //this is for appointment history of official in one term
+    const getHistoryForPosition = (positionId: string) => {
+        return roster
+            .filter((appt) => appt.position?.id === positionId && appt.actual_end_date !== null)
+            .sort((a, b) => {
+                const dateA = new Date(a.actual_end_date!).getTime();
+                const dateB = new Date(b.actual_end_date!).getTime();
+                return dateB - dateA;
+            });
     };
     return (
         <AppLayout>
@@ -134,7 +142,11 @@ export default function TermDetails({ term, positions, municipality, appointment
                     <div className="flex justify-center">
                         <div className="w-full max-w-md">
                             {mayor && (
-                                <RosterCard position={mayor} official={getOfficialForPosition(mayor.id)} onClick={() => handleCardClick(mayor)} />
+                                <RosterCard
+                                    position={mayor}
+                                    official={getActiveAppointment(mayor.id)?.official}
+                                    onClick={() => handleCardClick(mayor)}
+                                />
                             )}
                         </div>
                     </div>
@@ -156,7 +168,7 @@ export default function TermDetails({ term, positions, municipality, appointment
                             {viceMayor && (
                                 <RosterCard
                                     position={viceMayor}
-                                    official={getOfficialForPosition(viceMayor.id)}
+                                    official={getActiveAppointment(viceMayor.id)?.official}
                                     onClick={() => handleCardClick(viceMayor)}
                                 />
                             )}
@@ -164,12 +176,24 @@ export default function TermDetails({ term, positions, municipality, appointment
 
                         {/* Councilors Grid */}
                         <div className="w-full">
-                            <div className="mb-4 text-center text-xs font-medium text-gray-400">Sangguniang Bayan Members</div>
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-                                {/* {councilors.map((pos) => (
-                                    // <RosterCard key={pos.id} position={pos} />
-                                    <div></div>
-                                ))} */}
+                            <div className="mb-6 text-center text-xs font-bold tracking-widest text-gray-400 uppercase">
+                                Sangguniang Bayan Members (Councilors)
+                            </div>
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                                {councilors.map((pos, index) => (
+                                    <div key={pos.id} className="relative mt-3">
+                                        {/* THE RANKING BADGE */}
+                                        <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-slate-800 px-3 py-0.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm ring-4 ring-white">
+                                            {getOrdinalRank(index + 1)} Rank
+                                        </div>
+
+                                        <RosterCard
+                                            position={pos}
+                                            official={getActiveAppointment(pos.id)?.official}
+                                            onClick={() => handleCardClick(pos)}
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -177,13 +201,18 @@ export default function TermDetails({ term, positions, municipality, appointment
                         {exOfficios.length > 0 && (
                             <div className="w-full border-t border-dashed pt-6">
                                 <div className="mb-4 text-center text-xs font-medium text-gray-400">Ex-Officio Members</div>
-                                {/* <div className="flex flex-wrap justify-center gap-6">
+                                <div className="flex flex-wrap justify-center gap-6">
                                     {exOfficios.map((pos) => (
                                         <div key={pos.id} className="w-full sm:w-64">
-                                            <RosterCard key={pos.id} position={pos} />
+                                            <RosterCard
+                                                key={pos.id}
+                                                position={pos}
+                                                official={getActiveAppointment(pos.id)?.official}
+                                                onClick={() => handleCardClick(pos)}
+                                            />
                                         </div>
                                     ))}
-                                </div> */}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -198,10 +227,11 @@ export default function TermDetails({ term, positions, municipality, appointment
                     }}
                     position={selectedPosition}
                 />
-                {selectedPosition && getAppointmentForPosition(selectedPosition.id) && (
+                {selectedPosition && getActiveAppointment(selectedPosition.id) && (
                     <ManageAppointmentDialog
                         isOpen={isManageOpen}
-                        appointment={getAppointmentForPosition(selectedPosition.id)!}
+                        history={getHistoryForPosition(selectedPosition.id)!}
+                        appointment={getActiveAppointment(selectedPosition.id)!}
                         onClose={() => {
                             setIsManageOpen(false);
                             setSelectedPosition(null);

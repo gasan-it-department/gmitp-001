@@ -20,7 +20,7 @@ class OfficialTermResource extends JsonResource
             'status' => $this->status,
             'actual_start_date' => $this->actual_start_date,
             'actual_end_date' => $this->actual_end_date,
-
+            'remarks' => $this->remarks,
             // 2. The Official (Using the existing OfficialResource for consistency)
             // This ensures things like 'formatted_name' are included!
             'official' => new OfficialResource($this->whenLoaded('official')),

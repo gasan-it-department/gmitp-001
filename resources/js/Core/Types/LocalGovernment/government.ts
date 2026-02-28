@@ -26,6 +26,7 @@ interface OfficialTerm {
     status: string | null;
     actual_start_date: string;
     actual_end_date: string | null;
+    remarks?: string;
     official?: Official;
     position?: Position;
 

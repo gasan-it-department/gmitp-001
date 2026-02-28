@@ -15,7 +15,7 @@ export const RosterCard = ({ position, official, className = '', onClick }: Rost
         <button
             type="button"
             onClick={() => onClick(position)}
-            className={`group relative flex w-full flex-col items-center justify-center rounded-xl p-5 text-center transition-all duration-200 ${
+            className={`group relative flex h-full w-full flex-col items-center justify-center rounded-xl p-5 text-center transition-all duration-200 ${
                 isVacant
                     ? 'min-h-[160px] border-2 border-dashed border-gray-300 bg-gray-50/50 hover:border-blue-400 hover:bg-blue-50 hover:shadow-md'
                     : 'min-h-[160px] border border-gray-200 bg-white shadow-sm hover:border-blue-300 hover:shadow-md hover:ring-2 hover:ring-blue-500/20'

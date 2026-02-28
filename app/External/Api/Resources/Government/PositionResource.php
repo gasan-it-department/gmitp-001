@@ -21,7 +21,7 @@ class PositionResource extends JsonResource
 
             'title' => $this->title,
 
-            'rank' => $this->rank,
+            'sequence' => $this->sequence,
 
             'category' => $this->category,
 

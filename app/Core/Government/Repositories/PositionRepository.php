@@ -11,7 +11,7 @@ class PositionRepository
     {
 
         return DB::table('positions')
-            ->orderBy('rank', 'asc')
+            ->orderBy('sequence', 'asc')
             ->get();
 
     }

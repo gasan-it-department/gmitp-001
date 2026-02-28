@@ -55,6 +55,7 @@ export const AppointOfficialDialog = ({ isOpen, onClose, position, term }: Props
                 headers: {
                     'X-Municipality-Slug': currentMunicipality.slug,
                 },
+                preserveScroll: true,
                 onSuccess: () => handleFullClose(),
                 onFinish: () => setIsSubmitting(false),
             },

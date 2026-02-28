@@ -43,6 +43,8 @@ return new class extends Migration {
 
             $table->string('profile_public_id')->nullable();
 
+            $table->text('remarks')->nullable();
+
             $table->timestamps();
 
             $table->unique(['term_id', 'official_id'], 'one_position_per_term');

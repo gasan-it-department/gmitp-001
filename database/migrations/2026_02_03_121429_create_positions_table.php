@@ -16,7 +16,7 @@ return new class extends Migration {
 
             $table->string('title');
 
-            $table->string('rank');
+            $table->unsignedInteger('sequence');
 
             $table->string('category');
 

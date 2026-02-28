@@ -32,6 +32,8 @@ class OfficialTerm extends Model
 
         'status',
 
+        'remarks',
+
         'profile_url',
 
         'profile_public_id',

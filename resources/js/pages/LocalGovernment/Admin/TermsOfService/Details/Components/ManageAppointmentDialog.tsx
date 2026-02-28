@@ -7,15 +7,16 @@ import { AppointmentOverview } from './AppointmentOverview';
 import { ConcludeServiceForm } from './ConcludeServiceForm';
 import { EditAppointmentForm } from './EditAppointmentForm';
 
-type ManagementView = 'edit' | 'conclude' | 'history' | 'overview';
+type ManagementView = 'edit' | 'conclude' | 'overview';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     appointment: OfficialTerm;
+    history: OfficialTerm[];
 }
 
-export const ManageAppointmentDialog = ({ isOpen, onClose, appointment }: Props) => {
+export const ManageAppointmentDialog = ({ isOpen, onClose, appointment, history }: Props) => {
     const [view, setView] = useState<ManagementView>('overview');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { currentMunicipality } = useMunicipality();
@@ -32,6 +33,7 @@ export const ManageAppointmentDialog = ({ isOpen, onClose, appointment }: Props)
             headers: {
                 'X-Municipality-Slug': currentMunicipality.slug,
             },
+            preserveScroll: true,
             onFinish: () => setIsSubmitting(false),
             onSuccess: () => onClose(),
         });
@@ -79,7 +81,7 @@ export const ManageAppointmentDialog = ({ isOpen, onClose, appointment }: Props)
                         </DialogHeader>
 
                         <div className="flex-1 overflow-y-auto p-6">
-                            {view === 'overview' && <AppointmentOverview appointment={appointment} />}
+                            {view === 'overview' && <AppointmentOverview appointment={appointment} history={history} />}
                             {view === 'edit' && <EditAppointmentForm appointment={appointment} />}
                             {view === 'conclude' && <ConcludeServiceForm appointment={appointment} onSuccess={onClose} />}
                         </div>
