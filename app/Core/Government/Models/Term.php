@@ -2,6 +2,7 @@
 
 namespace App\Core\Government\Models;
 
+use App\Core\Municipality\Models\Municipality;
 use Illuminate\Database\Eloquent\Model;
 
 class Term extends Model
@@ -25,7 +26,11 @@ class Term extends Model
 
         'is_current',
 
-        'municipal_id'
+        'municipal_id',
+
+        'slug',
+
+        'is_published'
 
     ];
 
@@ -33,5 +38,17 @@ class Term extends Model
         'statutory_start' => 'date',
         'statutory_end' => 'date',
     ];
+
+    public function municipality()
+    {
+        return $this->belongsTo(Municipality::class, 'municipal_id');
+    }
+
+    public function appointments()
+    {
+
+        return $this->hasMany(OfficialTerm::class, 'term_id');
+
+    }
 
 }

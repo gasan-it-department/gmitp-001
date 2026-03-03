@@ -43,6 +43,7 @@ class ShowTermController extends Controller
             'appointment' => OfficialTermResource::collection($appointment),
 
             'municipality' => new MunicipalityResource($municipality)
+
         ]);
     }
 }

@@ -35,7 +35,20 @@ class UpdateTermUseCase
             $this->termRepo->markAllAsInactive($dto->municipalId);
         }
 
-        return $this->termRepo->update($termId, $dto);
+        //generate slug when updated eg. 2025-2026
+        $slug = $this->generateSlug($dto->statutoryStart, $dto->statutoryEnd);
+
+        return $this->termRepo->update($termId, $dto, $slug);
+
+    }
+
+    public function generateSlug(string $statutoryStart, string $statutoryEnd)
+    {
+
+        $startYear = date('Y', strtotime($statutoryStart));
+        $endYear = date('Y', strtotime($statutoryEnd));
+
+        return "{$startYear}-{$endYear}";
 
     }
 

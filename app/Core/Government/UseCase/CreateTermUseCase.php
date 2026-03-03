@@ -30,7 +30,20 @@ class CreateTermUseCase
 
         $termId = $this->idGeneratorInterface->generate();
 
-        return $this->termRepo->save($termId, $dto);
+        //generate the slug eg. 2025-2028
+        $slug = $this->generateSlug($dto->statutoryStart, $dto->statutoryEnd);
+
+        return $this->termRepo->save($termId, $dto, $slug);
+
+    }
+
+    public function generateSlug(string $statutoryStart, string $statutoryEnd)
+    {
+
+        $startYear = date('Y', strtotime($statutoryStart));
+        $endYear = date('Y', strtotime($statutoryEnd));
+
+        return "{$startYear}-{$endYear}";
 
     }
 

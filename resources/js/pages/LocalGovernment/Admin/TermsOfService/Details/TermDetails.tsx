@@ -4,9 +4,8 @@ import { Building2, Calendar, CheckCircle2, History, UserPlus } from 'lucide-rea
 import { useState } from 'react';
 import { AppointOfficialDialog } from './Components/AppointOfficialDialog';
 import { ManageAppointmentDialog } from './Components/ManageAppointmentDialog';
+import PublishControl from './Components/PublishControl';
 import { RosterCard } from './Components/RosterCard';
-
-// Assuming you have these dialogs or will create them next
 
 interface Props {
     term: { data: Term };
@@ -20,13 +19,12 @@ export default function TermDetails({ term, positions, municipality, appointment
     const positionsData = positions.data;
     const roster = appointment.data;
 
-    // --- STATE: The "Context" for our Modal ---
+    // --- STATE ---
     const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
     const [isAppointOpen, setIsAppointOpen] = useState(false);
     const [isManageOpen, setIsManageOpen] = useState(false);
 
-    // --- LOGIC: Sort the Roster (The "Org Chart" Logic) ---
-    // This assumes standard naming. Adjust filters if your DB titles are different.
+    // --- LOGIC: Sort the Roster ---
     const mayor = positionsData.find((p) => p.title.includes('Mayor') && !p.title.includes('Vice'));
     const viceMayor = positionsData.find((p) => p.title.includes('Vice Mayor'));
     const councilors = positionsData.filter((p) => p.title.includes('Sangguniang') || p.title.includes('Councilor'));
@@ -37,13 +35,27 @@ export default function TermDetails({ term, positions, municipality, appointment
         const v = n % 100;
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
-    // --- HELPER: Date Formatter ---
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
         });
+    };
+
+    const getActiveAppointment = (positionId: string) => {
+        return roster.find((appt) => appt.position?.id === positionId && appt.actual_end_date === null);
+    };
+
+    const getHistoryForPosition = (positionId: string) => {
+        return roster
+            .filter((appt) => appt.position?.id === positionId && appt.actual_end_date !== null)
+            .sort((a, b) => {
+                const dateA = new Date(a.actual_end_date!).getTime();
+                const dateB = new Date(b.actual_end_date!).getTime();
+                return dateB - dateA;
+            });
     };
 
     const handleCardClick = (pos: Position) => {
@@ -58,46 +70,40 @@ export default function TermDetails({ term, positions, municipality, appointment
         }
     };
 
-    //this func for RosterCard just read the code
-    const getActiveAppointment = (positionId: string) => {
-        return roster.find((appt) => appt.position?.id === positionId && appt.actual_end_date === null);
-    };
-    //this is for appointment history of official in one term
-    const getHistoryForPosition = (positionId: string) => {
-        return roster
-            .filter((appt) => appt.position?.id === positionId && appt.actual_end_date !== null)
-            .sort((a, b) => {
-                const dateA = new Date(a.actual_end_date!).getTime();
-                const dateB = new Date(b.actual_end_date!).getTime();
-                return dateB - dateA;
-            });
-    };
     return (
         <AppLayout>
             <div className="m-10 mx-auto max-w-7xl space-y-10 py-6">
-                {/* --- 1. HEADER (Cleaned up) --- */}
-                <div className="flex flex-col items-start justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
-                    <div className="space-y-1">
-                        <div className="flex items-center text-sm font-medium tracking-wide text-gray-500 uppercase">
-                            <Building2 className="mr-2 h-4 w-4" />
+                {/* --- 1. HEADER (Command Center) --- */}
+                <div className="flex flex-col items-start justify-between gap-6 border-b pb-8 md:flex-row md:items-end">
+                    {/* Left: Identity & Status */}
+                    <div className="space-y-3">
+                        <div className="flex items-center text-xs font-black tracking-widest text-slate-400 uppercase">
+                            <Building2 className="mr-2 h-4 w-4 text-slate-300" />
                             {municipality.name}
                         </div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold tracking-tight text-gray-900">{termDetails.name}</h1>
-                            {termDetails.is_current ? (
-                                <span className="inline-flex items-center rounded-full border border-green-200 bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                                    <CheckCircle2 className="mr-1 h-3 w-3" /> Active Term
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                                    <History className="mr-1 h-3 w-3" /> Past Term
-                                </span>
-                            )}
+
+                        <div className="flex flex-wrap items-center gap-4">
+                            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">{termDetails.name}</h1>
+
+                            <div className="flex items-center gap-2">
+                                {termDetails.is_current ? (
+                                    <span className="inline-flex items-center rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Active Term
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+                                        <History className="mr-1.5 h-3.5 w-3.5" /> Past Term
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    {/* Note: I removed the "Appoint" button. The Grid is the button now. */}
+
+                    {/* Right: Publish Control */}
+                    <PublishControl term={termDetails} />
                 </div>
-                {/* --- 2. DETAILS GRID (Dates & Stats) --- */}
+
+                {/* --- 2. DETAILS GRID --- */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="rounded-xl border bg-white p-6 shadow-sm">
                         <div className="mb-4 flex items-center justify-between">
@@ -127,9 +133,10 @@ export default function TermDetails({ term, positions, municipality, appointment
                         <p className="text-2xl font-bold text-gray-900">{positionsData.length}</p>
                     </div>
                 </div>
-                {/* --- 3. THE ROSTER GRID (The "Command Center") --- */}
+
+                {/* --- 3. THE ROSTER GRID --- */}
                 <div className="space-y-12 pb-20">
-                    {/* SECTION A: EXECUTIVE (The Mayor) */}
+                    {/* SECTION A: EXECUTIVE */}
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center" aria-hidden="true">
                             <div className="w-full border-t border-gray-200" />
@@ -151,7 +158,7 @@ export default function TermDetails({ term, positions, municipality, appointment
                         </div>
                     </div>
 
-                    {/* SECTION B: LEGISLATIVE (Presiding Officer) */}
+                    {/* SECTION B: LEGISLATIVE */}
                     <div className="relative mt-10">
                         <div className="absolute inset-0 flex items-center" aria-hidden="true">
                             <div className="w-full border-t border-gray-200" />
@@ -162,7 +169,7 @@ export default function TermDetails({ term, positions, municipality, appointment
                     </div>
 
                     <div className="flex flex-col items-center gap-8">
-                        {/* Vice Mayor (Top of Legislative) */}
+                        {/* Presiding Officer */}
                         <div className="w-full max-w-md">
                             <div className="mb-2 text-center text-xs font-medium text-gray-400">Presiding Officer</div>
                             {viceMayor && (
@@ -182,11 +189,9 @@ export default function TermDetails({ term, positions, municipality, appointment
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                                 {councilors.map((pos, index) => (
                                     <div key={pos.id} className="relative mt-3">
-                                        {/* THE RANKING BADGE */}
                                         <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-slate-800 px-3 py-0.5 text-[10px] font-black tracking-widest text-white uppercase shadow-sm ring-4 ring-white">
                                             {getOrdinalRank(index + 1)} Rank
                                         </div>
-
                                         <RosterCard
                                             position={pos}
                                             official={getActiveAppointment(pos.id)?.official}
@@ -205,7 +210,6 @@ export default function TermDetails({ term, positions, municipality, appointment
                                     {exOfficios.map((pos) => (
                                         <div key={pos.id} className="w-full sm:w-64">
                                             <RosterCard
-                                                key={pos.id}
                                                 position={pos}
                                                 official={getActiveAppointment(pos.id)?.official}
                                                 onClick={() => handleCardClick(pos)}
@@ -217,7 +221,8 @@ export default function TermDetails({ term, positions, municipality, appointment
                         )}
                     </div>
                 </div>
-                {/* --- 4. THE MODAL LOGIC (Hidden) --- */}
+
+                {/* --- 4. MODALS --- */}
                 <AppointOfficialDialog
                     term={termDetails}
                     isOpen={isAppointOpen}

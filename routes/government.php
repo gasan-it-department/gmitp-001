@@ -8,12 +8,26 @@ use App\External\Api\Controllers\Government\OfficialTerms\RemoveOfficialAppointm
 use App\External\Api\Controllers\Government\OfficialTerms\UpdateActiveAppointmentController;
 use App\External\Api\Controllers\Government\OfficialTerms\UpdateHistoricalAppointmentController;
 use App\External\Api\Controllers\Government\Terms\CreateTermController;
+use App\External\Api\Controllers\Government\Terms\ToggleTermPublishController;
 use App\External\Api\Controllers\Government\Terms\UpdateTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListOfficialsController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowAppointOfficialController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowTermController;
+use App\External\Web\Controllers\LocalGovernment\Public\ShowOfficialsRosterController;
 use Illuminate\Support\Facades\Route;
+
+//public view of the government terms roster
+Route::prefix('{municipality}/government')
+    ->name('government.')
+    ->middleware(['municipalityContext'])
+    ->group(function () {
+
+        Route::get('roster/{term_slug?}', ShowOfficialsRosterController::class)->name('roster');
+
+    });
+
+
 
 Route::prefix('{municipality}/government')
     ->name('government.admin.')
@@ -65,6 +79,8 @@ Route::prefix('api/government')
                 Route::post('store-terms', CreateTermController::class)->name('store');
 
                 Route::put('update-terms/{termId}', UpdateTermController::class)->name('update');
+
+                Route::patch('toggle-publish-term/{id}', ToggleTermPublishController::class)->name('toggle.publish');
 
             });
 

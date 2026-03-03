@@ -19,7 +19,6 @@ type WorkFlowStep = 'search' | 'create' | 'confirm';
 
 export const AppointOfficialDialog = ({ isOpen, onClose, position, term }: Props) => {
     // --- STATE ---
-    console.log(term.statutory_start);
     const [step, setStep] = useState<WorkFlowStep>('search');
     const [prefillName, setPrefillName] = useState('');
     const [selectedOfficial, setSelectedOfficial] = useState<Official | null>(null);

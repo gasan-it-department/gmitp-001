@@ -29,7 +29,7 @@ export const EditHistoryDialog = ({ isOpen, record, onClose }: Props) => {
             });
         }
     }, [record]);
-    console.log('this', record);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!record) return;

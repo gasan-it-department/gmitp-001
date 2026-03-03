@@ -49,7 +49,7 @@ class OfficialTerm extends Model
 
     public function official()
     {
-        return $this->belongsTo(Official::class);
+        return $this->belongsTo(Official::class, 'official_id');
     }
 
     public function position()

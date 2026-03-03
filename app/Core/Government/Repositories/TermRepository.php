@@ -9,7 +9,7 @@ use App\Core\Government\Models\Term;
 class TermRepository
 {
 
-    public function save(string $termId, TermDto $dto)
+    public function save(string $termId, TermDto $dto, string $slug)
     {
 
         // if ($dto->isCurrent) {
@@ -31,6 +31,8 @@ class TermRepository
 
             'municipal_id' => $dto->municipalId,
 
+            'slug' => $slug,
+
         ]);
 
         return $term;
@@ -47,7 +49,7 @@ class TermRepository
 
     }
 
-    public function update(string $termId, TermDto $dto)
+    public function update(string $termId, TermDto $dto, string $slug)
     {
 
         DB::table('terms')
@@ -63,6 +65,8 @@ class TermRepository
                 'is_current' => $dto->isCurrent,
 
                 'updated_at' => now(),
+
+                'slug' => $slug,
 
             ]);
 
@@ -95,5 +99,37 @@ class TermRepository
 
     }
 
+    public function findBySlug(string $municipalId, string $termSlug)
+    {
+        return Term::query()
+            ->with(['municipality', 'appointments.position', 'appointments.official'])
+            ->where('municipal_i', $municipalId)
+            ->where('slug', $termSlug)
+            ->where('is_published', true)
+            ->firstOrFail();
+    }
+
+    public function getPublishedByMunicipality(string $municipalId)
+    {
+        return Term::where('municipal_id', $municipalId)
+            ->where('is_published', true)
+            ->orderBy('statutory_start', 'desc')
+            ->get();
+
+    }
+
+    public function getPublishedBySlug(?string $termSlug, string $municipalId)
+    {
+
+        $query = Term::where('municipal_id', $municipalId)
+            ->where('is_published', true);
+
+        if ($termSlug) {
+            return $query->where('slug', $termSlug)->firstOrFail();
+        }
+
+        return $query->where('is_current', true)->firstOrFail();
+
+    }
 
 }

@@ -1,3 +1,4 @@
+// import officials from "@/routes/government/admin/officials";
 
 interface Official {
 
@@ -36,11 +37,13 @@ interface Term {
     id: string;
     municipality?: string | null;
     name: string;
+    slug?: string;
     statutory_start: string;
     statutory_end: string;
     readable_start: string;
     readable_end: string;
     is_current?: boolean;
+    is_published: boolean;
     label: string;
     officials_count?: number;
 }
@@ -48,8 +51,14 @@ interface Term {
 interface Position {
     id: string;
     title: string;
+}
 
-    // official?: Official | null;
-    // appointment?: Appointment | null;
+//for public
+interface PublicRosterItem {
+    id: string;
+    title: string;
+    category: string;
+    sequence: number;
 
+    official: Official | null;
 }

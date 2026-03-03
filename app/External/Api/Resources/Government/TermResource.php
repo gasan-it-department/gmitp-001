@@ -33,6 +33,10 @@ class TermResource extends JsonResource
 
             'is_current' => $this->is_current,
 
+            'is_published' => $this->is_published,
+
+            'slug' => $this->slug,
+
         ];
 
     }

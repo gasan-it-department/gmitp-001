@@ -1,6 +1,7 @@
 import { LucideIcon, Folders, House, Phone, MapPinned, Landmark, ShieldCheck } from "lucide-react";
-import { travel, home, government, executiveOrders, contact } from '@/routes';
+import { travel, home, executiveOrders, contact } from '@/routes';
 import transparency from "@/routes/transparency";
+import { roster } from "@/routes/government";
 
 export type NavigationItem = {
   title: string;
@@ -29,7 +30,7 @@ export const useNavigation = (): NavigationItem[] => [
   },
   {
     title: "Government",
-    route: government,
+    route: roster,
     icon: Landmark,
     id: "government"
   },

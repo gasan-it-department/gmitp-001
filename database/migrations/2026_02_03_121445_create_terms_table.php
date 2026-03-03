@@ -26,6 +26,10 @@ return new class extends Migration {
 
             $table->boolean('is_current')->default(false);
 
+            $table->string('slug')->nullable()->index();
+
+            $table->boolean('is_published')->default(false);
+
             $table->timestamps();
 
             // $table->unique(['municipal_id', 'name', 'statutory_date', 'statutory_end'], 'unique_term_index');

@@ -25,4 +25,17 @@ class Position extends Model
 
     ];
 
+    public function appointments()
+    {
+
+        return $this->hasMany(OfficialTerm::class, 'position_id');
+
+    }
+
+    public function activeAppointment()
+    {
+        return $this->hasOne(OfficialTerm::class, 'position_id')
+            ->whereNull('actual_end_date'); // Logic: If end date is null, they are currently seated
+    }
+
 }
