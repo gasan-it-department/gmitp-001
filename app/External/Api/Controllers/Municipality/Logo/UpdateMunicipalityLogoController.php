@@ -28,10 +28,7 @@ class UpdateMunicipalityLogoController
 
         $this->updateMunicipalityLogoUseCase->execute($dto);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logo updated successfully'
-        ], 200);
+        return back()->with('success', 'Logo uploaded successfully.');
     }
 }
 

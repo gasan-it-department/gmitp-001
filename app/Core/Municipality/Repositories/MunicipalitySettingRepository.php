@@ -47,6 +47,7 @@ class MunicipalitySettingRepository
         if ($fileData) {
 
             $settings->logo_public_id = $fileData['public_id'];
+            $settings->logo_secure_url = $fileData['secure_url'];
 
         }
 

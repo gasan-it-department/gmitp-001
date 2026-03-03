@@ -34,7 +34,7 @@ class SetMunicipalityLogoController extends Controller
 
         $this->setMunicipalityLogoUseCase->execute($dto);
 
-        return response()->json(['success' => true], 200);
+        return back()->with('success', 'Logo uploaded successfully.');
     }
 
 }

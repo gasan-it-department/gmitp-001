@@ -4,10 +4,8 @@ import { MunicipalitiesApi } from '@/Core/Api/Municipality/MunicipalityApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
-import ToastProvider from '@/pages/Utility/ToastShower';
 import { Image as ImageIcon, Loader2, Plus, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { toast } from 'sonner';
 import HotlineEditor from './HotlineEditor';
 import LogoEditor from './LogoEditor';
 
@@ -91,7 +89,7 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!municipalSlug) return toast.error('Municipality context missing');
+        if (!municipalSlug) return;
 
         const file = e.target.files?.[0];
         if (!file) return;
@@ -117,7 +115,6 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 title: 'Loading...',
             }));
 
-            toast.success('Banner uploaded successfully!');
             const newId = response.data?.id || Date.now().toString();
             const previewUrl = response.data?.image || URL.createObjectURL(file);
 
@@ -132,7 +129,6 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             setSelectedBannerId(newId);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to upload banner.');
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -170,11 +166,9 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
                 await MunicipalitiesApi.deleteBanner(municipalSlug, bannerId);
                 setBanners((prev) => prev.filter((b) => b.id !== bannerId));
                 if (selectedBannerId === bannerId) setSelectedBannerId(null);
-                toast.success('Banner deleted successfully.');
                 resetDialog();
             } catch (error) {
                 console.error(error);
-                toast.error('Failed to delete banner.');
             } finally {
                 setIsDeleting(false);
                 setIsLoadingDialogVisible((prev) => ({
@@ -378,8 +372,6 @@ export default function HomeBannerEditorPanel({ initialBanners = [] }: HomeBanne
             />
 
             <LoadingDialog isOpen={isLoadingDialogVisible.isOpened} title={isLoadingDialogVisible.title} />
-
-            <ToastProvider />
         </div>
     );
 }
