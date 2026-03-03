@@ -12,7 +12,7 @@ class Term extends Model
 
     protected $keyType = 'string';
 
-    // protected $table = 'terms';
+    protected $table = 'gov_terms';
 
     protected $fillable = [
 

@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('official_terms', function (Blueprint $table) {
+        Schema::create('gov_official_terms', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
@@ -20,15 +20,15 @@ return new class extends Migration {
                 ->restrictOnDelete();
 
             $table->foreignUlid('term_id')
-                ->constrained('terms')
+                ->constrained('gov_terms')
                 ->cascadeOnDelete();
 
             $table->foreignUlid('official_id')
-                ->constrained('officials')
+                ->constrained('gov_officials')
                 ->cascadeOnDelete();
 
             $table->foreignUlid('position_id')
-                ->constrained('positions')
+                ->constrained('gov_positions')
                 ->restrictOnDelete();
 
             $table->date('actual_start_date');
@@ -57,6 +57,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('official_terms');
+        Schema::dropIfExists('gov_official_terms');
     }
 };

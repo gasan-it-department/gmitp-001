@@ -13,7 +13,7 @@ class Official extends Model
 
     protected $keyType = 'string';
 
-    // protected $table = 'officials';
+    protected $table = 'gov_officials';
 
     protected $fillable = [
 

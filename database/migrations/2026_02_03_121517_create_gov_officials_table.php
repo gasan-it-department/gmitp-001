@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('officials', function (Blueprint $table) {
+        Schema::create('gov_officials', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
@@ -44,6 +44,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('officials');
+        Schema::dropIfExists('gov_officials');
     }
 };

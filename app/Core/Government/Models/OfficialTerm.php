@@ -14,7 +14,7 @@ class OfficialTerm extends Model
 
     protected $keyType = 'string';
 
-    // protected $table = 'official_terms';
+    protected $table = 'gov_official_terms';
 
     protected $fillable = [
 

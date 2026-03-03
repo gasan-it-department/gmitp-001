@@ -11,7 +11,7 @@ class Position extends Model
 
     protected $keyType = 'string';
 
-    // protected $table = 'positions';
+    protected $table = 'gov_positions';
 
     protected $fillable = [
 

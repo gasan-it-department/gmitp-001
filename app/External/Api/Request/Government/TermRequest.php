@@ -32,7 +32,7 @@ class TermRequest extends FormRequest
                 'string',
                 'max:100',
                 // Check uniqueness ONLY within the same municipality
-                Rule::unique('terms', 'name')
+                Rule::unique('gov_terms', 'name')
                     ->where('municipal_id', $municipalId)
                     ->ignore($termId)
             ],
@@ -41,7 +41,7 @@ class TermRequest extends FormRequest
                 'required',
                 'date',
                 // Allow multiple towns to have the same date, but block it within ONE town
-                Rule::unique('terms', 'statutory_start')
+                Rule::unique('gov_terms', 'statutory_start')
                     ->where('municipal_id', $municipalId)
                     ->ignore($termId)
             ],
@@ -50,7 +50,7 @@ class TermRequest extends FormRequest
                 'required',
                 'date',
                 'after:statutory_start',
-                Rule::unique('terms', 'statutory_end')
+                Rule::unique('gov_terms', 'statutory_end')
                     ->where('municipal_id', $municipalId)
                     ->ignore($termId)
             ],

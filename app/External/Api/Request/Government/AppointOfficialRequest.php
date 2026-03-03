@@ -23,8 +23,8 @@ class AppointOfficialRequest extends FormRequest
     {
         return [
             // --- Context Fields (Always Required) ---
-            'term_id' => ['required', 'string', 'exists:terms,id'],
-            'position_id' => ['required', 'string', 'exists:positions,id'],
+            'term_id' => ['required', 'string', 'exists:gov_terms,id'],
+            'position_id' => ['required', 'string', 'exists:gov_positions,id'],
             'actual_start_date' => ['nullable', 'date'],
             'political_party' => ['nullable', 'string', 'max:100'],
             'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
@@ -32,7 +32,7 @@ class AppointOfficialRequest extends FormRequest
             // --- The "Logic Switch" ---
             // If official_id is present, we use an existing person.
             // If it is NOT present, the name fields become mandatory.
-            'official_id' => ['nullable', 'string', 'exists:officials,id'],
+            'official_id' => ['nullable', 'string', 'exists:gov_officials,id'],
 
         ];
     }

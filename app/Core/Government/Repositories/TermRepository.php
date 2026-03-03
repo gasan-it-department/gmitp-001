@@ -42,7 +42,7 @@ class TermRepository
     public function markAllAsInactive(string $municipalId)
     {
 
-        DB::table('terms')
+        DB::table('gov_terms')
             ->where('municipal_id', $municipalId)
             ->where('is_current', true)
             ->update(['is_current' => false]);
@@ -52,7 +52,7 @@ class TermRepository
     public function update(string $termId, TermDto $dto, string $slug)
     {
 
-        DB::table('terms')
+        DB::table('gov_terms')
             ->where('id', $termId)
             ->update([
 

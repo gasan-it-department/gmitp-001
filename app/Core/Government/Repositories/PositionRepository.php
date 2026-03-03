@@ -11,7 +11,7 @@ class PositionRepository
     public function getAll()
     {
 
-        return DB::table('positions')
+        return DB::table('gov_positions')
             ->orderBy('sequence', 'asc')
             ->get();
 
