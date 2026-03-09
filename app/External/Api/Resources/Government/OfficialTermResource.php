@@ -26,10 +26,9 @@ class OfficialTermResource extends JsonResource
             'official' => new OfficialResource($this->whenLoaded('official')),
 
             // 3. The Position
-            'position' => [
-                'id' => $this->position_id,
-                'title' => $this->whenLoaded('position', fn() => $this->position->title),
-            ],
+            'position' => new PositionResource($this->whenLoaded('position')),
+
+            'term' => new TermResource($this->whenLoaded('term')),
         ];
 
     }

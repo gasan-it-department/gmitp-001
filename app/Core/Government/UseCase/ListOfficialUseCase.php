@@ -2,6 +2,7 @@
 
 namespace App\Core\Government\UseCase;
 
+use App\Core\Government\Dto\OfficialQueryDto;
 use App\Core\Government\Repositories\OfficialRepository;
 
 class ListOfficialUseCase
@@ -13,10 +14,10 @@ class ListOfficialUseCase
     ) {
     }
 
-    public function execute(string $municipalId)
+    public function execute(string $municipalId, OfficialQueryDto $filters)
     {
 
-        return $this->officialRepo->getAll($municipalId);
+        return $this->officialRepo->getPaginatedList($municipalId, $filters);
 
     }
 }

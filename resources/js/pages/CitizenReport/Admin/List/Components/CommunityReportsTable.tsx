@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
-import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';

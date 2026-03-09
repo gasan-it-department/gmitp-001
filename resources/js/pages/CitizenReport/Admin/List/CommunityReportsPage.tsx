@@ -1,5 +1,5 @@
 import { CommunityReportData } from '@/Core/Types/CommunityReportPage/CommunityReportPageTypes';
-import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AdminLayout from '@/layouts/App/AppLayout';
 import CommunityReportPageTable from './Components/CommunityReportsTable';
 

@@ -40,6 +40,7 @@ class TermRequest extends FormRequest
             'statutory_start' => [
                 'required',
                 'date',
+                'before_or_equal:' . now()->endOfYear()->format('Y-m-d'),
                 // Allow multiple towns to have the same date, but block it within ONE town
                 Rule::unique('gov_terms', 'statutory_start')
                     ->where('municipal_id', $municipalId)

@@ -2,7 +2,7 @@
 
 namespace App\Core\Government\UseCase;
 
-use App\Core\Government\Dto\AddOfficialDto;
+use App\Core\Government\Dto\OfficialDto;
 use App\Core\Government\Repositories\OfficialRepository;
 use App\Shared\FileUploader\Interface\FileUploadInterface;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -19,7 +19,7 @@ class AddOfficialUseCase
     ) {
     }
 
-    public function execute(AddOfficialDto $dto)
+    public function execute(OfficialDto $dto)
     {
 
         $officialId = $this->idGenerator->generate();
@@ -31,7 +31,9 @@ class AddOfficialUseCase
 
             $root = config('filesystems.disks.cloudinary.root');
 
-            $folder = "{$root}/{$dto->municipalName}/government/officials/{$officialId}";
+            //$folder = "{$root}/{$dto->municipalName}/government/officials/{$officialId}";
+
+            $folder = $this->fileUpload->getFolderPath($dto->municipalId, 'government', $officialId);
 
             $result = $this->fileUpload->uploadFiles($dto->profileImage, $folder, 'profile', true);
 

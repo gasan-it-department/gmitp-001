@@ -46,6 +46,18 @@ class Official extends Model
 
     }
 
+    public function appointments()
+    {
+        return $this->hasMany(OfficialTerm::class, 'official_id');
+    }
+
+    public function activeAppointments()
+    {
+        return $this->appointments()->whereHas('term', function ($query) {
+            $query->where('is_current', true);
+        });
+    }
+
     public function fullNameWithTitle(): Attribute
     {
 

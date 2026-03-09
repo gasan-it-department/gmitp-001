@@ -2,7 +2,7 @@
 
 namespace App\External\Api\Controllers\Government\Official;
 
-use App\Core\Government\Dto\AddOfficialDto;
+use App\Core\Government\Dto\OfficialDto;
 use App\Core\Government\UseCase\AddOfficialUseCase;
 use App\External\Api\Request\Government\OfficialRequest;
 use App\External\Api\Resources\Government\OfficialResource;
@@ -20,7 +20,7 @@ class StoreOfficialController extends Controller
     public function __invoke(OfficialRequest $request)
     {
 
-        $dto = AddOfficialDto::fromRequest($request);
+        $dto = OfficialDto::fromRequest($request);
 
         $official = $this->addOfficialUseCase->execute($dto);
 

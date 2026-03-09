@@ -18,7 +18,6 @@ export default function TermDetails({ term, positions, municipality, appointment
     const termDetails = term.data;
     const positionsData = positions.data;
     const roster = appointment.data;
-
     // --- STATE ---
     const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
     const [isAppointOpen, setIsAppointOpen] = useState(false);

@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { FeedbackData } from '@/Core/Types/Feedback/FeedbackTypes';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
-import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';

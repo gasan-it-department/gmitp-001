@@ -34,7 +34,7 @@ class OfficialTermRepository
     {
 
         return OfficialTerm::query()
-            ->with(['official', 'term'])
+            ->with(['official', 'term', 'position'])
             ->where('term_id', $termId)
             ->get();
 

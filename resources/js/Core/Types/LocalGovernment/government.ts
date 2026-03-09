@@ -7,19 +7,29 @@ interface Official {
     first_name: string;
     last_name: string;
     middle_name?: string;
-    suffix?: string
+    suffix?: string;
+    gender?: string;
     profile_url?: string;
+    biography: string;
     formatted_name: string;
+    appointments_count?: number;
+    active_appointments_exists: boolean;
+
+    //for profile history showing
+    appointments: Appointment[];
 
 }
 
 interface Appointment {
     id: string;
-    term_id: string;
-    official_id: string;
-    position_id: string;
+    // term_id: string;
+    // official_id: string;
+    // position_id: string;
     actual_start_date: string;
     actual_end_date: string;
+    //new add
+    position: Position;
+    term: Term;
 }
 
 interface OfficialTerm {
@@ -30,7 +40,6 @@ interface OfficialTerm {
     remarks?: string;
     official?: Official;
     position?: Position;
-
 }
 
 interface Term {
@@ -51,6 +60,7 @@ interface Term {
 interface Position {
     id: string;
     title: string;
+    category: string;
 }
 
 //for public
@@ -62,3 +72,7 @@ interface PublicRosterItem {
 
     official: Official | null;
 }
+
+// interface OfficialProfile extends Official {
+// history: 
+// }

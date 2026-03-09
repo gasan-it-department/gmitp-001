@@ -2,6 +2,8 @@
 
 use App\External\Api\Controllers\Government\Official\SearchOfficialsController;
 use App\External\Api\Controllers\Government\Official\StoreOfficialController;
+use App\External\Api\Controllers\Government\Official\UpdateOfficialProfileController;
+use App\External\Api\Controllers\Government\Official\UpdateOfficialProfilePictureController;
 use App\External\Api\Controllers\Government\OfficialTerms\AppointOfficialController;
 use App\External\Api\Controllers\Government\OfficialTerms\ConcludeOfficialTermController;
 use App\External\Api\Controllers\Government\OfficialTerms\RemoveOfficialAppointmentController;
@@ -13,9 +15,11 @@ use App\External\Api\Controllers\Government\Terms\UpdateTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListOfficialsController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ListTermController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowAppointOfficialController;
+use App\External\Web\Controllers\LocalGovernment\Admin\ShowOfficialProfileController;
 use App\External\Web\Controllers\LocalGovernment\Admin\ShowTermController;
 use App\External\Web\Controllers\LocalGovernment\Public\ShowOfficialsRosterController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 //public view of the government terms roster
 Route::prefix('{municipality}/government')
@@ -59,6 +63,7 @@ Route::prefix('{municipality}/government')
             ->group(function () {
 
             Route::get('/', ListOfficialsController::class)->name('page');
+            Route::get('profile/{officialId}', ShowOfficialProfileController::class)->name('profile');
 
         });
 
@@ -102,6 +107,9 @@ Route::prefix('api/government')
 
                 Route::patch('update-active-appointment/{id}', UpdateActiveAppointmentController::class)->name('update.active.appointment');
 
+                Route::put('update-profile-picture/{officialId}', UpdateOfficialProfilePictureController::class)->name('update.profile');
+
+                Route::put('update/{officialId}/official', UpdateOfficialProfileController::class)->name('update.official');
             });
 
     });

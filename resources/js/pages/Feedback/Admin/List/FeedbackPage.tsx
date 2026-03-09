@@ -1,5 +1,5 @@
 import { FeedbackData } from '@/Core/Types/Feedback/FeedbackTypes';
-import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AdminLayout from '@/layouts/App/AppLayout';
 import FeedbackPageTable from './Components/FeedbackPageTable';
 

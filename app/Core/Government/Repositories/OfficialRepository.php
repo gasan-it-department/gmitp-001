@@ -2,15 +2,14 @@
 
 namespace App\Core\Government\Repositories;
 
-use App\Core\Government\Dto\AddOfficialDto;
-use App\Core\Government\Dto\AppointOfficialDto;
+use App\Core\Government\Dto\OfficialDto;
+use App\Core\Government\Dto\OfficialQueryDto;
 use App\Core\Government\Models\Official;
-use Illuminate\Support\Facades\DB;
 
 class OfficialRepository
 {
 
-    public function addOfficial(AddOfficialDto $dto, string $officialId, ?string $profileUrl, ?string $imgPublicId)
+    public function addOfficial(OfficialDto $dto, string $officialId, ?string $profileUrl, ?string $imgPublicId)
     {
 
         return Official::create([
@@ -28,18 +27,43 @@ class OfficialRepository
 
     }
 
-    public function getAll(string $municipalId)
+    public function update(array $data, string $municipalId, string $officialId)
     {
 
-        $query = Official::query();
+        $official = $this->findOfficialById($municipalId, $officialId);
 
-        if ($municipalId) {
-            $query->where('municipal_id', $municipalId);
+        $official->update($data);
 
-        }
+        return $official;
 
-        return $query->get();
+    }
 
+    public function getPaginatedList(string $municipalId, OfficialQueryDto $filters)
+    {
+
+        return Official::query()
+            ->where('municipal_id', $municipalId)
+            ->withCount(['appointments'])
+            ->withExists('activeAppointments')
+
+            ->when($filters->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
+                });
+
+            })
+            ->when($filters->isCurrentlyServing !== null, function ($query) use ($filters) {
+                if ($filters->isCurrentlyServing) {
+                    $query->whereHas('activeAppointments');
+                } else {
+                    $query->whereDoesntHave('activeAppointments');
+                }
+            })
+            ->orderBy($filters->sortBy, $filters->sortDirection)
+            ->paginate($filters->perPage)
+            ->withQueryString();
     }
 
     public function search(string $query, string $municipalId)
@@ -60,5 +84,27 @@ class OfficialRepository
             ->orderBy('last_name', 'asc')
             ->limit(10)
             ->get();
+    }
+
+    public function findWithProfileById(string $officialId, string $municipalId)
+    {
+
+        return Official::query()
+            ->where('municipal_id', $municipalId)
+            ->withCount('appointments')
+            ->withExists('activeAppointments')
+            ->with([
+                'appointments.position',
+                'appointments.term'
+            ])
+            ->findOrFail($officialId);
+    }
+
+    public function findOfficialById(string $municipalId, string $officialId)
+    {
+
+        return Official::where('municipal_id', $municipalId)
+            ->findOrFail($officialId);
+
     }
 }

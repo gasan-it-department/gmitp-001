@@ -5,7 +5,7 @@ namespace App\Core\Government\Dto;
 use App\External\Api\Request\Government\OfficialRequest;
 use Illuminate\Http\UploadedFile;
 
-class AddOfficialDto
+class OfficialDto
 {
 
     public function __construct(
