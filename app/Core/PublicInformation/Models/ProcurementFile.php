@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProcurementFile extends Model
 {
+
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $fillable = [
 
         'id',
@@ -25,6 +29,25 @@ class ProcurementFile extends Model
         'file_size',
 
     ];
+
+    public function getViewUrlAttribute()
+    {
+        $cloudName = config('cloudinary.cloud_name');
+
+        $extension = $this->extension ? ".{$this->extension}" : '';
+
+        return "https://res.cloudinary.com/{$cloudName}/{$this->resource_type}/upload/{$this->public_id}{$extension}";
+    }
+
+    public function getDownloadUrlAttribute()
+    {
+        $cloudName = config('cloudinary.cloud_name');
+
+        $extension = $this->extension ? ".{$this->extension}" : '';
+
+        return "https://res.cloudinary.com/{$cloudName}/{$this->resource_type}/upload/fl_attachment/{$this->public_id}{$extension}";
+    }
+
 
     public function procurement(): BelongsTo
     {

@@ -2,19 +2,19 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { FeedbackData } from '@/Core/Types/Feedback/FeedbackTypes';
-import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
+import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import PaginationView from '@/pages/Utility/PaginationView';
 import Utility from '@/pages/Utility/Utility';
 import feedback from '@/routes/feedback';
 import { router } from '@inertiajs/react';
 import { EyeIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import FeedbackPageTableHeader from './FeedbackPageTableHeader';
-import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
-import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import PaginationView from '@/pages/Utility/PaginationView';
 
 interface Props {
     feedbacks: PaginatedResponse<FeedbackData>;
@@ -62,7 +62,6 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
         });
     };
 
-
     const handlePageChange = (page: number) => {
         if (page < 1 || page > lastPage) return;
 
@@ -80,10 +79,9 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                 preserveScroll: true,
                 preserveState: true,
                 onFinish: () => setIsLoading(false),
-            }
+            },
         );
     };
-
 
     return (
         <div>
@@ -91,11 +89,11 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Community Feedback</h1>
                 <FeedbackPageTableHeader
-                    onSearch={() => { }}
+                    onSearch={() => {}}
                     onFilterButtonClicked={() => {
                         setIsFilterOpened(true);
                     }}
-                    onExportButtonClicked={() => { }}
+                    onExportButtonClicked={() => {}}
                 />
             </div>
 
@@ -187,16 +185,13 @@ export default function FeedbackPageTable({ feedbacks }: Props) {
                 }}
             />
 
-            <ClassicDialog
-                title={''}
-                message={''}
-                open={false} />
+            <ClassicDialog title={''} message={''} open={false} />
 
             {showScrollTop && (
                 <Button
                     size="icon"
                     onClick={scrollToTop}
-                    className="fixed bottom-6 right-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
+                    className="fixed right-6 bottom-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
                     aria-label="Scroll to top"
                 >
                     ↑

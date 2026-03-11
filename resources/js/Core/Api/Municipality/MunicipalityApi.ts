@@ -2,6 +2,8 @@ import axios from 'axios';
 // Adjust imports based on your actual path
 import Municipality from '@/actions/App/External/Api/Controllers/Municipality';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
+import SetMunicipalityLogoController from '@/actions/App/External/Api/Controllers/Municipality/Logo/SetMunicipalityLogoController';
+import UpdateMunicipalityLogoController from '@/actions/App/External/Api/Controllers/Municipality/Logo/UpdateMunicipalityLogoController';
 
 interface GetMunicipalitiesResponse {
     success: boolean;
@@ -20,8 +22,8 @@ export const MunicipalitiesApi = {
     },
 
     // UPDATED: Now accepts FormData
-    async uploadMunicipalSettings(municipalSlug: string, formData: FormData) {
-        const { url, method } = Municipality.MunicipalitySettingsController.store();
+    async uploadMunicipalLogo(municipalSlug: string, formData: FormData) {
+        const { url, method } = SetMunicipalityLogoController();
 
         const { data } = await axios({
             url,
@@ -68,39 +70,29 @@ export const MunicipalitiesApi = {
 
     },
 
-    async updateMunicipalitySettings(
-        municipalSlug: string,
-        id: string,
-        payload: { logo?: File | null }
-    ) {
-        const { url, method } = Municipality.MunicipalitySettingsController.updateSettings(id);
+    async updateMunicipalityLogo(municipalSlug: string, payload: { logo?: File | null }) {
+        // 1. Get route from Wayfinder
+        // Assuming the name in Wayfinder follows your route name: 'municipality.admin.update.logo'
+        const { url } = UpdateMunicipalityLogoController();
 
-        // 2. Create FormData object
         const formData = new FormData();
 
-        // Only append the file if the user selected a NEW one
-        // This satisfies your "if uploaded update it, if none (ignore)" requirement
         if (payload.logo) {
+            // MATCH: Use 'logo' because that's what your Controller validates: $request->file('logo')
             formData.append('logo', payload.logo);
-            // Make sure 'logoImage' matches the key expected in your Backend DTO ($dto->logoImage)
         }
 
-        // 3. Send the request
-        // Note: We use '_method' trick if your backend requires PUT/PATCH via FormData (common in Laravel)
-        // If your backend natively supports PUT for multipart, you can skip appending '_method'.
-        formData.append('_method', 'PATCH');
+        // This allows Laravel to treat this POST as a PUT/PATCH while still reading the file
+        formData.append('_method', 'POST');
 
-        const { data } = await axios({
-            url,
-            method: 'POST', // Use POST with _method: PUT for file uploads (safest cross-server compatible way)
-            data: formData, // Pass the FormData here
+        const { data } = await axios.post(url, formData, {
             headers: {
                 'X-Municipality-Slug': municipalSlug,
-                // 'Content-Type': 'multipart/form-data' <--- REMOVED! Let Axios handle this automatically.
+                // Axios automatically sets 'multipart/form-data' with the correct boundary when it sees FormData
             }
         });
 
         return data;
-    },
+    }
 
 }

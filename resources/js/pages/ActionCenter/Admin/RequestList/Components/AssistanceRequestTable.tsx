@@ -1,9 +1,9 @@
-import { ActionCenterForm } from '@/components/ActionCenter/RequestAssistanceBeneficiaryForm'; // ✅ Import new form
+import { ActionCenterForm } from '@/components/ActionCenter/RequestAssistanceBeneficiaryForm';
 import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import type { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import type { ActionCenterFormData, AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
@@ -41,6 +41,27 @@ interface Props {
 
 export function AssistanceRequestTable({ data, filters }: Props) {
     const { currentMunicipality } = useMunicipality();
+
+    // --- 1. DATA MAPPING HELPER ---
+    // Converts nested AssistanceRequest to flat ActionCenterFormData
+    const mapToFormData = (req: AssistanceRequest | null): ActionCenterFormData | null => {
+        if (!req) return null;
+        return {
+            first_name: req.beneficiary?.first_name || '',
+            middle_name: req.beneficiary?.middle_name || '',
+            last_name: req.beneficiary?.last_name || '',
+            suffix: req.beneficiary?.suffix || '',
+            birth_date: req.beneficiary?.birth_date || '',
+            province: req.beneficiary?.province || '',
+            municipality: req.beneficiary?.municipality || '',
+            barangay: req.beneficiary?.barangay || '',
+            assistance_type: req.assistance_type || '',
+            description: req.description || '',
+            documents: [],
+        };
+    };
+
+    // --- 2. STATES ---
     const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState<{
         isOpen: boolean;
         editData: AssistanceRequest | null;
@@ -49,7 +70,6 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         editData: null,
     });
 
-    const [isSortSelectionDialogOpen, setIsSortSelectionDialogOpen] = useState(false);
     const [detailsView, setDetailsView] = useState<{
         data: AssistanceRequest | null;
         isOpen: boolean;
@@ -63,15 +83,7 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         request: AssistanceRequest | null;
     }>({ isVisible: false, request: null });
 
-    const [classicDialog, setClassicDialog] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-        positiveButtonText: string;
-        negativeButtonText: string;
-        isNegativeButtonHidden: boolean;
-        action: string | null;
-    }>({
+    const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
         title: '',
         message: '',
@@ -81,38 +93,13 @@ export function AssistanceRequestTable({ data, filters }: Props) {
         action: null,
     });
 
+    // --- 3. DATA HELPERS ---
     const requestList = data?.data || [];
-    const meta = data?.meta || {
-        current_page: 1,
-        last_page: 1,
-        per_page: 15,
-        total: 0,
-        from: 0,
-        to: 0,
-    };
+    const meta = data?.meta || { current_page: 1, last_page: 1, per_page: 15, total: 0, from: 0, to: 0 };
 
     const handlePageChange = (page: number) => {
-        const targetUrl = ActionCenter.index.url({
-            municipality: currentMunicipality.slug,
-        });
-
+        const targetUrl = ActionCenter.index.url({ municipality: currentMunicipality.slug });
         router.get(targetUrl, { page: page, ...filters }, { preserveState: true, preserveScroll: true, only: ['requests'] });
-    };
-
-    const handleViewRequest = (id: string) => {
-        const targetUrl = ActionCenter.show.url({
-            municipality: currentMunicipality.slug,
-            id: id,
-        });
-        router.visit(targetUrl);
-    };
-
-    const handleSearchOrSort = (searchValue: string) => {
-        console.log('Searching:', searchValue);
-    };
-
-    const handleSort = (sortValue: string) => {
-        console.log('Sorting by:', sortValue);
     };
 
     const handleReload = () => {
@@ -135,43 +122,23 @@ export function AssistanceRequestTable({ data, filters }: Props) {
     };
 
     if (detailsView.isOpen) {
-        return (
-            <AssistanceRequestDetails
-                data={detailsView.data}
-                onBackPressed={() => {
-                    setDetailsView((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                        data: null,
-                    }));
-                }}
-            />
-        );
+        return <AssistanceRequestDetails data={detailsView.data} onBackPressed={() => setDetailsView({ isOpen: false, data: null })} />;
     }
 
-    // --- RENDER ---
     return (
         <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight text-balance">Request Records</h1>
-
                 <Header
                     className="flex justify-end"
-                    onSortSelected={(value) => handleSort(value)}
                     sortList={[
                         { label: 'Name', value: 'first_name' },
                         { label: 'Date', value: 'created_at' },
                         { label: 'Transaction', value: 'transaction_number' },
                         { label: 'Status', value: 'status' },
                     ]}
-                    onAddNewButtonClicked={() => {
-                        setIsAddNewRecordDialogOpen((prev) => ({
-                            ...prev,
-                            isOpen: true,
-                            editData: null,
-                        }));
-                    }}
+                    onAddNewButtonClicked={() => setIsAddNewRecordDialogOpen({ isOpen: true, editData: null })}
                     onExportButtonClicked={() => {
                         if (requestList.length === 0) return toast('No data to export');
                         setClassicDialog({
@@ -181,17 +148,17 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                             positiveButtonText: 'Export',
                             negativeButtonText: 'Cancel',
                             isNegativeButtonHidden: false,
-                            action: 'file_export',
+                            action: 'file_export' as any,
                         });
                     }}
-                    onSearch={(query) => handleSearchOrSort(query)}
+                    onSearch={(query) => console.log('Searching:', query)}
                 />
             </div>
 
             {/* TABLE */}
             <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <Table className="w-full">
-                    <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
+                    <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur">
                         <TableRow>
                             <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">No.</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Beneficiary</TableHead>
@@ -210,13 +177,11 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                         ) : (
                             requestList.map((req, index) => {
                                 const rowNumber = (meta.current_page - 1) * meta.per_page + (index + 1);
-
                                 return (
                                     <ContextMenu key={req.id}>
                                         <ContextMenuTrigger asChild>
                                             <TableRow className="group transition-colors hover:bg-gray-50">
                                                 <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
-
                                                 <TableCell className="text-xs font-medium text-gray-900 capitalize">
                                                     {req.beneficiary ? (
                                                         `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
@@ -224,13 +189,11 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                                         <span className="text-gray-400 italic">No Beneficiary</span>
                                                     )}
                                                 </TableCell>
-
                                                 <TableCell className="text-xs text-gray-600">
                                                     {Utility().formatToReadableDateNoTime(req.created_at)}
                                                 </TableCell>
                                                 <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
                                                 <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
-
                                                 <TableCell>
                                                     <span
                                                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
@@ -238,50 +201,32 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                                                         {req.status.replace('_', ' ')}
                                                     </span>
                                                 </TableCell>
-
                                                 <TableCell className="text-xs font-semibold text-gray-700">
                                                     {Utility().formatCurrency(req.amount)}
                                                 </TableCell>
-
                                                 <TableCell>
                                                     <div className="flex justify-center gap-2">
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
-                                                            className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                            onClick={() => {
-                                                                // handleViewRequest(req.id)
-                                                                setDetailsView((prev) => ({
-                                                                    ...prev,
-                                                                    isOpen: true,
-                                                                    data: req,
-                                                                }));
-                                                            }}
+                                                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                            onClick={() => setDetailsView({ isOpen: true, data: req })}
                                                         >
                                                             <Eye size={16} />
                                                         </Button>
-
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
-                                                            className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
-                                                            onClick={() => {
-                                                                console.log('Edit request:', req.id);
-                                                                setIsAddNewRecordDialogOpen((prev) => ({
-                                                                    ...prev,
-                                                                    isOpen: true,
-                                                                    editData: req,
-                                                                }));
-                                                            }}
+                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                                                            onClick={() => setIsAddNewRecordDialogOpen({ isOpen: true, editData: req })}
                                                         >
                                                             <Pencil size={16} />
                                                         </Button>
-
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"
+                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
                                                             disabled={req.status === 'pending'}
-                                                            className="h-8 w-8 border-green-200 text-green-600 hover:bg-green-50"
                                                             onClick={() => setPrintDialogState({ isVisible: true, request: req })}
                                                         >
                                                             <Printer size={16} />
@@ -308,45 +253,24 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 />
             </div>
 
-            <ToastProvider />
-
-            {/* <FilterDialog
-                isOpen={isSortSelectionDialogOpen}
-                currentFilter={null}
-                onClose={() => setIsSortSelectionDialogOpen(false)}
-                filters={[
-                    { title: 'Name', sub: 'first_name' },
-                    { title: 'Date', sub: 'created_at' },
-                    { title: 'Transaction', sub: 'transaction_number' },
-                    { title: 'Status', sub: 'status' },
-                ]}
-                onApply={(selectedFilter) => handleSearchOrSort({ sort: selectedFilter?.sub })}
-            /> */}
-
-            {/* ✅ NEW: ActionCenterForm Implementation */}
+            {/* MODALS */}
             <ActionCenterForm
                 isOpen={isAddNewRecordDialogOpen.isOpen}
-                onClose={() => {
-                    setIsAddNewRecordDialogOpen((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                        editData: null,
-                    }));
-                }}
+                onClose={() => setIsAddNewRecordDialogOpen({ isOpen: false, editData: null })}
                 onSubmitSuccess={(title, message) => {
-                    // 1. Show the success dialog
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                        title: title,
-                        message: message,
+                    setClassicDialog({
+                        isOpen: true,
+                        title,
+                        message,
                         positiveButtonText: 'Close',
+                        negativeButtonText: '',
                         isNegativeButtonHidden: true,
-                    }));
-                    // 2. Reload the table data to show the new record
+                        action: null,
+                    });
                     handleReload();
                 }}
-                editData={isAddNewRecordDialogOpen.editData}
+                // ✅ This transformation fixes the type error
+                editData={mapToFormData(isAddNewRecordDialogOpen.editData)}
             />
 
             <ClassicDialog
@@ -370,6 +294,8 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 onClose={() => setPrintDialogState({ isVisible: false, request: null })}
                 data={printDialogState.request}
             />
+
+            <ToastProvider />
         </div>
     );
 }

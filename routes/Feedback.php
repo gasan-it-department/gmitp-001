@@ -1,5 +1,6 @@
 <?php
 use App\External\Web\Controllers\Feedback\Admin\FeedbackAdminController;
+use App\External\Web\Controllers\Feedback\Client\ListFeedbackController;
 use Illuminate\Support\Facades\Route;
 use App\External\Api\Controllers\Feedback\FeedbackController;
 
@@ -24,6 +25,14 @@ Route::prefix('{municipality}')
 
     });
 
+//client side route page.
+Route::prefix('{municipality}/feedback/client')
+    ->middleware(['municipalityContext', 'auth'])
+    ->group(function () {
+
+        Route::get('/', ListFeedbackController::class)->name('list');
+
+    });
 
 
 Route::prefix('api/feedback')

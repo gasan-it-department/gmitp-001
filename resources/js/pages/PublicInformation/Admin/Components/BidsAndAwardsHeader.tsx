@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext'; // Import the hook
 import { cn } from '@/lib/utils';
 import SearchBar from '@/pages/Utility/SearchBar';
+import procurement from '@/routes/procurement';
+import { router } from '@inertiajs/react';
 import { List, PlusIcon } from 'lucide-react';
 
 interface Props {
@@ -11,17 +13,17 @@ interface Props {
     onCreateNewButtonClicked: () => void;
 }
 
-export default function BidsAndAwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked}: Props) {
+export default function BidsAndAwardsHeader({ className, onFilterButtonClicked, onSearch, onCreateNewButtonClicked }: Props) {
     // 1. Consuming the context here is the clean, correct way
     const { currentMunicipality } = useMunicipality();
     const handleCreateClick = () => {
-        onCreateNewButtonClicked();
-        if (!currentMunicipality?.slug) return;
         // onCreateNewButtonClicked();
+        // if (!currentMunicipality?.slug) return;
+        // // onCreateNewButtonClicked();
 
-        // router.visit(awardsAdminPage.addEditPage.url(currentMunicipality.slug));
+        router.visit(procurement.admin.create.url(currentMunicipality.slug));
     };
-    
+
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             <SearchBar

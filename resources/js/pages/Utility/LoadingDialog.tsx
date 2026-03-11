@@ -28,23 +28,21 @@ export default function LoadingDialog({
         className="
           w-[90vw] sm:w-[80vw] md:w-[400px] 
           max-w-md rounded-2xl p-6
-          border shadow-lg 
-          bg-white dark:bg-neutral-900
+          border border-border shadow-lg 
+          bg-background
           flex flex-col items-center text-center gap-5
           transition-all duration-300 ease-in-out
         "
       >
-
         <LoadingSpinner />
 
-        {/* Title & Description */}
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
+          <DialogTitle className="text-lg sm:text-xl font-semibold text-foreground">
             {title}
           </DialogTitle>
 
           {description && (
-            <DialogDescription className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mt-2">
+            <DialogDescription className="text-sm sm:text-base text-muted-foreground mt-2">
               {description}
             </DialogDescription>
           )}

@@ -1,14 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import SearchBar from '@/pages/Utility/SearchBar';
-import { List, PlusIcon, ChevronDown } from 'lucide-react';
+import { ChevronDown, List, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 type SortListType = {
     label: string;
@@ -23,17 +18,11 @@ interface Props {
     onSortSelected?: (value: string) => void;
 }
 
-export default function AnnouncementPageHeader({
-    className,
-    onAddNewButtonClicked,
-    onSearch,
-    sortList = [],
-    onSortSelected,
-}: Props) {
+export default function AnnouncementPageHeader({ className, onAddNewButtonClicked, onSearch, sortList = [], onSortSelected }: Props) {
     const [selectedSort, setSelectedSort] = useState<SortListType | null>(null);
 
     const handleSortSelect = (item: SortListType) => {
-        if(selectedSort?.value === item.value) return;
+        if (selectedSort?.value === item.value) return;
         setSelectedSort(item);
         onSortSelected?.(item.value);
     };
@@ -60,15 +49,12 @@ export default function AnnouncementPageHeader({
                     >
                         <List className="h-4 w-4" />
                         {selectedSort ? selectedSort.label : 'Sort'}
-                        <ChevronDown className="h-4 w-4 ml-1" />
+                        <ChevronDown className="ml-1 h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40">
                     {sortList.map((item) => (
-                        <DropdownMenuItem
-                            key={item.value}
-                            onClick={() => handleSortSelect(item)}
-                        >
+                        <DropdownMenuItem key={item.value} onClick={() => handleSortSelect(item)}>
                             {item.label}
                         </DropdownMenuItem>
                     ))}

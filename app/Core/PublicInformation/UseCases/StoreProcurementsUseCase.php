@@ -29,19 +29,22 @@ class StoreProcurementsUseCase
 
         return DB::transaction(function () use ($dto, $procurementId) {
 
-            return $this->procurementsRepo->save($dto, $procurementId);
+            $procurement = $this->procurementsRepo->save($dto, $procurementId);
 
-            if (!empty($dto->files)) {
 
-                foreach ($dto->files as $index => $file) {
+            if (!empty($dto->attachments)) {
+
+                foreach ($dto->attachments as $index => $attachment) {
+
+                    $fileObject = $attachment['file'];
+
+                    $docType = $attachment['type'];
 
                     $fileId = $this->idGenerator->generate();
 
                     $folder = 'procurements_files/' . $procurementId;
 
-                    $fileData = $this->fileUploadService->uploadFiles($file, $folder);
-
-                    $fileType = $dto->fileTypes[$index] ?? 'DOCUMENT';
+                    $fileData = $this->fileUploadService->uploadFiles($fileObject, $folder);
 
                     $this->procurementsRepo->saveFiles(
 
@@ -49,7 +52,7 @@ class StoreProcurementsUseCase
 
                         procurementId: $procurementId,
 
-                        type: $fileType,
+                        type: $docType,
 
                         fileId: $fileId
 
@@ -58,7 +61,7 @@ class StoreProcurementsUseCase
                 }
 
             }
-
+            return $procurement;
         });
     }
 

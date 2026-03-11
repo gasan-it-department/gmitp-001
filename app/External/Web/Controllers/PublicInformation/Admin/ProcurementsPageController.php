@@ -29,4 +29,11 @@ class ProcurementsPageController extends Controller
         ]);
 
     }
+
+    public function create()
+    {
+
+        return Inertia::render('PublicInformation/Admin/Procurement/Create/Create');
+
+    }
 }

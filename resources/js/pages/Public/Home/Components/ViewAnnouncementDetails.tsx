@@ -1,14 +1,8 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { CalendarDays, Megaphone } from "lucide-react";
-import Utility from "@/pages/Utility/Utility";
-import { AnnouncementData } from "@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
+import Utility from '@/pages/Utility/Utility';
+import { CalendarDays, Megaphone } from 'lucide-react';
 
 type Props = {
     isOpen: boolean;
@@ -23,91 +17,66 @@ export function ViewAnnouncementDetails({ isOpen, data, onClose }: Props) {
         const urlRegex = /(https?:\/\/[^\s]+)/g;
 
         return text.replace(urlRegex, (url) => {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800">${url}</a>`;
+            // Updated link color to match theme primary or a standard blue
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80 font-medium">${url}</a>`;
         });
     };
-
 
     return (
         <Dialog open={isOpen}>
             <DialogContent
                 showCloseButton={false}
                 onInteractOutside={(e) => e.preventDefault()}
-                className="
-        w-full max-w-2xl sm:max-w-3xl lg:max-w-4xl
-        h-[80vh] sm:h-[75vh] lg:h-[70vh] 
-        p-6 rounded-2xl border
-        shadow-2xl bg-gradient-to-br from-orange-50 via-red-50 to-white
-        dark:bg-neutral-900 dark:from-[#1a0a0a] dark:via-[#2a0f00] dark:to-neutral-900
-        transition-all duration-300
-        flex flex-col
-    "
+                // Updated Container: Uses 'bg-background', 'border-border'
+                className="flex h-[80vh] w-full max-w-2xl flex-col rounded-2xl border border-border bg-background p-6 shadow-2xl transition-all duration-300 sm:h-[75vh] sm:max-w-3xl lg:h-[70vh] lg:max-w-4xl"
             >
                 {/* Header */}
-                <DialogHeader className="space-y-3 flex-shrink-0">
-                    <div className="flex items-start gap-3 w-full min-w-0">
-                        <div className="p-3 rounded-full bg-gradient-to-br from-red-500 to-orange-500 shadow-md shrink-0">
-                            <Megaphone className="w-5 h-5 text-white" />
+                <DialogHeader className="flex-shrink-0 space-y-3">
+                    <div className="flex w-full min-w-0 items-start gap-3">
+                        {/* Icon: Uses 'bg-primary' with 'text-primary-foreground' */}
+                        <div className="shrink-0 rounded-full bg-primary p-3 shadow-md text-primary-foreground">
+                            <Megaphone className="h-5 w-5" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <DialogTitle className="
-                    text-left text-xl sm:text-2xl font-bold
-                    bg-gradient-to-r from-red-600 to-orange-500
-                    dark:from-red-400 dark:to-orange-300
-                    bg-clip-text text-transparent tracking-tight
-                    line-clamp-3 overflow-hidden break-words leading-tight
-                ">
-                                {data.title || "Untitled Announcement"}
+                        <div className="min-w-0 flex-1">
+                            {/* Title: Uses 'text-foreground' */}
+                            <DialogTitle className="line-clamp-3 overflow-hidden text-left text-xl leading-tight font-bold tracking-tight break-words text-foreground sm:text-2xl">
+                                {data.title || 'Untitled Announcement'}
                             </DialogTitle>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <CalendarDays className="w-4 h-4 text-orange-500 dark:text-orange-300" />
+                    
+                    {/* Meta Data: Uses 'text-muted-foreground' */}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarDays className="h-4 w-4 text-primary" />
                         <span>{Utility().formatToReadableDate(data.created_at)}</span>
-                        <span className="text-gray-400 mx-1">•</span>
-                        <span className="text-gray-500 dark:text-gray-400">
-                            {Utility().formatTimeAgo(data.created_at)}
-                        </span>
+                        <span className="mx-1">•</span>
+                        <span>{Utility().formatTimeAgo(data.created_at)}</span>
                     </div>
-                    <div className="h-[1px] bg-gradient-to-r from-orange-400 to-red-400 dark:from-orange-700 dark:to-red-700 mt-3 mb-2" />
+                    
+                    {/* Divider: Uses 'bg-border' */}
+                    <div className="mt-3 mb-2 h-[1px] bg-border" />
                 </DialogHeader>
 
-                {/* Scrollable Textarea */}
                 {/* Scrollable Message Container */}
                 <div
-                    className="
-        flex-1 w-full
-        p-4 border border-gray-200 dark:border-neutral-700
-        rounded-lg bg-gray-50 dark:bg-neutral-800
-        text-gray-800 dark:text-gray-200
-        leading-relaxed whitespace-pre-line break-words
-        overflow-y-auto overflow-x-hidden
-        scrollbar-thin scrollbar-thumb-orange-400 dark:scrollbar-thumb-orange-700
-        scrollbar-track-transparent
-    "
+                    // Updated Content Area: 'bg-muted/30', 'text-foreground', 'border-border'
+                    className="scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent w-full flex-1 overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-muted/30 p-4 leading-relaxed break-words whitespace-pre-line text-foreground"
                     dangerouslySetInnerHTML={{
-                        __html: linkifyText(data.message || "No message provided for this announcement."),
+                        __html: linkifyText(data.message || 'No message provided for this announcement.'),
                     }}
                 />
 
                 {/* Footer */}
-                <DialogFooter className="mt-4 flex-shrink-0 flex justify-end">
+                <DialogFooter className="mt-4 flex flex-shrink-0 justify-end">
                     <Button
                         onClick={onClose}
-                        className="
-                px-6 py-2.5 text-base font-medium
-                rounded-lg transition-all duration-200
-                bg-gradient-to-r from-red-600 to-orange-500
-                hover:from-red-700 hover:to-orange-600
-                text-white shadow-md
-                focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 dark:focus:ring-offset-neutral-900
-            "
+                        // Button: Uses 'bg-primary', 'text-primary-foreground'
+                        className="rounded-lg bg-primary px-6 py-2.5 text-base font-medium text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
                         Close
                     </Button>
                 </DialogFooter>
             </DialogContent>
-
         </Dialog>
     );
 }

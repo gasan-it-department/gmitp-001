@@ -1,49 +1,49 @@
-import { cn } from '@/lib/utils';
-import { FieldError, useFormContext } from 'react-hook-form';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+// components/FormInputField.tsx
+import { Label } from '@/components/ui/label';
 
-interface InputFormProps {
-    label?: string;
-    name: string;
+interface InputProps {
+    label: string;
+    id: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error?: string;
     type?: string;
     required?: boolean;
-    className?: string;
-    autoComplete?: string;
+    disabled?: boolean;
+    isUppercase?: boolean;
+    placeholder?: string;
 }
 
-export function FormInput({ name, label, type, required = false, className, autoComplete }: InputFormProps) {
-    const {
-        register,
-        formState: { errors },
-    } = useFormContext();
-
-    const fieldError = (errors[name] as FieldError)?.message;
+export const FormInput = ({
+    label,
+    id,
+    value,
+    onChange,
+    error,
+    type = 'text',
+    required = false,
+    disabled = false,
+    isUppercase = false, // Default is false, so it works if prop is missing
+    placeholder, // 3. Destructure it
+}: InputProps) => {
     return (
-        <div className="space-y-2">
-            <Label htmlFor={name} className="text-md font-bold text-gray-700">
-                {label} {required && '*'}
+        <div className="flex flex-col gap-1.5">
+            <Label htmlFor={id} className="text-sm font-medium text-gray-700">
+                {label} {required && <span className="text-red-500">*</span>}
             </Label>
-
-            <Input
-                id={name}
+            <input
+                id={id}
                 type={type}
-                autoComplete={autoComplete}
-                {...register(name, { required: `${label} is required` })}
-                className={cn(
-                    'rounded-md border transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-200',
-                    fieldError ? 'border-red-500' : 'border-gray-300',
-                    className,
-                )}
-                aria-label={label}
-                aria-required={required}
-                aria-invalid={!!fieldError}
+                value={value}
+                onChange={onChange}
+                disabled={disabled}
+                required={required}
+                placeholder={placeholder} // 4. Pass it here
+                className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                    error ? 'border-red-500 focus-visible:ring-red-500' : 'border-input'
+                } ${isUppercase ? 'uppercase placeholder:normal-case' : ''}`}
             />
-            {fieldError && (
-                <p className="text-sm text-red-600" role="alert">
-                    {fieldError}
-                </p>
-            )}
+            {error && <span className="animate-pulse text-sm text-red-500">{error}</span>}
         </div>
     );
-}
+};

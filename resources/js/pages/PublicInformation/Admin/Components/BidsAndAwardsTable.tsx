@@ -1,11 +1,14 @@
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AwardsData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
-import AwardsHeader from './BidsAndAwardsHeader';
-import BidsAndAwardsHeader from './BidsAndAwardsHeader';
+import procurement from '@/routes/procurement';
+import { Link } from '@inertiajs/react';
+import { Edit, Eye } from 'lucide-react';
 import { useState } from 'react';
 import BidsAndAwardsDialog from './AddEditBidsAndAwardsDialog';
-import { is } from 'date-fns/locale';
+import BidsAndAwardsHeader from './BidsAndAwardsHeader';
 
 interface Props {
     data: AwardsData[];
@@ -13,6 +16,8 @@ interface Props {
 }
 
 export default function AwardsTable({ data = [] }: Props) {
+    const { currentMunicipality } = useMunicipality();
+
     const [bidsAndAwardsDialogVisible, setBidsAndAwardsDialogVisible] = useState(false);
     // Helper to format money (PHP)
     const formatCurrency = (amount: number) => {
@@ -51,8 +56,7 @@ export default function AwardsTable({ data = [] }: Props) {
             {/* Header with Create Button */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Procurements</h1>
-                <BidsAndAwardsHeader onSearch={() => { }}
-                    onCreateNewButtonClicked={() => setBidsAndAwardsDialogVisible(true)} />
+                <BidsAndAwardsHeader onSearch={() => {}} onCreateNewButtonClicked={() => setBidsAndAwardsDialogVisible(true)} />
             </div>
 
             {/* TABLE CONTAINER */}
@@ -60,13 +64,13 @@ export default function AwardsTable({ data = [] }: Props) {
                 <Table className="min-w-full">
                     <TableHeader className="bg-gray-50/50">
                         <TableRow>
-                            <TableHead className="w-[150px]">Ref No.</TableHead>
-                            <TableHead className="w-[300px]">Project Title</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>ABC (Budget)</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Closing Date</TableHead>
-                            <TableHead className="w-[120px] text-center">Actions</TableHead>
+                            <TableHead className="w-[180px]">Ref No.</TableHead>
+                            <TableHead className="w-[400px]">Project Title</TableHead>
+                            <TableHead className="w-[180px]">Category</TableHead>
+                            <TableHead className="w-[180px]">ABC (Budget)</TableHead>
+                            <TableHead className="w-[180px]">Status</TableHead>
+                            <TableHead className="w-[180px]">Closing Date</TableHead>
+                            <TableHead className="w-[180px] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
@@ -106,17 +110,24 @@ export default function AwardsTable({ data = [] }: Props) {
 
                                     {/* 7. Actions */}
                                     <TableCell>
-                                        {/* <div className="flex justify-center gap-2">
+                                        <div className="flex justify-center gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="icon"
                                                 className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                                onClick={() => console.log('Edit', item.id)}
                                             >
-                                                <Edit className="h-4 w-4" />
+                                                <Link
+                                                    href={procurement.admin.show({
+                                                        municipality: currentMunicipality.slug,
+                                                        id: item.id || '', // 👈 FIX: Provides a fallback string
+                                                    })}
+                                                >
+                                                    {' '}
+                                                    <Eye className="h-4 w-4" />
+                                                </Link>
                                             </Button>
 
-                                            {item.files?.length > 0 && (
+                                            {/* {item.files?.length > 0 && (
                                                 <Button
                                                     variant="outline"
                                                     size="icon"
@@ -125,8 +136,8 @@ export default function AwardsTable({ data = [] }: Props) {
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
-                                            )}
-                                        </div> */}
+                                            )} */}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -135,12 +146,7 @@ export default function AwardsTable({ data = [] }: Props) {
                 </Table>
             </div>
 
-            <BidsAndAwardsDialog
-                isOpen={bidsAndAwardsDialogVisible}
-                onClose={() => setBidsAndAwardsDialogVisible(false)}
-                onSuccess={() => {
-
-                }} />
+            <BidsAndAwardsDialog isOpen={bidsAndAwardsDialogVisible} onClose={() => setBidsAndAwardsDialogVisible(false)} onSuccess={() => {}} />
 
             {/* Optional: Add Pagination controls at the bottom using `pagination` prop */}
         </div>

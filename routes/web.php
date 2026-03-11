@@ -24,11 +24,11 @@ require __DIR__ . '/travel_editor_page.php';
 require __DIR__ . '/bidding_admin_page.php';
 require __DIR__ . '/citizen_charter_admin_page.php';
 require __DIR__ . '/executive_orders_admin_page.php';
-require __DIR__ . '/officials_admin_page.php';
-require __DIR__ . '/offices_admin_page.php';
 require __DIR__ . '/public_information.php';
 require __DIR__ . '/transaction.php';
 require __DIR__ . '/cemetery.php';
+require __DIR__ . '/government.php';
+
 
 
 

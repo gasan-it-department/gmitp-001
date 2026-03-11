@@ -1,15 +1,16 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use App\Http\Middleware\RoleCheckRedirect;
+use App\Http\Middleware\Admin\AdminGuardMiddleware;
+use App\Http\Middleware\Client\ClientGuardMiddleware;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\Admin\AdminGuardMiddleware;
+use App\Http\Middleware\Municipality\SetMunicipalityContext;
+use App\Http\Middleware\RoleCheckRedirect;
+use App\Http\Middleware\SuperAdmin\SuperAdminGuardMiddleware;
+use App\Shared\Exceptions\Interfaces\DomainException;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\Client\ClientGuardMiddleware;
-use App\Http\Middleware\Municipality\SetMunicipalityContext;
-use App\Http\Middleware\SuperAdmin\SuperAdminGuardMiddleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
+
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
@@ -40,7 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-
+            'phone.verified' => EnsurePhoneIsVerified::class,
             'admin' => AdminGuardMiddleware::class,
             'superAdmin' => SuperAdminGuardMiddleware::class,
             'client' => ClientGuardMiddleware::class,
@@ -54,6 +56,26 @@ return Application::configure(basePath: dirname(__DIR__))
         base_path('app/Core/*/Listeners'),
     ])
 
-    ->withExceptions(using: function (Exceptions $exceptions) {
-        //
+
+    ->withExceptions(function (Exceptions $exceptions) {
+
+        // 1. Register the renderer for ALL DomainExceptions
+        $exceptions->render(function (DomainException $e, Request $request) {
+
+            // 2. Handle API / Axios Requests
+            if (($request->wantsJson() || $request->is('api/*')) && !$request->hasHeader('X-Inertia')) {
+
+                return response()->json([
+                    'error' => class_basename($e),
+                    'code' => $e->errorCode(),
+                    'message' => $e->getMessage(),
+                ], $e->status());
+            }
+
+            // 3. Handle Inertia Web Requests
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
+        });
+
     })->create();

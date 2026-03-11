@@ -1,45 +1,96 @@
-"use client";
+import { 
+    CreditCard, 
+    LockKeyhole, 
+    Phone, 
+    ArrowRight, 
+    ShieldAlert 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Head } from '@inertiajs/react';
 
-import { Button } from "@/components/ui/button";
-import { MunicipalityProvider, useMunicipality } from "@/Core/Context/MunicipalityContext";
-import { router } from "@inertiajs/react";
-import { Lock } from "lucide-react";
-
-interface NoAccessPageProps {
-    title: string;
-    message: string;
-    route: string
+// Define props expected from Laravel
+interface ServiceSuspendedProps {
+    municipalityName?: string;
+    referenceId?: string;
 }
 
-export default function NoAccessPage({ title, message, route }: NoAccessPageProps) {
+export default function ServiceSuspended({ 
+    municipalityName = "Unknown Municipality", 
+    referenceId = "REF-UNKNOWN" 
+}: ServiceSuspendedProps) {
+    
     return (
-        <MunicipalityProvider>
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-100 text-center px-6">
-                {/* Lock Icon */}
-                <div className="bg-white p-6 rounded-full shadow-md mb-6">
-                    <Lock className="w-12 h-12 text-orange-500" />
+        <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden">
+            <Head title="Service Suspended" />
+            
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+            
+            {/* Decorative Gradient */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-100/50 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 w-full max-w-lg px-4">
+                <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden">
+                    
+                    {/* Header Strip */}
+                    <div className="h-2 w-full bg-gradient-to-r from-orange-500 to-red-600" />
+
+                    <div className="p-8 md:p-10 flex flex-col items-center text-center">
+                        
+                        {/* Icon Badge */}
+                        <div className="mb-6 relative">
+                            <div className="h-20 w-20 rounded-full bg-orange-50 flex items-center justify-center ring-8 ring-orange-50/50">
+                                <LockKeyhole className="h-10 w-10 text-orange-600" />
+                            </div>
+                            <div className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-md flex items-center justify-center border border-slate-100">
+                                <ShieldAlert className="h-4 w-4 text-red-500" />
+                            </div>
+                        </div>
+
+                        {/* Headlines */}
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-3">
+                            Service Suspended
+                        </h1>
+                        
+                        <p className="text-slate-600 text-sm md:text-base leading-relaxed mb-6">
+                            Access to the <span className="font-bold text-slate-900">{municipalityName}</span> portal has been temporarily restricted due to an outstanding balance or inactive status.
+                        </p>
+
+                        {/* Info Box */}
+                        <div className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 mb-8">
+                            <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                <span>Reference ID</span>
+                                <span>Status</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="font-mono text-sm text-slate-700 font-medium">{referenceId}</span>
+                                <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
+                                    Inactive
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="w-full space-y-3">
+                            <Button 
+                                className="w-full h-12 bg-slate-900 hover:bg-orange-600 text-white font-bold rounded-xl shadow-lg shadow-slate-900/20 transition-all active:scale-95 group"
+                            >
+                                <CreditCard className="mr-2 h-4 w-4" />
+                                Proceed to Payment
+                                <ArrowRight className="ml-auto h-4 w-4 opacity-50 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+
+                            <Button 
+                                variant="ghost"
+                                className="w-full h-12 text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-bold rounded-xl"
+                            >
+                                <Phone className="mr-2 h-4 w-4" />
+                                Contact Support
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-
-                {/* Heading */}
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                    {title}
-                </h1>
-
-                {/* Description */}
-                <p className="text-gray-600 max-w-md mb-8">
-                    {message}
-                </p>
-
-                {/* Back Button */}
-                <Button
-                    onClick={() => {
-                        router.visit(route);
-                    }}
-                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium shadow-md hover:shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 rounded-md px-6 py-2"
-                >
-                    Return Home
-                </Button>
             </div>
-        </MunicipalityProvider>
+        </div>
     );
 }

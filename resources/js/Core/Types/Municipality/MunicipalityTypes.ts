@@ -5,7 +5,21 @@ export interface MunicipalityType {
     zip_code: string;
     municipal_code: string;
     is_active?: boolean;
-    settings?: any
+    settings?: MunicipalitySettings;
+}
+
+export interface Municipality {
+    id: string;
+    name: string;
+    slug: string;
+    zip_code: string;
+    municipal_code: string;
+    is_active?: boolean;
+    settings?: MunicipalitySettings;
+}
+
+export interface MunicipalitySettings {
+    logo_url: string;
 }
 
 export interface MunicipalResponse {

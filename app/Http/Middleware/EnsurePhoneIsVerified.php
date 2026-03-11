@@ -14,15 +14,14 @@ class EnsurePhoneIsVerified
 
         $user = request()->user();
 
-        if (!$user) {
-            return redirect()->route('landing');
+        if ($user) {
+            if (is_null($user->phone_verified_at)) {
+
+                return redirect()->route('otp.verification.page');
+
+            }
         }
 
-        if (is_null($user->phone_verified_at)) {
-
-            return redirect()->route('otp.verification.page');
-
-        }
 
         return $next($request);
     }

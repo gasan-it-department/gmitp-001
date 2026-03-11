@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import Utility from "@/pages/Utility/Utility";
-import { useEffect, useState } from "react";
-import { InfoIcon, Clock, XCircle, CheckCircle, FileText } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import Utility from '@/pages/Utility/Utility';
+import { CheckCircle, Clock, FileText, InfoIcon, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Props {
     isOpen: boolean;
@@ -29,11 +29,11 @@ interface RequestData {
 }
 
 export default function RequestStatusDialog({ isOpen, selectedRequest, onClose }: Props) {
-    const [clientName, setClientName] = useState("");
-    const [clientAge, setClientAge] = useState("");
-    const [clientContactMumber, setClientContactNumber] = useState("");
-    const [clientAddress, setClientAddress] = useState("");
-    const [clientRequestedService, setClientRequestedService] = useState("");
+    const [clientName, setClientName] = useState('');
+    const [clientAge, setClientAge] = useState('');
+    const [clientContactMumber, setClientContactNumber] = useState('');
+    const [clientAddress, setClientAddress] = useState('');
+    const [clientRequestedService, setClientRequestedService] = useState('');
     const [files, setFiles] = useState<{ files: File[] }>({ files: [] });
     const [totalFileSize, setTotalFileSize] = useState(0);
 
@@ -42,10 +42,10 @@ export default function RequestStatusDialog({ isOpen, selectedRequest, onClose }
     });
 
     async function initLogic() {
-        setClientName(selectedRequest?.data[0]?.clientName ?? "");
-        setClientAge(selectedRequest?.data[0]?.clientAge ?? "");
-        setClientContactNumber(selectedRequest?.data[0]?.clientContactNumber ?? "");
-        setClientAddress(selectedRequest?.data[0]?.clientAddress ?? "");
+        setClientName(selectedRequest?.data[0]?.clientName ?? '');
+        setClientAge(selectedRequest?.data[0]?.clientAge ?? '');
+        setClientContactNumber(selectedRequest?.data[0]?.clientContactNumber ?? '');
+        setClientAddress(selectedRequest?.data[0]?.clientAddress ?? '');
         setClientRequestedService(selectedRequest!.title);
     }
 
@@ -53,13 +53,12 @@ export default function RequestStatusDialog({ isOpen, selectedRequest, onClose }
         const selectedFiles = Array.from(e.target.files || []);
 
         if (selectedFiles.length > 10) {
-            alert("You can only select up to 10 files.");
-            e.target.value = "";
+            alert('You can only select up to 10 files.');
+            e.target.value = '';
             return;
         }
 
         const updatedFiles = [...files.files];
-
         let newTotalSize = totalFileSize;
 
         selectedFiles.forEach((file) => {
@@ -73,199 +72,184 @@ export default function RequestStatusDialog({ isOpen, selectedRequest, onClose }
         setTotalFileSize(newTotalSize);
     };
 
+    // Helper to determine status styling
+    const getStatusStyles = (status: string | undefined) => {
+        switch (status) {
+            case 'In-review':
+                return 'bg-amber-100 text-amber-700 border-amber-200';
+            case 'Approved':
+                return 'bg-green-100 text-green-700 border-green-200';
+            case 'Rejected':
+                return 'bg-destructive/10 text-destructive border-destructive/20'; // Uses theme 'destructive'
+            case 'Document':
+                return 'bg-secondary text-secondary-foreground border-border'; // Uses theme 'secondary'
+            default:
+                return 'bg-muted text-muted-foreground border-border';
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent showCloseButton={false} className="
-      w-full h-screen max-w-none rounded-none m-0 p-4 overflow-y-auto scrollbar-hide
-                sm:max-w-[700px] sm:h-auto sm:rounded-lg sm:m-auto lg:h-5/6">
+            <DialogContent
+                showCloseButton={false}
+                className="scrollbar-hide m-0 h-screen w-full max-w-none overflow-y-auto rounded-none border-border bg-background p-4 sm:m-auto sm:h-auto sm:max-w-[700px] sm:rounded-lg lg:h-5/6"
+            >
                 <DialogHeader>
-                    <DialogTitle className="p-3 text-[21px] text-center">Request Status</DialogTitle>
+                    <DialogTitle className="p-3 text-center text-xl font-bold text-foreground">Request Status</DialogTitle>
                 </DialogHeader>
-                <form className="flex flex-col gap-6" onSubmit={(e) => {
-                    e.preventDefault();
-                }}>
-
+                <form
+                    className="flex flex-col gap-6"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                    }}
+                >
+                    {/* Status Badge */}
                     <div
-                        className={`text-[20px] px-2 py-1 rounded text-center flex flex-col items-center ${selectedRequest?.status === "In-review"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : selectedRequest?.status === "Approved"
-                                    ? "bg-green-100 text-green-800"
-                                    : selectedRequest?.status === "Document"
-                                        ? "bg-gray-100 text-gray-800"
-                                        : selectedRequest?.status === "Rejected"
-                                            ? "bg-red-100 text-red-800"
-                                            : "bg-gray-200 text-gray-800"
-                            }`}
+                        className={`flex flex-col items-center rounded-lg border px-4 py-6 text-center ${getStatusStyles(selectedRequest?.status)}`}
                     >
-                        {
-                            selectedRequest?.status === "In-review" ? <Clock size={35} /> :
-                                selectedRequest?.status === "Approved" ? <CheckCircle size={35} /> :
-                                    selectedRequest?.status === "Document" ? <FileText size={35} /> :
-                                        selectedRequest?.status === "Rejected" ? <XCircle size={35} /> :
-                                            <Clock size={35} />
-                        }
+                        {selectedRequest?.status === 'In-review' ? (
+                            <Clock size={40} className="mb-2 opacity-80" />
+                        ) : selectedRequest?.status === 'Approved' ? (
+                            <CheckCircle size={40} className="mb-2 opacity-80" />
+                        ) : selectedRequest?.status === 'Document' ? (
+                            <FileText size={40} className="mb-2 opacity-80" />
+                        ) : selectedRequest?.status === 'Rejected' ? (
+                            <XCircle size={40} className="mb-2 opacity-80" />
+                        ) : (
+                            <Clock size={40} className="mb-2 opacity-80" />
+                        )}
 
-                        <span className="font-bold">
-                            {selectedRequest?.status}
-                        </span>
+                        <span className="text-xl font-bold">{selectedRequest?.status}</span>
 
-                        <span className="text-[14px] p-1">
-                            {
-                                selectedRequest?.status === "In-review"
-                                    ? "Your application is being reviewed by Action Center."
-                                    : selectedRequest?.status === "Approved"
-                                        ? "Your application has been approved. Please check details below."
-                                        : selectedRequest?.status === "Rejected"
-                                            ? "Your application has been rejected. More details below."
-                                            : selectedRequest?.status === "Document"
-                                                ? "Your application is pending. Please submit the necessary documents. See more details below."
-                                                : "Unknown status. Please report this to developers."
-                            }
+                        <span className="mt-1 text-sm font-medium opacity-90">
+                            {selectedRequest?.status === 'In-review'
+                                ? 'Your application is being reviewed by Action Center.'
+                                : selectedRequest?.status === 'Approved'
+                                  ? 'Your application has been approved. Please check details below.'
+                                  : selectedRequest?.status === 'Rejected'
+                                    ? 'Your application has been rejected. More details below.'
+                                    : selectedRequest?.status === 'Document'
+                                      ? 'Your application is pending. Please submit the necessary documents.'
+                                      : 'Unknown status.'}
                         </span>
                     </div>
 
-
-                    {(selectedRequest?.status === "Rejected" || selectedRequest?.status === "Document") && (
+                    {/* Review Comment Box (If Rejected or Document needed) */}
+                    {(selectedRequest?.status === 'Rejected' || selectedRequest?.status === 'Document') && (
                         <div
-                            className={`text-[20px] px-2 py-1 rounded text-center flex flex-row gap-1 ${selectedRequest?.status === 'Document'
-                                ? 'bg-gray-100 text-gray-800'
-                                : 'bg-red-100 text-red-800'
-                                }`}
+                            className={`flex flex-row items-start gap-3 rounded-md border p-3 text-sm ${
+                                selectedRequest?.status === 'Document'
+                                    ? 'border-border bg-secondary text-secondary-foreground'
+                                    : 'border-destructive/20 bg-destructive/5 text-destructive'
+                            }`}
                         >
-                            <InfoIcon size={20} />
-                            <span className="text-[12px] text-start self-start">{selectedRequest.reviewComment}</span>
+                            <InfoIcon size={18} className="mt-0.5 shrink-0" />
+                            <span>{selectedRequest.reviewComment}</span>
                         </div>
                     )}
 
-
-
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Name/Pangalan:
-                            </label>
+                    {/* Form Fields */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Name / Pangalan</label>
                             <Input
                                 id="clientName"
                                 disabled={true}
                                 value={clientName}
                                 onChange={(e) => setClientName(e.target.value)}
-                                placeholder=" "
-                                className="placeholder-transparent w-full"
+                                className="bg-muted/50 text-foreground"
                             />
                         </div>
 
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Age/Edad:
-                            </label>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Age / Edad</label>
                             <Input
                                 id="clientAge"
                                 disabled={true}
                                 value={clientAge}
                                 onChange={(e) => setClientAge(e.target.value)}
-                                placeholder=" "
-                                className="placeholder-transparent w-full"
+                                className="bg-muted/50 text-foreground"
                             />
                         </div>
-                    </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Contact number:
-                            </label>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contact number</label>
                             <Input
                                 id="clientContactNumber"
                                 disabled={true}
                                 value={clientContactMumber}
                                 onChange={(e) => setClientContactNumber(e.target.value)}
-                                placeholder=" "
-                                className="placeholder-transparent w-full"
+                                className="bg-muted/50 text-foreground"
                             />
                         </div>
 
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Address:
-                            </label>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address</label>
                             <Input
                                 id="clientAddress"
                                 disabled={true}
                                 value={clientAddress}
                                 onChange={(e) => setClientAddress(e.target.value)}
-                                placeholder=" "
-                                className="placeholder-transparent w-full"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4 w-full">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Assistance needed:
-                            </label>
-                            <Input
-                                id="clientSelectedService"
-                                value={clientRequestedService}
-                                placeholder=" "
-                                className="placeholder-transparent w-full"
-                                disabled={true}
+                                className="bg-muted/50 text-foreground"
                             />
                         </div>
                     </div>
 
-                    {(selectedRequest?.status === 'Document') &&
-                        <div className="flex flex-col">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Assistance needed</label>
+                        <Input
+                            id="clientSelectedService"
+                            value={clientRequestedService}
+                            className="bg-muted/50 text-foreground"
+                            disabled={true}
+                        />
+                    </div>
+
+                    {/* File Upload Section (Only shown if status is 'Document') */}
+                    {selectedRequest?.status === 'Document' && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-foreground">Upload Documents</label>
                             <div
-                                onClick={() => document.getElementById("file-upload")?.click()}
-                                className="border border-gray-300 p-2 rounded cursor-pointer hover:bg-gray-100 w-auto"
+                                onClick={() => document.getElementById('file-upload')?.click()}
+                                className="cursor-pointer rounded-md border border-dashed border-input bg-background p-4 text-center hover:bg-muted/50 transition-colors"
                             >
-                                <p className="text-gray-600">Select files</p>
+                                <p className="text-sm text-muted-foreground">Click to select files</p>
                                 <input
                                     type="file"
                                     multiple
                                     id="file-upload"
                                     className="hidden"
                                     accept="image/*,application/pdf"
-                                    onChange={(e) => {
-                                        handleFileChange(e);
-                                    }}
+                                    onChange={handleFileChange}
                                 />
                             </div>
 
-                            <ul className="list-disc list-inside text-sm text-gray-700 max-h-32 overflow-y-auto mt-2">
-                                {files.files.filter(file =>
-                                    file.type.startsWith("image/") || file.type === "application/pdf"
-                                ).length === 0 ? (
-                                    <li>No files selected</li>
+                            <ul className="max-h-32 list-inside overflow-y-auto text-sm text-foreground">
+                                {files.files.filter((file) => file.type.startsWith('image/') || file.type === 'application/pdf').length === 0 ? (
+                                    <li className="text-muted-foreground italic">No files selected</li>
                                 ) : (
                                     files.files
-                                        .filter(file =>
-                                            file.type.startsWith("image/") || file.type === "application/pdf"
-                                        )
+                                        .filter((file) => file.type.startsWith('image/') || file.type === 'application/pdf')
                                         .map((file, index) => (
-                                            <li key={index} className="flex justify-between items-center">
-                                                <span className="truncate">
-                                                    {file.name.length > 25 ? file.name.slice(0, 25) + "..." : file.name}
-                                                    {" "}
-                                                    <span className="text-gray-500 text-xs">
-                                                        (
-                                                        {file.size >= 1048576
-                                                            ? `${(file.size / 1048576).toFixed(2)} MB`
-                                                            : `${(file.size / 1024).toFixed(2)} KB`}
-                                                        )
+                                            <li key={index} className="flex items-center justify-between py-1">
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    <FileText className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="truncate max-w-[200px]">{file.name}</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        ({file.size >= 1048576 ? `${(file.size / 1048576).toFixed(2)} MB` : `${(file.size / 1024).toFixed(2)} KB`})
                                                     </span>
-                                                </span>
+                                                </div>
 
                                                 <Button
                                                     variant="ghost"
+                                                    size="sm"
                                                     onClick={() => {
                                                         const newFiles = [...files.files];
                                                         newFiles.splice(index, 1);
                                                         setFiles({ ...files, files: newFiles });
                                                         setTotalFileSize(totalFileSize - file.size);
                                                     }}
-                                                    className="ml-2 text-red-500 hover:text-red-700 text-xs px-2 py-1"
-                                                    aria-label="Remove file"
+                                                    className="h-auto px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                 >
                                                     Remove
                                                 </Button>
@@ -273,35 +257,45 @@ export default function RequestStatusDialog({ isOpen, selectedRequest, onClose }
                                         ))
                                 )}
                             </ul>
-                        </div>}
+                        </div>
+                    )}
 
-                    <div className="bg-gray-100 rounded-md p-2 flex flex-col">
-                        <span className="text-[13px] p-1">Submitted on {Utility().formatToReadableDate(selectedRequest?.requestedDate)}</span>
-                        <span className="text-[13px] p-1">Transaction No. B-123456</span>
+                    {/* Metadata Footer */}
+                    <div className="flex flex-col gap-1 rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                        <span>Submitted on {Utility().formatToReadableDate(selectedRequest?.requestedDate)}</span>
+                        <span>Transaction No. <span className="font-mono text-foreground">{selectedRequest?.transactionNumber}</span></span>
                     </div>
 
-                    <div className="mt-5 mb-5 flex gap-2 flex-row sm:justify-end">
-                        <Button
-                            variant="outline"
-                            className="basis-1/2 sm:basis-auto sm:w-auto"
-                            onClick={onClose}
-                        >
+                    {/* Actions */}
+                    <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <Button variant="outline" type="button" onClick={onClose} className="sm:w-auto">
                             Close
                         </Button>
 
-                        <Button
-                            disabled={selectedRequest?.status !== "Document" && selectedRequest?.status !== "Rejected"}
-                            className="basis-1/2 sm:basis-auto sm:w-auto"
-                            onClick={() => {
-                                console.log(`Client name: ${clientName}`);
-                                console.log(`Client age: ${clientAge}`);
-                                console.log(`Client contact number: ${clientContactMumber}`);
-                                console.log(`Client address: ${clientAddress}`);
-                            }}
-                        >
-                            {selectedRequest?.status === "Document" || selectedRequest?.status === "Rejected" ? "Submit" : 
-                            selectedRequest?.status === "Approved" ? "Approved" : "Pending..."}
-                        </Button>
+                        {(selectedRequest?.status === 'Document' || selectedRequest?.status === 'Rejected') && (
+                            <Button
+                                type="button" // Use type="submit" if you wire up the form submission
+                                onClick={() => {
+                                    console.log('Submitting updated info...');
+                                }}
+                                className="sm:w-auto"
+                            >
+                                Submit Update
+                            </Button>
+                        )}
+                        
+                        {/* Just for display, if it's approved */}
+                        {selectedRequest?.status === 'Approved' && (
+                            <Button disabled className="bg-green-600 text-white opacity-100 sm:w-auto">
+                                Approved
+                            </Button>
+                        )}
+                         {/* Just for display, if it's in-review */}
+                         {selectedRequest?.status === 'In-review' && (
+                            <Button disabled variant="secondary" className="sm:w-auto">
+                                Pending Review
+                            </Button>
+                        )}
                     </div>
                 </form>
             </DialogContent>

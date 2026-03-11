@@ -1,225 +1,356 @@
-import { AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
-import { PaginatedResponse } from '@/Core/Types/Utility/PaginationTypes';
+import { useState, useEffect } from 'react';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { Head, Link } from '@inertiajs/react';
-import { AlertCircle, Calendar, CheckCircle2, ChevronRight, Clock, FileText, User, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Head } from '@inertiajs/react'; 
+import { Pagination } from '@/components/Shared/Pagination';
+import { 
+    AlertCircle, 
+    Calendar, 
+    CheckCircle2, 
+    ArrowRight, // Changed from ChevronRight to match CommunityReport
+    Clock, 
+    FileText, 
+    User, 
+    XCircle,
+    Banknote,
+    HelpingHand,
+    ChevronLeft, 
+    ArrowUp 
+} from 'lucide-react';
+import AssistanceDetailsDialog from './AssistanceRequestDialog';
 
-interface Props {
-    assistance: PaginatedResponse<AssistanceRequest>;
+// ----------------------------------------------------------------------
+// TYPES
+// ----------------------------------------------------------------------
+interface AssistanceRequest {
+    id: string;
+    municipal_id: string;
+    user_id: string;
+    assistance_type: string;
+    transaction_number: string;
+    description: string;
+    status: 'pending' | 'approved' | 'released' | 'rejected';
+    amount: number | null;
+    created_at: string;
+    updated_at: string;
+    beneficiary: {
+        id: string;
+        first_name: string;
+        last_name: string;
+        name: string;
+        barangay: string;
+        municipality: string;
+        province: string;
+        contact_number?: string | null;
+        email?: string | null;
+    } | null;
 }
 
-// Configuration for Status Styles
-const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; icon: any }> = {
+interface Props {
+    assistance: {
+        data: AssistanceRequest[];
+        meta: any;
+        links: any;
+    };
+}
+
+// ----------------------------------------------------------------------
+// STYLES CONFIGURATION
+// ----------------------------------------------------------------------
+const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; icon: any; label: string }> = {
     approved: {
-        bg: 'bg-emerald-50',
-        text: 'text-emerald-700',
-        border: 'border-l-emerald-500',
+        bg: 'bg-green-100',
+        text: 'text-green-700',
+        border: 'border-green-200',
         icon: CheckCircle2,
+        label: 'Approved'
     },
     released: {
-        bg: 'bg-blue-50',
+        bg: 'bg-blue-100',
         text: 'text-blue-700',
-        border: 'border-l-blue-500',
-        icon: CheckCircle2,
+        border: 'border-blue-200',
+        icon: HelpingHand,
+        label: 'Released'
     },
     rejected: {
-        bg: 'bg-red-50',
+        bg: 'bg-red-100',
         text: 'text-red-700',
-        border: 'border-l-red-500',
+        border: 'border-red-200',
         icon: XCircle,
+        label: 'Rejected'
     },
     pending: {
-        bg: 'bg-amber-50',
+        bg: 'bg-amber-100',
         text: 'text-amber-700',
-        border: 'border-l-amber-500',
+        border: 'border-amber-200',
         icon: Clock,
+        label: 'In Review'
     },
     default: {
-        bg: 'bg-gray-50',
+        bg: 'bg-gray-100',
         text: 'text-gray-700',
-        border: 'border-l-gray-300',
+        border: 'border-gray-200',
         icon: AlertCircle,
+        label: 'Unknown'
     },
 };
 
 export default function AssistanceList({ assistance }: Props) {
-    const requests = assistance.data;
+    const requests = assistance.data || [];
+    const totalCount = assistance?.meta?.total || requests.length || 0;
+
+    // --- State ---
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [classicDialog, setClassicDialog] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-        positiveButtonText: string;
-        negativeButtonText: string;
-        isNegativeButtonHidden: boolean;
-        action: string | null;
-    }>({
-        isOpen: false,
-        title: '',
-        message: '',
-        positiveButtonText: '',
-        negativeButtonText: '',
-        isNegativeButtonHidden: false,
-        action: null,
-    });
-    const getStyle = (status: string) => STATUS_STYLES[status.toLowerCase()] || STATUS_STYLES.default;
+    const [selectedRequest, setSelectedRequest] = useState<AssistanceRequest | null>(null);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    // --- Handlers ---
+    const handleViewDetails = (request: AssistanceRequest) => {
+        setSelectedRequest(request);
+        setIsDialogOpen(true);
+    };
+
+    const handleCloseDialog = () => {
+        setIsDialogOpen(false);
+        setTimeout(() => setSelectedRequest(null), 300); 
+    };
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
+    };
+
+    // --- Effects ---
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 400) {
+                setShowScrollTop(true);
+            } else {
+                setShowScrollTop(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // --- Helpers ---
+    const getStyle = (status: string) => STATUS_STYLES[status?.toLowerCase()] || STATUS_STYLES.default;
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
+
+    const formatCurrency = (amount: number | null) => {
+        if (amount === null) return 'Pending Assessment';
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+        }).format(amount);
+    };
+
+    const formatType = (typeString: string) => {
+        if (!typeString) return 'Assistance';
+        return typeString
+            .split('_')
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    };
 
     return (
-        <PublicLayout title="Action Center" description="Track your assistance requests">
-            <Head title="My Assistance Requests" />
+        <PublicLayout title="" description="">
+            <Head title="Action Center" />
 
-            <div className="min-h-screen bg-gray-50/50">
-                {/* CONTENT SECTION */}
-                <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-                    {/* Grid Layout for Cards */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
-                        {requests.map((req) => {
-                            const style = getStyle(req.status);
-                            const StatusIcon = style.icon;
-
-                            return (
-                                <Link
-                                    key={req.id}
-                                    href={`/assistance/${req.id}`}
-                                    className={`group relative flex flex-col justify-between rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5 transition-all hover:-translate-y-1 hover:shadow-md hover:ring-gray-900/10 ${style.border} border-l-4`}
+            <div className="py-12 relative min-h-screen bg-muted/30">
+                <div className="mx-auto max-w-5xl sm:px-6 lg:px-8">
+                    
+                    {/* Main Card Container */}
+                    <div className="rounded-xl shadow-sm border border-border bg-card overflow-hidden">
+                        
+                        {/* THEMED CARD HEADER (Integrated Toolbar) */}
+                        <div className="border-b border-border p-5 bg-card/50 backdrop-blur-sm sticky top-0 z-20">
+                            <div className="flex items-center gap-4">
+                                
+                                {/* 1. Integrated Back Button */}
+                                <button
+                                    onClick={() => window.history.back()}
+                                    className="group flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background transition-all hover:border-primary hover:text-primary active:scale-95"
+                                    title="Go Back"
                                 >
-                                    {/* Card Header: Type & Status */}
-                                    <div className="mb-4 flex items-start justify-between">
-                                        <div>
-                                            <h3 className="line-clamp-1 font-extrabold text-gray-900 uppercase">{req.assistance_type} Assistance</h3>
-                                            <div className="mt-1 flex items-center gap-2 font-mono text-xs text-gray-500">
-                                                <FileText className="h-3 w-3" />
-                                                {req.transaction_number}
-                                            </div>
-                                        </div>
-                                        <span
-                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${style.bg} ${style.text}`}
+                                    <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+                                </button>
+
+                                {/* Divider */}
+                                <div className="h-8 w-px bg-border" />
+
+                                {/* Icon */}
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+                                    <HelpingHand className="h-5 w-5" />
+                                </div>
+                                
+                                {/* Title Text */}
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-3">
+                                        <h3 className="text-xl font-black uppercase tracking-widest text-foreground hidden sm:block">Action Center</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-widest text-foreground sm:hidden">Assistance</h3>
+                                        
+                                        {/* Count Badge */}
+                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary border border-primary/20">
+                                            {totalCount}
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:block">
+                                        Track your assistance requests
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-4 sm:p-6 space-y-4">
+
+                            {/* Grid Layout for Items */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {requests.map((req) => {
+                                    const style = getStyle(req.status);
+                                    const StatusIcon = style.icon;
+
+                                    return (
+                                        <div
+                                            key={req.id}
+                                            onClick={() => handleViewDetails(req)}
+                                            className={`
+                                                group relative flex flex-col justify-between overflow-hidden rounded-xl border border-border p-5 transition-all duration-300 cursor-pointer
+                                                bg-card hover:border-primary/50 hover:shadow-lg hover:-translate-y-1
+                                            `}
                                         >
-                                            <StatusIcon className="h-3.5 w-3.5" />
-                                            {req.status}
-                                        </span>
-                                    </div>
+                                            <div className="flex flex-col h-full">
+                                                
+                                                {/* Top Row: Transaction ID & Status */}
+                                                <div className="mb-4 flex items-start justify-between">
+                                                    <div className="flex items-center gap-2 rounded-md bg-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                        <FileText className="h-3 w-3 text-primary" />
+                                                        <span className="font-mono">{req.transaction_number}</span>
+                                                    </div>
+                                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide shadow-sm ${style.bg} ${style.text} ${style.border}`}>
+                                                        <StatusIcon className="h-3 w-3" />
+                                                        {style.label}
+                                                    </span>
+                                                </div>
 
-                                    {/* Card Body: Beneficiary & Desc */}
-                                    <div className="mb-6 space-y-3">
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-gray-400">
-                                                <User className="h-4 w-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500">Beneficiary</p>
-                                                <p className="font-medium text-gray-900">{req.beneficiary?.name || 'Self'}</p>
+                                                {/* Middle: Content */}
+                                                <div className="mb-4">
+                                                    <h3 className="text-lg font-black uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
+                                                        {formatType(req.assistance_type)} Assistance
+                                                    </h3>
+                                                    
+                                                    <div className="mt-3 space-y-2">
+                                                        {/* Beneficiary */}
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            <User className="h-4 w-4 text-primary" />
+                                                            <span className="font-bold text-foreground">
+                                                                {req.beneficiary?.name || 'Self'}
+                                                            </span>
+                                                            {req.beneficiary?.barangay && (
+                                                                <span className="text-xs text-muted-foreground uppercase">
+                                                                    ({req.beneficiary.barangay})
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Amount (if available) */}
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            <Banknote className="h-4 w-4 text-primary" />
+                                                            <span className={`${req.amount ? 'font-bold text-green-600' : 'text-muted-foreground italic'}`}>
+                                                                {formatCurrency(req.amount)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Description */}
+                                                    <p className="mt-4 line-clamp-2 text-xs font-medium text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border italic">
+                                                        "{req.description}"
+                                                    </p>
+                                                </div>
+
+                                                {/* Bottom: Date & Action */}
+                                                <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                        {formatDate(req.created_at)}
+                                                    </div>
+
+                                                    {/* VIEW DETAILS BUTTON (Updated to match CommunityReport) */}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // Prevent double trigger
+                                                            handleViewDetails(req);
+                                                        }}
+                                                        className="group flex items-center gap-1 text-xs font-black uppercase tracking-wide text-primary hover:underline decoration-2 underline-offset-4 transition-all"
+                                                    >
+                                                        View Details
+                                                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
+                                    );
+                                })}
+                            </div>
 
-                                        <div className="line-clamp-2 rounded-lg bg-gray-50 p-3 text-sm text-gray-600 italic">"{req.description}"</div>
-                                    </div>
-
-                                    {/* Card Footer: Date & Link */}
-                                    <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                            <Calendar className="h-3.5 w-3.5" />
-                                            {req.created_at}
+                            {/* EMPTY STATE */}
+                            {requests.length === 0 && (
+                                <div className="rounded-xl border border-dashed border-border bg-muted/30 py-20 text-center">
+                                    <div className="mb-2 flex justify-center">
+                                        <div className="rounded-full bg-muted p-4">
+                                            <HelpingHand className="h-8 w-8 text-muted-foreground" />
                                         </div>
-
-                                        <span className="flex items-center gap-1 text-sm font-semibold text-blue-600 group-hover:underline">
-                                            Details
-                                            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                        </span>
                                     </div>
-                                </Link>
-                            );
-                        })}
+                                    <h3 className="mt-4 text-lg font-black uppercase tracking-wide text-foreground">No requests found</h3>
+                                    <p className="mt-2 text-sm font-medium text-muted-foreground">
+                                        You haven't submitted any assistance requests yet.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* PAGINATION */}
+                            {assistance.meta?.links && (
+                                <div className="mt-8">
+                                    <Pagination links={assistance.meta.links} />
+                                </div>
+                            )}
+
+                        </div>
                     </div>
-
-                    {/* EMPTY STATE */}
-                    {requests.length === 0 && (
-                        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-                                <FileText className="h-8 w-8 text-blue-600" />
-                            </div>
-                            <h3 className="mt-4 text-lg font-semibold text-gray-900">No requests found</h3>
-                            <p className="mt-2 max-w-sm text-gray-500">You haven't submitted any assistance requests yet.</p>
-                            {/* <Button
-                                size="lg"
-                                className="bg-orange-500 font-semibold text-white hover:bg-orange-600"
-                                onClick={() => setIsDialogOpen(true)}
-                            >
-                                Request Assistance
-                            </Button>
-
-                            <ActionCenterForm
-                                onSubmitSuccess={(title, message) => {
-                                    setClassicDialog((prev) => ({
-                                        ...prev,
-                                        isOpen: true,
-                                        title: title,
-                                        message: message,
-                                        positiveButtonText: 'Close',
-                                        isNegativeButtonHidden: true,
-                                    }));
-                                }}
-                                isOpen={isDialogOpen}
-                                onClose={() => setIsDialogOpen(false)}
-                            /> */}
-                        </div>
-                    )}
-
-                    {/* PAGINATION */}
-                    {assistance.meta.total > assistance.meta.per_page && (
-                        <div className="mt-8 flex items-center justify-between border-t border-gray-200 pt-6">
-                            <p className="text-sm text-gray-500">
-                                Showing <span className="font-medium">{assistance.meta.from}</span> to{' '}
-                                <span className="font-medium">{assistance.meta.to}</span> of{' '}
-                                <span className="font-medium">{assistance.meta.total}</span> results
-                            </p>
-
-                            <div className="flex gap-2">
-                                {assistance.links.prev && (
-                                    <Link
-                                        href={assistance.links.prev}
-                                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                                    >
-                                        Previous
-                                    </Link>
-                                )}
-                                {assistance.links.next && (
-                                    <Link
-                                        href={assistance.links.next}
-                                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                                    >
-                                        Next
-                                    </Link>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
+
+                {/* SCROLL TO TOP FLOATING BUTTON */}
+                <button
+                    onClick={scrollToTop}
+                    className={`
+                        fixed bottom-8 right-8 z-40 rounded-full bg-primary p-3 text-primary-foreground shadow-lg shadow-primary/30 
+                        transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+                        ${showScrollTop ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}
+                    `}
+                    aria-label="Scroll to top"
+                >
+                    <ArrowUp className="h-5 w-5" />
+                </button>
+
             </div>
-            <ClassicDialog
-                title={classicDialog.title}
-                message={classicDialog.message}
-                open={classicDialog.isOpen}
-                positiveButtonText={classicDialog.positiveButtonText}
-                negativeButtonText={classicDialog.negativeButtonText}
-                hideNegativeButton={classicDialog.isNegativeButtonHidden}
-                onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        action: null,
-                        isOpen: false,
-                    }));
-                }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        action: null,
-                        isOpen: false,
-                    }));
-                }}
+
+            {/* MODAL / DIALOG COMPONENT */}
+            <AssistanceDetailsDialog 
+                isOpen={isDialogOpen}
+                onClose={handleCloseDialog}
+                request={selectedRequest}
             />
+
         </PublicLayout>
     );
 }

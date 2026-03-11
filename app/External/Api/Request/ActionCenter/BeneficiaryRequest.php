@@ -39,11 +39,11 @@ class BeneficiaryRequest extends FormRequest
 
             'birth_date' => ['required', 'date'],
 
-            'province' => ['required', 'string', 'max:255',],
+            'province' => ['required', 'string', 'max:50',],
 
-            'municipality' => ['required', 'string', 'max:255'],
+            'municipality' => ['required', 'string', 'max:50'],
 
-            'barangay' => ['required', 'string', 'max:255'],
+            'barangay' => ['required', 'string', 'max:50'],
 
         ];
     }

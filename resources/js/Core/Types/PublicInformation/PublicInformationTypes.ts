@@ -1,3 +1,48 @@
+export interface ProcurementFormData {
+    [key: string]: any;
+
+    reference_number: string;
+    title: string;
+    category: string;
+    status: string;
+    approved_budget: number;
+    contract_amount?: number | null;
+    pre_bid_date?: string | null;
+    closing_date?: string | null;
+    award_date?: string | null;
+    winning_bidder?: string | null;
+    attachments: any[];
+}
+
+export interface ProcurementData {
+    id: string;
+
+    reference_number: string;
+    title: string;
+    category: string;
+
+    status: string;
+
+    approved_budget: number;       // PHP (float) becomes JS number
+    contract_amount: number | null;
+    winning_bidder: string | null;
+
+    pre_bid_date: string | null;
+    closing_date: string | null;
+    award_date: string | null;
+    created_at: string;
+
+    // The array of files
+    files?: ProcurementFile[];
+}
+
+export interface ProcurementFile {
+    id: string;
+    name: string;
+    type: string;
+    download_url: string;
+    view_url: string;
+}
 
 export interface BiddingFormData {
     title: string;
@@ -43,27 +88,10 @@ export interface AwardsData {
     files?: ProcurementFile[];
 }
 
-export interface ProcurementFormData {
-    reference_number: string;
-    title: string;
-    category: string;
-    status: string;
-    approved_budget: number;
-    contract_amount?: number | null;
-    pre_bid_date?: string | null;
-    closing_date?: string | null;
-    award_date?: string | null;
-    winning_bidder?: string | null;
-}
 
 
-export interface ProcurementFile {
-    id: string;
-    name: string;
-    type: string;
-    download_link: string;
-    view_link: string;
-}
+
+
 
 export interface CitizenCharterFormData {
     id: string;

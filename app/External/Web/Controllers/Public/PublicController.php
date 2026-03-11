@@ -54,10 +54,10 @@ class PublicController extends Controller
         return Inertia::render('Public/NewsAndEvents/NewsAndEventsPage');
     }
 
-    public function showGovernmentPage()
-    {
-        return Inertia::render('Public/Government/GovernmentPage');
-    }
+    // public function showGovernmentPage()
+    // {
+    //     return Inertia::render('Public/Government/GovernmentPage');
+    // }
 
     public function showPrivacyPolicyPage()
     {

@@ -17,19 +17,26 @@ class CloudinaryFileUploadService implements FileUploadInterface
         $this->cloudinary = new Cloudinary(config('cloudinary.cloud_url'));
     }
 
-    public function uploadFiles(UploadedFile $file, string $folder): array
+    public function uploadFiles(UploadedFile $file, string $folder, ?string $filename = null, bool $overwrite = false): array
     {
+
+        $options = [
+            'folder' => $folder,
+            'resource_type' => 'auto',
+            'overwrite' => $overwrite,
+            // --- REMOVED TRANSFORMATIONS ---
+            // We removed 'transformation' => [...]
+            // This ensures the PDF is stored exactly as the user uploaded it.
+            // We will handle optimization in the Frontend/Resource URL generation instead.
+        ];
+
+        if ($filename) {
+            $options['public_id'] = $filename;
+        }
+
         $result = $this->cloudinary->uploadApi()->upload(
             $file->getRealPath(),
-            [
-                'folder' => $folder,
-                'resource_type' => 'auto',
-
-                // --- REMOVED TRANSFORMATIONS ---
-                // We removed 'transformation' => [...]
-                // This ensures the PDF is stored exactly as the user uploaded it.
-                // We will handle optimization in the Frontend/Resource URL generation instead.
-            ]
+            $options,
         );
 
         return [
@@ -46,8 +53,22 @@ class CloudinaryFileUploadService implements FileUploadInterface
 
             'format' => $result['format'] ?? '',
 
+            'secure_url' => $result['secure_url'] ?? '',
+
         ];
 
+    }
+
+    public function getFolderPath(string $municipalId, string $module, ?string $subFolderId = null): string
+    {
+        $root = config('filesystems.disks.cloudinary.root');
+        $path = "{$root}/municipal-id-{$municipalId}/{$module}";
+
+        if ($subFolderId) {
+            $path .= "/{$subFolderId}";
+        }
+
+        return $path;
     }
 
     public function delete(string $publicId)

@@ -49,7 +49,9 @@ class CreateFeedback
 
                         $fileId = $this->idGenerator->generate();
 
-                        $folder = 'feedback_files/' . $feedbackId;
+                        $root = config('filesystems.disks.cloudinary.root');
+
+                        $folder = "{$root}/{$dto->municipalName}/feedback/{$feedbackId}";
 
                         $fileData = $this->cloudinaryFileUploadService->uploadFiles($file, $folder);
 

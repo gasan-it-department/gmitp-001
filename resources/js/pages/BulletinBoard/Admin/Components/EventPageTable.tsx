@@ -10,9 +10,8 @@ import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import { CheckCircle2, Clock, Pencil, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import AddEditEventsDialog from './AddEditEventsDialog';
+import AddEditEventsDialog from '../../Event/Admin/List/Components/AddEditEventsDialog';
 import EventPageHeader from './EventPageHeader';
-import FilterDialog from './FilterDialog';
 
 // 1. Defined types based on your JSON structure
 interface EventDataList {
@@ -116,10 +115,7 @@ export default function EventPageTable() {
             console.error('Error fetching events:', error);
 
             // Better error handling for Axios or fetch
-            const errorMessage =
-                error.response?.data?.message ||
-                error.message ||
-                'Failed to load events.';
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to load events.';
 
             setEventList([]);
 
@@ -273,7 +269,7 @@ export default function EventPageTable() {
 
     const handleSearch = (searchValue: string) => {
         console.log('Searching for: ', searchValue);
-    }
+    };
 
     return (
         <div>
@@ -282,42 +278,38 @@ export default function EventPageTable() {
                 <h1 className="text-3xl font-bold tracking-tight">Event List</h1>
                 <EventPageHeader
                     onSearch={(searchValue) => handleSearch(searchValue)}
-                    sortList={
-                        [
-                            { label: 'Title', value: 'title' },
-                            { label: 'Description', value: 'description' },
-                            { label: 'Event Date', value: 'event_date' },
-                            { label: 'Date Created', value: 'created_at' },
-                        ]
-                    }
+                    sortList={[
+                        { label: 'Title', value: 'title' },
+                        { label: 'Description', value: 'description' },
+                        { label: 'Event Date', value: 'event_date' },
+                        { label: 'Date Created', value: 'created_at' },
+                    ]}
                     onSortSelected={(value) => handleSort(value)}
                     onAddNewButtonClicked={() => setAddEventDialog({ isOpen: true, editData: null })}
                 />
             </div>
 
-            <div className="mb-2 flex items-center justify-between">
-                <div>
-                    <Button
-                        size="sm"
-                        disabled={selectedItems.length <= 0}
-                        className="border-none bg-red-600 text-white hover:bg-red-700"
-                        onClick={() =>
-                            setClassicDialog((prev) => ({
-                                ...prev,
-                                isOpen: true,
-                                title: 'Confirm',
-                                message: `Are you sure you want to delete ${selectedItems.length} selected announcement(s)?`,
-                                positiveButtonText: 'Delete',
-                                negativeButtonText: 'Cancel',
-                                payload: selectedItems,
-                                action: 'delete', // Ensure action is set
-                                selectedItemId: selectedItems, // Ensure IDs are passed
-                            }))
-                        }
-                    >
-                        Delete ({selectedItems.length}) items
-                    </Button>
-                </div>
+            {/* BULK DELETE */}
+            <div className="mb-2">
+                <Button
+                    size="sm"
+                    disabled={selectedItems.length === 0}
+                    className="bg-red-600 text-white hover:bg-red-700"
+                    onClick={() =>
+                        setClassicDialog((prev) => ({
+                            ...prev,
+                            isOpen: true,
+                            title: 'Confirm',
+                            message: `Delete ${selectedItems.length} selected events(s)?`,
+                            positiveButtonText: 'Delete',
+                            negativeButtonText: 'Cancel',
+                            action: 'delete',
+                            selectedItemId: selectedItems,
+                        }))
+                    }
+                >
+                    Delete ({selectedItems.length}) items
+                </Button>
             </div>
 
             {/* TABLE */}

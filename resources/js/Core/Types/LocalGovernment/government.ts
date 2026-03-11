@@ -1,0 +1,78 @@
+// import officials from "@/routes/government/admin/officials";
+
+interface Official {
+
+    id: string;
+    municipality?: string | null;
+    first_name: string;
+    last_name: string;
+    middle_name?: string;
+    suffix?: string;
+    gender?: string;
+    profile_url?: string;
+    biography: string;
+    formatted_name: string;
+    appointments_count?: number;
+    active_appointments_exists: boolean;
+
+    //for profile history showing
+    appointments: Appointment[];
+
+}
+
+interface Appointment {
+    id: string;
+    // term_id: string;
+    // official_id: string;
+    // position_id: string;
+    actual_start_date: string;
+    actual_end_date: string;
+    //new add
+    position: Position;
+    term: Term;
+}
+
+interface OfficialTerm {
+    id: string;
+    status: string | null;
+    actual_start_date: string;
+    actual_end_date: string | null;
+    remarks?: string;
+    official?: Official;
+    position?: Position;
+}
+
+interface Term {
+    id: string;
+    municipality?: string | null;
+    name: string;
+    slug?: string;
+    statutory_start: string;
+    statutory_end: string;
+    readable_start: string;
+    readable_end: string;
+    is_current?: boolean;
+    is_published: boolean;
+    label: string;
+    officials_count?: number;
+}
+
+interface Position {
+    id: string;
+    title: string;
+    category: string;
+}
+
+//for public
+interface PublicRosterItem {
+    id: string;
+    title: string;
+    category: string;
+    sequence: number;
+
+    official: Official | null;
+}
+
+// interface OfficialProfile extends Official {
+// history: 
+// }

@@ -10,10 +10,11 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { InertiaInput } from '../InputField';
 import { AssistanceOptions } from './AssistanceOptionsDropdown';
 import { DatePickerField } from './Form/DatePicker';
 import { FileUploader } from './Form/FileUploader';
-import { InertiaInput } from './Form/InputField';
+import { ShieldCheck } from "lucide-react";
 
 interface Props {
     isOpen: boolean;
@@ -21,14 +22,11 @@ interface Props {
     onSubmitSuccess: (title: string, message: string) => void;
     editData: ActionCenterFormData | null;
 }
+
 export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }: Props) {
     const { currentMunicipality } = useMunicipality();
 
-    // 1. INITIALIZE INERTIA FORM
-    // ✅ CLEANER: We remove the explicit generic and intersection types.
-    // TypeScript will automatically infer the correct shape from the initial values below.
-    // This satisfies Inertia's constraints while keeping your code readable.
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         first_name: editData?.first_name || '',
         middle_name: editData?.middle_name || '',
         last_name: editData?.last_name || '',
@@ -42,16 +40,7 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
         documents: [] as File[],
     });
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [classicDialog, setClassicDialog] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-        positiveButtonText: string;
-        negativeButtonText: string;
-        isNegativeButtonHidden: boolean;
-        action: string | null;
-    }>({
+    const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
         title: '',
         message: '',
@@ -63,7 +52,6 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
 
     const handleAddressChange = (address: { province: string; municipality: string; barangay: string } | null) => {
         if (address) {
-            // We use the functional update pattern to update multiple fields at once
             setData((prevData) => ({
                 ...prevData,
                 province: address.province,
@@ -90,36 +78,47 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
         });
     };
 
-    // Helper for simple text inputs
-    // We cast field to 'any' to ensure compatibility between the Interface keys and the Inferred keys,
-    // which prevents strict type mismatches in edge cases.
     const handleTextChange = (field: keyof ActionCenterFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(field as any, e.target.value);
     };
-
-    const handleFileChange = () => {};
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
                 showCloseButton={false}
-                // ✅ APPLIED: Mobile full screen, flex-col structure
-                className="flex h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 bg-background p-0 sm:h-auto sm:max-h-[90vh] sm:w-[1100px] sm:max-w-none sm:rounded-2xl sm:border"
+                className="flex h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 bg-background p-0 sm:h-auto sm:max-h-[90vh] sm:w-[1100px] sm:max-w-none sm:rounded-2xl sm:border border-border shadow-2xl"
             >
-                {/* Header Section (Fixed/Non-scrollable) */}
-                <div className="shrink-0 bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5 sm:rounded-t-xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-white">Assistance Request Form</DialogTitle>
+                {/* --- HEADER SECTION (Solid Brand Color) --- */}
+                <div className="shrink-0 bg-primary px-6 py-6 sm:rounded-t-xl border-b border-primary-foreground/10">
+                    <DialogHeader className="flex flex-row items-center gap-4 space-y-0">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 shadow-inner backdrop-blur-sm">
+                            <ShieldCheck className="h-7 w-7 text-primary-foreground" />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-xl font-black uppercase tracking-tight text-primary-foreground">
+                                Assistance Request Form
+                            </DialogTitle>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary-foreground/60 mt-0.5">
+                                Gasan Social Welfare Services
+                            </p>
+                        </div>
                     </DialogHeader>
                 </div>
 
-                {/* Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto px-6 py-6">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* PERSONAL INFORMATION */}
-                        <div className="space-y-4">
-                            <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Personal Information</h3>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* --- SCROLLABLE CONTENT AREA --- */}
+                <div className="flex-1 overflow-y-auto px-6 py-8 scrollbar-thin scrollbar-thumb-primary/20">
+                    <form onSubmit={handleSubmit} className="space-y-10 max-w-5xl mx-auto">
+                        
+                        {/* I. PERSONAL INFORMATION */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-primary italic">
+                                    I. Personal Information
+                                </h3>
+                                <div className="h-[1px] flex-1 bg-border" />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                                 <InertiaInput
                                     label="First Name *"
                                     id="first_name"
@@ -151,19 +150,26 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                                     onChange={handleTextChange('suffix')}
                                     isUppercase={true}
                                 />
-                                <DatePickerField
-                                    label="Birth Date"
-                                    value={data.birth_date}
-                                    error={errors.birth_date}
-                                    onChange={(date) => setData('birth_date', date)}
-                                    required
-                                />
+                                <div className="sm:col-span-2 lg:col-span-2">
+                                    <DatePickerField
+                                        label="Birth Date"
+                                        value={data.birth_date}
+                                        error={errors.birth_date}
+                                        onChange={(date) => setData('birth_date', date)}
+                                        required
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        {/* ADDRESS DROPDOWN */}
-                        <div className="space-y-4">
-                            <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Address</h3>
+                        {/* II. ADDRESS DETAILS */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-primary italic">
+                                    II. Address Details
+                                </h3>
+                                <div className="h-[1px] flex-1 bg-border" />
+                            </div>
                             <AddressDropdown
                                 editMunicipality={editData?.municipality || ''}
                                 editBarangay={editData?.barangay || ''}
@@ -173,90 +179,99 @@ export function ActionCenterForm({ isOpen, onClose, onSubmitSuccess, editData }:
                             />
                         </div>
 
-                        {/* ASSISTANCE TYPE */}
-                        <div className="space-y-4">
-                            <h3 className="border-b border-orange-100 pb-2 text-base font-semibold text-orange-600">Request Details</h3>
-
-                            <div className="space-y-2">
-                                <AssistanceOptions value={data.assistance_type} onChange={(val) => setData('assistance_type', val)} />
-                                {errors.assistance_type && <p className="text-sm text-red-500">{errors.assistance_type}</p>}
+                        {/* III. REQUEST SPECIFICATIONS */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-primary italic">
+                                    III. Request Specifications
+                                </h3>
+                                <div className="h-[1px] flex-1 bg-border" />
                             </div>
 
-                            {/* DESCRIPTION */}
-                            <div className="space-y-2">
-                                <Label className="font-semibold text-gray-800">Description / Reason *</Label>
-                                <Textarea
-                                    rows={4}
-                                    value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
-                                    placeholder="Provide details about your request..."
-                                    className={errors.description ? 'border-red-500' : 'border-gray-300'}
-                                />
-                                {errors.description && <p className="animate-pulse text-sm text-red-500">{errors.description}</p>}
-                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-tight text-muted-foreground">Type of Assistance</Label>
+                                    <AssistanceOptions value={data.assistance_type} onChange={(val) => setData('assistance_type', val)} />
+                                    {errors.assistance_type && <p className="text-xs font-bold text-destructive mt-1">{errors.assistance_type}</p>}
+                                </div>
 
-                            {/*file uploading*/}
-                            <div className="pt-2">
-                                <FileUploader
-                                    files={data.documents}
-                                    onFilesChange={(newFiles) => setData('documents', newFiles)}
-                                    error={errors.documents}
-                                    maxFiles={5}
-                                    label="Attach Supporting Documents"
-                                    description="Please attach photos of your Valid ID, Indigency, or other requirements."
-                                />
-                            </div>
-                        </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold uppercase tracking-tight text-muted-foreground">Description / Reason *</Label>
+                                    <Textarea
+                                        rows={4}
+                                        value={data.description}
+                                        onChange={(e) => setData('description', e.target.value)}
+                                        placeholder="Explain the reason for your request..."
+                                        className={`rounded-xl border-border bg-muted/30 focus:ring-primary ${errors.description ? 'border-destructive focus:ring-destructive' : ''}`}
+                                    />
+                                    {errors.description && <p className="text-xs font-bold text-destructive animate-pulse mt-1">{errors.description}</p>}
+                                </div>
 
-                        {/* ACTIONS */}
-                        <div className="flex flex-row gap-4 pt-4 pb-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100"
-                                onClick={() => {
-                                    reset();
-                                    onClose();
-                                }}
-                                disabled={processing}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white transition-all duration-300 hover:opacity-90 active:scale-[0.98]"
-                                disabled={processing}
-                            >
-                                {processing ? (
-                                    <span className="flex items-center gap-2">
-                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                                        Submitting...
-                                    </span>
-                                ) : (
-                                    'Submit Request'
-                                )}
-                            </Button>
+                                <div className="pt-2">
+                                    <FileUploader
+                                        files={data.documents}
+                                        onFilesChange={(newFiles) => setData('documents', newFiles)}
+                                        error={errors.documents}
+                                        maxFiles={5}
+                                        label="Supporting Documents"
+                                        description="Attach photos of Valid ID, Certificate of Indigency, or relevant medical records."
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </form>
+                </div>
 
-                    <ToastProvider />
-
-                    <ClassicDialog
-                        title={classicDialog.title}
-                        message={classicDialog.message}
-                        open={classicDialog.isOpen}
-                        positiveButtonText={classicDialog.positiveButtonText}
-                        negativeButtonText={classicDialog.negativeButtonText}
-                        hideNegativeButton={classicDialog.isNegativeButtonHidden}
-                        onPositiveClick={() => {
-                            setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
-                        }}
-                        onNegativeClick={() => {
-                            setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
-                        }}
-                    />
+                {/* --- ACTIONS FOOTER (Side-by-Side Mobile) --- */}
+                <div className="shrink-0 border-t border-border bg-muted/20 px-4 py-4 sm:px-6 sm:py-5">
+                    <div className="flex flex-row gap-3 max-w-5xl mx-auto w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="flex-1 h-11 sm:h-12 rounded-xl font-bold uppercase tracking-wider border-border hover:bg-muted text-[11px] sm:text-xs shadow-sm transition-all"
+                            onClick={() => {
+                                reset();
+                                onClose();
+                            }}
+                            disabled={processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            className="flex-1 h-11 sm:h-12 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-lg hover:opacity-90 active:scale-[0.98] text-[11px] sm:text-xs transition-all"
+                            disabled={processing}
+                        >
+                            {processing ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="h-3 w-3 sm:h-4 sm:w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></span>
+                                    <span className="hidden xs:inline">Processing...</span>
+                                    <span className="inline xs:hidden">...</span>
+                                </span>
+                            ) : (
+                                'Submit Request'
+                            )}
+                        </Button>
+                    </div>
                 </div>
             </DialogContent>
+
+            <ToastProvider />
+
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                open={classicDialog.isOpen}
+                positiveButtonText={classicDialog.positiveButtonText}
+                negativeButtonText={classicDialog.negativeButtonText}
+                hideNegativeButton={classicDialog.isNegativeButtonHidden}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
+                }}
+            />
         </Dialog>
     );
 }

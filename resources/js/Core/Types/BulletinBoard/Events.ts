@@ -6,8 +6,10 @@ export type EventFormData = {
 };
 
 export type EventData = {
+    id: string;
     title: string;
     description: string;
     event_date: string;
-    id: string;
+    created_at: string;
+    is_published?: boolean;
 };

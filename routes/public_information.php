@@ -1,19 +1,28 @@
 <?php
 
 
-use App\External\Api\Controllers\PublicInformation\ProcurementsController;
-use App\External\Web\Controllers\PublicInformation\Admin\ProcurementsPageController;
+use App\External\Web\Controllers\PublicInformation\Admin\EditProcurementController;
+use App\External\Web\Controllers\PublicInformation\Admin\ShowProcurementController;
 use App\External\Web\Controllers\PublicInformation\Client;
+use App\External\Api\Controllers\PublicInformation\StoreProcurementsController;
+use App\External\Web\Controllers\PublicInformation\Admin\ProcurementsPageController;
 
-Route::prefix('{municipality}/awards')
+Route::prefix('{municipality}/procurements')
     ->middleware(['municipalityContext', 'admin'])
-    ->name('awardsAdminPage.')
+    ->name('procurement.admin.')
     ->controller(ProcurementsPageController::class)
     ->group(function () {
 
         Route::get('/admin', 'index')->name('page');
 
-        Route::get('/admin/add-edit-procurement', 'addEditShow')->name('addEditPage');
+        //test page remove later and use the name('creation);
+        // Route::get('/admin/add-edit-procurement', 'addEditShow')->name('create');
+    
+        Route::get('create-procurement', 'create')->name('create');
+
+        Route::get('/view/{id}', ShowProcurementController::class)->name('show');
+
+        Route::get('/edit/{id}', EditProcurementController::class)->name('edit');
 
     });
 
@@ -31,17 +40,12 @@ Route::prefix('{municipality}/transparency')
 Route::prefix('api/public-information')
     ->middleware(['municipalityContext'])
     ->name('publicInformation.')
-    ->controller(ProcurementsController::class)
     ->group(function () {
 
         Route::middleware(['admin', 'auth', 'municipalityContext'])
             ->group(function () {
 
-                Route::post('/store', 'store')->name('store');
-
-                Route::get('/', 'fetch')->name('fetch');
-
-                Route::get('/{id}', 'show')->name('show');
+                Route::post('/procurement-store', StoreProcurementsController::class)->name('store');
 
             });
 

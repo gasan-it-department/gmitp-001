@@ -1,14 +1,13 @@
-import { Button } from "@/components/ui/button";
-import BidsAndAwardsHeader from "./BiddingHeader";
-import { useState } from "react";
-import AddEditBidsAndAwardsDialog from "./AddEditBiddingDialog";
-import { BiddingData } from "@/Core/Types/PublicInformation/PublicInformationTypes";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import AdminEmptyListItem from "@/pages/Utility/AdminEmptyListItem";
-import { EyeIcon, Filter } from "lucide-react";
-import SortDialog from "@/pages/BulletinBoard/Admin/Components/FilterDialog";
-import { FilterDialogData } from "@/Core/Types/Utility/FilterDialogTypes";
-
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { BiddingData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import SortDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import { EyeIcon } from 'lucide-react';
+import { useState } from 'react';
+import AddEditBidsAndAwardsDialog from './AddEditBiddingDialog';
+import BidsAndAwardsHeader from './BiddingHeader';
 
 export default function BiddingTable() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -23,25 +22,28 @@ export default function BiddingTable() {
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
             {/* HEADER */}
             <div className="my-5 flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Invitations to Bid</h1>
                 <BidsAndAwardsHeader
-                    onSearch={() => { }}
-                    onFilterButtonClicked={() => { setIsFilterDialogVisible(true) }}
-                    onExportButtonClicked={() => { }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {
+                        setIsFilterDialogVisible(true);
+                    }}
+                    onExportButtonClicked={() => {}}
                     onAddNewButtonClicked={() => setIsAddEditDialogVisible(true)}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
                 <div>
                     <Button
                         size="sm"
                         disabled={selectedItems.length <= 0}
-                        className="bg-red-600 hover:bg-red-700 text-white border-none"
-                        onClick={() => { }
+                        className="border-none bg-red-600 text-white hover:bg-red-700"
+                        onClick={
+                            () => {}
                             // setClassicDialog((prev) => ({
                             //     ...prev,
                             //     isOpen: true,
@@ -85,10 +87,7 @@ export default function BiddingTable() {
 
                     <TableBody>
                         {biddingList.length === 0 ? (
-                            <AdminEmptyListItem
-                                colSpan={7}
-                                title='No biddings yet'
-                                message='Biddings will appear here once you create one.' />
+                            <AdminEmptyListItem colSpan={7} title="No biddings yet" message="Biddings will appear here once you create one." />
                         ) : (
                             biddingList.map((item, index) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
@@ -178,9 +177,8 @@ export default function BiddingTable() {
             <AddEditBidsAndAwardsDialog
                 isOpen={isAddEditDialogVisible}
                 onClose={() => setIsAddEditDialogVisible(false)}
-                onSuccess={(data, isEditMode) => {
-
-                }} />
+                onSuccess={(data, isEditMode) => {}}
+            />
         </div>
     );
 }
