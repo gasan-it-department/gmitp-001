@@ -1,23 +1,22 @@
 <?php
 
-namespace App\Core\Cemetery\Interments\Models;
+namespace App\Core\Cemetery\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Interment extends Model
+class Decedent extends Model
 {
 
-    // protected $table = 'interments';
+    use SoftDeletes;
+    protected $table = "cemetery_decedents";
 
     public $incrementing = false;
-
     protected $keyType = 'string';
 
     protected $fillable = [
 
         'id',
-
-        'plot_id',
 
         'first_name',
 
@@ -25,7 +24,7 @@ class Interment extends Model
 
         'middle_name',
 
-        'extension_name',
+        'suffix',
 
         'date_of_birth',
 
@@ -39,6 +38,13 @@ class Interment extends Model
 
         'notes',
 
+        'municipal_id'
+
     ];
 
+    protected $casts = [
+        'date_of_birth' => 'date',
+        'date_of_death' => 'date',
+
+    ];
 }

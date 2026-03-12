@@ -10,13 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('interments', function (Blueprint $table) {
+        Schema::create('cemetery_decedents', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
-            $table->foreignUlid('plot_id')
-                ->nullable()
-                ->constrained('cemetery_plots')
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
                 ->restrictOnDelete();
 
             $table->string('first_name');
@@ -25,7 +24,7 @@ return new class extends Migration {
 
             $table->string('middle_name')->nullable();
 
-            $table->string('extension_name')->nullable();
+            $table->string('suffix')->nullable();
 
             $table->date('date_of_birth')->nullable();
 
@@ -35,7 +34,7 @@ return new class extends Migration {
 
             $table->string('cause_of_death')->nullable();
 
-            $table->string('death_certificate_no')->nullable();
+            $table->string('death_certificate_no')->nullable()->unique();
 
             $table->text('notes')->nullable();
 
@@ -51,6 +50,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('interments');
+        Schema::dropIfExists('cemetery_decedents');
     }
 };

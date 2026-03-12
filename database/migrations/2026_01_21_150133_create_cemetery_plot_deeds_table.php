@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('plot_deeds', function (Blueprint $table) {
+        Schema::create('cemetery_plot_deeds', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
@@ -44,6 +44,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('plot_deeds');
+        Schema::dropIfExists('cemetery_plot_deeds');
     }
 };
