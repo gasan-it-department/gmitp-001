@@ -14,13 +14,17 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->foreignUlid('section_id')
                 ->constrained('cemetery_sections')
                 ->restrictOnDelete();
 
             $table->string('plot_number')->nullable();
 
-            $table->string('row_number')->nullable();
+            $table->string('name')->nullable();
 
             $table->string('type')->nullable();
 
@@ -28,11 +32,11 @@ return new class extends Migration {
 
             $table->unsignedBigInteger('total_capacity')->nullable();
 
-            $table->unsignedBigInteger('current_occupancy')->nullable();
+            $table->geometry('coordinates')->nullable();
 
             $table->timestamps();
 
-            $table->unique(['section_id', 'plot_number']);
+            $table->unique(['municipal_id', 'plot_number']);
         });
     }
 

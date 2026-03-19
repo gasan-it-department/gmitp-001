@@ -36,7 +36,7 @@ class AdminSeeder extends Seeder
 
             'email' => 'layrart8@gmail.com',
 
-            'user_name' => 'oneman',
+            'user_name' => 'harvs',
 
             'email_verified_at' => now(),
 

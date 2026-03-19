@@ -14,7 +14,7 @@ class ShowDecedentProfile extends Controller
     public function __invoke()
     {
         return Inertia::render('Cemetery/Admin/Decedents/Profile/DecedentProfile', [
-            'decedent' => ''
+
         ]);
     }
 

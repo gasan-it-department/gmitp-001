@@ -20,7 +20,7 @@ class RegisterDecedentController extends Controller
 
         $this->decedentUseCase->execute($dto);
 
-        return redirect()->route('')
+        return redirect()->route('ceme')
             ->with('success', 'Decedent registered successfully.');
     }
 }

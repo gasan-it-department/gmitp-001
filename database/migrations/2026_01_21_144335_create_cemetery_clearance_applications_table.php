@@ -10,17 +10,17 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('cemetery_sections', function (Blueprint $table) {
+        Schema::create('cemetery_clearance_applications', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
-            $table->foreignUlid('municipal_id')
-                ->constrained('municipalities')
+            $table->foreignUlid('plot_id')
+                ->constrained('cemetery_plots')
                 ->restrictOnDelete();
 
-            $table->string('name');
+            $table->string('requesting_part_name');
 
-            $table->geometry('boundary_polygon')->nullable();
+            $table->string('requesting_party_address');
 
             $table->timestamps();
         });
@@ -31,6 +31,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('cemetery_sections');
+        Schema::dropIfExists('cemetery_clearance_applications');
     }
 };

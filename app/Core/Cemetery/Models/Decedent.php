@@ -2,6 +2,8 @@
 
 namespace App\Core\Cemetery\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -26,9 +28,21 @@ class Decedent extends Model
 
         'suffix',
 
+        'memorial_name',
+
         'date_of_birth',
 
         'date_of_death',
+
+        'date_of_registration',
+
+        'decendent_type',
+
+        'reference_document_type',
+
+        'reference_document_number',
+
+        'place_of_death',
 
         'gender',
 
@@ -38,7 +52,9 @@ class Decedent extends Model
 
         'notes',
 
-        'municipal_id'
+        'municipal_id',
+
+        'address_id'
 
     ];
 
@@ -47,4 +63,16 @@ class Decedent extends Model
         'date_of_death' => 'date',
 
     ];
+
+    protected function age()
+    {
+        return Attribute::make(
+            get: function () {
+
+                if ($this->date_of_birth && $this->date_of_death) {
+                    return Carbon::parse($this->date_of_birth)->diffInYears(Carbon::parse($this->date_of_death));
+                }
+            }
+        );
+    }
 }

@@ -3,6 +3,7 @@
 use App\External\Api\Controllers\Cemetery\Decedents\RegisterDecedentController;
 use App\External\Web\Controllers\Cemetery\Admin\Decedents\ListDecedentsController;
 use App\External\Web\Controllers\Cemetery\Admin\Decedents\RegisterDecedentsController;
+use App\External\Web\Controllers\Cemetery\Admin\Decedents\ShowDecedentProfile;
 use App\External\Web\Controllers\Cemetery\CemeteryController;
 use App\External\Web\Controllers\Cemetery\Interements\CreateIntermentController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,8 @@ Route::prefix('/{municipality}/cemetery')
                         Route::get('/', ListDecedentsController::class)->name('list.page');
 
                         Route::get('register', RegisterDecedentsController::class)->name('create.page');
+
+                        Route::get('profile', ShowDecedentProfile::class)->name('profile.page');
 
                     });
             });

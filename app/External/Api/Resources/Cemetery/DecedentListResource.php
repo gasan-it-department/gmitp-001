@@ -25,7 +25,9 @@ class DecedentListResource extends JsonResource
                 $this->middle_name ?? '',
                 $this->suffix ?? ''
             )),
-            'death_certificate_no' => $this->death_certificate_no,
+            'death_certificate_no' => ($this->death_certificate_no !== null && $this->death_certificate_no !== '')
+                ? $this->death_certificate_no
+                : 'N/A',
             'date_of_death' => $this->date_of_death?->format('M d, Y') ?? 'N/A',
         ];
 

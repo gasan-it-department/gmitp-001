@@ -10,19 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('cemetery_sections', function (Blueprint $table) {
+        Schema::create('psgc_barangays', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('municipality_id')->constrained('psgc_municipalities')->restrictOnDelete();
 
-            $table->ulid('id')->primary();
-
-            $table->foreignUlid('municipal_id')
-                ->constrained('municipalities')
-                ->restrictOnDelete();
-
+            $table->string('psgc_code', 20)->unique();
             $table->string('name');
 
-            $table->geometry('boundary_polygon')->nullable();
-
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -31,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('cemetery_sections');
+        Schema::dropIfExists('psgc_barangays');
     }
 };
