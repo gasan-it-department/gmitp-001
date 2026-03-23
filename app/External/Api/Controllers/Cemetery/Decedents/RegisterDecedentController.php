@@ -16,11 +16,16 @@ class RegisterDecedentController extends Controller
     }
     public function __invoke(DecedentRequest $request)
     {
+        $municipality = app('current_municipality');
+
         $dto = DecedentDto::fromRequest($request);
 
-        $this->decedentUseCase->execute($dto);
+        $decedent = $this->decedentUseCase->execute($dto);
 
-        return redirect()->route('ceme')
-            ->with('success', 'Decedent registered successfully.');
+        return redirect()->route('cemetery.admin.decedents.profile.page', [
+            'municipality' => $municipality->slug,
+            'decedent_id' => $decedent->id,
+
+        ])->with('success', 'Decedent registered successfully.');
     }
 }

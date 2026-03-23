@@ -23,7 +23,8 @@ const mockDecedent = {
     relatives: [{ name: 'Maria Dela Cruz', relation: 'Spouse', contact: '+63 917 123 4567' }],
 };
 
-const DecedentProfile = () => {
+const DecedentProfile = ({ decedent }: any) => {
+    console.log(decedent);
     const { firstName, lastName, dateOfBirth, dateOfDeath, ageAtDeath, epitaph, plotDetails, relatives } = mockDecedent;
 
     return (

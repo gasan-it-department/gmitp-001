@@ -33,7 +33,7 @@ class DecedentsRepository
         ]);
     }
 
-    public function findDecedentById(string $decedentId, string $municipalId)
+    public function findDecedentById(string $municipalId, string $decedentId)
     {
 
         return Decedent::where('municipal_id', $municipalId)

@@ -44,7 +44,7 @@ Route::prefix('/{municipality}/cemetery')
 
                         Route::get('register', RegisterDecedentsController::class)->name('create.page');
 
-                        Route::get('profile', ShowDecedentProfile::class)->name('profile.page');
+                        Route::get('profile/{decedent_id}', ShowDecedentProfile::class)->name('profile.page');
 
                     });
             });

@@ -61,7 +61,7 @@ class Decedent extends Model
     protected $casts = [
         'date_of_birth' => 'date',
         'date_of_death' => 'date',
-
+        'date_of_registration' => 'date',
     ];
 
     protected function age()
