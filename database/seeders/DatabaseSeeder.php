@@ -20,8 +20,11 @@ class DatabaseSeeder extends Seeder
             MunicipalitySeeder::class,
             SuperAdminSeeder::class,
             PositionSeeder::class,
-            AdminSeeder::class
-            // AdminSeeder::class,
+            AdminSeeder::class,
+            DepartmentSeeder::class,
+                // EventsSeeder::class,
+                // AnnouncementSeeder::class,
+            ProcurementFundingSourceSeeder::class,
         ]);
 
         // $this->call([

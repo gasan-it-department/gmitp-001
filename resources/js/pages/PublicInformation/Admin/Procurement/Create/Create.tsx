@@ -1,19 +1,11 @@
-import PublicInformation from '@/actions/App/External/Api/Controllers/PublicInformation';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { ProcurementFormData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
 import AppLayout from '@/layouts/App/AppLayout';
+import procurement from '@/routes/procurement';
 import { useForm, usePage } from '@inertiajs/react';
-import { 
-    ArrowLeft, 
-    FilePlus2, 
-    Gavel, 
-    Wallet, 
-    Paperclip, 
-    Info,
-    CheckCircle2
-} from 'lucide-react';
+import { ArrowLeft, CheckCircle2, FilePlus2, Gavel, Paperclip, Wallet } from 'lucide-react';
 import { Attachments } from './Components/Attachments';
 import { AwardInformation } from './Components/AwardInformation';
 import { BudgetAndSchedule } from './Components/BudgetAndSchedule';
@@ -35,13 +27,13 @@ const initialValues: ProcurementFormData = {
 
 export default function CreateProcurement() {
     const { currentMunicipality } = usePage<any>().props;
-    
+
     // Explicitly typing the useForm hook helps resolve 'never' errors
     const { data, setData, post, processing, errors } = useForm<ProcurementFormData>(initialValues);
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(PublicInformation.StoreProcurementsController.url(), {
+        post(procurement.store.url(), {
             forceFormData: true,
             headers: {
                 'X-Municipality-Slug': currentMunicipality?.slug || '',
@@ -56,9 +48,8 @@ export default function CreateProcurement() {
     return (
         <AppLayout>
             <div className="flex min-h-screen w-full flex-col bg-slate-50/50">
-                
                 {/* --- STICKY HEADER --- */}
-                <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-sm shadow-sm">
+                <header className="sticky top-0 z-30 border-b bg-white/95 shadow-sm backdrop-blur-sm">
                     <div className="flex items-center justify-between px-6 py-4 lg:px-10">
                         <div className="flex items-center gap-4">
                             <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
@@ -68,11 +59,14 @@ export default function CreateProcurement() {
                             <div>
                                 <div className="flex items-center gap-2">
                                     <h1 className="text-xl font-extrabold tracking-tight text-slate-900">Create Procurement</h1>
-                                    <Badge variant={isAwarded ? "default" : "outline"} className={isAwarded ? "bg-emerald-600 hover:bg-emerald-600" : ""}>
+                                    <Badge
+                                        variant={isAwarded ? 'default' : 'outline'}
+                                        className={isAwarded ? 'bg-emerald-600 hover:bg-emerald-600' : ''}
+                                    >
                                         {data.status}
                                     </Badge>
                                 </div>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+                                <p className="text-xs font-semibold tracking-widest text-slate-500 uppercase">
                                     {currentMunicipality?.name || 'Municipality'} Portal
                                 </p>
                             </div>
@@ -82,10 +76,10 @@ export default function CreateProcurement() {
                             <Button type="button" variant="ghost" onClick={handleBack} disabled={processing}>
                                 Cancel
                             </Button>
-                            <Button 
-                                onClick={onSubmit} 
-                                disabled={processing} 
-                                className="bg-blue-600 px-6 font-bold hover:bg-blue-700 shadow-lg shadow-blue-200"
+                            <Button
+                                onClick={onSubmit}
+                                disabled={processing}
+                                className="bg-blue-600 px-6 font-bold shadow-lg shadow-blue-200 hover:bg-blue-700"
                             >
                                 {processing ? 'Publishing...' : 'Publish Procurement'}
                             </Button>
@@ -97,10 +91,8 @@ export default function CreateProcurement() {
                 <main className="flex-1 px-6 py-8 lg:px-10">
                     <form onSubmit={onSubmit} className="mx-auto w-full">
                         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-                            
                             {/* LEFT COLUMN: PRIMARY DATA */}
                             <div className="space-y-8 lg:col-span-8">
-                                
                                 {/* 1. Project Details */}
                                 <section className="overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md">
                                     <div className="flex items-center gap-4 border-b bg-slate-50/50 px-8 py-5">
@@ -135,14 +127,14 @@ export default function CreateProcurement() {
 
                                 {/* 3. Award Information (CONDITIONAL) */}
                                 {isAwarded ? (
-                                    <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                                    <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm duration-500 animate-in fade-in slide-in-from-top-4">
                                         <div className="flex items-center gap-4 border-b bg-emerald-50/50 px-8 py-5">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md">
                                                 <Gavel className="h-5 w-5" />
                                             </div>
                                             <div>
                                                 <h3 className="text-lg font-bold text-slate-900">Award Details</h3>
-                                                <p className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                                                <p className="flex items-center gap-1 text-sm font-medium text-emerald-700">
                                                     <CheckCircle2 className="h-3 w-3" /> Project status is set to Awarded
                                                 </p>
                                             </div>
@@ -152,11 +144,12 @@ export default function CreateProcurement() {
                                         </div>
                                     </section>
                                 ) : (
-                                    <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center bg-slate-50/30 transition-all">
-                                        <Gavel className="mx-auto h-10 w-10 text-slate-300 mb-3 opacity-50" />
-                                        <h4 className="text-slate-900 font-bold text-lg">Award Details are Locked</h4>
-                                        <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">
-                                            This section becomes available when the project status is updated to <span className="font-bold text-blue-600">AWARDED</span>.
+                                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 p-10 text-center transition-all">
+                                        <Gavel className="mx-auto mb-3 h-10 w-10 text-slate-300 opacity-50" />
+                                        <h4 className="text-lg font-bold text-slate-900">Award Details are Locked</h4>
+                                        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+                                            This section becomes available when the project status is updated to{' '}
+                                            <span className="font-bold text-blue-600">AWARDED</span>.
                                         </p>
                                     </div>
                                 )}
@@ -180,13 +173,16 @@ export default function CreateProcurement() {
                                                 error={(errors as any)?.attachments}
                                                 disabled={processing}
                                             />
-                                            
+
                                             {/* File Error Display */}
                                             <div className="mt-4 space-y-1">
                                                 {Object.keys(errors).map((key) => {
                                                     if (key.startsWith('attachments.')) {
                                                         return (
-                                                            <div key={key} className="flex items-center gap-2 rounded-md bg-red-50 p-2 text-xs font-semibold text-red-600">
+                                                            <div
+                                                                key={key}
+                                                                className="flex items-center gap-2 rounded-md bg-red-50 p-2 text-xs font-semibold text-red-600"
+                                                            >
                                                                 <span className="h-1.5 w-1.5 rounded-full bg-red-600" />
                                                                 {(errors as any)[key]}
                                                             </div>

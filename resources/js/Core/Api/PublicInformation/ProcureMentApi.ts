@@ -1,11 +1,11 @@
-import PublicInformation from "@/actions/App/External/Api/Controllers/PublicInformation";
+import procurement from "@/routes/procurement";
 import axios from "axios"
 
 
 export const ProcurementsApi = {
 
     async store(municiplaySlug: string, formData: any) {
-        const { url, method } = await PublicInformation.ProcurementsController.store();
+        const { url, method } = await procurement.store();
 
         const { data } = await axios({
             url,

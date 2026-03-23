@@ -14,7 +14,7 @@ export interface ProcurementFormData {
     attachments: any[];
 }
 
-export interface ProcurementData {
+export interface Procurement {
     id: string;
 
     reference_number: string;
@@ -34,6 +34,20 @@ export interface ProcurementData {
 
     // The array of files
     files?: ProcurementFile[];
+}
+
+export type ProcurementStatus = 'Draft' | 'Open' | 'Evaluating' | 'Awarded' | 'Failed' | 'Cancelled';
+
+export interface ProcurementListItem {
+
+    id: string;
+    reference_number: string;
+    title: string;
+    abc_amount: number;
+    category: string;
+    status: ProcurementStatus;
+    closing_date: string;
+
 }
 
 export interface ProcurementFile {
