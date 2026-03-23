@@ -4,6 +4,7 @@ use App\External\Api\Controllers\Municipality\Logo\SetMunicipalityLogoController
 use App\External\Api\Controllers\Municipality\Logo\UpdateMunicipalityLogoController;
 use App\External\Api\Controllers\Municipality\MunicipalityController;
 use App\External\Api\Controllers\Municipality\MunicipalitySettingsController;
+use App\External\Api\Controllers\Psgc\LocationController;
 use App\External\Web\Controllers\Municipality\MunicipalityAdminController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use Illuminate\Support\Facades\Route;
@@ -72,6 +73,20 @@ Route::prefix('api/municipality')
         Route::post('/save-banner', 'storeBanner')->name('saveBanner');
 
         Route::delete('/delete-banner/{id}', 'destroyBanner')->name('deleteBanner');
+
+    });
+
+//api for address or location
+Route::prefix('api/gmitp-001-psgc')
+    ->name('psgc.')
+    ->controller(LocationController::class)
+    ->group(function () {
+
+        Route::get('regions', 'regions')->name('regions');
+        Route::get('provinces/{id}', 'provinces')->name('provinces');
+        Route::get('municipalities/{id}', 'municipalities')->name('municipalities');
+        Route::get('cities/{id}', 'municipalitiesByRegion')->name('cities');
+        Route::get('barangays/{id}', 'barangays')->name('barangays');
 
     });
 

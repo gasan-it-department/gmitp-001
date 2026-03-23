@@ -22,7 +22,7 @@ class IntermentRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
 
             'middle_name' => ['nullable', 'string', 'max:255'],
-            'extension_name' => ['nullable', 'string', 'max:20'], // e.g. "Jr.", "III"
+            'suffix' => ['nullable', 'string', 'max:20'], // e.g. "Jr.", "III"
 
             'date_of_birth' => ['nullable', 'date', 'before_or_equal:today'],
             'date_of_death' => ['nullable', 'date', 'before_or_equal:today', 'after_or_equal:date_of_birth'],

@@ -11,7 +11,6 @@ interface Props {
 
 export default function OfficialsList({ officials, filters }: Props) {
     const data = officials?.data || [];
-    console.log(data);
     return (
         <AppLayout>
             <div className="min-h-screen bg-slate-50 p-8 dark:bg-zinc-950">

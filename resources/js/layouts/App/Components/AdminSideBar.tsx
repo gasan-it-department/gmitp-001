@@ -209,8 +209,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Burial Records',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
+                    title: 'Decedents Records',
+                    url: cemetery.admin.decedents.list.page.url({ municipality: currentMunicipality.slug }),
                     icon: BookOpen,
                     permission: 'cemetery.access',
                 },

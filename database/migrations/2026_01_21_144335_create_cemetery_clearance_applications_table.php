@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('plot_deeds', function (Blueprint $table) {
+        Schema::create('cemetery_clearance_applications', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
@@ -18,24 +18,11 @@ return new class extends Migration {
                 ->constrained('cemetery_plots')
                 ->restrictOnDelete();
 
-            $table->string('owner_name');
+            $table->string('requesting_part_name');
 
-            $table->string('owner_contact')->nullable();
-
-            $table->string('owner_address')->nullable();
-
-            $table->date('lease_start')->nullable();
-
-            $table->date('lease_end')->nullable();
-
-            $table->decimal('amount_paid', 10, 2)->nullable();
-
-            $table->string('or_number')->nullable();
-
-            $table->string('status')->nullable();
+            $table->string('requesting_party_address');
 
             $table->timestamps();
-
         });
     }
 
@@ -44,6 +31,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('plot_deeds');
+        Schema::dropIfExists('cemetery_clearance_applications');
     }
 };
