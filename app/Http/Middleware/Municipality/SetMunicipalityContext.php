@@ -18,7 +18,9 @@ class SetMunicipalityContext
 
     public function handle(Request $request, Closure $next): Response
     {
-        $slug = $request->route('municipality') ?? $request->header('X-Municipality-Slug');
+        $slug = $request->route('municipality')
+            ?? $request->header('X-Municipality-Slug')
+            ?? $request->query('municipality');
 
         if (!is_string($slug) || empty($slug)) {
 
@@ -31,7 +33,7 @@ class SetMunicipalityContext
         $municipality = $this->municipalityContextService->execute($slug, $isActive);
 
         if (!$municipality) {
-             return Inertia::render('Public/RestrictedAccess/MunicipalityNoAccess')
+            return Inertia::render('Public/RestrictedAccess/MunicipalityNoAccess')
                 ->toResponse($request)
                 ->setStatusCode(403);
         }

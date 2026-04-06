@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Core\Department\Models\Department;
+use App\Core\Municipality\Models\Municipality;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -30,11 +31,14 @@ class DepartmentSeeder extends Seeder
             ['code' => 'MDRRMO', 'name' => 'Municipal Disaster Risk Reduction and Management Office'],
         ];
 
+        $municipalities = Municipality::first();
+
         foreach ($departments as $dept) {
             Department::updateOrCreate(
                 ['code' => $dept['code']],
-                ['name' => $dept['name'], 'is_active' => true]
+                ['name' => $dept['name'], 'is_active' => true, 'municipal_id' => $municipalities->id]
             );
         }
+
     }
 }

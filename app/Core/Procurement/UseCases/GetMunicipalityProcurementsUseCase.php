@@ -19,7 +19,7 @@ class GetMunicipalityProcurementsUseCase
     public function execute(string $municipalId)
     {
 
-        return $this->procurementsRepo->getAllPermunicipality($municipalId);
+        return $this->procurementsRepo->paginateByMunicipality($municipalId);
 
     }
 

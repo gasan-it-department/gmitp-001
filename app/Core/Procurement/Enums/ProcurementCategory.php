@@ -29,4 +29,12 @@ enum ProcurementCategory: string
             self::OTHERS => 'Others',
         };
     }
+
+    public static function toSelectOption()
+    {
+        return array_map(fn(self $case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+        ], ProcurementCategory::cases());
+    }
 }

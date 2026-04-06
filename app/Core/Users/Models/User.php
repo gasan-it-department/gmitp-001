@@ -78,8 +78,11 @@ class User extends Authenticatable
 
     public function municipality(): BelongsTo
     {
-
         return $this->belongsTo(Municipality::class, 'municipal_id');
+    }
 
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 }

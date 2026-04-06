@@ -4,10 +4,10 @@ namespace App\Core\Procurement\UseCases;
 
 use App\Core\Procurement\Dto\StoreProcurementsDto;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
-use App\Shared\FileUploader\CloudinaryFileUploadService;
+use App\Shared\FileUploader\Interface\MediaUploadInterface;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Support\Facades\DB;
-
+use Exception;
 
 class StoreProcurementsUseCase
 {
@@ -18,7 +18,7 @@ class StoreProcurementsUseCase
 
         protected IdGeneratorInterface $idGenerator,
 
-        protected CloudinaryFileUploadService $fileUploadService,
+        protected MediaUploadInterface $pdfUploadService,
 
     ) {
     }
@@ -32,37 +32,39 @@ class StoreProcurementsUseCase
             $procurement = $this->procurementsRepo->save($dto, $procurementId);
 
 
-            if (!empty($dto->attachments)) {
+            if (!empty($dto->documents)) {
 
-                foreach ($dto->attachments as $index => $attachment) {
+                $folderPath = $this->pdfUploadService->getFolderPath($dto->municipalId, 'procurements', $procurementId);
 
-                    $fileObject = $attachment['file'];
+                $uploadedPaths = [];
+                try {
+                    foreach ($dto->documents as $document) {
 
-                    $docType = $attachment['type'];
+                        $file = $document['file'];
+                        $type = $document['type'];
+                        $pdfId = $this->idGenerator->generate();
 
-                    $fileId = $this->idGenerator->generate();
+                        $uploadResult = $this->pdfUploadService->uploadMedia(
+                            $file,
+                            $folderPath,
+                            $file->getClientOriginalName()
+                        );
+                        $uploadedPaths[] = $uploadResult['file_path'];
 
-                    $folder = 'procurements_files/' . $procurementId;
+                        $this->procurementsRepo->saveFiles($uploadResult, $procurementId, $type, $pdfId, $dto->createdBy);
 
-                    $fileData = $this->fileUploadService->uploadFiles($fileObject, $folder);
+                    }
 
-                    $this->procurementsRepo->saveFiles(
-
-                        fileData: $fileData,
-
-                        procurementId: $procurementId,
-
-                        type: $docType,
-
-                        fileId: $fileId
-
-                    );
-
+                } catch (Exception $e) {
+                    foreach ($uploadedPaths as $path) {
+                        $this->pdfUploadService->deleteMedia($path);
+                    }
+                    throw $e;
                 }
-
             }
             return $procurement;
         });
     }
+
 
 }

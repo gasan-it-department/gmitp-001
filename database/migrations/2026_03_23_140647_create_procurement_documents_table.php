@@ -17,11 +17,16 @@ return new class extends Migration {
                 ->constrained('procurements')
                 ->cascadeOnDelete();
 
-            $table->string('public_id');
+            $table->foreignUlid('uploaded_by')
+                ->nullable() // Must be nullable so nullOnDelete works
+                ->constrained('users') // Links to the 'id' column on the 'users' table
+                ->nullOnDelete();
+
+            $table->string('file_path');
 
             $table->string('type')->default('DOCUMENT');
 
-            $table->string('resource_type')->default('image')->after('file_name');
+            $table->string('mime_type')->default('application/pdf');
 
             $table->string('file_name'); // e.g., "Invitation_to_Bid.pdf" (Original name)
 

@@ -1,12 +1,15 @@
+import ConfirmDialog from '@/components/Shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ProcurementFormData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { Textarea } from '@/components/ui/textarea';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { ProcurementFormData } from '@/Core/Types/Procurement/procurement';
 import AppLayout from '@/layouts/App/AppLayout';
 import procurement from '@/routes/procurement';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, FilePlus2, Gavel, Paperclip, Wallet } from 'lucide-react';
-import { Attachments } from './Components/Attachments';
+import { ArrowLeft, CheckCircle2, FilePlus2, Gavel, Info, StickyNote, Wallet } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 import { AwardInformation } from './Components/AwardInformation';
 import { BudgetAndSchedule } from './Components/BudgetAndSchedule';
 import { ProjectDetails } from './Components/ProjectDetails';
@@ -15,41 +18,68 @@ const initialValues: ProcurementFormData = {
     reference_number: '',
     title: '',
     category: '',
-    status: 'OPEN',
-    approved_budget: 0,
+    status: '',
+    abc_amount: 0,
     contract_amount: null,
     pre_bid_date: null,
     closing_date: null,
     award_date: null,
     winning_bidder: null,
-    attachments: [],
+    documents: [],
+    department_id: '',
+    funding_source_id: '',
+    notes: '',
+    is_historical: true,
 };
 
-export default function CreateProcurement() {
-    const { currentMunicipality } = usePage<any>().props;
+interface Props {
+    fundingSources: any;
+    categories: any;
+    statuses: any;
+    documentTypes: any;
+}
+
+export default function CreateProcurement({ fundingSources, categories, statuses, documentTypes }: Props) {
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const fundingSourcesData = fundingSources.data;
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const queryParameters = new URLSearchParams(window.location.search);
+
+    const isHistorical = queryParameters.get('type') === 'historical';
 
     // Explicitly typing the useForm hook helps resolve 'never' errors
-    const { data, setData, post, processing, errors } = useForm<ProcurementFormData>(initialValues);
+    const { data, setData, post, processing, errors } = useForm<ProcurementFormData>({
+        ...initialValues,
+        is_historical: isHistorical,
+    });
 
-    const onSubmit = (e: React.FormEvent) => {
+    const handleInitialSubmit = (e: FormEvent) => {
         e.preventDefault();
+        setIsConfirmOpen(true);
+    };
+
+    const onSubmit = () => {
         post(procurement.store.url(), {
             forceFormData: true,
             headers: {
                 'X-Municipality-Slug': currentMunicipality?.slug || '',
             },
+            onSuccess: () => setIsConfirmOpen(false),
+            onError: () => setIsConfirmOpen(false),
         });
     };
 
     const handleBack = () => window.history.back();
 
     const isAwarded = data.status?.toUpperCase() === 'AWARDED';
+    console.log(isHistorical);
 
     return (
         <AppLayout>
             <div className="flex min-h-screen w-full flex-col bg-slate-50/50">
                 {/* --- STICKY HEADER --- */}
-                <header className="sticky top-0 z-30 border-b bg-white/95 shadow-sm backdrop-blur-sm">
+                <header className="sticky top-15 z-30 border-b bg-white/95 shadow-sm backdrop-blur-sm">
                     <div className="flex items-center justify-between px-6 py-4 lg:px-10">
                         <div className="flex items-center gap-4">
                             <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
@@ -63,7 +93,7 @@ export default function CreateProcurement() {
                                         variant={isAwarded ? 'default' : 'outline'}
                                         className={isAwarded ? 'bg-emerald-600 hover:bg-emerald-600' : ''}
                                     >
-                                        {data.status}
+                                        {data.status || 'N/A'}
                                     </Badge>
                                 </div>
                                 <p className="text-xs font-semibold tracking-widest text-slate-500 uppercase">
@@ -77,11 +107,11 @@ export default function CreateProcurement() {
                                 Cancel
                             </Button>
                             <Button
-                                onClick={onSubmit}
+                                onClick={handleInitialSubmit}
                                 disabled={processing}
                                 className="bg-blue-600 px-6 font-bold shadow-lg shadow-blue-200 hover:bg-blue-700"
                             >
-                                {processing ? 'Publishing...' : 'Publish Procurement'}
+                                {processing ? 'Saving...' : 'Save Procurement'}
                             </Button>
                         </div>
                     </div>
@@ -105,7 +135,16 @@ export default function CreateProcurement() {
                                         </div>
                                     </div>
                                     <div className="p-8">
-                                        <ProjectDetails data={data} setData={setData} errors={errors} processing={processing} />
+                                        <ProjectDetails
+                                            data={data}
+                                            setData={setData}
+                                            errors={errors}
+                                            processing={processing}
+                                            fundingSources={fundingSourcesData}
+                                            statuses={statuses}
+                                            categories={categories}
+                                            isHistorical={data.is_historical}
+                                        />
                                     </div>
                                 </section>
 
@@ -158,7 +197,7 @@ export default function CreateProcurement() {
                             {/* RIGHT COLUMN: SIDEBAR */}
                             <div className="lg:col-span-4">
                                 <div className="sticky top-28 space-y-6">
-                                    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                                    {/* <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
                                         <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
                                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
                                                 <Paperclip className="h-4 w-4" />
@@ -167,17 +206,17 @@ export default function CreateProcurement() {
                                         </div>
                                         <div className="p-6">
                                             <Attachments
-                                                attachments={data.attachments}
+                                                documentTypes={documentTypes}
+                                                attachments={data.documents}
                                                 // FIXED: Using function pattern to avoid TypeScript 'never' error
-                                                onFilesChange={(newFiles) => setData((prev) => ({ ...prev, attachments: newFiles }))}
-                                                error={(errors as any)?.attachments}
+                                                onFilesChange={(newFiles) => setData((prev) => ({ ...prev, documents: newFiles }))}
+                                                error={(errors as any)?.documents}
                                                 disabled={processing}
                                             />
 
-                                            {/* File Error Display */}
                                             <div className="mt-4 space-y-1">
                                                 {Object.keys(errors).map((key) => {
-                                                    if (key.startsWith('attachments.')) {
+                                                    if (key.startsWith('documents.')) {
                                                         return (
                                                             <div
                                                                 key={key}
@@ -192,16 +231,35 @@ export default function CreateProcurement() {
                                                 })}
                                             </div>
                                         </div>
-                                    </section>
+                                    </section> */}
 
-                                    {/* <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6">
+                                    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                                        <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
+                                                <StickyNote className="h-4 w-4" />
+                                            </div>
+                                            <h3 className="font-bold text-slate-900">
+                                                Notes <span className="text-red-500">/</span> Remarks
+                                            </h3>
+                                        </div>
+                                        <div className="p-6">
+                                            <Textarea
+                                                placeholder="Add any additional notes, BAC resolutions, or remarks regarding this procurement here..."
+                                                className="min-h-[120px]"
+                                                // value={data.notes}
+                                                // onChange={(e) => setData('notes', e.target.value)}
+                                            />
+                                            {errors.notes && <span className="animate-pulse text-sm text-red-500">{errors.notes}</span>}
+                                        </div>
+                                    </section>
+                                    <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6">
                                         <div className="flex items-start gap-3 text-blue-700">
                                             <div className="rounded-full bg-blue-100 p-1">
                                                 <Info className="h-4 w-4 shrink-0" />
                                             </div>
                                             <div className="space-y-2">
                                                 <p className="text-sm font-bold">Portal Guidelines</p>
-                                                <ul className="list-inside list-disc space-y-1.5 text-xs opacity-80 leading-relaxed">
+                                                <ul className="list-inside list-disc space-y-1.5 text-xs leading-relaxed opacity-80">
                                                     <li>PhilGEPS reference is required for public biddings.</li>
                                                     <li>All monetary values must be in PHP.</li>
                                                     <li>Attachments are visible to the public.</li>
@@ -209,13 +267,26 @@ export default function CreateProcurement() {
                                                 </ul>
                                             </div>
                                         </div>
-                                    </div> */}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </main>
             </div>
+            <ConfirmDialog
+                title="Save Procurement?"
+                isOpen={isConfirmOpen}
+                onCancel={() => setIsConfirmOpen(false)}
+                confirmText="Yes, Save Draft"
+                onConfirm={onSubmit}
+                isProcessing={processing}
+                message={
+                    isHistorical
+                        ? 'Are you sure you want to save this historical procurement?'
+                        : 'Are you sure you want to save this project? You can still edit the details and attach bidding documents after saving.'
+                }
+            />
         </AppLayout>
     );
 }

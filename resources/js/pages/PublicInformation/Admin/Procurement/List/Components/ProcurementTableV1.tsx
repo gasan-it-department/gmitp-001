@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BiddingData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { BiddingData } from '@/Core/Types/Procurement/procurement';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 import SortDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';

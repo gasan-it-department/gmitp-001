@@ -4,6 +4,8 @@ namespace App\Core\Procurement\Models;
 
 use App\Core\Department\Models\Department;
 use App\Core\Municipality\Models\Municipality;
+use App\Core\Procurement\Enums\ProcurementCategory;
+use App\Core\Procurement\Enums\ProcurementStatus;
 use App\Core\Procurement\Models\ProcurementDocument;
 use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -31,8 +33,6 @@ class Procurement extends Model
 
         'created_by',
 
-        'approved_by',
-
         'municipal_id',
 
         'department_id',
@@ -45,7 +45,7 @@ class Procurement extends Model
 
         'description',
 
-        'approved_budget',
+        'abc_amount',
 
         'contract_amount',
 
@@ -53,7 +53,7 @@ class Procurement extends Model
 
         'status',
 
-        'remarks',
+        'notes',
 
         'published_at',
 
@@ -72,9 +72,10 @@ class Procurement extends Model
      */
     protected $casts = [
         // Cast money to float (or 'decimal:2') so you can do math easily
-        'approved_budget' => 'float',
+        'abc_amount' => 'float',
         'contract_amount' => 'float',
-
+        'status' => ProcurementStatus::class,
+        'category' => ProcurementCategory::class,
         // Cast dates to Carbon instances so you can format them (e.g., ->format('M d, Y'))
         'published_at' => 'datetime',
         'pre_bid_date' => 'datetime',
@@ -83,7 +84,7 @@ class Procurement extends Model
         'deleted_at' => 'datetime',
     ];
 
-    public function files(): HasMany
+    public function documents(): HasMany
     {
         return $this->hasMany(ProcurementDocument::class);
     }

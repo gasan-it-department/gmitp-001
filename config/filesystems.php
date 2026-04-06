@@ -65,6 +65,19 @@ return [
             'report' => false,
         ],
 
+        'r2' => [
+            'driver' => 's3', // This MUST remain 's3' because R2 uses the S3 protocol
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'), // Cloudflare R2 generally uses 'auto'
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', true), // Required for R2
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -17,9 +17,7 @@ class GetProcurementUseCase
 
     public function execute(string $procurementId, string $municipalId)
     {
-
         return $this->procurementsRepo->findByIdAndMunicipality($procurementId, $municipalId);
-
     }
 
 }

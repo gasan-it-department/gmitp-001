@@ -4,7 +4,7 @@ namespace App\External\Api\Controllers\Procurement;
 
 use App\Core\Procurement\Dto\StoreProcurementsDto;
 use App\Core\Procurement\UseCases\StoreProcurementsUseCase;
-use App\External\Api\Request\PublicInformation\ProcurementRequest;
+use App\External\Api\Request\Procurement\ProcurementRequest;
 
 class StoreProcurementsController
 {
@@ -27,7 +27,7 @@ class StoreProcurementsController
 
         $procurement = $this->storeProcurementsUseCase->execute($dto);
 
-        return redirect()->route('procurement.admin.page', ['municipality' => $slug])->with('success', 'Procurement added successfully.');
+        return redirect()->route('procurement.admin.show', ['municipality' => $slug, 'id' => $procurement->id])->with('success', 'Procurement added successfully.');
 
     }
 

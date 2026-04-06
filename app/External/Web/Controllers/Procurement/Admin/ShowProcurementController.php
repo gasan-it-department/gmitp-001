@@ -2,8 +2,9 @@
 
 namespace App\External\Web\Controllers\Procurement\Admin;
 
+use App\Core\Procurement\Enums\ProcurementDocumentType;
 use App\Core\Procurement\UseCases\GetProcurementUseCase;
-use App\External\Api\Resources\PublicInformation\ProcurementResource;
+use App\External\Api\Resources\Procurement\ProcurementDetailResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 
@@ -19,8 +20,9 @@ class ShowProcurementController extends Controller
 
         $procurement = $this->getProcurementUseCase->execute($procurementId, app('municipal_id'));
 
-        return Inertia::render('PublicInformation/Admin/Procurement/Show/Procurement', [
-            'procurement' => new ProcurementResource($procurement)
+        return Inertia::render('PublicInformation/Admin/Procurement/Show/ProcurementDetails', [
+            'procurement' => new ProcurementDetailResource($procurement),
+            'documentTypes' => ProcurementDocumentType::toOptionsArray(),
         ]);
 
     }

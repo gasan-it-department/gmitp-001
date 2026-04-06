@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { ProcurementListItem } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { ProcurementListItem } from '@/Core/Types/Procurement/procurement';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import procurement from '@/routes/procurement';
 import { Link } from '@inertiajs/react';

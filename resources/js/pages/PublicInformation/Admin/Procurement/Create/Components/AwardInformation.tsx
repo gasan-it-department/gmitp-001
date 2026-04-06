@@ -1,5 +1,6 @@
 import { FormInput } from '@/components/FormInputField';
-import { ProcurementFormData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { DatePicker } from '@/components/Shared/DatePicker';
+import { ProcurementFormData } from '@/Core/Types/Procurement/procurement';
 
 interface Props {
     data: ProcurementFormData;
@@ -44,16 +45,7 @@ export function AwardInformation({ data, setData, errors, processing }: Props) {
             </div>
 
             <div>
-                <FormInput
-                    label="Date of Award"
-                    id="award_date"
-                    type="date"
-                    // Handle null value safely
-                    value={data.award_date || ''}
-                    onChange={(e) => setData('award_date', e.target.value)}
-                    error={errors.award_date}
-                    disabled={processing}
-                />
+                <DatePicker label="Date of Award" error={errors.award_date} value={data.award_date} onChange={(v) => setData('award_date', v)} />
             </div>
         </div>
     );

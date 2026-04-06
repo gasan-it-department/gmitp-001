@@ -29,4 +29,12 @@ enum FundingSource: string
             self::OTHERS => 'Others (Please specify)',
         };
     }
+
+    public static function toSelectOption()
+    {
+        return array_map(fn(self $case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+        ], FundingSource::cases());
+    }
 }

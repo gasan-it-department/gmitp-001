@@ -1,34 +1,29 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { FileText, Trash2, UploadCloud } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCircle, FileText, Trash2, UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-// 1. Define the allowed Document Types
-const DOCUMENT_TYPES = [
-    { value: 'INVITATION', label: 'Invitation to Bid / Request for Quote' },
-    { value: 'BID_DOCS', label: 'Bidding Documents' },
-    { value: 'BULLETIN', label: 'Bid Bulletin' },
-    { value: 'NOTICE_OF_AWARD', label: 'Notice of Award' },
-    { value: 'CONTRACT', label: 'Contract / PO' },
-    { value: 'NOTICE_TO_PROCEED', label: 'Notice to Proceed' },
-    { value: 'OTHERS', label: 'Others' },
-];
+interface SelectOption {
+    value: string;
+    label: string;
+    color?: string;
+}
 
-// 2. Define the new shape of a single attachment item
 export interface AttachmentItem {
     file: File;
-    type: string; // The selected value from the dropdown
+    type: string;
 }
 
 interface Props {
-    // Update props to use the new object structure
     attachments: AttachmentItem[];
     onFilesChange: (files: AttachmentItem[]) => void;
     error?: string;
     disabled?: boolean;
+    documentTypes: SelectOption[];
 }
 
-export const Attachments = ({ attachments, onFilesChange, error, disabled }: Props) => {
+export const Attachments = ({ attachments, onFilesChange, error, disabled, documentTypes }: Props) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -37,35 +32,35 @@ export const Attachments = ({ attachments, onFilesChange, error, disabled }: Pro
             const validFiles = Array.from(files).filter((file) => file.type === 'application/pdf');
 
             if (validFiles.length !== files.length) {
-                alert('Only PDF files are allowed.');
+                alert('Only PDF files are allowed. Other file types were ignored.');
             }
 
-            // 3. Wrap the raw File in our new Object structure
             const newAttachments: AttachmentItem[] = validFiles.map((file) => ({
                 file: file,
-                type: '', // Default to empty (forces user to select) or 'OTHERS'
+                type: '', // Forces user to select a type
             }));
 
             onFilesChange([...attachments, ...newAttachments]);
         }
     };
 
-    // 4. Handle Dropdown Changes
     const updateFileType = (index: number, newType: string) => {
         const updated = [...attachments];
         updated[index].type = newType;
         onFilesChange(updated);
     };
 
-    // Standard Drag & Drop handlers...
+    // Drag & Drop handlers
     const onDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(true);
     };
+
     const onDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
     };
+
     const onDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
@@ -79,35 +74,39 @@ export const Attachments = ({ attachments, onFilesChange, error, disabled }: Pro
 
     return (
         <div className="space-y-4">
-            <Label>Procurement Documents (PDF only, Max 25MB)</Label>
+            <Label className="text-sm font-semibold text-slate-800">
+                Procurement Documents <span className="font-normal text-slate-500">(PDF only, Max 25MB)</span>
+            </Label>
 
             {/* Drop Zone */}
             <div
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
-                className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                    error ? 'border-red-500 bg-red-50' : isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'
-                }`}
+                className={`rounded-xl border-2 border-dashed p-8 text-center transition-all duration-200 ${
+                    error
+                        ? 'border-red-400 bg-red-50'
+                        : isDragging
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50'
+                } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                onClick={() => !disabled && inputRef.current?.click()}
             >
-                <div className="flex flex-col items-center justify-center gap-2">
-                    <div className={`rounded-full p-3 ${isDragging ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                        <UploadCloud className={`h-6 w-6 ${isDragging ? 'text-blue-600' : 'text-gray-600'}`} />
+                <div className="pointer-events-none flex flex-col items-center justify-center gap-3">
+                    <div className={`rounded-full p-4 transition-colors ${isDragging ? 'bg-blue-100' : 'bg-white shadow-sm'}`}>
+                        <UploadCloud className={`h-8 w-8 ${isDragging ? 'text-blue-600' : 'text-slate-400'}`} />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm font-medium">
-                            <span className="cursor-pointer text-blue-600 hover:underline" onClick={() => !disabled && inputRef.current?.click()}>
-                                Click to upload
-                            </span>{' '}
-                            or drag and drop
+                        <p className="text-sm font-medium text-slate-700">
+                            <span className="font-semibold text-blue-600 hover:text-blue-700">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-gray-500">PDF up to 25MB per file</p>
+                        <p className="text-xs text-slate-500">Attach NOAs, Contracts, or Bidding Documents</p>
                     </div>
                 </div>
                 <input
                     ref={inputRef}
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,application/pdf"
                     multiple
                     className="hidden"
                     onChange={(e) => processFiles(e.target.files)}
@@ -115,59 +114,74 @@ export const Attachments = ({ attachments, onFilesChange, error, disabled }: Pro
                 />
             </div>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-500">{error}</p>}
 
-            {/* The File List with Dropdowns */}
+            {/* The File List */}
             {attachments.length > 0 && (
-                <ul className="space-y-3">
-                    {attachments.map((item, index) => (
-                        <li
-                            key={`${item.file.name}-${index}`}
-                            className="flex flex-col gap-3 rounded-md border bg-white p-3 shadow-sm md:flex-row md:items-center md:justify-between"
-                        >
-                            {/* File Info */}
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="rounded bg-blue-50 p-2">
-                                    <FileText className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <div className="truncate">
-                                    <p className="max-w-[200px] truncate text-sm font-medium">{item.file.name}</p>
-                                    <p className="text-xs text-gray-500">{(item.file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                </div>
-                            </div>
+                <ul className="mt-4 space-y-3">
+                    {attachments.map((item, index) => {
+                        const isMissingType = !item.type;
 
-                            {/* Actions: Dropdown & Delete */}
-                            <div className="flex items-center gap-2">
-                                {/* 5. The Document Type Dropdown */}
-                                <select
-                                    className="h-8 rounded-md border border-gray-300 bg-transparent px-2 text-xs text-gray-900 focus:border-blue-500 focus:outline-none"
-                                    value={item.type}
-                                    onChange={(e) => updateFileType(index, e.target.value)}
-                                    disabled={disabled}
-                                >
-                                    <option value="" disabled>
-                                        Select Type...
-                                    </option>
-                                    {DOCUMENT_TYPES.map((type) => (
-                                        <option key={type.value} value={type.value}>
-                                            {type.label}
-                                        </option>
-                                    ))}
-                                </select>
+                        return (
+                            <li
+                                key={`${item.file.name}-${index}`}
+                                className={`flex flex-col gap-4 rounded-lg border bg-white p-4 shadow-sm transition-all md:flex-row md:items-center md:justify-between ${
+                                    isMissingType ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200'
+                                }`}
+                            >
+                                {/* File Info (Left Side) */}
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className={`shrink-0 rounded-lg p-2.5 ${isMissingType ? 'bg-amber-100/50' : 'bg-blue-50'}`}>
+                                        <FileText className={`h-5 w-5 ${isMissingType ? 'text-amber-600' : 'text-blue-600'}`} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-slate-700" title={item.file.name}>
+                                            {item.file.name}
+                                        </p>
+                                        <p className="text-xs text-slate-500">{(item.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </div>
+                                </div>
 
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeFile(index)}
-                                    className="text-red-500 hover:bg-red-50 hover:text-red-700"
-                                    disabled={disabled}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </li>
-                    ))}
+                                {/* Actions (Right Side) */}
+                                <div className="flex shrink-0 items-center gap-3">
+                                    {/* Missing Type Warning Icon */}
+                                    {isMissingType && (
+                                        <div className="flex items-center text-amber-600" title="Please select a document type">
+                                            <AlertCircle className="h-4 w-4" />
+                                        </div>
+                                    )}
+
+                                    {/* Connected Dropdown */}
+                                    <Select value={item.type || ''} onValueChange={(val) => updateFileType(index, val)} disabled={disabled}>
+                                        <SelectTrigger
+                                            className={`h-9 w-[220px] text-xs font-medium ${isMissingType ? 'border-amber-400 focus:ring-amber-500' : ''}`}
+                                        >
+                                            <SelectValue placeholder="Select Document Type..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {documentTypes.map((docType) => (
+                                                <SelectItem key={docType.value} value={docType.value} className="text-xs">
+                                                    {docType.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Delete Button */}
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeFile(index)}
+                                        className="h-9 w-9 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                                        disabled={disabled}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
         </div>

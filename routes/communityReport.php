@@ -2,8 +2,9 @@
 
 use App\External\Api\Controllers\CommunityReport\CommunityReportController;
 use App\External\Api\Controllers\CommunityReport\CommunityReportTypeController;
-use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
 use App\External\Web\Controllers\CommunityReport\Client\CommunityReportClientController;
+use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('{municipality}/community-report')
     ->middleware(['municipalityContext', 'admin'])

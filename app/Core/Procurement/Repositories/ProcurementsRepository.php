@@ -4,6 +4,7 @@ namespace App\Core\Procurement\Repositories;
 
 use App\Core\Procurement\Dto\StoreProcurementsDto;
 use App\Core\Procurement\Models\Procurement;
+use App\Core\Procurement\Models\ProcurementDocument;
 use App\Core\PublicInformation\Models\ProcurementFile;
 
 class ProcurementsRepository
@@ -16,11 +17,15 @@ class ProcurementsRepository
 
             'id' => $procurementId,
 
-            'user_id' => $dto->userId,
+            'created_by' => $dto->createdBy,
 
             'municipal_id' => $dto->municipalId,
 
             'reference_number' => $dto->referenceNumber,
+
+            'funding_source_id' => $dto->fundingSourceId,
+
+            'department_id' => $dto->departmentId,
 
             'title' => $dto->title,
 
@@ -28,7 +33,7 @@ class ProcurementsRepository
 
             'status' => $dto->status,
 
-            'approved_budget' => $dto->approvedBudget,
+            'abc_amount' => $dto->abcAmount,
 
             'contract_amount' => $dto->contractAmount,
 
@@ -40,26 +45,31 @@ class ProcurementsRepository
 
             'award_date' => $dto->awardDate,
 
+            'notes' => $dto->notes,
         ]);
 
     }
 
-    public function saveFiles(array $fileData, string $procurementId, string $type, string $fileId)
+    public function saveFiles(array $fileData, string $procurementId, string $type, string $fileId, string $uploadedBy)
     {
 
-        ProcurementFile::create([
+        ProcurementDocument::create([
 
             'id' => $fileId,
 
+            'uploaded_by' => $uploadedBy,
+
             'procurement_id' => $procurementId,
 
-            'public_id' => $fileData['public_id'],
+            'file_path' => $fileData['file_path'],
 
             'file_name' => $fileData['original_name'],
 
+            'file_size' => $fileData['file_size'],
+
             'type' => $type,
 
-            'resource_type' => $fileData['resource_type'] ?? 'image',
+            'mime_type' => $fileData['mime_type'],
 
         ]);
 
@@ -75,18 +85,22 @@ class ProcurementsRepository
     public function findByIdAndMunicipality(string $procurementId, string $municipalId)
     {
 
-        return Procurement::with('files')
-            ->where('municipal_id', $municipalId)
-            ->find($procurementId);
+        return Procurement::where('municipal_id', $municipalId)
+            ->with('documents')
+            ->with('department')
+            ->with('fundingSource')
+            ->with('creator')
+            ->findOrFail($procurementId);
 
     }
 
-    public function getAllPermunicipality(string $municipalId)
+    public function paginateByMunicipality(string $municipalId)
     {
 
         return Procurement::query()
             ->where('municipal_id', $municipalId)
-            ->with('files')
+            ->with('documents')
+            ->with('department')
             ->paginate(50);
 
     }

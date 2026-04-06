@@ -11,11 +11,21 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('departments', function (Blueprint $table) {
+
             $table->ulid('id')->primary();
+
             $table->string('name');
+
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
+
             $table->string('code')->unique(); // e.g., 'MEO', 'MHO'
+
             $table->boolean('is_active')->default(true);
+
             $table->softDeletes();
+
             $table->timestamps();
         });
     }

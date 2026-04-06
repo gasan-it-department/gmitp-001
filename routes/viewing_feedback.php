@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Web\Controllers\Feedback\Admin\FeedbackAdminController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('{municipality}/view-feedback')
     ->middleware(['municipalityContext', 'admin'])

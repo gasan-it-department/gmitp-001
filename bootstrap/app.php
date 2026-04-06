@@ -63,7 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (DomainException $e, Request $request) {
 
             // 2. Handle API / Axios Requests
-            if (($request->wantsJson() || $request->is('api/*')) && !$request->hasHeader('X-Inertia')) {
+            if ($request->wantsJson() || !$request->hasHeader('X-Inertia')) {
 
                 return response()->json([
                     'error' => class_basename($e),

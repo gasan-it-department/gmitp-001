@@ -8,20 +8,36 @@ import * as React from 'react';
 
 interface DatePickerProps {
     label: string;
-    value: string | undefined; // Strictly expects a Laravel string: 'YYYY-MM-DD'
+    value: string | undefined | null; // Added null to perfectly match your ProcurementFormData
     onChange: (date: string) => void;
     error?: string;
-    disableFuture?: boolean; // Simple toggle for UX
+    disableFuture?: boolean;
+    disablePast?: boolean; // NEW: Toggle to prevent selecting old dates
 }
 
-export function DatePicker({ label, value, onChange, error, disableFuture = false }: DatePickerProps) {
+export function DatePicker({ label, value, onChange, error, disableFuture = false, disablePast = false }: DatePickerProps) {
     const [open, setOpen] = React.useState(false);
 
-    // 1. Safely parse the Laravel string into a JS Date object for Shadcn
+    // 1. Safely parse the Laravel string into a JS Date object
     const selectedDate = value ? parseISO(value) : undefined;
 
-    // 2. Calculate the year range for historical registry entries
+    // 2. Dynamically calculate year ranges based on the props
     const currentYear = new Date().getFullYear();
+    // If past is disabled, only show from this year onward. Otherwise, go back 120 years.
+    const fromYear = disablePast ? currentYear : currentYear - 120;
+    // If future is disabled, cap it at this year. Otherwise, allow up to 10 years in the future.
+    const toYear = disableFuture ? currentYear : currentYear + 10;
+
+    // 3. Determine disabled dates logic for Shadcn / react-day-picker
+    let disabledMatcher;
+    if (disableFuture && disablePast) {
+        disabledMatcher = [{ before: new Date() }, { after: new Date() }]; // Only allows today
+    } else if (disableFuture) {
+        disabledMatcher = { after: new Date() };
+    } else if (disablePast) {
+        // Disables all dates before today (allows selecting today and future)
+        disabledMatcher = { before: new Date() };
+    }
 
     return (
         <div className="flex w-full flex-col">
@@ -47,14 +63,12 @@ export function DatePicker({ label, value, onChange, error, disableFuture = fals
                         mode="single"
                         selected={selectedDate}
                         defaultMonth={selectedDate}
-                        // Ensure clerks can easily select historical dates
                         captionLayout="dropdown"
-                        fromYear={currentYear - 120}
-                        toYear={currentYear}
-                        // Conditionally disable future dates if the prop is true
-                        disabled={disableFuture ? { after: new Date() } : undefined}
+                        fromYear={fromYear} // Dynamically set
+                        toYear={toYear} // Dynamically set
+                        disabled={disabledMatcher} // Applies our new logic
                         onSelect={(date) => {
-                            // 3. Convert back to Laravel's expected format on selection
+                            // Convert back to Laravel's expected format on selection
                             onChange(date ? format(date, 'yyyy-MM-dd') : '');
                             setOpen(false);
                         }}
@@ -62,8 +76,8 @@ export function DatePicker({ label, value, onChange, error, disableFuture = fals
                 </PopoverContent>
             </Popover>
 
-            {/* Display Laravel validation errors directly under the input */}
-            {error && <span className="animate-pulse text-sm text-red-500">{error}</span>}
+            {/* Display Laravel validation errors */}
+            {error && <span className="mt-1 text-sm font-medium text-red-500">{error}</span>}
         </div>
     );
 }

@@ -29,7 +29,7 @@ class SuperAdminSeeder extends Seeder
                 'phone_verified_at' => now(),
                 'email' => 'gasanmarinduque.itdepartment@gmail.com',
                 'email_verified_at' => now(),
-                'password' => Hash::make('password'),
+                'password' => Hash::make('capstone'),
             ]
 
         );

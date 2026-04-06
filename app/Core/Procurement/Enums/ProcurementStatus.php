@@ -4,12 +4,12 @@ namespace App\Core\Procurement\Enums;
 
 enum ProcurementStatus: string
 {
-    case DRAFT = 'Draft';
-    case OPEN = 'Open';
-    case EVALUATING = 'Evaluating'; // Post-qualification phase
-    case AWARDED = 'Awarded';
-    case FAILED = 'Failed';
-    case CANCELLED = 'Cancelled';
+    case DRAFT = 'draft';
+    case OPEN = 'open';
+    case EVALUATING = 'evaluating'; // Post-qualification phase
+    case AWARDED = 'awarded';
+    case FAILED = 'failed';
+    case CANCELLED = 'cancelled';
 
     // Bonus: You can add helper methods directly in the Enum for your React frontend!
     public function color(): string
@@ -21,6 +21,27 @@ enum ProcurementStatus: string
             self::FAILED, self::CANCELLED => 'text-red-700 bg-red-100',
             default => 'text-gray-700 bg-gray-100',
         };
+    }
+
+    public function label()
+    {
+        return match ($this) {
+            self::DRAFT => 'Draft',
+            self::OPEN => 'Open (Bidding Ongoing)',
+            self::EVALUATING => 'Evaluating (Post-Qualification)',
+            self::AWARDED => 'Awarded',
+            self::FAILED => 'Failed Bidding',
+            self::CANCELLED => 'Cancelled',
+        };
+    }
+
+    public static function toSelectOptions(): array
+    {
+        return array_map(fn(self $case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+            'color' => $case->color(),
+        ], ProcurementStatus::cases());
     }
 
 }

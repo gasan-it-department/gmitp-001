@@ -16,7 +16,7 @@ class ProcurementListResource extends JsonResource
             'title' => $this->title,
             'category' => $this->category,
             'status' => $this->status,
-            'abc_amount' => (float) $this->approved_budget,
+            'abc_amount' => (float) $this->abc_amount,
             'closing_date' => $this->closing_date?->format('M d, Y'),
         ];
     }

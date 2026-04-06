@@ -1,5 +1,6 @@
 import { FormInput } from '@/components/FormInputField';
-import { ProcurementFormData } from '@/Core/Types/PublicInformation/PublicInformationTypes';
+import { DatePicker } from '@/components/Shared/DatePicker';
+import { ProcurementFormData } from '@/Core/Types/Procurement/procurement';
 
 interface Props {
     data: ProcurementFormData;
@@ -18,9 +19,9 @@ export const BudgetAndSchedule = ({ data, setData, errors, processing }: Props) 
                     id="approved_budget"
                     type="number"
                     // Handle the 0 vs empty string issue for UX
-                    value={data.approved_budget === 0 ? '' : data.approved_budget.toString()}
-                    onChange={(e) => setData('approved_budget', e.target.value)}
-                    error={errors.approved_budget}
+                    value={data.abc_amount === 0 ? '' : data.abc_amount.toString()}
+                    onChange={(e) => setData('abc_amount', e.target.value)}
+                    error={errors.abc_amount}
                     placeholder="0.00"
                     disabled={processing}
                 />
@@ -29,26 +30,20 @@ export const BudgetAndSchedule = ({ data, setData, errors, processing }: Props) 
 
             {/* ROW 2: TIMELINE (3 Columns for dates) */}
             <div>
-                <FormInput
+                <DatePicker
                     label="Pre-procurement / Pre-bid"
-                    id="pre_bid_date"
-                    type="date"
-                    value={data.pre_bid_date || ''}
-                    onChange={(e) => setData('pre_bid_date', e.target.value)}
+                    value={data.pre_bid_date}
+                    onChange={(val) => setData('pre_bid_date', val)}
                     error={errors.pre_bid_date}
-                    disabled={processing}
                 />
             </div>
 
             <div>
-                <FormInput
+                <DatePicker
                     label="Closing Date / Deadline"
-                    id="closing_date"
-                    type="date"
-                    value={data.closing_date || ''}
-                    onChange={(e) => setData('closing_date', e.target.value)}
                     error={errors.closing_date}
-                    disabled={processing}
+                    value={data.closing_date}
+                    onChange={(val) => setData('closing_date', val)}
                 />
             </div>
         </div>

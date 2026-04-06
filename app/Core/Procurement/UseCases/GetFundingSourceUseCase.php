@@ -10,11 +10,10 @@ class GetFundingSourceUseCase
     public function execute()
     {
 
-        return [
-            'funding_sources' => ProcurementFundingSource::where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'code']),
-        ];
+        return ProcurementFundingSource::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
 
     }
 
