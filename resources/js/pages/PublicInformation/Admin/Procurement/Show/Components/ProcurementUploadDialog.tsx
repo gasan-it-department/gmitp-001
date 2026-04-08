@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import api from '@/lib/axios';
 import procurement from '@/routes/procurement';
-import axios from 'axios';
+import axios from 'axios'; // Raw, clean slate for Cloudflare
 import { toast } from 'sonner';
 
 interface SelectOption {
@@ -61,26 +62,21 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
             toast.error('File too large', {
                 description: `Please select a document smaller than ${MAX_FILE_SIZE_MB}MB.`,
             });
-            return; // Instantly stops the upload process
+            return;
         }
-        // Instantly close the confirm dialog to reveal the main dialog's progress bar
+
         setIsAlertConfirmOpen(false);
         setIsUploading(true);
         setStatus('idle');
 
         try {
             const extension = file.name.split('.').pop();
-
-            // DIAGNOSTIC 1: Check the route helper
             const genUrlEndpoint = procurement.generate.upload.url(procurementId);
-            console.log('1. Generation Endpoint:', genUrlEndpoint);
 
-            // 1. Get Pre-signed URL
-            const { data: ticket } = await axios.post(
+            // 🟢 STEP 1: Talk to Laravel (Use 'api')
+            const { data: ticket } = await api.post(
                 genUrlEndpoint,
                 {
-                    // Note: Axios headers usually go in the 3rd argument for POST requests!
-                    // Passing them inside the data body (2nd argument) might be breaking your backend validation.
                     extension,
                     content_type: file.type,
                     file_size: file.size,
@@ -89,22 +85,14 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
                     headers: { 'X-Municipality-Slug': currentMunicipality.slug },
                 },
             );
-            console.log(ticket);
-            // DIAGNOSTIC 2: Check the Laravel response
-            console.log('2. Laravel Ticket Response:', ticket);
 
-            // Safety guard to catch the exact error
             if (!ticket || !ticket.upload_url) {
-                alert("Backend did not return an 'upload_url'. Check the console!");
                 setStatus('error');
                 return;
             }
 
-            console.log('3. Starting PUT to Cloudflare R2...');
-
-            // 2. Direct-to-Cloud Upload
-            // Important: Use standard 'axios' here if your custom '@/lib/axios' has interceptors
-            // that mess with external domains. Sometimes custom instances force a '/api/' prefix.
+            // 🟠 STEP 2: Talk to Cloudflare R2 (Use RAW 'axios')
+            // Using raw axios guarantees no 'withCredentials' CORS errors!
             await axios.put(ticket.upload_url, file, {
                 headers: { 'Content-Type': file.type },
                 onUploadProgress: (p) => {
@@ -113,12 +101,9 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
                 },
             });
 
-            // DIAGNOSTIC 3: Check the save route helper
+            // 🟢 STEP 3: Talk to Laravel (Use 'api')
             const saveUrlEndpoint = procurement.document.upload.url(procurementId);
-            console.log('4. Save Endpoint:', saveUrlEndpoint);
-
-            // 3. Save Metadata
-            await axios.post(
+            await api.post(
                 saveUrlEndpoint,
                 {
                     file_path: ticket.storage_path,
@@ -137,6 +122,15 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
         } catch (error) {
             console.error('Upload Error:', error);
             setStatus('error');
+
+            // 🛡️ ERROR HANDLING LOGIC
+            // If the error came from Laravel (api), the global interceptor ALREADY showed the toast.
+            // We only need to show a toast if the RAW axios (Cloudflare upload) failed.
+            if (axios.isAxiosError(error) && !error.response?.data?.message) {
+                toast.error('Cloud Upload Failed', {
+                    description: 'There was an issue sending the file to the storage bucket.',
+                });
+            }
         } finally {
             setIsUploading(false);
         }

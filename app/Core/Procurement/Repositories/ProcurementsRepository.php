@@ -101,8 +101,19 @@ class ProcurementsRepository
             ->where('municipal_id', $municipalId)
             ->with('documents')
             ->with('department')
-            ->paginate(50);
+            ->paginate(10);
 
+    }
+
+    public function getDocumentCount(string $procurementId, string $municipalId): int
+    {
+        $procurement = Procurement::where('id', $procurementId)
+            ->where('municipal_id', $municipalId) // Always check the municipality for security!
+            ->withCount('documents')
+            ->first();
+
+        // If procurement exists, return the count. Otherwise, return 0.
+        return $procurement ? $procurement->documents_count : 0;
     }
 
 }

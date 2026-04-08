@@ -4,6 +4,7 @@ namespace App\Core\Procurement\Dto;
 
 use App\External\Api\Request\Procurement\OpenBiddingRequest;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 final class OpenBiddingDto
 {
 
@@ -11,8 +12,8 @@ final class OpenBiddingDto
         public string $procurementId,
         public string $municipalId,
         public float $abcAmount,
-        public string $preBidDate,
-        public string $closingDate,
+        public ?Carbon $preBidDate,
+        public Carbon $closingDate,
         public string $referenceNumber,
     ) {
     }
@@ -23,8 +24,10 @@ final class OpenBiddingDto
             procurementId: $procurementId,
             municipalId: $municipalId,
             abcAmount: (float) $request->validated('abc_amount'),
-            preBidDate: $request->validated('pre_bid_date'),
-            closingDate: $request->validated('closing_date'),
+            preBidDate: $request->validated('pre_bid_date')
+            ? Carbon::parse($request->validated('pre_bid_date'))
+            : null,
+            closingDate: Carbon::parse($request->validated('closing_date')),
             referenceNumber: $request->validated('reference_number'),
         );
     }

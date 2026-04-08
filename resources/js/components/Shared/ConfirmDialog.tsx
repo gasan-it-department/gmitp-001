@@ -19,6 +19,7 @@ interface Props {
     onConfirm: () => void;
     onCancel: () => void;
     isProcessing?: boolean;
+    variant?: 'default' | 'destructive';
 }
 
 export default function ConfirmDialog({
@@ -30,7 +31,17 @@ export default function ConfirmDialog({
     onConfirm,
     onCancel,
     isProcessing = false,
+    variant = 'default',
 }: Props) {
+    // Dynamically set colors based on the variant
+    const isDestructive = variant === 'destructive';
+
+    const iconColors = isDestructive ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600';
+
+    const actionButtonColors = isDestructive
+        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-600'
+        : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600';
+
     return (
         <AlertDialog
             open={isOpen}
@@ -43,9 +54,8 @@ export default function ConfirmDialog({
         >
             <AlertDialogContent className="sm:max-w-md">
                 <AlertDialogHeader>
-                    {/* Replicated your custom icon layout here */}
                     <div className="flex items-start gap-4">
-                        <div className="flex shrink-0 items-center justify-center rounded-full bg-blue-100 p-3 text-blue-600">
+                        <div className={`flex shrink-0 items-center justify-center rounded-full p-3 ${iconColors}`}>
                             <AlertTriangle className="h-6 w-6" />
                         </div>
                         <div className="flex-1 text-left">
@@ -72,7 +82,7 @@ export default function ConfirmDialog({
                             e.preventDefault();
                             onConfirm();
                         }}
-                        className="bg-blue-600 text-white hover:bg-blue-700"
+                        className={actionButtonColors}
                     >
                         {isProcessing ? (
                             <>

@@ -1,15 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { ProcurementDetail } from '@/Core/Types/Procurement/procurement';
 import AppLayout from '@/layouts/App/AppLayout';
-import axios from '@/lib/axios';
 import ToastProvider from '@/pages/Utility/ToastShower';
-import { AlertCircle, Building2, Calendar, CheckCircle2, Download, FileText, MoveLeft, StickyNote, Tag, Wallet } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import OpenBiddingDialog from './Components/OpenBiddingDialog';
-import { ProcurementUploadDialog } from './Components/ProcurementUploadDialog';
+import ProcurementDocumentSection from './Components/ProcurementDocumentSection';
 
 interface Props {
-    // Laravel Resources usually wrap the payload in a 'data' object
     procurement: {
         data: ProcurementDetail;
     };
@@ -32,19 +31,11 @@ const formatDate = (dateString: string | null) => {
     });
 };
 
-const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
 export default function ProcurementDetails({ procurement, documentTypes }: Props) {
     // Extract the actual procurement object from the Laravel Resource wrapper
     const data = procurement.data;
     const [isOpenBiddingDialogOpen, setIsOpenBiddingDialogOpen] = useState(false);
-    const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+
     // Status Badge Styling Helper
     const getStatusStyles = (status: string) => {
         switch (status) {
@@ -63,40 +54,20 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                 return 'bg-gray-100 text-gray-700';
         }
     };
-    const downloadDocument = async (url: string, fileName: string) => {
-        try {
-            // Optional: Trigger a "Downloading..." toast here
 
-            const response = await axios.get(url, {
-                responseType: 'blob', // Critical: tells Axios to expect a binary file, not JSON
-            });
-
-            // Create a temporary URL for the downloaded blob
-            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-
-            // Create a fake, invisible anchor tag to trigger the browser's download UI
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.setAttribute('download', fileName);
-            document.body.appendChild(link);
-            link.click();
-
-            // Cleanup
-            link.remove();
-            window.URL.revokeObjectURL(blobUrl);
-        } catch (error) {
-            console.error('Download failed', error);
-            // Show your error toast
-            // toast.error('Failed to download document. It may have been removed.');
-        }
+    const handleBack = () => {
+        router.visit(window.history.state.url, {
+            preserveScroll: true,
+            preserveState: true, // ← this preserves filters, pagination, search state
+        });
     };
-    const handleBack = () => window.history.back();
     return (
         <AppLayout>
             <Button onClick={handleBack} className="m-4 mb-0 max-w-20 rounded-full bg-accent text-gray-600 hover:bg-gray-300">
                 <MoveLeft />
             </Button>
             <ToastProvider position="top-right" />
+
             <div className="space-y-6 p-6">
                 {/* 1. HEADER SECTION */}
                 <header className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
@@ -118,22 +89,11 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
 
                     {/* Right Side: Metadata (Date & Author) */}
                     <div className="flex shrink-0 flex-col gap-2 md:text-right">
-                        {/* Uploaded Date */}
                         <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500 md:justify-end">
-                            <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                                />
-                            </svg>
+                            <Calendar className="h-4 w-4 text-slate-400" />
                             <p>Uploaded: {formatDate(data.created_at)}</p>
                         </div>
-
-                        {/* Prepared By */}
                         <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500 md:justify-end">
-                            {/* Standard User/Avatar Icon */}
                             <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path
                                     strokeLinecap="round"
@@ -182,7 +142,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
 
                 {/* 3. MAIN GRID */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    {/* LEFT COLUMN (Details & Timeline - Spans 2 cols) */}
+                    {/* --- LEFT COLUMN (Spans 2 cols) --- */}
                     <div className="space-y-6 lg:col-span-2">
                         {/* Financials & Source */}
                         <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
@@ -241,9 +201,9 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                         )}
                     </div>
 
-                    {/* RIGHT COLUMN (Documents & Award Info - Spans 1 col) */}
+                    {/* --- RIGHT COLUMN (Spans 1 col) --- */}
                     <div className="space-y-6">
-                        {/* Award Information (Only shows if Awarded) */}
+                        {/* Award Information (Restored!) */}
                         {data.status === 'awarded' && (
                             <section className="overflow-hidden rounded-2xl border border-green-600 bg-gradient-to-br from-green-500 to-emerald-700 text-white shadow-md">
                                 <div className="flex items-center gap-3 border-b border-white/20 px-6 py-4">
@@ -263,86 +223,17 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             </section>
                         )}
 
-                        {/* Attached Documents */}
-                        <section className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
-                            <div className="flex items-center justify-between border-b bg-slate-50/50 px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="h-5 w-5 text-orange-500" />
-                                    <h3 className="font-bold text-slate-900">Bidding Documents</h3>
-                                </div>
-                                <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-700">{data.documents.length}</span>
-                            </div>
-                            <div className="flex-1 p-4">
-                                {data.documents.length === 0 ? (
-                                    <div className="flex flex-col items-center py-8 text-center text-slate-500">
-                                        <AlertCircle className="mb-2 h-8 w-8 text-slate-300" />
-                                        <p className="text-sm">No documents attached yet.</p>
-                                    </div>
-                                ) : (
-                                    <ul className="space-y-3">
-                                        {data.documents.map((doc) => (
-                                            <li
-                                                key={doc.id}
-                                                className="group flex items-start gap-3 rounded-lg border p-3 transition hover:border-blue-300 hover:bg-blue-50"
-                                            >
-                                                <div className="mt-1 rounded bg-red-100 p-2 pt-1 text-red-600">
-                                                    <FileText className="h-4 w-4" />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-semibold text-slate-900" title={doc.file_name}>
-                                                        {doc.file_name}
-                                                    </p>
-                                                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                                                        <span className="font-medium tracking-wide uppercase">{doc.type.replace(/_/g, ' ')}</span>
-                                                        <span>•</span>
-                                                        <span>{formatBytes(doc.file_size)}</span>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => downloadDocument(doc.file_path, doc.file_name)}
-                                                    type="button"
-                                                    className="rounded-md p-2 text-slate-400 transition hover:bg-blue-100 hover:text-blue-600"
-                                                    title="Download Document"
-                                                >
-                                                    <Download className="h-4 w-4" />
-                                                </button>
-                                                <a
-                                                    href={doc.file_path}
-                                                    download={doc.file_name} // Add this to explicitly tell the browser to save the file
-                                                    className="rounded-md p-2 text-slate-400 transition hover:bg-blue-100 hover:text-blue-600"
-                                                    title="Download Document"
-                                                >
-                                                    <Download className="h-4 w-4" />
-                                                </a>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-
-                            {/* Optional: Add Document button if Draft/Open */}
-                            {(data.status === 'draft' || data.status === 'open') && (
-                                <div className="border-t bg-slate-50 p-4">
-                                    <button
-                                        onClick={() => setIsDocumentUploadOpen(true)}
-                                        className="w-full rounded-lg border-2 border-dashed border-slate-300 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-400 hover:bg-slate-100"
-                                    >
-                                        + Attach New Document
-                                    </button>
-                                </div>
-                            )}
-                        </section>
+                        {/* The Extracted Document Component! */}
+                        <ProcurementDocumentSection
+                            procurementId={data.id}
+                            documents={data.documents}
+                            status={data.status}
+                            documentTypes={documentTypes}
+                        />
                     </div>
                 </div>
             </div>
-            <ProcurementUploadDialog
-                onSuccess={handleBack}
-                isOpen={isDocumentUploadOpen}
-                docTypes={documentTypes}
-                onOpenChange={setIsDocumentUploadOpen}
-                procurementId={data.id}
-            />
-            {/* Mount the dialog at the bottom of your component */}
+
             <OpenBiddingDialog isOpen={isOpenBiddingDialogOpen} onClose={() => setIsOpenBiddingDialogOpen(false)} procurement={data} />
         </AppLayout>
     );

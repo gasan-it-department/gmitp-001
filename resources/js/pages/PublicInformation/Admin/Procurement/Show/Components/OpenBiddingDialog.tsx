@@ -142,15 +142,26 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
                         </div>
 
                         {/* 4. PhilGEPS Reference (Always Editable unless already published) */}
+                        {/* 4. PhilGEPS Reference (Smart Checklist) */}
                         <div>
-                            <FormInput
-                                id="reference_number"
-                                label="Enter Reference number"
-                                placeholder="PhilGEPS Reference Number"
-                                value={data.reference_number}
-                                onChange={(e) => setData('reference_number', e.target.value)}
-                                error={errors.reference_number}
-                            />
+                            <label className="text-sm font-semibold text-slate-700">4. PhilGEPS Reference Number</label>
+                            {procurement.reference_number ? (
+                                <div className="mt-1 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                                    <span className="font-bold">{procurement.reference_number}</span>
+                                </div>
+                            ) : (
+                                <div className="mt-1">
+                                    <FormInput
+                                        id="reference_number"
+                                        label=""
+                                        placeholder="Enter PhilGEPS Reference Number"
+                                        value={data.reference_number}
+                                        onChange={(e) => setData('reference_number', e.target.value)}
+                                        error={errors.reference_number}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

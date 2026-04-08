@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Api\Controllers\Procurement\Document\DeleteProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\DownloadProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\GenerateProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\StoreProcurementDocumentController;
@@ -59,6 +60,8 @@ Route::prefix('api/procurement')
                 Route::post('document/upload/{procurementId}', StoreProcurementDocumentController::class)->name('document.upload');
 
                 Route::post('document/generate/upload/url/{procurementId}', GenerateProcurementDocumentController::class)->name('generate.upload');
+
+                Route::delete('delete/procurement/document/{procurementId}/{documentId}', DeleteProcurementDocumentController::class)->name('document.delete');
             });
 
 

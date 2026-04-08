@@ -15,8 +15,8 @@ class OpenBiddingRequest extends FormRequest
     {
         return [
             'abc_amount' => ['required', 'numeric', 'min:1'],
-            'pre_bid_date' => ['required', 'date',],
-            'closing_date' => ['required', 'date', 'after:pre_bid_date'],
+            'pre_bid_date' => ['nullable', 'date'],
+            'closing_date' => ['required', 'date'],
             'reference_number' => ['required', 'string'],
         ];
     }

@@ -2,15 +2,16 @@
 
 namespace App\External\Api\Controllers\Procurement\Document;
 
+
+use App\Core\Procurement\UseCases\Document\GenerateDocumentUploadUrlUseCase;
 use App\Http\Controllers\Controller;
-use App\Shared\FileUploader\GeneratePresignedUrlService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+
 class GenerateProcurementDocumentController extends Controller
 {
     public function __construct(
-        private GeneratePresignedUrlService $urlService
+        private GenerateDocumentUploadUrlUseCase $generateDocumentUploadUrlUseCase,
     ) {
     }
 
@@ -24,20 +25,13 @@ class GenerateProcurementDocumentController extends Controller
             'file_size' => ['required', 'integer', "max:{$maxBytes}"],
         ]);
 
-        $filename = Str::ulid() . '.' . $validated['extension'];
-
-        $storagePath = "procurements/{$procurementId}/documents/{$filename}";
-
-        $uploadUrl = $this->urlService->execute(
-            disk: 's3',
-            path: $storagePath,
-            contentType: $validated['content_type'],
-            expirationMinutes: 15
+        $result = $this->generateDocumentUploadUrlUseCase->execute(
+            app('municipal_id'),
+            $procurementId,
+            $validated['extension'],
+            $validated['content_type'],
         );
 
-        return response()->json([
-            'upload_url' => $uploadUrl['url'],
-            'storage_path' => $storagePath,
-        ]);
+        return response()->json($result);
     }
 }
