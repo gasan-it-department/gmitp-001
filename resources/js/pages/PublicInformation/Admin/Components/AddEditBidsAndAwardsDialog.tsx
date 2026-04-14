@@ -35,7 +35,7 @@ export interface ProcurementFormData {
     contract_amount?: number | null;
     pre_bid_date?: string | null;
     closing_date?: string | null;
-    award_date?: string | null;
+    awarded_date?: string | null;
     winning_bidder?: string | null;
     file_attachments?: { file: File; type: string }[];
 }
@@ -94,10 +94,11 @@ function FormField({
                     autoComplete="off"
                     placeholder={placeholder}
                     {...register(name, requiredMsg ? { required: requiredMsg } : {})}
-                    className={`h-11 rounded-lg border bg-white text-gray-900 shadow-sm transition-all dark:bg-neutral-900 dark:text-gray-100 ${Icon ? 'pl-10' : 'pl-3'} ${errors[name]
+                    className={`h-11 rounded-lg border bg-white text-gray-900 shadow-sm transition-all dark:bg-neutral-900 dark:text-gray-100 ${Icon ? 'pl-10' : 'pl-3'} ${
+                        errors[name]
                             ? 'border-red-300 ring-4 ring-red-50 focus:border-red-500 focus:ring-red-100 dark:border-red-800 dark:ring-red-900/20'
                             : 'border-gray-200 hover:border-orange-300 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 dark:border-neutral-700 dark:hover:border-neutral-600 dark:focus:ring-neutral-800'
-                        } `}
+                    } `}
                 />
             </div>
 
@@ -218,21 +219,7 @@ export default function BidsAndAwardsDialog({ isOpen, editData, onClose, onSucce
             <DialogContent
                 showCloseButton
                 onInteractOutside={(e) => e.preventDefault()}
-                className="
-        flex
-        max-h-[90vh]
-        w-[1100px]
-        !max-w-none
-        flex-col
-        gap-0
-        overflow-hidden
-        rounded-2xl
-        border-none
-        bg-white
-        p-0
-        shadow-2xl
-        dark:bg-neutral-950
-    "
+                className="flex max-h-[90vh] w-[1100px] !max-w-none flex-col gap-0 overflow-hidden rounded-2xl border-none bg-white p-0 shadow-2xl dark:bg-neutral-950"
             >
                 {/* Header */}
                 <DialogHeader className="border-b border-gray-100 bg-gray-50/50 px-8 py-6 dark:border-neutral-800 dark:bg-neutral-900/50">
@@ -311,12 +298,13 @@ export default function BidsAndAwardsDialog({ isOpen, editData, onClose, onSucce
                                         render={({ field }) => (
                                             <Select onValueChange={field.onChange} value={field.value}>
                                                 <SelectTrigger
-                                                    className={`h-11 font-medium ${field.value === 'OPEN'
+                                                    className={`h-11 font-medium ${
+                                                        field.value === 'OPEN'
                                                             ? 'border-blue-200 bg-blue-50 text-blue-600'
                                                             : field.value === 'AWARDED'
-                                                                ? 'border-green-200 bg-green-50 text-green-600'
-                                                                : 'bg-white'
-                                                        }`}
+                                                              ? 'border-green-200 bg-green-50 text-green-600'
+                                                              : 'bg-white'
+                                                    }`}
                                                 >
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -400,8 +388,8 @@ export default function BidsAndAwardsDialog({ isOpen, editData, onClose, onSucce
                                     />
                                     <FormField
                                         label="Date of Award"
-                                        id="award_date"
-                                        name="award_date"
+                                        id="awarded_date"
+                                        name="awarded_date"
                                         type="datetime-local"
                                         register={register}
                                         errors={errors}
@@ -429,10 +417,11 @@ export default function BidsAndAwardsDialog({ isOpen, editData, onClose, onSucce
                                 onDragLeave={() => setIsDragging(false)}
                                 onDrop={handleDrop}
                                 onClick={() => fileInputRef.current?.click()}
-                                className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all ${isDragging
+                                className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all ${
+                                    isDragging
                                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
                                         : 'border-gray-200 hover:border-orange-400 hover:bg-gray-50 dark:border-neutral-700 dark:hover:bg-neutral-800'
-                                    } ${stagedFiles.length >= MAX_FILES ? 'pointer-events-none opacity-50' : ''} `}
+                                } ${stagedFiles.length >= MAX_FILES ? 'pointer-events-none opacity-50' : ''} `}
                             >
                                 <input
                                     ref={fileInputRef}

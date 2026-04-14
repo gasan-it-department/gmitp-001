@@ -5,6 +5,7 @@ namespace App\Core\Procurement\UseCases;
 use App\Core\Procurement\Enums\ProcurementStatus;
 use App\Core\Procurement\Exceptions\ProcurementDomainException;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
+use Illuminate\Support\Carbon;
 
 class EvaluateProcurementUseCase
 {
@@ -27,9 +28,13 @@ class EvaluateProcurementUseCase
             );
         }
 
-        $payload = [
-            'status' => ProcurementStatus::EVALUATING,
-        ];
+        $closingDate = Carbon::parse($procurement->closing_date);
+
+        if (now()->isBefore($closingDate)) {
+            throw new ProcurementDomainException(
+                "Action Denied: You cannot evaluate this project yet. The official closing date ({$closingDate->format('M d, Y')}) has not passed."
+            );
+        }
 
         $appendedNotes = null;
         if ($remarks) {

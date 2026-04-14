@@ -24,10 +24,10 @@ class DeleteProcurementDocumentUseCase
             throw new ProcurementDocumentException("Procurement project not found.");
         }
 
-        //harvey only allow the draft docs to be deleted
-        if ($procurement->status !== ProcurementStatus::DRAFT) {
+        //harvey only allow the docs to be deleted
+        if (!$procurement->status instanceof ProcurementStatus) {
             throw new ProcurementDocumentException(
-                "Action Denied: You cannot delete documents once the procurement is {$procurement->status}."
+                "Action Denied."
             );
         }
 

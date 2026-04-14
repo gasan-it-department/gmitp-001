@@ -22,7 +22,7 @@ const initialValues: ProcurementFormData = {
     contract_amount: null,
     pre_bid_date: null,
     closing_date: null,
-    award_date: null,
+    awarded_date: null,
     winning_bidder: null,
     documents: [],
     department_id: '',

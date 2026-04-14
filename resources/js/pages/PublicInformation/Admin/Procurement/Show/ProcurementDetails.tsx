@@ -8,6 +8,7 @@ import procurementRoute from '@/routes/procurement';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Wallet } from 'lucide-react';
 import { useState } from 'react';
+import { AwardBiddingDialog } from './Components/AwardBiddingDialog';
 import CloseBiddingDialog from './Components/CloseBiddingDialog';
 import OpenBiddingDialog from './Components/OpenBiddingDialog';
 import ProcurementDocumentSection from './Components/ProcurementDocumentSection';
@@ -43,6 +44,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEvaluating, setIsEvaluating] = useState(false);
+    const [isAwarding, setIsAwarding] = useState<boolean>(false);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     console.log(procurement);
     // Status Badge Styling Helper
@@ -131,26 +133,28 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                 </header>
 
                 {/* 2. THE ACTION BAR (State Machine Enforcer) */}
+                {/* 2. THE ACTION BAR (State Machine Enforcer) */}
                 <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-white p-4 shadow-sm">
                     <span className="mr-2 text-sm font-semibold text-slate-500">Actions:</span>
 
+                    {/* 🌟 UX Fix 1: Make Edit an 'Outline' button so it doesn't fight the primary colors */}
+                    <Link
+                        className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                        href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
+                    >
+                        Edit Details
+                    </Link>
+
+                    {/* --- DRAFT STATE --- */}
                     {data.status === 'draft' && (
                         <>
-                            <Link
-                                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                                href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
-                            >
-                                Edit Draft
-                            </Link>
-
+                            {/* Primary Action (Solid Blue) */}
                             <Button
                                 onClick={() => setIsOpenBiddingDialogOpen(true)}
-                                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
+                                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                             >
                                 Open Bidding
                             </Button>
-
-                            {/* 🌟 Moved to the far right with ml-auto, made red! */}
                             <button
                                 onClick={() => setIsDeleteOpen(true)}
                                 className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
@@ -160,8 +164,10 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                         </>
                     )}
 
+                    {/* --- OPEN STATE --- */}
                     {data.status === 'open' && (
                         <>
+                            {/* Primary Action (Solid Amber) */}
                             <button
                                 onClick={() => setIsEvaluating(true)}
                                 className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600"
@@ -173,6 +179,25 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             </button>
                         </>
                     )}
+
+                    {/* --- EVALUATING STATE --- */}
+                    {data.status === 'evaluating' && (
+                        <>
+                            {/* Primary Action (Solid Green) */}
+                            <button
+                                onClick={() => setIsAwarding(true)}
+                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+                            >
+                                Award Project
+                            </button>
+                            <button className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                Declare Failure
+                            </button>
+                        </>
+                    )}
+
+                    {/* --- AWARDED STATE --- */}
+                    {data.status === 'awarded' && <span className="ml-auto text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
                 </div>
 
                 {/* 3. MAIN GRID */}
@@ -280,6 +305,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
             />
             <OpenBiddingDialog isOpen={isOpenBiddingDialogOpen} onClose={() => setIsOpenBiddingDialogOpen(false)} procurement={data} />
             <CloseBiddingDialog isOpen={isEvaluating} onClose={() => setIsEvaluating(false)} procurement={data} />
+            <AwardBiddingDialog isOpen={isAwarding} onClose={() => setIsAwarding(false)} procurement={data} />
         </AppLayout>
     );
 }

@@ -8,12 +8,14 @@ use App\Core\Procurement\Exceptions\InvalidProcurementStateException;
 use App\Core\Procurement\Exceptions\ProcurementComplianceException;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
 use App\Core\Procurement\Services\ProcurementLegalRules;
+use App\Core\Procurement\Services\ProcurementTimelineValidator;
 
 class OpenBiddingUseCase
 {
     public function __construct(
         private ProcurementsRepository $procurementRepo,
-        protected ProcurementLegalRules $rules
+        protected ProcurementLegalRules $rules,
+        protected ProcurementTimelineValidator $procurementTimeValidator,
     ) {
     }
 
@@ -31,12 +33,7 @@ class OpenBiddingUseCase
             );
         }
         // 2. Check if the timeline is compliant (only if a pre-bid date exists)
-        if ($dto->preBidDate && !$this->rules->isTimeCompliant($dto->preBidDate, $dto->closingDate)) {
-            throw new ProcurementComplianceException(
-                "Compliance Error: The closing date must be at least " . ProcurementLegalRules::MIN_DAYS_BETWEEN_PREBID_AND_CLOSING . " days after the pre-bid conference."
-            );
-        }
-
+        $this->procurementTimeValidator->validateSequence($dto->preBidDate, $dto->closingDate);
         // 4. Persistence
         $procurement->update([
             'abc_amount' => $dto->abcAmount,

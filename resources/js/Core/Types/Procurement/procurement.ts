@@ -9,7 +9,7 @@ export type ProcurementFormData = {
     contract_amount?: number | null;
     pre_bid_date?: string | null;
     closing_date?: string | null;
-    award_date?: string | null;
+    awarded_date?: string | null;
     winning_bidder?: string | null;
     documents: any[];
     department_id?: string | null;
@@ -29,7 +29,7 @@ export interface Procurement {
     winning_bidder: string | null;
     pre_bid_date: string | null;
     closing_date: string | null;
-    award_date: string | null;
+    awarded_date: string | null;
     created_at: string;
     notes: string;
     department_id: string | null;

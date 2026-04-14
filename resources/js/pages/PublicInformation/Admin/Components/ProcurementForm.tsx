@@ -35,7 +35,7 @@ export interface ProcurementFormData {
     contract_amount?: number | null;
     pre_bid_date?: string | null;
     closing_date?: string | null;
-    award_date?: string | null;
+    awarded_date?: string | null;
     winning_bidder?: string | null;
 }
 
@@ -367,8 +367,8 @@ export default function ProcurementForm({ editData }: Props) {
                                         />
                                         <FormField
                                             label="Date Awarded"
-                                            id="award_date"
-                                            name="award_date"
+                                            id="awarded_date"
+                                            name="awarded_date"
                                             type="date" // CHANGED FROM datetime-local
                                             register={register}
                                             errors={errors}

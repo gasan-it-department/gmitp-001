@@ -53,7 +53,7 @@ class UpdateProcurementDto
             winningBidder: $cleanString($data['winning_bidder'] ?? null),
             preBidDate: $data['pre_bid_date'] ?? null,
             closingDate: $data['closing_date'] ?? null,
-            awardDate: $data['award_date'] ?? null,
+            awardDate: $data['awarded_date'] ?? null,
             notes: $cleanString($data['notes'] ?? null, false),
             documents: $data['documents'] ?? []
         );

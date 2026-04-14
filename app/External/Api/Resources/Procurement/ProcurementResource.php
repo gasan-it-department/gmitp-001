@@ -30,13 +30,13 @@ class ProcurementResource extends JsonResource
 
             'contract_amount' => $this->contract_amount ? (float) $this->contract_amount : null,
 
-            'winning_bidder' => $this->winning_bidder,
+            'winning_bidder' => $this->winning_bidder_name,
 
             'pre_bid_date' => $this->pre_bid_date?->toIso8601String(),
 
             'closing_date' => $this->closing_date?->toIso8601String(),
 
-            'award_date' => $this->award_date?->toIso8601String(),
+            'awarded_date' => $this->awarded_date?->toIso8601String(),
 
             'created_at' => $this->created_at?->toIso8601String(),
 

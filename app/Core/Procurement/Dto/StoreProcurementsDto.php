@@ -42,7 +42,6 @@ class StoreProcurementsDto
             $cleaned = trim(preg_replace('/\s+/', ' ', $value));
             return $uppercase ? strtoupper($cleaned) : $cleaned;
         };
-        $categoryString = $cleanString($data['category'] ?? 'goods', true);
 
         $status = $data['is_historical']
             ? ProcurementStatus::from($data['status'])
@@ -55,7 +54,7 @@ class StoreProcurementsDto
             fundingSourceId: $data['funding_source_id'] ?? null,
             referenceNumber: $cleanString($data['reference_number'] ?? null),
             title: $cleanString($data['title'] ?? null),
-            category: ProcurementCategory::tryFrom($categoryString) ?? ProcurementCategory::GOODS,
+            category: ProcurementCategory::from($data['category']) ?? ProcurementCategory::GOODS,
             status: $status,
             abcAmount: (float) ($data['abc_amount'] ?? 0),
             contractAmount: isset($data['contract_amount']) ? (float) $data['contract_amount'] : null,
@@ -63,7 +62,7 @@ class StoreProcurementsDto
             notes: $cleanString($data['notes'] ?? null, false),
             preBidDate: $data['pre_bid_date'] ?? null,
             closingDate: $data['closing_date'] ?? null,
-            awardDate: $data['award_date'] ?? null,
+            awardDate: $data['awarded_date'] ?? null,
             documents: $data['documents'] ?? []
         );
     }

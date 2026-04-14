@@ -54,7 +54,7 @@ class ProcurementRequest extends FormRequest
                 'date',
                 'after:pre_bid_date', // Chronology check stays here
             ],
-            'award_date' => [
+            'awarded_date' => [
                 'nullable',
                 'date',
                 'after:closing_date', // Chronology check stays here
@@ -115,8 +115,8 @@ class ProcurementRequest extends FormRequest
                 if (empty($this->input('contract_amount'))) {
                     $validator->errors()->add('contract_amount', 'The final Contract Amount is required.');
                 }
-                if (empty($this->input('award_date'))) {
-                    $validator->errors()->add('award_date', 'The Award Date is required.');
+                if (empty($this->input('awarded_date'))) {
+                    $validator->errors()->add('awarded_date', 'The Award Date is required.');
                 }
             }
 
@@ -136,7 +136,7 @@ class ProcurementRequest extends FormRequest
             'reference_number.unique' => 'This PhilGEPS Reference Number has already been used.',
             'contract_amount.lte' => 'The Contract Amount cannot be higher than the ABC Amount.',
             'closing_date.after' => 'The Bidding Closing Date must be after the Pre-Bid Date.',
-            'award_date.after' => 'The Award Date must be after the Bidding Closing Date.',
+            'awarded_date.after' => 'The Award Date must be after the Bidding Closing Date.',
             'documents.*.file.mimes' => 'All bidding documents must be in PDF format.',
             'documents.*.file.max' => 'A document exceeds the 25MB limit.',
             'documents.*.type.required' => 'Please select a Document Type for every uploaded file.',

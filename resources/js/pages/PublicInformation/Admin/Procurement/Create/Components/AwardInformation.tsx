@@ -45,7 +45,12 @@ export function AwardInformation({ data, setData, errors, processing }: Props) {
             </div>
 
             <div>
-                <DatePicker label="Date of Award" error={errors.award_date} value={data.award_date} onChange={(v) => setData('award_date', v)} />
+                <DatePicker
+                    label="Date of Award"
+                    error={errors.awarded_date}
+                    value={data.awarded_date}
+                    onChange={(v) => setData('awarded_date', v)}
+                />
             </div>
         </div>
     );

@@ -1,5 +1,7 @@
 import SharedProcurementForm from '@/components/Procurement/SharedProcurementForm';
+import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Category, FundingSource, ProcurementDetail, ProcurementFormData } from '@/Core/Types/Procurement/procurement';
+import ToastProvider from '@/pages/Utility/ToastShower';
 
 interface EditProps {
     //  FIX 1: The data coming from Laravel is the full Detail view
@@ -22,7 +24,7 @@ export default function Edit({ procurement, fundingSources, categories, statuses
 
         pre_bid_date: existingData.pre_bid_date ? existingData.pre_bid_date.split('T')[0] : null,
         closing_date: existingData.closing_date ? existingData.closing_date.split('T')[0] : null,
-        award_date: existingData.award_date ? existingData.award_date.split('T')[0] : null,
+        awarded_date: existingData.awarded_date ? existingData.awarded_date.split('T')[0] : null,
 
         winning_bidder: existingData.winning_bidder || null,
         documents: existingData.documents || [],
@@ -38,13 +40,17 @@ export default function Edit({ procurement, fundingSources, categories, statuses
     };
     console.log(mappedInitialData);
     return (
-        <SharedProcurementForm
-            initialData={mappedInitialData}
-            mode="edit"
-            procurementId={existingData.id} // This works now because existingData is a ProcurementDetail!
-            fundingSources={fundingSources.data}
-            categories={categories}
-            statuses={statuses}
-        />
+        <>
+            <SharedProcurementForm
+                initialData={mappedInitialData}
+                mode="edit"
+                procurementId={existingData.id} // This works now because existingData is a ProcurementDetail!
+                fundingSources={fundingSources.data}
+                categories={categories}
+                statuses={statuses}
+            />
+            <FlashHandler />
+            <ToastProvider position="top-right" />
+        </>
     );
 }

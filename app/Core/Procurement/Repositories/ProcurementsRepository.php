@@ -37,52 +37,30 @@ class ProcurementsRepository
 
             'contract_amount' => $dto->contractAmount,
 
-            'winning_bidder' => $dto->winningBidder,
+            'winning_bidder_name' => $dto->winningBidder,
 
             'pre_bid_date' => $dto->preBidDate,
 
             'closing_date' => $dto->closingDate,
 
-            'award_date' => $dto->awardDate,
+            'awarded_date' => $dto->awardDate,
 
             'notes' => $dto->notes,
+
         ]);
 
     }
 
-    public function update(UpdateProcurementDto $dto, $procurementId)
+    public function update(string $municipalId, string $procurementId, array $data): bool
     {
 
-        return Procurement::where('id', $procurementId)
-            ->where('municipal_id', $dto->municipalId)
-            ->update([
+        $procurement = $this->findByIdAndMunicipality($procurementId, $municipalId);
 
-                'reference_number' => $dto->referenceNumber,
+        if (!$procurement) {
+            return false;
+        }
 
-                'funding_source_id' => $dto->fundingSourceId,
-
-                'department_id' => $dto->departmentId,
-
-                'title' => $dto->title,
-
-                'category' => $dto->category,
-
-                'status' => $dto->status,
-
-                'abc_amount' => $dto->abcAmount,
-
-                'contract_amount' => $dto->contractAmount,
-
-                'winning_bidder' => $dto->winningBidder,
-
-                'pre_bid_date' => $dto->preBidDate,
-
-                'closing_date' => $dto->closingDate,
-
-                'award_date' => $dto->awardDate,
-
-                'notes' => $dto->notes,
-            ]);
+        return $procurement->update($data);
 
     }
 

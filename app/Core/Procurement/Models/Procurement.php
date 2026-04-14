@@ -61,9 +61,9 @@ class Procurement extends Model
 
         'closing_date',
 
-        'award_date',
+        'awarded_date',
 
-        'winning_bidder',
+        'winning_bidder_name',
 
     ];
 
@@ -80,7 +80,7 @@ class Procurement extends Model
         'published_at' => 'datetime',
         'pre_bid_date' => 'datetime',
         'closing_date' => 'datetime',
-        'award_date' => 'datetime',
+        'awarded_date' => 'datetime',
         'deleted_at' => 'datetime',
     ];
 

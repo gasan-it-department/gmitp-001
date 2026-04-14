@@ -128,18 +128,15 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                                         <Download className="h-4 w-4" />
                                     </button>
 
-                                    {/* Strict Draft-Only Deletion */}
-                                    {status === 'draft' && (
-                                        <button
-                                            // 🌟 3. Trigger the dialog by setting the state
-                                            onClick={() => setDocumentToDelete(doc)}
-                                            type="button"
-                                            className="rounded-md p-2 text-slate-400 transition hover:bg-red-100 hover:text-red-600"
-                                            title="Delete Document"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    )}
+                                    <button
+                                        // 🌟 3. Trigger the dialog by setting the state
+                                        onClick={() => setDocumentToDelete(doc)}
+                                        type="button"
+                                        className="rounded-md p-2 text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                                        title="Delete Document"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
                                 </div>
                             </li>
                         ))}

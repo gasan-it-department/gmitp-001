@@ -33,13 +33,13 @@ return new class extends Migration {
             $table->string('category')->default('GOODS'); // Use Enum values
             $table->string('status')->default('draft');   // Default to draft, not null
 
-            $table->string('winning_bidder')->nullable();
+            $table->string('winning_bidder_name')->nullable();
             $table->text('notes')->nullable(); // Changed to text in case of long BAC notes
             $table->text('description')->nullable();
 
             $table->dateTime('pre_bid_date')->nullable();
             $table->dateTime('closing_date')->nullable();
-            $table->dateTime('award_date')->nullable();
+            $table->dateTime('awarded_date')->nullable();
 
             // The timestamp that controls public visibility
             $table->dateTime('published_at')->nullable();
