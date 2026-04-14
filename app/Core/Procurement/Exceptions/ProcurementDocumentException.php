@@ -47,4 +47,9 @@ class ProcurementDocumentException extends DomainException
         );
     }
 
+    public static function invalidTypeForStatus(string $documentLabel, string $status): self
+    {
+        return new self("Action Denied: You cannot upload a '{$documentLabel}' while the project is in the '{$status}' phase.");
+    }
+
 }

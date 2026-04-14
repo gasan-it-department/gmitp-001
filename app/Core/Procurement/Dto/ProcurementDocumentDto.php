@@ -2,6 +2,7 @@
 
 namespace App\Core\Procurement\Dto;
 
+use App\Core\Procurement\Enums\ProcurementDocumentType;
 use Illuminate\Support\Facades\Auth;
 
 readonly class ProcurementDocumentDto
@@ -13,7 +14,7 @@ readonly class ProcurementDocumentDto
         public string $procurementId,
         public string $filePath,
         public string $fileName,
-        public string $type,
+        public ProcurementDocumentType $type,
         public int $fileSize,
         public string $mimeType,
     ) {
@@ -28,7 +29,7 @@ readonly class ProcurementDocumentDto
             $procurementId,
             $validatedData['file_path'],
             $validatedData['file_name'],
-            $validatedData['type'],
+            ProcurementDocumentType::from($validatedData['type']),
             $validatedData['file_size'],
             $validatedData['mime_type'],
         );

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\Procurement;
 
+use App\External\Api\Resources\Department\DepartmentResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -21,8 +22,6 @@ class ProcurementDetailResource extends JsonResource
             'title' => $this->title,
             'reference_number' => $this->reference_number,
 
-            'category' => $this->category?->label() ?? $this->category,
-
             'status' => $this->status?->value ?? $this->status,
 
             'abc_amount' => (float) $this->abc_amount,
@@ -36,9 +35,23 @@ class ProcurementDetailResource extends JsonResource
             'award_date' => $this->award_date?->toIso8601String(),
 
             // --- RELATIONSHIPS ---
-            'department_name' => $this->whenLoaded('department', fn() => $this->department->name, 'Unknown Department'),
-            'funding_source_name' => $this->whenLoaded('fundingSource', fn() => $this->fundingSource->name, 'Unknown Source'),
-            'prepared_by' => $this->whenLoaded('creator', fn() => $this->creator->full_name, 'Unknown User'),
+            'department' => $this->whenLoaded('department', fn() => new DepartmentResource($this->department)),
+
+            'funding_source' => $this->whenLoaded('fundingSource', fn() => new ProcurementFundingSourceResource($this->fundingSource)),
+
+            'category' => $this->category ? [
+                'value' => $this->category->value,
+                'label' => $this->category->label(),
+            ] : null,
+
+            'prepared_by' => $this->whenLoaded('creator', function () {
+                if (!$this->creator)
+                    return null;
+                return [
+                    'id' => $this->creator->id,
+                    'full_name' => $this->creator->full_name,
+                ];
+            }),
 
             'documents' => $this->whenLoaded('documents', function () {
 

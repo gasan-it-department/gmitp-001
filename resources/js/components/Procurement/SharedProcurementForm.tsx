@@ -2,57 +2,33 @@ import ConfirmDialog from '@/components/Shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { ProcurementFormData } from '@/Core/Types/Procurement/procurement';
+import { Category, FundingSource, ProcurementFormData } from '@/Core/Types/Procurement/procurement';
+import { AwardInformation } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/AwardInformation';
+import { BudgetAndSchedule } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/BudgetAndSchedule';
+import { ProjectDetails } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/ProjectDetails';
 import procurement from '@/routes/procurement';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, FilePlus2, Gavel, Info, StickyNote, Wallet } from 'lucide-react';
 import { FormEvent, useState } from 'react';
-import { AwardInformation } from './Components/AwardInformation';
-import { BudgetAndSchedule } from './Components/BudgetAndSchedule';
-import { ProjectDetails } from './Components/ProjectDetails';
+import { Textarea } from '../ui/textarea';
 
-const initialValues: ProcurementFormData = {
-    reference_number: '',
-    title: '',
-    category: '',
-    status: '',
-    abc_amount: 0,
-    contract_amount: null,
-    pre_bid_date: null,
-    closing_date: null,
-    award_date: null,
-    winning_bidder: null,
-    documents: [],
-    department_id: '',
-    funding_source_id: '',
-    notes: '',
-    is_historical: true,
-};
-
-interface Props {
-    fundingSources: any;
-    categories: any;
+interface SharedFormProps {
+    initialData: ProcurementFormData;
+    mode: 'create' | 'edit';
+    procurementId?: string | number; // Only needed for edit
+    fundingSources: FundingSource[];
+    categories: Category[];
     statuses: any;
-    documentTypes: any;
 }
 
-export default function CreateProcurement({ fundingSources, categories, statuses, documentTypes }: Props) {
+export default function SharedProcurementForm({ initialData, mode, procurementId, fundingSources, categories, statuses }: SharedFormProps) {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
-
-    const fundingSourcesData = fundingSources.data;
-    console.log(fundingSourcesData);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const queryParameters = new URLSearchParams(window.location.search);
 
-    const isHistorical = queryParameters.get('type') === 'historical';
-
-    const { data, setData, post, processing, errors, isDirty } = useForm<ProcurementFormData>({
-        ...initialValues,
-        is_historical: isHistorical,
-    });
+    // 1. Initialize form with whatever data the parent gave us
+    const { data, setData, submit, processing, errors, isDirty } = useForm<ProcurementFormData>(initialData);
 
     const handleInitialSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -60,44 +36,37 @@ export default function CreateProcurement({ fundingSources, categories, statuses
     };
 
     const onSubmit = () => {
-        post(procurement.store.url(), {
-            forceFormData: true,
-            headers: {
-                'X-Municipality-Slug': currentMunicipality?.slug || '',
-            },
+        // 2. SMART ROUTING: Post if create, Put if edit
+        const submitMethod = mode === 'create' ? 'post' : 'put';
+        const submitUrl = mode === 'create' ? procurement.store.url() : procurement.update.url(procurementId!); // Assuming you have an update route
+
+        submit(submitMethod, submitUrl, {
+            forceFormData: mode === 'create', // Usually true for post, false for put
+            headers: { 'X-Municipality-Slug': currentMunicipality?.slug || '' },
             onSuccess: () => setIsConfirmOpen(false),
             onError: () => setIsConfirmOpen(false),
         });
     };
 
     const handleCancel = () => {
-        if (isDirty) {
-            setIsCancel(true);
-        } else {
-            handleBack();
-        }
+        if (isDirty) setIsCancel(true);
+        else handleBack();
     };
 
     const handleBack = () => {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            router.visit(procurement.admin.page.url(currentMunicipality.slug));
-        }
+        if (window.history.length > 1) window.history.back();
+        else router.visit(procurement.admin.page.url(currentMunicipality.slug));
     };
 
     const isAwarded = data.status?.toUpperCase() === 'AWARDED';
+    const isHistorical = data.is_historical;
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-slate-50/50">
             {/* --- STICKY HEADER --- */}
             <header className="sticky top-0 z-30 border-b bg-white/95 shadow-sm backdrop-blur-sm">
-                {/* Added max-w-7xl and mx-auto here to constrain the header 
-                  on ultrawide monitors so it aligns perfectly with the form below.
-                */}
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-4">
-                        {/* Revived the Back Button - wired to handleCancel so it still protects dirty state */}
                         <Button
                             variant="ghost"
                             size="icon"
@@ -110,7 +79,10 @@ export default function CreateProcurement({ fundingSources, categories, statuses
 
                         <div>
                             <div className="flex items-center gap-2 lg:gap-3">
-                                <h1 className="line-clamp-1 text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">Create Procurement</h1>
+                                {/* 3. DYNAMIC TITLE */}
+                                <h1 className="line-clamp-1 text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">
+                                    {mode === 'create' ? 'Create Procurement' : `Edit Draft: ${data.title}`}
+                                </h1>
                                 <Badge
                                     variant={isAwarded ? 'default' : 'outline'}
                                     className={isAwarded ? 'shrink-0 bg-emerald-600 hover:bg-emerald-600' : 'shrink-0'}
@@ -133,17 +105,14 @@ export default function CreateProcurement({ fundingSources, categories, statuses
                             disabled={processing}
                             className="bg-blue-600 px-4 font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 sm:px-6"
                         >
-                            {processing ? 'Saving...' : 'Save Draft'}
+                            {processing ? 'Saving...' : mode === 'create' ? 'Save Draft' : 'Update Draft'}
                         </Button>
                     </div>
                 </div>
             </header>
 
-            {/* --- MAIN CONTENT --- */}
+            {/* --- MAIN CONTENT (Identical to your original code) --- */}
             <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
-                {/* Added max-w-7xl and mx-auto here. 
-                  This is the secret to a professional "Focus Mode" layout. 
-                */}
                 <div className="mx-auto max-w-7xl">
                     <form onSubmit={onSubmit} className="w-full">
                         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
@@ -166,7 +135,7 @@ export default function CreateProcurement({ fundingSources, categories, statuses
                                             setData={setData}
                                             errors={errors}
                                             processing={processing}
-                                            fundingSources={fundingSourcesData}
+                                            fundingSources={fundingSources}
                                             statuses={statuses}
                                             categories={categories}
                                             isHistorical={data.is_historical}
@@ -263,22 +232,18 @@ export default function CreateProcurement({ fundingSources, categories, statuses
                             </div>
                         </div>
                     </form>
-                </div>
+                </div>{' '}
             </main>
 
-            {/* Dialogs remain identical */}
+            {/* --- DIALOGS (Dynamic messaging based on mode) --- */}
             <ConfirmDialog
-                title="Save Procurement?"
+                title={mode === 'create' ? 'Save Procurement?' : 'Update Procurement?'}
                 isOpen={isConfirmOpen}
                 onCancel={() => setIsConfirmOpen(false)}
-                confirmText="Yes, Save Draft"
+                confirmText={mode === 'create' ? 'Yes, Save Draft' : 'Yes, Update Draft'}
                 onConfirm={onSubmit}
                 isProcessing={processing}
-                message={
-                    isHistorical
-                        ? 'Are you sure you want to save this historical procurement?'
-                        : 'Are you sure you want to save this project? You can still edit the details and attach bidding documents after saving.'
-                }
+                message={mode === 'create' ? 'Are you sure you want to save this project?' : 'Are you sure you want to update these details?'}
             />
 
             <ConfirmDialog
@@ -289,11 +254,7 @@ export default function CreateProcurement({ fundingSources, categories, statuses
                 onConfirm={handleBack}
                 isProcessing={processing}
                 variant="destructive"
-                message={
-                    isHistorical
-                        ? 'Are you sure you want to cancel? Any details you have entered for this historical procurement will be lost.'
-                        : 'Are you sure you want to cancel? Any details you have entered for this project will be lost.'
-                }
+                message="Are you sure you want to cancel? Any unsaved changes will be lost."
             />
         </div>
     );

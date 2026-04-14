@@ -4,6 +4,7 @@ namespace App\Core\Procurement\UseCases\Document;
 
 use App\Core\Procurement\Dto\ProcurementDocumentDto;
 use App\Core\Procurement\Exceptions\ProcurementDocumentException;
+use App\Core\Procurement\Exceptions\ProcurementDomainException;
 use App\Core\Procurement\Models\ProcurementDocument;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
 use App\Core\Procurement\Services\ProcurementDocumentService;
@@ -21,6 +22,26 @@ class StoreProcurementDocumentUseCase
 
     public function execute(ProcurementDocumentDto $dto)
     {
+
+        $this->procurementDocumentService->validateUploadRules($dto->municipalId, $dto->procurementId, $dto->type);
+
+
+        $this->procurementDocumentService->validateUploadRules(
+            $dto->municipalId,
+            $dto->procurementId,
+            $dto->type
+        );
+
+        $procurement = $this->procurementsRepo->findByIdAndMunicipality($dto->procurementId, $dto->municipalId);
+
+        if (!$procurement) {
+            throw new ProcurementDomainException("Procurement not found.");
+        }
+
+        if (!in_array($procurement->status, $dto->type->allowedStatuses())) {
+            throw ProcurementDocumentException::invalidTypeForStatus($dto->type->label(), $procurement->status->value);
+        }
+
         $currentCount = $this->procurementsRepo->getDocumentCount($dto->procurementId, $dto->municipalId);
 
         if (!$this->procurementDocumentService->isWithinLimit($currentCount)) {

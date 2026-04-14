@@ -1,6 +1,6 @@
+import { Department } from "../Department/department";
+
 export type ProcurementFormData = {
-
-
     reference_number: string;
     title: string;
     category: string;
@@ -22,7 +22,7 @@ export interface Procurement {
     id: string;
     reference_number: string;
     title: string;
-    category: string;
+    category: Category;
     status: ProcurementStatus;
     abc_amount: number;       // PHP (float) becomes JS number
     contract_amount: number | null;
@@ -32,13 +32,18 @@ export interface Procurement {
     award_date: string | null;
     created_at: string;
     notes: string;
-    prepared_by: string;
+    department_id: string | null;
+    funding_source_id: string | null;
 }
 
 export interface ProcurementDetail extends Procurement {
-    department_name: string;
-    funding_source_name: string;
+    department: Department;
+    funding_source: FundingSource;
     documents: ProcurementFile[];
+    prepared_by: {
+        id: string;
+        full_name: string;
+    };
 }
 
 export interface ProcurementFile {
@@ -70,5 +75,8 @@ export interface FundingSource {
     label?: string;
 }
 
-
+export interface Category {
+    label: string;
+    value: string;
+}
 

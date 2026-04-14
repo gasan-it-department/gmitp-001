@@ -1,12 +1,15 @@
 <?php
 
+use App\External\Api\Controllers\Procurement\DeleteProcurementController;
 use App\External\Api\Controllers\Procurement\Document\DeleteProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\DownloadProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\GenerateProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\StoreProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\ViewProcurementDocumentController;
+use App\External\Api\Controllers\Procurement\EvaluateProcurementController;
 use App\External\Api\Controllers\Procurement\OpenProcurementController;
 use App\External\Api\Controllers\Procurement\StoreProcurementsController;
+use App\External\Api\Controllers\Procurement\UpdateProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\CreateProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\EditProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\ListProcurementController;
@@ -62,6 +65,12 @@ Route::prefix('api/procurement')
                 Route::post('document/generate/upload/url/{procurementId}', GenerateProcurementDocumentController::class)->name('generate.upload');
 
                 Route::delete('delete/procurement/document/{procurementId}/{documentId}', DeleteProcurementDocumentController::class)->name('document.delete');
+
+                Route::delete('delete/procurement/{procurementId}', DeleteProcurementController::class)->name('delete.draft');
+
+                Route::put('update/procurement/{procurementId}', UpdateProcurementController::class)->name('update');
+
+                Route::patch('evaluate/{procurementId}', EvaluateProcurementController::class)->name('evaluate');
             });
 
 

@@ -80,6 +80,7 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
                     extension,
                     content_type: file.type,
                     file_size: file.size,
+                    type: docType,
                 },
                 {
                     headers: { 'X-Municipality-Slug': currentMunicipality.slug },

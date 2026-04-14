@@ -3,9 +3,9 @@
 namespace App\Core\Procurement\Repositories;
 
 use App\Core\Procurement\Dto\StoreProcurementsDto;
+use App\Core\Procurement\Dto\UpdateProcurementDto;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Procurement\Models\ProcurementDocument;
-use App\Core\PublicInformation\Models\ProcurementFile;
 
 class ProcurementsRepository
 {
@@ -47,6 +47,42 @@ class ProcurementsRepository
 
             'notes' => $dto->notes,
         ]);
+
+    }
+
+    public function update(UpdateProcurementDto $dto, $procurementId)
+    {
+
+        return Procurement::where('id', $procurementId)
+            ->where('municipal_id', $dto->municipalId)
+            ->update([
+
+                'reference_number' => $dto->referenceNumber,
+
+                'funding_source_id' => $dto->fundingSourceId,
+
+                'department_id' => $dto->departmentId,
+
+                'title' => $dto->title,
+
+                'category' => $dto->category,
+
+                'status' => $dto->status,
+
+                'abc_amount' => $dto->abcAmount,
+
+                'contract_amount' => $dto->contractAmount,
+
+                'winning_bidder' => $dto->winningBidder,
+
+                'pre_bid_date' => $dto->preBidDate,
+
+                'closing_date' => $dto->closingDate,
+
+                'award_date' => $dto->awardDate,
+
+                'notes' => $dto->notes,
+            ]);
 
     }
 
@@ -114,6 +150,23 @@ class ProcurementsRepository
 
         // If procurement exists, return the count. Otherwise, return 0.
         return $procurement ? $procurement->documents_count : 0;
+    }
+
+    public function deleteProcurement(string $procurementId): bool
+    {
+        return Procurement::where('id', $procurementId)->delete();
+    }
+
+    public function transitionStatus(string $procurementId, $newStatus, ?string $appendNotes = null): bool
+    {
+        $payload = [
+            'status' => $newStatus,
+        ];
+
+        if ($appendNotes) {
+            $payload['notes'] = $appendNotes;
+        }
+        return Procurement::where('id', $procurementId)->update($payload);
     }
 
 }

@@ -1,10 +1,14 @@
+import ConfirmDialog from '@/components/Shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { ProcurementDetail } from '@/Core/Types/Procurement/procurement';
 import AppLayout from '@/layouts/App/AppLayout';
 import ToastProvider from '@/pages/Utility/ToastShower';
-import { router } from '@inertiajs/react';
+import procurementRoute from '@/routes/procurement';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Wallet } from 'lucide-react';
 import { useState } from 'react';
+import CloseBiddingDialog from './Components/CloseBiddingDialog';
 import OpenBiddingDialog from './Components/OpenBiddingDialog';
 import ProcurementDocumentSection from './Components/ProcurementDocumentSection';
 
@@ -32,10 +36,15 @@ const formatDate = (dateString: string | null) => {
 };
 
 export default function ProcurementDetails({ procurement, documentTypes }: Props) {
+    console.log(procurement.data);
     // Extract the actual procurement object from the Laravel Resource wrapper
     const data = procurement.data;
     const [isOpenBiddingDialogOpen, setIsOpenBiddingDialogOpen] = useState(false);
-
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isEvaluating, setIsEvaluating] = useState(false);
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    console.log(procurement);
     // Status Badge Styling Helper
     const getStatusStyles = (status: string) => {
         switch (status) {
@@ -53,6 +62,20 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
             default:
                 return 'bg-gray-100 text-gray-700';
         }
+    };
+
+    const handleDelete = () => {
+        router.delete(procurementRoute.delete.draft.url(data.id), {
+            headers: {
+                'X-Municipality-Slug': currentMunicipality.slug,
+            },
+            onBefore: () => setIsDeleting(true),
+            onSuccess: () => {
+                setIsDeleteOpen(false);
+            },
+            onError: () => setIsDeleteOpen(false),
+            onFinish: () => setIsDeleting(false),
+        });
     };
 
     const handleBack = () => {
@@ -80,7 +103,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                                 {data.status}
                             </span>
                             <span className="flex items-center gap-1 text-sm font-medium text-slate-500">
-                                <Tag className="h-4 w-4" /> {data.category}
+                                <Tag className="h-4 w-4" /> {data.category.label}
                             </span>
                         </div>
                         <h1 className="text-3xl leading-tight font-bold text-slate-900">{data.title}</h1>
@@ -102,7 +125,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                 />
                             </svg>
-                            <p>Prepared by: {data.prepared_by}</p>
+                            <p>Prepared by: {data.prepared_by.full_name}</p>
                         </div>
                     </div>
                 </header>
@@ -113,24 +136,36 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
 
                     {data.status === 'draft' && (
                         <>
-                            <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800">
+                            <Link
+                                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                                href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
+                            >
                                 Edit Draft
-                            </button>
+                            </Link>
+
                             <Button
                                 onClick={() => setIsOpenBiddingDialogOpen(true)}
                                 className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:opacity-50"
                             >
-                                Open
+                                Open Bidding
                             </Button>
-                            <button className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
-                                Cancel Project
+
+                            {/* 🌟 Moved to the far right with ml-auto, made red! */}
+                            <button
+                                onClick={() => setIsDeleteOpen(true)}
+                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                            >
+                                Delete Draft
                             </button>
                         </>
                     )}
 
                     {data.status === 'open' && (
                         <>
-                            <button className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600">
+                            <button
+                                onClick={() => setIsEvaluating(true)}
+                                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600"
+                            >
                                 Close Bidding & Evaluate
                             </button>
                             <button className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
@@ -157,13 +192,13 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                                 </div>
                                 <div>
                                     <p className="mb-1 text-sm text-slate-500">Funding Source</p>
-                                    <p className="text-base font-medium text-slate-900">{data.funding_source_name}</p>
+                                    <p className="text-base font-medium text-slate-900">{data.funding_source.label}</p>
                                 </div>
                                 <div className="border-t pt-4 sm:col-span-2">
                                     <p className="mb-1 text-sm text-slate-500">Requesting Department</p>
                                     <div className="flex items-center gap-2 font-medium text-slate-900">
                                         <Building2 className="h-4 w-4 text-slate-400" />
-                                        {data.department_name}
+                                        {data.department.name}
                                     </div>
                                 </div>
                             </div>
@@ -233,8 +268,18 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     </div>
                 </div>
             </div>
-
+            <ConfirmDialog
+                title="Delete Procurement?"
+                isOpen={isDeleteOpen}
+                onCancel={() => setIsDeleteOpen(false)}
+                confirmText="Yes, Delete Draft"
+                onConfirm={handleDelete}
+                isProcessing={isDeleting} // 🌟 Use the new state
+                variant="destructive" // 🌟 Make the confirm button Red!
+                message={'Are you sure you want to permanently delete this draft procurement? This action cannot be undone.'}
+            />
             <OpenBiddingDialog isOpen={isOpenBiddingDialogOpen} onClose={() => setIsOpenBiddingDialogOpen(false)} procurement={data} />
+            <CloseBiddingDialog isOpen={isEvaluating} onClose={() => setIsEvaluating(false)} procurement={data} />
         </AppLayout>
     );
 }

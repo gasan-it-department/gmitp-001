@@ -3,11 +3,12 @@
 namespace App\External\Api\Controllers\Procurement\Document;
 
 use App\Core\Procurement\Dto\ProcurementDocumentDto;
+use App\Core\Procurement\Enums\ProcurementDocumentType;
 use App\Core\Procurement\UseCases\Document\StoreProcurementDocumentUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Validation\Rule;
 class StoreProcurementDocumentController extends Controller
 {
 
@@ -20,7 +21,7 @@ class StoreProcurementDocumentController extends Controller
         $maxBytes = config('procurement.documents.max_size_bytes');
         $validated = $request->validate([
             'file_path' => ['required', 'string'],
-            'type' => ['required', 'string'],
+            'type' => ['required', 'string', Rule::enum(ProcurementDocumentType::class)],
             'file_name' => ['required', 'string'],
             'file_size' => ['required', 'integer', "max:{$maxBytes}"],
             'mime_type' => ['required', 'string'],

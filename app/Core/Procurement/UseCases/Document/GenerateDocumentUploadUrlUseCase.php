@@ -3,6 +3,7 @@
 namespace App\Core\Procurement\UseCases\Document;
 
 use App\Core\Procurement\Constants\ProcurementFolders;
+use App\Core\Procurement\Enums\ProcurementDocumentType;
 use App\Core\Procurement\Exceptions\ProcurementDocumentException;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
 use App\Core\Procurement\Services\ProcurementDocumentService;
@@ -20,10 +21,12 @@ class GenerateDocumentUploadUrlUseCase
     ) {
     }
 
-    public function execute(string $municipalId, string $procurementId, string $extension, string $contentType)
+    public function execute(string $municipalId, string $procurementId, string $extension, string $contentType, ProcurementDocumentType $type)
     {
-        $currentCount = $this->procurementsRepo->getDocumentCount($procurementId, $municipalId);
 
+        $this->documentService->validateUploadRules($municipalId, $procurementId, $type);
+
+        $currentCount = $this->procurementsRepo->getDocumentCount($procurementId, $municipalId);
         if (!$this->documentService->isWithinLimit($currentCount)) {
             throw ProcurementDocumentException::limitExceeded($currentCount);
         }
