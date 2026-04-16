@@ -2,6 +2,7 @@
 
 namespace App\Core\Procurement\Repositories;
 
+use App\Core\Procurement\Dto\ProcurementFilterDto;
 use App\Core\Procurement\Dto\StoreProcurementsDto;
 use App\Core\Procurement\Dto\UpdateProcurementDto;
 use App\Core\Procurement\Models\Procurement;
@@ -108,15 +109,37 @@ class ProcurementsRepository
 
     }
 
-    public function paginateByMunicipality(string $municipalId)
+    public function getFilteredList(string $municipalId, ProcurementFilterDto $dto)
     {
-
         return Procurement::query()
             ->where('municipal_id', $municipalId)
-            ->with('documents')
-            ->with('department')
-            ->paginate(10);
+            ->select([
+                'id',
+                'municipal_id',
+                'reference_number',
+                'title',
+                'category',
+                'status',
+                'abc_amount',
+                'closing_date',
+                'created_at'
+            ])
 
+            ->when($dto->search, function ($query) use ($dto) {
+                $query->where(function ($subQuery) use ($dto) {
+                    $searchTerm = "%{$dto->search}%";
+                    $subQuery->where('title', 'like', $searchTerm)
+                        ->orWhere('reference_number', 'like', $searchTerm)
+                        ->orWhere('winning_bidder_name', 'like', $searchTerm);
+                });
+            })
+            ->when($dto->status, fn($query) => $query->where('status', $dto->status->value))
+            ->when($dto->category, fn($query) => $query->where('category', $dto->category))
+            ->when($dto->departmentId, fn($query) => $query->where('department_id', $dto->departmentId))
+            ->when($dto->fundingSourceId, fn($query) => $query->where('funding_source_id', $dto->fundingSourceId))
+            ->orderBy($dto->sortField, $dto->sortDirection)
+            ->paginate(25)
+            ->withQueryString();
     }
 
     public function getDocumentCount(string $procurementId, string $municipalId): int

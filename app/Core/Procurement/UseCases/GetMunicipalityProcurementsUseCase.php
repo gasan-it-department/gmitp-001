@@ -2,6 +2,7 @@
 
 namespace App\Core\Procurement\UseCases;
 
+use App\Core\Procurement\Dto\ProcurementFilterDto;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
 
 
@@ -16,10 +17,10 @@ class GetMunicipalityProcurementsUseCase
     ) {
     }
 
-    public function execute(string $municipalId)
+    public function execute(string $municipalId, ProcurementFilterDto $dto)
     {
 
-        return $this->procurementsRepo->paginateByMunicipality($municipalId);
+        return $this->procurementsRepo->getFilteredList($municipalId, $dto);
 
     }
 

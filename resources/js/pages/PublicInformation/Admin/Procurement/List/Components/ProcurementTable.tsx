@@ -4,8 +4,8 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { ProcurementListItem } from '@/Core/Types/Procurement/procurement';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import procurement from '@/routes/procurement';
-import { Link } from '@inertiajs/react';
-import { Eye } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Eye } from 'lucide-react';
 import { useState } from 'react';
 import BidsAndAwardsDialog from '../../../Components/AddEditBidsAndAwardsDialog';
 
@@ -16,26 +16,21 @@ interface Props {
 export default function ProcurementTable({ procurements }: Props) {
     const { currentMunicipality } = useMunicipality();
 
+    // 🌟 1. Grab the current filters from the URL so we know what is actively sorted
+    const { filters } = usePage<{ filters: any }>().props;
+
     const [bidsAndAwardsDialogVisible, setBidsAndAwardsDialogVisible] = useState(false);
-    // Helper to format money (PHP)
+
+    // Helpers
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP',
-        }).format(amount);
+        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
     };
 
-    // Helper to format dates
     const formatDate = (dateString: string | null) => {
         if (!dateString) return '-';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
+        return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    // Helper for Status Colors
     const getStatusColor = (status: string | null) => {
         switch (status) {
             case 'AWARDED':
@@ -49,25 +44,62 @@ export default function ProcurementTable({ procurements }: Props) {
         }
     };
 
+    // 🌟 2. THE SORTABLE HEADER COMPONENT
+    // We wrap the Inertia <Link> inside your Shadcn <TableHead>
+    const SortableHeader = ({ label, field, className }: { label: string; field: string; className?: string }) => {
+        const isActive = filters?.sort_field === field;
+        const nextDirection = isActive && filters?.sort_direction === 'asc' ? 'desc' : 'asc';
+
+        return (
+            <TableHead className={className}>
+                <Link
+                    // Using your exact route!
+                    href={procurement.admin.page.url({ municipality: currentMunicipality.slug })}
+                    data={{
+                        ...filters, // Keep search, status, etc.
+                        sort_field: field,
+                        sort_direction: nextDirection,
+                    }}
+                    preserveScroll
+                    preserveState
+                    className="group flex w-full items-center gap-1 transition-colors hover:text-indigo-600"
+                >
+                    {label}
+                    {isActive ? (
+                        filters.sort_direction === 'asc' ? (
+                            <ArrowUp className="h-3.5 w-3.5 text-indigo-600" />
+                        ) : (
+                            <ArrowDown className="h-3.5 w-3.5 text-indigo-600" />
+                        )
+                    ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-40" />
+                    )}
+                </Link>
+            </TableHead>
+        );
+    };
+
     return (
         <div className="flex h-full flex-col">
-            {/* Header with Create Button */}
-            {/* <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Procurements</h1>
-                <BidsAndAwardsHeader onSearch={() => {}} onCreateNewButtonClicked={() => setBidsAndAwardsDialogVisible(true)} />
-            </div> */}
-
             {/* TABLE CONTAINER */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <Table className="min-w-full">
                     <TableHeader className="bg-gray-50/50">
                         <TableRow>
+                            {/* Static Header (Not in DTO for sorting yet) */}
                             <TableHead className="w-[180px]">Ref No.</TableHead>
-                            <TableHead className="w-[400px]">Project Title</TableHead>
+
+                            {/* 🌟 3. Replace standard TableHeads with our Sortable ones! */}
+                            <SortableHeader className="w-[400px]" label="Project Title" field="title" />
+
                             <TableHead className="w-[180px]">Category</TableHead>
-                            <TableHead className="w-[180px]">ABC (Budget)</TableHead>
+
+                            <SortableHeader className="w-[180px]" label="ABC (Budget)" field="abc_amount" />
+
                             <TableHead className="w-[180px]">Status</TableHead>
-                            <TableHead className="w-[180px]">Closing Date</TableHead>
+
+                            <SortableHeader className="w-[180px]" label="Closing Date" field="closing_date" />
+
                             <TableHead className="w-[180px] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -78,35 +110,22 @@ export default function ProcurementTable({ procurements }: Props) {
                         ) : (
                             procurements.map((item) => (
                                 <TableRow key={item.id} className="group transition-colors hover:bg-gray-50">
-                                    {/* 1. Reference Number */}
                                     <TableCell className="font-medium text-gray-900">
                                         {item.reference_number || <span className="text-gray-400 italic">No Ref</span>}
                                     </TableCell>
-
-                                    {/* 2. Title (Truncate if long) */}
                                     <TableCell>
                                         <div className="max-w-[300px] truncate font-medium text-gray-700" title={item.title}>
                                             {item.title}
                                         </div>
                                     </TableCell>
-
-                                    {/* 3. Category */}
                                     <TableCell className="text-gray-500">{item.category}</TableCell>
-
-                                    {/* 4. Budget */}
                                     <TableCell className="font-mono text-gray-700">{formatCurrency(item.abc_amount)}</TableCell>
-
-                                    {/* 5. Status Badge */}
                                     <TableCell>
                                         <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(item.status)}`}>
                                             {item.status}
                                         </span>
                                     </TableCell>
-
-                                    {/* 6. Date */}
                                     <TableCell className="text-gray-500">{formatDate(item.closing_date)}</TableCell>
-
-                                    {/* 7. Actions */}
                                     <TableCell>
                                         <div className="flex justify-center gap-2">
                                             <Button
@@ -115,26 +134,16 @@ export default function ProcurementTable({ procurements }: Props) {
                                                 className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                                             >
                                                 <Link
-                                                    href={procurement.admin.show({
+                                                    href={procurement.admin.show.url({
+                                                        // FIXED: `.url` added based on standard routing patterns
                                                         municipality: currentMunicipality.slug,
-                                                        id: item.id || '', // 👈 FIX: Provides a fallback string
+                                                        id: item.id || '',
                                                     })}
                                                 >
                                                     {' '}
                                                     <Eye className="h-4 w-4" />
                                                 </Link>
                                             </Button>
-
-                                            {/* {item.files?.length > 0 && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-gray-600 hover:text-gray-900"
-                                                    title="View Files"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                            )} */}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -145,8 +154,6 @@ export default function ProcurementTable({ procurements }: Props) {
             </div>
 
             <BidsAndAwardsDialog isOpen={bidsAndAwardsDialogVisible} onClose={() => setBidsAndAwardsDialogVisible(false)} onSuccess={() => {}} />
-
-            {/* Optional: Add Pagination controls at the bottom using `pagination` prop */}
         </div>
     );
 }

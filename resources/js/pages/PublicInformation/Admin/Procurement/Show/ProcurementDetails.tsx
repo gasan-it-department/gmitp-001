@@ -10,6 +10,7 @@ import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Wallet } 
 import { useState } from 'react';
 import { AwardBiddingDialog } from './Components/AwardBiddingDialog';
 import CloseBiddingDialog from './Components/CloseBiddingDialog';
+import { FailureBiddingDialog } from './Components/FailureBiddingDialog';
 import OpenBiddingDialog from './Components/OpenBiddingDialog';
 import ProcurementDocumentSection from './Components/ProcurementDocumentSection';
 
@@ -45,6 +46,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEvaluating, setIsEvaluating] = useState(false);
     const [isAwarding, setIsAwarding] = useState<boolean>(false);
+    const [isFailedOpen, setIsFailedOpen] = useState<boolean>(false);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     console.log(procurement);
     // Status Badge Styling Helper
@@ -81,10 +83,16 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
     };
 
     const handleBack = () => {
-        router.visit(window.history.state.url, {
-            preserveScroll: true,
-            preserveState: true, // ← this preserves filters, pagination, search state
-        });
+        // 1. Get the URL of the page that sent us here (The List Page)
+        const previousUrl = document.referrer;
+
+        // 2. Safety Check: Only go back if the referrer is from our own site/municipality
+        if (previousUrl && previousUrl.includes(currentMunicipality.slug)) {
+            router.visit(previousUrl); // This triggers a fresh server request
+        } else {
+            // 3. Fallback: If no referrer (new tab), go to the general index
+            // router.visit(procurementRoute.index.url({ municipality: currentMunicipality.slug }));
+        }
     };
     return (
         <AppLayout>
@@ -174,7 +182,10 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             >
                                 Close Bidding & Evaluate
                             </button>
-                            <button className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                            <button
+                                onClick={() => setIsFailedOpen(true)}
+                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                            >
                                 Declare Failure
                             </button>
                         </>
@@ -190,7 +201,10 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             >
                                 Award Project
                             </button>
-                            <button className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                            <button
+                                onClick={() => setIsFailedOpen(true)}
+                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                            >
                                 Declare Failure
                             </button>
                         </>
@@ -306,6 +320,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
             <OpenBiddingDialog isOpen={isOpenBiddingDialogOpen} onClose={() => setIsOpenBiddingDialogOpen(false)} procurement={data} />
             <CloseBiddingDialog isOpen={isEvaluating} onClose={() => setIsEvaluating(false)} procurement={data} />
             <AwardBiddingDialog isOpen={isAwarding} onClose={() => setIsAwarding(false)} procurement={data} />
+            <FailureBiddingDialog isOpen={isFailedOpen} onClose={() => setIsFailedOpen(false)} procurement={data} />
         </AppLayout>
     );
 }

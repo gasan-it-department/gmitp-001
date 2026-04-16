@@ -44,6 +44,9 @@ return new class extends Migration {
             // The timestamp that controls public visibility
             $table->dateTime('published_at')->nullable();
 
+            $table->date('failed_date')->nullable();
+            $table->text('failure_reason')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\Procurement\AwardProcurementController;
+use App\External\Api\Controllers\Procurement\DeclareFailureProcurementController;
 use App\External\Api\Controllers\Procurement\DeleteProcurementController;
 use App\External\Api\Controllers\Procurement\Document\DeleteProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\Document\DownloadProcurementDocumentController;
@@ -75,6 +76,7 @@ Route::prefix('api/procurement')
 
                 Route::put('award/{procurementId}', AwardProcurementController::class)->name('award');
 
+                Route::put('fail/{procurementId}', DeclareFailureProcurementController::class)->name('fail');
             });
 
 

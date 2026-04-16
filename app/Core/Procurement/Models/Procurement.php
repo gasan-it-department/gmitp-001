@@ -65,6 +65,9 @@ class Procurement extends Model
 
         'winning_bidder_name',
 
+        'failure_reason',
+
+        'failed_date'
     ];
 
     /**

@@ -6,7 +6,7 @@ use Carbon\Carbon;
 
 class ProcurementTimelineValidator
 {
-    public function validateSequence(?string $preBidDate, string $closingDate, ?string $awardDate = null): void
+    public function validateSequence(?string $preBidDate, ?string $closingDate, ?string $awardDate = null): void
     {
         $closing = Carbon::parse($closingDate)->startOfDay();
 

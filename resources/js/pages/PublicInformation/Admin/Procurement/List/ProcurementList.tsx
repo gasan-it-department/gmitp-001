@@ -1,47 +1,53 @@
 import { Pagination } from '@/components/Shared/Pagination';
+import { Department } from '@/Core/Types/Department/department';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { ProcurementListItem } from '@/Core/Types/Procurement/procurement';
+import { Category, FundingSource, ProcurementListItem, ProcurementStatus } from '@/Core/Types/Procurement/procurement';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
 import procurement from '@/routes/procurement';
 import { Link, usePage } from '@inertiajs/react';
 import { History, Plus } from 'lucide-react';
+import ProcurementFilterBar from './Components/ProcurementFilterBar'; // 🌟 Import your new component
 import ProcurementTable from './Components/ProcurementTable';
+
 interface Props {
     procurements: PaginatedResponse<ProcurementListItem>;
-    filter?: any;
+    departments: { data: Department[] };
+    fundingSources: { data: FundingSource[] };
+    categories: Category[];
+    statuses: ProcurementStatus[];
+    filters?: {
+        search?: string;
+        status?: string;
+        category?: string;
+        department?: string;
+        funding?: string;
+    };
 }
 
-export default function BiddingPage({ procurements }: Props) {
+export default function BiddingPage({ procurements, departments, fundingSources, categories, statuses, filters }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const ProcurementData = procurements.data;
 
     return (
         <AppLayout>
-            <div className="m-5 mt-0 grid grid-cols-1 bg-white">
-                {/* Table Toolbar Container */}
-                <div className="my-5 flex items-center justify-between">
-                    {/* Left Side: Future Search/Filter Bar */}
-                    <div className="flex-1">
-                        <h2 className="text-lg font-semibold text-gray-800">Procurements</h2>
-                        <p className="text-sm text-gray-500">Manage and view all procurements in the municipality of {currentMunicipality.name}.</p>
+            <div className="mx-auto min-h-screen w-full bg-slate-50/50 p-8">
+                {/* 1. Page Header & Actions */}
+                <div className="mb-6 flex items-end justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Procurements</h2>
+                        <p className="mt-1 text-sm text-slate-500">Manage and track all bidding activities for {currentMunicipality.name}.</p>
                     </div>
-                    <div className="flex items-center space-x-4">
-                        {/* Secondary Action: Encode Past Record */}
+                    <div className="flex items-center gap-3">
                         <Link
-                            // Append a query parameter here to tell the next page what to do
                             href={`${procurement.admin.create.url(currentMunicipality.slug)}?type=historical`}
-                            className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+                            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
-                            <History size={16} />
+                            <History size={16} className="text-slate-500" />
                             Encode Past Record
                         </Link>
-
-                        {/* Primary Action: Add New Procurement */}
                         <Link
-                            // Standard URL for a brand new request
                             href={procurement.admin.create.url(currentMunicipality.slug)}
-                            className="inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+                            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
                         >
                             <Plus size={16} />
                             Add New Procurement
@@ -49,11 +55,24 @@ export default function BiddingPage({ procurements }: Props) {
                     </div>
                 </div>
 
-                <div>
-                    <ProcurementTable procurements={ProcurementData} />
-                    <div className="mt-4">
-                        <Pagination links={procurements.meta.links} />
-                    </div>
+                {/* 2. THE EXTRACTED FILTER BAR */}
+                <ProcurementFilterBar
+                    municipalitySlug={currentMunicipality.slug}
+                    departments={departments.data}
+                    fundingSources={fundingSources.data}
+                    categories={categories}
+                    statuses={statuses}
+                    initialFilters={filters}
+                />
+
+                {/* 3. The Data Table */}
+                <div className="">
+                    <ProcurementTable procurements={procurements.data} />
+                </div>
+
+                {/* 4. Pagination */}
+                <div className="mt-4 flex justify-end">
+                    <Pagination links={procurements.meta.links} />
                 </div>
             </div>
         </AppLayout>
