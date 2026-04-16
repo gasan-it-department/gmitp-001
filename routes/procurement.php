@@ -38,10 +38,9 @@ Route::prefix('{municipality}/procurements')
 Route::prefix('{municipality}/transparency')
     ->middleware(['municipalityContext'])
     ->name('transparency.')
-    ->controller(TransparencyPageController::class)
     ->group(function () {
 
-        Route::get('/', 'index')->name('index');
+        Route::get('/', TransparencyPageController::class)->name('index');
 
     });
 

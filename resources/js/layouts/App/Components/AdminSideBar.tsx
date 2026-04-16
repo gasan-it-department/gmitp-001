@@ -155,12 +155,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             icon: Palmtree,
             items: [
                 {
-                    title: 'Site Pages (CMS)',
-                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: LayoutTemplate,
-                    permission: 'municipality_settings.access',
-                },
-                {
                     title: 'Tourism Spots',
                     url: travelEditor.page.url({ municipality: currentMunicipality.slug }),
                     icon: Palmtree,
@@ -195,6 +189,18 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: government.admin.officials.page.url({ municipality: currentMunicipality.slug }),
                     icon: Contact,
                     permission: 'public_information.access',
+                },
+                {
+                    title: 'Site Pages (CMS)',
+                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    icon: LayoutTemplate,
+                    permission: 'municipality_settings.access',
+                },
+                {
+                    title: 'Departments',
+                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    icon: Landmark,
+                    permission: 'municipality_settings.access',
                 },
             ],
         },

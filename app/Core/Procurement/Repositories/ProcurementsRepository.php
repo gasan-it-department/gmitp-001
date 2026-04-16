@@ -109,6 +109,51 @@ class ProcurementsRepository
 
     }
 
+    public function getTransparencyPortalList(string $municipalId, ProcurementFilterDto $dto)
+    {
+        return Procurement::query()
+            // 1. TENANT SECURITY (Always first)
+            ->where('municipal_id', $municipalId)
+
+            // 2. 🛡️ THE IRON DOME: Force public visibility rules
+            ->whereNotNull('published_at') // Must have a published date
+            ->where('published_at', '<=', now()) // Pro-tip: Prevents seeing future scheduled posts!
+            ->where('status', '!=', 'draft') // Double security: Never return drafts
+
+            // 3. Select ONLY safe columns for the public
+            ->select([
+                'id',
+                'reference_number',
+                'title',
+                'category',
+                'status',
+                'abc_amount',
+                'pre_bid_date',
+                'closing_date',
+                'published_at',
+                'department_id', // Only if you are eager-loading the department name
+            ])
+
+            // 4. Eager load safe relationships (Public needs to know the department)
+            ->with(['department:id,name', 'documents']) // Notice the :id,name - this only grabs those two columns from the departments table!
+
+            // 5. Apply the Public Filters (Omni-Search, Category, Status)
+            ->when($dto->search, function ($query) use ($dto) {
+                $query->where(function ($subQuery) use ($dto) {
+                    $searchTerm = "%{$dto->search}%";
+                    $subQuery->where('title', 'like', $searchTerm)
+                        ->orWhere('reference_number', 'like', $searchTerm);
+                });
+            })
+            ->when($dto->status, fn($query) => $query->where('status', $dto->status->value))
+            ->when($dto->category, fn($query) => $query->where('category', $dto->category))
+
+            // 6. Public sorting is usually latest published first
+            ->latest('published_at')
+
+            ->paginate(10)
+            ->withQueryString();
+    }
     public function getFilteredList(string $municipalId, ProcurementFilterDto $dto)
     {
         return Procurement::query()

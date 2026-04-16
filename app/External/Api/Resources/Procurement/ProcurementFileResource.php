@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Api\Resources\PublicInformation;
+namespace App\External\Api\Resources\Procurement;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
