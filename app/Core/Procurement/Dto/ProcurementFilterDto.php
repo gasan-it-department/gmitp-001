@@ -22,7 +22,7 @@ readonly class ProcurementFilterDto
     {
         $sortField = in_array($validated['sort_field'] ?? '', ['abc_amount', 'closing_date', 'title']) ? $validated['sort_field'] : 'created_at';
         return new self(
-            search: $validated['search'] ?? null,
+            search: !empty($validated['search']) ? strtoupper($validated['search']) : null,
             status: isset($validated['status']) ? ProcurementStatus::tryFrom($validated['status']) : null,
             category: isset($validated['category']) ? ProcurementCategory::tryFrom($validated['category']) : null,
             departmentId: isset($validated['department']) ? (string) $validated['department'] : null,

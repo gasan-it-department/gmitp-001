@@ -1,9 +1,11 @@
 import { Pagination } from '@/components/Shared/Pagination'; // Assuming you have this!
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import { Link, router } from '@inertiajs/react';
+import transparency from '@/routes/transparency';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Building2, Calendar, FileText, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -23,7 +25,6 @@ export interface PublicProcurementItem {
 }
 
 interface Props {
-    municipalitySlug: string;
     procurements: PaginatedResponse<PublicProcurementItem>;
     filters?: {
         search?: string;
@@ -32,9 +33,10 @@ interface Props {
     };
 }
 
-export default function Transparency({ municipalitySlug, procurements, filters }: Props) {
+export default function Transparency({ procurements, filters }: Props) {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const procurementData = procurements.data;
-
+    console.log(filters);
     // --- PUBLIC FILTER STATE ---
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
     const [categoryFilter, setCategoryFilter] = useState(filters?.category || '');
@@ -49,7 +51,7 @@ export default function Transparency({ municipalitySlug, procurements, filters }
                 status: statusFilter || undefined,
             };
 
-            router.get(`/transparency/${municipalitySlug}`, queryParams, {
+            router.get(transparency.index.url(currentMunicipality.slug), queryParams, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
@@ -57,7 +59,7 @@ export default function Transparency({ municipalitySlug, procurements, filters }
         }, 300);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [searchQuery, categoryFilter, statusFilter, municipalitySlug]);
+    }, [searchQuery, categoryFilter, statusFilter]);
 
     const handleClearFilters = () => {
         setSearchQuery('');
@@ -93,7 +95,7 @@ export default function Transparency({ municipalitySlug, procurements, filters }
             <div className="bg-slate-900 px-6 py-16 text-center text-white sm:px-12">
                 <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">Transparency Portal</h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
-                    Search and track public bidding, infrastructure projects, and municipal procurements in real-time.
+                    Search and track public bidding, infrastructure projects, and municipal procurements.
                 </p>
 
                 {/* Omni-Search Bar */}
@@ -105,7 +107,7 @@ export default function Transparency({ municipalitySlug, procurements, filters }
                             placeholder="Search by project title, PhilGEPS reference, or keyword..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-14 w-full rounded-full border-0 bg-white pr-4 pl-12 text-lg text-slate-900 shadow-lg focus-visible:ring-2 focus-visible:ring-indigo-500"
+                            className="h-14 w-full rounded-full border-0 bg-white pr-4 pl-12 text-lg text-slate-900 uppercase shadow-lg focus-visible:ring-2 focus-visible:ring-indigo-500"
                         />
                     </div>
                 </div>
@@ -160,7 +162,13 @@ export default function Transparency({ municipalitySlug, procurements, filters }
                             <Link
                                 key={item.id}
                                 // Replace with your actual route helper
-                                href={`/transparency/${municipalitySlug}/procurement/${item.id}`}
+                                href={transparency.show.url({
+                                    municipality: currentMunicipality.slug,
+                                    procurementId: item.id,
+                                })}
+                                headers={{
+                                    'X-Municipality-Slug': currentMunicipality.slug,
+                                }}
                                 className="group block overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                             >
                                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">

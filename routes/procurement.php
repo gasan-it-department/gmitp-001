@@ -16,6 +16,7 @@ use App\External\Web\Controllers\Procurement\Admin\CreateProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\EditProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\ListProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\ShowProcurementController;
+use App\External\Web\Controllers\Procurement\Public\ShowPublicProcurementController;
 use App\External\Web\Controllers\Procurement\Public\TransparencyPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,8 @@ Route::prefix('{municipality}/transparency')
     ->group(function () {
 
         Route::get('/', TransparencyPageController::class)->name('index');
+
+        Route::get('details/{procurementId}', ShowPublicProcurementController::class)->name('show');
 
     });
 
