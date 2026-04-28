@@ -26,6 +26,7 @@ require __DIR__ . '/transaction.php';
 require __DIR__ . '/cemetery.php';
 require __DIR__ . '/government.php';
 require __DIR__ . '/department.php';
+require __DIR__ . '/tourism.php';
 
 
 

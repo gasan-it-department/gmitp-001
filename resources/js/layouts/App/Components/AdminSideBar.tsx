@@ -22,10 +22,11 @@ import feedback from '@/routes/feedback';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
 import procurement from '@/routes/procurement';
-import travelEditor from '@/routes/travelEditor';
+import tourism from '@/routes/tourism';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
+    Binoculars,
     BookOpen,
     CalendarDays,
     CalendarRange,
@@ -155,9 +156,15 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             icon: Palmtree,
             items: [
                 {
-                    title: 'Tourism Spots',
-                    url: travelEditor.page.url({ municipality: currentMunicipality.slug }),
+                    title: 'Tourism Assets',
+                    url: tourism.admin.asset.list.url({ municipality: currentMunicipality.slug }),
                     icon: Palmtree,
+                    permission: 'tourism.access',
+                },
+                {
+                    title: 'Categories',
+                    url: tourism.admin.category.show.url({ municipality: currentMunicipality.slug }),
+                    icon: Binoculars,
                     permission: 'tourism.access',
                 },
             ],
