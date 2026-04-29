@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->ulid('id')->primary();
 
             $table->foreignUlid('assistance_request_id')
-                ->constrained('assistance_requests')
+                ->constrained('ac_assistance_requests')
                 ->cascadeOnDelete();
 
             $table->string('document_type')->nullable();
@@ -29,6 +29,7 @@ return new class extends Migration {
 
             $table->unsignedBigInteger('file_size')->nullable();
 
+            $table->softDeletes();
             $table->timestamps();
         });
     }

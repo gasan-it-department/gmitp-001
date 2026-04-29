@@ -10,12 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('household_members', function (Blueprint $table) {
+        Schema::create('ac_household_members', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
 
-            $table->foreignUlid('user_id')
-                ->constrained()
+            $table->foreignUlid('household_id')
+                ->constrained('ac_households')
                 ->cascadeOnDelete();
 
             $table->string('first_name');
@@ -26,20 +26,18 @@ return new class extends Migration {
 
             $table->string('suffix')->nullable();
 
-            $table->date('birth_date');
+            $table->date('birth_date')->nullable();
+
+            $table->string('sex')->nullable();
 
             $table->string('relationship')->nullable();
 
-            $table->string('province');
+            $table->string('civil_status')->nullable();
+            $table->string('occupation')->nullable();
+            // Storing income as decimal: 10 digits total, 2 decimal places (e.g., 99999999.99)
+            $table->decimal('monthly_income', 10, 2)->default(0);
 
-            $table->string('municipality');
-
-            $table->string('barangay');
-
-            $table->string('purok')->nullable();
-
-            $table->string('street_address')->nullable();
-
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index(['first_name', 'last_name', 'birth_date']);
@@ -52,6 +50,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('household_members');
+        Schema::dropIfExists('ac_household_members');
     }
 };

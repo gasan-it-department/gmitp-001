@@ -13,9 +13,9 @@ return new class extends Migration {
         Schema::create('beneficiary_flags', function (Blueprint $table) {
             $table->ulid('id')->primary(); // Consistent with your other tables using ULID
 
-            $table->foreignUlid('assistance_beneficiary_id')
-                ->constrained('assistance_beneficiaries')
-                ->cascadeOnDelete();
+            $table->foreignUlid('beneficiary_id')
+                ->constrained('ac_beneficiaries')
+                ->onDelete('cascade');
 
             $table->foreignUlid('user_id')
                 ->nullable() // Nullable in case the user is deleted or system-generated

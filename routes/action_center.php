@@ -10,6 +10,7 @@ use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\AssistanceRequestPageController;
 use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
+use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 
 Route::prefix('{municipality}/action-center')
     ->middleware(['auth', 'municipalityContext'])
@@ -28,6 +29,8 @@ Route::prefix('{municipality}/action-center')
 
             Route::get('/assistance-request/{id}', [AdminActionCenterController::class, 'show'])
                 ->name('show');
+
+            Route::get('create', CreateAssistanceRequestController::class)->name('assistance.create');
         });
 
         //eg. https://gasan-4905/action-center/beneficiary

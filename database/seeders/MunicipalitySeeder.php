@@ -15,7 +15,7 @@ class MunicipalitySeeder extends Seeder
     {
         $municipalities = [
             [
-                'name' => 'Gasan',
+                'name' => 'GASAN',
                 'slug' => 'gasan-4905',
                 'municipal_code' => '174003000',
                 'zip_code' => '4905',
