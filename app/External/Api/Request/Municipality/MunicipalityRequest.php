@@ -22,8 +22,11 @@ class MunicipalityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'municipal_code' => 'required|string|min:3|max:50',
+            'psgc_municipal_id' => [
+                'required',
+                'string',
+                'exists:psgc_municipalities,id'
+            ],
             'is_active' => 'sometimes|boolean',
             'zip_code' => 'required|string|max:20',
         ];

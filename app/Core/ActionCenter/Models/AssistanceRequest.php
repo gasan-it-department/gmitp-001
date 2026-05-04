@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Database\Factories\AssistanceRequestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Core\ActionCenter\Beneficiaries\Models\Beneficiary;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AssistanceRequest extends Model
 {
 
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     public $incrementing = false;
 
     protected $keyType = 'string';

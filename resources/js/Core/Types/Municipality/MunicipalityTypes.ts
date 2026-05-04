@@ -8,8 +8,16 @@ export interface MunicipalityType {
     settings?: MunicipalitySettings;
 }
 
+export interface MunicipalityFormData {
+    id: string;
+    zip_code: string;
+    psgc_municipal_id: string;
+    is_active: boolean;
+}
+
 export interface Municipality {
     id: string;
+    psgc_municipal_id: string;
     name: string;
     slug: string;
     zip_code: string;

@@ -28,6 +28,8 @@ return new class extends Migration {
 
             $table->date('birth_date')->nullable();
 
+            $table->string('educational_attainment')->nullable();
+
             $table->string('sex')->nullable();
 
             $table->string('relationship')->nullable();
@@ -36,6 +38,8 @@ return new class extends Migration {
             $table->string('occupation')->nullable();
             // Storing income as decimal: 10 digits total, 2 decimal places (e.g., 99999999.99)
             $table->decimal('monthly_income', 10, 2)->default(0);
+
+            $table->string('religion')->nullable();
 
             $table->softDeletes();
             $table->timestamps();

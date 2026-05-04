@@ -23,6 +23,9 @@ return new class extends Migration {
             $table->string('sex')->nullable();
             $table->date('birth_date');
 
+            $table->string('religion')->nullable();
+            $table->string('educational_attainment')->nullable();
+
             $table->softDeletes();
             $table->timestamps();
 

@@ -4,6 +4,7 @@ use App\External\Api\Controllers\Municipality\Logo\SetMunicipalityLogoController
 use App\External\Api\Controllers\Municipality\Logo\UpdateMunicipalityLogoController;
 use App\External\Api\Controllers\Municipality\MunicipalityController;
 use App\External\Api\Controllers\Municipality\MunicipalitySettingsController;
+use App\External\Api\Controllers\Municipality\StoreMunicipalityController;
 use App\External\Api\Controllers\Psgc\LocationController;
 use App\External\Web\Controllers\Municipality\MunicipalityAdminController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
@@ -23,7 +24,7 @@ Route::prefix('municipality')
             Route::get('/', [SuperAdminController::class, 'showMunicipalityPage'])
                 ->name('page');
 
-            Route::post('/add', [MunicipalityController::class, 'store'])
+            Route::post('/add', StoreMunicipalityController::class)
                 ->name('add');
 
             Route::get('/list', [MunicipalityController::class, 'index'])

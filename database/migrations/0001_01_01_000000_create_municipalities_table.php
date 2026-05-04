@@ -14,6 +14,8 @@ return new class extends Migration {
 
             $table->ulid('id')->primary();
 
+            $table->string('psgc_municipal_id')->nullable();
+
             $table->string('name');
 
             $table->string('slug')->unique()->after('name');

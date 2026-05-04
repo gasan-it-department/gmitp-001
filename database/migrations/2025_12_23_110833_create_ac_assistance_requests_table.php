@@ -23,7 +23,7 @@ return new class extends Migration {
                 ->constrained('ac_beneficiaries')
                 ->onDelete('cascade');
 
-            $table->foreignId('household_id')
+            $table->foreignUlid('household_id')
                 ->constrained('ac_households')
                 ->restrictOnDelete();
 

@@ -2,17 +2,19 @@
 
 namespace App\Core\Municipality\Exceptions;
 
-use DomainException;
+use App\Shared\Exceptions\Interfaces\DomainException;
 
 class MunicipalityValidationException extends DomainException
 {
-    public function __construct(
-        protected array $errors
-    ) {
-        parent::__construct('Municipality validation failed');
-    }
-    public function getErrors(): array
+
+    public function status(): int
     {
-        return $this->errors;
+        return 422;
     }
+
+    public function errorCode(): string
+    {
+        return 'MUNICIPALITY_ERROR_EXCEPTION';
+    }
+
 }

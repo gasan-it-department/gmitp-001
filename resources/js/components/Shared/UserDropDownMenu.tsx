@@ -11,7 +11,7 @@ import { AuthApi } from '@/Core/Api/Auth/AuthApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { account } from '@/routes';
-import actionCenter from '@/routes/actionCenter';
+import { dashboard } from '@/routes/admin';
 import superAdmin from '@/routes/superAdmin';
 import transaction from '@/routes/transaction';
 import { type SharedData } from '@/types';
@@ -26,7 +26,7 @@ export function UserDropdownMenu() {
     const { currentMunicipality } = useMunicipality();
 
     const adminMunicipalSlug = auth.user.municipality?.slug;
-
+    console.log(adminMunicipalSlug, 'ju');
     const handleLogout = async () => {
         try {
             await AuthApi.logout();
@@ -69,7 +69,7 @@ export function UserDropdownMenu() {
                     <DropdownMenuGroup>
                         {auth.roles?.isAdmin && adminMunicipalSlug && (
                             <DropdownMenuItem
-                                onClick={() => router.visit(actionCenter.admin.index.url({ municipality: adminMunicipalSlug }))}
+                                onClick={() => router.visit(dashboard.url({ municipality: adminMunicipalSlug }))}
                                 className="cursor-pointer"
                             >
                                 <LayoutDashboard className="mr-2 h-4 w-4" />

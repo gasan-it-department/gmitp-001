@@ -23,7 +23,7 @@
         "meilisearch/meilisearch-php": "^1.16",
         "spatie/laravel-medialibrary": "^11.21",
         "spatie/laravel-permission": "^6.24",
-        "spatie/laravel-sluggable": "^3.8",
+        "spatie/laravel-sluggable": "^4.0",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {

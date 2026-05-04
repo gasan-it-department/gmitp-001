@@ -72,11 +72,12 @@ class ActionCenterController extends Controller
 
     public function fetch(Request $request)
     {
+        dd('hello');
         $municipalId = app('municipal_id');
 
         $dto = AssistanceQueryDto::fromRequest($request);
 
-        $assitance = $this->getAllAssistance->execute($municipalId, $dto);
+        // $assitance = $this->getAllAssistance->execute($municipalId, $dto);
 
 
         return AssistanceResource::collection($assitance)->additional([

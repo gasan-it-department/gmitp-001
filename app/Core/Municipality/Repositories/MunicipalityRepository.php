@@ -13,6 +13,7 @@ class MunicipalityRepository
         return Municipality::create([
             'id' => $municipalityId,
             'name' => $dto->name,
+            'psgc_municipal_id' => $dto->psgcMunicipalId,
             'municipal_code' => $dto->code,
             'is_active' => $dto->isActive,
             'slug' => $slug,

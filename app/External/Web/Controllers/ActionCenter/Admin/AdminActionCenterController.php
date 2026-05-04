@@ -24,7 +24,7 @@ class AdminActionCenterController extends Controller
             'ActionCenter/Admin/RequestList/ActionCenterRequestList',
 
             [
-                'requests' => AssistanceResource::collection($assistance)->response()->getData(true)
+                'requests' => ''
             ]
         );
     }

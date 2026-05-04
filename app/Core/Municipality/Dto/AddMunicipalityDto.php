@@ -6,6 +6,7 @@ class AddMunicipalityDto
 {
     public function __construct(
         public readonly string $name,
+        public readonly string $psgcMunicipalId,
         public readonly string $code,
         public readonly string $zipCode,
         public readonly bool $isActive = false,

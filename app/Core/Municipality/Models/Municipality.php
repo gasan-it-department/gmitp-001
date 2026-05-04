@@ -17,6 +17,7 @@ class Municipality extends Model
 
     protected $fillable = [
         'id',
+        'psgc_municipal_id',
         'name',
         'slug',
         'municipal_code',
