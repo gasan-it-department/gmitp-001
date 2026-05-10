@@ -24,17 +24,15 @@ return new class extends Migration {
 
             $table->unsignedInteger('cooldown_months')->default(0);
 
-            $table->decimal('min_amount', 10, 2)->default(0)->after('cooldown_months');
-            $table->decimal('max_amount', 10, 2)->nullable()->after('min_amount');
-
-            $table->json('required_documents')->nullable();
+            $table->decimal('min_amount', 10, 2)->default(0);
+            $table->decimal('max_amount', 10, 2)->nullable();
 
             $table->softDeletes();
             $table->timestamps();
         });
     }
 
-    /**
+    /*
      * Reverse the migrations.
      */
     public function down(): void

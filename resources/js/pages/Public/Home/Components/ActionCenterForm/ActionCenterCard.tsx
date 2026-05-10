@@ -1,8 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { actionCenter } from '@/routes';
-import { router } from '@inertiajs/react';
+import { portal } from '@/routes/actionCenter';
+import { Link } from '@inertiajs/react';
 import { ArrowRight, LayoutDashboard } from 'lucide-react';
 
 export default function ActionCenterUi() {
@@ -21,9 +20,9 @@ export default function ActionCenterUi() {
                     <div>
                         {/* Title: Uses 'foreground' (primary text color) */}
                         <h2 className="text-xl font-bold text-foreground">Action Center</h2>
-                        
+
                         {/* Description: Uses 'muted-foreground' (subtle text color) */}
-                        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                             Get the support you need — access assistance programs for food, financial aid, burial services, and more.
                         </p>
                     </div>
@@ -31,15 +30,13 @@ export default function ActionCenterUi() {
 
                 {/* Footer Button */}
                 <div className="mt-6 flex justify-end">
-                    <Button
-                        // Button: Uses 'primary' background and 'primary-foreground' text
-                        // We also use 'hover:bg-primary/90' for a standard hover effect
+                    <Link
+                        href={portal.url({ municipality: currentMunicipality.slug })}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
-                        onClick={() => router.visit(actionCenter.url(currentMunicipality.slug))}
                     >
                         Open Action Center
                         <ArrowRight size={16} />
-                    </Button>
+                    </Link>
                 </div>
             </CardContent>
         </Card>

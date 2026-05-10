@@ -27,7 +27,7 @@ export default function CreateAssistanceRequest({ assistanceTypes, sexOptions }:
     const { data, setData, post, processing, errors } = useForm({
         // 1. Address Anchor (Hardcoded to Gasan as discussed)
         province: 'MARINDUQUE',
-        municipality: 'GASAN',
+        municipality: '',
         barangay: '',
         street_or_purok: '',
 
@@ -100,7 +100,11 @@ export default function CreateAssistanceRequest({ assistanceTypes, sexOptions }:
                         </div>
 
                         <div className="space-y-2">
-                            <BarangaySelect municipalityId={} value={} onChange={} />
+                            <BarangaySelect
+                                municipalityId={currentMunicipality.psgc_municipal_id}
+                                value={data.municipality}
+                                onChange={(value) => setData('municipality', data.municipality)}
+                            />
                         </div>
 
                         <div className="space-y-2 md:col-span-2">

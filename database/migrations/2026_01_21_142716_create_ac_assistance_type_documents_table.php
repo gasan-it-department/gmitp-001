@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('ac_assistance_document_requirements', function (Blueprint $table) {
+        Schema::create('ac_assistance_type_documents', function (Blueprint $table) {
             $table->ulid('id')->primary();
 
             $table->foreignUlid('assistance_type_id')
@@ -34,6 +34,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('ac_assistance_document_requirements');
+        Schema::dropIfExists('ac_assistance_type_documents');
     }
 };

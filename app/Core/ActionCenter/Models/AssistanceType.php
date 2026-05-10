@@ -15,6 +15,9 @@ class AssistanceType extends Model
 
     protected $fillable = [
         'name',
+        'municipal_id',
+        'max_amount',
+        'cooldown_months',
         'description',
         'is_active',
         'required_documents',
@@ -27,6 +30,13 @@ class AssistanceType extends Model
     public function requests()
     {
         return $this->hasMany(AssistanceRequest::class, 'assistance_type_id');
+    }
+
+    public function documents()
+    {
+        return $this->belongsToMany(DocumentType::class, 'ac_assistance_type_documents', 'assistance_type_id', 'document_type_id')
+            ->withPivot('is_required')
+            ->withTimestamps();
     }
 }
 

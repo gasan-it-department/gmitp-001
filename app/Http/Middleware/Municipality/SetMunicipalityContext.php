@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware\Municipality;
 
+use App\Core\Municipality\Models\Municipality;
 use App\External\Api\Resources\Municipality\MunicipalitysettingsResource;
 use Closure;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class SetMunicipalityContext
         return $next($request);
     }
 
-    public function setContext(object $municipality)
+    public function setContext(Municipality $municipality)
     {
         session(['municipal_id' => $municipality->id]);
 
@@ -60,7 +61,7 @@ class SetMunicipalityContext
                     'name' => $municipality->name,
                     'slug' => $municipality->slug,
                     'zip_code' => $municipality->zip_code,
-
+                    'psgc_municipal_id' => $municipality->psgc_municipal_id,
                     'settings' => $municipality->settings
                         ? (new MunicipalitysettingsResource($municipality->settings))->resolve()
                         : null,

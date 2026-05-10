@@ -4,15 +4,16 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Models\AssistanceType;
 
-class ListAssistanceTypesAction
+class ListActiveAssistanceTypeAction
 {
-
     public function execute(string $municipalId)
     {
+
         return AssistanceType::query()
             ->where('municipal_id', $municipalId)
-            ->withCount('documents')
+            ->where('is_active', true)
             ->get();
 
     }
+
 }

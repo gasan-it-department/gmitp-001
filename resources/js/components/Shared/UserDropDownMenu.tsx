@@ -26,7 +26,7 @@ export function UserDropdownMenu() {
     const { currentMunicipality } = useMunicipality();
 
     const adminMunicipalSlug = auth.user.municipality?.slug;
-    console.log(adminMunicipalSlug, 'ju');
+
     const handleLogout = async () => {
         try {
             await AuthApi.logout();

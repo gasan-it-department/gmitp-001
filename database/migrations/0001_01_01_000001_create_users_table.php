@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('users', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('user_name')->unique();
+            $table->string('user_name')->nullable()->unique();
             $table->string('first_name');
             $table->string('middle_name')->nullable();
 
@@ -22,7 +22,7 @@ return new class extends Migration {
                 ->nullOnDelete();
 
             $table->string('last_name');
-            $table->string('phone')->unique();
+            $table->string('phone')->nullable()->unique();
             $table->string('email')->nullable()->unique();
             $table->timestamp('phone_verified_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
