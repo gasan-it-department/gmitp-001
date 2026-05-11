@@ -39,7 +39,19 @@ return new class extends Migration {
             // Storing income as decimal: 10 digits total, 2 decimal places (e.g., 99999999.99)
             $table->decimal('monthly_income', 10, 2)->default(0);
 
-            $table->string('religion')->nullable();
+            $table->foreignUlid('religion_id')
+                ->nullable()
+                ->constrained('ac_religions')
+                ->nullOnDelete();
+
+            // Optional FK back to ac_beneficiaries when this member is also a registered citizen.
+            // NULL means the member exists only inline here (encoded by the admin, no portal account).
+            $table->foreignUlid('beneficiary_id')
+                ->nullable()
+                ->constrained('ac_beneficiaries')
+                ->nullOnDelete();
+
+            $table->boolean('is_active')->default(true); // false = moved out, never hard deleted
 
             $table->softDeletes();
             $table->timestamps();

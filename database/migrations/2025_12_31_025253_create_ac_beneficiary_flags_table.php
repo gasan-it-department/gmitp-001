@@ -10,32 +10,31 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('beneficiary_flags', function (Blueprint $table) {
-            $table->ulid('id')->primary(); // Consistent with your other tables using ULID
+        Schema::create('ac_beneficiary_flags', function (Blueprint $table) {
+            $table->ulid('id')->primary();
 
             $table->foreignUlid('beneficiary_id')
                 ->constrained('ac_beneficiaries')
-                ->onDelete('cascade');
+                ->cascadeOnDelete();
 
+            // Admin who raised the flag. Nullable if system-generated or if the admin is later removed.
             $table->foreignUlid('user_id')
-                ->nullable() // Nullable in case the user is deleted or system-generated
+                ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
 
             $table->string('reason');
-
-            // Severity level: 'warning' (proceed with caution) or 'blacklist' (do not serve)
-            $table->string('severity')->default('warning');
-
-            // Optional: Notes for internal details
+            $table->string('severity')->default('warning'); // warning | blacklist
             $table->text('notes')->nullable();
 
-            // When the flag effectively expires (optional, nullable means permanent)
+            // NULL = permanent flag. Otherwise the flag stops affecting eligibility after this time.
             $table->timestamp('expires_at')->nullable();
 
             $table->timestamps();
-        });
 
+            // The eligibility checker filters by (beneficiary_id, severity, expires_at) on every request.
+            $table->index(['beneficiary_id', 'severity', 'expires_at']);
+        });
     }
 
     /**
@@ -43,6 +42,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('beneficiary_flags');
+        Schema::dropIfExists('ac_beneficiary_flags');
     }
 };

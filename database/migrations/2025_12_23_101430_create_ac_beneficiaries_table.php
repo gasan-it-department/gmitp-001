@@ -23,7 +23,11 @@ return new class extends Migration {
             $table->string('sex')->nullable();
             $table->date('birth_date');
 
-            $table->string('religion')->nullable();
+            $table->foreignUlid('religion_id')
+                ->nullable()
+                ->constrained('ac_religions')
+                ->nullOnDelete();
+
             $table->string('educational_attainment')->nullable();
 
             $table->softDeletes();

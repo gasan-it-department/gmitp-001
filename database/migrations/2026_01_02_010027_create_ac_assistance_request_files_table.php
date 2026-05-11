@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('assistance_request_files', function (Blueprint $table) {
+        Schema::create('ac_assistance_request_files', function (Blueprint $table) {
             $table->ulid('id')->primary();
 
             $table->foreignUlid('assistance_request_id')
@@ -31,6 +31,9 @@ return new class extends Migration {
 
             $table->softDeletes();
             $table->timestamps();
+
+            // The form needs to check "did the citizen upload all required documents of type X?"
+            $table->index(['assistance_request_id', 'document_type']);
         });
     }
 
@@ -39,6 +42,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('assistance_request_files');
+        Schema::dropIfExists('ac_assistance_request_files');
     }
 };

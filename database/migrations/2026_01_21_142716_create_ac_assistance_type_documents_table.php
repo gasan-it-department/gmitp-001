@@ -21,6 +21,7 @@ return new class extends Migration {
                 ->cascadeOnDelete();
 
             $table->boolean('is_required')->default(true);
+            $table->unsignedInteger('sort_order')->default(0); // display order on the upload form
 
             $table->timestamps();
 

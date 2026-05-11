@@ -36,23 +36,45 @@ return new class extends Migration {
                 ->constrained('ac_assistance_types')
                 ->restrictOnDelete();
 
-            $table->text('amount')->nullable(); // Text is safer for long encrypted strings
+            // Reviewers / approvers — populated as the request moves through the workflow.
+            $table->foreignUlid('reviewed_by_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignUlid('approved_by_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            // Amount is NOT requested by the citizen. It is set only when the mayor / approver
+            // grants the assistance. Bounded by ac_assistance_types.min_amount / max_amount.
+            $table->decimal('amount_approved', 10, 2)->nullable();
 
             $table->string('transaction_number')->unique();
 
-            $table->string('status')->default('pending');
+            $table->string('status')->default('pending');  // pending | under_review | approved | released | rejected
 
-            $table->text('description')->nullable();
+            $table->text('description')->nullable();      // citizen's reason for the request
+            $table->text('remarks')->nullable();          // admin notes during review
 
-            //addresses
+            // Workflow timestamps. approved_at starts the cooldown clock.
+            $table->timestamp('approved_at')->nullable();
+            $table->timestamp('released_at')->nullable();
+
+            // Denormalized address snapshot — preserved per request even if household address changes.
             $table->string('province')->default('MARINDUQUE');
             $table->string('municipality');
             $table->string('barangay');
             $table->string('street')->nullable();
 
             $table->softDeletes();
-
             $table->timestamps();
+
+            // Indexes that the eligibility checker and admin dashboard will rely on heavily.
+            $table->index(['beneficiary_id', 'assistance_type_id', 'status', 'approved_at']);
+            $table->index(['household_id', 'assistance_type_id', 'status', 'approved_at']);
+            $table->index(['municipal_id', 'status', 'created_at']);
 
         });
     }
