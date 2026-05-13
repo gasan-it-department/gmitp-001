@@ -27,7 +27,6 @@ class CreateBeneficiaryProfileAction
             $household = Household::create([
                 'municipal_id' => $dto->municipalId,
                 'barangay' => $dto->barangay,
-                'barangay_psgc_code' => $dto->barangayCode,
                 'street' => $dto->street,
             ]);
 
@@ -42,10 +41,6 @@ class CreateBeneficiaryProfileAction
                 'birth_date' => $dto->birthDate,
                 'religion_id' => $dto->religionId,
                 'educational_attainment' => $dto->educationalAttainment,
-
-                // Data Privacy Act (RA 10173) consent record.
-                'terms_consented_at' => $dto->termsConsentedAt,
-                'terms_version' => $dto->termsVersion,
             ]);
         });
     }
