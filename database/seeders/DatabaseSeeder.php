@@ -27,6 +27,17 @@ class DatabaseSeeder extends Seeder
             ProcurementFundingSourceSeeder::class,
         ]);
 
+        // ── Action Center lookup tables ───────────────────────────────────────
+        // Run these once after the core seeders above.
+        // Order matters: DocumentTypes → AssistanceTypes (pivot depends on both).
+        //
+        $this->call([
+            ReligionSeeder::class,
+            AssistanceDocumentTypeSeeder::class,
+            AssistanceTypeSeeder::class,
+        ]);
+
+        // ── Fake / dev data (never run on production) ─────────────────────────
         // $this->call([
         //     ActionCenterSeeder::class,
         // ]);

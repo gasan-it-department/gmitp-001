@@ -4,7 +4,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\UseCase\Assistance\GetActiveDocumentTypesForDropdown;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceTypeAction;
-use App\External\Api\Resources\ActionCenter\AssistanceTypeDetails;
+use App\External\Api\Resources\ActionCenter\AssistanceTypeDetailsResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 
@@ -20,7 +20,7 @@ class EditAssistanceTypeController extends Controller
     {
         $assistance = $this->getAssistanceType->execute(app('municipal_id'), $typeId);
         return Inertia::render('ActionCenter/Admin/Assistance/Create/EditAssistanceType', [
-            'existingAssistance' => new AssistanceTypeDetails($assistance),
+            'existingAssistance' => new AssistanceTypeDetailsResource($assistance),
             'documentTypes' => $this->getActiveDocumentTypesForDropdown->execute(),
         ]);
     }

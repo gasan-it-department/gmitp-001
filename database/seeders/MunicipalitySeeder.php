@@ -32,7 +32,7 @@ class MunicipalitySeeder extends Seeder
         ];
 
         foreach ($municipalities as $data) {
-            Municipality::create(array_merge($data, ['id' => Str::ulid()]));
+            Municipality::firstOrCreate(array_merge($data, ['id' => Str::ulid()]));
         }
     }
 }

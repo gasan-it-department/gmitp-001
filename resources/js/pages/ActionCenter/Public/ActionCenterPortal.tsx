@@ -1,11 +1,9 @@
-import { ActionCenterForm } from '@/components/ActionCenter/RequestAssistanceBeneficiaryForm';
-import { LogInSignUpForm } from '@/components/LoginSignUpForm';
-import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AssistanceTypeListItem } from '@/Core/Types/ActionCenter/assistance';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import apply from '@/routes/actionCenter/apply';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Ambulance, Banknote, BookOpen, Bus, CalendarClock, FileText, HandHeart, Heart, ShieldCheck, Utensils, Wallet } from 'lucide-react';
@@ -30,7 +28,7 @@ const getAssistanceIcon = (name: string) => {
 
 export default function ActionCenterPortal({ assistanceTypes }: Props) {
     const assistanceData = assistanceTypes.data;
-
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [classicDialog, setClassicDialog] = useState({
@@ -67,52 +65,6 @@ export default function ActionCenterPortal({ assistanceTypes }: Props) {
                         The Municipal Action Center provides essential assistance to residents in need. Whether you need food, medical, financial, or
                         other support, we're here for you.
                     </p>
-
-                    <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
-                        {auth.user ? (
-                            <>
-                                <Button
-                                    size="lg"
-                                    className="h-14 bg-primary px-8 text-base font-black tracking-widest text-primary-foreground uppercase shadow-xl transition-all hover:scale-105 hover:bg-primary/90 active:scale-95"
-                                    onClick={() => setIsDialogOpen(true)}
-                                >
-                                    <HandHeart className="mr-2 h-5 w-5" />
-                                    Request Assistance
-                                </Button>
-
-                                <ActionCenterForm
-                                    onSubmitSuccess={(title, message) => {
-                                        setClassicDialog((prev) => ({
-                                            ...prev,
-                                            isOpen: true,
-                                            title: title,
-                                            message: message,
-                                            positiveButtonText: 'Close',
-                                            isNegativeButtonHidden: true,
-                                        }));
-                                    }}
-                                    isOpen={isDialogOpen}
-                                    onClose={() => setIsDialogOpen(false)}
-                                    editData={null}
-                                />
-                            </>
-                        ) : (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className="w-full sm:w-auto">
-                                            <div className="rounded-xl border border-border bg-background p-1 shadow-sm">
-                                                <LogInSignUpForm />
-                                            </div>
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="bg-foreground font-bold text-background">
-                                        <p>Please login before requesting for Assistance</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
-                    </div>
                 </div>
             </section>
 
@@ -130,60 +82,68 @@ export default function ActionCenterPortal({ assistanceTypes }: Props) {
                             <p className="text-lg font-medium text-muted-foreground">No assistance programs are currently active.</p>
                         </div>
                     ) : (
-                        <Link href="#">
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {activeAssistance.map((type) => {
-                                    const Icon = getAssistanceIcon(type.name);
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {activeAssistance.map((type) => {
+                                const Icon = getAssistanceIcon(type.name);
 
-                                    return (
-                                        <div
-                                            key={type.id}
-                                            className="group flex flex-col space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg"
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                                                    <Icon className="h-6 w-6" />
-                                                </div>
-                                            </div>
+                                // Each card routes to /{municipality}/action-center/apply/{slug}.
+                                // Wayfinder resolves both params — no Ziggy needed.
+                                const applyHref = auth.user
+                                    ? apply.assistance.url({ municipality: currentMunicipality.slug, assistanceType: type.slug })
+                                    : '#';
 
-                                            <div className="flex-1">
-                                                <h4
-                                                    className="line-clamp-2 text-lg font-bold tracking-tight text-foreground uppercase transition-colors group-hover:text-primary"
-                                                    title={type.name}
-                                                >
-                                                    {type.name}
-                                                </h4>
-
-                                                {/* 🎯 SENIOR TOUCH: Line-clamp keeps long Tagalog descriptions neat! */}
-                                                <p
-                                                    className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground"
-                                                    title={type.description}
-                                                >
-                                                    {type.description || 'No description available.'}
-                                                </p>
-                                            </div>
-
-                                            {/* 🎯 NEW: Business Rules displayed to the citizen */}
-                                            <div className="mt-auto flex flex-wrap gap-2 border-t border-border/50 pt-4">
-                                                {type.max_amount && Number(type.max_amount) > 0 && (
-                                                    <div className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-500/10 dark:text-green-400">
-                                                        <Banknote className="h-3.5 w-3.5" />
-                                                        Up to ₱{Number(type.max_amount).toLocaleString()}
-                                                    </div>
-                                                )}
-
-                                                {type.cooldown_months > 0 && (
-                                                    <div className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-                                                        <CalendarClock className="h-3.5 w-3.5" />
-                                                        {type.cooldown_months} Month Cooldown
-                                                    </div>
-                                                )}
+                                return (
+                                    <Link
+                                        key={type.id}
+                                        href={applyHref}
+                                        className="group flex flex-col space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg"
+                                        onClick={(e) => {
+                                            if (!auth.user) {
+                                                e.preventDefault();
+                                                setIsDialogOpen(true);
+                                            }
+                                        }}
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                                                <Icon className="h-6 w-6" />
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </Link>
+
+                                        <div className="flex-1">
+                                            <h4
+                                                className="line-clamp-2 text-lg font-bold tracking-tight text-foreground uppercase transition-colors group-hover:text-primary"
+                                                title={type.name}
+                                            >
+                                                {type.name}
+                                            </h4>
+
+                                            {/* 🎯 SENIOR TOUCH: Line-clamp keeps long Tagalog descriptions neat! */}
+                                            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground" title={type.description}>
+                                                {type.description || 'No description available.'}
+                                            </p>
+                                        </div>
+
+                                        {/* 🎯 NEW: Business Rules displayed to the citizen */}
+                                        <div className="mt-auto flex flex-wrap gap-2 border-t border-border/50 pt-4">
+                                            {type.max_amount && Number(type.max_amount) > 0 && (
+                                                <div className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-500/10 dark:text-green-400">
+                                                    <Banknote className="h-3.5 w-3.5" />
+                                                    Up to ₱{Number(type.max_amount).toLocaleString()}
+                                                </div>
+                                            )}
+
+                                            {type.cooldown_months > 0 && (
+                                                <div className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                                                    <CalendarClock className="h-3.5 w-3.5" />
+                                                    {type.cooldown_months} Month Cooldown
+                                                </div>
+                                            )}
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     )}
                 </div>
 

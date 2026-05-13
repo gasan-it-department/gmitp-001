@@ -47,6 +47,7 @@ return new class extends Migration {
                 ->constrained('users')
                 ->nullOnDelete();
 
+            $table->string('relationship_to_beneficiary')->nullable()->after('beneficiary_id');
             // Amount is NOT requested by the citizen. It is set only when the mayor / approver
             // grants the assistance. Bounded by ac_assistance_types.min_amount / max_amount.
             $table->decimal('amount_approved', 10, 2)->nullable();
@@ -62,11 +63,34 @@ return new class extends Migration {
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('released_at')->nullable();
 
-            // Denormalized address snapshot — preserved per request even if household address changes.
-            $table->string('province')->default('MARINDUQUE');
-            $table->string('municipality');
-            $table->string('barangay');
-            $table->string('street')->nullable();
+            // ── Data Privacy Act (RA 10173) consent record ───────────────────
+            // The citizen must explicitly tick the privacy notice on each apply
+            // submission. We persist *when* they consented and *which version*
+            // of the notice they agreed to so NPC accountability obligations
+            // can be satisfied without depending on log files.
+            $table->timestamp('privacy_consented_at');
+            $table->string('privacy_notice_version');
+
+            // ── Identity snapshot ────────────────────────────────────────────
+            // Frozen copy of ac_beneficiaries at submission time. If the citizen
+            // later edits their profile the historical request is unaffected.
+            $table->string('snapshot_first_name');
+            $table->string('snapshot_last_name');
+            $table->string('snapshot_middle_name')->nullable();
+            $table->string('snapshot_suffix')->nullable();
+            $table->string('snapshot_sex')->nullable();
+            $table->date('snapshot_birth_date')->nullable();
+            $table->string('snapshot_educational_attainment')->nullable();
+            $table->string('snapshot_religion')->nullable();
+
+            // ── Address snapshot ─────────────────────────────────────────────
+            // Frozen copy of ac_households at submission time. Province is
+            // omitted — municipal_id (above) pins the municipality and province
+            // is derivable. snapshot_barangay_psgc_code enables reliable GROUP BY
+            // queries without depending on name-string matching.
+            $table->string('snapshot_barangay')->nullable();
+            $table->string('snapshot_barangay_psgc_code')->nullable();
+            $table->string('snapshot_street')->nullable();
 
             $table->softDeletes();
             $table->timestamps();

@@ -2,66 +2,65 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
-use App\Core\ActionCenter\Enums\Sex;
+use App\Core\ActionCenter\Models\AssistanceType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rules\Enum;
 
+/**
+ * Validates the citizen's submission on POST /apply/{assistanceType:slug}.
+ *
+ * Auto-filled fields (name, sex, birthdate, address) are NOT accepted from the
+ * request — they are sourced from the authenticated user's beneficiary record
+ * inside the action. This guarantees the verified identity is always used.
+ *
+ * The citizen does NOT propose an amount. That is set only on approval.
+ */
 class StoreAssistanceRequest extends FormRequest
 {
-
     public function authorize(): bool
     {
+        // Auth gate is handled by the route middleware. By this point the user
+        // is known to be authenticated and within their own municipality context.
         return true;
     }
 
     public function rules(): array
     {
         $rules = [
-            // --- 1. Address Anchor ---
-            'barangay' => ['required', 'string', 'max:255'],
-            'street_or_purok' => ['nullable', 'string', 'max:255'],
-
-            // --- 2. Beneficiary (Actor) ---
-            'first_name' => ['required', 'string', 'max:255'],
-            'middle_name' => ['nullable', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'birth_date' => ['required', 'date', 'before:today'],
-            'sex' => ['required', new Enum(Sex::class)],
-
-            // --- 3. Request Details ---
-            'contact_number' => ['required', 'string', 'max:20'],
-            'assistance_type_id' => ['required', 'integer', 'exists:ac_assistance_types,id'],
-            'description' => ['required', 'string', 'max:1000'],
-
-            // --- 4. Legal ---
-            'privacy_consent' => ['required', 'accepted'], // 'accepted' forces it to be true/"on"/1
-
-            // Base array validation for documents
+            'description' => ['required', 'string', 'min:10', 'max:1000'],
+            'privacy_consent' => ['required', 'accepted'],
             'documents' => ['nullable', 'array'],
+
+            // ── Representative ("on behalf of") fields ───────────────────────
+            // All optional at the validator level. The action layer is responsible
+            // for cross-field rules (e.g. burial REQUIRES a representative + DOD).
+            'relationship_to_beneficiary' => ['nullable', 'in:spouse,parent,child,sibling'],
+            'on_behalf_first_name'        => ['nullable', 'string', 'max:100'],
+            'on_behalf_middle_name'       => ['nullable', 'string', 'max:100'],
+            'on_behalf_last_name'         => ['nullable', 'string', 'max:100'],
+            'on_behalf_suffix'            => ['nullable', 'string', 'max:20'],
+            'on_behalf_date_of_death'     => ['nullable', 'date', 'before_or_equal:today'],
         ];
 
-        // --- 5. The Magic: Dynamic Document Validation ---
-        // We only append these rules if they successfully selected an assistance type
-        $assistanceTypeId = $this->input('assistance_type_id');
+        // Dynamic document rules — one entry per ac_assistance_type_documents
+        // row for the resolved assistance type. Keys must match document_types.key.
+        $assistanceType = $this->route('assistanceType');
 
-        if ($assistanceTypeId) {
-            // Fetch the specific rules for this assistance type from our new pivot table
-            $requirements = DB::table('ac_assistance_document_requirements')
-                ->join('ac_document_types', 'ac_document_types.id', '=', 'ac_assistance_document_requirements.document_type_id')
-                ->where('assistance_type_id', $assistanceTypeId)
-                ->get(['ac_document_types.code', 'ac_assistance_document_requirements.is_mandatory']);
+        if ($assistanceType instanceof AssistanceType) {
+            $requirements = DB::table('ac_assistance_type_documents as atd')
+                ->join('ac_document_types as dt', 'dt.id', '=', 'atd.document_type_id')
+                ->where('atd.assistance_type_id', $assistanceType->id)
+                ->orderBy('atd.sort_order')
+                ->get(['dt.key', 'atd.is_required']);
 
-            foreach ($requirements as $requirement) {
-                // If the DB says it's mandatory, enforce 'required'. Otherwise, 'nullable'.
-                $enforcementRule = $requirement->is_mandatory ? 'required' : 'nullable';
+            foreach ($requirements as $req) {
+                $enforcement = $req->is_required ? 'required' : 'nullable';
 
-                // Define the exact file constraints (e.g., must be a file, max 5MB, specific types)
-                $rules["documents.{$requirement->code}"] = [
-                    $enforcementRule,
+                $rules["documents.{$req->key}"] = [
+                    $enforcement,
                     'file',
                     'mimes:jpg,jpeg,png,pdf',
-                    'max:5120' // 5MB in kilobytes
+                    'max:5120', // 5 MB
                 ];
             }
         }
@@ -69,4 +68,15 @@ class StoreAssistanceRequest extends FormRequest
         return $rules;
     }
 
+    public function messages(): array
+    {
+        return [
+            'description.required' => 'Please briefly explain why you are requesting assistance.',
+            'description.min' => 'Please give at least a few words about your situation.',
+            'privacy_consent.accepted' => 'You must agree to the Data Privacy notice to submit.',
+            'documents.*.required' => 'This document is required for the selected assistance type.',
+            'documents.*.mimes' => 'Allowed file types: JPG, PNG, PDF.',
+            'documents.*.max' => 'Each file must be 5 MB or smaller.',
+        ];
+    }
 }

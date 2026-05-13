@@ -16,6 +16,12 @@ return new class extends Migration {
                 ->constrained('ac_households')
                 ->cascadeOnDelete();
 
+            $table->foreignUlid('user_id')
+                ->nullable()
+                ->after('id')
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->string('first_name');
             $table->string('last_name');
             $table->string('middle_name')->nullable();
@@ -29,6 +35,14 @@ return new class extends Migration {
                 ->nullOnDelete();
 
             $table->string('educational_attainment')->nullable();
+
+            // ── Data Privacy Act (RA 10173) consent record ───────────────────
+            // Captured at profile-setup time. The citizen agreed to MSWD's terms
+            // of registration + general privacy notice in order to be enrolled
+            // in the beneficiary registry. Per-application consent is recorded
+            // separately on ac_assistance_requests.
+            $table->timestamp('terms_consented_at');
+            $table->string('terms_version');
 
             $table->softDeletes();
             $table->timestamps();
@@ -45,3 +59,4 @@ return new class extends Migration {
         Schema::dropIfExists('ac_beneficiaries');
     }
 };
+

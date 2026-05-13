@@ -20,8 +20,7 @@ return new class extends Migration {
             // A generated reference code for MSWD (e.g., GASAN-HH-26-0001)
             $table->string('household_code')->unique()->nullable();
 
-            $table->string('province')->default('MARINDUQUE');
-            $table->string('municipality');
+            $table->string('barangay_psgc_code')->nullable();
             $table->string('barangay');
             $table->string('street')->nullable();
 

@@ -78,8 +78,8 @@ class LoginUser
             null,
             'Session',
             $sessionData['expires_in'],
-            $redirectUrl,
             $users,
+            $redirectUrl,
         );
 
     }

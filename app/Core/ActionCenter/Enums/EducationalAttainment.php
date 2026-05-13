@@ -14,4 +14,25 @@ enum EducationalAttainment: string
     case COLLEGE_UNDERGRAD = 'College Undergrad.';
     case COLLEGE_GRADUATE = 'College Graduate';
     case VOCATIONAL = 'Vocational Training';
+
+    /**
+     * Returns the human-readable label.
+     */
+    public function label(): string
+    {
+        // Since your backing values (the strings on the right) are already 
+        // human-readable, we can just return the value itself.
+        return $this->value;
+    }
+
+    /**
+     * Transforms the enum into an array for frontend dropdowns.
+     */
+    public static function toOptions(): array
+    {
+        return array_map(fn(self $case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+        ], self::cases());
+    }
 }

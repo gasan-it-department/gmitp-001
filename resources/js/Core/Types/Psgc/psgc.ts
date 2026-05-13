@@ -16,5 +16,6 @@ export interface PsgcMunicipality {
 
 export interface PsgcBarangay {
     id: number;
+    psgc_code: string;
     name: string;
 }

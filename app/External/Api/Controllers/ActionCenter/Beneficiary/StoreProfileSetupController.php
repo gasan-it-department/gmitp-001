@@ -1,0 +1,47 @@
+<?php
+
+namespace App\External\Api\Controllers\ActionCenter\Beneficiary;
+
+use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
+use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
+use App\External\Web\Request\ActionCenter\StoreProfileSetupRequest;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
+
+/**
+ * Handles the one-time profile setup form submission for a new portal citizen.
+ *
+ * Route: POST /{municipality}/action-center/profile/setup
+ *
+ * Sits in the Api\Controllers layer because it mutates the database
+ * (creates ac_households + ac_beneficiaries in a transaction).
+ *
+ * Returns a redirect() so Inertia can process the response correctly.
+ */
+class StoreProfileSetupController extends Controller
+{
+    public function __construct(
+        private readonly CreateBeneficiaryProfileAction $createProfile,
+    ) {
+    }
+
+    public function __invoke(
+        StoreProfileSetupRequest $request,
+    ): RedirectResponse {
+
+        $municipality = app('current_municipality');
+
+        $dto = CreateBeneficiaryProfileDto::fromArray(
+            $request->validated(),
+            $request->user()->id,
+            $municipality->id,
+        );
+
+        $this->createProfile->execute($dto);
+
+        $fallback = route('actionCenter.portal', ['municipality' => $municipality->slug]);
+
+        return redirect(session()->pull('url.intended', $fallback))
+            ->with('success', 'Profile saved! You can now apply for assistance.');
+    }
+}

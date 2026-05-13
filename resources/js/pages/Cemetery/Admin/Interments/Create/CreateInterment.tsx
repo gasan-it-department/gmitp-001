@@ -1,4 +1,3 @@
-import Interments from '@/actions/App/External/Api/Controllers/Cemetery/Interments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,17 +30,17 @@ export default function CreateIntermentForm({ municipality }: any) {
     function submit(e: React.FormEvent) {
         e.preventDefault();
 
-        post(Interments.RegisterIntermentsController.url(), {
-            headers: {
-                'X-Municipality-Slug': municipality.slug, // Replace with your actual header key and value
-            },
-            onSuccess: () => {
-                // Success logic
-            },
-            onError: (errors) => {
-                console.error('Submission failed:', errors);
-            },
-        });
+        // post(Interments.RegisterIntermentsController.url(), {
+        //     headers: {
+        //         'X-Municipality-Slug': municipality.slug, // Replace with your actual header key and value
+        //     },
+        //     onSuccess: () => {
+        //         // Success logic
+        //     },
+        //     onError: (errors) => {
+        //         console.error('Submission failed:', errors);
+        //     },
+        // });
     }
 
     return (

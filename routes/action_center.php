@@ -1,21 +1,20 @@
 <?php
 
-use App\External\Api\Controllers\ActionCenter\ActionCenterController;
 use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
-use App\External\Api\Controllers\ActionCenter\AssistanceRequestController;
-use App\External\Api\Controllers\ActionCenter\BeneficiaryFlagController;
 use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
-use App\External\Web\Controllers\ActionCenter\Client\AssistanceRequestPageController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
 use App\External\Web\Controllers\ActionCenter\Public\ApplyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\IndexAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
+use App\External\Web\Controllers\ActionCenter\Public\ShowProfileSetupController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('{municipality}/action-center')
@@ -43,6 +42,11 @@ Route::prefix('{municipality}/action-center')
             Route::get('edit/assistance-type/{id}', EditAssistanceTypeController::class)->name('edit.assistance-type');
         });
 
+        // Profile setup wizard — first-time users only.
+        //   GET  /{municipality}/action-center/profile/setup  → show the form
+        //   POST /{municipality}/action-center/profile/setup  → save and redirect to portal
+        Route::get('/profile/setup', ShowProfileSetupController::class)->name('profile.setup');
+
         //eg. https://gasan-4905/action-center/beneficiary
         Route::get('/portal', IndexAssistanceRequestController::class)->name('portal');
 
@@ -50,9 +54,15 @@ Route::prefix('{municipality}/action-center')
 
         Route::get('/household', [HouseholdController::class, 'index'])->name('household.index');
 
-        // Route::get('/create-request', [AssistanceRequestPageController::class, 'create'])->name('create.request');
-    
-        Route::get('/apply/assistance-request/', ApplyAssistanceRequestController::class)->name('apply.assistance');
+        // Apply for assistance — slug-resolved, scoped to the current municipality
+        // via AssistanceType::resolveRouteBinding().
+        //   GET  /{municipality}/action-center/apply/medical   → renders the form
+        //   POST /{municipality}/action-center/apply/medical   → submits the request
+        Route::get('/apply/{assistanceType:slug}', ApplyAssistanceRequestController::class)
+            ->name('apply.assistance');
+
+        Route::post('/apply/{assistanceType:slug}', StoreAssistanceRequestController::class)
+            ->name('apply.assistance.store');
 
     });
 
@@ -63,21 +73,10 @@ Route::prefix('{municipality}/action-center')
 //eg. https://api/action-center
 Route::prefix('/api/action-center')
     ->name('actionCenter.')
-    ->controller(ActionCenterController::class)
     ->group(function () {
 
         Route::middleware(['municipalityContext', 'admin'])
             ->group(function () {
-
-                Route::get('/', 'fetch')->name('fetch');
-
-                Route::get('/status-labels', 'getStatusList')->name('status');
-
-                Route::put('/set-amount/{id}', [AssistanceRequestController::class, 'setAmount'])->name('setAmount');
-
-                Route::post('/beneficiaries/{id}/flag', [BeneficiaryFlagController::class, 'store'])
-                    ->name('beneficiaries.flag');
-
                 Route::post('store/assistance-type', StoreAssistanceTypeController::class)->name('assistance.type.store');
 
                 Route::put('update/assistance-type/{typeId}', UpdateAssistanceTypeController::class)->name('assistance.type.update');
@@ -86,20 +85,7 @@ Route::prefix('/api/action-center')
         Route::middleware(['auth', 'municipalityContext'])
             ->group(function () {
 
-                Route::get('/mine', 'fetchMine')->name('mine');
-
-                Route::post('/', 'store')->name('store');
-
-                Route::put('/{id}', 'update')->name('update');
-
-                Route::post('/{municipality}/action-center/requests/{id}/cancel', [AssistanceRequestController::class, 'cancel'])
-                    ->name('citizen.action-center.cancel');
-
-                Route::get('/{id}', 'show')->name('show');
-
-                Route::get('/assistance/types', 'getAssistanceTypesList')->name('assistanceTypes');
-
-                Route::put('/cancel/{id}', CancelAssistanceRequestController::class)->name('assistance.cancel');
+                Route::post('/profile/setup', StoreProfileSetupController::class)->name('profile.setup.store');
 
 
             });

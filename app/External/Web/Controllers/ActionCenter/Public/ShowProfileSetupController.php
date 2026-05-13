@@ -1,0 +1,29 @@
+<?php
+
+namespace App\External\Web\Controllers\ActionCenter\Public;
+
+use App\Core\ActionCenter\Enums\EducationalAttainment;
+use App\Core\ActionCenter\Models\Religion;
+use App\Http\Controllers\Controller;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/**
+ * Renders the one-time profile setup form for first-time portal users.
+ *
+ * Route: GET /{municipality}/action-center/profile/setup
+ *
+ * Passes religion options from the DB so the frontend dropdown
+ * is never hardcoded — MSWD can manage entries without a deploy.
+ */
+class ShowProfileSetupController extends Controller
+{
+    public function __invoke(string $municipality): Response
+    {
+        return Inertia::render('ActionCenter/Client/Apply/ProfileSetUpWizard', [
+            'religions' => Religion::active()->get(['id', 'name']),
+            'educationalAttainment' => EducationalAttainment::toOptions(),
+            'submitUrl' => route('actionCenter.profile.setup.store'),
+        ]);
+    }
+}

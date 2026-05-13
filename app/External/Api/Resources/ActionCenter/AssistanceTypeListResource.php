@@ -16,11 +16,12 @@ class AssistanceTypeListResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'slug' => $this->slug, // used by the portal card to link to /apply/{slug}
 
             'name' => $this->name,
             'description' => $this->description,
             'is_active' => (bool) $this->is_active,
-            'max_amount' => (float) $this->max_amount,
+            'max_amount' => $this->max_amount !== null ? (float) $this->max_amount : null,
             'cooldown_months' => (int) $this->cooldown_months,
 
             // 🎯 SENIOR MOVE: The Safe Count

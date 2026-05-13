@@ -3,10 +3,15 @@ import { PsgcBarangay } from '@/Core/Types/Psgc/psgc';
 import psgc from '@/routes/psgc';
 import { useEffect, useState } from 'react';
 
+interface BarangaySelection {
+    name: string;
+    psgc_code: string;
+}
+
 interface BarangaySelectProps {
     municipalityId: string;
     value: string;
-    onChange: (value: string) => void;
+    onChange: (selection: BarangaySelection) => void;
     disabled?: boolean;
 }
 
@@ -27,13 +32,20 @@ export function BarangaySelect({ municipalityId, value, onChange, disabled }: Ba
     return (
         <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700">Barangay</label>
-            <Select disabled={disabled || !municipalityId} value={value} onValueChange={onChange}>
+            <Select
+                disabled={disabled || !municipalityId}
+                value={value}
+                onValueChange={(code) => {
+                    const found = barangays.find((b) => b.psgc_code === code);
+                    if (found) onChange({ name: found.name, psgc_code: found.psgc_code });
+                }}
+            >
                 <SelectTrigger>
                     <SelectValue placeholder="Select Barangay..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] overflow-y-auto">
                     {barangays.map((b) => (
-                        <SelectItem key={b.id} value={String(b.id)}>
+                        <SelectItem key={b.id} value={b.psgc_code}>
                             {b.name}
                         </SelectItem>
                     ))}
