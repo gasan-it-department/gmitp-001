@@ -29,17 +29,24 @@ class StoreAssistanceRequest extends FormRequest
         $rules = [
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'privacy_consent' => ['required', 'accepted'],
-            'documents' => ['nullable', 'array'],
+            // The frontend sends `documents` as a flat dictionary keyed by
+            // ac_document_types.key — `documents[cert_of_indigency] = <File>`.
+            // Per-key rules are appended dynamically below based on the
+            // selected assistance type's required documents.
+            'documents' => ['required', 'array', 'min:1'],
 
             // ── Representative ("on behalf of") fields ───────────────────────
             // All optional at the validator level. The action layer is responsible
-            // for cross-field rules (e.g. burial REQUIRES a representative + DOD).
+            // for cross-field rules (e.g. burial REQUIRES a representative + DOD)
+            // and for verifying that the chosen household member belongs to the
+            // filer's own household.
             'relationship_to_beneficiary' => ['nullable', 'in:spouse,parent,child,sibling'],
-            'on_behalf_first_name'        => ['nullable', 'string', 'max:100'],
-            'on_behalf_middle_name'       => ['nullable', 'string', 'max:100'],
-            'on_behalf_last_name'         => ['nullable', 'string', 'max:100'],
-            'on_behalf_suffix'            => ['nullable', 'string', 'max:20'],
-            'on_behalf_date_of_death'     => ['nullable', 'date', 'before_or_equal:today'],
+            'on_behalf_household_member_id' => ['nullable', 'ulid', 'exists:ac_household_members,id'],
+            'on_behalf_first_name' => ['nullable', 'string', 'max:100'],
+            'on_behalf_middle_name' => ['nullable', 'string', 'max:100'],
+            'on_behalf_last_name' => ['nullable', 'string', 'max:100'],
+            'on_behalf_suffix' => ['nullable', 'string', 'max:20'],
+            'on_behalf_date_of_death' => ['nullable', 'date', 'before_or_equal:today'],
         ];
 
         // Dynamic document rules — one entry per ac_assistance_type_documents

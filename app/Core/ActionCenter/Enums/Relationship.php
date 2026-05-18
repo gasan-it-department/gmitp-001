@@ -31,12 +31,27 @@ enum Relationship: string
         };
     }
 
-    public static function toOptions()
+    /**
+     * Drives the relationship selector on the citizen Apply form.
+     *
+     * Returns one row per enum case in display order:
+     *   - value              → submitted in the request payload
+     *   - label              → button text shown to the citizen
+     *   - requires_legal_age → drives the "Must be 18+" pill and the
+     *                          under-age guard on the frontend, so the
+     *                          legal-age rule is sourced from this enum
+     *                          (single source of truth) instead of being
+     *                          duplicated client-side.
+     *
+     * @return array<int, array{value: string, label: string, requires_legal_age: bool}>
+     */
+    public static function toOptions(): array
     {
         return collect(self::cases())
-            ->map(fn($cases) => [
-                'label' => $cases->label(),
-                'value' => $cases->value,
+            ->map(fn (self $case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+                'requires_legal_age' => $case->requiresLegalAge(),
             ])
             ->toArray();
     }

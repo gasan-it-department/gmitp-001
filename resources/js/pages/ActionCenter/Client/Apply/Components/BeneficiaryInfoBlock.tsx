@@ -1,10 +1,10 @@
 import { BeneficiarySummary, HouseholdSummary } from '@/Core/Types/ActionCenter/assistance';
-import { Lock, User } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import { Lock, User } from 'lucide-react';
 
 interface Props {
-    beneficiary: BeneficiarySummary;
-    household: HouseholdSummary;
+    beneficiary: { data: BeneficiarySummary };
+    household: { data: HouseholdSummary };
     editProfileUrl?: string;
 }
 
@@ -15,9 +15,12 @@ interface Props {
  * to amend them.
  */
 export function BeneficiaryInfoBlock({ beneficiary, household, editProfileUrl }: Props) {
-    const fullAddress = [household.street, household.barangay, household.municipality, household.province]
-        .filter(Boolean)
-        .join(', ');
+    // Most-specific → least-specific. `municipality` arrives from the tenant
+    // binding via HouseholdDetailsResource; province is omitted (not stored,
+    // single-province deployment).
+    const beneData = beneficiary.data;
+    const householdData = household.data;
+    const fullAddress = [householdData.street, householdData.barangay, householdData.municipality].filter(Boolean).join(', ');
 
     return (
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -34,9 +37,9 @@ export function BeneficiaryInfoBlock({ beneficiary, household, editProfileUrl }:
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Full name" value={beneficiary.full_name || '—'} />
-                <Field label="Sex" value={beneficiary.sex ?? '—'} className="capitalize" />
-                <Field label="Date of birth" value={beneficiary.birth_date ?? '—'} />
+                <Field label="Full name" value={beneData.full_name || '—'} />
+                <Field label="Sex" value={beneData.sex ?? '—'} className="capitalize" />
+                <Field label="Date of birth" value={beneData.birth_date ?? '—'} />
                 <Field label="Home address" value={fullAddress || '—'} />
             </div>
 

@@ -43,6 +43,17 @@ export interface AssistanceTypeDetails {
     documents: AssistanceDocumentRequirement[];
 }
 
+/**
+ * One row of the relationship selector on the Apply form. Mirrors
+ * App\Core\ActionCenter\Enums\Relationship::toOptions() exactly — the
+ * `requires_legal_age` flag is authoritative for the "Must be 18+" rule.
+ */
+export interface RelationshipOption {
+    value: string;
+    label: string;
+    requires_legal_age: boolean;
+}
+
 /** Auto-filled identity block shown on the Apply form (read-only). */
 export interface BeneficiarySummary {
     id: string;
@@ -55,13 +66,36 @@ export interface BeneficiarySummary {
     birth_date: string | null;
 }
 
-/** Auto-filled household address snapshot. */
+/**
+ * Auto-filled household address shown on the Apply form (read-only).
+ * Mirrors HouseholdDetailsResource exactly:
+ *   - `municipality` is sourced server-side from the tenant binding, not from
+ *     ac_households (the column was dropped).
+ *   - `province` is intentionally absent — not stored anywhere; the deployment
+ *     is single-province for now.
+ */
 export interface HouseholdSummary {
     id: string;
-    province: string;
-    municipality: string;
     barangay: string;
+    barangay_psgc_code?: string | null;
+    municipality: string | null;
     street: string | null;
+}
+
+/**
+ * Mirrors HouseholdMemberOptionResource. One entry per active member of the
+ * filer's household — the picker on the Apply form uses these to let the
+ * citizen file on behalf of an existing family member without retyping
+ * names. `relationship` is one of the Relationship enum values.
+ */
+export interface HouseholdMemberOption {
+    id: string;
+    first_name: string;
+    middle_name: string | null;
+    last_name: string;
+    suffix: string | null;
+    relationship: string | null;
+    birth_date: string | null;
 }
 
 /**

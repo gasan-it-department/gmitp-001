@@ -1,241 +1,236 @@
-import { ActionCenterForm } from '@/components/ActionCenter/RequestAssistanceBeneficiaryForm';
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import type { ActionCenterFormData, AssistanceRequest } from '@/Core/Types/ActionCenter/AssistanceRequestTypes';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import PaginationView from '@/pages/Utility/PaginationView';
-import ToastProvider from '@/pages/Utility/ToastShower';
-import { ToExcel } from '@/pages/Utility/ToExcel';
 import Utility from '@/pages/Utility/Utility';
-import ActionCenter from '@/routes/actionCenter/admin';
-import { router } from '@inertiajs/react';
-import { Eye, Pencil, Printer } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import AssistanceRequestDetails from '../../RequestDetails/AssistanceRequestsDetails';
-import Header from './Header';
-import PrintView from './PrintView';
+import { Eye } from 'lucide-react';
 
-interface PaginationMeta {
-    current_page: number;
-    from: number;
-    last_page: number;
-    per_page: number;
-    to: number;
-    total: number;
+// ─────────────────────────────────────────────────────────────────────────────
+// Types — mirror AssistanceRequestListResource exactly. Re-export so the
+// parent page can type its props without duplicating the shape.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface AssistanceRequestListItem {
+    id: string;
+    transaction_number: string;
+    status: string;
+
+    assistance_type_id: string;
+    assistance_type?: {
+        id: string;
+        name: string;
+        slug: string;
+    };
+
+    amount_approved: number | null;
+    submitted_at: string | null;
+    approved_at: string | null;
+    released_at: string | null;
+
+    filed_for_self: boolean;
+    relationship: { value: string; label: string } | null;
+    subject_full_name: string;
+    is_walkin: boolean;
+
+    snapshot_barangay: string | null;
+    snapshot_barangay_psgc_code: string | null;
+
+    beneficiary_id: string;
+    household_id: string;
+
+    documents_count?: number;
+    documents_uploaded?: string[];
+
+    created_at: string | null;
+    updated_at: string | null;
 }
 
-export interface AssistanceApiResponse {
-    data: AssistanceRequest[];
-    meta: PaginationMeta;
-    links: any;
+export interface PaginatorMeta {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+    links: { url: string | null; label: string; active: boolean }[];
+}
+
+export interface AssistanceRequestPaginator {
+    data: AssistanceRequestListItem[];
+    meta: PaginatorMeta;
+    links: { first: string | null; last: string | null; prev: string | null; next: string | null };
 }
 
 interface Props {
-    data: AssistanceApiResponse;
-    filters?: any;
+    paginator: AssistanceRequestPaginator;
+    /** Callback when the admin clicks the row's View action.
+     *  The page wires this to navigate to the request detail route. */
+    onView?: (row: AssistanceRequestListItem) => void;
 }
 
-export function AssistanceRequestTable({ data, filters }: Props) {
-    const { currentMunicipality } = useMunicipality();
+// ─────────────────────────────────────────────────────────────────────────────
+// Status badge palette — UI-only mapping. Backend stores the raw string.
+// ─────────────────────────────────────────────────────────────────────────────
 
-    // --- 1. DATA MAPPING HELPER ---
-    // Converts nested AssistanceRequest to flat ActionCenterFormData
-    const mapToFormData = (req: AssistanceRequest | null): ActionCenterFormData | null => {
-        if (!req) return null;
-        return {
-            first_name: req.beneficiary?.first_name || '',
-            middle_name: req.beneficiary?.middle_name || '',
-            last_name: req.beneficiary?.last_name || '',
-            suffix: req.beneficiary?.suffix || '',
-            birth_date: req.beneficiary?.birth_date || '',
-            province: req.beneficiary?.province || '',
-            municipality: req.beneficiary?.municipality || '',
-            barangay: req.beneficiary?.barangay || '',
-            assistance_type: req.assistance_type || '',
-            description: req.description || '',
-            documents: [],
-        };
-    };
+const STATUS_BADGE: Record<string, string> = {
+    pending:      'bg-amber-100  text-amber-800  ring-1 ring-amber-200',
+    under_review: 'bg-sky-100    text-sky-800    ring-1 ring-sky-200',
+    approved:     'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
+    released:     'bg-blue-100   text-blue-800   ring-1 ring-blue-200',
+    rejected:     'bg-rose-100   text-rose-800   ring-1 ring-rose-200',
+    cancelled:    'bg-gray-100   text-gray-700   ring-1 ring-gray-200',
+};
 
-    // --- 2. STATES ---
-    const [isAddNewRecordDialogOpen, setIsAddNewRecordDialogOpen] = useState<{
-        isOpen: boolean;
-        editData: AssistanceRequest | null;
-    }>({
-        isOpen: false,
-        editData: null,
-    });
+function statusClass(status: string): string {
+    return STATUS_BADGE[status] ?? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
+}
 
-    const [detailsView, setDetailsView] = useState<{
-        data: AssistanceRequest | null;
-        isOpen: boolean;
-    }>({
-        data: null,
-        isOpen: false,
-    });
+function humanizeStatus(status: string): string {
+    return status.replace(/_/g, ' ');
+}
 
-    const [printDialogState, setPrintDialogState] = useState<{
-        isVisible: boolean;
-        request: AssistanceRequest | null;
-    }>({ isVisible: false, request: null });
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 
-    const [classicDialog, setClassicDialog] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        positiveButtonText: '',
-        negativeButtonText: '',
-        isNegativeButtonHidden: true,
-        action: null,
-    });
+/**
+ * Renders rows of assistance requests for the admin queue.
+ *
+ * Columns are tuned for an MSWD reviewer scanning the inbox:
+ *  - Ref no. + Submitted date          → identification + recency
+ *  - Subject (with on-behalf hint)     → who would receive the assistance
+ *  - Program + Barangay                → eligibility / area filters
+ *  - Status + Amount                   → workflow at a glance
+ *  - Docs                              → "did they actually attach the required IDs?"
+ *  - View                              → open the detail page
+ *
+ * The component is presentation-only. Filters, pagination, and routing live
+ * in the parent page so this table is reusable.
+ */
+export function AssistanceRequestTable({ paginator, onView }: Props) {
+    const rows = paginator?.data ?? [];
+    const meta = paginator?.meta;
 
-    // --- 3. DATA HELPERS ---
-    const requestList = data?.data || [];
-    const meta = data?.meta || { current_page: 1, last_page: 1, per_page: 15, total: 0, from: 0, to: 0 };
-
-    const handlePageChange = (page: number) => {
-        const targetUrl = ActionCenter.index.url({ municipality: currentMunicipality.slug });
-        router.get(targetUrl, { page: page, ...filters }, { preserveState: true, preserveScroll: true, only: ['requests'] });
-    };
-
-    const handleReload = () => {
-        router.reload({ only: ['requests'] });
-    };
-
-    const getStatusBadgeColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'approved':
-                return 'bg-green-100 text-green-700';
-            case 'rejected':
-                return 'bg-red-100 text-red-700';
-            case 'in_review':
-                return 'bg-blue-100 text-blue-700';
-            case 'completed':
-                return 'bg-emerald-100 text-emerald-700';
-            default:
-                return 'bg-yellow-100 text-yellow-700';
-        }
-    };
-
-    if (detailsView.isOpen) {
-        return <AssistanceRequestDetails data={detailsView.data} onBackPressed={() => setDetailsView({ isOpen: false, data: null })} />;
-    }
+    const utils = Utility();
 
     return (
         <div className="flex h-full flex-col">
-            {/* HEADER */}
-            <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight text-balance">Request Records</h1>
-                <Header
-                    className="flex justify-end"
-                    sortList={[
-                        { label: 'Name', value: 'first_name' },
-                        { label: 'Date', value: 'created_at' },
-                        { label: 'Transaction', value: 'transaction_number' },
-                        { label: 'Status', value: 'status' },
-                    ]}
-                    onAddNewButtonClicked={() => setIsAddNewRecordDialogOpen({ isOpen: true, editData: null })}
-                    onExportButtonClicked={() => {
-                        if (requestList.length === 0) return toast('No data to export');
-                        setClassicDialog({
-                            isOpen: true,
-                            title: 'Export File',
-                            message: 'Export list as .xlsx?',
-                            positiveButtonText: 'Export',
-                            negativeButtonText: 'Cancel',
-                            isNegativeButtonHidden: false,
-                            action: 'file_export' as any,
-                        });
-                    }}
-                    onSearch={(query) => console.log('Searching:', query)}
-                />
-            </div>
-
-            {/* TABLE */}
             <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur">
                         <TableRow>
-                            <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">No.</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Beneficiary</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Date</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Type</TableHead>
+                            <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">#</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Ref No.</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Subject</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Program</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Barangay</TableHead>
                             <TableHead className="text-xs font-bold text-gray-700">Status</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Amount</TableHead>
-                            <TableHead className="text-center text-xs font-bold text-gray-700">Actions</TableHead>
+                            <TableHead className="text-xs font-bold text-gray-700">Submitted</TableHead>
+                            <TableHead className="text-right text-xs font-bold text-gray-700">Amount</TableHead>
+                            <TableHead className="text-center text-xs font-bold text-gray-700">Docs</TableHead>
+                            <TableHead className="w-16 text-center text-xs font-bold text-gray-700">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
-                        {requestList.length === 0 ? (
-                            <AdminEmptyListItem colSpan={8} title="No records found." message="Action center records will show here." />
+                        {rows.length === 0 ? (
+                            <AdminEmptyListItem
+                                colSpan={10}
+                                title="No assistance requests found."
+                                message="Filed requests will appear here. Try adjusting filters above."
+                            />
                         ) : (
-                            requestList.map((req, index) => {
-                                const rowNumber = (meta.current_page - 1) * meta.per_page + (index + 1);
+                            rows.map((row, index) => {
+                                const rowNumber = meta
+                                    ? (meta.current_page - 1) * meta.per_page + (index + 1)
+                                    : index + 1;
+
                                 return (
-                                    <ContextMenu key={req.id}>
-                                        <ContextMenuTrigger asChild>
-                                            <TableRow className="group transition-colors hover:bg-gray-50">
-                                                <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
-                                                <TableCell className="text-xs font-medium text-gray-900 capitalize">
-                                                    {req.beneficiary ? (
-                                                        `${req.beneficiary.first_name} ${req.beneficiary.last_name}`
-                                                    ) : (
-                                                        <span className="text-gray-400 italic">No Beneficiary</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-xs text-gray-600">
-                                                    {Utility().formatToReadableDateNoTime(req.created_at)}
-                                                </TableCell>
-                                                <TableCell className="text-xs text-gray-600">{req.assistance_type}</TableCell>
-                                                <TableCell className="font-mono text-xs text-gray-500">{req.transaction_number}</TableCell>
-                                                <TableCell>
-                                                    <span
-                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${getStatusBadgeColor(req.status)}`}
-                                                    >
-                                                        {req.status.replace('_', ' ')}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="text-xs font-semibold text-gray-700">
-                                                    {Utility().formatCurrency(req.amount)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex justify-center gap-2">
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                                                            onClick={() => setDetailsView({ isOpen: true, data: req })}
-                                                        >
-                                                            <Eye size={16} />
-                                                        </Button>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
-                                                            onClick={() => setIsAddNewRecordDialogOpen({ isOpen: true, editData: req })}
-                                                        >
-                                                            <Pencil size={16} />
-                                                        </Button>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-green-600 hover:bg-green-50"
-                                                            disabled={req.status === 'pending'}
-                                                            onClick={() => setPrintDialogState({ isVisible: true, request: req })}
-                                                        >
-                                                            <Printer size={16} />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        </ContextMenuTrigger>
-                                    </ContextMenu>
+                                    <TableRow
+                                        key={row.id}
+                                        className="group transition-colors hover:bg-gray-50"
+                                    >
+                                        {/* # */}
+                                        <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
+
+                                        {/* Ref No. */}
+                                        <TableCell className="font-mono text-xs font-semibold text-gray-800">
+                                            {row.transaction_number}
+                                        </TableCell>
+
+                                        {/* Subject — full name + filing-context hint */}
+                                        <TableCell className="text-xs">
+                                            <div className="font-medium text-gray-900 capitalize">
+                                                {row.subject_full_name || <span className="text-gray-400 italic">No name</span>}
+                                            </div>
+                                            {!row.filed_for_self && row.relationship && (
+                                                <div className="mt-0.5 text-[10px] font-medium tracking-wide text-blue-700 uppercase">
+                                                    via {row.relationship.label}
+                                                </div>
+                                            )}
+                                            {row.is_walkin && (
+                                                <div className="mt-0.5 text-[10px] font-medium tracking-wide text-purple-700 uppercase">
+                                                    walk-in
+                                                </div>
+                                            )}
+                                        </TableCell>
+
+                                        {/* Program */}
+                                        <TableCell className="text-xs text-gray-700">
+                                            {row.assistance_type?.name ?? (
+                                                <span className="text-gray-400 italic">—</span>
+                                            )}
+                                        </TableCell>
+
+                                        {/* Barangay */}
+                                        <TableCell className="text-xs text-gray-600 capitalize">
+                                            {row.snapshot_barangay ?? <span className="text-gray-400 italic">—</span>}
+                                        </TableCell>
+
+                                        {/* Status */}
+                                        <TableCell>
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${statusClass(row.status)}`}
+                                            >
+                                                {humanizeStatus(row.status)}
+                                            </span>
+                                        </TableCell>
+
+                                        {/* Submitted */}
+                                        <TableCell className="text-xs whitespace-nowrap text-gray-600">
+                                            {utils.formatToReadableDateNoTime(row.submitted_at ?? undefined)}
+                                        </TableCell>
+
+                                        {/* Amount */}
+                                        <TableCell className="text-right text-xs font-semibold whitespace-nowrap text-gray-800">
+                                            {row.amount_approved !== null
+                                                ? utils.formatCurrency(row.amount_approved)
+                                                : <span className="text-gray-400">—</span>}
+                                        </TableCell>
+
+                                        {/* Documents — count badge with collection-key tooltip */}
+                                        <TableCell className="text-center">
+                                            <DocumentsBadge
+                                                count={row.documents_count}
+                                                uploaded={row.documents_uploaded}
+                                            />
+                                        </TableCell>
+
+                                        {/* Actions */}
+                                        <TableCell>
+                                            <div className="flex justify-center">
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                                    onClick={() => onView?.(row)}
+                                                    aria-label={`View ${row.transaction_number}`}
+                                                >
+                                                    <Eye size={16} />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
                                 );
                             })
                         )}
@@ -243,59 +238,47 @@ export function AssistanceRequestTable({ data, filters }: Props) {
                 </Table>
             </div>
 
-            <div className="mt-4">
-                <PaginationView
-                    currentPage={meta.current_page}
-                    totalPages={meta.last_page}
-                    totalItems={meta.total}
-                    itemsPerPage={meta.per_page}
-                    onPageChange={handlePageChange}
-                />
-            </div>
-
-            {/* MODALS */}
-            <ActionCenterForm
-                isOpen={isAddNewRecordDialogOpen.isOpen}
-                onClose={() => setIsAddNewRecordDialogOpen({ isOpen: false, editData: null })}
-                onSubmitSuccess={(title, message) => {
-                    setClassicDialog({
-                        isOpen: true,
-                        title,
-                        message,
-                        positiveButtonText: 'Close',
-                        negativeButtonText: '',
-                        isNegativeButtonHidden: true,
-                        action: null,
-                    });
-                    handleReload();
-                }}
-                // ✅ This transformation fixes the type error
-                editData={mapToFormData(isAddNewRecordDialogOpen.editData)}
-            />
-
-            <ClassicDialog
-                open={classicDialog.isOpen}
-                title={classicDialog.title}
-                message={classicDialog.message}
-                positiveButtonText={classicDialog.positiveButtonText}
-                negativeButtonText={classicDialog.negativeButtonText}
-                hideNegativeButton={classicDialog.isNegativeButtonHidden}
-                onPositiveClick={() => {
-                    if (classicDialog.action === 'file_export') {
-                        ToExcel(requestList, `Assistance_List_${new Date().toISOString().slice(0, 10)}.xlsx`);
-                    }
-                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
-                }}
-                onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
-            />
-
-            <PrintView
-                isOpen={printDialogState.isVisible}
-                onClose={() => setPrintDialogState({ isVisible: false, request: null })}
-                data={printDialogState.request}
-            />
-
-            <ToastProvider />
+            {/* Row count caption — small, unobtrusive */}
+            {meta && rows.length > 0 && (
+                <p className="mt-3 px-1 text-xs text-gray-500">
+                    Showing {meta.from}–{meta.to} of {meta.total.toLocaleString()} requests
+                </p>
+            )}
         </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-component: docs badge
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DocumentsBadge({ count, uploaded }: { count: number | undefined; uploaded: string[] | undefined }) {
+    // If the parent forgot to eager-load media, the resource omits the field.
+    // Render a muted "—" instead of pretending the count is zero.
+    if (count === undefined) {
+        return <span className="text-xs text-gray-400">—</span>;
+    }
+
+    if (count === 0) {
+        return <span className="text-xs text-gray-400">0</span>;
+    }
+
+    const tooltipBody = uploaded && uploaded.length > 0
+        ? uploaded.map((key) => key.replace(/_/g, ' ')).join(', ')
+        : 'Files attached';
+
+    return (
+        <TooltipProvider delayDuration={150}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className="inline-flex cursor-help items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                        {count}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs capitalize">
+                    {tooltipBody}
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 }

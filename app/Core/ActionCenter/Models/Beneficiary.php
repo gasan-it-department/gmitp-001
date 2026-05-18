@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * The permanent identity record for any person served by the MSWD —
@@ -17,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Beneficiary extends Model
 {
-    use HasUlids, SoftDeletes;
+    use HasUlids, SoftDeletes, LogsActivity;
 
     protected $table = 'ac_beneficiaries';
     protected $keyType = 'string';
@@ -41,9 +43,32 @@ class Beneficiary extends Model
     ];
 
     protected $casts = [
-        'birth_date'         => 'date',
+        'birth_date' => 'date',
         'terms_consented_at' => 'datetime',
     ];
+
+    /**
+     * Only log the fields an admin is permitted to edit (hard identity).
+     * Excludes FK columns and system-managed consent timestamps — those
+     * don't need a human-readable change entry.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'first_name',
+                'middle_name',
+                'last_name',
+                'suffix',
+                'sex',
+                'birth_date',
+                'religion_id',
+                'educational_attainment',
+            ])
+            ->logOnlyDirty()        // skip no-op saves
+            ->dontLogEmptyChanges() // skip if nothing actually changed
+            ->useLogName('beneficiary');
+    }
 
     /**
      * The household this beneficiary belongs to.

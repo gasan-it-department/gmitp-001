@@ -115,8 +115,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             icon: ClipboardList,
             items: [
                 {
-                    title: 'Service Requests',
-                    url: actionCenter.admin.index.url({ municipality: currentMunicipality.slug }),
+                    title: 'Assistance Requests',
+                    url: actionCenter.admin.list.assistance.url({ municipality: currentMunicipality.slug }),
                     icon: FileInput,
                     permission: 'action_center.access',
                 },

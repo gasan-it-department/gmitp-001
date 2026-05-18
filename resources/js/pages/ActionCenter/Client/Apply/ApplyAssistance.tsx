@@ -2,7 +2,9 @@ import { Button } from '@/components/ui/button';
 import {
     AssistanceTypeDetails,
     BeneficiarySummary,
+    HouseholdMemberOption,
     HouseholdSummary,
+    RelationshipOption,
 } from '@/Core/Types/ActionCenter/assistance';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
@@ -23,7 +25,14 @@ interface Props {
     assistanceType: { data: AssistanceTypeDetails } | AssistanceTypeDetails;
     beneficiary:    BeneficiarySummary;
     household:      HouseholdSummary;
+    // Driven by App\Core\ActionCenter\Enums\Relationship::toOptions() — the
+    // enum is the single source of truth for both the label copy and the
+    // legal-age rule that gates child/sibling representatives.
+    relationships:  RelationshipOption[];
+    // Inertia ResourceCollection wraps the array under `data`.
+    householdMembers: { data: HouseholdMemberOption[] } | HouseholdMemberOption[];
     submitUrl:      string;
+    storeHouseholdMemberUrl: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,19 +44,28 @@ interface FormData {
     privacy_consent:             boolean;
     documents:                   Record<string, File | null>;
     // Representative fields — submitted for ALL programs; null = "myself"
-    relationship_to_beneficiary: RelationshipType;
-    on_behalf_first_name:        string;
-    on_behalf_middle_name:       string;
-    on_behalf_last_name:         string;
-    on_behalf_suffix:            string;
-    on_behalf_date_of_death:     string; // burial only
+    relationship_to_beneficiary:    RelationshipType;
+    on_behalf_household_member_id:  string; // FK to ac_household_members; '' when filing for self
+    on_behalf_first_name:           string;
+    on_behalf_middle_name:          string;
+    on_behalf_last_name:            string;
+    on_behalf_suffix:               string;
+    on_behalf_date_of_death:        string; // burial only
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ApplyAssistance({ assistanceType, beneficiary, household, submitUrl }: Props) {
+export default function ApplyAssistance({
+    assistanceType,
+    beneficiary,
+    household,
+    relationships,
+    householdMembers,
+    submitUrl,
+    storeHouseholdMemberUrl,
+}: Props) {
     // The Inertia resource may arrive wrapped ({ data: … }) or raw — handle both.
     const program: AssistanceTypeDetails =
         'data' in assistanceType ? assistanceType.data : assistanceType;
@@ -55,6 +73,13 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
     const beneficiaryData = beneficiary;
     const householdData   = household;
     const formAction      = submitUrl;
+
+    // householdMembers may arrive as { data: [...] } (ResourceCollection) or
+    // a bare array; normalise once. Newly-created members are appended via
+    // setHouseholdRoster so they show up in the picker without a page reload.
+    const initialMembers: HouseholdMemberOption[] =
+        'data' in householdMembers ? householdMembers.data : householdMembers;
+    const [householdRoster, setHouseholdRoster] = useState<HouseholdMemberOption[]>(initialMembers);
 
     const { props } = usePage<{ ziggy?: { url?: string } }>();
     const isBurial = program.slug === 'burial';
@@ -69,6 +94,7 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
         setFilingFor(value);
         if (value === 'self') {
             setData('relationship_to_beneficiary', '');
+            setData('on_behalf_household_member_id', '');
             setData('on_behalf_first_name', '');
             setData('on_behalf_middle_name', '');
             setData('on_behalf_last_name', '');
@@ -79,15 +105,16 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
 
     // ── Form ─────────────────────────────────────────────────────────────────
     const { data, setData, post, processing, errors, transform } = useForm<FormData>({
-        description:                 '',
-        privacy_consent:             false,
-        documents:                   {},
-        relationship_to_beneficiary: '',
-        on_behalf_first_name:        '',
-        on_behalf_middle_name:       '',
-        on_behalf_last_name:         '',
-        on_behalf_suffix:            '',
-        on_behalf_date_of_death:     '',
+        description:                   '',
+        privacy_consent:               false,
+        documents:                     {},
+        relationship_to_beneficiary:   '',
+        on_behalf_household_member_id: '',
+        on_behalf_first_name:          '',
+        on_behalf_middle_name:         '',
+        on_behalf_last_name:           '',
+        on_behalf_suffix:              '',
+        on_behalf_date_of_death:       '',
     });
 
     transform((form) => {
@@ -99,13 +126,14 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
         if (effectiveFilingFor === 'self') {
             return {
                 ...form,
-                documents:                   flatDocs,
-                relationship_to_beneficiary: null,
-                on_behalf_first_name:        null,
-                on_behalf_middle_name:       null,
-                on_behalf_last_name:         null,
-                on_behalf_suffix:            null,
-                on_behalf_date_of_death:     null,
+                documents:                     flatDocs,
+                relationship_to_beneficiary:   null,
+                on_behalf_household_member_id: null,
+                on_behalf_first_name:          null,
+                on_behalf_middle_name:         null,
+                on_behalf_last_name:           null,
+                on_behalf_suffix:              null,
+                on_behalf_date_of_death:       null,
             };
         }
         return { ...form, documents: flatDocs };
@@ -113,24 +141,41 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
 
     // ── Representative helpers ────────────────────────────────────────────────
     const onBehalfOfData: OnBehalfOfData = {
-        first_name:    data.on_behalf_first_name,
-        middle_name:   data.on_behalf_middle_name,
-        last_name:     data.on_behalf_last_name,
-        suffix:        data.on_behalf_suffix,
-        date_of_death: data.on_behalf_date_of_death,
-        relationship:  data.relationship_to_beneficiary,
+        household_member_id: data.on_behalf_household_member_id,
+        first_name:          data.on_behalf_first_name,
+        middle_name:         data.on_behalf_middle_name,
+        last_name:           data.on_behalf_last_name,
+        suffix:              data.on_behalf_suffix,
+        date_of_death:       data.on_behalf_date_of_death,
+        relationship:        data.relationship_to_beneficiary,
     };
 
     const handleBehalfChange = <K extends keyof OnBehalfOfData>(field: K, value: OnBehalfOfData[K]) => {
         const keyMap: Record<keyof OnBehalfOfData, keyof FormData> = {
-            first_name:    'on_behalf_first_name',
-            middle_name:   'on_behalf_middle_name',
-            last_name:     'on_behalf_last_name',
-            suffix:        'on_behalf_suffix',
-            date_of_death: 'on_behalf_date_of_death',
-            relationship:  'relationship_to_beneficiary',
+            household_member_id: 'on_behalf_household_member_id',
+            first_name:          'on_behalf_first_name',
+            middle_name:         'on_behalf_middle_name',
+            last_name:           'on_behalf_last_name',
+            suffix:              'on_behalf_suffix',
+            date_of_death:       'on_behalf_date_of_death',
+            relationship:        'relationship_to_beneficiary',
         };
         setData(keyMap[field], value as string);
+    };
+
+    // ── Inline "Add a new family member" ──────────────────────────────────────
+    // Posts to the API endpoint, appends the created row to the local roster,
+    // and selects it so the on-behalf payload is wired up automatically.
+    const handleMemberCreated = (member: HouseholdMemberOption) => {
+        setHouseholdRoster((current) => [...current, member]);
+        setData('on_behalf_household_member_id', member.id);
+        setData('on_behalf_first_name', member.first_name);
+        setData('on_behalf_middle_name', member.middle_name ?? '');
+        setData('on_behalf_last_name', member.last_name);
+        setData('on_behalf_suffix', member.suffix ?? '');
+        if (member.relationship) {
+            setData('relationship_to_beneficiary', member.relationship);
+        }
     };
 
     // ── Validation ───────────────────────────────────────────────────────────
@@ -153,8 +198,12 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
     const applicantAge = beneficiaryData.birth_date
         ? Math.floor((Date.now() - new Date(beneficiaryData.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : 999;
-    const requiresLegalAge = ['child', 'sibling'].includes(data.relationship_to_beneficiary);
-    const isUnderAge       = effectiveFilingFor === 'family_member' && requiresLegalAge && applicantAge < 18;
+    // Lookup the matched relationship option — the enum-driven flag is the
+    // single source of truth for the legal-age rule. Avoids re-hardcoding
+    // ['child', 'sibling'] in three places.
+    const selectedRelationship = relationships.find((r) => r.value === data.relationship_to_beneficiary);
+    const requiresLegalAge     = selectedRelationship?.requires_legal_age ?? false;
+    const isUnderAge           = effectiveFilingFor === 'family_member' && requiresLegalAge && applicantAge < 18;
 
     const canSubmit =
         data.description.trim().length >= 10 &&
@@ -213,8 +262,12 @@ export default function ApplyAssistance({ assistanceType, beneficiary, household
                                     <OnBehalfOfSection
                                         data={onBehalfOfData}
                                         onChange={handleBehalfChange}
+                                        relationships={relationships}
                                         isBurial={isBurial}
                                         applicantBirthDate={beneficiaryData.birth_date}
+                                        householdMembers={householdRoster}
+                                        storeHouseholdMemberUrl={storeHouseholdMemberUrl}
+                                        onMemberCreated={handleMemberCreated}
                                         errors={errors as Record<string, string | undefined>}
                                     />
                                 )}

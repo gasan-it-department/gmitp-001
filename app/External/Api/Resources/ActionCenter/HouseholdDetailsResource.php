@@ -21,6 +21,13 @@ class HouseholdDetailsResource extends JsonResource
             'barangay' => $this->barangay,
             'barangay_psgc_code' => $this->barangay_psgc_code,
             'street' => $this->street,
+
+            // Display value — sourced from the tenant binding because the
+            // `municipality` column was dropped from ac_households (the
+            // municipal_id FK already pins it). This lets the "Your verified
+            // info" block render "Purok 3, Bati, Gasan" without storing the
+            // municipality name redundantly on every household row.
+            'municipality' => app('current_municipality')?->name,
         ];
     }
 }

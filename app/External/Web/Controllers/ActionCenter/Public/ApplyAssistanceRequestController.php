@@ -4,10 +4,12 @@ namespace App\External\Web\Controllers\ActionCenter\Public;
 
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\AssistanceType;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
 use App\External\Api\Resources\ActionCenter\AssistanceTypeDetailsResource;
 use App\External\Api\Resources\ActionCenter\BeneficiaryDetailsResource;
 use App\External\Api\Resources\ActionCenter\HouseholdDetailsResource;
+use App\External\Api\Resources\ActionCenter\HouseholdMemberOptionResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,17 +50,26 @@ class ApplyAssistanceRequestController extends Controller
                 ->route('actionCenter.profile.setup', ['municipality' => $municipality])
                 ->with('info', 'Please complete your profile before applying for assistance.');
         }
+        // Roster the citizen can pick from when filing on behalf of a family
+        // member. Soft-deleted and inactive ("moved out") rows are excluded.
+        $householdMembers = HouseholdMember::query()
+            ->where('household_id', $beneficiary->household_id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->get();
 
         return Inertia::render('ActionCenter/Client/Apply/ApplyAssistance', [
             'assistanceType' => new AssistanceTypeDetailsResource($assistanceType),
             'relationships' => Relationship::toOptions(),
             'beneficiary' => new BeneficiaryDetailsResource($beneficiary),
             'household' => new HouseholdDetailsResource($beneficiary->household),
+            'householdMembers' => HouseholdMemberOptionResource::collection($householdMembers),
 
             'submitUrl' => route('actionCenter.apply.assistance.store', [
                 'municipality' => $municipality,
                 'assistanceType' => $assistanceType->slug,
             ]),
+            'storeHouseholdMemberUrl' => route('actionCenter.household.members.store'),
         ]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
 use App\Core\Users\Models\User;
@@ -24,9 +26,11 @@ class MorphMapServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Relation::enforceMorphMap([
-            'tourism_asset' => TourismAsset::class,
-            'procurement' => Procurement::class,
-            'user' => User::class
+            'tourism_asset'      => TourismAsset::class,
+            'procurement'        => Procurement::class,
+            'user'               => User::class,
+            'assistance_request' => AssistanceRequest::class,
+            'beneficiary'        => Beneficiary::class,
         ]);
     }
 }

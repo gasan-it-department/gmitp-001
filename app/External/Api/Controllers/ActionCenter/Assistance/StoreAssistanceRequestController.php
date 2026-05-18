@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
 use App\External\Api\Request\ActionCenter\StoreAssistanceRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -26,6 +27,7 @@ class StoreAssistanceRequestController extends Controller
 {
     public function __construct(
         private StoreAssistanceRequestAction $storeAssistanceRequest,
+        private ResolveApplicantProfileAction $resolveApplicantProfileAction,
     ) {
     }
 
@@ -38,9 +40,7 @@ class StoreAssistanceRequestController extends Controller
 
         // The beneficiary record is the verified identity for the citizen.
         // We refuse to submit on behalf of users who haven't completed the profile wizard.
-        $beneficiary = Beneficiary::with('household')
-            ->where('user_id', $user->id)
-            ->firstOrFail();
+        $beneficiary = $this->resolveApplicantProfileAction->execute($request->user()->id);
 
         if (!$beneficiary->household) {
             return redirect()
@@ -48,14 +48,6 @@ class StoreAssistanceRequestController extends Controller
                 ->withErrors([
                     'profile' => 'Please complete your address and household profile before requesting assistance.',
                 ]);
-        }
-
-        // Municipality guard: a citizen registered in another LGU cannot
-        // submit to this LGU's programs even if they bypass the UI.
-        if ($beneficiary->household->municipal_id !== $assistanceType->municipal_id) {
-            throw new AuthorizationException(
-                'You may only request assistance from the municipality where you reside.'
-            );
         }
 
         $dto = StoreAssistanceRequestDto::fromRequest($request, $assistanceType, $beneficiary);

@@ -10,18 +10,6 @@ use Illuminate\Http\UploadedFile;
 
 /**
  * Immutable input to StoreAssistanceRequestAction.
- *
- * All identity / address snapshot fields are resolved from the authenticated
- * beneficiary's server-side record — NEVER trusted from the request payload —
- * so the citizen cannot spoof someone else's identity by tampering with form
- * values.
- *
- * The only "free text" identity values that COME FROM the request are the
- * `onBehalf*` representative fields, since they describe a *different* person
- * (e.g. a deceased family member for a burial claim).
- *
- * No amount field: the citizen does not propose an amount. amount_approved is
- * set only at approval time.
  */
 readonly class StoreAssistanceRequestDto
 {
@@ -45,12 +33,8 @@ readonly class StoreAssistanceRequestDto
         public string $submitterUserId,
         public ?string $encodedByUserId,   // null for self-filed online; admin user id for walk-in
         public string $description,
-        public array $documents,
 
         // ── Data Privacy Act (RA 10173) consent ──────────────────────────────
-        // Server-side evidence that the citizen agreed to the privacy notice
-        // for THIS specific application. Timestamp comes from the server clock,
-        // not the client, so it cannot be back-dated.
         public CarbonImmutable $privacyConsentedAt,
         public string $privacyNoticeVersion,
 
@@ -58,7 +42,13 @@ readonly class StoreAssistanceRequestDto
         // Null when the citizen is filing for themselves. Burial always uses
         // these (the beneficiary IS the representative; the deceased is captured
         // here).
+        //
+        // onBehalfHouseholdMemberId is the FK to ac_household_members. When set,
+        // the action resolves the on_behalf_* snapshot fields from that row
+        // (the client-supplied name strings are ignored) so the snapshot cannot
+        // be tampered with by editing the submitted form values.
         public ?string $relationshipToBeneficiary,
+        public ?string $onBehalfHouseholdMemberId,
         public ?string $onBehalfFirstName,
         public ?string $onBehalfMiddleName,
         public ?string $onBehalfLastName,
@@ -83,6 +73,8 @@ readonly class StoreAssistanceRequestDto
         public ?string $snapshotBarangay,
         public ?string $snapshotBarangayPsgcCode,
         public ?string $snapshotStreet,
+        public array $documents = [],
+
     ) {
     }
 
@@ -95,6 +87,20 @@ readonly class StoreAssistanceRequestDto
         AssistanceType $assistanceType,
         Beneficiary $beneficiary,
     ): self {
+        // The frontend posts `documents` as a flat dictionary
+        //   documents[<document_key>] = <UploadedFile>
+        // where <document_key> is the ac_document_types.key slug. We forward
+        // exactly that shape to the action; Spatie's addMedia() needs the
+        // UploadedFile, and the key is preserved as a custom property so the
+        // admin UI can group uploads by required-document slot.
+        $documents = [];
+
+        foreach ((array) $request->file('documents', []) as $documentKey => $file) {
+            if ($file instanceof UploadedFile) {
+                $documents[$documentKey] = $file;
+            }
+        }
+
         $household = $beneficiary->household;
 
         // Resolve religion name (snapshot the human-readable label, not the FK ULID)
@@ -110,7 +116,7 @@ readonly class StoreAssistanceRequestDto
             submitterUserId: $request->user()->id,
             encodedByUserId: null, // online self-filed; admin walk-ins set this elsewhere
             description: $request->validated('description'),
-            documents: $request->file('documents', []),
+            documents: $documents,
 
             // Consent is server-stamped. The FormRequest enforced `accepted`;
             // arriving here means the citizen ticked the box.
@@ -120,6 +126,7 @@ readonly class StoreAssistanceRequestDto
             // Representative info — only present when filing for a family member.
             // Frontend sends null/empty when filing for self; we normalise to null.
             relationshipToBeneficiary: $request->input('relationship_to_beneficiary') ?: null,
+            onBehalfHouseholdMemberId: $request->input('on_behalf_household_member_id') ?: null,
             onBehalfFirstName: $request->input('on_behalf_first_name') ?: null,
             onBehalfMiddleName: $request->input('on_behalf_middle_name') ?: null,
             onBehalfLastName: $request->input('on_behalf_last_name') ?: null,

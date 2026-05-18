@@ -24,6 +24,18 @@ class CreateBeneficiaryProfileAction
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
         return DB::transaction(function () use ($dto) {
+
+            DB::table('users')
+                ->where('id', $dto->userId)
+                ->lockForUpdate()
+                ->first();
+
+            $existing = Beneficiary::where('user_id', $dto->userId)->first();
+            if ($existing) {
+
+                return $existing;
+            }
+
             $household = Household::create([
                 'municipal_id' => $dto->municipalId,
                 'barangay' => $dto->barangay,
@@ -40,6 +52,8 @@ class CreateBeneficiaryProfileAction
                 'sex' => $dto->sex,
                 'birth_date' => $dto->birthDate,
                 'religion_id' => $dto->religionId,
+                'terms_consented_at' => $dto->termsConsentedAt,
+                'terms_version' => $dto->termsVersion,
                 'educational_attainment' => $dto->educationalAttainment,
             ]);
         });

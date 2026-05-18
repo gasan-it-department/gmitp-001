@@ -48,6 +48,16 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['last_name', 'first_name']);
+
+            // One portal user can only ever own ONE beneficiary record.
+            // Walk-ins keep user_id NULL — SQL allows multiple NULLs in a
+            // UNIQUE column so this does not block them.
+            //
+            // This is the last-line safety net against duplicate submissions
+            // from double-clicks, network retries, concurrent tabs, or
+            // bypassed front-end validation. The action layer also guards
+            // this with a row lock, but the DB is the source of truth.
+            $table->unique('user_id');
         });
     }
 

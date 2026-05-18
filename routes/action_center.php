@@ -1,19 +1,20 @@
 <?php
 
-use App\External\Api\Controllers\ActionCenter\Actions\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
-use App\External\Web\Controllers\ActionCenter\Admin\AdminActionCenterController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
+use App\External\Api\Controllers\ActionCenter\Household\StoreInlineHouseholdMemberController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
+use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
+use App\External\Web\Controllers\ActionCenter\Admin\ShowAssistanceRequestProfileController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
 use App\External\Web\Controllers\ActionCenter\Public\ApplyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\IndexAssistanceRequestController;
-use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
 use App\External\Web\Controllers\ActionCenter\Public\ShowProfileSetupController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,9 +30,7 @@ Route::prefix('{municipality}/action-center')
             ->name('admin.')
             ->group(function () {
 
-            Route::get('/', [AdminActionCenterController::class, 'index'])->name('index');
-
-            Route::get('/assistance-request/{id}', [AdminActionCenterController::class, 'show'])->name('show');
+            Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
 
             Route::get('create', CreateAssistanceRequestController::class)->name('assistance.create');
 
@@ -40,6 +39,13 @@ Route::prefix('{municipality}/action-center')
             Route::get('list/assistance-types', ListAssistanceTypeController::class)->name('list.assistance.types');
 
             Route::get('edit/assistance-type/{id}', EditAssistanceTypeController::class)->name('edit.assistance-type');
+
+            // Admin request-detail page. `{assistanceRequest}` is route-model
+            // bound to App\Core\ActionCenter\Models\AssistanceRequest by ULID.
+            // The controller additionally guards that the bound request belongs
+            // to the current municipality.
+            Route::get('profile/assistance-request/{assistanceRequest}', ShowAssistanceRequestProfileController::class)
+                ->name('show.assistance-request.profile');
         });
 
         // Profile setup wizard — first-time users only.
@@ -87,6 +93,9 @@ Route::prefix('/api/action-center')
 
                 Route::post('/profile/setup', StoreProfileSetupController::class)->name('profile.setup.store');
 
+                // Inline "Add a new family member" from the Apply form.
+                Route::post('/household/members', StoreInlineHouseholdMemberController::class)
+                    ->name('household.members.store');
 
             });
 

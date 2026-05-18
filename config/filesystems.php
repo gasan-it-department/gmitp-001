@@ -29,6 +29,23 @@ return [
     */
 
     'disks' => [
+        'action_center' => [
+            // This looks at your .env file. If ACTION_CENTER_DISK is missing, it defaults to 'local'
+            'driver' => env('ACTION_CENTER_DISK', 'local'),
+
+            // If the driver is local, it saves here (secure and private)
+            'root' => storage_path('app/assistance_requests'),
+
+            // If the driver is s3 or r2, it pulls these credentials automatically
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', true),
+            'throw' => false,
+        ],
 
         'cloudinary' => [
             'driver' => 'cloudinary',

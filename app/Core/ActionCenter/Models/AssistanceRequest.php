@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * The main transaction table for the Action Center. One row per citizen
@@ -20,9 +24,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * only when the mayor / authorized approver grants the request, bounded by
  * the assistance type's min_amount / max_amount.
  */
-class AssistanceRequest extends Model
+class AssistanceRequest extends Model implements HasMedia
 {
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     protected $table = 'ac_assistance_requests';
     protected $keyType = 'string';
@@ -45,6 +49,7 @@ class AssistanceRequest extends Model
         'on_behalf_last_name',
         'on_behalf_suffix',
         'on_behalf_date_of_death',      // burial only
+        'on_behalf_household_member_id',// FK to ac_household_members when filing for a family member
 
         'amount_approved',       // set only on approval
         'transaction_number',    // #REQ-YYYY-XXXX
@@ -80,13 +85,33 @@ class AssistanceRequest extends Model
 
     protected $casts = [
         'relationship_to_beneficiary' => Relationship::class,
-        'on_behalf_date_of_death'     => 'date',
-        'snapshot_birth_date'         => 'date',
-        'amount_approved'             => 'decimal:2',
-        'approved_at'                 => 'datetime',
-        'released_at'                 => 'datetime',
-        'privacy_consented_at'        => 'datetime',
+        'on_behalf_date_of_death' => 'date',
+        'snapshot_birth_date' => 'date',
+        'amount_approved' => 'decimal:2',
+        'approved_at' => 'datetime',
+        'released_at' => 'datetime',
+        'privacy_consented_at' => 'datetime',
     ];
+
+    /**
+     * Log workflow mutations that matter for COA audit:
+     * status transitions, approver assignment, approved amount, and admin remarks.
+     * `logOnlyDirty` + `dontSubmitEmptyLogs` keeps the table clean on no-op saves.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'status',
+                'amount_approved',
+                'remarks',
+                'reviewed_by_user_id',
+                'approved_by_user_id',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('assistance_request');
+    }
 
     protected static function newFactory()
     {
@@ -101,6 +126,15 @@ class AssistanceRequest extends Model
     public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class, 'household_id');
+    }
+
+    /**
+     * The household member being assisted, when filing on behalf of a family
+     * member. NULL means the filer is also the beneficiary.
+     */
+    public function onBehalfHouseholdMember(): BelongsTo
+    {
+        return $this->belongsTo(HouseholdMember::class, 'on_behalf_household_member_id');
     }
 
     public function assistanceType(): BelongsTo
@@ -126,9 +160,29 @@ class AssistanceRequest extends Model
     /**
      * Files uploaded with this request. The schema is built to fit both
      * Cloudinary (public_id, resource_type) and local-disk storage paths.
+     *
+     * @deprecated New uploads go through Spatie Media Library on the
+     *             "documents" collection. Kept for any historical rows.
      */
-    public function files(): HasMany
+
+    /**
+     * Spatie Media Library — one collection per request holding every
+     * uploaded supporting document. Each media row carries the
+     * `document_key` custom property so the admin UI can render uploads
+     * grouped by their ac_document_types slot.
+     *
+     * Stored on the private "local" disk (storage/app/private/…). Admin
+     * downloads are served through an authenticated controller route —
+     * the files are never publicly accessible.
+     */
+    public function registerMediaCollections(): void
     {
-        return $this->hasMany(AssistanceRequestFile::class, 'assistance_request_id');
+        $this->addMediaCollection('documents')
+            ->useDisk('action_center')
+            ->acceptsMimeTypes([
+                'application/pdf',
+                'image/jpeg',
+                'image/png',
+            ]);
     }
 }
