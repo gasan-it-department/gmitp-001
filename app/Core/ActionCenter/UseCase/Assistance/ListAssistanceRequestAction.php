@@ -11,19 +11,23 @@ class ListAssistanceRequestAction
      * Return a paginated, filterable list of assistance requests scoped to one municipality.
      *
      * Supported filters:
-     *  - status             : pending | under_review | approved | released | rejected
-     *  - assistance_type_id : ULID of the assistance type
-     *  - search             : matches transaction_number, filer snapshot name, or on-behalf name
-     *  - date_from / date_to: inclusive range on created_at (Y-m-d)
-     *  - per_page           : rows per page, capped at 100 (default 15)
+     *  - status               : pending | under_review | approved | released | rejected
+     *  - assistance_type_id   : ULID of the assistance type
+     *  - search               : matches transaction_number, filer snapshot name, or on-behalf name
+     *  - date_from / date_to  : inclusive range on created_at (Y-m-d)
+     *  - per_page             : rows per page, capped at 100 (default 15)
+     *  - reviewed_by_user_id  : ULID of the reviewer — narrows the list to cases
+     *                           assigned to one admin. Used by the "My Cases" page
+     *                           to render the personal worklist.
      *
      * @param  array{
-     *     status?:             string|null,
-     *     assistance_type_id?: string|null,
-     *     search?:             string|null,
-     *     date_from?:          string|null,
-     *     date_to?:            string|null,
-     *     per_page?:           int|string|null,
+     *     status?:              string|null,
+     *     assistance_type_id?:  string|null,
+     *     search?:              string|null,
+     *     date_from?:           string|null,
+     *     date_to?:             string|null,
+     *     per_page?:            int|string|null,
+     *     reviewed_by_user_id?: string|null,
      * } $filters
      */
     public function execute(string $municipalId, array $filters = []): LengthAwarePaginator
@@ -52,6 +56,15 @@ class ListAssistanceRequestAction
         // ── Assistance type ───────────────────────────────────────────────────
         if (!empty($filters['assistance_type_id'])) {
             $query->where('assistance_type_id', $filters['assistance_type_id']);
+        }
+
+        // ── Reviewer (personal worklist scope) ────────────────────────────────
+        // Used by the "My Cases" page to narrow the list to cases the current
+        // admin owns. Composes with the status filter so the My Cases controller
+        // can pass status=under_review + reviewed_by_user_id=auth->id() and get
+        // exactly the personal worklist.
+        if (!empty($filters['reviewed_by_user_id'])) {
+            $query->where('reviewed_by_user_id', $filters['reviewed_by_user_id']);
         }
 
         // ── Date range (inclusive, on created_at) ─────────────────────────────

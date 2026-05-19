@@ -6,13 +6,23 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import apply from '@/routes/actionCenter/apply';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Ambulance, Banknote, BookOpen, Bus, CalendarClock, FileText, HandHeart, Heart, ShieldCheck, Utensils, Wallet } from 'lucide-react';
+import { Ambulance, Banknote, BookOpen, Bus, CalendarClock, Clock, FileText, HandHeart, Heart, Lock, ShieldCheck, Utensils, Wallet } from 'lucide-react';
 import { useState } from 'react';
 
 // 1. Define the Expected Interface from Laravel
 
+// Mirrors EligibilityResult::toArray() on the backend. The map is empty for
+// guests / profile-incomplete users — the page treats that as "no gating."
+interface Eligibility {
+    eligible: boolean;
+    reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | null;
+    message: string;
+    cooldown_ends_at: string | null;
+}
+
 interface Props {
     assistanceTypes: { data: AssistanceTypeListItem[] };
+    eligibilityByType: Record<string, Eligibility>;
 }
 // 2. Dynamic Icon Mapper
 const getAssistanceIcon = (name: string) => {
@@ -26,7 +36,7 @@ const getAssistanceIcon = (name: string) => {
     return FileText; // Default fallback icon
 };
 
-export default function ActionCenterPortal({ assistanceTypes }: Props) {
+export default function ActionCenterPortal({ assistanceTypes, eligibilityByType }: Props) {
     const assistanceData = assistanceTypes.data;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
@@ -86,11 +96,110 @@ export default function ActionCenterPortal({ assistanceTypes }: Props) {
                             {activeAssistance.map((type) => {
                                 const Icon = getAssistanceIcon(type.name);
 
+                                // Eligibility is only set for signed-in citizens with a profile.
+                                // Absent entry → assume eligible (guest / pre-profile flow).
+                                const eligibility = eligibilityByType?.[type.id];
+                                const isBlocked = eligibility ? !eligibility.eligible : false;
+
                                 // Each card routes to /{municipality}/action-center/apply/{slug}.
                                 // Wayfinder resolves both params — no Ziggy needed.
                                 const applyHref = auth.user
                                     ? apply.assistance.url({ municipality: currentMunicipality.slug, assistanceType: type.slug })
                                     : '#';
+
+                                // Shared card body so the disabled and enabled branches stay
+                                // visually identical apart from the wrapper element.
+                                const cardBody = (
+                                    <>
+                                        <div className="flex items-start justify-between">
+                                            <div
+                                                className={`inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors ${
+                                                    !isBlocked && 'group-hover:bg-primary group-hover:text-primary-foreground'
+                                                }`}
+                                            >
+                                                <Icon className="h-6 w-6" />
+                                            </div>
+
+                                            {isBlocked && (
+                                                <div className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold tracking-widest text-rose-700 uppercase">
+                                                    {eligibility?.reason === 'in_flight_request' ? (
+                                                        <>
+                                                            <Clock className="h-3 w-3" /> pending
+                                                        </>
+                                                    ) : eligibility?.reason === 'on_cooldown' ? (
+                                                        <>
+                                                            <CalendarClock className="h-3 w-3" /> on cooldown
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Lock className="h-3 w-3" /> unavailable
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <h4
+                                                className={`line-clamp-2 text-lg font-bold tracking-tight text-foreground uppercase transition-colors ${
+                                                    !isBlocked && 'group-hover:text-primary'
+                                                }`}
+                                                title={type.name}
+                                            >
+                                                {type.name}
+                                            </h4>
+
+                                            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground" title={type.description}>
+                                                {type.description || 'No description available.'}
+                                            </p>
+                                        </div>
+
+                                        {/* Business rules + per-citizen status footer */}
+                                        <div className="mt-auto flex flex-wrap gap-2 border-t border-border/50 pt-4">
+                                            {isBlocked ? (
+                                                // When blocked we replace the generic chips with the
+                                                // *specific* reason this citizen can't apply right now.
+                                                <p className="text-xs font-medium text-rose-700" title={eligibility?.message}>
+                                                    {eligibility?.message}
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    {type.max_amount && Number(type.max_amount) > 0 && (
+                                                        <div className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-500/10 dark:text-green-400">
+                                                            <Banknote className="h-3.5 w-3.5" />
+                                                            Up to ₱{Number(type.max_amount).toLocaleString()}
+                                                        </div>
+                                                    )}
+
+                                                    {type.cooldown_months > 0 && (
+                                                        <div className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                                                            <CalendarClock className="h-3.5 w-3.5" />
+                                                            {type.cooldown_months} Month Cooldown
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </>
+                                );
+
+                                // Blocked → render as a non-interactive div so the user can still
+                                // READ the card but can't navigate. We deliberately don't render a
+                                // <Link> with a disabled prop because Inertia <Link> has no native
+                                // disabled state and aria-disabled on an anchor still navigates.
+                                if (isBlocked) {
+                                    return (
+                                        <div
+                                            key={type.id}
+                                            role="group"
+                                            aria-disabled="true"
+                                            title={eligibility?.message}
+                                            className="flex cursor-not-allowed flex-col space-y-4 rounded-xl border border-border bg-muted/40 p-6 opacity-60 shadow-sm"
+                                        >
+                                            {cardBody}
+                                        </div>
+                                    );
+                                }
 
                                 return (
                                     <Link
@@ -104,42 +213,7 @@ export default function ActionCenterPortal({ assistanceTypes }: Props) {
                                             }
                                         }}
                                     >
-                                        <div className="flex items-start justify-between">
-                                            <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                                                <Icon className="h-6 w-6" />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex-1">
-                                            <h4
-                                                className="line-clamp-2 text-lg font-bold tracking-tight text-foreground uppercase transition-colors group-hover:text-primary"
-                                                title={type.name}
-                                            >
-                                                {type.name}
-                                            </h4>
-
-                                            {/* 🎯 SENIOR TOUCH: Line-clamp keeps long Tagalog descriptions neat! */}
-                                            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground" title={type.description}>
-                                                {type.description || 'No description available.'}
-                                            </p>
-                                        </div>
-
-                                        {/* 🎯 NEW: Business Rules displayed to the citizen */}
-                                        <div className="mt-auto flex flex-wrap gap-2 border-t border-border/50 pt-4">
-                                            {type.max_amount && Number(type.max_amount) > 0 && (
-                                                <div className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-500/10 dark:text-green-400">
-                                                    <Banknote className="h-3.5 w-3.5" />
-                                                    Up to ₱{Number(type.max_amount).toLocaleString()}
-                                                </div>
-                                            )}
-
-                                            {type.cooldown_months > 0 && (
-                                                <div className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-                                                    <CalendarClock className="h-3.5 w-3.5" />
-                                                    {type.cooldown_months} Month Cooldown
-                                                </div>
-                                            )}
-                                        </div>
+                                        {cardBody}
                                     </Link>
                                 );
                             })}

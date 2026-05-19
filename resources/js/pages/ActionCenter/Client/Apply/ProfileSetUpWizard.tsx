@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Home, Info, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Briefcase, Home, Info, User } from 'lucide-react';
 import { FormEvent } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ interface EnumOption {
 interface Props {
     religions: ReligionOption[];
     educationalAttainment: EnumOption[];
+    civilStatus: EnumOption[];
     submitUrl: string;
 }
 
@@ -37,7 +38,7 @@ const SUFFIX_OPTIONS = ['Jr.', 'Sr.', 'II', 'III', 'IV'];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function ProfileSetUpWizard({ religions, submitUrl, educationalAttainment }: Props) {
+export default function ProfileSetUpWizard({ religions, submitUrl, educationalAttainment, civilStatus }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { data, setData, post, processing, errors } = useForm({
         first_name: '',
@@ -48,6 +49,10 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
         birth_date: '',
         religion_id: '',
         educational_attainment: '',
+        // Civil status / employment / income — paper-form parity.
+        civil_status: '',
+        occupation: '',
+        monthly_income: '',
         barangay: '',
         barangay_code: '',
         street: '',
@@ -68,6 +73,11 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
         data.last_name.trim().length > 0 &&
         data.sex.length > 0 &&
         data.birth_date.length > 0 &&
+        data.civil_status.length > 0 &&
+        data.occupation.trim().length > 0 &&
+        // Income can be 0 (the citizen has no income) so we only require that
+        // SOMETHING was entered — empty string fails, "0" passes.
+        data.monthly_income.length > 0 &&
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
         !processing;
@@ -194,7 +204,62 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
                             </div>
                         </div>
 
-                        {/* ── Section 2: Home Address ── */}
+                        {/* ── Section 2: Civil Status & Employment ── */}
+                        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                            <SectionHeader
+                                icon={<Briefcase className="h-4 w-4 text-[#005088]" />}
+                                title="Civil Status & Employment"
+                            />
+
+                            <div className="mt-6 space-y-5">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <ShadcnSelectField
+                                        id="civil_status"
+                                        label="Civil Status"
+                                        required
+                                        placeholder="Select…"
+                                        value={data.civil_status}
+                                        onValueChange={(value) => setData('civil_status', value)}
+                                        error={errors.civil_status}
+                                        options={civilStatus}
+                                    />
+
+                                    <FormInput
+                                        id="occupation"
+                                        label="Occupation"
+                                        required
+                                        value={data.occupation}
+                                        onChange={(e) => setData('occupation', e.target.value)}
+                                        placeholder='e.g. Farmer, Driver, "None"'
+                                        error={errors.occupation}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <FormInput
+                                        id="monthly_income"
+                                        label="Monthly Income (₱)"
+                                        required
+                                        type="number"
+                                        min={0}
+                                        step={0.01}
+                                        value={data.monthly_income}
+                                        onChange={(e) => setData('monthly_income', e.target.value)}
+                                        placeholder="0.00"
+                                        error={errors.monthly_income}
+                                    />
+                                </div>
+
+                                <p className="text-xs leading-relaxed text-slate-500">
+                                    Enter <strong>0</strong> if you currently have no income, or write{' '}
+                                    <strong>"None"</strong> as your occupation if you are unemployed. This
+                                    information is used to evaluate your eligibility for MSWD assistance
+                                    programs.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* ── Section 3: Home Address ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<Home className="h-4 w-4 text-[#005088]" />} title="Home Address" />
 

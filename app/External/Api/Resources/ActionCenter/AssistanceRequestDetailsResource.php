@@ -143,13 +143,23 @@ class AssistanceRequestDetailsResource extends JsonResource
     /**
      * Lightweight user payload — only what the audit-trail row needs.
      *
+     * Composes a display name from the first/last/middle columns since the
+     * User model does NOT have a single `name` column. Falls back to
+     * `user_name` (login handle) if both first and last are empty, so the
+     * audit row never renders blank.
+     *
      * @return array{id: string, name: string}
      */
     private function shortUser($user): array
     {
+        $fullName = trim(implode(' ', array_filter([
+            $user->first_name,
+            $user->last_name,
+        ])));
+
         return [
             'id'   => $user->id,
-            'name' => $user->name,
+            'name' => $fullName !== '' ? $fullName : ($user->user_name ?? 'Unknown user'),
         ];
     }
 

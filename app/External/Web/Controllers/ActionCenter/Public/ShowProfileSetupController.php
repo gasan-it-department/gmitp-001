@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\ActionCenter\Public;
 
+use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\ActionCenter\Models\Religion;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,10 @@ use Inertia\Response;
  *
  * Passes religion options from the DB so the frontend dropdown
  * is never hardcoded — MSWD can manage entries without a deploy.
+ *
+ * Enum-backed dropdowns (educational attainment, civil status) come from
+ * the PHP enums directly so the form options can't drift from the
+ * validator rules.
  */
 class ShowProfileSetupController extends Controller
 {
@@ -23,6 +28,7 @@ class ShowProfileSetupController extends Controller
         return Inertia::render('ActionCenter/Client/Apply/ProfileSetUpWizard', [
             'religions' => Religion::active()->get(['id', 'name']),
             'educationalAttainment' => EducationalAttainment::toOptions(),
+            'civilStatus' => CivilStatus::option(),
             'submitUrl' => route('actionCenter.profile.setup.store'),
         ]);
     }

@@ -28,6 +28,12 @@ readonly class CreateBeneficiaryProfileDto
         public ?string $religionId,
         public ?string $educationalAttainment,
 
+        // Civil status / employment / income — paper-form parity with
+        // ac_household_members. Drives indigency assessment downstream.
+        public string $civilStatus,
+        public string $occupation,
+        public float $monthlyIncome,
+
         // Home address — written to ac_households
         public string $barangay,
         public ?string $barangayCode,
@@ -65,6 +71,16 @@ readonly class CreateBeneficiaryProfileDto
             religionId: $data['religion_id'] ?? null,
 
             educationalAttainment: !empty($data['educational_attainment']) ? mb_strtoupper($data['educational_attainment']) : null,
+
+            // Civil status — stored as the enum's backing string value (lowercase).
+            // The model casts it back to CivilStatus on read.
+            civilStatus: $data['civil_status'],
+            // Occupation is a free-text descriptor; uppercase for display
+            // consistency with the rest of the identity columns.
+            occupation: mb_strtoupper($data['occupation']),
+            // Cast to float because the DB column is decimal(10,2). The
+            // FormRequest already validated numeric + min:0.
+            monthlyIncome: (float) $data['monthly_income'],
 
             // Address details uppercase
             barangay: mb_strtoupper($data['barangay']),

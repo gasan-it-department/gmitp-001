@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Models;
 
+use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +37,9 @@ class Beneficiary extends Model
         'birth_date',
         'religion_id',
         'educational_attainment',
-
+        'civil_status',
+        'occupation',
+        'monthly_income',
         // Data Privacy Act (RA 10173) consent record — captured at profile setup.
         'terms_consented_at',
         'terms_version',
@@ -45,6 +48,9 @@ class Beneficiary extends Model
     protected $casts = [
         'birth_date' => 'date',
         'terms_consented_at' => 'datetime',
+        'monthly_income' => 'decimal:2',
+        'civil_status' => CivilStatus::class,
+
     ];
 
     /**
@@ -64,6 +70,9 @@ class Beneficiary extends Model
                 'birth_date',
                 'religion_id',
                 'educational_attainment',
+                'civil_status',
+                'occupation',
+                'monthly_income',
             ])
             ->logOnlyDirty()        // skip no-op saves
             ->dontLogEmptyChanges() // skip if nothing actually changed

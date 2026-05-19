@@ -1,4 +1,5 @@
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
+import ListMyAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListMyAssistanceRequestController';
 import ShowAssistanceRequestProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ShowAssistanceRequestProfileController';
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
@@ -6,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
-import { router, usePage } from '@inertiajs/react';
-import { Search, X } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Inbox, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { AssistanceRequestListItem, AssistanceRequestPaginator, AssistanceRequestTable } from './Components/AssistanceRequestTable';
 
@@ -29,10 +30,18 @@ interface Filters {
     per_page?: number | null;
 }
 
+type ViewMode = 'all' | 'mine';
+
 interface Props {
     requests: AssistanceRequestPaginator;
     filters: Filters;
     assistanceTypes: AssistanceTypeOption[];
+    /**
+     * 'all'  → All Cases page (default). Status filter visible.
+     * 'mine' → My Cases page. Status is server-pinned to under_review
+     *          and the status filter dropdown is hidden.
+     */
+    viewMode?: ViewMode;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -68,8 +77,16 @@ const ALL = '__all__';
  * Rendering of each row belongs to <AssistanceRequestTable />, which is kept
  * presentation-only so it can be reused from other listing contexts later.
  */
-export default function ActionCenterRequestList({ requests, filters, assistanceTypes }: Props) {
+export default function ActionCenterRequestList({ requests, filters, assistanceTypes, viewMode = 'all' }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const isMine = viewMode === 'mine';
+
+    // Filter submissions need to go to the SAME route the page is rendered
+    // from — otherwise switching the Program dropdown on My Cases would
+    // bounce the admin over to All Cases.
+    const baseListUrl = isMine
+        ? ListMyAssistanceRequestController.url({ municipality: currentMunicipality.slug })
+        : ListAssistanceRequestController.url({ municipality: currentMunicipality.slug });
     // Local mirror of server-side filter state. Submitting these triggers an
     // Inertia partial reload — we don't track loading state here because the
     // page itself is a navigation target and Inertia handles the spinner.
@@ -108,7 +125,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
             date_to: firstDefined(overrides.date_to, dateTo) || undefined,
         };
 
-        router.get(ListAssistanceRequestController.url({ municipality: currentMunicipality.slug }), stripEmpty(next), {
+        router.get(baseListUrl, stripEmpty(next), {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -123,7 +140,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
         setDateTo('');
 
         router.get(
-            ListAssistanceRequestController.url({ municipality: currentMunicipality.slug }),
+            baseListUrl,
             {},
             { preserveState: false, preserveScroll: true, replace: true },
         );
@@ -149,11 +166,41 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
     return (
         <AdminLayout>
             <div className="m-5 mt-0 grid grid-cols-1 bg-white">
+                {/* ── View switcher ── */}
+                <nav className="mt-5 mb-1 flex items-center gap-2 text-sm">
+                    <Link
+                        href={ListMyAssistanceRequestController.url({ municipality: currentMunicipality.slug })}
+                        className={
+                            isMine
+                                ? 'rounded-md bg-slate-900 px-3 py-1.5 font-semibold text-white'
+                                : 'rounded-md px-3 py-1.5 font-medium text-slate-500 hover:text-slate-900'
+                        }
+                    >
+                        My Active
+                    </Link>
+                    <Link
+                        href={ListAssistanceRequestController.url({ municipality: currentMunicipality.slug })}
+                        className={
+                            !isMine
+                                ? 'rounded-md bg-slate-900 px-3 py-1.5 font-semibold text-white'
+                                : 'rounded-md px-3 py-1.5 font-medium text-slate-500 hover:text-slate-900'
+                        }
+                    >
+                        All Cases
+                    </Link>
+                </nav>
+
                 {/* ── Header ── */}
-                <div className="my-5 flex items-center justify-between">
+                <div className="mt-2 mb-5 flex items-center justify-between">
                     <div className="flex-1">
-                        <h2 className="text-lg font-semibold text-gray-800">Assistance Requests</h2>
-                        <p className="text-sm text-gray-500">Review every assistance request filed in {currentMunicipality.name}.</p>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                            {isMine ? 'My Active Cases' : 'Assistance Requests'}
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                            {isMine
+                                ? `Cases currently assigned to you in ${currentMunicipality.name}.`
+                                : `Review every assistance request filed in ${currentMunicipality.name}.`}
+                        </p>
                     </div>
                 </div>
 
@@ -173,29 +220,31 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
                         </div>
                     </div>
 
-                    {/* Status */}
-                    <div className="min-w-[160px]">
-                        <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Status</label>
-                        <Select
-                            value={status}
-                            onValueChange={(v) => {
-                                setStatus(v);
-                                applyFilters({ status: v });
-                            }}
-                        >
-                            <SelectTrigger className="h-10">
-                                <SelectValue placeholder="All statuses" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL}>All statuses</SelectItem>
-                                {STATUS_OPTIONS.map((o) => (
-                                    <SelectItem key={o.value} value={o.value}>
-                                        {o.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {/* Status — hidden on My Cases (status is server-pinned to under_review) */}
+                    {!isMine && (
+                        <div className="min-w-[160px]">
+                            <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Status</label>
+                            <Select
+                                value={status}
+                                onValueChange={(v) => {
+                                    setStatus(v);
+                                    applyFilters({ status: v });
+                                }}
+                            >
+                                <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="All statuses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL}>All statuses</SelectItem>
+                                    {STATUS_OPTIONS.map((o) => (
+                                        <SelectItem key={o.value} value={o.value}>
+                                            {o.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
 
                     {/* Program */}
                     <div className="min-w-[200px]">
@@ -255,11 +304,31 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
                     )}
                 </div>
 
-                {/* ── Table ── */}
-                <AssistanceRequestTable paginator={requests} onView={handleView} />
+                {/* ── Empty-state copy for My Cases ── */}
+                {isMine && (requests.data?.length ?? 0) === 0 && (
+                    <div className="mb-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50/40 px-6 py-10 text-center">
+                        <Inbox className="h-8 w-8 text-gray-400" />
+                        <p className="text-sm font-medium text-gray-700">You have no active cases right now.</p>
+                        <p className="text-xs text-gray-500">
+                            Pick one up from the{' '}
+                            <Link
+                                href={`${ListAssistanceRequestController.url({ municipality: currentMunicipality.slug })}?status=pending`}
+                                className="font-semibold text-slate-900 underline-offset-2 hover:underline"
+                            >
+                                Pending Queue
+                            </Link>
+                            {' '}to get started.
+                        </p>
+                    </div>
+                )}
 
-                {/* ── Pagination ── */}
-                <Pagination links={requests.meta?.links ?? []} />
+                {/* ── Table ── */}
+                {(!isMine || (requests.data?.length ?? 0) > 0) && (
+                    <>
+                        <AssistanceRequestTable paginator={requests} onView={handleView} />
+                        <Pagination links={requests.meta?.links ?? []} />
+                    </>
+                )}
             </div>
         </AdminLayout>
     );

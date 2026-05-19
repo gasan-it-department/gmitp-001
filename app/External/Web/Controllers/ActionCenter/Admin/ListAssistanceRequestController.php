@@ -77,6 +77,11 @@ class ListAssistanceRequestController extends Controller
 
             // Dropdown options for the filter bar.
             'assistanceTypes' => $assistanceTypes,
+
+            // Tells the shared React page to render the All Cases heading
+            // and show the Status filter dropdown. See the companion
+            // ListMyAssistanceRequestController for the 'mine' variant.
+            'viewMode'        => 'all',
         ]);
     }
 }

@@ -5,7 +5,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
-import { Link, usePage } from '@inertiajs/react';
+import actionCenter from '@/routes/actionCenter';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -157,9 +159,9 @@ interface ActivityEntry {
 
 interface Props {
     request: { data: AssistanceRequestDetail } | AssistanceRequestDetail;
-    requiredDocuments: RequiredDocument[];
-    recentHistory: RecentHistoryRow[];
-    activityLog: ActivityEntry[];
+    requiredDocuments: { data: RequiredDocument[] };
+    recentHistory: { data: RecentHistoryRow[] };
+    activityLog: { data: ActivityEntry[] };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -185,10 +187,18 @@ const statusClass = (s: string): string => STATUS_BADGE[s] ?? 'bg-gray-100 text-
 
 export default function AssistanceRequestsDetails({ request, requiredDocuments, recentHistory, activityLog }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { auth } = usePage<SharedData>().props;
     const utils = Utility();
-
+    const requiredDocumentsData = requiredDocuments.data;
+    const recentHistoryData = recentHistory.data;
+    const activityLogData = activityLog.data;
     // Inertia resources can arrive wrapped ({data:…}) — handle both shapes.
     const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
+
+    // Ownership gate — true when the current admin is the case's assigned
+    // reviewer. Drives whether the under_review action buttons render here
+    // or whether we show the read-only "Claimed by …" pill to other admins.
+    const isMine = detail.reviewed_by?.id === auth.user?.id;
 
     // ── Local UI state ───────────────────────────────────────────────────────
     const [adminNote, setAdminNote] = useState<string>('');
@@ -197,7 +207,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
     // sees one row per *expected* document (uploaded or missing) plus any
     // extra files attached outside the catalog.
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [d.collection_name, d]));
-    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocuments.some((r) => r.key === d.collection_name));
+    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === d.collection_name));
 
     // ── Stubbed action handlers ──────────────────────────────────────────────
     // Each one is a placeholder for a future dedicated controller. They're
@@ -210,6 +220,25 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
             note: adminNote || undefined,
         });
         alert(`"${label}" is not wired yet. The future POST controller will own this.`);
+    };
+
+    // ── Real action: pending → under_review ─────────────────────────────────
+    // POSTs to StartAssistanceRequestReviewController. The controller delegates
+    // to StartAssistanceRequestReviewAction which lockForUpdate's the row,
+    // re-checks the transition rule, and stamps reviewed_by_user_id. Server
+    // returns a `back()` redirect, so Inertia re-renders this page with the
+    // refreshed status badge and any flash messages.
+    const handlePickUp = () => {
+        router.post(
+            actionCenter.assistance.startReview.url({ assistanceRequestId: detail.id }),
+            {},
+            {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
+                },
+                preserveScroll: true,
+            },
+        );
     };
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -362,7 +391,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    {requiredDocuments.map((req) => {
+                                    {requiredDocumentsData.map((req) => {
                                         const uploaded = uploadedByKey.get(req.key);
                                         return <DocumentRow key={req.key} required={req} file={uploaded} />;
                                     })}
@@ -376,7 +405,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                         </>
                                     )}
 
-                                    {requiredDocuments.length === 0 && (detail.documents ?? []).length === 0 && (
+                                    {requiredDocumentsData.length === 0 && (detail.documents ?? []).length === 0 && (
                                         <p className="text-sm text-slate-400 italic">No documents uploaded.</p>
                                     )}
                                 </CardContent>
@@ -422,7 +451,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                             </Card>
 
                             {/* Change History — spatie/laravel-activitylog */}
-                            {activityLog.length > 0 && (
+                            {activityLogData.length > 0 && (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
@@ -432,12 +461,10 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                     </CardHeader>
                                     <CardContent>
                                         <ol className="space-y-4">
-                                            {activityLog.map((entry) => (
+                                            {activityLogData.map((entry) => (
                                                 <li key={entry.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <p className="text-xs font-semibold text-slate-700">
-                                                            {entry.by ?? 'System'}
-                                                        </p>
+                                                        <p className="text-xs font-semibold text-slate-700">{entry.by ?? 'System'}</p>
                                                         <p className="text-[11px] text-slate-400">
                                                             {entry.at ? new Date(entry.at).toLocaleString() : '—'}
                                                         </p>
@@ -452,9 +479,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                                                         {String(entry.old[field] ?? '—')}
                                                                     </span>
                                                                     {' → '}
-                                                                    <span className="font-medium text-slate-800">
-                                                                        {String(newVal ?? '—')}
-                                                                    </span>
+                                                                    <span className="font-medium text-slate-800">{String(newVal ?? '—')}</span>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -490,7 +515,13 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                     <CardTitle className="text-base">Actions</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
-                                    <ActionButtons status={detail.status} onAction={stubAction} />
+                                    <ActionButtons
+                                        status={detail.status}
+                                        onAction={stubAction}
+                                        onPickUp={handlePickUp}
+                                        isMine={isMine}
+                                        reviewerName={detail.reviewed_by?.name ?? null}
+                                    />
 
                                     <div className="border-t border-slate-100 pt-3">
                                         <label className="mb-1.5 block text-[11px] font-bold tracking-widest text-slate-600 uppercase">
@@ -562,11 +593,11 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                     <CardTitle className="text-base">Recent activity</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    {recentHistory.length === 0 ? (
+                                    {recentHistoryData.length === 0 ? (
                                         <p className="text-sm text-slate-400 italic">First request from this beneficiary.</p>
                                     ) : (
                                         <ul className="space-y-2">
-                                            {recentHistory.map((row) => (
+                                            {recentHistoryData.map((row) => (
                                                 <li key={row.id} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="min-w-0">
@@ -704,13 +735,28 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
     );
 }
 
-function ActionButtons({ status, onAction }: { status: string; onAction: (label: string) => () => void }) {
+function ActionButtons({
+    status,
+    onAction,
+    onPickUp,
+    isMine,
+    reviewerName,
+}: {
+    status: string;
+    onAction: (label: string) => () => void;
+    onPickUp: () => void;
+    /** True when the current admin is the assigned reviewer for this case. */
+    isMine: boolean;
+    /** Name of the assigned reviewer — used by the "Claimed by …" pill. */
+    reviewerName: string | null;
+}) {
     switch (status) {
         case 'pending':
+            // Pending = unclaimed. Anyone can pick up; no ownership gate yet.
             return (
                 <>
-                    <Button className="w-full" onClick={onAction('Move to Under Review')}>
-                        <FileText className="mr-2 h-4 w-4" /> Move to Under Review
+                    <Button className="w-full" onClick={onPickUp}>
+                        <UserCheck className="mr-2 h-4 w-4" /> Pick Up Case
                     </Button>
                     <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700" onClick={onAction('Approve')}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
@@ -722,6 +768,23 @@ function ActionButtons({ status, onAction }: { status: string; onAction: (label:
             );
 
         case 'under_review':
+            // Ownership gate — only the assigned reviewer sees the workflow
+            // buttons. Other admins still see the full case detail above but
+            // get a read-only pill here, preserving audit visibility while
+            // making ownership explicit.
+            if (!isMine) {
+                return (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+                        <p className="font-semibold text-slate-700">
+                            Claimed by {reviewerName ?? 'another reviewer'}
+                        </p>
+                        <p className="mt-1 leading-relaxed">
+                            You can view this case for cross-reference, but only the
+                            assigned reviewer can take action on it.
+                        </p>
+                    </div>
+                );
+            }
             return (
                 <>
                     <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700" onClick={onAction('Approve')}>

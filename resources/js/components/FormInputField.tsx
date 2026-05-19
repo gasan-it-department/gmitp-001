@@ -12,6 +12,10 @@ interface InputProps {
     disabled?: boolean;
     isUppercase?: boolean;
     placeholder?: string;
+    /** Optional numeric-input attributes (used when type="number"). */
+    min?: number | string;
+    max?: number | string;
+    step?: number | string;
 }
 
 export const FormInput = ({
@@ -25,6 +29,9 @@ export const FormInput = ({
     disabled = false,
     isUppercase = false, // Default is false, so it works if prop is missing
     placeholder, // 3. Destructure it
+    min,
+    max,
+    step,
 }: InputProps) => {
     return (
         <div className="flex flex-col gap-1.5">
@@ -38,7 +45,10 @@ export const FormInput = ({
                 onChange={onChange}
                 disabled={disabled}
                 required={required}
-                placeholder={placeholder} // 4. Pass it here
+                placeholder={placeholder}
+                min={min}
+                max={max}
+                step={step}
                 className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                     error ? 'border-red-500 focus-visible:ring-red-500' : 'border-input'
                 } ${isUppercase ? 'uppercase placeholder:normal-case' : ''}`}

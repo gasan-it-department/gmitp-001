@@ -36,11 +36,11 @@ return new class extends Migration {
 
             $table->string('educational_attainment')->nullable();
 
-            // ── Data Privacy Act (RA 10173) consent record ───────────────────
-            // Captured at profile-setup time. The citizen agreed to MSWD's terms
-            // of registration + general privacy notice in order to be enrolled
-            // in the beneficiary registry. Per-application consent is recorded
-            // separately on ac_assistance_requests.
+            $table->string('civil_status')->nullable();
+            $table->string('occupation')->nullable();
+            // Same shape as ac_household_members: decimal(10,2) with default 0
+            $table->decimal('monthly_income', 10, 2)->default(0);
+
             $table->timestamp('terms_consented_at');
             $table->string('terms_version');
 

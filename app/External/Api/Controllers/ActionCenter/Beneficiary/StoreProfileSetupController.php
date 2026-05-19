@@ -28,7 +28,6 @@ class StoreProfileSetupController extends Controller
     public function __invoke(
         StoreProfileSetupRequest $request,
     ): RedirectResponse {
-
         $municipality = app('current_municipality');
 
         $dto = CreateBeneficiaryProfileDto::fromArray(

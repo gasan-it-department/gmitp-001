@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Models;
 
+use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\Users\Models\User;
 use Database\Factories\AssistanceRequestFactory;
@@ -75,6 +76,10 @@ class AssistanceRequest extends Model implements HasMedia
         'snapshot_birth_date',
         'snapshot_educational_attainment',
         'snapshot_religion',
+        'snapshot_civil_status',
+        'snapshot_occupation',
+        'snapshot_monthly_income',
+        'snapshot_household_total_income',
 
         // Address snapshot — frozen copy of ac_households at request time.
         // Province omitted; municipal_id FK already captures that context.
@@ -84,6 +89,7 @@ class AssistanceRequest extends Model implements HasMedia
     ];
 
     protected $casts = [
+        'status' => AssistanceStatus::class,
         'relationship_to_beneficiary' => Relationship::class,
         'on_behalf_date_of_death' => 'date',
         'snapshot_birth_date' => 'date',
@@ -157,24 +163,6 @@ class AssistanceRequest extends Model implements HasMedia
         return $this->belongsTo(User::class, 'approved_by_user_id');
     }
 
-    /**
-     * Files uploaded with this request. The schema is built to fit both
-     * Cloudinary (public_id, resource_type) and local-disk storage paths.
-     *
-     * @deprecated New uploads go through Spatie Media Library on the
-     *             "documents" collection. Kept for any historical rows.
-     */
-
-    /**
-     * Spatie Media Library — one collection per request holding every
-     * uploaded supporting document. Each media row carries the
-     * `document_key` custom property so the admin UI can render uploads
-     * grouped by their ac_document_types slot.
-     *
-     * Stored on the private "local" disk (storage/app/private/…). Admin
-     * downloads are served through an authenticated controller route —
-     * the files are never publicly accessible.
-     */
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('documents')

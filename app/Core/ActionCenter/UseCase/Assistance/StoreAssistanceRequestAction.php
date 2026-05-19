@@ -34,8 +34,10 @@ class StoreAssistanceRequestAction
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
     {
-
-        $beneficiary = Beneficiary::findOrFail($dto->beneficiaryId);
+        // Load the beneficiary ONCE here — the action owns I/O. The DTO
+        // stayed pure (just IDs / primitives), the model fetch happens
+        // in the action layer per our layered-architecture contract.
+        $beneficiary = Beneficiary::with(['household', 'religion'])->findOrFail($dto->beneficiaryId);
 
         if ($beneficiary->household->municipal_id !== $dto->municipalId) {
             throw new AuthorizationException(
@@ -43,7 +45,18 @@ class StoreAssistanceRequestAction
             );
         }
 
-        return DB::transaction(function () use ($dto) {
+        // ── Compute derived economic snapshot BEFORE opening the transaction.
+        //    These are read-only SELECTs that do not need to be inside the
+        //    lock window — pulling them out keeps the transaction tight.
+        $householdTotalIncome = $this->computeHouseholdTotalIncome($beneficiary);
+
+        // ── Transaction scope: ONLY the row insert + sequence increment.
+        //    Media uploads (multi-MB disk I/O) are deliberately kept OUTSIDE
+        //    so the lock on ac_request_sequences never waits for a file
+        //    write. `attempts: 3` auto-retries on the rare sequence-table
+        //    serialization conflict (two citizens hitting submit within
+        //    the same millisecond).
+        $request = DB::transaction(function () use ($dto, $beneficiary, $householdTotalIncome) {
             $requestId = $this->idGenerator->generate();
 
             // When filing for a household member, resolve the snapshot fields
@@ -57,7 +70,7 @@ class StoreAssistanceRequestAction
             $onBehalfLastName = $member?->last_name ?? $dto->onBehalfLastName;
             $onBehalfSuffix = $member?->suffix ?? $dto->onBehalfSuffix;
 
-            $request = AssistanceRequest::create([
+            return AssistanceRequest::create([
                 'id' => $requestId,
                 'municipal_id' => $dto->municipalId,
                 'beneficiary_id' => $dto->beneficiaryId,
@@ -96,16 +109,53 @@ class StoreAssistanceRequestAction
                 'snapshot_educational_attainment' => $dto->snapshotEducationalAttainment,
                 'snapshot_religion' => $dto->snapshotReligion,
 
+                // Economic snapshot — read straight from the loaded beneficiary
+                // for the three direct fields. The household total is the
+                // value computed above against ac_household_members at the
+                // moment of submission, frozen forever for COA traceability.
+                'snapshot_civil_status' => $beneficiary->civil_status?->value,
+                'snapshot_occupation' => $beneficiary->occupation,
+                'snapshot_monthly_income' => $beneficiary->monthly_income,
+                'snapshot_household_total_income' => $householdTotalIncome,
+
                 // Address snapshot — frozen from ac_households at submission time.
                 'snapshot_barangay' => $dto->snapshotBarangay,
                 'snapshot_barangay_psgc_code' => $dto->snapshotBarangayPsgcCode,
                 'snapshot_street' => $dto->snapshotStreet,
             ]);
+        }, attempts: 3);
 
-            $this->attachUploadedDocuments($request, $dto->documents);
+        // ── Media uploads run OUTSIDE the transaction. If a file write
+        //    fails here, the request row is already committed and visible
+        //    to admins with whatever documents DID attach. Re-submitting
+        //    won't double-insert (ULID is unique). Orphan media files
+        //    from a partial failure are cleaned up by Spatie's GC.
+        $this->attachUploadedDocuments($request, $dto->documents);
 
-            return $request->fresh(['media']);
-        });
+        // Reload with the freshly-attached media so the return value
+        // reflects the post-upload state (callers / API resources can
+        // serialize `documents_uploaded` correctly on the very first read).
+        return $request->fresh(['media']);
+    }
+
+    /**
+     * Sum the beneficiary's own monthly income with every ACTIVE household
+     * member's monthly income at submission time. The snapshot column on
+     * ac_assistance_requests will hold this value immutably — even after
+     * the citizen's family composition or earnings change, COA can still
+     * see the household income that justified the original approval.
+     *
+     * Returns 0.0 for a beneficiary with no members and no declared income
+     * (rather than null) so the snapshot column carries a real number.
+     */
+    private function computeHouseholdTotalIncome(Beneficiary $beneficiary): float
+    {
+        $membersIncome = (float) HouseholdMember::query()
+            ->where('household_id', $beneficiary->household_id)
+            ->where('is_active', true)
+            ->sum('monthly_income');
+
+        return (float) ($beneficiary->monthly_income ?? 0) + $membersIncome;
     }
 
     /**

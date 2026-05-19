@@ -18,6 +18,19 @@ use Illuminate\Support\Facades\DB;
  *
  * After this action succeeds the citizen will pass the profile gate in
  * ApplyAssistanceRequestController and can submit assistance requests.
+ *
+ * ── Lock-order contract ────────────────────────────────────────────────
+ * Locks in this order: users row → households insert → beneficiaries
+ * insert. The users-row lock is held to serialize the double-submit
+ * idempotency check (citizen double-clicks the Save button on the
+ * profile setup form). If new locks are ever added here, append them
+ * AFTER the existing chain — keep users first to match any other
+ * action that touches users + ac_beneficiaries.
+ *
+ * `attempts: 3` retries on transient serialization failures around the
+ * users-row lock without changing the idempotency semantics — the
+ * "existing beneficiary found, return it" branch handles the rare case
+ * where a concurrent transaction beat us to the insert.
  */
 class CreateBeneficiaryProfileAction
 {
@@ -52,10 +65,14 @@ class CreateBeneficiaryProfileAction
                 'sex' => $dto->sex,
                 'birth_date' => $dto->birthDate,
                 'religion_id' => $dto->religionId,
+                'educational_attainment' => $dto->educationalAttainment,
+                // Civil status / employment / income — paper-form parity.
+                'civil_status' => $dto->civilStatus,
+                'occupation' => $dto->occupation,
+                'monthly_income' => $dto->monthlyIncome,
                 'terms_consented_at' => $dto->termsConsentedAt,
                 'terms_version' => $dto->termsVersion,
-                'educational_attainment' => $dto->educationalAttainment,
             ]);
-        });
+        }, attempts: 3);
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
@@ -10,6 +11,7 @@ use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeControll
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
+use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ShowAssistanceRequestProfileController;
 use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
 use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
@@ -25,12 +27,19 @@ Route::prefix('{municipality}/action-center')
 
 
         //eg. https://gasan-4905/action-center/admin
+        // for admin pages
         Route::prefix('/admin')
             ->middleware(['admin'])
             ->name('admin.')
             ->group(function () {
 
             Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
+
+            // Personal worklist — only under_review cases assigned to the
+            // current admin. Pinned scope is set server-side; query-string
+            // overrides are ignored. Companion to list.assistance (All Cases).
+            Route::get('list/my-assistance-requests', ListMyAssistanceRequestController::class)
+                ->name('list.my.assistance');
 
             Route::get('create', CreateAssistanceRequestController::class)->name('assistance.create');
 
@@ -48,22 +57,16 @@ Route::prefix('{municipality}/action-center')
                 ->name('show.assistance-request.profile');
         });
 
-        // Profile setup wizard — first-time users only.
-        //   GET  /{municipality}/action-center/profile/setup  → show the form
-        //   POST /{municipality}/action-center/profile/setup  → save and redirect to portal
+        //for non admin pages 
         Route::get('/profile/setup', ShowProfileSetupController::class)->name('profile.setup');
 
-        //eg. https://gasan-4905/action-center/beneficiary
         Route::get('/portal', IndexAssistanceRequestController::class)->name('portal');
 
         Route::get('/', [ClientActionCenterController::class, 'index'])->name('index');
 
         Route::get('/household', [HouseholdController::class, 'index'])->name('household.index');
 
-        // Apply for assistance — slug-resolved, scoped to the current municipality
-        // via AssistanceType::resolveRouteBinding().
-        //   GET  /{municipality}/action-center/apply/medical   → renders the form
-        //   POST /{municipality}/action-center/apply/medical   → submits the request
+        //need to change place to api
         Route::get('/apply/{assistanceType:slug}', ApplyAssistanceRequestController::class)
             ->name('apply.assistance');
 
@@ -86,6 +89,11 @@ Route::prefix('/api/action-center')
                 Route::post('store/assistance-type', StoreAssistanceTypeController::class)->name('assistance.type.store');
 
                 Route::put('update/assistance-type/{typeId}', UpdateAssistanceTypeController::class)->name('assistance.type.update');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/start-review',
+                    StartAssistanceRequestReviewController::class,
+                )->name('assistance.start-review');
             });
 
         Route::middleware(['auth', 'municipalityContext'])
@@ -98,7 +106,6 @@ Route::prefix('/api/action-center')
                     ->name('household.members.store');
 
             });
-
 
     });
 
