@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
@@ -94,6 +95,14 @@ Route::prefix('/api/action-center')
                     '/assistance-request/{assistanceRequestId}/start-review',
                     StartAssistanceRequestReviewController::class,
                 )->name('assistance.start-review');
+
+                // Approve a case — commits the amount and writes cooldown rows.
+                // Sibling to start-review; both follow the same thin-controller
+                // + heavy-lifting-action pattern.
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/approve',
+                    ApproveAssistanceRequestController::class,
+                )->name('assistance.approve');
             });
 
         Route::middleware(['auth', 'municipalityContext'])

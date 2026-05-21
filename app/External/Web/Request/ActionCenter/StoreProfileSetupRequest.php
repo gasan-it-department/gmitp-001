@@ -3,6 +3,10 @@
 namespace App\External\Web\Request\ActionCenter;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
+use App\Core\ActionCenter\Enums\EducationalAttainment;
+use App\Core\ActionCenter\Enums\Relationship;
+use App\Core\ActionCenter\Enums\Sex;
+use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -44,6 +48,25 @@ class StoreProfileSetupRequest extends FormRequest
             // freely given AND evidenced. We persist the timestamp + notice
             // version on ac_beneficiaries in the action layer.
             'terms_consent' => ['required', 'accepted'],
+
+            // ── Household composition (optional but encouraged) ──────────────
+            // Citizen can skip this section entirely; admin will collect
+            // during interview if it's missing. When provided, each entry
+            // is validated as a small inline form. Per-household-cap is
+            // enforced server-side in StoreHouseholdMemberAction.
+            'household_members'                          => ['nullable', 'array', 'max:' . StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
+            'household_members.*.first_name'             => ['required_with:household_members.*', 'string', 'max:100'],
+            'household_members.*.last_name'              => ['required_with:household_members.*', 'string', 'max:100'],
+            'household_members.*.middle_name'            => ['nullable', 'string', 'max:100'],
+            'household_members.*.suffix'                 => ['nullable', 'string', 'max:20'],
+            'household_members.*.relationship'           => ['required_with:household_members.*', Rule::in($this->relationshipValues())],
+            'household_members.*.birth_date'             => ['nullable', 'date', 'before_or_equal:today'],
+            'household_members.*.sex'                    => ['nullable', Rule::in($this->sexValues())],
+            'household_members.*.civil_status'           => ['nullable', Rule::in($this->civilStatusValues())],
+            'household_members.*.educational_attainment' => ['nullable', Rule::in($this->educationalAttainmentValues())],
+            'household_members.*.occupation'             => ['nullable', 'string', 'max:120'],
+            'household_members.*.monthly_income'         => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'household_members.*.religion_id'            => ['nullable', 'ulid', 'exists:ac_religions,id'],
         ];
     }
 
@@ -66,5 +89,23 @@ class StoreProfileSetupRequest extends FormRequest
     private function civilStatusValues(): array
     {
         return array_map(fn (CivilStatus $case) => $case->value, CivilStatus::cases());
+    }
+
+    /** @return array<int, string> */
+    private function relationshipValues(): array
+    {
+        return array_map(fn (Relationship $case) => $case->value, Relationship::cases());
+    }
+
+    /** @return array<int, string> */
+    private function sexValues(): array
+    {
+        return array_map(fn (Sex $case) => $case->value, Sex::cases());
+    }
+
+    /** @return array<int, string> */
+    private function educationalAttainmentValues(): array
+    {
+        return array_map(fn (EducationalAttainment $case) => $case->value, EducationalAttainment::cases());
     }
 }

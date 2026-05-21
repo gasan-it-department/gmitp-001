@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
 use App\Core\Users\Models\User;
@@ -31,6 +32,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'user'               => User::class,
             'assistance_request' => AssistanceRequest::class,
             'beneficiary'        => Beneficiary::class,
+            'household_member'   => HouseholdMember::class,
         ]);
     }
 }

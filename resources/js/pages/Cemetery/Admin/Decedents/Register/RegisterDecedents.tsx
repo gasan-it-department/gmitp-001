@@ -42,7 +42,6 @@ export default function RegisterDecedents({ municipality }: Props) {
         street_name: '',
         memorial_name: '',
     });
-    console.log(data.has_official_name);
     const handleTypeChange = (type: RegisterDecedentForm['decedent_type']) => {
         setData((prevData) => {
             let newData = { ...prevData, decedent_type: type };
@@ -297,8 +296,8 @@ export default function RegisterDecedents({ municipality }: Props) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="male">MALE</SelectItem>
-                                            <SelectItem value="female">FEMALE</SelectItem>
+                                            <SelectItem value="MALE">MALE</SelectItem>
+                                            <SelectItem value="FEMALE">FEMALE</SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>

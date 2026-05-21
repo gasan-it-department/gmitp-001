@@ -139,23 +139,23 @@ class StoreAssistanceRequestAction
     }
 
     /**
-     * Sum the beneficiary's own monthly income with every ACTIVE household
-     * member's monthly income at submission time. The snapshot column on
-     * ac_assistance_requests will hold this value immutably — even after
-     * the citizen's family composition or earnings change, COA can still
-     * see the household income that justified the original approval.
+     * Sum the monthly income across every ACTIVE row in ac_household_members
+     * for this beneficiary's household. The citizen themselves is one of
+     * those rows (the "Head of Household" self-row written at registration
+     * by CreateBeneficiaryProfileAction), so this SUM alone IS the total —
+     * no need to add the beneficiary's income separately.
      *
-     * Returns 0.0 for a beneficiary with no members and no declared income
-     * (rather than null) so the snapshot column carries a real number.
+     * The snapshot column on ac_assistance_requests holds this value
+     * immutably: even after the citizen's family composition or earnings
+     * change, COA can still see the household income that justified the
+     * original approval.
      */
     private function computeHouseholdTotalIncome(Beneficiary $beneficiary): float
     {
-        $membersIncome = (float) HouseholdMember::query()
+        return (float) HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
             ->where('is_active', true)
             ->sum('monthly_income');
-
-        return (float) ($beneficiary->monthly_income ?? 0) + $membersIncome;
     }
 
     /**

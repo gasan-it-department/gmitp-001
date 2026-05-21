@@ -4,10 +4,16 @@ namespace App\Core\Cemetery\Repositories;
 
 use App\Core\Cemetery\Dto\DecedentDto;
 use App\Core\Cemetery\Models\Decedent;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
+/**
+ * Single source of truth for cemetery_decedents persistence.
+ *
+ * Every method MUST scope by municipal_id — there is no global scope. The
+ * controller layer never touches the model directly.
+ */
 class DecedentsRepository
 {
-
     public function save(DecedentDto $dto, string $decedentId, ?string $addressId): Decedent
     {
         return Decedent::create([
@@ -33,20 +39,33 @@ class DecedentsRepository
         ]);
     }
 
-    public function findDecedentById(string $municipalId, string $decedentId)
+    public function findByIdForMunicipality(string $municipalId, string $decedentId): Decedent
     {
-
-        return Decedent::where('municipal_id', $municipalId)
+        return Decedent::with(['currentInterment.plot.section'])
+            ->where('municipal_id', $municipalId)
             ->findOrFail($decedentId);
-
     }
 
-    public function getMunicipalitiesDecedents(string $municipalId)
+    public function paginateByMunicipality(string $municipalId, int $perPage = 10): LengthAwarePaginator
     {
-
         return Decedent::where('municipal_id', $municipalId)
-            ->paginate(10);
-
+            ->with(['currentInterment.plot'])
+            ->orderByDesc('date_of_registration')
+            ->paginate($perPage);
     }
 
+    /**
+     * Used by the interment-assignment screen: returns decedents that do not
+     * yet have any non-pending interment row — i.e. they are eligible for
+     * a fresh plot assignment.
+     */
+    public function paginateUninterredByMunicipality(string $municipalId, int $perPage = 25): LengthAwarePaginator
+    {
+        return Decedent::where('municipal_id', $municipalId)
+            ->whereDoesntHave('interments', function ($query) {
+                $query->whereIn('status', ['interred', 'transferred']);
+            })
+            ->orderByDesc('date_of_registration')
+            ->paginate($perPage);
+    }
 }

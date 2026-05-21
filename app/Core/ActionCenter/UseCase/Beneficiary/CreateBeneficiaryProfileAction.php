@@ -3,8 +3,10 @@
 namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
+use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
+use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -34,6 +36,11 @@ use Illuminate\Support\Facades\DB;
  */
 class CreateBeneficiaryProfileAction
 {
+    public function __construct(
+        private readonly StoreHouseholdMemberAction $storeHouseholdMember,
+    ) {
+    }
+
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
         return DB::transaction(function () use ($dto) {
@@ -55,7 +62,7 @@ class CreateBeneficiaryProfileAction
                 'street' => $dto->street,
             ]);
 
-            return Beneficiary::create([
+            $beneficiary = Beneficiary::create([
                 'household_id' => $household->id,
                 'user_id' => $dto->userId,
                 'first_name' => $dto->firstName,
@@ -73,6 +80,40 @@ class CreateBeneficiaryProfileAction
                 'terms_consented_at' => $dto->termsConsentedAt,
                 'terms_version' => $dto->termsVersion,
             ]);
+
+            // ── Write the self-referencing "Head of Household" row ───────
+            // The citizen IS a member of their own household. Mirroring
+            // their identity here means every per-household operation
+            // (cooldown fan-out, total income, member count) can query
+            // a single table without special-casing the head.
+            //
+            // NOTE: Subsequent edits to the citizen's profile must ALSO
+            // update this head row. We do NOT use a model observer for
+            // that sync (deliberately — observers create invisible
+            // side effects). Each future update action (e.g.
+            // UpdateBeneficiaryProfileAction, AdminUpdateBeneficiaryAction)
+            // is responsible for explicitly syncing the head row via the
+            // same identity-field mirror used in StoreHouseholdMemberDto::fromBeneficiary.
+            $this->storeHouseholdMember->execute(
+                StoreHouseholdMemberDto::fromBeneficiary($beneficiary),
+                beneficiaryId: $beneficiary->id,
+            );
+
+            // ── Fan out the OTHER household members the citizen listed ───
+            // Each entry was already validated for shape by the FormRequest.
+            // StoreHouseholdMemberAction enforces the per-household cap and
+            // writes activity-log entries via spatie. All persists run
+            // inside this same DB::transaction — partial writes impossible.
+            // beneficiary_id stays NULL for these (unregistered family
+            // members); identity reconciliation links them on future
+            // registrations of those individuals.
+            foreach ($dto->householdMembers as $memberData) {
+                $this->storeHouseholdMember->execute(
+                    StoreHouseholdMemberDto::fromArray($memberData, $household->id),
+                );
+            }
+
+            return $beneficiary;
         }, attempts: 3);
     }
 }

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * One row per person in a household. Populated by the admin during the
@@ -20,7 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class HouseholdMember extends Model
 {
-    use HasUlids, SoftDeletes;
+    use HasUlids, LogsActivity, SoftDeletes;
 
     protected $table = 'ac_household_members';
     protected $keyType = 'string';
@@ -49,6 +51,35 @@ class HouseholdMember extends Model
         'monthly_income' => 'decimal:2',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Audit log for HouseholdMember edits. The citizen entered these rows
+     * at registration; the admin can correct them during under_review.
+     * Both paths leave an immutable trail keyed on this column set.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'first_name',
+                'middle_name',
+                'last_name',
+                'suffix',
+                'relationship',
+                'birth_date',
+                'sex',
+                'civil_status',
+                'occupation',
+                'monthly_income',
+                'educational_attainment',
+                'religion_id',
+                'is_active',
+                'beneficiary_id',  // populated during identity reconciliation
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('household_member');
+    }
 
     public function household(): BelongsTo
     {

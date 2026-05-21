@@ -4,6 +4,15 @@ namespace App\Core\ActionCenter\Enums;
 
 enum Relationship: string
 {
+    /**
+     * The registered citizen themselves — used for the self-referencing
+     * ac_household_members row that CreateBeneficiaryProfileAction writes
+     * alongside the beneficiary. Only one Head per household; the action
+     * layer enforces that invariant. This case is intentionally NOT shown
+     * in the citizen-facing relationship dropdown (server-managed only).
+     */
+    case Head = 'head';
+
     case Spouse = 'spouse';
     case Parent = 'parent';
     case Child = 'child';    // must be 18+
@@ -14,11 +23,12 @@ enum Relationship: string
     public function label(): string
     {
         return match ($this) {
-            self::Spouse => 'Spouse',
-            self::Parent => 'Parent',
-            self::Child => 'Son / Daughter',
+            self::Head    => 'Head of Household',
+            self::Spouse  => 'Spouse',
+            self::Parent  => 'Parent',
+            self::Child   => 'Son / Daughter',
             self::Sibling => 'Brother / Sister',
-            self::Bading => 'bading nga'
+            self::Bading  => 'bading nga',
         };
     }
 
@@ -48,11 +58,16 @@ enum Relationship: string
     public static function toOptions(): array
     {
         return collect(self::cases())
+            // Head is server-managed (assigned automatically to the registered
+            // citizen). Hide it from the citizen-facing dropdown — they can
+            // never pick "Head" for another household member.
+            ->reject(fn (self $case) => $case === self::Head)
             ->map(fn (self $case) => [
                 'value' => $case->value,
                 'label' => $case->label(),
                 'requires_legal_age' => $case->requiresLegalAge(),
             ])
+            ->values()
             ->toArray();
     }
 }

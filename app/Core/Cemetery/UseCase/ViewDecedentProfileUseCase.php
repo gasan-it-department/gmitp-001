@@ -2,6 +2,7 @@
 
 namespace App\Core\Cemetery\UseCase;
 
+use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Repositories\DecedentsRepository;
 
 class ViewDecedentProfileUseCase
@@ -11,8 +12,8 @@ class ViewDecedentProfileUseCase
     ) {
     }
 
-    public function execute(string $decedentId, string $municipalId)
+    public function execute(string $decedentId, string $municipalId): Decedent
     {
-        return $this->decedentRepo->findDecedentById($municipalId, $decedentId);
+        return $this->decedentRepo->findByIdForMunicipality($municipalId, $decedentId);
     }
 }

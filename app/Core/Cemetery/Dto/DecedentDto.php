@@ -2,8 +2,14 @@
 
 namespace App\Core\Cemetery\Dto;
 
-use App\External\Api\Request\Cemetery\DecedentRequest;
+use App\External\Api\Request\Cemetery\CreateDecedentRequest;
 
+/**
+ * Immutable transport for a decedent-create payload moving from the HTTP
+ * boundary into the domain layer. All string fields are pre-normalised
+ * (uppercased/trimmed) here so downstream use cases and repositories never
+ * touch raw request data.
+ */
 final readonly class DecedentDto
 {
     public function __construct(
@@ -16,56 +22,62 @@ final readonly class DecedentDto
 
         public ?string $dateOfBirth,
         public ?string $dateOfDeath,
-        public string $dateOfRegistration,
+        public string  $dateOfRegistration,
 
-        public string $decedentType,
+        public string  $decedentType,
         public ?string $causeOfDeath,
         public ?string $deathCertNumber,
         public ?string $notes,
         public ?string $placeOfDeath,
-        public ?string $referenceDocumentNumber, //if the decedent is unknown 
-        public ?string $referenceDocumentType, //if the decedent is unknown 
+        public ?string $referenceDocumentType,
+        public ?string $referenceDocumentNumber,
 
-        public string $municipalId,
-        public ?string $psgcMunicpalityId,
+        public string  $municipalId,
+        public ?string $psgcMunicipalityId,
         public ?string $psgcBarangayId,
-        public ?string $streetName
+        public ?string $streetName,
     ) {
     }
 
-    public static function fromRequest(DecedentRequest $request): self
+    public static function fromRequest(CreateDecedentRequest $request): self
     {
         $data = $request->validated();
 
-        $municipalId = app('municipal_id');
         return new self(
-            firstName: filled($data['first_name'])
-            ? strtoupper(trim($data['first_name']))
-            : null,
-            lastName: !empty($data['last_name']) ? strtoupper(trim($data['last_name'])) : null,
-            middleName: !empty($data['middle_name']) ? strtoupper(trim($data['middle_name'])) : null,
-            suffix: !empty($data['suffix']) ? strtoupper(trim($data['suffix'])) : null,
-            gender: !empty($data['gender']) ? strtoupper(trim($data['gender'])) : null,
-            memorialName: $data['memorial_name'],
+            firstName: self::upper($data['first_name'] ?? null),
+            lastName: self::upper($data['last_name'] ?? null),
+            middleName: self::upper($data['middle_name'] ?? null),
+            suffix: self::upper($data['suffix'] ?? null),
+            gender: self::upper($data['gender'] ?? null),
+            memorialName: self::upper($data['memorial_name'] ?? null),
 
-            // Dates don't need uppercase, just pass them through
             dateOfBirth: $data['date_of_birth'] ?? null,
             dateOfDeath: $data['date_of_death'] ?? null,
             dateOfRegistration: $data['date_of_registration'],
 
             decedentType: $data['decedent_type'],
-            causeOfDeath: !empty($data['cause_of_death']) ? strtoupper(trim($data['cause_of_death'])) : null,
-            deathCertNumber: strtoupper(trim($data['death_certificate_no'])),
-            notes: !empty($data['notes']) ? strtoupper(trim($data['notes'])) : null,
-            placeOfDeath: $data['place_of_death'],
-            referenceDocumentType: $data['reference_document_type'],
-            referenceDocumentNumber: $data['reference_document_number'],
+            causeOfDeath: self::upper($data['cause_of_death'] ?? null),
+            deathCertNumber: self::upper($data['death_certificate_no'] ?? null),
+            notes: self::upper($data['notes'] ?? null),
+            placeOfDeath: self::upper($data['place_of_death'] ?? null),
+            referenceDocumentType: $data['reference_document_type'] ?? null,
+            referenceDocumentNumber: self::upper($data['reference_document_number'] ?? null),
 
-            municipalId: $municipalId,
-
-            psgcMunicpalityId: $data['psgc_municipal_id'],
-            psgcBarangayId: $data['psgc_barangay_id'],
-            streetName: $data['street_name'],
+            municipalId: app('municipal_id'),
+            psgcMunicipalityId: $data['psgc_municipal_id'] ?? null,
+            psgcBarangayId: $data['psgc_barangay_id'] ?? null,
+            streetName: self::upper($data['street_name'] ?? null),
         );
+    }
+
+    private static function upper(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : strtoupper($trimmed);
     }
 }

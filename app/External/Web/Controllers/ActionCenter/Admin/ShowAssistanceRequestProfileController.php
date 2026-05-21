@@ -2,16 +2,15 @@
 
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
-use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\HouseholdMemberDetailsResource;
 use App\External\Api\Resources\ActionCenter\RecentAssistanceRequestResource;
 use App\External\Api\Resources\ActionCenter\RequiredDocumentResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\Activitylog\Models\Activity;
 
 /**
  * Admin: show the full profile of a single assistance request.
@@ -51,6 +50,9 @@ class ShowAssistanceRequestProfileController extends Controller
             'recentHistory' => RecentAssistanceRequestResource::collection($data['recentHistory']),
 
             'activityLog' => ActivityLogResource::collection($data['activityLog']),
+
+            'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
+
         ]);
     }
 }

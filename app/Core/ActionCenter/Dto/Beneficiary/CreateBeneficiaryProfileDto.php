@@ -45,6 +45,15 @@ readonly class CreateBeneficiaryProfileDto
         // DTO is built we know the box was ticked.
         public CarbonImmutable $termsConsentedAt,
         public string $termsVersion,
+
+        // ── Household composition (entered alongside identity) ───────────────
+        // Pure-primitives array; each entry will be hydrated into a
+        // StoreHouseholdMemberDto in the action and persisted via
+        // StoreHouseholdMemberAction inside the same DB transaction as the
+        // beneficiary row. Empty array = citizen chose to skip.
+        //
+        // @var array<int, array<string, mixed>>
+        public array $householdMembers = [],
     ) {
     }
 
@@ -90,6 +99,11 @@ readonly class CreateBeneficiaryProfileDto
             // Consent is server-stamped, not trusted from the request payload.
             termsConsentedAt: CarbonImmutable::now(),
             termsVersion: self::TERMS_VERSION,
+
+            // Household members carried through as-is (associative arrays).
+            // Action will iterate and hand each one to StoreHouseholdMemberDto.
+            // Missing key → empty array = citizen skipped the section.
+            householdMembers: $data['household_members'] ?? [],
         );
     }
 }

@@ -30,21 +30,21 @@ class AssistanceRequestDetailsResource extends JsonResource
     {
         return [
             // ── Identification ───────────────────────────────────────────────
-            'id'                 => $this->id,
+            'id' => $this->id,
             'transaction_number' => $this->transaction_number,
-            'status'             => $this->status,
+            'status' => $this->status,
 
             // ── Program ──────────────────────────────────────────────────────
-            'assistance_type' => $this->whenLoaded('assistanceType', fn () => [
-                'id'              => $this->assistanceType->id,
-                'name'            => $this->assistanceType->name,
-                'slug'            => $this->assistanceType->slug,
-                'description'     => $this->assistanceType->description,
-                'min_amount'      => $this->assistanceType->min_amount !== null ? (float) $this->assistanceType->min_amount : null,
-                'max_amount'      => $this->assistanceType->max_amount !== null ? (float) $this->assistanceType->max_amount : null,
+            'assistance_type' => $this->whenLoaded('assistanceType', fn() => [
+                'id' => $this->assistanceType->id,
+                'name' => $this->assistanceType->name,
+                'slug' => $this->assistanceType->slug,
+                'description' => $this->assistanceType->description,
+                'min_amount' => $this->assistanceType->min_amount !== null ? (float) $this->assistanceType->min_amount : null,
+                'max_amount' => $this->assistanceType->max_amount !== null ? (float) $this->assistanceType->max_amount : null,
                 'cooldown_months' => (int) $this->assistanceType->cooldown_months,
-                'cooldown_type'   => $this->assistanceType->cooldown_type,
-                'cooldown_scope'  => $this->assistanceType->cooldown_scope,
+                'cooldown_type' => $this->assistanceType->cooldown_type,
+                'cooldown_scope' => $this->assistanceType->cooldown_scope,
             ]),
 
             // ── Money — null until the approver fills it ─────────────────────
@@ -52,22 +52,22 @@ class AssistanceRequestDetailsResource extends JsonResource
 
             // ── Free-text fields ─────────────────────────────────────────────
             'description' => $this->description,    // citizen's stated reason
-            'remarks'     => $this->remarks,        // admin's internal notes
+            'remarks' => $this->remarks,        // admin's internal notes
 
             // ── Workflow timestamps (ISO 8601, UTC) ──────────────────────────
             'submitted_at' => $this->created_at?->toIso8601String(),
-            'approved_at'  => $this->approved_at?->toIso8601String(),
-            'released_at'  => $this->released_at?->toIso8601String(),
+            'approved_at' => $this->approved_at?->toIso8601String(),
+            'released_at' => $this->released_at?->toIso8601String(),
 
             // ── Audit trail (who did what) ───────────────────────────────────
-            'is_walkin'   => $this->encoded_by_user_id !== null,
-            'encoded_by'  => $this->whenLoaded('encodedBy',  fn () => $this->encodedBy  ? $this->shortUser($this->encodedBy)  : null),
-            'reviewed_by' => $this->whenLoaded('reviewedBy', fn () => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
-            'approved_by' => $this->whenLoaded('approvedBy', fn () => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
+            'is_walkin' => $this->encoded_by_user_id !== null,
+            'encoded_by' => $this->whenLoaded('encodedBy', fn() => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
+            'reviewed_by' => $this->whenLoaded('reviewedBy', fn() => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
+            'approved_by' => $this->whenLoaded('approvedBy', fn() => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
 
             // ── Representative — null when filed for self ────────────────────
             'filed_for_self' => $this->relationship_to_beneficiary === null,
-            'relationship'   => $this->relationship_to_beneficiary
+            'relationship' => $this->relationship_to_beneficiary
                 ? [
                     'value' => $this->relationship_to_beneficiary->value,
                     'label' => $this->relationship_to_beneficiary->label(),
@@ -75,63 +75,65 @@ class AssistanceRequestDetailsResource extends JsonResource
                 : null,
             'on_behalf' => $this->relationship_to_beneficiary
                 ? [
-                    'first_name'    => $this->on_behalf_first_name,
-                    'middle_name'   => $this->on_behalf_middle_name,
-                    'last_name'     => $this->on_behalf_last_name,
-                    'suffix'        => $this->on_behalf_suffix,
-                    'full_name'     => $this->resolveOnBehalfFullName(),
+                    'first_name' => $this->on_behalf_first_name,
+                    'middle_name' => $this->on_behalf_middle_name,
+                    'last_name' => $this->on_behalf_last_name,
+                    'suffix' => $this->on_behalf_suffix,
+                    'full_name' => $this->resolveOnBehalfFullName(),
                     'date_of_death' => $this->on_behalf_date_of_death?->toDateString(),
                 ]
                 : null,
 
             // ── Identity snapshot (frozen at submission) ─────────────────────
             'identity_snapshot' => [
-                'first_name'             => $this->snapshot_first_name,
-                'middle_name'            => $this->snapshot_middle_name,
-                'last_name'              => $this->snapshot_last_name,
-                'suffix'                 => $this->snapshot_suffix,
-                'full_name'              => $this->resolveSnapshotFullName(),
-                'sex'                    => $this->snapshot_sex,
-                'birth_date'             => $this->snapshot_birth_date?->toDateString(),
-                'age_at_submission'      => $this->calculateAgeAtSubmission(),
+                'first_name' => $this->snapshot_first_name,
+                'middle_name' => $this->snapshot_middle_name,
+                'last_name' => $this->snapshot_last_name,
+                'suffix' => $this->snapshot_suffix,
+                'full_name' => $this->resolveSnapshotFullName(),
+                'sex' => $this->snapshot_sex,
+                'birth_date' => $this->snapshot_birth_date?->toDateString(),
+                'age_at_submission' => $this->calculateAgeAtSubmission(),
                 'educational_attainment' => $this->snapshot_educational_attainment,
-                'religion'               => $this->snapshot_religion,
+                'religion' => $this->snapshot_religion,
             ],
 
             // ── Address snapshot (frozen at submission) ──────────────────────
             'address_snapshot' => [
-                'street'              => $this->snapshot_street,
-                'barangay'            => $this->snapshot_barangay,
-                'barangay_psgc_code'  => $this->snapshot_barangay_psgc_code,
-                'full_address'        => $this->resolveSnapshotAddress(),
+                'street' => $this->snapshot_street,
+                'barangay' => $this->snapshot_barangay,
+                'barangay_psgc_code' => $this->snapshot_barangay_psgc_code,
+                'full_address' => $this->resolveSnapshotAddress(),
             ],
 
             // ── Privacy / consent (RA 10173 evidence) ────────────────────────
-            'privacy_consented_at'   => $this->privacy_consented_at?->toIso8601String(),
+            'privacy_consented_at' => $this->privacy_consented_at?->toIso8601String(),
             'privacy_notice_version' => $this->privacy_notice_version,
 
             // ── Beneficiary / household references ───────────────────────────
             'beneficiary_id' => $this->beneficiary_id,
-            'household_id'   => $this->household_id,
+            'household_id' => $this->household_id,
 
             // ── Uploaded documents (via spatie media) ────────────────────────
             // `collection_name` = ac_document_types.key (e.g. valid_id).
             // `uuid` is spatie's public identifier; the frontend uses it to
             // build a signed download URL when that route exists.
-            'documents' => $this->whenLoaded('media', fn () => $this->media
-                ->map(fn ($m) => [
-                    'id'                => $m->id,
-                    'uuid'              => $m->uuid,
-                    'collection_name'   => $m->collection_name,
-                    'name'              => $m->name,
-                    'file_name'         => $m->file_name,
-                    'mime_type'         => $m->mime_type,
-                    'size'              => (int) $m->size,
-                    'uploaded_at'       => $m->created_at?->toIso8601String(),
-                    'custom_properties' => $m->custom_properties ?? [],
-                ])
-                ->values()
-                ->all()
+            'documents' => $this->whenLoaded(
+                'media',
+                fn() => $this->media
+                    ->map(fn($m) => [
+                        'id' => $m->id,
+                        'uuid' => $m->uuid,
+                        'collection_name' => $m->collection_name,
+                        'name' => $m->name,
+                        'file_name' => $m->file_name,
+                        'mime_type' => $m->mime_type,
+                        'size' => (int) $m->size,
+                        'uploaded_at' => $m->created_at?->toIso8601String(),
+                        'custom_properties' => $m->custom_properties ?? [],
+                    ])
+                    ->values()
+                    ->all()
             ),
 
             // ── System ───────────────────────────────────────────────────────
@@ -158,7 +160,7 @@ class AssistanceRequestDetailsResource extends JsonResource
         ])));
 
         return [
-            'id'   => $user->id,
+            'id' => $user->id,
             'name' => $fullName !== '' ? $fullName : ($user->user_name ?? 'Unknown user'),
         ];
     }
@@ -198,7 +200,7 @@ class AssistanceRequestDetailsResource extends JsonResource
      */
     private function calculateAgeAtSubmission(): ?int
     {
-        if (! $this->snapshot_birth_date || ! $this->created_at) {
+        if (!$this->snapshot_birth_date || !$this->created_at) {
             return null;
         }
 

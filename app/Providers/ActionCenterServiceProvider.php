@@ -19,6 +19,6 @@ class ActionCenterServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        //
     }
 }

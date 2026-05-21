@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Spatie\Activitylog\Models\Activity;
 
@@ -35,6 +36,14 @@ class GetAssistanceRequestProfileAction
             ->limit(5)
             ->get();
 
+        $householdMembers = HouseholdMember::query()
+            ->where('household_id', $assistanceRequest->household_id)
+            ->where('is_active', true)
+            ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
+            ->orderBy('created_at')
+            ->get();
+
+
         // Audit trail for THIS specific request — the `=` (not `!=`) is
         // critical. With `!=` you'd get the audit log of every OTHER
         // request in the system, which is both wrong and an info leak.
@@ -50,6 +59,7 @@ class GetAssistanceRequestProfileAction
             'request' => $assistanceRequest,
             'recentHistory' => $recentHistory,
             'activityLog' => $activityLog,
+            'householdMembers' => $householdMembers,
         ];
     }
 }
