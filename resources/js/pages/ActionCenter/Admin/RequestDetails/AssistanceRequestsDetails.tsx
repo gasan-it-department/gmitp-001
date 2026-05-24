@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
+import RejectRequestDialog from './Components/RejectRequestDialog';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Types
@@ -190,10 +191,10 @@ const humanizeStatus = (s: string) => s.replace(/_/g, ' ');
 const statusClass = (s: string): string => STATUS_BADGE[s] ?? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
 
 export default function AssistanceRequestsDetails({ request, requiredDocuments, recentHistory, activityLog, householdMembers }: Props) {
+    console.log(activityLog.data);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
     const utils = Utility();
-
     const requiredDocumentsData = requiredDocuments.data;
     const recentHistoryData = recentHistory.data;
     const activityLogData = activityLog.data;
@@ -203,6 +204,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
     const isMine = detail.reviewed_by?.id === auth.user?.id;
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
+    const [isRejectOpen, setIsRejectOpen] = useState(false);
 
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [d.collection_name, d]));
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === d.collection_name));
@@ -210,6 +212,10 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
     const handleAction = (label: string) => () => {
         if (label === 'Approve') {
             setIsApproveOpen(true);
+            return;
+        }
+        if (label === 'Reject') {
+            setIsRejectOpen(true);
             return;
         }
         // eslint-disable-next-line no-console
@@ -695,6 +701,13 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                 onClose={() => setIsApproveOpen(false)}
                 minAmount={detail.assistance_type?.min_amount}
                 maxAmount={detail.assistance_type?.max_amount}
+            />
+
+            <RejectRequestDialog
+                requestId={detail.id}
+                applicantName={detail.identity_snapshot?.full_name || undefined}
+                isOpen={isRejectOpen}
+                onClose={() => setIsRejectOpen(false)}
             />
         </>
     );

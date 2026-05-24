@@ -71,11 +71,6 @@ class User extends Authenticatable
         ];
     }
 
-    public function assistanceRequests()
-    {
-        return $this->hasMany(AssistanceRequest::class, 'user_id');
-    }
-
     public function municipality(): BelongsTo
     {
         return $this->belongsTo(Municipality::class, 'municipal_id');

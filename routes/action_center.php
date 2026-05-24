@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
@@ -103,6 +104,14 @@ Route::prefix('/api/action-center')
                     '/assistance-request/{assistanceRequestId}/approve',
                     ApproveAssistanceRequestController::class,
                 )->name('assistance.approve');
+
+                // Reject a case — moves status to Rejected and appends the
+                // reviewer's reason to remarks. No cooldown is written
+                // (rejection doesn't block future applications).
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/reject',
+                    RejectAssistanceRequestController::class,
+                )->name('assistance.reject');
             });
 
         Route::middleware(['auth', 'municipalityContext'])

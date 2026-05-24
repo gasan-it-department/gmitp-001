@@ -87,13 +87,8 @@ class CreateBeneficiaryProfileAction
             // (cooldown fan-out, total income, member count) can query
             // a single table without special-casing the head.
             //
-            // NOTE: Subsequent edits to the citizen's profile must ALSO
-            // update this head row. We do NOT use a model observer for
-            // that sync (deliberately — observers create invisible
-            // side effects). Each future update action (e.g.
-            // UpdateBeneficiaryProfileAction, AdminUpdateBeneficiaryAction)
-            // is responsible for explicitly syncing the head row via the
-            // same identity-field mirror used in StoreHouseholdMemberDto::fromBeneficiary.
+            // BeneficiaryObserver keeps this row in sync if the citizen
+            // later edits their own profile.
             $this->storeHouseholdMember->execute(
                 StoreHouseholdMemberDto::fromBeneficiary($beneficiary),
                 beneficiaryId: $beneficiary->id,

@@ -41,6 +41,7 @@ class AssistanceRequest extends Model implements HasMedia
         'encoded_by_user_id',
         'reviewed_by_user_id',
         'approved_by_user_id',
+        'rejected_by_user_id',
         'assistance_type_id',
 
         // Authorized-representative fields (null = applicant is the beneficiary)
@@ -61,6 +62,7 @@ class AssistanceRequest extends Model implements HasMedia
 
         'approved_at',
         'released_at',
+        'rejected_at',
 
         // Data Privacy Act (RA 10173) consent record.
         'privacy_consented_at',
@@ -96,6 +98,7 @@ class AssistanceRequest extends Model implements HasMedia
         'amount_approved' => 'decimal:2',
         'approved_at' => 'datetime',
         'released_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'privacy_consented_at' => 'datetime',
     ];
 
@@ -113,6 +116,7 @@ class AssistanceRequest extends Model implements HasMedia
                 'remarks',
                 'reviewed_by_user_id',
                 'approved_by_user_id',
+                'rejected_by_user_id',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
@@ -161,6 +165,11 @@ class AssistanceRequest extends Model implements HasMedia
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by_user_id');
+    }
+
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by_user_id');
     }
 
     public function registerMediaCollections(): void

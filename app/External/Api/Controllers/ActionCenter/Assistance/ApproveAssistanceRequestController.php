@@ -37,10 +37,10 @@ class ApproveAssistanceRequestController extends Controller
     ): RedirectResponse {
         try {
             $dto = ApproveAssistanceRequestDto::fromRequest(
-                request:             $request,
+                request: $request,
                 assistanceRequestId: $assistanceRequestId,
-                municipalId:         app('municipal_id'),
-                approverId:          Auth::id(),
+                municipalId: app('municipal_id'),
+                approverId: Auth::id(),
             );
 
             $this->approve->execute($dto);

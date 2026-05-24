@@ -65,17 +65,16 @@ class ApproveAssistanceRequestAction
             // status / amount_approved / approved_by_user_id changes
             // automatically via spatie LogsActivity on AssistanceRequest.
             $request->update([
-                'status'              => AssistanceStatus::Approved,
-                'amount_approved'     => $dto->amountApproved,
+                'status' => AssistanceStatus::Approved,
+                'amount_approved' => $dto->amountApproved,
                 'approved_by_user_id' => $dto->approverId,
-                'approved_at'         => now(),
-                'remarks'             => $this->appendApprovalNotes(
-                    existing:  $request->remarks,
-                    notes:     $dto->approvalNotes,
-                    approver:  $dto->approverId,
+                'approved_at' => now(),
+                'remarks' => $this->appendApprovalNotes(
+                    existing: $request->remarks,
+                    notes: $dto->approvalNotes,
+                    approverId: $dto->approverId,
                 ),
             ]);
-
             // Write the cooldown row(s). Behavior depends on the
             // AssistanceType's cooldown_scope / cooldown_type.
             $this->writeCooldowns($request);
@@ -99,15 +98,15 @@ class ApproveAssistanceRequestAction
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
-        if (! $request->status->canTransitionTo(AssistanceStatus::Approved)) {
+        if (!$request->status->canTransitionTo(AssistanceStatus::Approved)) {
             throw new \DomainException(
                 match ($request->status) {
-                    AssistanceStatus::Pending     => 'This case is still pending — pick it up first before approving.',
-                    AssistanceStatus::Approved    => 'This case has already been approved.',
-                    AssistanceStatus::Released    => 'This case has already been released and cannot be re-approved.',
-                    AssistanceStatus::Rejected    => 'This case was rejected and cannot be approved.',
-                    AssistanceStatus::Cancelled   => 'This case was cancelled and cannot be approved.',
-                    default                       => 'This case cannot be approved from its current state.',
+                    AssistanceStatus::Pending => 'This case is still pending — pick it up first before approving.',
+                    AssistanceStatus::Approved => 'This case has already been approved.',
+                    AssistanceStatus::Released => 'This case has already been released and cannot be re-approved.',
+                    AssistanceStatus::Rejected => 'This case was rejected and cannot be approved.',
+                    AssistanceStatus::Cancelled => 'This case was cancelled and cannot be approved.',
+                    default => 'This case cannot be approved from its current state.',
                 },
             );
         }
@@ -164,7 +163,7 @@ class ApproveAssistanceRequestAction
     private function ensureRequiredDocumentsReady(AssistanceRequest $request): void
     {
         $requiredKeys = $request->assistanceType->documents
-            ->filter(fn ($doc) => (bool) $doc->pivot->is_required)
+            ->filter(fn($doc) => (bool) $doc->pivot->is_required)
             ->pluck('key');
 
         if ($requiredKeys->isEmpty()) {
@@ -177,7 +176,7 @@ class ApproveAssistanceRequestAction
         if ($missing->isNotEmpty()) {
             throw new \DomainException(
                 'Cannot approve — the following required document(s) are missing: '
-                    . $missing->implode(', '),
+                . $missing->implode(', '),
             );
         }
     }
@@ -188,13 +187,18 @@ class ApproveAssistanceRequestAction
 
     /**
      * Append the approver's notes to the existing remarks with a separator
-     * and a footer line identifying who appended them. Preserves the case
-     * study history while making the approval rationale visible to anyone
-     * reading the remarks field afterward.
+     * and a footer line identifying who approved. Uses a human-readable name
+     * so COA auditors can read the trail without decoding ULIDs.
      */
-    private function appendApprovalNotes(?string $existing, string $notes, string $approver): string
+    private function appendApprovalNotes(?string $existing, string $notes, string $approverId): string
     {
-        $stamp = '[APPROVAL ' . now()->toIso8601String() . ' by user ' . $approver . ']';
+        // Single PK lookup — cheap, already inside the DB transaction.
+        $user = \App\Core\Users\Models\User::find($approverId);
+        $name = $user
+            ? (trim("{$user->first_name} {$user->last_name}") ?: ($user->user_name ?? $approverId))
+            : $approverId;
+
+        $stamp = '[APPROVED ' . now()->toDateTimeString() . ' by ' . $name . ']';
         $block = $stamp . "\n" . $notes;
 
         return $existing
@@ -226,11 +230,11 @@ class ApproveAssistanceRequestAction
             : now()->addMonths((int) $type->cooldown_months);
 
         $base = [
-            'assistance_type_id'    => $request->assistance_type_id,
+            'assistance_type_id' => $request->assistance_type_id,
             'assistance_request_id' => $request->id,
-            'household_id'          => $request->household_id,
-            'cooldown_starts_at'    => now(),
-            'cooldown_expires_at'   => $expiresAt,
+            'household_id' => $request->household_id,
+            'cooldown_starts_at' => now(),
+            'cooldown_expires_at' => $expiresAt,
         ];
 
         if ($type->cooldown_scope === 'per_household') {
