@@ -94,7 +94,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'sslmode' => env('DB_SSLMODE', 'require'),
             // Note: when deploying to Laravel Cloud (Neon Postgres backend),
             // set the env var `PGOPTIONS=endpoint=<your-endpoint-id>`. This
             // is required because the libpq in Cloud's PHP container does
