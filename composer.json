@@ -20,9 +20,12 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.12",
         "league/flysystem-aws-s3-v3": "3.0",
+        "maatwebsite/excel": "*",
         "meilisearch/meilisearch-php": "^1.16",
+        "spatie/browsershot": "^5.3",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-medialibrary": "^11.21",
+        "spatie/laravel-pdf": "^2.9",
         "spatie/laravel-permission": "^6.24",
         "spatie/laravel-sluggable": "^4.0",
         "tightenco/ziggy": "^2.4"

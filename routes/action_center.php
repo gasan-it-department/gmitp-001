@@ -11,6 +11,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeCon
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreInlineHouseholdMemberController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
@@ -59,6 +60,19 @@ Route::prefix('{municipality}/action-center')
             // to the current municipality.
             Route::get('profile/assistance-request/{assistanceRequest}', ShowAssistanceRequestProfileController::class)
                 ->name('show.assistance-request.profile');
+
+            // Download the printable PDF intake sheet for one beneficiary.
+            // Tenant + ownership-of-data are enforced inside the action;
+            // the admin middleware on the parent group is the coarse gate.
+            //
+            // URL is plain `/intake-sheet` (no .pdf suffix) — Laravel's router
+            // gets fussy about dots in literal path segments. The downloaded
+            // file is still named *.pdf because Spatie sets the filename via
+            // the Content-Disposition response header in the renderer.
+            Route::get(
+                'beneficiary/{beneficiaryId}/intake-sheet',
+                DownloadBeneficiaryIntakeSheetController::class,
+            )->name('beneficiary.intake-sheet');
         });
 
         //for non admin pages 

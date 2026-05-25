@@ -1,3 +1,4 @@
+import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -623,6 +624,32 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                             <Send className="mr-2 h-3.5 w-3.5" /> Append Note
                                         </Button>
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* ─── Documents: printable PDFs for case folder / COA ─── */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-base">
+                                        <FileText className="h-4 w-4 text-slate-600" /> Documents
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <a
+                                        href={DownloadBeneficiaryIntakeSheetController.url({
+                                            municipality: currentMunicipality.slug,
+                                            beneficiaryId: detail.beneficiary_id,
+                                        })}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Download Intake Sheet (PDF)
+                                    </a>
+                                    <p className="text-[11px] leading-snug text-slate-400">
+                                        Generates the official beneficiary intake sheet for the case folder. Opens in a new tab.
+                                    </p>
                                 </CardContent>
                             </Card>
 
