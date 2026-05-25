@@ -47,6 +47,28 @@ return new class extends Migration {
                 ->constrained('users')
                 ->nullOnDelete();
 
+            $table->foreignUlid('rejected_by_user_id')
+                ->nullable()
+                ->after('approved_by_user_id')
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignUlid('cancelled_by_user_id')
+                ->nullable()
+                ->after('rejected_by_user_id')
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignUlid('released_by_user_id')
+                ->nullable()
+                ->after('cancelled_by_user_id')
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->string('release_reference_number', 60)
+                ->nullable()
+                ->after('released_by_user_id');
+
             $table->string('relationship_to_beneficiary')->nullable();
 
             $table->decimal('amount_approved', 10, 2)->nullable();
@@ -92,10 +114,15 @@ return new class extends Migration {
             $table->softDeletes();
             $table->timestamps();
 
+            $table->unique(
+                ['municipal_id', 'release_reference_number'],
+                'ac_assistance_requests_release_ref_unique',
+            );
             // Indexes that the eligibility checker and admin dashboard will rely on heavily.
             $table->index(['beneficiary_id', 'assistance_type_id', 'status', 'approved_at']);
             $table->index(['household_id', 'assistance_type_id', 'status', 'approved_at']);
             $table->index(['municipal_id', 'status', 'created_at']);
+
 
         });
     }

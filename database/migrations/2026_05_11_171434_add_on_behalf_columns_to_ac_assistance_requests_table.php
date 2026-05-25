@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Schema;
  * `relationship_to_beneficiary` already exists (added in the original migration);
  * this migration adds the remaining personal-detail columns.
  */
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::table('ac_assistance_requests', function (Blueprint $table) {
@@ -25,8 +24,7 @@ return new class extends Migration
             $table->string('on_behalf_last_name')->nullable()->after('on_behalf_middle_name');
             $table->string('on_behalf_suffix')->nullable()->after('on_behalf_last_name');
 
-            // Burial-specific: date the deceased passed away
-            $table->date('on_behalf_date_of_death')->nullable()->after('on_behalf_suffix');
+            $table->date('on_behalf_date_of_death')->nullable();
         });
     }
 

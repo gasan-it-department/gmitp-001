@@ -1,7 +1,9 @@
 <?php
 
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
@@ -112,6 +114,15 @@ Route::prefix('/api/action-center')
                     '/assistance-request/{assistanceRequestId}/reject',
                     RejectAssistanceRequestController::class,
                 )->name('assistance.reject');
+
+                // Mark as Released — cashier records the physical
+                // disbursement. Terminal, COA-immutable. Requires an
+                // OR/voucher reference number that is unique within
+                // the municipality.
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/release',
+                    ReleaseAssistanceRequestController::class,
+                )->name('assistance.release');
             });
 
         Route::middleware(['auth', 'municipalityContext'])
@@ -122,6 +133,14 @@ Route::prefix('/api/action-center')
                 // Inline "Add a new family member" from the Apply form.
                 Route::post('/household/members', StoreInlineHouseholdMemberController::class)
                     ->name('household.members.store');
+
+                // Citizen-initiated cancellation of their own pending /
+                // under_review assistance request. Ownership is enforced
+                // inside the action (against beneficiary.user_id).
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/cancel',
+                    CancelAssistanceRequestController::class,
+                )->name('assistance.cancel');
 
             });
 

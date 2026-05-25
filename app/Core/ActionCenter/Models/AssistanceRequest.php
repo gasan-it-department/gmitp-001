@@ -42,6 +42,9 @@ class AssistanceRequest extends Model implements HasMedia
         'reviewed_by_user_id',
         'approved_by_user_id',
         'rejected_by_user_id',
+        'cancelled_by_user_id',
+        'released_by_user_id',
+        'release_reference_number',
         'assistance_type_id',
 
         // Authorized-representative fields (null = applicant is the beneficiary)
@@ -63,6 +66,7 @@ class AssistanceRequest extends Model implements HasMedia
         'approved_at',
         'released_at',
         'rejected_at',
+        'cancelled_at',
 
         // Data Privacy Act (RA 10173) consent record.
         'privacy_consented_at',
@@ -99,6 +103,7 @@ class AssistanceRequest extends Model implements HasMedia
         'approved_at' => 'datetime',
         'released_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'privacy_consented_at' => 'datetime',
     ];
 
@@ -117,6 +122,9 @@ class AssistanceRequest extends Model implements HasMedia
                 'reviewed_by_user_id',
                 'approved_by_user_id',
                 'rejected_by_user_id',
+                'cancelled_by_user_id',
+                'released_by_user_id',
+                'release_reference_number',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
@@ -170,6 +178,16 @@ class AssistanceRequest extends Model implements HasMedia
     public function rejectedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by_user_id');
+    }
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by_user_id');
+    }
+
+    public function releasedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'released_by_user_id');
     }
 
     public function registerMediaCollections(): void

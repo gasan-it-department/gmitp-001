@@ -38,6 +38,13 @@ return new class extends Migration {
                 ->constrained('ac_assistance_requests')
                 ->cascadeOnDelete();
 
+            $table->foreignUlid('household_member_id')
+                ->nullable()
+                ->after('beneficiary_id')
+                ->constrained('ac_household_members')
+                ->nullOnDelete();
+
+
             // The household the beneficiary belonged to at the time of approval.
             // Used for per_household scope eligibility checks (e.g., Financial Assistance E.O.).
             $table->foreignUlid('household_id')
@@ -70,6 +77,11 @@ return new class extends Migration {
             $table->index(
                 ['household_id', 'assistance_type_id', 'cooldown_expires_at'],
                 'ac_cooldowns_household_type_expires_idx'
+            );
+
+            $table->index(
+                ['household_member_id', 'assistance_type_id', 'cooldown_expires_at'],
+                'ac_cooldowns_member_type_expires_idx'
             );
         });
     }

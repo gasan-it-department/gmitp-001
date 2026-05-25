@@ -33,6 +33,7 @@ import {
 import { useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import RejectRequestDialog from './Components/RejectRequestDialog';
+import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Types
@@ -205,6 +206,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
+    const [isReleaseOpen, setIsReleaseOpen] = useState(false);
 
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [d.collection_name, d]));
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === d.collection_name));
@@ -216,6 +218,10 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
         }
         if (label === 'Reject') {
             setIsRejectOpen(true);
+            return;
+        }
+        if (label === 'Mark Released') {
+            setIsReleaseOpen(true);
             return;
         }
         // eslint-disable-next-line no-console
@@ -708,6 +714,13 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                 applicantName={detail.identity_snapshot?.full_name || undefined}
                 isOpen={isRejectOpen}
                 onClose={() => setIsRejectOpen(false)}
+            />
+
+            <ReleaseRequestDialog
+                requestId={detail.id}
+                amountApproved={detail.amount_approved}
+                isOpen={isReleaseOpen}
+                onClose={() => setIsReleaseOpen(false)}
             />
         </>
     );
