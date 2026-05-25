@@ -94,14 +94,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
-            // Note: when deploying to Laravel Cloud (Neon Postgres backend),
-            // set the env var `PGOPTIONS=endpoint=<your-endpoint-id>`. This
-            // is required because the libpq in Cloud's PHP container does
-            // not support SNI, so Neon cannot route to the right endpoint
-            // without an explicit hint. The endpoint ID is the first dot-
-            // segment of DB_HOST (e.g. `ep-nameless-glade-aoau5kje`).
-            // See https://neon.tech/sni
+            'sslmode' => env('DB_SSLMODE', 'require'),
         ],
 
         'sqlsrv' => [
