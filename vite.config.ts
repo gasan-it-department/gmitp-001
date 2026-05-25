@@ -15,7 +15,10 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            ssr: 'resources/js/ssr.tsx',
+            // SSR intentionally disabled — Laravel Cloud's standard build runs
+            // `npm run build` (client-only). Re-enable here + switch Cloud to
+            // `npm run build:ssr` + run the inertia:start-ssr daemon if SEO
+            // ever requires server rendering.
             refresh: true,
         }),
         react(),
