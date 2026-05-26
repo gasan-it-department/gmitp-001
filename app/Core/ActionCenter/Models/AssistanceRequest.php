@@ -16,6 +16,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * The main transaction table for the Action Center. One row per citizen
@@ -193,11 +194,30 @@ class AssistanceRequest extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('documents')
-            ->useDisk('action_center')
             ->acceptsMimeTypes([
                 'application/pdf',
                 'image/jpeg',
                 'image/png',
             ]);
+
+        $this->addMediaCollection('photos')
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+            ]);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->performOnCollections('photos')
+            ->width(300)
+            ->height(300)
+            ->sharpen(10);
+
+        $this->addMediaConversion('web')
+            ->performOnCollections('photos')
+            ->width(1200)
+            ->quality(85);
     }
 }
