@@ -193,7 +193,6 @@ class AssistanceRequest extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('documents')
-            ->useDisk('action_center')
             ->acceptsMimeTypes([
                 'application/pdf',
                 'image/jpeg',

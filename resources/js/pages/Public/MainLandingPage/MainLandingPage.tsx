@@ -10,16 +10,16 @@ export default function MainLandingPage() {
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Shield className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Opisyal na Portal ng Pamahalaan ng Lalawigan ng Marinduque</span>
+                        <span className="hidden sm:inline">Opisyal na Portal ng Pamahalaan ng Gasan</span>
                         <span className="sm:hidden">Gov.PH Portal</span>
                     </div>
                     <div className="flex items-center gap-4 font-medium">
-                        <Link href="#" className="hover:underline">
+                        {/* <Link href="#" className="hover:underline">
                             Transparency Seal
                         </Link>
                         <Link href="#" className="hidden hover:underline sm:inline">
                             Makipag-ugnayan
-                        </Link>
+                        </Link> */}
                     </div>
                 </div>
             </div>
