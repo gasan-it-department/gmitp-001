@@ -3,7 +3,7 @@ import axios from "axios";
 
 export const FeedbackApi = {
     async storeFeedback(municipalSlug: string, payload: any) {
-        const { url, method } = Feedback.FeedbackController.store();
+        const { url, method } = Feedback.StoreFeedbackController();
 
         const formData = new FormData();
 
@@ -32,7 +32,7 @@ export const FeedbackApi = {
     },
 
     async getAllFeedback(municipalSlug: string, page: number = 1) {
-        const { url, method } = Feedback.FeedbackController.fetch();
+        const { url, method } = Feedback.FetchFeedbackController();
 
         const { data } = await axios({
             url,

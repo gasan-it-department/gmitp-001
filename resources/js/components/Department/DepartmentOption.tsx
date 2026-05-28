@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import department from '@/routes/department';
+import { usePage } from '@inertiajs/react';
 import clsx from 'clsx';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -19,10 +20,12 @@ interface Props {
 }
 
 export const DepartmentOption = ({ value, onValueChange, error, placeholder, className }: Props) => {
+    const { currentMunicipality } = usePage<{ currentMunicipality: { slug: string } }>().props;
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+
     useEffect(() => {
-        fetch(department.list.url())
+        fetch(department.list.url(currentMunicipality.slug))
             .then((res) => res.json())
             .then((json) => {
                 setDepartments(json.data);
@@ -32,8 +35,8 @@ export const DepartmentOption = ({ value, onValueChange, error, placeholder, cla
                 console.error('Error fetching departments:', err);
                 setLoading(false);
             });
-    }, []);
-    console.log;
+    }, [currentMunicipality.slug]);
+
     return (
         <div className={`flex flex-col gap-1.5 ${clsx(className)}`}>
             <Label className="text-sm font-medium text-gray-700">{placeholder || 'Department'}</Label>
