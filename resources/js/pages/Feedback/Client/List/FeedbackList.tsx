@@ -1,12 +1,33 @@
 import { Pagination } from '@/components/Shared/Pagination';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { Head } from '@inertiajs/react';
-import { ArrowUp, Building2, ChevronLeft, Clock, MessageCircle, MessageSquareQuote, Star, User, UserCircle, VenetianMask } from 'lucide-react';
+import {
+    ArrowUp,
+    Building2,
+    ChevronLeft,
+    Clock,
+    Image as ImageIcon,
+    MessageCircle,
+    MessageSquareQuote,
+    Star,
+    User,
+    UserCircle,
+    VenetianMask,
+    X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // ----------------------------------------------------------------------
 // TYPES
 // ----------------------------------------------------------------------
+interface Attachment {
+    id: string;
+    name: string;
+    mime_type: string;
+    size: number;
+    url: string;
+}
+
 interface FeedbackData {
     id: string;
     subject: string;
@@ -17,13 +38,7 @@ interface FeedbackData {
     employee_name: string | null;
     department: { id: string; name: string } | null;
     created_at: string;
-    attachments: {
-        id: string;
-        name: string;
-        mime_type: string;
-        size: number;
-        url: string;
-    }[];
+    attachments: Attachment[];
 }
 
 interface FeedbackListProps {
@@ -33,6 +48,63 @@ interface FeedbackListProps {
         links: any;
     };
 }
+
+// ----------------------------------------------------------------------
+// SUB-COMPONENT: Lightbox
+// ----------------------------------------------------------------------
+const Lightbox = ({ url, onClose }: { url: string; onClose: () => void }) => {
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm sm:p-10" onClick={onClose}>
+            <button
+                onClick={onClose}
+                className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
+            >
+                <X className="h-6 w-6" />
+            </button>
+            <img
+                src={url}
+                alt="Full size feedback attachment"
+                className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            />
+        </div>
+    );
+};
+
+// ----------------------------------------------------------------------
+// SUB-COMPONENT: Image Gallery
+// ----------------------------------------------------------------------
+const FeedbackImageGallery = ({ attachments }: { attachments: Attachment[] }) => {
+    const images = attachments.filter((a) => a.mime_type.startsWith('image/'));
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+    if (images.length === 0) return null;
+
+    return (
+        <div className="mt-4">
+            <div className="flex flex-wrap gap-2">
+                {images.map((img) => (
+                    <button
+                        key={img.id}
+                        onClick={() => setSelectedImage(img.url)}
+                        className="group relative h-20 w-20 overflow-hidden rounded-lg border border-border bg-muted transition-all hover:border-primary active:scale-95 sm:h-24 sm:w-24"
+                    >
+                        <img
+                            src={img.url}
+                            alt={img.name}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                            <ImageIcon className="h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
+                        </div>
+                    </button>
+                ))}
+            </div>
+
+            {selectedImage && <Lightbox url={selectedImage} onClose={() => setSelectedImage(null)} />}
+        </div>
+    );
+};
 
 // ----------------------------------------------------------------------
 // SUB-COMPONENT: Star Rating
@@ -185,6 +257,9 @@ export default function FeedbackList({ feedback }: FeedbackListProps) {
                                                         <MessageSquareQuote className="absolute top-2 left-2 h-4 w-4 -translate-x-1 -translate-y-1 text-primary/20" />
                                                         <span className="relative z-10">"{item.message}"</span>
                                                     </div>
+
+                                                    {/* Image Gallery */}
+                                                    <FeedbackImageGallery attachments={item.attachments} />
 
                                                     {/* Target / Context (Employee or Department) */}
                                                     <div className="mt-3 flex flex-wrap items-center gap-3">

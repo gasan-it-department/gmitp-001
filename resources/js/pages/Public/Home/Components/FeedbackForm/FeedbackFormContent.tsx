@@ -15,6 +15,7 @@ export type DepartmentOption = { id: string; name: string };
 
 interface FeedbackFormContentProps {
     departments?: DepartmentOption[];
+    feedbackTypes?: { value: string; label: string }[];
     onCancel?: () => void;
     onSuccess?: (message: string) => void;
     onError?: (message: string) => void;
@@ -35,7 +36,7 @@ type FeedbackFormShape = {
 const MAX_FILES = 5;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50 MB
 
-export function FeedbackFormContent({ departments = [], onCancel, onSuccess, onError }: FeedbackFormContentProps) {
+export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCancel, onSuccess, onError }: FeedbackFormContentProps) {
     const { currentMunicipality } = useMunicipality();
 
     const { data, setData, post, processing, errors, reset } = useForm<FeedbackFormShape>({
@@ -98,17 +99,41 @@ export function FeedbackFormContent({ departments = [], onCancel, onSuccess, onE
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* SUBJECT */}
+            {/* SUBJECT */}
             <div>
-                <Label className="font-semibold text-foreground">
-                    Subject <span className="text-destructive">*</span>
+                <Label className="mb-3 block font-semibold text-foreground">
+                    Feedback Type <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                    value={data.subject}
-                    onChange={(e) => setData('subject', e.target.value)}
-                    placeholder="Brief title for your feedback"
-                    className={errors.subject ? 'border-destructive' : ''}
-                />
-                {errors.subject && <p className="text-sm text-destructive">{errors.subject}</p>}
+
+                {feedbackTypes.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {feedbackTypes.map((type) => {
+                            const isSelected = data.subject === type.value;
+                            return (
+                                <button
+                                    key={type.value}
+                                    type="button" // Critical: prevents form submission when clicked
+                                    onClick={() => setData('subject', type.value)}
+                                    className={`flex min-h-[60px] items-center justify-center rounded-xl border p-3 text-center text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                                        isSelected
+                                            ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                            : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/50 hover:text-foreground'
+                                    } ${errors.subject && !isSelected ? 'border-destructive/60 bg-destructive/5' : ''} `}
+                                >
+                                    {type.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <Input
+                        value={data.subject}
+                        onChange={(e) => setData('subject', e.target.value)}
+                        placeholder="Brief title for your feedback"
+                        className={errors.subject ? 'border-destructive' : ''}
+                    />
+                )}
+                {errors.subject && <p className="mt-2 text-sm text-destructive">{errors.subject}</p>}
             </div>
 
             {/* CITIZEN NAME */}

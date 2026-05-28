@@ -21,9 +21,9 @@ class ListFeedbackController extends Controller
     public function __invoke(Request $request): Response
     {
         $feedback = $this->listMyFeedback->execute(
-            userId:      Auth::id(),
+            userId: Auth::id(),
             municipalId: app('municipal_id'),
-            dto:         FeedbackQueryDto::fromRequest($request),
+            dto: FeedbackQueryDto::fromRequest($request),
         );
 
         return Inertia::render('Feedback/Client/List/FeedbackList', [

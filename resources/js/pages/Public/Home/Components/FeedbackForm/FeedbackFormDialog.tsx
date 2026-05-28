@@ -8,9 +8,16 @@ interface FeedbackDialogProps {
     onOpenChange: (open: boolean) => void;
     onStatusChange?: (status: 'success' | 'failed', message: string) => void;
     departments?: DepartmentOption[];
+    feedbackTypes?: { value: string; label: string }[];
 }
 
-export function FeedbackFormDialog({ open, onOpenChange, onStatusChange, departments = [] }: FeedbackDialogProps) {
+export function FeedbackFormDialog({ 
+    open, 
+    onOpenChange, 
+    onStatusChange, 
+    departments = [], 
+    feedbackTypes = [] 
+}: FeedbackDialogProps) {
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: '',
@@ -61,6 +68,7 @@ export function FeedbackFormDialog({ open, onOpenChange, onStatusChange, departm
                     <div className="space-y-6 overflow-auto px-6 py-6 sm:px-8 sm:py-8">
                         <FeedbackFormContent
                             departments={departments}
+                            feedbackTypes={feedbackTypes}
                             onCancel={() => onOpenChange(false)}
                             onSuccess={handleSuccess}
                             onError={handleError}

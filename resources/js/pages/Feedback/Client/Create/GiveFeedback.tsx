@@ -7,9 +7,10 @@ import { DepartmentOption, FeedbackFormContent } from '../../../Public/Home/Comp
 
 interface GiveFeedbackProps {
     departments: DepartmentOption[];
+    feedbackTypes: { value: string; label: string }[];
 }
 
-export default function GiveFeedback({ departments }: GiveFeedbackProps) {
+export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbackProps) {
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: '',
@@ -52,7 +53,12 @@ export default function GiveFeedback({ departments }: GiveFeedbackProps) {
                         <p className="text-sm text-muted-foreground">Your input helps us improve our services. Please fill out the form below.</p>
                     </CardHeader>
                     <CardContent>
-                        <FeedbackFormContent departments={departments} onSuccess={handleSuccess} onError={handleError} />
+                        <FeedbackFormContent 
+                            departments={departments} 
+                            feedbackTypes={feedbackTypes}
+                            onSuccess={handleSuccess} 
+                            onError={handleError} 
+                        />
                     </CardContent>
                 </Card>
             </div>
