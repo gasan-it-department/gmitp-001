@@ -4,7 +4,7 @@ namespace App\External\Api\Controllers\ActionCenter\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
-use App\External\Web\Request\ActionCenter\StoreProfileSetupRequest;
+use App\External\Api\Request\ActionCenter\StoreProfileSetupRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 

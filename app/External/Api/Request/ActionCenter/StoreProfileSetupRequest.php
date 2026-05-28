@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Web\Request\ActionCenter;
+namespace App\External\Api\Request\ActionCenter;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Enums\EducationalAttainment;

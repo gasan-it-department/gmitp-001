@@ -40,10 +40,10 @@ export const useNavigation = (): NavigationItem[] => [
     icon: ShieldCheck,
     id: "transparency"
   },
-  {
-    title: "Executive Orders",
-    route: executiveOrders,
-    icon: Folders,
-    id: "executive-orders"
-  },
+  // {
+  //   title: "Executive Orders",
+  //   route: executiveOrders,
+  //   icon: Folders,
+  //   id: "executive-orders"
+  // },
 ];

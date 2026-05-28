@@ -2,7 +2,7 @@
 
 namespace App\External\Web\Controllers\Procurement\Admin;
 
-use App\Core\Department\UseCases\GetDepartmentsUseCase;
+use App\Core\Department\UseCases\GetActiveDepartmentUseCase;
 use App\Core\Procurement\Dto\ProcurementFilterDto;
 use App\Core\Procurement\UseCases\GetMunicipalityProcurementsUseCase;
 use App\Core\Procurement\UseCases\GetProcurementFormOptions;
@@ -18,7 +18,7 @@ class ListProcurementController extends Controller
 
     public function __construct(
         private GetProcurementFormOptions $getProcurementFormOptions,
-        private GetDepartmentsUseCase $getDepartmentsUseCase
+        private GetActiveDepartmentUseCase $getActiveDepartmentUseCase
 
     ) {
     }
@@ -33,7 +33,7 @@ class ListProcurementController extends Controller
 
         $options = $this->getProcurementFormOptions->execute();
 
-        $departments = $this->getDepartmentsUseCase->execute();
+        $departments = $this->getActiveDepartmentUseCase->execute($municipalId);
 
         return Inertia::render('PublicInformation/Admin/Procurement/List/ProcurementList', [
             'procurements' => ProcurementListResource::collection($procurements),

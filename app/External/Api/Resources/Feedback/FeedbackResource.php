@@ -7,36 +7,30 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class FeedbackResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
-
             'id' => $this->id,
-
+            'subject' => $this->subject,
             'message' => $this->message,
-
-            'feedback_target' => $this->feedback_target,
-
-            'department_id' => $this->department_id,
-
             'rating' => $this->rating,
-
-            'sender_name' => $this->sender_name,
-
+            'is_anonymous' => (bool) $this->is_anonymous,
+            'citizen_name' => $this->is_anonymous ? null : $this->citizen_name,
             'employee_name' => $this->employee_name,
-
-            'created_at' => $this->created_at->format('M d, Y'),
-
-            'attachments' => $this->whenLoaded('attachments', function () {
-
-                return FeedbackFileResource::collection($this->attachments)->resolve();
-
-            }),
+            'department' => $this->whenLoaded('department', fn() => $this->department ? [
+                'id' => $this->department->id,
+                'name' => $this->department->name,
+            ] : null),
+            'attachments' => $this->getMedia('attachments')->map(fn($media) => [
+                'id' => $media->id,
+                'name' => $media->file_name,
+                'mime_type' => $media->mime_type,
+                'size' => $media->size,
+                'url' => $media->disk === 's3'
+                    ? $media->getTemporaryUrl(now()->addMinutes(15))
+                    : $media->getUrl(),
+            ])->values(),
+            'created_at' => $this->created_at?->format('M d, Y'),
         ];
     }
 }

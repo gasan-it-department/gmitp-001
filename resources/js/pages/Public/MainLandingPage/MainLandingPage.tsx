@@ -34,7 +34,7 @@ export default function MainLandingPage() {
                             className="h-10 w-10 object-contain drop-shadow-sm"
                         />
                         <div>
-                            <h1 className="text-lg leading-none font-black tracking-tight text-foreground">AGA WEB SERVICE</h1>
+                            <h1 className="text-lg leading-none font-black tracking-tight text-foreground">GMITP</h1>
                             <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Unified Services Portal</p>
                         </div>
                     </div>

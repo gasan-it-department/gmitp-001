@@ -1,14 +1,16 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import feedback from '@/routes/feedback';
 import { SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight, MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FeedbackFormDialog } from './FeedbackFormDialog';
 
 export default function FeedbackUi() {
+    const { currentMunicipality } = useMunicipality();
     const { auth } = usePage<SharedData>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
@@ -28,6 +30,10 @@ export default function FeedbackUi() {
         }
     }, [auth.user]);
 
+    const feedbackPage = () => {
+        feedback.create.url(currentMunicipality.slug);
+    };
+
     return (
         <Card className="m-3 flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
@@ -39,7 +45,7 @@ export default function FeedbackUi() {
 
                     <div>
                         <h2 className="text-xl font-bold text-slate-900">We’d Love Your Feedback</h2>
-                        <p className="mt-1 text-sm text-slate-500 leading-relaxed">
+                        <p className="mt-1 text-sm leading-relaxed text-slate-500">
                             Tell us what you think — your feedback helps us improve your experience.
                         </p>
                     </div>
@@ -47,20 +53,20 @@ export default function FeedbackUi() {
 
                 {/* Footer Button (stays bottom-right) */}
                 <div className="mt-6 flex justify-end">
-                    <Button
+                    <Link
+                        href={feedback.create.url(currentMunicipality.slug)}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
-                        onClick={() => {
+                        onClick={(e) => {
+                            // If the user isn't logged in, intercept the click, stop the navigation, and show the modal
                             if (auth.user === null) {
+                                e.preventDefault();
                                 setLogInSignUpDialogVisible(true);
-                                return;
                             }
-
-                            setIsDialogOpen(true);
                         }}
                     >
                         Submit Feedback
                         <ArrowRight size={16} />
-                    </Button>
+                    </Link>
                 </div>
 
                 {/* Feedback Form Modal */}

@@ -181,7 +181,7 @@ class StoreAssistanceRequestAction
                 ->withCustomProperties([
                     'document_key' => $documentKey,
                 ])
-                ->toMediaCollection($documentKey);
+                ->toMediaCollection('documents');
         }
     }
 
