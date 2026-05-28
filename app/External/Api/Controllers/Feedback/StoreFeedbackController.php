@@ -2,61 +2,26 @@
 
 namespace App\External\Api\Controllers\Feedback;
 
+use App\Core\Feedback\Actions\SubmitFeedbackAction;
+use App\Core\Feedback\Dto\SubmitFeedbackDto;
+use App\External\Api\Request\Feedback\SubmitFeedbackRequest;
 use App\Http\Controllers\Controller;
-use App\Core\Feedback\Dto\CreateFeedbackDto;
-use App\Core\Feedback\UseCases\CreateFeedback;
-use App\External\Api\Request\Feedback\FeedbackRequest;
+use Illuminate\Http\RedirectResponse;
 
 class StoreFeedbackController extends Controller
 {
     public function __construct(
-        protected CreateFeedback $feedbackService,
+        private SubmitFeedbackAction $submitFeedback,
     ) {
     }
 
-    public function __invoke(FeedbackRequest $request)
+    public function __invoke(SubmitFeedbackRequest $request): RedirectResponse
     {
-        try {
-            //validate the inputs via request
-            $validated = $request->validated();
+        $this->submitFeedback->execute(
+            SubmitFeedbackDto::fromRequest($request, app('municipal_id')),
+        );
 
-
-            $municipality = app('current_municipality');
-
-            //ternary check if file exist in the request 
-            $files = $request->hasFile('feedback_files') ? $request->file('feedback_files') : [];
-            //form the (data transfer object) to be pass and process in the service
-            $dto = new CreateFeedbackDto(
-                userId: $request->user()?->id,
-                senderName: $validated['sender_name'] ?? null,
-                employeeName: $validated['employee_name'] ?? null,
-                feedbackTarget: $validated['feedback_target'],
-                departmentId: $validated['department_id'] ?? null,
-                rating: $validated['rating'] ?? null,
-                message: $validated['feedback_message'],
-                feedbackFiles: $files,
-                ipAddress: $request->ip(),
-                municipalId: $municipality->id,
-                userAgent: $request->userAgent(),
-                municipalName: $municipality->name,
-            );
-            // call the service to process the feedback of citizen
-            $feedback = $this->feedbackService->execute($dto);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Feedback submitted successfully',
-                'data' => $feedback,
-            ], 201);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to submit feedback',
-                'error' => $e->getMessage()
-            ], 500);
-
-        }
+        return redirect()->route('feedback.list', ['municipality' => app('current_municipality')->slug])
+            ->with('success', 'Thank you for your feedback!');
     }
 }

@@ -2,48 +2,30 @@
 
 namespace App\External\Api\Controllers\Feedback;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use App\Core\Feedback\Actions\ListFeedbackSubmissionsAction;
 use App\Core\Feedback\Dto\FeedbackQueryDto;
-use App\Core\Feedback\UseCases\GetAllFeedback;
 use App\External\Api\Resources\Feedback\FeedbackResource;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class FetchFeedbackController extends Controller
 {
     public function __construct(
-        protected GetAllFeedback $getAllFeedback,
+        private ListFeedbackSubmissionsAction $listFeedbackSubmissions,
     ) {
     }
 
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): JsonResponse
     {
-        try {
+        $feedback = $this->listFeedbackSubmissions->execute(
+            FeedbackQueryDto::fromRequest($request),
+            app('municipal_id'),
+        );
 
-            $municipalId = app('municipal_id');
-
-            $dto = new FeedbackQueryDto(
-                perPage: $request->get('per_page', 10),
-                orderBy: 'created_at',
-                direction: 'desc',
-            );
-
-            $feedback = $this->getAllFeedback->execute($dto, $municipalId);
-
-            return response()->json([
-
-                'success' => true,
-
-                'data' => FeedbackResource::collection($feedback),
-
-            ]);
-
-        } catch (\Exception $e) {
-
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch feedback',
-            ], 200);
-        }
+        return response()->json([
+            'success' => true,
+            'data'    => FeedbackResource::collection($feedback),
+        ]);
     }
 }

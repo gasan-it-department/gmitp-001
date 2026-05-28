@@ -1,82 +1,82 @@
-import { DepartmentOption } from '@/components/Department/DepartmentOption';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/layouts/App/AppLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { Send } from 'lucide-react';
-import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { Head } from '@inertiajs/react';
+import { useState } from 'react';
+import { DepartmentOption, FeedbackFormContent } from '../../../Public/Home/Components/FeedbackForm/FeedbackFormContent';
 
-export default function GiveFeedback() {
-    const { data, setData, post, processing, errors } = useForm({
-        department_id: '',
-        subject: '',
+interface GiveFeedbackProps {
+    departments: DepartmentOption[];
+}
+
+export default function GiveFeedback({ departments }: GiveFeedbackProps) {
+    const [classicDialogOpen, setClassicDialog] = useState({
+        isOpen: false,
+        title: '',
         message: '',
+        positiveButtonText: '',
+        negativeButtonText: '',
+        hideNegativeButton: false,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Backend wiring deferred as requested
-        console.log('Form data:', data);
+    const handleSuccess = (message: string) => {
+        setClassicDialog({
+            isOpen: true,
+            title: 'Feedback Submitted',
+            message: message || 'Thank you for your feedback! We appreciate you taking the time to help us improve.',
+            positiveButtonText: 'Close',
+            negativeButtonText: '',
+            hideNegativeButton: true,
+        });
+    };
+
+    const handleError = (message: string) => {
+        setClassicDialog({
+            isOpen: true,
+            title: 'Something went wrong!',
+            message: message,
+            positiveButtonText: 'Close',
+            negativeButtonText: '',
+            hideNegativeButton: true,
+        });
     };
 
     return (
-        <AppLayout>
+        <PublicLayout description="" title="">
             <Head title="Give Feedback" />
 
             <div className="container mx-auto max-w-2xl py-8">
                 <Card className="shadow-lg">
                     <CardHeader className="space-y-1">
                         <CardTitle className="text-2xl font-bold">Share Your Feedback</CardTitle>
-                        <CardDescription>
-                            Your input helps us improve our services. Please fill out the form below.
-                        </CardDescription>
+                        <p className="text-sm text-muted-foreground">Your input helps us improve our services. Please fill out the form below.</p>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="space-y-2">
-                                <DepartmentOption
-                                    value={data.department_id}
-                                    onValueChange={(val) => setData('department_id', val)}
-                                    error={errors.department_id}
-                                    placeholder="Select Office/Department"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="subject">Subject</Label>
-                                <Input
-                                    id="subject"
-                                    value={data.subject}
-                                    onChange={(e) => setData('subject', e.target.value)}
-                                    placeholder="What is this feedback about?"
-                                    className={errors.subject ? 'border-destructive' : ''}
-                                />
-                                {errors.subject && <p className="text-sm text-destructive">{errors.subject}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="message">Your Message</Label>
-                                <Textarea
-                                    id="message"
-                                    value={data.message}
-                                    onChange={(e) => setData('message', e.target.value)}
-                                    placeholder="Provide details about your experience or suggestion..."
-                                    className={`min-h-[150px] ${errors.message ? 'border-destructive' : ''}`}
-                                />
-                                {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
-                            </div>
-
-                            <Button type="submit" className="w-full" disabled={processing}>
-                                <Send className="mr-2 h-4 w-4" />
-                                {processing ? 'Submitting...' : 'Submit Feedback'}
-                            </Button>
-                        </form>
+                        <FeedbackFormContent departments={departments} onSuccess={handleSuccess} onError={handleError} />
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+
+            <ClassicDialog
+                title={classicDialogOpen.title}
+                message={classicDialogOpen.message}
+                open={classicDialogOpen.isOpen}
+                positiveButtonText={classicDialogOpen.positiveButtonText}
+                negativeButtonText={classicDialogOpen.negativeButtonText}
+                hideNegativeButton={classicDialogOpen.hideNegativeButton}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }));
+                }}
+                onNegativeClick={() => {
+                    setClassicDialog((prev) => ({
+                        ...prev,
+                        isOpen: false,
+                    }));
+                }}
+            />
+        </PublicLayout>
     );
 }

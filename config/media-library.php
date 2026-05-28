@@ -93,6 +93,7 @@ return [
      */
     'custom_path_generators' => [
         \App\Core\ActionCenter\Models\AssistanceRequest::class => \App\External\Documents\ActionCenter\MediaLibrary\ActionCenterPathGenerator::class,
+        \App\Core\Feedback\Models\FeedbackSubmission::class => \App\External\Documents\Feedback\MediaLibrary\FeedbackPathGenerator::class,
     ],
 
     /*

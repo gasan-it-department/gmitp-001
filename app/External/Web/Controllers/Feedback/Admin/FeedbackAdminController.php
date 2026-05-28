@@ -2,43 +2,44 @@
 
 namespace App\External\Web\Controllers\Feedback\Admin;
 
-use Inertia\Inertia;
-use Illuminate\Http\Request;
+use App\Core\Feedback\Actions\GetAdminFeedbackAction;
+use App\Core\Feedback\Actions\ListFeedbackSubmissionsAction;
 use App\Core\Feedback\Dto\FeedbackQueryDto;
-use App\Core\Feedback\UseCases\GetAllFeedback;
-use App\Core\Feedback\UseCases\GetFeedbackUseCase;
 use App\External\Api\Resources\Feedback\FeedbackResource;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
-class FeedbackAdminController
+class FeedbackAdminController extends Controller
 {
-    public function index(Request $request, GetAllFeedback $getAllFeedback)
+    public function __construct(
+        private ListFeedbackSubmissionsAction $listFeedbackSubmissions,
+        private GetAdminFeedbackAction $getAdminFeedback,
+    ) {
+    }
+
+    public function index(Request $request): Response
     {
-
-        $municipalId = app('municipal_id');
-
-        $dto = FeedbackQueryDto::fromRequest($request);
-
-        $feedbacks = $getAllFeedback->execute($dto, $municipalId);
+        $feedbacks = $this->listFeedbackSubmissions->execute(
+            FeedbackQueryDto::fromRequest($request),
+            app('municipal_id'),
+        );
 
         return Inertia::render('Feedback/Admin/List/FeedbackPage', [
-
             'feedbacks' => FeedbackResource::collection($feedbacks),
-
         ]);
     }
 
-    public function show($municipality, $feedbackId, Request $request, GetFeedbackUseCase $getFeedbackUseCase)
+    public function show(string $municipality, string $feedback): Response
     {
-
-        $municipalId = app('municipal_id');
-
-        $feedback = $getFeedbackUseCase->execute($municipalId, $feedbackId);
+        $submission = $this->getAdminFeedback->execute(
+            feedbackId:  $feedback,
+            municipalId: app('municipal_id'),
+        );
 
         return Inertia::render('Feedback/Admin/Details/Feedbackdetails', [
-
-            'feedback' => (new FeedbackResource($feedback))->resolve()
-
+            'feedback' => (new FeedbackResource($submission))->resolve(),
         ]);
-
     }
 }

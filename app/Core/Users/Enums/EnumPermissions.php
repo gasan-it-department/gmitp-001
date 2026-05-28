@@ -32,6 +32,7 @@ enum EnumPermissions: string
             self::WEDDING_ACCESS => 'Wedding Management',
             self::CEMETERY_ACCESS => 'Cemetery Management',
             self::GOVERNMENT_ACCESS => 'Government Management',
+            self::DEPARTMENT_ACCESS => 'Department Management',
         };
     }
 
