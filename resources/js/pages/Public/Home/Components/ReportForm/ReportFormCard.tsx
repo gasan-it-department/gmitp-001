@@ -2,15 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import communityReport from '@/routes/communityReport';
 import { SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ReportFormDialog } from './ReportFormDialog';
 
 export default function ReportIssueCard() {
-    const { auth } = usePage<SharedData>().props;
-    const [isReportDialogShown, setIsReportDialogShown] = useState(false);
+    const { auth, currentMunicipality } = usePage<SharedData>().props;
     const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const [classicDialog, setClassicDialog] = useState({
         isOpen: false,
@@ -40,9 +39,9 @@ export default function ReportIssueCard() {
                     <div>
                         {/* Title: Dark Slate (Official/Serious) */}
                         <h2 className="text-xl font-bold text-slate-900">Report Community Issue</h2>
-                        
+
                         {/* Description: Muted Slate text */}
-                        <p className="mt-1 text-sm text-slate-500 leading-relaxed">
+                        <p className="mt-1 text-sm leading-relaxed text-slate-500">
                             Help keep our community safe and clean — report damaged roads, broken street lights, garbage, and other local issues.
                         </p>
                     </div>
@@ -57,40 +56,13 @@ export default function ReportIssueCard() {
                                 setLogInSignUpDialogVisible(true);
                                 return;
                             }
-                            setIsReportDialogShown(true);
+                            router.visit(communityReport.create.url({ municipality: currentMunicipality.slug }));
                         }}
                     >
                         Submit Report
                         <ArrowRight size={16} />
                     </Button>
                 </div>
-
-                <ReportFormDialog
-                    open={isReportDialogShown}
-                    onOpenChange={setIsReportDialogShown}
-                    onFailed={(errorMessage) => {
-                        setClassicDialog((prev) => ({
-                            ...prev,
-                            isOpen: true,
-                            title: 'Failed to Submit Report',
-                            message: errorMessage,
-                            positiveButtonText: 'OK',
-                            negativeButtonText: '',
-                            isNegativeButtonHidden: true,
-                        }));
-                    }}
-                    onSuccess={() => {
-                        setClassicDialog((prev) => ({
-                            ...prev,
-                            isOpen: true,
-                            title: 'Report Submitted',
-                            message: 'Thank you for your report! We appreciate your effort in helping us improve our community.',
-                            positiveButtonText: 'OK',
-                            negativeButtonText: '',
-                            isNegativeButtonHidden: true,
-                        }));
-                    }}
-                />
             </CardContent>
 
             <ClassicDialog

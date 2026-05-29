@@ -3,7 +3,12 @@
     "allow": [
       "Bash(for module in ActionCenter Auth BulletinBoard Cemetery CommunityReport Department Feedback Government Municipality Procurement Tourism Users; do *)",
       "Bash(php -l app/External/Api/Request/Cemetery/CreateDecedentRequest.php app/External/Api/Request/Cemetery/CreatePlotRequest.php app/External/Api/Request/Cemetery/CreateIntermentRequest.php app/Core/Cemetery/Models/Decedent.php app/Core/Cemetery/Models/Plot.php app/Core/Cemetery/Models/Interment.php app/Core/Cemetery/Models/Section.php app/Core/Cemetery/Dto/DecedentDto.php app/Core/Cemetery/Dto/PlotDto.php app/Core/Cemetery/Dto/IntermentDto.php app/Core/Cemetery/Repositories/DecedentsRepository.php app/Core/Cemetery/Repositories/PlotsRepository.php app/Core/Cemetery/Repositories/IntermentsRepository.php app/Core/Cemetery/Repositories/SectionsRepository.php app/Core/Cemetery/UseCase/CreatePlotUseCase.php app/Core/Cemetery/UseCase/GetPlotListUseCase.php app/Core/Cemetery/UseCase/GetAvailablePlotsUseCase.php app/Core/Cemetery/UseCase/CreateIntermentUseCase.php app/External/Api/Controllers/Cemetery/Plots/StorePlotController.php app/External/Api/Controllers/Cemetery/Interments/StoreIntermentController.php app/External/Web/Controllers/Cemetery/Admin/Plots/ListPlotsController.php app/External/Web/Controllers/Cemetery/Admin/Plots/CreatePlotController.php app/External/Web/Controllers/Cemetery/Admin/Interments/AssignDecedentToPlotController.php routes/cemetery.php)",
-      "Bash(which php.exe php.bat 2>&1; find /c/ -maxdepth 4 -name \"php.exe\" 2>/dev/null | head -5)"
+      "Bash(which php.exe php.bat 2>&1; find /c/ -maxdepth 4 -name \"php.exe\" 2>/dev/null | head -5)",
+      "Bash(php -l app/Core/CommunityReport/Enums/ReportCategory.php)",
+      "Bash(php -l app/Core/CommunityReport/Enums/ReportStatus.php)",
+      "Bash(php -l app/Core/CommunityReport/Models/ReportSubmission.php)",
+      "Bash(php -l app/Core/CommunityReport/Dto/SubmitReportDto.php)",
+      "Bash(php -l app/Core/CommunityReport/Actions/SubmitReportAction.php)"
     ]
   }
 }

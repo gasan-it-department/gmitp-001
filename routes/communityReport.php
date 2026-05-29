@@ -1,56 +1,29 @@
 <?php
 
-use App\External\Api\Controllers\CommunityReport\CommunityReportController;
-use App\External\Api\Controllers\CommunityReport\CommunityReportTypeController;
-use App\External\Web\Controllers\CommunityReport\Client\CommunityReportClientController;
-use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
+use App\External\Api\Controllers\CommunityReport\StoreReportController;
+use App\External\Web\Controllers\CommunityReport\Client\CreateReportController;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Web (Inertia page rendering) — citizen-facing.
+ */
 Route::prefix('{municipality}/community-report')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'auth'])
     ->name('communityReport.')
-    ->controller(CommunityReportAdminController::class)
     ->group(function () {
 
-        Route::get('/admin', 'index')->name('page');
-
-        Route::get('/show/{id}', 'show')->name('show');
+        Route::get('/create', CreateReportController::class)->name('create');
 
     });
 
-
+/*
+ * API (form mutations) — returns Inertia redirects, not JSON.
+ */
 Route::prefix('api/community-report')
     ->middleware(['municipalityContext', 'auth'])
-    ->name('communityReport')
-    ->controller(CommunityReportController::class)
+    ->name('api.communityReport.')
     ->group(function () {
 
-        Route::middleware(['admin', 'auth', 'municipalityContext'])
-            ->group(function () {
-
-                Route::get('/', 'fetch')->name('fetch');
-
-                Route::patch('/resolve/{id}', 'resolve')->name('resolve');
-
-                Route::patch('/reject/{id}', 'reject')->name('reject');
-
-            });
-
-        Route::post('/', 'store')->name('store');
-
-        Route::get('/report-type', [CommunityReportTypeController::class, 'getCommunityReportType'])
-            ->name('reportType');
-
-    });
-
-Route::prefix('{municipality}/community-report')
-    ->middleware(['municipalityContext', 'auth'])
-    ->name('communityReport.')
-    ->controller(CommunityReportClientController::class)
-    ->group(function () {
-
-        Route::get('/client', 'index')->name('client.page');
-
-        Route::get('/show/{id}', 'show')->name('show');
+        Route::post('/', StoreReportController::class)->name('store');
 
     });
