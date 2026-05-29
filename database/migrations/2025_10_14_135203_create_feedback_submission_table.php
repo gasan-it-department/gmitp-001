@@ -20,8 +20,8 @@ return new class extends Migration {
 
             // Encrypted PII & Contact Info
             $table->string('citizen_name')->nullable();
-            $table->string('contact_number')->nullable();
-            $table->string('email')->nullable();
+            $table->text('contact_number')->nullable();
+            $table->text('email')->nullable();
 
             // Feedback Details
             $table->string('employee_name')->nullable();
