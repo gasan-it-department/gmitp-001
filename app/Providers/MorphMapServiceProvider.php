@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\CommunityReport\Models\ReportSubmission;
+use App\Core\Department\Models\Department;
 use App\Core\Feedback\Models\FeedbackSubmission;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
@@ -37,6 +38,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'household_member' => HouseholdMember::class,
             'feedback_submission' => FeedbackSubmission::class,
             'report_submission' => ReportSubmission::class,
+            'department' => Department::class,
         ]);
     }
 }

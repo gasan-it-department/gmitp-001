@@ -211,12 +211,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     icon: LayoutTemplate,
                     permission: 'municipality_settings.access',
                 },
-                {
-                    title: 'Departments',
-                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
-                    icon: Landmark,
-                    permission: 'municipality_settings.access',
-                },
             ],
         },
         {

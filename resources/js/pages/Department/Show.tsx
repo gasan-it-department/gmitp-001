@@ -1,10 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import AppLayout from '@/layouts/App/AppLayout';
 import { DepartmentDetail } from '@/Core/Types/Department/department';
-import { Head, Link } from '@inertiajs/react';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import AppLayout from '@/layouts/App/AppLayout';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Building2, Pencil } from 'lucide-react';
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function DepartmentShow({ department }: Props) {
-    const { currentMunicipality } = useMunicipality();
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
 
     return (
@@ -55,18 +55,16 @@ export default function DepartmentShow({ department }: Props) {
                                 )}
                             </div>
                             <p className="font-mono text-sm font-semibold text-slate-500">{department.code}</p>
-                            {department.created_at && (
-                                <p className="text-xs text-muted-foreground">Created {department.created_at}</p>
-                            )}
+                            {department.created_at && <p className="text-xs text-muted-foreground">Created {department.created_at}</p>}
                         </div>
                     </CardHeader>
 
                     <CardContent>
-                        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Description</h2>
+                        <h2 className="mb-2 text-sm font-semibold tracking-wide text-slate-500 uppercase">Description</h2>
                         {department.description ? (
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{department.description}</p>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{department.description}</p>
                         ) : (
-                            <p className="text-sm italic text-slate-400">No description provided.</p>
+                            <p className="text-sm text-slate-400 italic">No description provided.</p>
                         )}
                     </CardContent>
                 </Card>
