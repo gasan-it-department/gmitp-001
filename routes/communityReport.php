@@ -1,6 +1,8 @@
 <?php
 
 use App\External\Api\Controllers\CommunityReport\StoreReportController;
+use App\External\Web\Controllers\CommunityReport\Admin\IndexReportController as AdminIndexReportController;
+use App\External\Web\Controllers\CommunityReport\Admin\ShowReportController as AdminShowReportController;
 use App\External\Web\Controllers\CommunityReport\Client\CreateReportController;
 use App\External\Web\Controllers\CommunityReport\Client\ListReportsController;
 use App\External\Web\Controllers\CommunityReport\Client\ShowReportController;
@@ -17,6 +19,21 @@ Route::prefix('{municipality}/community-report')
         Route::get('/', ListReportsController::class)->name('index');
         Route::get('/create', CreateReportController::class)->name('create');
         Route::get('/{report_submission}', ShowReportController::class)
+            ->whereUlid('report_submission')
+            ->name('show');
+
+    });
+
+/*
+ * Web (Inertia page rendering) — admin-facing.
+ */
+Route::prefix('{municipality}/admin/community-reports')
+    ->middleware(['municipalityContext', 'admin'])
+    ->name('communityReport.admin.')
+    ->group(function () {
+
+        Route::get('/', AdminIndexReportController::class)->name('index');
+        Route::get('/{report_submission}', AdminShowReportController::class)
             ->whereUlid('report_submission')
             ->name('show');
 

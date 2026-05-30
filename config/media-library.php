@@ -95,6 +95,7 @@ return [
         \App\Core\ActionCenter\Models\AssistanceRequest::class => \App\External\Documents\ActionCenter\MediaLibrary\ActionCenterPathGenerator::class,
         \App\Core\Feedback\Models\FeedbackSubmission::class => \App\External\Documents\Feedback\MediaLibrary\FeedbackPathGenerator::class,
         \App\Core\CommunityReport\Models\ReportSubmission::class => \App\External\Documents\CommunityReport\MediaLibrary\CommunityReportPathGenerator::class,
+        \App\Core\Department\Models\Department::class => \App\External\Documents\Department\MediaLibrary\DepartmentPathGenerator::class,
     ],
 
     /*

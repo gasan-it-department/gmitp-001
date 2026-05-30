@@ -152,7 +152,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Incident Reports',
-                    url: communityReport.page.url({ municipality: currentMunicipality.slug }),
+                    url: communityReport.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Siren,
                     permission: 'community_report.access',
                 },

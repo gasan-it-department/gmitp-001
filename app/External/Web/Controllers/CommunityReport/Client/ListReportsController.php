@@ -10,6 +10,12 @@ use Inertia\Response;
 
 class ListReportsController extends Controller
 {
+
+    public function __construct(
+
+    ) {
+    }
+
     public function __invoke(): Response
     {
         $reports = ReportSubmission::query()
@@ -18,7 +24,7 @@ class ListReportsController extends Controller
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->paginate(10)
-            ->through(fn (ReportSubmission $r) => [
+            ->through(fn(ReportSubmission $r) => [
                 'id' => $r->id,
                 'category' => [
                     'value' => $r->category->value,
