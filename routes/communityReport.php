@@ -2,6 +2,8 @@
 
 use App\External\Api\Controllers\CommunityReport\StoreReportController;
 use App\External\Web\Controllers\CommunityReport\Client\CreateReportController;
+use App\External\Web\Controllers\CommunityReport\Client\ListReportsController;
+use App\External\Web\Controllers\CommunityReport\Client\ShowReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,7 +14,11 @@ Route::prefix('{municipality}/community-report')
     ->name('communityReport.')
     ->group(function () {
 
+        Route::get('/', ListReportsController::class)->name('index');
         Route::get('/create', CreateReportController::class)->name('create');
+        Route::get('/{report_submission}', ShowReportController::class)
+            ->whereUlid('report_submission')
+            ->name('show');
 
     });
 

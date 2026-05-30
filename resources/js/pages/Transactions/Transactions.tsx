@@ -3,7 +3,7 @@ import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import actionCenter from '@/routes/actionCenter';
 import communityReport from '@/routes/communityReport';
 import { Link, usePage } from '@inertiajs/react';
-import { AlertTriangle, ChevronRight, FileWarning, HandHeart, Layers } from 'lucide-react';
+import { AlertTriangle, FileWarning, HandHeart } from 'lucide-react';
 
 type SharedProps = {
     currentMunicipality: {
@@ -22,7 +22,7 @@ interface Props {
 
 export default function TransactionHub({ counts = { assistance: 0, reports: 0 } }: Props) {
     const { currentMunicipality } = usePage<SharedProps>().props;
-    
+
     const modules = [
         {
             title: 'Action Center Assistance',
@@ -35,7 +35,7 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
             title: 'Community Reports',
             description: 'Incident reports, road damages, and waste management concerns.',
             icon: FileWarning,
-            href: communityReport.client.page.url(currentMunicipality.slug),
+            href: communityReport.index.url(currentMunicipality.slug),
             pendingCount: counts.reports,
         },
         {
@@ -59,12 +59,12 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
             <div className="min-h-screen bg-muted/30 px-4 py-12">
                 <div className="mx-auto max-w-5xl">
                     {/* Header */}
-                    <div className="mb-10 text-center md:text-left space-y-2">
-                        <h1 className="flex items-center justify-center gap-3 text-3xl font-black uppercase tracking-widest text-foreground md:justify-start">
+                    <div className="mb-10 space-y-2 text-center md:text-left">
+                        <h1 className="flex items-center justify-center gap-3 text-3xl font-black tracking-widest text-foreground uppercase md:justify-start">
                             My Transactions
                         </h1>
-                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                            Viewing activity for <span className="text-primary font-bold">{currentMunicipality.name}</span>
+                        <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+                            Viewing activity for <span className="font-bold text-primary">{currentMunicipality.name}</span>
                         </p>
                     </div>
 
@@ -77,15 +77,13 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
                                 className="group relative flex transform flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg"
                             >
                                 <div>
-                                    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground shadow-sm">
+                                    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                                         <item.icon className="h-7 w-7" />
                                     </div>
-                                    <h3 className="text-xl font-black uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
+                                    <h3 className="text-xl font-black tracking-tight text-foreground uppercase transition-colors group-hover:text-primary">
                                         {item.title}
                                     </h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground font-medium">
-                                        {item.description}
-                                    </p>
+                                    <p className="mt-2 text-sm leading-relaxed font-medium text-muted-foreground">{item.description}</p>
                                 </div>
 
                                 {/* <div className="mt-8 flex items-center justify-between border-t border-border pt-4">
