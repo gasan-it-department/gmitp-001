@@ -10,29 +10,6 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('announcements', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-
-            $table->string('title');
-            $table->text('message');
-
-            $table->string('status')->nullable();
-
-            $table->foreignUlid('user_id')
-                ->constrained()
-                ->restrictOnDelete();
-
-            $table->foreignUlid('municipal_id')
-                ->constrained('municipalities')
-                ->restrictOnDelete();
-
-            $table->boolean('is_published')->default(false);
-            $table->softDeletes();
-            $table->timestamps();
-
-            $table->index('municipal_id');
-        });
-
         Schema::create('events', function (Blueprint $table) {
             $table->ulid('id')->primary();
 
@@ -67,7 +44,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('announcements');
         Schema::dropIfExists('events');
 
     }

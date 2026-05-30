@@ -15,6 +15,7 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
+import announcement from '@/routes/announcement';
 import bulletinBoard from '@/routes/bulletin-board';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
@@ -135,7 +136,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             items: [
                 {
                     title: 'Announcements',
-                    url: bulletinBoard.announcement.admin.index.url({ municipality: currentMunicipality.slug }),
+                    url: announcement.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Megaphone,
                     permission: 'bulletin_board.access',
                 },

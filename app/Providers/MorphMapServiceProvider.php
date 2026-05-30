@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\Announcement\Models\Announcement;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
 use App\Core\Feedback\Models\FeedbackSubmission;
@@ -39,6 +40,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'feedback_submission' => FeedbackSubmission::class,
             'report_submission' => ReportSubmission::class,
             'department' => Department::class,
+            'announcement' => Announcement::class,
         ]);
     }
 }
