@@ -18,6 +18,7 @@ class GetAdminReportSubmissionDetailsAction
             ->with([
                 'user:id,first_name,last_name',
                 'media',
+                'activities',
             ])
             ->where('municipal_id', $municipalId)
             ->whereKey($reportId)

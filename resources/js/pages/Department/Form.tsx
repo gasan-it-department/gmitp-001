@@ -4,10 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import AppLayout from '@/layouts/App/AppLayout';
 import { DepartmentDetail } from '@/Core/Types/Department/department';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import AppLayout from '@/layouts/App/AppLayout';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Building2, ImagePlus, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
@@ -26,7 +26,7 @@ interface FormShape {
 }
 
 export default function DepartmentForm({ department }: Props) {
-    const { currentMunicipality } = useMunicipality();
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
     const isEdit = department !== null;
 
@@ -199,11 +199,7 @@ export default function DepartmentForm({ department }: Props) {
                                     </Label>
                                     <p className="text-sm text-muted-foreground">Inactive departments are hidden from public-facing dropdowns.</p>
                                 </div>
-                                <Switch
-                                    id="is_active"
-                                    checked={data.is_active}
-                                    onCheckedChange={(checked) => setData('is_active', checked)}
-                                />
+                                <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
                             </div>
 
                             <div className="flex justify-end gap-2">

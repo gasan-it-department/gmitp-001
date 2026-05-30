@@ -18,6 +18,7 @@ import actionCenter from '@/routes/actionCenter';
 import bulletinBoard from '@/routes/bulletin-board';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
+import department from '@/routes/department';
 import feedback from '@/routes/feedback';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
@@ -213,6 +214,18 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 {
                     title: 'Departments',
                     url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    icon: Landmark,
+                    permission: 'municipality_settings.access',
+                },
+            ],
+        },
+        {
+            title: 'DEPARTMENTS',
+            icon: Landmark,
+            items: [
+                {
+                    title: 'Departments',
+                    url: department.index.url({ municipality: currentMunicipality.slug }),
                     icon: Landmark,
                     permission: 'municipality_settings.access',
                 },

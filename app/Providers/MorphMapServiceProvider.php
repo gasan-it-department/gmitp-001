@@ -36,7 +36,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'beneficiary' => Beneficiary::class,
             'household_member' => HouseholdMember::class,
             'feedback_submission' => FeedbackSubmission::class,
-            'repor_submission' => ReportSubmission::class,
+            'report_submission' => ReportSubmission::class,
         ]);
     }
 }

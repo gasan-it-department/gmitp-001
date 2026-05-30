@@ -1,10 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import AppLayout from '@/layouts/App/AppLayout';
 import { DepartmentListItem } from '@/Core/Types/Department/department';
-import { Head, Link, router } from '@inertiajs/react';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import AppLayout from '@/layouts/App/AppLayout';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Power, PowerOff } from 'lucide-react';
 import { useState } from 'react';
 
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function DepartmentIndex({ departments }: Props) {
-    const { currentMunicipality } = useMunicipality();
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
