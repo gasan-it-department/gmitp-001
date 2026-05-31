@@ -13,24 +13,24 @@ class MunicipalitySettingsResource extends JsonResource
         $logo = $this->getFirstMedia('logo');
 
         return [
-            'id'   => $this->id,
+            'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
 
             'settings' => [
                 'primary_color_hex' => optional($this->settings)->primary_color_hex,
-                'contact_email'     => optional($this->settings)->contact_email,
-                'trunkline_phone'   => optional($this->settings)->trunkline_phone,
-                'office_hours'      => optional($this->settings)->office_hours,
-                'facebook_url'      => optional($this->settings)->facebook_url,
+                'contact_email' => optional($this->settings)->contact_email,
+                'trunkline_phone' => optional($this->settings)->trunkline_phone,
+                'office_hours' => optional($this->settings)->office_hours,
+                'facebook_url' => optional($this->settings)->facebook_url,
             ],
 
             'logo_url' => $logo ? $this->resolveMediaUrl($logo) : null,
 
-            'banner_urls' => $this->getMedia('banners')->map(fn (Media $m) => [
-                'id'   => $m->id,
+            'banner_urls' => $this->getMedia('banners')->map(fn(Media $m) => [
+                'id' => $m->id,
                 'name' => $m->file_name,
-                'url'  => $this->resolveMediaUrl($m),
+                'url' => $this->resolveMediaUrl($m),
             ])->values(),
         ];
     }
