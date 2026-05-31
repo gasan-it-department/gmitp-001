@@ -23,12 +23,12 @@ class EditMunicipalitySettingsController extends Controller
     {
         $municipalId = app('municipal_id');
 
-        $model    = $this->getSettings->execute($municipalId);
+        $model = $this->getSettings->execute($municipalId);
         $hotlines = $this->getHotlines->execute($municipalId);
 
         return Inertia::render('Municipality/Settings', [
-            'settings'           => (new MunicipalitySettingsResource($model))->resolve(),
-            'hotlines'           => HotlineResource::collection($hotlines)->resolve(),
+            'settings' => (new MunicipalitySettingsResource($model))->resolve(),
+            'hotlines' => HotlineResource::collection($hotlines)->resolve(),
             'hotline_categories' => HotlineCategory::toOptions(),
         ]);
     }
