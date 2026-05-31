@@ -1,72 +1,40 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { EventsApi } from '@/Core/Api/BulletinBoard/EventsApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { EventData } from '@/Core/Types/BulletinBoard/Events';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import Utility from '@/pages/Utility/Utility';
-import { events } from '@/routes';
+import event from '@/routes/event';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ViewEventDetails } from './ViewEventDetails';
 
-export default function EventsCalendarUi() {
-    const [dashboardList, setDashboardList] = useState<EventData[]>([]);
+interface Event {
+    id: string;
+    title: string;
+    description: string;
+    type: {
+        value: string;
+        label: string;
+    };
+    start_datetime: string;
+    end_datetime: string;
+    location_name: string;
+    banner_url: string | null;
+    created_at: string;
+}
+
+interface Props {
+    events: PaginatedResponse<Event>;
+}
+
+export default function EventsCalendarUi({ events }: Props) {
     const [isEventDetailDialogShowing, setIsEventDialogShowing] = useState(false);
-    const [selectedEventData, setSelectedEventData] = useState<EventData | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [selectedEventData, setSelectedEventData] = useState<any | null>(null);
     const { currentMunicipality } = useMunicipality();
 
-    const [classicDialg, setClassicDialog] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        positiveButtonText: '',
-        negativeButtonText: '',
-        isNegativeButtonHidden: false,
-        action: '',
-    });
-
-    useEffect(() => {
-        loadEvents();
-    }, []);
-
-    async function loadEvents() {
-        try {
-            setIsLoading(true);
-            const response = await EventsApi.getPublished(currentMunicipality.slug);
-            setIsLoading(false);
-            if (response.success) {
-                const sorted = [...response.data].sort((a, b) => {
-                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                });
-                setDashboardList(sorted);
-            } else {
-                setClassicDialog((prev) => ({
-                    ...prev,
-                    isOpen: true,
-                    title: 'An error occurred!',
-                    message: 'Failed to load announcement. Please check your Internet connection and try again.',
-                    positiveButtonText: 'Close',
-                    isNegativeButtonHidden: true,
-                }));
-            }
-        } catch (error: any) {
-            setIsLoading(false);
-            console.error('Error fetching announcements:', error);
-            setClassicDialog((prev) => ({
-                ...prev,
-                isOpen: true,
-                title: 'An error occurred!',
-                message: error,
-                positiveButtonText: 'Close',
-                isNegativeButtonHidden: true,
-            }));
-        }
-    }
+    const dashboardList = events.data;
 
     return (
         <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -78,11 +46,7 @@ export default function EventsCalendarUi() {
             </div>
 
             <div className="flex flex-col gap-4 sm:gap-6">
-                {isLoading ? (
-                    <div className="flex w-full items-center justify-center py-4">
-                        <LoadingSpinner />
-                    </div>
-                ) : dashboardList.length > 0 ? (
+                {dashboardList.length > 0 ? (
                     dashboardList.slice(0, 5).map((item, index) => {
                         return (
                             <motion.div
@@ -102,38 +66,33 @@ export default function EventsCalendarUi() {
                                         setSelectedEventData(item);
                                         setIsEventDialogShowing(true);
                                     }}
-                                    // Theme Update: 'bg-card' and 'border-border'
                                     className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md"
                                 >
-                                    {/* Days Remaining Badge: 'bg-secondary' with 'text-secondary-foreground' */}
+                                    {/* Days Remaining Badge */}
                                     <div className="absolute top-2 right-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground uppercase shadow-sm">
-                                        {Utility().calculateArrivingDays(item.event_date)}
+                                        {Utility().calculateArrivingDays(item.start_datetime)}
                                     </div>
 
                                     <div className="flex items-center gap-3 sm:gap-4">
-                                        {/* Date Box: Primary theme color */}
-                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary text-primary-foreground font-semibold shadow-sm sm:h-14 sm:w-14">
+                                        {/* Date Box */}
+                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary font-semibold text-primary-foreground shadow-sm sm:h-14 sm:w-14">
                                             <span className="text-xs leading-none uppercase opacity-80 sm:text-sm">
-                                                {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('MMM')}
+                                                {moment(item.start_datetime, 'MMM DD, YYYY g:i A').format('MMM')}
                                             </span>
                                             <span className="text-lg leading-none font-bold sm:text-xl">
-                                                {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('DD')}
+                                                {moment(item.start_datetime, 'MMM DD, YYYY g:i A').format('DD')}
                                             </span>
                                         </div>
 
                                         <div className="flex min-w-0 flex-grow flex-col">
                                             <span className="text-xs font-semibold text-muted-foreground sm:text-sm">
-                                                {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('YYYY')}
+                                                {moment(item.start_datetime, 'MMM DD, YYYY g:i A').format('YYYY')}
                                             </span>
-                                            <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">
-                                                {item.title}
-                                            </h3>
+                                            <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">{item.title}</h3>
                                         </div>
                                     </div>
 
-                                    <p className="mt-3 line-clamp-3 text-sm text-muted-foreground sm:text-base">
-                                        {item.description}
-                                    </p>
+                                    <p className="mt-3 line-clamp-3 text-sm text-muted-foreground sm:text-base">{item.description}</p>
                                 </Card>
                             </motion.div>
                         );
@@ -147,34 +106,13 @@ export default function EventsCalendarUi() {
 
             {dashboardList.length > 0 && (
                 <div className="mt-6 flex w-full items-end justify-end">
-                    <Button variant="outline" onClick={() => router.visit(events.url(currentMunicipality.slug))}>
+                    <Button variant="outline" onClick={() => router.visit(event.index.url(currentMunicipality.slug))}>
                         View More
                     </Button>
                 </div>
             )}
 
             <ViewEventDetails isOpen={isEventDetailDialogShowing} data={selectedEventData} onClose={() => setIsEventDialogShowing(false)} />
-
-            <ClassicDialog
-                title={classicDialg.title}
-                message={classicDialg.message}
-                positiveButtonText={classicDialg.positiveButtonText}
-                negativeButtonText={classicDialg.negativeButtonText}
-                hideNegativeButton={classicDialg.isNegativeButtonHidden}
-                open={classicDialg.isOpen}
-                onPositiveClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({
-                        ...prev,
-                        isOpen: false,
-                    }));
-                }}
-            />
         </div>
     );
 }

@@ -4,7 +4,6 @@ namespace App\Core\Feedback\Actions;
 
 use App\Core\Feedback\Dto\FeedbackQueryDto;
 use App\Core\Feedback\Models\FeedbackSubmission;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListMyFeedbackAction
 {

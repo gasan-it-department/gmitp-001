@@ -13,9 +13,10 @@ import CommunityReportHeader from './CommunityReportHeader';
 
 interface Props {
     reports: PaginatedResponse<CommunityReportData>;
+    hideHeader?: boolean;
 }
 
-export default function CommunityReportPageTable({ reports }: Props) {
+export default function CommunityReportPageTable({ reports, hideHeader = false }: Props) {
     const reportList = reports.data;
     const meta = reports.meta;
     const [reportDetails, setReportDetails] = useState<{
@@ -104,23 +105,25 @@ export default function CommunityReportPageTable({ reports }: Props) {
     return (
         <div className="flex h-full flex-col">
             {/* HEADER ... */}
-            <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Community Reports</h1>
-                <CommunityReportHeader
-                    onSearch={(searchValue) => handleSearch(searchValue)}
-                    sortList={[
-                        { label: 'Type', value: 'type' },
-                        { label: 'Date Reported', value: 'created_at' },
-                        { label: 'Status', value: 'status' },
-                        { label: 'Location', value: 'location' },
-                    ]}
-                    onSortSelected={(sortValue) => handleSort(sortValue)}
-                    onExportButtonClicked={() => {}}
-                />
-            </div>
+            {!hideHeader && (
+                <div className="my-5 flex items-center justify-between">
+                    <h1 className="text-3xl font-bold">Community Reports</h1>
+                    <CommunityReportHeader
+                        onSearch={(searchValue) => handleSearch(searchValue)}
+                        sortList={[
+                            { label: 'Type', value: 'type' },
+                            { label: 'Date Reported', value: 'created_at' },
+                            { label: 'Status', value: 'status' },
+                            { label: 'Location', value: 'location' },
+                        ]}
+                        onSortSelected={(sortValue) => handleSort(sortValue)}
+                        onExportButtonClicked={() => {}}
+                    />
+                </div>
+            )}
 
             {!reportDetails.isVisible && !reportDetails.data && (
-                <div className="overflow-auto rounded-2xl border border-gray-200 shadow-sm">
+                <div className="overflow-auto">
                     <Table className="min-w-full table-auto">
                         <TableHeader className="sticky top-0 z-10 bg-gray-50">
                             <TableRow>
@@ -164,12 +167,6 @@ export default function CommunityReportPageTable({ reports }: Props) {
                                                         isVisible: true,
                                                         data: item,
                                                     }));
-                                                    // router.visit(
-                                                    //     communityReport.show.url({
-                                                    //         municipality: currentMunicipality.slug,
-                                                    //         id: item.id,
-                                                    //     }),
-                                                    // );
                                                 }}
                                                 className="border-green-200 text-green-600 hover:bg-green-50"
                                             >
@@ -186,15 +183,17 @@ export default function CommunityReportPageTable({ reports }: Props) {
 
             {/* 4. PAGINATION CONTROL */}
             {/* Pass the Meta directly. No state calculation needed. */}
-            <div className="mt-2">
-                <PaginationView
-                    currentPage={meta.current_page}
-                    totalPages={meta.last_page}
-                    totalItems={meta.total}
-                    itemsPerPage={meta.per_page}
-                    onPageChange={handlePageChange}
-                />
-            </div>
+            {!hideHeader && (
+                <div className="mt-2">
+                    <PaginationView
+                        currentPage={meta.current_page}
+                        totalPages={meta.last_page}
+                        totalItems={meta.total}
+                        itemsPerPage={meta.per_page}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            )}
         </div>
     );
 }

@@ -94,6 +94,11 @@ return [
     'custom_path_generators' => [
         \App\Core\ActionCenter\Models\AssistanceRequest::class => \App\External\Documents\ActionCenter\MediaLibrary\ActionCenterPathGenerator::class,
         \App\Core\Feedback\Models\FeedbackSubmission::class => \App\External\Documents\Feedback\MediaLibrary\FeedbackPathGenerator::class,
+        \App\Core\CommunityReport\Models\ReportSubmission::class => \App\External\Documents\CommunityReport\MediaLibrary\CommunityReportPathGenerator::class,
+        \App\Core\Department\Models\Department::class => \App\External\Documents\Department\MediaLibrary\DepartmentPathGenerator::class,
+        \App\Core\Announcement\Models\Announcement::class => \App\External\Documents\Announcement\MediaLibrary\AnnouncementPathGenerator::class,
+        \App\Core\Event\Models\Event::class => \App\External\Documents\Event\MediaLibrary\EventPathGenerator::class,
+        \App\Core\Municipality\Models\Municipality::class => \App\External\Documents\Municipality\MediaLibrary\MunicipalityPathGenerator::class,
     ],
 
     /*

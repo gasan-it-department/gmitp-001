@@ -2,49 +2,55 @@
 
 namespace App\Core\Municipality\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+
 class MunicipalitySettings extends Model
 {
+    use HasFactory, HasUlids, LogsActivity;
 
-    // protected $table = 'municipality_settings';
-
+    protected $table = 'municipality_settings';
+    protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $keyType = 'string';
-
     protected $fillable = [
-
         'id',
-
         'municipal_id',
-
-        'user_id',
-
-        'logo_public_id',
-
+        'primary_color_hex',
+        'contact_email',
+        'trunkline_phone',
+        'office_hours',
+        'facebook_url',
     ];
-
-    public function getLogoUrlAttribute(): ?string
-    {
-        if (!$this->logo_public_id) {
-            return null;
-        }
-
-        // We add ?t= and the updated_at timestamp. 
-        // When the row updates, the 't' changes, and the browser refreshes the image.
-        $timestamp = $this->updated_at ? $this->updated_at->timestamp : time();
-
-        return "https://res.cloudinary.com/" . config('cloudinary.cloud_name') .
-            "/image/upload/f_auto,q_auto,w_500,c_limit/" .
-            $this->logo_public_id .
-            "?t=" . $timestamp;
-
-    }
 
     public function municipality(): BelongsTo
     {
         return $this->belongsTo(Municipality::class, 'municipal_id');
     }
 
+    public function activities(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'primary_color_hex',
+                'contact_email',
+                'trunkline_phone',
+                'office_hours',
+                'facebook_url',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('municipality_settings');
+    }
 }

@@ -1,211 +1,183 @@
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
+import { Card, CardContent } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import Utility from '@/pages/Utility/Utility';
-import { announcements } from '@/routes';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { CalendarDays, MapPin } from 'lucide-react';
+import { useState } from 'react';
 import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
 
-export default function GeneralAnnouncement() {
+interface Announcement {
+    id: string;
+    title: string;
+    content: string;
+    type: {
+        value: string;
+        label: string;
+    };
+    created_at: string;
+    cover_image_url: string | null;
+    images: { url: string }[];
+}
+
+interface Props {
+    announcements: PaginatedResponse<Announcement>;
+}
+
+export default function GeneralAnnouncement({ announcements }: Props) {
     const { currentMunicipality } = useMunicipality();
-    const [announcementList, setAnnouncementList] = useState<AnnouncementData[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [classicDialog, setClassicDialog] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        positiveButtonText: '',
-        negativeButtonText: '',
-        isNegativeButtonHidden: false,
-        action: '',
-    });
     const [announcementDetailsDialog, setAnnouncementDetailsDialog] = useState<{
         isOpen: boolean;
-        data: AnnouncementData | null;
+        data: Announcement | null;
     }>({
         isOpen: false,
         data: null,
     });
 
-    useEffect(() => {
-        loadAnnouncement();
-    }, []);
-
-    async function loadAnnouncement() {
-        try {
-            setIsLoading(true);
-            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug);
-            if (response.success) {
-                const sorted = [...response.data].sort((a, b) => {
-                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                });
-                setAnnouncementList(sorted);
-            } else {
-                setClassicDialog((prev) => ({
-                    ...prev,
-                    isOpen: true,
-                    title: 'An error occurred!',
-                    message: 'Failed to load announcement. Please check your Internet connection and try again.',
-                    positiveButtonText: 'Close',
-                    isNegativeButtonHidden: true,
-                }));
-            }
-        } catch (error: any) {
-            console.error('Error fetching announcements:', error);
-            setClassicDialog((prev) => ({
-                ...prev,
-                isOpen: true,
-                title: 'An error occurred!',
-                message: error,
-                positiveButtonText: 'Close',
-                isNegativeButtonHidden: true,
-            }));
-        } finally {
-            setIsLoading(false);
-        }
-    }
+    const announcementList = announcements.data;
 
     return (
         <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
             <div className="flex flex-1 flex-col">
-                <div>
-                    {/* Updated to use semantic text colors */}
-                    <h2 className="text-xl font-semibold text-foreground sm:text-2xl">General Announcements</h2>
-                    <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+                <div className="mb-8">
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">General Announcements</h2>
+                    <p className="mt-2 text-muted-foreground sm:text-lg">
                         Stay updated with important notices, reminders, and community information.
                     </p>
                 </div>
 
-                <div className="mt-4 w-full flex-1 bg-transparent sm:mt-6">
-                    {isLoading ? (
-                        <div className="flex w-full items-center justify-center py-4">
-                            <LoadingSpinner />
-                        </div>
-                    ) : (
-                        <>
-                            {/* ANNOUNCEMENTS LIST */}
-                            {announcementList.length > 0 ? (
-                                <div className="flex flex-col space-y-4">
-                                    {announcementList.slice(0, 5).map((item, index) => (
-                                        <motion.div
-                                            key={item.id}
-                                            onClick={() => {
-                                                setAnnouncementDetailsDialog((prev) => ({
-                                                    ...prev,
-                                                    isOpen: true,
-                                                    data: item,
-                                                }));
-                                            }}
-                                            className="cursor-pointer transition-transform active:scale-[0.99]"
-                                            initial={{ opacity: 0, x: -80 }}
-                                            whileInView={{ opacity: 1, x: 0 }}
-                                            viewport={{ once: true, amount: 0.2 }}
-                                            transition={{
-                                                duration: 0.2,
-                                                delay: index * 0.1,
-                                                ease: [0.25, 0.1, 0.25, 1],
-                                            }}
-                                        >
-                                            {/* Updates:
-                                                1. Removed red gradients.
-                                                2. Added 'bg-card' and 'border-border'.
-                                                3. Used 'border-l-primary' for the accent line on the left.
-                                            */}
-                                            <Card className="relative overflow-hidden rounded-xl border border-border border-l-4 border-l-primary bg-card p-4 transition-all duration-300 hover:shadow-md sm:p-5">
-                                                {/* Time Badge: Uses 'secondary' background for subtle contrast */}
-                                                <div className="absolute top-2 right-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground shadow-sm sm:top-3 sm:right-3 sm:text-xs">
-                                                    {Utility().formatTimeAgo(item.created_at)}
-                                                </div>
-
-                                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                                                    {/* Icon Container: Uses 'muted' background */}
-                                                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-muted shadow-sm sm:h-12 sm:w-12">
-                                                        <img
-                                                            src="/assets/announcement.png"
-                                                            alt="Notice Icon"
-                                                            className="h-5 w-5 opacity-80 sm:h-6 sm:w-6"
-                                                        />
-                                                    </div>
-
-                                                    <div className="flex min-w-0 flex-grow flex-col">
-                                                        {/* Title: Primary Foreground color */}
-                                                        <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">
-                                                            {item.title.length > 100 ? `${item.title.slice(0, 100)}…` : item.title}
-                                                        </h3>
-                                                        {/* Body: Muted text color */}
-                                                        <p className="mt-1 line-clamp-2 text-sm leading-snug text-muted-foreground sm:text-[13px]">
-                                                            {item.message.length > 100 ? `${item.message.slice(0, 100)}…` : item.message}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            ) : (
-                                /* Empty State: Neutral styling */
-                                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center text-sm text-muted-foreground">
-                                    No announcements yet
-                                </div>
-                            )}
-
-                            {/* VIEW MORE BUTTON */}
-                            {announcementList.length > 0 && (
-                                <div className="mt-6 flex w-full justify-end">
-                                    <Button
-                                        variant="outline"
-                                        className="text-sm sm:text-base hover:bg-secondary/80"
+                <div className="w-full flex-1">
+                    {announcementList.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-2">
+                            {announcementList.slice(0, 6).map((item, index) => (
+                                <motion.div
+                                    key={item.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                                >
+                                    <Card 
+                                        className="group flex h-full flex-col overflow-hidden border-border bg-card transition-all duration-300 hover:shadow-xl"
                                         onClick={() => {
-                                            router.visit(announcements.url(currentMunicipality.slug));
+                                            setAnnouncementDetailsDialog({
+                                                isOpen: true,
+                                                data: item,
+                                            });
                                         }}
                                     >
-                                        View More
-                                    </Button>
-                                </div>
-                            )}
-                        </>
+                                        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                                            {item.images.length > 1 ? (
+                                                <Carousel className="h-full w-full" opts={{ loop: true }}>
+                                                    <CarouselContent className="h-full">
+                                                        {item.images.map((img, i) => (
+                                                            <CarouselItem key={i} className="h-full">
+                                                                <img
+                                                                    src={img.url}
+                                                                    alt={`${item.title} - ${i + 1}`}
+                                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                                />
+                                                            </CarouselItem>
+                                                        ))}
+                                                    </CarouselContent>
+                                                    <div className="absolute inset-0 flex items-center justify-between px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                                        <CarouselPrevious className="relative left-0 translate-x-0" />
+                                                        <CarouselNext className="relative right-0 translate-x-0" />
+                                                    </div>
+                                                </Carousel>
+                                            ) : item.cover_image_url ? (
+                                                <img
+                                                    src={item.cover_image_url}
+                                                    alt={item.title}
+                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center bg-muted/50">
+                                                    <img src="/assets/announcement.png" alt="No image" className="h-12 w-12 opacity-20" />
+                                                </div>
+                                            )}
+                                            <div className="absolute top-3 left-3">
+                                                <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-semibold backdrop-blur-sm text-foreground shadow-sm">
+                                                    {item.type.label}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <CardContent className="flex flex-1 flex-col p-5">
+                                            <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+                                                <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                                <span>{Utility().formatToReadableDate(item.created_at)}</span>
+                                                <span className="mx-1">•</span>
+                                                <span>{Utility().formatTimeAgo(item.created_at)}</span>
+                                            </div>
+
+                                            <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-tight text-foreground group-hover:text-primary transition-colors">
+                                                {item.title}
+                                            </h3>
+
+                                            <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                                                {item.content}
+                                            </p>
+
+                                            <div className="mt-auto pt-4 border-t border-border/50">
+                                                <Button 
+                                                    variant="link" 
+                                                    className="h-auto p-0 text-primary font-semibold hover:no-underline"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setAnnouncementDetailsDialog({
+                                                            isOpen: true,
+                                                            data: item,
+                                                        });
+                                                    }}
+                                                >
+                                                    Read More →
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/30 p-12 text-center">
+                            <div className="mb-4 rounded-full bg-muted p-4">
+                                <img src="/assets/announcement.png" alt="Empty" className="h-12 w-12 opacity-20" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground">No announcements yet</h3>
+                            <p className="mt-1 text-muted-foreground">Important updates will appear here once published.</p>
+                        </div>
+                    )}
+
+                    {announcementList.length > 0 && (
+                        <div className="mt-10 flex justify-center">
+                            <Button
+                                size="lg"
+                                className="rounded-full bg-primary px-8 text-primary-foreground shadow-lg transition-all hover:scale-105 active:scale-95"
+                                onClick={() => {
+                                    router.visit(`/${currentMunicipality.slug}/all-announcements`);
+                                }}
+                            >
+                                View All Announcements
+                            </Button>
+                        </div>
                     )}
                 </div>
-
-                <ViewAnnouncementDetails
-                    isOpen={announcementDetailsDialog.isOpen}
-                    data={announcementDetailsDialog.data}
-                    onClose={() => {
-                        setAnnouncementDetailsDialog((prev) => ({
-                            ...prev,
-                            isOpen: false,
-                            data: null,
-                        }));
-                    }}
-                />
-
-                <ClassicDialog
-                    title={classicDialog.title}
-                    message={classicDialog.message}
-                    positiveButtonText={classicDialog.positiveButtonText}
-                    negativeButtonText={classicDialog.negativeButtonText}
-                    hideNegativeButton={classicDialog.isNegativeButtonHidden}
-                    open={classicDialog.isOpen}
-                    onPositiveClick={() => {
-                        setClassicDialog((prev) => ({
-                            ...prev,
-                            isOpen: false,
-                        }));
-                    }}
-                    onNegativeClick={() => {
-                        setClassicDialog((prev) => ({
-                            ...prev,
-                            isOpen: false,
-                        }));
-                    }}
-                />
             </div>
+
+            <ViewAnnouncementDetails
+                isOpen={announcementDetailsDialog.isOpen}
+                data={announcementDetailsDialog.data}
+                onClose={() => {
+                    setAnnouncementDetailsDialog({
+                        isOpen: false,
+                        data: null,
+                    });
+                }}
+            />
         </div>
     );
 }
