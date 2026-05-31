@@ -10,6 +10,8 @@ use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
 use App\Core\Event\Models\Event;
 use App\Core\Feedback\Models\FeedbackSubmission;
+use App\Core\Municipality\Models\Municipality;
+use App\Core\Municipality\Models\MunicipalitySettings;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
 use App\Core\Users\Models\User;
@@ -43,6 +45,8 @@ class MorphMapServiceProvider extends ServiceProvider
             'department' => Department::class,
             'announcement' => Announcement::class,
             'event' => Event::class,
+            'municipality' => Municipality::class,
+            'municipality_settings' => MunicipalitySettings::class,
         ]);
     }
 }

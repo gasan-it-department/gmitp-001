@@ -1,9 +1,11 @@
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import Utility from '@/pages/Utility/Utility';
+import { usePage } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
 import ActionCenterUi from './Components/ActionCenterForm/ActionCenterCard';
-import Carousel, { Banner } from './Components/Carousel';
+import Carousel from './Components/Carousel';
 import EventsCalendarUi from './Components/EventsCalendarUi';
 import FeedbackUi from './Components/FeedbackForm/FeedbackFormCard';
 import GeneralAnnouncementUi from './Components/GeneralAnnouncementUi';
@@ -12,12 +14,13 @@ import Report from './Components/ReportForm/ReportFormCard';
 
 // Define Props
 interface HomePageProps {
-    banners: Banner[];
     announcements: PaginatedResponse<any>;
     events: any;
 }
 
-export default function HomePage({ banners, announcements, events }: HomePageProps) {
+export default function HomePage({ announcements, events }: HomePageProps) {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+
     return (
         <PublicLayout title="Home" description="">
             <div className="bg-background">
@@ -35,7 +38,7 @@ export default function HomePage({ banners, announcements, events }: HomePagePro
                     </div>
                 </div>
 
-                <Carousel slides={banners} />
+                <Carousel slides={currentMunicipality.settings?.banner_urls} />
 
                 <div className="mx-auto max-w-screen-2xl">
                     <div className="h-8" />

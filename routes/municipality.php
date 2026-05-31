@@ -1,12 +1,13 @@
 <?php
 
-use App\External\Api\Controllers\Municipality\Logo\SetMunicipalityLogoController;
-use App\External\Api\Controllers\Municipality\Logo\UpdateMunicipalityLogoController;
+use App\External\Api\Controllers\Municipality\DeleteHotlineController;
 use App\External\Api\Controllers\Municipality\MunicipalityController;
-use App\External\Api\Controllers\Municipality\MunicipalitySettingsController;
+use App\External\Api\Controllers\Municipality\StoreHotlineController;
 use App\External\Api\Controllers\Municipality\StoreMunicipalityController;
+use App\External\Api\Controllers\Municipality\UpdateHotlineController;
+use App\External\Api\Controllers\Municipality\UpdateSettingsController;
 use App\External\Api\Controllers\Psgc\LocationController;
-use App\External\Web\Controllers\Municipality\MunicipalityAdminController;
+use App\External\Web\Controllers\Municipality\Admin\EditMunicipalitySettingsController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,44 +38,44 @@ Route::prefix('municipality')
         // ========================
         // PUBLIC MUNICIPAL ROUTES
         // ========================
-    
+
         Route::get('/', [MunicipalityController::class, 'indexActiveMunicipalities'])
             ->name('index');
 
     });
 
 
-//showing the pages for the municipality
-Route::prefix('{municipality}/municipality-editor')
+/*
+ * Admin web (Inertia render) — unified Settings & Hotlines management page.
+ */
+Route::prefix('{municipality}/admin/municipality')
     ->middleware(['municipalityContext', 'admin'])
     ->name('municipality.admin.')
-    ->controller(MunicipalityAdminController::class)
     ->group(function () {
-
-        Route::get('/', 'index')->name('page');
-
+        Route::get('/settings', EditMunicipalitySettingsController::class)
+            ->name('settings.edit');
     });
 
-//api for municipality settings
+/*
+ * Admin API (form mutations) — returns Inertia redirects, not JSON.
+ */
 Route::prefix('api/municipality')
     ->middleware(['municipalityContext', 'admin'])
-    ->name('municipality.admin.')
-    ->controller(MunicipalitySettingsController::class)
+    ->name('api.municipality.')
     ->group(function () {
+        Route::put('/settings', UpdateSettingsController::class)
+            ->name('settings.update');
 
-        //for logo create and update route
-        Route::post('/store-logo', SetMunicipalityLogoController::class)->name('store.logo');
-        Route::post('/update-logo', UpdateMunicipalityLogoController::class)->name('update.logo');
-        //
-    
-        Route::post('/', 'store')->name('setSettings');
+        Route::post('/hotlines', StoreHotlineController::class)
+            ->name('hotlines.store');
 
-        Route::patch('/update/{id}', 'updateSettings')->name('updateSettings');
+        Route::put('/hotlines/{hotline}', UpdateHotlineController::class)
+            ->whereUlid('hotline')
+            ->name('hotlines.update');
 
-        Route::post('/save-banner', 'storeBanner')->name('saveBanner');
-
-        Route::delete('/delete-banner/{id}', 'destroyBanner')->name('deleteBanner');
-
+        Route::delete('/hotlines/{hotline}', DeleteHotlineController::class)
+            ->whereUlid('hotline')
+            ->name('hotlines.destroy');
     });
 
 //api for address or location
@@ -90,7 +91,3 @@ Route::prefix('api/gmitp-001-psgc')
         Route::get('barangays/{id}', 'barangays')->name('barangays');
 
     });
-
-
-
-

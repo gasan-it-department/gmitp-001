@@ -28,6 +28,11 @@ export interface Municipality {
 
 export interface MunicipalitySettings {
     logo_url: string;
+    banner_urls: {
+        id: string | number;
+        name: string;
+        url: string;
+    }[];
 }
 
 export interface MunicipalResponse {

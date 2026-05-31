@@ -4,27 +4,41 @@ namespace App\External\Api\Resources\Municipality;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-class MunicipalitysettingsResource extends JsonResource
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class MunicipalitySettingsResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        $data = [
-            // We expose the computed URL, not the raw public_id
-            'id' => $this->id,
+        $logo = $this->getFirstMedia('logo');
 
-            'logoUrl' => $this->logo_secure_url,
+        return [
+            'id'   => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
 
-            'helper_logo_link' => $this->logo_url,
-            // add other settings
+            'settings' => [
+                'primary_color_hex' => optional($this->settings)->primary_color_hex,
+                'contact_email'     => optional($this->settings)->contact_email,
+                'trunkline_phone'   => optional($this->settings)->trunkline_phone,
+                'office_hours'      => optional($this->settings)->office_hours,
+                'facebook_url'      => optional($this->settings)->facebook_url,
+            ],
 
+            'logo_url' => $logo ? $this->resolveMediaUrl($logo) : null,
+
+            'banner_urls' => $this->getMedia('banners')->map(fn (Media $m) => [
+                'id'   => $m->id,
+                'name' => $m->file_name,
+                'url'  => $this->resolveMediaUrl($m),
+            ])->values(),
         ];
+    }
 
-
-        return $data;
+    private function resolveMediaUrl(Media $media): string
+    {
+        return $media->disk === 's3'
+            ? $media->getTemporaryUrl(now()->addMinutes(15))
+            : $media->getUrl();
     }
 }

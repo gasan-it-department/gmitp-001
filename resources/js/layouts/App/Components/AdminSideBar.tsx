@@ -208,7 +208,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Site Pages (CMS)',
-                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    url: municipality.admin.settings.edit.url({ municipality: currentMunicipality.slug }),
                     icon: LayoutTemplate,
                     permission: 'municipality_settings.access',
                 },

@@ -4,7 +4,8 @@ import { createContext, ReactNode, useContext } from 'react';
 // 1. Define the Settings structure
 type MunicipalitySettings = {
     id: string;
-    logoUrl: string | null;
+    logo_url: string | null;
+    banner_urls: string | null;
     homeTitle: string | null;
     primaryColor: string | null;
 };
@@ -32,7 +33,7 @@ export const MunicipalityProvider = ({ children }: { children: ReactNode }) => {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     // 4. Derive values safely
-    const logoUrl = currentMunicipality?.settings?.logoUrl ?? null;
+    const logoUrl = currentMunicipality?.settings?.logo_url ?? null;
     const settingsId = currentMunicipality?.settings?.id;
 
     // Debugging log

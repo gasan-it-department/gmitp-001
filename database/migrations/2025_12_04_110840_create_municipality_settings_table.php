@@ -11,44 +11,17 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('municipality_settings', function (Blueprint $table) {
-
             $table->ulid('id')->primary();
 
-            $table->foreignUlid('municipal_id')
-                ->constrained('municipalities')
-                ->cascadeOnDelete();
-
-            $table->foreignUlid('user_id')
-                ->constrained('users')
-                ->nullOnDelete();
-
-            $table->string('logo_public_id')->nullable();
-
-            $table->string('logo_secure_url')->nullable();
+            $table->foreignUlid('municipal_id')->constrained('municipalities')->cascadeOnDelete();
+            $table->string('primary_color_hex')->nullable();
+            $table->string('contact_email')->nullable();
+            $table->string('trunkline_phone')->nullable();
+            $table->string('office_hours')->nullable();
+            $table->string('facebook_url')->nullable();
 
             $table->timestamps();
         });
-
-        Schema::create('municipality_banners', function (Blueprint $table) {
-
-            $table->ulid('id')->primary();
-
-            $table->foreignUlid('municipal_id')
-                ->constrained('municipalities')
-                ->cascadeOnDelete();
-
-            $table->foreignUlid('user_id')
-                ->constrained('users')
-                ->nullOnDelete();
-
-            $table->string('public_id');
-
-            $table->string('position')->nullable();
-
-            $table->timestamps();
-        });
-
-
 
     }
 
@@ -59,9 +32,6 @@ return new class extends Migration {
     {
 
         Schema::dropIfExists('municipality_settings');
-
-        Schema::dropIfExists('municipality_banners');
-
 
     }
 };
