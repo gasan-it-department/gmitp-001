@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
@@ -96,16 +95,6 @@ export default function AnnouncementPageTable() {
     const loadAnnouncement = async (page = 1) => {
         setIsLoading(true);
         try {
-            const response = await AnnouncementApi.getAnnouncement(currentMunicipality.slug, page);
-
-            const apiData = response as unknown as AnnouncementApiResponse;
-
-            setAnnouncementList(apiData.data);
-            setCurrentPage(apiData.meta.current_page);
-            setLastPage(apiData.meta.last_page);
-            setPerPage(apiData.meta.per_page);
-            setTotalItems(apiData.meta.total);
-            setSelectedItems([]);
         } catch (e) {
             console.error(e);
             setAnnouncementList([]);
@@ -139,21 +128,6 @@ export default function AnnouncementPageTable() {
 
         setIsLoading(true);
         try {
-            const response = await AnnouncementApi.deleteMultiple(ids, currentMunicipality.slug);
-
-            if (response.success) {
-                toast.success('Successfully deleted');
-
-                const remaining = announcementList.length - ids.length;
-                let pageToLoad = currentPage;
-
-                if (remaining <= 0 && currentPage > 1 && totalItems - ids.length <= (currentPage - 1) * perPage) {
-                    pageToLoad = currentPage - 1;
-                }
-
-                loadAnnouncement(pageToLoad);
-                setSelectedItems([]);
-            }
         } finally {
             setIsLoading(false);
         }

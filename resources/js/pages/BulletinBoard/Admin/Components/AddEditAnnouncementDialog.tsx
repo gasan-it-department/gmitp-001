@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import { AxiosError } from 'axios';
@@ -30,7 +29,7 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
     } = useForm<AnnouncementData>({
         defaultValues: { title: '', message: '', is_published: false },
     });
-    
+
     const onSubmit: SubmitHandler<AnnouncementData> = async (data) => {
         setServerError(null);
 
@@ -42,18 +41,18 @@ export default function AddEditAnnouncementDialog({ isOpen, onClose, editData, o
 
         try {
             let response;
-            if (editData) {
-                console.log(payload);
-                const response = await AnnouncementApi.updateAnnouncement(currentMunicipality.slug, editData.id, payload);
-                if (response) {
-                    onSuccess(response.data, true);
-                }
-            } else {
-                response = await AnnouncementApi.storeAnnouncement(payload, municipalSlug);
-                if (response.success) {
-                    onSuccess(response.data, false);
-                }
-            }
+            // if (editData) {
+            //     console.log(payload);
+            //     const response = await AnnouncementApi.updateAnnouncement(currentMunicipality.slug, editData.id, payload);
+            //     if (response) {
+            //         onSuccess(response.data, true);
+            //     }
+            // } else {
+            //     response = await AnnouncementApi.storeAnnouncement(payload, municipalSlug);
+            //     if (response.success) {
+            //         onSuccess(response.data, false);
+            //     }
+            // }
 
             reset();
             onClose();

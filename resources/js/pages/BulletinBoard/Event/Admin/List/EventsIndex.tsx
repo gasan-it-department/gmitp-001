@@ -1,4 +1,3 @@
-import { destroy } from '@/actions/App/External/Api/Controllers/BulletinBoard/EventController';
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
 import { EventData, EventFormData } from '@/Core/Types/BulletinBoard/Events';
@@ -73,24 +72,7 @@ export default function EventsIndex({ events, filters, municipality }: Props) {
             isOpen: true,
             title: 'Confirm Deletion',
             message: `Are you sure you want to delete ${ids.length} selected event(s)?`,
-            action: () => {
-                router.delete(destroy.url(), {
-                    data: { ids },
-                    preserveScroll: true,
-                    headers: {
-                        'X-Municipality-Slug': municipality.slug,
-                    },
-                    onSuccess: () => {
-                        setSelectedItems([]); // Clear checkboxes
-                        setConfirmDialog((prev) => ({ ...prev, isOpen: false })); // Close modal
-                        // Optional: toast("Events deleted successfully")
-                    },
-                    onError: (errors) => {
-                        console.error('Failed to delete', errors);
-                        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
-                    },
-                });
-            },
+            action: () => {},
         });
     };
 

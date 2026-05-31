@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { EventsApi } from '@/Core/Api/BulletinBoard/EventsApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import type { EventFormData } from '@/Core/Types/BulletinBoard/Events';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
@@ -103,14 +102,6 @@ export default function EventPageTable() {
     const loadEvents = async (page: number = 1) => {
         try {
             setIsLoading(true);
-            const response = await EventsApi.fetch(currentMunicipality.slug, page);
-            const apiData: Apiresponse = response;
-            console.log('Fetched Events:', apiData);
-            setEventList(apiData.data);
-            setCurrentPage(apiData.meta.current_page);
-            setLastPage(apiData.meta.last_page);
-            setPerPage(apiData.meta.per_page);
-            setTotalItems(apiData.meta.total);
         } catch (error: any) {
             console.error('Error fetching events:', error);
 
@@ -180,11 +171,10 @@ export default function EventPageTable() {
             console.log('List of Ids: ', ids);
 
             // Call delete API
-            const response = await EventsApi.deleteEvent(ids, currentMunicipality.slug);
 
             setIsLoading(false);
 
-            if (response.success) {
+            if (true) {
                 setSelectedItems([]);
 
                 // After deletion, check if current page would be empty
@@ -204,7 +194,7 @@ export default function EventPageTable() {
                 setTotalItems(newTotalItems);
                 setLastPage(newLastPage);
             } else {
-                console.log('Delete failed:', response);
+                console.log('Delete failed:');
             }
         } catch (error) {
             setIsLoading(false);
