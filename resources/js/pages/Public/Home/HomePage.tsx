@@ -1,3 +1,4 @@
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import Utility from '@/pages/Utility/Utility';
 import { AlertTriangle } from 'lucide-react';
@@ -8,15 +9,15 @@ import FeedbackUi from './Components/FeedbackForm/FeedbackFormCard';
 import GeneralAnnouncementUi from './Components/GeneralAnnouncementUi';
 import InformationDashboard from './Components/InformationDashboard';
 import Report from './Components/ReportForm/ReportFormCard';
-import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 
 // Define Props
 interface HomePageProps {
     banners: Banner[];
     announcements: PaginatedResponse<any>;
+    events: any;
 }
 
-export default function HomePage({ banners, announcements }: HomePageProps) {
+export default function HomePage({ banners, announcements, events }: HomePageProps) {
     return (
         <PublicLayout title="Home" description="">
             <div className="bg-background">
@@ -38,7 +39,7 @@ export default function HomePage({ banners, announcements }: HomePageProps) {
 
                 <div className="mx-auto max-w-screen-2xl">
                     <div className="h-8" />
-                    
+
                     {/* Primary Actions Grid */}
                     <div className="px-4 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -49,7 +50,7 @@ export default function HomePage({ banners, announcements }: HomePageProps) {
                     </div>
 
                     <div className="h-12" />
-                    
+
                     {/* Information Dashboard */}
                     <div className="px-4 sm:px-6 lg:px-8">
                         <InformationDashboard />
@@ -58,12 +59,12 @@ export default function HomePage({ banners, announcements }: HomePageProps) {
                     <div className="h-12" />
 
                     {/* Announcements & Events Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:divide-x divide-border border-t border-border">
+                    <div className="grid grid-cols-1 gap-0 divide-border border-t border-border lg:grid-cols-12 lg:divide-x">
                         <div className="lg:col-span-8">
                             <GeneralAnnouncementUi announcements={announcements} />
                         </div>
-                        <div className="lg:col-span-4 bg-muted/10">
-                            <EventsCalendarUi />
+                        <div className="bg-muted/10 lg:col-span-4">
+                            <EventsCalendarUi events={events} />
                         </div>
                     </div>
                 </div>

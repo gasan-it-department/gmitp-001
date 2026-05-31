@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
+use App\Core\Event\Models\Event;
 use App\Core\Feedback\Models\FeedbackSubmission;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
@@ -41,6 +42,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'report_submission' => ReportSubmission::class,
             'department' => Department::class,
             'announcement' => Announcement::class,
+            'event' => Event::class,
         ]);
     }
 }

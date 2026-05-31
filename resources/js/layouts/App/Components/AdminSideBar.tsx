@@ -16,10 +16,10 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
 import announcement from '@/routes/announcement';
-import bulletinBoard from '@/routes/bulletin-board';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
 import department from '@/routes/department';
+import event from '@/routes/event';
 import feedback from '@/routes/feedback';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
@@ -142,7 +142,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Events Calendar',
-                    url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }),
+                    url: event.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: CalendarDays,
                     permission: 'bulletin_board.access',
                 },

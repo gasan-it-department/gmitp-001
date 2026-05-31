@@ -97,6 +97,7 @@ return [
         \App\Core\CommunityReport\Models\ReportSubmission::class => \App\External\Documents\CommunityReport\MediaLibrary\CommunityReportPathGenerator::class,
         \App\Core\Department\Models\Department::class => \App\External\Documents\Department\MediaLibrary\DepartmentPathGenerator::class,
         \App\Core\Announcement\Models\Announcement::class => \App\External\Documents\Announcement\MediaLibrary\AnnouncementPathGenerator::class,
+        \App\Core\Event\Models\Event::class => \App\External\Documents\Event\MediaLibrary\EventPathGenerator::class,
     ],
 
     /*
