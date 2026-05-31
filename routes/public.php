@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Web\Controllers\Public\Home\ShowHomePageController;
 use App\External\Web\Controllers\Public\PublicController;
 use Illuminate\Support\Facades\Route;
 
@@ -7,7 +8,7 @@ Route::prefix('{municipality}')
     ->middleware(['municipalityContext', 'phone.verified'])
     ->group(function () {
         // Route::get('/services', [PublicController::class, 'showServicePage'])->name('services');
-        Route::get('/home', [PublicController::class, 'showHomePage'])->name('home');
+        Route::get('/home', ShowHomePageController::class)->name('home');
         Route::get('/privacy-policy', [PublicController::class, 'showPrivacyPolicyPage'])->name('privacy');
         //Route::get('/government', [PublicController::class, 'showGovernmentPage'])->name('government');
         Route::get('/municipal-admin', [PublicController::class, 'showMunicipalAdminPage'])->name('admin');

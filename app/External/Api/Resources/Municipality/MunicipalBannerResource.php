@@ -10,10 +10,10 @@ class MunicipalBannerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-
             'id' => $this->id,
-
+            'title' => $this->title,
             'bannerUrl' => $this->banner_url,
+            'sortOrder' => $this->sort_order,
         ];
     }
 }
