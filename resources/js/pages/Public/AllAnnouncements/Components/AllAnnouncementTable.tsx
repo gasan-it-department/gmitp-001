@@ -1,5 +1,4 @@
 import { Card } from '@/components/ui/card';
-import { AnnouncementApi } from '@/Core/Api/BulletinBoard/AnnouncementApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { AnnouncementData } from '@/Core/Types/AdminAnnouncementPage/AdminAnnouncementPageTypes';
 import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
@@ -8,8 +7,7 @@ import Utility from '@/pages/Utility/Utility';
 import { home } from '@/routes';
 import { router } from '@inertiajs/react';
 import { ArrowUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { ViewAnnouncementDetails } from '../../Home/Components/ViewAnnouncementDetails';
+import { useState } from 'react';
 
 export default function AllAnnouncementTable() {
     const [isLoadingDialogVisible, setIsLoadingDialogVisible] = useState(false);
@@ -30,41 +28,6 @@ export default function AllAnnouncementTable() {
         isOpen: false,
         data: null,
     });
-
-    useEffect(() => {
-        loadAnnouncements(currentPage);
-
-        const handleScroll = () => {
-            if (window.scrollY > 300) {
-                setShowScrollTop(true);
-            } else {
-                setShowScrollTop(false);
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [currentPage]);
-
-    const loadAnnouncements = async (currentPage: number = 1) => {
-        try {
-            setIsLoadingDialogVisible(true);
-            const response = await AnnouncementApi.getPublishedAnnouncements(currentMunicipality.slug, currentPage);
-            if (response.success) {
-                console.log('All announcement response: ', response);
-                setAnnouncementList(response.data);
-                setIsLoadingDialogVisible(false);
-            }
-
-            setLastPage(response.meta.last_page);
-            setPerPage(response.meta.per_page);
-            setTotalItems(response.meta.total);
-        } catch (error: any) {
-            console.error(error);
-        } finally {
-            setIsLoadingDialogVisible(false);
-        }
-    };
 
     return (
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:flex-row lg:px-10">
@@ -99,7 +62,7 @@ export default function AllAnnouncementTable() {
                                         <Card
                                             key={index}
                                             // Theme Update: 'bg-card', 'border-border', 'border-l-primary'
-                                            className="relative cursor-pointer overflow-hidden rounded-xl border border-border border-l-4 border-l-primary bg-card p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg sm:p-5"
+                                            className="relative cursor-pointer overflow-hidden rounded-xl border border-l-4 border-border border-l-primary bg-card p-4 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg sm:p-5"
                                             onClick={() => {
                                                 setAnnouncementDetailsDialog((prev) => ({
                                                     ...prev,
@@ -159,17 +122,6 @@ export default function AllAnnouncementTable() {
                 </div>
 
                 {/* Announcement Details Dialog */}
-                <ViewAnnouncementDetails
-                    isOpen={announcementDetailsDialog.isOpen}
-                    data={announcementDetailsDialog.data}
-                    onClose={() => {
-                        setAnnouncementDetailsDialog((prev) => ({
-                            ...prev,
-                            isOpen: false,
-                            data: null,
-                        }));
-                    }}
-                />
 
                 {/* Floating Scroll-to-Top Button */}
                 {showScrollTop && (
