@@ -21,7 +21,8 @@ class SetMunicipalityContext
     {
         $slug = $request->route('municipality')
             ?? $request->header('X-Municipality-Slug')
-            ?? $request->query('municipality');
+            ?? $request->query('municipality')
+            ?? $request->segment(1);
 
         if (!is_string($slug) || empty($slug)) {
 
