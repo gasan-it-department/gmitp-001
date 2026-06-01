@@ -158,6 +158,7 @@ export default function Carousel({ slides }: CarouselProps) {
                         className="flex aspect-[24/10] w-full min-w-full items-center justify-center overflow-hidden bg-gray-100"
                     >
                         <img
+                            loading="lazy"
                             src={banner.url}
                             alt={banner.name || `Banner ${i}`}
                             // 2. Change object-cover to object-contain.
