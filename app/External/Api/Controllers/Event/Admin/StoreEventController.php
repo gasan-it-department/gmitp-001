@@ -21,6 +21,6 @@ class StoreEventController extends Controller
             StoreEventDto::fromRequest($request, app('municipal_id')),
         );
 
-        return back()->with('success', 'Event created.');
+        return redirect()->route('event.admin.index', ['municipality' => app('current_municipality')->slug])->with('success', 'Event created.');
     }
 }

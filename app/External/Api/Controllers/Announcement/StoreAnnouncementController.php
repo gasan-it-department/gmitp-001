@@ -21,6 +21,6 @@ class StoreAnnouncementController extends Controller
             StoreAnnouncementDto::fromRequest($request, app('municipal_id')),
         );
 
-        return back()->with('success', 'Announcement created.');
+        return redirect()->route('announcement.admin.index', ['municipality' => app('current_municipality')->slug])->with('success', 'Announcement created.');
     }
 }

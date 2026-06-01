@@ -4,9 +4,10 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import Utility from '@/pages/Utility/Utility';
+import announcement from '@/routes/announcement';
 import { router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { CalendarDays, MapPin } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { useState } from 'react';
 import { ViewAnnouncementDetails } from './ViewAnnouncementDetails';
 
@@ -60,7 +61,7 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.3, delay: index * 0.1 }}
                                 >
-                                    <Card 
+                                    <Card
                                         className="group flex h-full flex-col overflow-hidden border-border bg-card transition-all duration-300 hover:shadow-xl"
                                         onClick={() => {
                                             setAnnouncementDetailsDialog({
@@ -100,7 +101,7 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                                                 </div>
                                             )}
                                             <div className="absolute top-3 left-3">
-                                                <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-semibold backdrop-blur-sm text-foreground shadow-sm">
+                                                <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm">
                                                     {item.type.label}
                                                 </span>
                                             </div>
@@ -114,18 +115,16 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                                                 <span>{Utility().formatTimeAgo(item.created_at)}</span>
                                             </div>
 
-                                            <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-tight text-foreground group-hover:text-primary transition-colors">
+                                            <h3 className="mb-2 line-clamp-2 text-lg leading-tight font-bold text-foreground transition-colors group-hover:text-primary">
                                                 {item.title}
                                             </h3>
 
-                                            <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                                                {item.content}
-                                            </p>
+                                            <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.content}</p>
 
-                                            <div className="mt-auto pt-4 border-t border-border/50">
-                                                <Button 
-                                                    variant="link" 
-                                                    className="h-auto p-0 text-primary font-semibold hover:no-underline"
+                                            <div className="mt-auto border-t border-border/50 pt-4">
+                                                <Button
+                                                    variant="link"
+                                                    className="h-auto p-0 font-semibold text-primary hover:no-underline"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setAnnouncementDetailsDialog({
@@ -158,7 +157,7 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                                 size="lg"
                                 className="rounded-full bg-primary px-8 text-primary-foreground shadow-lg transition-all hover:scale-105 active:scale-95"
                                 onClick={() => {
-                                    router.visit(`/${currentMunicipality.slug}/all-announcements`);
+                                    router.visit(announcement.index.url(currentMunicipality.slug));
                                 }}
                             >
                                 View All Announcements

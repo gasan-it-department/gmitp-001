@@ -21,7 +21,6 @@ class IndexAnnouncementController extends Controller
             municipalId: app('municipal_id'),
             perPage: 20,
         );
-
         return Inertia::render('Announcement/Client/Index', [
             'announcements' => ClientAnnouncementListResource::collection($announcements),
         ]);

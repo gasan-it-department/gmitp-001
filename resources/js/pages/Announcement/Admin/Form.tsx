@@ -1,7 +1,8 @@
+import { FormInput } from '@/components/FormInputField';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
@@ -32,15 +33,14 @@ interface Props {
     types: EnumOption[];
 }
 
-interface FormShape {
+type FormShape = {
     title: string;
     content: string;
     type: string;
     is_published: boolean;
     images: File[];
     _method?: 'PUT';
-    [key: string]: string | boolean | File[] | undefined;
-}
+};
 
 const MAX_IMAGES = 3;
 
@@ -52,14 +52,11 @@ export default function AnnouncementForm({ announcement, types }: Props) {
     const initialForm: FormShape = {
         title: announcement?.title ?? '',
         content: announcement?.content ?? '',
-        type: announcement?.type.value ?? 'general',
+        type: announcement?.type?.value ?? 'general',
         is_published: announcement?.is_published ?? false,
         images: [],
+        ...(isEdit ? { _method: 'PUT' as const } : {}),
     };
-
-    if (isEdit) {
-        initialForm._method = 'PUT';
-    }
 
     const { data, setData, post, processing, errors, clearErrors, progress } = useForm<FormShape>(initialForm);
 
@@ -117,43 +114,42 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                     <CardContent>
                         <form onSubmit={submit} className="space-y-6">
                             {/* Title */}
-                            <div>
-                                <Label htmlFor="title">
-                                    Title <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="title"
-                                    value={data.title}
-                                    onChange={(e) => {
-                                        setData('title', e.target.value);
-                                        clearErrors('title');
-                                    }}
-                                    placeholder="e.g., Water service interruption — Sept 15"
-                                    maxLength={255}
-                                />
-                                {errors.title && <p className="mt-1 text-sm text-destructive">{errors.title}</p>}
-                            </div>
+                            <FormInput
+                                label="Title"
+                                id="title"
+                                value={data.title}
+                                onChange={(e) => {
+                                    setData('title', e.target.value);
+                                    clearErrors('title');
+                                }}
+                                placeholder="e.g., Water service interruption — Sept 15"
+                                required
+                                error={errors.title}
+                            />
 
                             {/* Type */}
-                            <div>
+                            <div className="space-y-2">
                                 <Label htmlFor="type">
                                     Type <span className="text-destructive">*</span>
                                 </Label>
-                                <select
-                                    id="type"
+                                <Select
                                     value={data.type}
-                                    onChange={(e) => {
-                                        setData('type', e.target.value);
+                                    onValueChange={(value) => {
+                                        setData('type', value);
                                         clearErrors('type');
                                     }}
-                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                                 >
-                                    {types.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger id="type">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {types.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 {errors.type && <p className="mt-1 text-sm text-destructive">{errors.type}</p>}
                             </div>
 
@@ -188,7 +184,11 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                                         <div className="flex flex-wrap gap-3">
                                             {existingImages.map((img) => (
                                                 <div key={img.id} className="h-24 w-24 overflow-hidden rounded-lg border bg-slate-50">
-                                                    <img src={img.url} alt={img.name ?? 'announcement image'} className="h-full w-full object-cover" />
+                                                    <img
+                                                        src={img.url}
+                                                        alt={img.name ?? 'announcement image'}
+                                                        className="h-full w-full object-cover"
+                                                    />
                                                 </div>
                                             ))}
                                         </div>
@@ -199,15 +199,12 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                                 {previews.length > 0 && (
                                     <div className="mb-3 flex flex-wrap gap-3">
                                         {previews.map((src, i) => (
-                                            <div
-                                                key={`${src}-${i}`}
-                                                className="relative h-24 w-24 overflow-hidden rounded-lg border bg-slate-50"
-                                            >
+                                            <div key={`${src}-${i}`} className="relative h-24 w-24 overflow-hidden rounded-lg border bg-slate-50">
                                                 <img src={src} alt={`preview ${i + 1}`} className="h-full w-full object-cover" />
                                                 <button
                                                     type="button"
                                                     onClick={() => removeNewImage(i)}
-                                                    className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+                                                    className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
                                                     aria-label="Remove image"
                                                 >
                                                     <X className="h-3 w-3" />

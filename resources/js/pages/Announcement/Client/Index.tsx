@@ -1,4 +1,3 @@
-import { Pagination } from '@/components/Shared/Pagination';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -112,7 +111,7 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                                     alt={a.title}
                                                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                                 />
-                                                <span className={`absolute left-0 top-0 h-full w-1.5 ${style.stripe}`} />
+                                                <span className={`absolute top-0 left-0 h-full w-1.5 ${style.stripe}`} />
                                             </div>
                                         )}
 
@@ -127,13 +126,11 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                                 {a.created_at && <span className="text-xs text-muted-foreground">{a.created_at}</span>}
                                             </div>
 
-                                            <h2 className="text-base font-semibold leading-snug text-slate-800 group-hover:text-slate-900">
+                                            <h2 className="text-base leading-snug font-semibold text-slate-800 group-hover:text-slate-900">
                                                 {a.title}
                                             </h2>
 
-                                            <span className="mt-auto text-xs font-medium text-slate-500 group-hover:text-slate-700">
-                                                Read more →
-                                            </span>
+                                            <span className="mt-auto text-xs font-medium text-slate-500 group-hover:text-slate-700">Read more →</span>
                                         </div>
                                     </div>
                                 </Link>
@@ -142,7 +139,7 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                     </div>
                 )}
 
-                <Pagination links={paginationLinks} />
+                {/* <Pagination links={paginationLinks} /> */}
             </div>
         </PublicLayout>
     );
