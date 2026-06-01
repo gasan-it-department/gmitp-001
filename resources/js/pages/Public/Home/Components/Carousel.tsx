@@ -159,6 +159,7 @@ export default function Carousel({ slides }: CarouselProps) {
                     >
                         <img
                             loading="lazy"
+                            decoding="async"
                             src={banner.url}
                             alt={banner.name || `Banner ${i}`}
                             // 2. Change object-cover to object-contain.
