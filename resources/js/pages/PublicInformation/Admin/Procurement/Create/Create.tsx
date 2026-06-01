@@ -36,9 +36,11 @@ interface Props {
     categories: any;
     statuses: any;
     documentTypes: any;
+    departments: any;
 }
 
-export default function CreateProcurement({ fundingSources, categories, statuses, documentTypes }: Props) {
+export default function CreateProcurement({ fundingSources, categories, statuses, documentTypes, departments }: Props) {
+    console.log(departments);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
 
@@ -169,6 +171,7 @@ export default function CreateProcurement({ fundingSources, categories, statuses
                                             fundingSources={fundingSourcesData}
                                             statuses={statuses}
                                             categories={categories}
+                                            departments={departments}
                                             isHistorical={data.is_historical}
                                         />
                                     </div>

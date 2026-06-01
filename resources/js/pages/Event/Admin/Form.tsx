@@ -1,7 +1,8 @@
+import { FormInput } from '@/components/FormInputField';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
@@ -35,7 +36,7 @@ interface Props {
     types: EnumOption[];
 }
 
-interface FormShape {
+type FormShape = {
     title: string;
     description: string;
     type: string;
@@ -45,8 +46,7 @@ interface FormShape {
     is_published: boolean;
     event_banner: File | null;
     _method?: 'PUT';
-    [key: string]: string | boolean | File | null | undefined;
-}
+};
 
 export default function EventForm({ event, types }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
@@ -56,17 +56,14 @@ export default function EventForm({ event, types }: Props) {
     const initialForm: FormShape = {
         title: event?.title ?? '',
         description: event?.description ?? '',
-        type: event?.type.value ?? 'community',
+        type: event?.type?.value ?? 'community',
         start_datetime: event?.start_datetime_input ?? '',
         end_datetime: event?.end_datetime_input ?? '',
         location_name: event?.location_name ?? '',
         is_published: event?.is_published ?? false,
         event_banner: null,
+        ...(isEdit ? { _method: 'PUT' as const } : {}),
     };
-
-    if (isEdit) {
-        initialForm._method = 'PUT';
-    }
 
     const { data, setData, post, processing, errors, clearErrors, progress } = useForm<FormShape>(initialForm);
 
@@ -122,103 +119,86 @@ export default function EventForm({ event, types }: Props) {
                     <CardContent>
                         <form onSubmit={submit} className="space-y-6">
                             {/* Title */}
-                            <div>
-                                <Label htmlFor="title">
-                                    Title <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="title"
-                                    value={data.title}
-                                    onChange={(e) => {
-                                        setData('title', e.target.value);
-                                        clearErrors('title');
-                                    }}
-                                    placeholder="e.g., Town Fiesta 2026"
-                                    maxLength={255}
-                                />
-                                {errors.title && <p className="mt-1 text-sm text-destructive">{errors.title}</p>}
-                            </div>
+                            <FormInput
+                                label="Title"
+                                id="title"
+                                value={data.title}
+                                onChange={(e) => {
+                                    setData('title', e.target.value);
+                                    clearErrors('title');
+                                }}
+                                placeholder="e.g., Town Fiesta 2026"
+                                required
+                                error={errors.title}
+                            />
 
                             {/* Type */}
-                            <div>
+                            <div className="space-y-2">
                                 <Label htmlFor="type">
                                     Type <span className="text-destructive">*</span>
                                 </Label>
-                                <select
-                                    id="type"
+                                <Select
                                     value={data.type}
-                                    onChange={(e) => {
-                                        setData('type', e.target.value);
+                                    onValueChange={(value) => {
+                                        setData('type', value);
                                         clearErrors('type');
                                     }}
-                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                                 >
-                                    {types.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger id="type">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {types.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 {errors.type && <p className="mt-1 text-sm text-destructive">{errors.type}</p>}
                             </div>
 
                             {/* Schedule */}
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <Label htmlFor="start_datetime">
-                                        Start <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="start_datetime"
-                                        type="datetime-local"
-                                        value={data.start_datetime}
-                                        onChange={(e) => {
-                                            setData('start_datetime', e.target.value);
-                                            clearErrors('start_datetime');
-                                        }}
-                                    />
-                                    {errors.start_datetime && (
-                                        <p className="mt-1 text-sm text-destructive">{errors.start_datetime}</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <Label htmlFor="end_datetime">
-                                        End <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="end_datetime"
-                                        type="datetime-local"
-                                        value={data.end_datetime}
-                                        onChange={(e) => {
-                                            setData('end_datetime', e.target.value);
-                                            clearErrors('end_datetime');
-                                        }}
-                                    />
-                                    {errors.end_datetime && (
-                                        <p className="mt-1 text-sm text-destructive">{errors.end_datetime}</p>
-                                    )}
-                                </div>
+                                <FormInput
+                                    label="Start"
+                                    id="start_datetime"
+                                    type="datetime-local"
+                                    value={data.start_datetime}
+                                    onChange={(e) => {
+                                        setData('start_datetime', e.target.value);
+                                        clearErrors('start_datetime');
+                                    }}
+                                    required
+                                    error={errors.start_datetime}
+                                />
+                                <FormInput
+                                    label="End"
+                                    id="end_datetime"
+                                    type="datetime-local"
+                                    value={data.end_datetime}
+                                    onChange={(e) => {
+                                        setData('end_datetime', e.target.value);
+                                        clearErrors('end_datetime');
+                                    }}
+                                    required
+                                    error={errors.end_datetime}
+                                />
                             </div>
 
                             {/* Location */}
-                            <div>
-                                <Label htmlFor="location_name">
-                                    Location <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="location_name"
-                                    value={data.location_name}
-                                    onChange={(e) => {
-                                        setData('location_name', e.target.value);
-                                        clearErrors('location_name');
-                                    }}
-                                    placeholder="e.g., Municipal Plaza"
-                                    maxLength={255}
-                                />
-                                {errors.location_name && (
-                                    <p className="mt-1 text-sm text-destructive">{errors.location_name}</p>
-                                )}
-                            </div>
+                            <FormInput
+                                label="Location"
+                                id="location_name"
+                                value={data.location_name}
+                                onChange={(e) => {
+                                    setData('location_name', e.target.value);
+                                    clearErrors('location_name');
+                                }}
+                                placeholder="e.g., Municipal Plaza"
+                                required
+                                error={errors.location_name}
+                            />
 
                             {/* Description */}
                             <div>
