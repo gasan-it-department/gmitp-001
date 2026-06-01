@@ -99,6 +99,7 @@ return [
         \App\Core\Announcement\Models\Announcement::class => \App\External\Documents\Announcement\MediaLibrary\AnnouncementPathGenerator::class,
         \App\Core\Event\Models\Event::class => \App\External\Documents\Event\MediaLibrary\EventPathGenerator::class,
         \App\Core\Municipality\Models\Municipality::class => \App\External\Documents\Municipality\MediaLibrary\MunicipalityPathGenerator::class,
+        \App\Core\Government\Models\Official::class => \App\External\Documents\Government\MediaLibrary\OfficialPathGenerator::class,
     ],
 
     /*

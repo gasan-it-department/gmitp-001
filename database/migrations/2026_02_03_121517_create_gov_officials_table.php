@@ -5,9 +5,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('gov_officials', function (Blueprint $table) {
@@ -17,6 +14,8 @@ return new class extends Migration {
             $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')
                 ->restrictOnDelete();
+
+            $table->string('slug');
 
             $table->string('first_name');
 
@@ -30,18 +29,13 @@ return new class extends Migration {
 
             $table->text('biography')->nullable();
 
-            $table->string('profile_url')->nullable();
-
-            $table->string('profile_public_id')->nullable();
-
             $table->timestamps();
+
+            $table->unique(['municipal_id', 'slug']);
 
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('gov_officials');

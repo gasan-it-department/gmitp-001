@@ -6,9 +6,12 @@ use App\Core\Government\Models\Official;
 use App\Core\Government\Models\Position;
 use App\Core\Government\Models\Term;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class OfficialTerm extends Model
 {
+    use LogsActivity;
 
     public $incrementing = false;
 
@@ -34,10 +37,6 @@ class OfficialTerm extends Model
 
         'remarks',
 
-        'profile_url',
-
-        'profile_public_id',
-
         'municipal_id'
 
     ];
@@ -55,6 +54,23 @@ class OfficialTerm extends Model
     public function position()
     {
         return $this->belongsTo(Position::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'term_id',
+                'official_id',
+                'position_id',
+                'actual_start_date',
+                'actual_end_date',
+                'status',
+                'remarks',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('official_term');
     }
 
 }

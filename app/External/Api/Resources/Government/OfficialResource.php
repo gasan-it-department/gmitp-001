@@ -30,9 +30,7 @@ class OfficialResource extends JsonResource
 
             'biography' => $this->biography,
 
-            'profile_url' => $this->profile_url,
-
-            'profile_public_id' => $this->profile_public_id,
+            'profile_url' => $this->getFirstMediaUrl('official_portrait') ?: null,
 
             'formatted_name' => $this->full_name_with_title,
 
