@@ -47,7 +47,7 @@ class SetMunicipalityContext
 
     public function setContext(Municipality $municipality)
     {
-        session(['municipal_id' => $municipality->id]);
+        // session(['municipal_id' => $municipality->id]);
 
         app()->instance('municipal_id', $municipality->id);
 
