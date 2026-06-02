@@ -8,18 +8,19 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
- * Validates the LGU admin payload when creating a NEW decedent record from the
- * Inertia web form.
+ * Validates the LGU admin payload when editing an EXISTING decedent record from
+ * the Inertia web form.
  *
- * Single-purpose: wired only to StoreDecedentController. Do not reuse for updates
- * — UpdateDecedentRequest owns the unique-rule ignore logic so each intent stays
- * explicit (layered request convention).
+ * Single-purpose: wired only to UpdateDecedentController. Mirrors CreateDecedentRequest
+ * but the death-certificate unique rule ignores the record currently being edited
+ * (resolved from the {decedent_id} route binding) so re-saving an unchanged record
+ * does not trip the per-tenant uniqueness constraint.
  *
  * Tenant boundary: municipal_id is NOT accepted from the payload — it is sourced
  * from the bound `municipal_id` container instance set by SetMunicipalityContext
  * middleware. This prevents cross-tenant writes from a forged form field.
  */
-class CreateDecedentRequest extends FormRequest
+class UpdateDecedentRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -78,6 +79,7 @@ class CreateDecedentRequest extends FormRequest
     public function rules(): array
     {
         $municipalId = app('municipal_id');
+        $decedentId = $this->route('decedent_id');
 
         return [
             'decedent_type' => ['required', new Enum(DecedentTypes::class)],
@@ -141,9 +143,10 @@ class CreateDecedentRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
-                // Partial unique index scoped per tenant — mirror that constraint here
-                // so duplicate-within-municipality is caught before insert.
+                // Same per-tenant partial-unique constraint as create, but ignore the
+                // record being edited so an unchanged certificate number still passes.
                 Rule::unique('cemetery_decedents', 'death_certificate_no')
+                    ->ignore($decedentId)
                     ->where(fn ($query) => $query->where('municipal_id', $municipalId)
                         ->whereNull('deleted_at')),
             ],
@@ -155,7 +158,8 @@ class CreateDecedentRequest extends FormRequest
                 Rule::requiredIf(fn () => $this->input('decedent_type') === DecedentTypes::UNKNOWN->value),
             ],
 
-            // Identification layer (Spatie MediaLibrary). Optional on create.
+            // Identification layer (Spatie MediaLibrary). Always optional on update —
+            // absent ⇒ existing media is preserved (the use case only touches media when files arrive).
             'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'identification' => ['nullable', 'array', 'max:10'],
             'identification.*' => ['file', 'mimes:jpeg,jpg,png,webp,pdf', 'max:10240'],

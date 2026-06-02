@@ -4,7 +4,7 @@ namespace App\External\Web\Controllers\Cemetery\Admin\Plots;
 
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
-use App\Core\Cemetery\Repositories\SectionsRepository;
+use App\Core\Cemetery\Actions\ListSectionsAction;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 
@@ -16,7 +16,7 @@ use Inertia\Inertia;
 class CreatePlotController extends Controller
 {
     public function __construct(
-        private SectionsRepository $sectionsRepo,
+        private ListSectionsAction $listSections,
     ) {
     }
 
@@ -26,7 +26,7 @@ class CreatePlotController extends Controller
 
         return Inertia::render('Cemetery/Admin/Plots/Create/CreatePlot', [
             'municipality' => app('current_municipality'),
-            'sections' => $this->sectionsRepo->listByMunicipality($municipalId)
+            'sections' => $this->listSections->execute($municipalId)
                 ->map(fn ($section) => ['id' => $section->id, 'name' => $section->name])
                 ->values(),
             'type_options' => PlotTypes::toOptions(),

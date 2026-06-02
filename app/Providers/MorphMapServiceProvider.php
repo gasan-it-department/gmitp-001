@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
+use App\Core\Cemetery\Models\Decedent;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
 use App\Core\Event\Models\Event;
@@ -55,6 +56,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'position' => Position::class,
             'official_term' => OfficialTerm::class,
             'term' => Term::class,
+            'decedent' => Decedent::class,
         ]);
     }
 }

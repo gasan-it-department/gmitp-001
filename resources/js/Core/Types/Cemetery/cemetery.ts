@@ -46,6 +46,13 @@ export interface DecedentProfile {
     cause_of_death: string | null;
     death_certificate_no: string | null;
     notes: string | null;
+    avatar_url: string | null;
+    identification: {
+        id: number;
+        name: string;
+        url: string;
+        mime_type: string;
+    }[];
     interment: {
         id: string;
         status: IntermentStatusValue;
@@ -87,6 +94,8 @@ export type RegisterDecedentForm = {
     date_of_registration: string;
 
     notes: string;
+    avatar: File | null;
+    identification: File[];
 };
 
 // ─── Plots ───────────────────────────────────────────────────────────────

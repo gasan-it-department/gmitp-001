@@ -35,6 +35,16 @@ class DecedentDetailsResource extends JsonResource
             'notes' => $this->notes,
             'address_id' => $this->address_id,
 
+            // Identification layer (Spatie MediaLibrary). avatar is a single photo;
+            // identification is the supporting-document set.
+            'avatar_url' => $this->getFirstMediaUrl('avatar') ?: null,
+            'identification' => $this->getMedia('identification')->map(fn ($media) => [
+                'id' => $media->id,
+                'name' => $media->file_name,
+                'url' => $media->getUrl(),
+                'mime_type' => $media->mime_type,
+            ])->values()->all(),
+
             // Current interment summary (null when no plot is assigned yet)
             'interment' => $this->whenLoaded('currentInterment', function () {
                 if (! $this->currentInterment) {

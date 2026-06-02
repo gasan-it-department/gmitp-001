@@ -6,7 +6,7 @@ import { DatePicker } from '@/components/Shared/DatePicker';
 import { MunicipalitySelect } from '@/components/Shared/MunicipalitySelect';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { RegisterDecedentForm } from '@/Core/Types/Cemetery/cemetery';
+import { DecedentProfile as DecedentProfileType, RegisterDecedentForm } from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import { useForm } from '@inertiajs/react';
@@ -15,36 +15,42 @@ import { FormEvent } from 'react';
 
 interface Props {
     municipality: MunicipalityType;
+    decedent: { data: DecedentProfileType };
 }
 
-export default function RegisterDecedents({ municipality }: Props) {
+export default function EditDecedents({ municipality, decedent }: Props) {
     const marinduqueId = '28';
+    const record = decedent.data;
 
-    // We set default to 'standard' so the form loads normally
-    const { data, setData, post, processing, errors } = useForm<RegisterDecedentForm>({
-        decedent_type: 'standard', // MOVED TO TOP OF STATE
-        has_official_name: true, // Helper for fetal/child
-        first_name: '',
-        middle_name: '',
-        last_name: '',
-        suffix: '',
-        reference_document_number: '', // Added for 'unknown'
-        reference_document_type: '', // Added for 'fetal/child' without names
-        date_of_birth: '',
-        date_of_death: '',
-        date_of_registration: '',
-        gender: '',
-        cause_of_death: '',
-        death_certificate_no: '',
-        notes: '',
-        place_of_death: '',
+    // Prefill from the existing record. Address fields are intentionally left blank:
+    // the stored address is an immutable snapshot, so we only write a new one when the
+    // admin actively picks a new barangay (the use case skips address writes otherwise).
+    const { data, setData, post, processing, errors } = useForm<RegisterDecedentForm & { _method: string }>({
+        _method: 'put',
+        decedent_type: record.decedent_type ?? 'standard',
+        has_official_name: record.memorial_name ? false : true,
+        first_name: record.first_name ?? '',
+        middle_name: record.middle_name ?? '',
+        last_name: record.last_name ?? '',
+        suffix: record.suffix ?? '',
+        reference_document_number: record.reference_document_number ?? '',
+        reference_document_type: record.reference_document_type ?? '',
+        date_of_birth: record.date_of_birth ?? '',
+        date_of_death: record.date_of_death ?? '',
+        date_of_registration: record.date_of_registration ?? '',
+        gender: (record.gender ?? '') as RegisterDecedentForm['gender'],
+        cause_of_death: record.cause_of_death ?? '',
+        death_certificate_no: record.death_certificate_no ?? '',
+        notes: record.notes ?? '',
+        place_of_death: record.place_of_death ?? '',
         psgc_municipal_id: '',
         psgc_barangay_id: '',
         street_name: '',
-        memorial_name: '',
+        memorial_name: record.memorial_name ?? '',
         avatar: null,
         identification: [],
     });
+
     const handleTypeChange = (type: RegisterDecedentForm['decedent_type']) => {
         setData((prevData) => {
             let newData = { ...prevData, decedent_type: type };
@@ -76,11 +82,8 @@ export default function RegisterDecedents({ municipality }: Props) {
             let newData = { ...prevData, has_official_name: isChecked };
 
             if (isChecked) {
-                // If they check it, wipe the memorial name
                 newData.memorial_name = '';
             } else {
-                // If they uncheck it, wipe the standard first/middle names
-                // (We keep last_name because your UI still asks for family last name)
                 newData.first_name = '';
                 newData.middle_name = '';
                 newData.suffix = '';
@@ -90,23 +93,28 @@ export default function RegisterDecedents({ municipality }: Props) {
             return newData;
         });
     };
+
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(Decedent.StoreDecedentController.url(), {
+        // Use POST with _method: 'put' for file uploads on update
+        post(Decedent.UpdateDecedentController.url(record.id), {
+            forceFormData: true,
             headers: {
                 'X-Municipality-Slug': municipality.slug,
             },
         });
     };
+
     const showFullNameFields = data.decedent_type === 'standard' || (data.decedent_type !== 'unknown' && data.has_official_name);
+
     return (
         <AppLayout>
             <div className="m-10 max-w-7xl space-y-10 py-6 md:m-4 lg:mx-auto">
                 {/* Page Header */}
                 <div className="mb-6 flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Register Decedent</h1>
-                        <p className="text-sm text-gray-500">Enter the biological and legal records into the municipal registry.</p>
+                        <h1 className="text-2xl font-bold text-gray-900">Edit Decedent</h1>
+                        <p className="text-sm text-gray-500">Update this decedent's biological and legal records.</p>
                     </div>
                 </div>
 
@@ -117,7 +125,6 @@ export default function RegisterDecedents({ municipality }: Props) {
                         <div className="mb-6 flex items-center justify-between border-b pb-4">
                             <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
 
-                            {/* THE HIERARCHY SELECTOR: Placed right at the top right of the card */}
                             <div className="grid min-w-md grid-cols-2 items-start justify-end gap-6">
                                 <div className="col-span-1 flex flex-col">
                                     <DatePicker
@@ -150,8 +157,6 @@ export default function RegisterDecedents({ municipality }: Props) {
                         {/* --- DYNAMIC UI: UNKNOWN CASES --- */}
                         {data.decedent_type === 'unknown' && (
                             <div className="mb-6 rounded-md border-l-4 border-yellow-400 bg-yellow-50 p-4">
-                                {/* Inside your dynamic Unknown UI block */}
-
                                 <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
                                     <div className="md:col-span-2">
                                         <h4 className="mb-2 text-sm font-semibold text-slate-800">Legal Authorization (Required)</h4>
@@ -169,11 +174,8 @@ export default function RegisterDecedents({ municipality }: Props) {
                                                 <SelectValue placeholder="Select Document Type" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {/* For crime or found bodies */}
                                                 <SelectItem value="PNP Police Blotter">PNP Police Blotter</SelectItem>
                                                 <SelectItem value="Medico-Legal Report">Medico-Legal Report</SelectItem>
-
-                                                {/* For homeless/illness deaths on the street */}
                                                 <SelectItem value="MHO Burial Clearance">MHO (Health Office) Clearance</SelectItem>
                                                 <SelectItem value="DSWD Case Report">DSWD Case Report</SelectItem>
                                                 <SelectItem value="Mayor's Clearance">Mayor's Office Clearance</SelectItem>
@@ -309,6 +311,12 @@ export default function RegisterDecedents({ municipality }: Props) {
 
                         {/* Location Fields */}
                         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="md:col-span-2">
+                                <p className="rounded-md bg-slate-50 p-3 text-xs text-slate-500">
+                                    Leave the address blank to keep the current snapshot. Selecting a new barangay records a fresh address snapshot
+                                    and preserves the previous one for historical accuracy.
+                                </p>
+                            </div>
                             <MunicipalitySelect
                                 provinceId={marinduqueId}
                                 value={data.psgc_municipal_id}
@@ -317,7 +325,7 @@ export default function RegisterDecedents({ municipality }: Props) {
                             <BarangaySelect
                                 municipalityId={data.psgc_municipal_id}
                                 value={data.psgc_barangay_id}
-                                onChange={(value) => setData('psgc_barangay_id', value)}
+                                onChange={(selection) => setData('psgc_barangay_id', selection.psgc_code)}
                             />
                             <FormInput
                                 id="street"
@@ -394,24 +402,58 @@ export default function RegisterDecedents({ municipality }: Props) {
                             </div>
 
                             <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-2">
-                                <FileUploader
-                                    label="Profile Photo (Avatar)"
-                                    description="Upload a photo of the decedent or a representative image (Max 5MB)"
-                                    files={data.avatar ? [data.avatar] : []}
-                                    onFilesChange={(files) => setData('avatar', files[0] || null)}
-                                    maxFiles={1}
-                                    accept="image/*"
-                                    error={errors.avatar}
-                                />
+                                <div className="space-y-4">
+                                    {record.avatar_url && !data.avatar && (
+                                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                            <p className="mb-2 text-xs font-bold tracking-wider text-slate-500 uppercase">Current Photo</p>
+                                            <img
+                                                src={record.avatar_url}
+                                                alt="Current avatar"
+                                                className="h-24 w-24 rounded-lg border border-white object-cover shadow-sm"
+                                            />
+                                        </div>
+                                    )}
+                                    <FileUploader
+                                        label="Profile Photo (Avatar)"
+                                        description="Upload a photo of the decedent or a representative image (Max 5MB)"
+                                        files={data.avatar ? [data.avatar] : []}
+                                        onFilesChange={(files) => setData('avatar', files[0] || null)}
+                                        maxFiles={1}
+                                        accept="image/*"
+                                        error={errors.avatar}
+                                    />
+                                </div>
 
-                                <FileUploader
-                                    label="Identification Documents"
-                                    description="Upload death certificates, IDs, or other supporting documents (Max 10 files)"
-                                    files={data.identification}
-                                    onFilesChange={(files) => setData('identification', files)}
-                                    maxFiles={10}
-                                    error={errors.identification}
-                                />
+                                <div className="space-y-4">
+                                    {record.identification.length > 0 && data.identification.length === 0 && (
+                                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                            <p className="mb-2 text-xs font-bold tracking-wider text-slate-500 uppercase">
+                                                Existing Documents ({record.identification.length})
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {record.identification.map((file) => (
+                                                    <a
+                                                        key={file.id}
+                                                        href={file.url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="inline-flex items-center gap-1 rounded bg-white px-2 py-1 text-[11px] font-medium text-indigo-600 ring-1 ring-indigo-200 transition-colors ring-inset hover:bg-indigo-50"
+                                                    >
+                                                        {file.name}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <FileUploader
+                                        label="Identification Documents"
+                                        description="Upload death certificates, IDs, or other supporting documents (Max 10 files)"
+                                        files={data.identification}
+                                        onFilesChange={(files) => setData('identification', files)}
+                                        maxFiles={10}
+                                        error={errors.identification}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -430,7 +472,7 @@ export default function RegisterDecedents({ municipality }: Props) {
                             disabled={processing}
                             className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            {processing ? 'Saving...' : 'Save Registry Record'}
+                            {processing ? 'Updating...' : 'Update Record'}
                         </button>
                     </div>
                 </form>

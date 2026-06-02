@@ -2,15 +2,15 @@
 
 namespace App\External\Api\Controllers\Cemetery\Interments;
 
+use App\Core\Cemetery\Actions\StoreIntermentAction;
 use App\Core\Cemetery\Dto\IntermentDto;
-use App\Core\Cemetery\UseCase\CreateIntermentUseCase;
 use App\External\Api\Request\Cemetery\CreateIntermentRequest;
 use App\Http\Controllers\Controller;
 
 class StoreIntermentController extends Controller
 {
     public function __construct(
-        private CreateIntermentUseCase $createInterment,
+        private StoreIntermentAction $storeInterment,
     ) {
     }
 
@@ -18,7 +18,7 @@ class StoreIntermentController extends Controller
     {
         $municipality = app('current_municipality');
 
-        $interment = $this->createInterment->execute(
+        $interment = $this->storeInterment->execute(
             IntermentDto::fromCreateRequest($request)
         );
 
