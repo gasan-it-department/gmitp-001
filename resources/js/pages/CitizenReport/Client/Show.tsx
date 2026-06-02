@@ -62,7 +62,7 @@ const stepIcon = (key: string, reached: boolean) => {
     switch (key) {
         case 'submitted':
             return <ShieldCheck className={`${baseClass} ${size}`} />;
-        case 'reviewed':
+        case 'acknowledged':
             return reached ? <CheckCircle2 className={`${baseClass} ${size}`} /> : <Circle className={`${baseClass} ${size}`} />;
         case 'in_progress':
             return <Clock className={`${baseClass} ${size}`} />;
@@ -80,7 +80,7 @@ const stepBubbleBg = (key: string, reached: boolean): string => {
     if (key === 'rejected') return 'bg-red-500';
     if (key === 'resolved') return 'bg-green-500';
     if (key === 'in_progress') return 'bg-blue-500';
-    if (key === 'reviewed') return 'bg-indigo-500';
+    if (key === 'acknowledged') return 'bg-indigo-500';
     return 'bg-primary';
 };
 
@@ -142,14 +142,25 @@ export default function Show({ report, photos, timeline }: ShowProps) {
                                     <div>
                                         <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">GPS Coordinates</h3>
                                         {hasCoordinates ? (
-                                            <a
-                                                href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-                                            >
-                                                {report.latitude}, {report.longitude}
-                                            </a>
+                                            <div className="space-y-3">
+                                                <a
+                                                    href={`https://www.google.com/maps?q=${report.latitude},${report.longitude}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-sm font-medium text-primary underline-offset-2 hover:underline"
+                                                >
+                                                    {report.latitude}, {report.longitude}
+                                                </a>
+                                                <div className="overflow-hidden rounded-lg border border-border">
+                                                    <iframe
+                                                        width="100%"
+                                                        height="200"
+                                                        style={{ border: 0 }}
+                                                        loading="lazy"
+                                                        src={`https://maps.google.com/maps?q=${report.latitude},${report.longitude}&z=15&output=embed`}
+                                                    ></iframe>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <p className="text-sm text-muted-foreground">Not provided</p>
                                         )}

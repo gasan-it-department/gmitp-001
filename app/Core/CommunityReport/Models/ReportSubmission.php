@@ -37,10 +37,18 @@ class ReportSubmission extends Model implements HasMedia
         'longitude',
         'description',
         'is_anonymous',
-        'reviewed_at',
+        'acknowledged_at',
         'in_progress_at',
         'resolved_at',
         'rejected_at',
+        'acknowledged_by',
+        'in_progress_by',
+        'resolved_by',
+        'rejected_by',
+        'assigned_to',
+        'acknowledgement_note',
+        'resolution_note',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -49,7 +57,7 @@ class ReportSubmission extends Model implements HasMedia
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'is_anonymous' => 'boolean',
-        'reviewed_at' => 'datetime',
+        'acknowledged_at' => 'datetime',
         'in_progress_at' => 'datetime',
         'resolved_at' => 'datetime',
         'rejected_at' => 'datetime',
@@ -60,6 +68,26 @@ class ReportSubmission extends Model implements HasMedia
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function acknowledgedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'acknowledged_by');
+    }
+
+    public function inProgressBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'in_progress_by');
+    }
+
+    public function resolvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -68,10 +96,18 @@ class ReportSubmission extends Model implements HasMedia
                 'status',
                 'description',
                 'location_text',
-                'reviewed_at',
+                'acknowledged_at',
                 'in_progress_at',
                 'resolved_at',
                 'rejected_at',
+                'acknowledged_by',
+                'in_progress_by',
+                'resolved_by',
+                'rejected_by',
+                'assigned_to',
+                'acknowledgement_note',
+                'resolution_note',
+                'rejection_reason',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
@@ -85,7 +121,7 @@ class ReportSubmission extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('evidence_photos')
+        $this->addMediaCollection('report_submission_evidence')
             ->useDisk('s3')
             ->acceptsMimeTypes([
                 'image/jpeg',

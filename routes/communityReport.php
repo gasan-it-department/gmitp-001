@@ -1,5 +1,9 @@
 <?php
 
+use App\External\Api\Controllers\CommunityReport\Admin\AcknowledgeReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\RejectReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\ResolveReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\StartReportProgressController;
 use App\External\Api\Controllers\CommunityReport\StoreReportController;
 use App\External\Web\Controllers\CommunityReport\Admin\IndexReportController as AdminIndexReportController;
 use App\External\Web\Controllers\CommunityReport\Admin\ShowReportController as AdminShowReportController;
@@ -48,5 +52,20 @@ Route::prefix('api/community-report')
     ->group(function () {
 
         Route::post('/', StoreReportController::class)->name('store');
+
+        // Admin Lifecycle Transitions
+        Route::middleware('admin')->group(function () {
+            Route::post('/{report_submission}/acknowledge', AcknowledgeReportController::class)
+                ->name('acknowledge');
+
+            Route::post('/{report_submission}/start-progress', StartReportProgressController::class)
+                ->name('start-progress');
+
+            Route::post('/{report_submission}/resolve', ResolveReportController::class)
+                ->name('resolve');
+
+            Route::post('/{report_submission}/reject', RejectReportController::class)
+                ->name('reject');
+        });
 
     });

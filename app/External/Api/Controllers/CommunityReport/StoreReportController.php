@@ -21,6 +21,6 @@ class StoreReportController extends Controller
             SubmitReportDto::fromRequest($request, app('municipal_id')),
         );
 
-        return back()->with('success', 'Report submitted successfully.');
+        return redirect()->route('communityReport.index', ['municipality' => app('current_municipality')->slug])->with('success', 'Report submitted successfully.');
     }
 }

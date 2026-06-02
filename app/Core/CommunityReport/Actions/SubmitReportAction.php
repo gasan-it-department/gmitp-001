@@ -4,6 +4,7 @@ namespace App\Core\CommunityReport\Actions;
 
 use App\Core\CommunityReport\Dto\SubmitReportDto;
 use App\Core\CommunityReport\Enums\ReportStatus;
+use App\Core\CommunityReport\Exceptions\ReportLimitExceededException;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Http\UploadedFile;
@@ -13,11 +14,16 @@ class SubmitReportAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
+        private CheckEligibilityToReportAction $checkEligibility,
     ) {
     }
 
     public function execute(SubmitReportDto $dto): ReportSubmission
     {
+        if (!$this->checkEligibility->execute($dto->userId, $dto->municipalId)) {
+            throw ReportLimitExceededException::forDailyLimit(3);
+        }
+
         return DB::transaction(function () use ($dto) {
             $submission = ReportSubmission::create([
                 'id' => $this->idGenerator->generate(),

@@ -39,7 +39,7 @@ class AdminReportDetailsResource extends JsonResource
             ] : null),
 
             'created_at'      => $this->created_at?->format('M d, Y g:i A'),
-            'reviewed_at'     => $this->reviewed_at?->format('M d, Y g:i A'),
+            'acknowledged_at' => $this->acknowledged_at?->format('M d, Y g:i A'),
             'in_progress_at'  => $this->in_progress_at?->format('M d, Y g:i A'),
             'resolved_at'     => $this->resolved_at?->format('M d, Y g:i A'),
             'rejected_at'     => $this->rejected_at?->format('M d, Y g:i A'),
