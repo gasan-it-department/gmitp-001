@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { useState } from 'react';
-import { DepartmentOption, FeedbackFormContent } from './FeedbackFormContent';
+import { DepartmentOption, FeedbackFormContent } from '../../../../Feedback/Client/Create/Components/FeedbackFormContent';
 
 interface FeedbackDialogProps {
     open: boolean;
@@ -11,13 +11,7 @@ interface FeedbackDialogProps {
     feedbackTypes?: { value: string; label: string }[];
 }
 
-export function FeedbackFormDialog({ 
-    open, 
-    onOpenChange, 
-    onStatusChange, 
-    departments = [], 
-    feedbackTypes = [] 
-}: FeedbackDialogProps) {
+export function FeedbackFormDialog({ open, onOpenChange, onStatusChange, departments = [], feedbackTypes = [] }: FeedbackDialogProps) {
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: '',

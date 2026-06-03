@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Heart } from 'lucide-react';
 import { useState } from 'react';
-import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { DepartmentOption, FeedbackFormContent } from '../../../Public/Home/Components/FeedbackForm/FeedbackFormContent';
+import { DepartmentOption, FeedbackFormContent } from './Components/FeedbackFormContent';
 
 interface GiveFeedbackProps {
     departments: DepartmentOption[];
@@ -55,7 +55,7 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
                 {/* Back Button */}
                 <div className="mb-6">
                     <Link href={`/${slug}/home`}>
-                        <button className="flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+                        <button className="flex items-center text-sm font-bold text-slate-500 transition-colors hover:text-primary">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Bumalik sa Home
                         </button>
@@ -67,24 +67,22 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:mx-0">
                             <Heart className="h-8 w-8 fill-current" />
                         </div>
-                        <CardTitle className="text-xl font-extrabold tracking-tight sm:text-2xl">
-                            I-abot ang iyong Feedback
-                        </CardTitle>
+                        <CardTitle className="text-xl font-extrabold tracking-tight sm:text-2xl">I-abot ang iyong Feedback</CardTitle>
                         <p className="text-sm leading-relaxed text-muted-foreground">
                             Ang iyong opinyon ay mahalaga sa amin. Tulungan kaming mapabuti ang aming serbisyo para sa buong bayan.
                         </p>
                     </CardHeader>
                     <CardContent>
-                        <FeedbackFormContent 
-                            departments={departments} 
+                        <FeedbackFormContent
+                            departments={departments}
                             feedbackTypes={feedbackTypes}
-                            onSuccess={handleSuccess} 
-                            onError={handleError} 
+                            onSuccess={handleSuccess}
+                            onError={handleError}
                         />
                     </CardContent>
                 </Card>
 
-                <p className="mt-8 text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                <p className="mt-8 text-center text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                     Ligtas at Mabilis na Serbisyo para sa mga Mamamayan
                 </p>
             </div>
@@ -112,4 +110,3 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
         </PublicLayout>
     );
 }
-
