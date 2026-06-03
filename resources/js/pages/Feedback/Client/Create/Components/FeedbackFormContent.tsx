@@ -7,6 +7,7 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import api from '@/routes/api';
 import { useForm } from '@inertiajs/react';
+import imageCompression from 'browser-image-compression';
 import { AlertTriangle, FileIcon, Loader2, Upload, X } from 'lucide-react';
 import React, { useState } from 'react';
 import StarRating from './StarRatingBar';
@@ -52,19 +53,57 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
     });
 
     const [fileError, setFileError] = useState<string | null>(null);
+    const [isCompressing, setIsCompressing] = useState(false);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
-        const incoming = Array.from(e.target.files);
-        const combined = [...data.attachments, ...incoming].slice(0, MAX_FILES);
 
+        const incoming = Array.from(e.target.files);
+        const availableSlots = MAX_FILES - data.attachments.length;
+        const filesToProcess = incoming.slice(0, availableSlots);
+
+        if (filesToProcess.length === 0) return;
+
+        setIsCompressing(true);
+        setFileError(null);
+
+        const compressedFiles: File[] = [];
+
+        const options = {
+            maxSizeMB: 1, // Shrink to ~1MB
+            maxWidthOrHeight: 1920, // Standard HD
+            useWebWorker: true,
+        };
+
+        for (const file of filesToProcess) {
+            if (file.type.startsWith('image/')) {
+                try {
+                    const compressedBlob = await imageCompression(file, options);
+                    const finalFile = new File([compressedBlob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now(),
+                    });
+                    compressedFiles.push(finalFile);
+                } catch (error) {
+                    console.error('Compression failed for:', file.name, error);
+                    compressedFiles.push(file);
+                }
+            } else {
+                compressedFiles.push(file);
+            }
+        }
+
+        const combined = [...data.attachments, ...compressedFiles];
         const totalSize = combined.reduce((acc, file) => acc + file.size, 0);
+
         if (totalSize > MAX_TOTAL_SIZE) {
-            setFileError('Total file size exceeds 50 MB limit.');
+            setFileError('Sobra sa 50 MB ang kabuuang laki ng iyong mga files kahit pagkatapos ng compression.');
+            setIsCompressing(false);
             return;
         }
-        setFileError(null);
+
         setData('attachments', combined);
+        setIsCompressing(false);
         e.target.value = '';
     };
 
@@ -77,6 +116,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (isCompressing) return;
         setFileError(null);
 
         post(api.feedback.store.url(), {
@@ -137,7 +177,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
 
             {/* RATING */}
             <div className="rounded-2xl border-2 border-slate-100 bg-slate-50/50 p-4 sm:p-6">
-                <StarRating value={data.rating ?? 0} onChange={(value) => setData('rating', value)} />
+                <StarRating value={data.rating ?? 0} onChange={(value: any) => setData('rating', value)} />
                 {errors.rating && <p className="mt-2 text-xs font-medium text-destructive">{errors.rating}</p>}
             </div>
 
@@ -237,17 +277,26 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                 <Label className="text-sm font-bold tracking-wider text-slate-500 uppercase">Litrato o Video (Opsyonal)</Label>
 
                 <div
-                    onClick={() => data.attachments.length < MAX_FILES && document.getElementById('feedback-evidence')?.click()}
+                    onClick={() => !isCompressing && data.attachments.length < MAX_FILES && document.getElementById('feedback-evidence')?.click()}
                     className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-colors ${
-                        data.attachments.length >= MAX_FILES
+                        isCompressing || data.attachments.length >= MAX_FILES
                             ? 'cursor-not-allowed border-slate-200 bg-slate-50'
                             : 'cursor-pointer border-slate-200 bg-slate-50/50 hover:border-primary/50'
                     }`}
                 >
-                    <Upload className={`mb-2 h-8 w-8 ${data.attachments.length >= MAX_FILES ? 'text-slate-300' : 'text-primary/60'}`} />
-                    <p className="text-xs font-bold text-slate-600">
-                        {data.attachments.length >= MAX_FILES ? 'Puno na ang limitasyon' : 'Mag-attach ng Patunay'}
-                    </p>
+                    {isCompressing ? (
+                        <>
+                            <Loader2 className="mb-2 h-8 w-8 animate-spin text-primary/60" />
+                            <p className="text-xs font-bold text-slate-600">I-compress ang mga litrato...</p>
+                        </>
+                    ) : (
+                        <>
+                            <Upload className={`mb-2 h-8 w-8 ${data.attachments.length >= MAX_FILES ? 'text-slate-300' : 'text-primary/60'}`} />
+                            <p className="text-xs font-bold text-slate-600">
+                                {data.attachments.length >= MAX_FILES ? 'Puno na ang limitasyon' : 'Mag-attach ng Patunay'}
+                            </p>
+                        </>
+                    )}
                     <p className="mt-1 text-[10px] text-slate-400">Hanggang 5 files (Max 50MB)</p>
                 </div>
 
@@ -299,7 +348,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                         variant="ghost"
                         onClick={onCancel}
                         className="order-2 h-14 rounded-2xl font-bold sm:order-1 sm:flex-1"
-                        disabled={processing}
+                        disabled={processing || isCompressing}
                     >
                         I-kansela
                     </Button>
@@ -308,12 +357,17 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                 <Button
                     type="submit"
                     className="order-1 h-14 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] sm:order-2 sm:flex-1"
-                    disabled={processing}
+                    disabled={processing || isCompressing}
                 >
                     {processing ? (
                         <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             I-sinusumite…
+                        </>
+                    ) : isCompressing ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            I-compress…
                         </>
                     ) : (
                         'I-sumite ang Feedback'
