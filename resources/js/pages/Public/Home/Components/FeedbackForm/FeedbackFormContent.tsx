@@ -7,7 +7,7 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import api from '@/routes/api';
 import { useForm } from '@inertiajs/react';
-import { AlertTriangle, FileIcon, Upload, X } from 'lucide-react';
+import { AlertTriangle, FileIcon, Loader2, Upload, X } from 'lucide-react';
 import React, { useState } from 'react';
 import StarRating from './StarRatingBar';
 
@@ -100,7 +100,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
         <form onSubmit={handleSubmit} className="space-y-8">
             {/* SUBJECT */}
             <div className="space-y-3">
-                <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                <Label className="text-sm font-bold tracking-wider text-slate-500 uppercase">
                     Uri ng Feedback <span className="text-destructive">*</span>
                 </Label>
 
@@ -129,7 +129,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                         value={data.subject}
                         onChange={(e) => setData('subject', e.target.value)}
                         placeholder="Hal: Reklamo o Suhestiyon"
-                        className={`rounded-xl h-12 ${errors.subject ? 'border-destructive' : 'bg-slate-50'}`}
+                        className={`h-12 rounded-xl ${errors.subject ? 'border-destructive' : 'bg-slate-50'}`}
                     />
                 )}
                 {errors.subject && <p className="text-xs font-medium text-destructive">{errors.subject}</p>}
@@ -143,7 +143,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
 
             {/* MESSAGE */}
             <div className="space-y-2">
-                <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                <Label className="text-sm font-bold tracking-wider text-slate-500 uppercase">
                     Iyong Mensahe <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
@@ -151,15 +151,15 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                     value={data.message}
                     onChange={(e) => setData('message', e.target.value)}
                     placeholder="Dito mo isulat ang iyong suhestiyon, papuri, o reklamo..."
-                    className={`rounded-xl resize-none ${errors.message ? 'border-destructive ring-destructive/20' : 'bg-slate-50'}`}
+                    className={`resize-none rounded-xl ${errors.message ? 'border-destructive ring-destructive/20' : 'bg-slate-50'}`}
                 />
                 {errors.message && <p className="text-xs font-medium text-destructive">{errors.message}</p>}
             </div>
 
             {/* PERSONAL INFO SECTION */}
             <div className="space-y-6 pt-2">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Impormasyon (Opsyonal)</h3>
-                
+                <h3 className="text-xs font-black tracking-[0.2em] text-slate-400 uppercase">Impormasyon (Opsyonal)</h3>
+
                 {/* CITIZEN NAME */}
                 <div className="space-y-2">
                     <Label className="text-sm font-bold text-slate-700">Pangalan</Label>
@@ -167,7 +167,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                         value={data.citizen_name}
                         onChange={(e) => setData('citizen_name', e.target.value)}
                         placeholder="Iwanang bakante kung nais mong manatiling anonymous"
-                        className={`rounded-xl h-12 ${errors.citizen_name ? 'border-destructive' : 'bg-slate-50'}`}
+                        className={`h-12 rounded-xl ${errors.citizen_name ? 'border-destructive' : 'bg-slate-50'}`}
                     />
                     {errors.citizen_name && <p className="text-xs font-medium text-destructive">{errors.citizen_name}</p>}
                 </div>
@@ -180,7 +180,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                             value={data.contact_number}
                             onChange={(e) => setData('contact_number', e.target.value)}
                             placeholder="Hal: 09171234567"
-                            className={`rounded-xl h-12 ${errors.contact_number ? 'border-destructive' : 'bg-slate-50'}`}
+                            className={`h-12 rounded-xl ${errors.contact_number ? 'border-destructive' : 'bg-slate-50'}`}
                         />
                         {errors.contact_number && <p className="text-xs font-medium text-destructive">{errors.contact_number}</p>}
                     </div>
@@ -191,7 +191,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="halimbawa@email.com"
-                            className={`rounded-xl h-12 ${errors.email ? 'border-destructive' : 'bg-slate-50'}`}
+                            className={`h-12 rounded-xl ${errors.email ? 'border-destructive' : 'bg-slate-50'}`}
                         />
                         {errors.email && <p className="text-xs font-medium text-destructive">{errors.email}</p>}
                     </div>
@@ -202,7 +202,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                     <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-700">Departamento</Label>
                         <Select value={data.department_id} onValueChange={(value) => setData('department_id', value)}>
-                            <SelectTrigger className={`rounded-xl h-12 bg-slate-50 ${errors.department_id ? 'border-destructive' : ''}`}>
+                            <SelectTrigger className={`h-12 rounded-xl bg-slate-50 ${errors.department_id ? 'border-destructive' : ''}`}>
                                 <SelectValue placeholder="Pumili ng Departamento" />
                             </SelectTrigger>
                             <SelectContent>
@@ -225,7 +225,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                             value={data.employee_name}
                             onChange={(e) => setData('employee_name', e.target.value)}
                             placeholder="Sino ang tumulong sa iyo?"
-                            className={`rounded-xl h-12 ${errors.employee_name ? 'border-destructive' : 'bg-slate-50'}`}
+                            className={`h-12 rounded-xl ${errors.employee_name ? 'border-destructive' : 'bg-slate-50'}`}
                         />
                         {errors.employee_name && <p className="text-xs font-medium text-destructive">{errors.employee_name}</p>}
                     </div>
@@ -234,21 +234,21 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
 
             {/* UPLOAD */}
             <div className="space-y-3 pt-2">
-                <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">Litrato o Video (Opsyonal)</Label>
-                
-                <div 
+                <Label className="text-sm font-bold tracking-wider text-slate-500 uppercase">Litrato o Video (Opsyonal)</Label>
+
+                <div
                     onClick={() => data.attachments.length < MAX_FILES && document.getElementById('feedback-evidence')?.click()}
                     className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-colors ${
-                        data.attachments.length >= MAX_FILES 
-                            ? 'bg-slate-50 border-slate-200 cursor-not-allowed' 
-                            : 'bg-slate-50/50 border-slate-200 hover:border-primary/50 cursor-pointer'
+                        data.attachments.length >= MAX_FILES
+                            ? 'cursor-not-allowed border-slate-200 bg-slate-50'
+                            : 'cursor-pointer border-slate-200 bg-slate-50/50 hover:border-primary/50'
                     }`}
                 >
-                    <Upload className={`h-8 w-8 mb-2 ${data.attachments.length >= MAX_FILES ? 'text-slate-300' : 'text-primary/60'}`} />
+                    <Upload className={`mb-2 h-8 w-8 ${data.attachments.length >= MAX_FILES ? 'text-slate-300' : 'text-primary/60'}`} />
                     <p className="text-xs font-bold text-slate-600">
                         {data.attachments.length >= MAX_FILES ? 'Puno na ang limitasyon' : 'Mag-attach ng Patunay'}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-1">Hanggang 5 files (Max 50MB)</p>
+                    <p className="mt-1 text-[10px] text-slate-400">Hanggang 5 files (Max 50MB)</p>
                 </div>
 
                 <input
@@ -275,13 +275,13 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                                 className="group relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                             >
                                 <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
-                                    <FileIcon className="h-6 w-6 text-primary/40 mb-1" />
-                                    <span className="line-clamp-1 text-[10px] font-bold text-slate-600 px-2">{file.name}</span>
+                                    <FileIcon className="mb-1 h-6 w-6 text-primary/40" />
+                                    <span className="line-clamp-1 px-2 text-[10px] font-bold text-slate-600">{file.name}</span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => removeFile(index)}
-                                    className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-destructive shadow-sm hover:bg-destructive hover:text-white transition-colors"
+                                    className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-destructive shadow-sm transition-colors hover:bg-destructive hover:text-white"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
@@ -294,20 +294,20 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
             {/* ACTIONS */}
             <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                 {onCancel && (
-                    <Button 
-                        type="button" 
-                        variant="ghost" 
-                        onClick={onCancel} 
-                        className="h-14 rounded-2xl font-bold order-2 sm:order-1 sm:flex-1" 
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={onCancel}
+                        className="order-2 h-14 rounded-2xl font-bold sm:order-1 sm:flex-1"
                         disabled={processing}
                     >
                         I-kansela
                     </Button>
                 )}
 
-                <Button 
-                    type="submit" 
-                    className="h-14 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] transition-all order-1 sm:order-2 sm:flex-1" 
+                <Button
+                    type="submit"
+                    className="order-1 h-14 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] sm:order-2 sm:flex-1"
                     disabled={processing}
                 >
                     {processing ? (

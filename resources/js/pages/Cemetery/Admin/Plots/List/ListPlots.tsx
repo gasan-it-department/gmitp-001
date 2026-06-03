@@ -2,19 +2,20 @@ import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlotListItem, PlotStatusOption, SelectOption } from '@/Core/Types/Cemetery/cemetery';
+import { PlotInventoryCounts, PlotListItem, PlotStatusOption, SelectOption } from '@/Core/Types/Cemetery/cemetery';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
 import { Link, router, usePage } from '@inertiajs/react';
-import { LandPlot, Plus } from 'lucide-react';
+import { Boxes, LandPlot, Plus } from 'lucide-react';
 
 interface Props {
     plots: PaginatedResponse<PlotListItem>;
     filters: { status: string | null };
     status_options: PlotStatusOption[];
     type_options: SelectOption[];
+    inventory_counts: PlotInventoryCounts;
 }
 
 const TONE_CLASSES: Record<string, string> = {
@@ -24,7 +25,15 @@ const TONE_CLASSES: Record<string, string> = {
     slate: 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
-export default function ListPlots({ plots, filters, status_options }: Props) {
+/**
+ * A row is a CONTAINER when it has no parent AND capacity > 1 — i.e. it auto-
+ * generated child slots when it was registered. Containers carry NULL status
+ * (they are not bookable directly) and the admin drills into them to see the
+ * level-by-level breakdown.
+ */
+const isContainer = (plot: PlotListItem): boolean => plot.parent_plot_id === null && plot.capacity > 1;
+
+export default function ListPlots({ plots, filters, status_options, inventory_counts }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const rows = plots.data;
 
@@ -34,13 +43,6 @@ export default function ListPlots({ plots, filters, status_options }: Props) {
             { status: status === 'all' ? undefined : status },
             { preserveState: true, preserveScroll: true, replace: true },
         );
-    };
-
-    const counts = {
-        total: plots.meta.total ?? rows.length,
-        available: rows.filter((p) => p.status === 'available').length,
-        occupied: rows.filter((p) => p.status === 'occupied').length,
-        maintenance: rows.filter((p) => p.status === 'maintenance').length,
     };
 
     return (
@@ -55,6 +57,7 @@ export default function ListPlots({ plots, filters, status_options }: Props) {
                             <h1 className="text-xl font-semibold text-slate-900">Plots & Real Estate</h1>
                             <p className="text-sm text-slate-500">
                                 Manage the physical inventory of cemetery plots under {currentMunicipality?.name ?? 'this municipality'}.
+                                The table shows top-level containers and single-capacity plots; child slots live inside their container.
                             </p>
                         </div>
                     </div>
@@ -68,11 +71,14 @@ export default function ListPlots({ plots, filters, status_options }: Props) {
                     </Link>
                 </header>
 
+                {/* Inventory counts are server-computed and LEAF-level — child slots
+                    inside containers are counted, parent containers are excluded.
+                    These numbers reflect real bookable inventory, not the page. */}
                 <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <Stat label="Total Plots" value={counts.total} tone="slate" />
-                    <Stat label="Available" value={counts.available} tone="emerald" />
-                    <Stat label="Occupied" value={counts.occupied} tone="rose" />
-                    <Stat label="Maintenance" value={counts.maintenance} tone="amber" />
+                    <Stat label="Total Slots" value={inventory_counts.total} tone="slate" />
+                    <Stat label="Available" value={inventory_counts.available} tone="emerald" />
+                    <Stat label="Occupied" value={inventory_counts.occupied} tone="rose" />
+                    <Stat label="Maintenance" value={inventory_counts.maintenance} tone="amber" />
                 </section>
 
                 {/* Toolbar */}
@@ -101,10 +107,11 @@ export default function ListPlots({ plots, filters, status_options }: Props) {
                             <TableHeader className="sticky top-0 bg-slate-50/95 backdrop-blur">
                                 <TableRow className="border-slate-200">
                                     <TableHead className="pl-4 text-xs font-semibold tracking-wide text-slate-600 uppercase">
-                                        Plot Number
+                                        Slot Label
                                     </TableHead>
-                                    <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Name</TableHead>
                                     <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Section</TableHead>
+                                    <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Block</TableHead>
+                                    <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Row</TableHead>
                                     <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Type</TableHead>
                                     <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Capacity</TableHead>
                                     <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Status</TableHead>
@@ -117,36 +124,55 @@ export default function ListPlots({ plots, filters, status_options }: Props) {
                             <TableBody>
                                 {rows.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-32 text-center text-sm text-slate-500">
+                                        <TableCell colSpan={8} className="h-32 text-center text-sm text-slate-500">
                                             No plots registered yet.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    rows.map((plot) => (
-                                        <TableRow key={plot.id} className="border-slate-100 transition-colors hover:bg-slate-50">
-                                            <TableCell className="pl-4 font-mono text-sm font-medium text-slate-900">
-                                                {plot.plot_number ?? '—'}
-                                            </TableCell>
-                                            <TableCell className="text-sm text-slate-700">{plot.name ?? '—'}</TableCell>
-                                            <TableCell className="text-sm text-slate-600">{plot.section?.name ?? '—'}</TableCell>
-                                            <TableCell className="text-xs text-slate-600">{plot.type_label ?? '—'}</TableCell>
-                                            <TableCell className="text-xs text-slate-600">{plot.total_capacity ?? 1}</TableCell>
-                                            <TableCell className="text-xs">
-                                                <span
-                                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-                                                        TONE_CLASSES[plot.status_tone ?? 'slate']
-                                                    }`}
-                                                >
-                                                    {plot.status_label ?? '—'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="pr-4 text-right">
-                                                <Button size="sm" variant="ghost" className="text-slate-600">
-                                                    View
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    rows.map((plot) => {
+                                        const container = isContainer(plot);
+                                        return (
+                                            <TableRow key={plot.id} className="border-slate-100 transition-colors hover:bg-slate-50">
+                                                <TableCell className="pl-4 font-mono text-sm font-medium text-slate-900">
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{plot.slot_label || '—'}</span>
+                                                        {container && (
+                                                            <span
+                                                                className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-indigo-700 uppercase ring-1 ring-inset ring-indigo-200"
+                                                                title={`Container — holds ${plot.capacity} child slots`}
+                                                            >
+                                                                <Boxes size={10} />
+                                                                Container
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-sm text-slate-600">{plot.block?.section?.name ?? '—'}</TableCell>
+                                                <TableCell className="text-sm text-slate-600">{plot.block?.name ?? '—'}</TableCell>
+                                                <TableCell className="text-xs text-slate-600">{plot.row ?? '—'}</TableCell>
+                                                <TableCell className="text-xs text-slate-600">{plot.type_label ?? '—'}</TableCell>
+                                                <TableCell className="text-xs text-slate-600">{plot.capacity}</TableCell>
+                                                <TableCell className="text-xs">
+                                                    {container ? (
+                                                        <span className="text-xs text-slate-400">—</span>
+                                                    ) : (
+                                                        <span
+                                                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
+                                                                TONE_CLASSES[plot.status_tone ?? 'slate']
+                                                            }`}
+                                                        >
+                                                            {plot.status_label ?? '—'}
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="pr-4 text-right">
+                                                    <Button size="sm" variant="ghost" className="text-slate-600">
+                                                        View
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>

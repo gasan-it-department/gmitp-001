@@ -1,10 +1,10 @@
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, CalendarDays, CalendarRange, Landmark, MapPin, PartyPopper, Sparkles, Users } from 'lucide-react';
+import React from 'react';
 
 type EnumOption = { value: string; label: string };
 
@@ -27,29 +27,29 @@ interface Props {
 
 type TypeStyle = {
     chip: string;
-    placeholder: string;
+    banner: string;
     icon: React.ComponentType<{ className?: string }>;
 };
 
 const TYPE_STYLES: Record<string, TypeStyle> = {
     festival: {
         chip: 'bg-purple-100 text-purple-700 ring-1 ring-inset ring-purple-300',
-        placeholder: 'bg-purple-50 text-purple-300',
+        banner: 'bg-purple-50 text-purple-800',
         icon: PartyPopper,
     },
     government: {
         chip: 'bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-300',
-        placeholder: 'bg-blue-50 text-blue-300',
+        banner: 'bg-blue-50 text-blue-800',
         icon: Landmark,
     },
     community: {
         chip: 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-300',
-        placeholder: 'bg-emerald-50 text-emerald-300',
+        banner: 'bg-emerald-50 text-emerald-800',
         icon: Users,
     },
     holiday: {
         chip: 'bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-300',
-        placeholder: 'bg-rose-50 text-rose-300',
+        banner: 'bg-rose-50 text-rose-800',
         icon: Sparkles,
     },
 };
@@ -57,7 +57,7 @@ const TYPE_STYLES: Record<string, TypeStyle> = {
 const styleFor = (type: string): TypeStyle =>
     TYPE_STYLES[type] ?? {
         chip: 'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-300',
-        placeholder: 'bg-slate-50 text-slate-300',
+        banner: 'bg-slate-50 text-slate-700',
         icon: CalendarDays,
     };
 
@@ -68,62 +68,103 @@ export default function EventClientShow({ event }: Props) {
     const Icon = style.icon;
 
     return (
-        <PublicLayout title={event.title} description="">
+        <PublicLayout title="" description="">
             <Head title={event.title} />
 
-            <div className="container mx-auto max-w-3xl space-y-6 py-10">
-                <Link href={`/${slug}/event`}>
-                    <Button variant="ghost" size="sm">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Events
-                    </Button>
-                </Link>
+            <div className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
+                {/* Back Button */}
+                <div className="mb-6">
+                    <Link href={`/${slug}/event`}>
+                        <button className="flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Bumalik sa mga Kaganapan
+                        </button>
+                    </Link>
+                </div>
 
-                <Card className="overflow-hidden p-0">
-                    {/* Hero banner */}
-                    {event.banner_url ? (
-                        <div className="aspect-[21/9] w-full overflow-hidden bg-slate-100">
-                            <img src={event.banner_url} alt={event.title} className="h-full w-full object-cover" />
-                        </div>
-                    ) : (
-                        <div className={`flex aspect-[21/9] w-full items-center justify-center ${style.placeholder}`}>
-                            <Icon className="h-20 w-20" />
-                        </div>
-                    )}
+                <article className="space-y-8">
+                    {/* Main Content Card */}
+                    <Card className="overflow-hidden border-none shadow-xl sm:border-2 sm:border-slate-100 sm:shadow-lg">
+                        {/* Hero banner */}
+                        {event.banner_url ? (
+                            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                                <img
+                                    src={event.banner_url}
+                                    alt={event.title}
+                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                            </div>
+                        ) : (
+                            <div className={`flex aspect-video w-full items-center justify-center ${style.banner}`}>
+                                <Icon className="h-20 w-20 opacity-20" />
+                            </div>
+                        )}
 
-                    <CardContent className="space-y-6 p-6 sm:p-8">
-                        {/* Title block */}
-                        <div className="space-y-3">
-                            <Badge variant="secondary" className={`inline-flex items-center gap-1 ${style.chip}`}>
-                                <Icon className="h-3 w-3" />
-                                {event.type.label}
-                            </Badge>
-                            <h1 className="text-3xl leading-tight font-bold tracking-tight text-slate-900">{event.title}</h1>
-                        </div>
+                        <CardContent className="p-6 sm:p-10">
+                            <div className="space-y-8">
+                                {/* Category Badge */}
+                                <div>
+                                    <Badge variant="secondary" className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest ${style.chip} ring-0 shadow-sm`}>
+                                        <Icon className="h-3.5 w-3.5" />
+                                        {event.type.label}
+                                    </Badge>
+                                </div>
 
-                        {/* Schedule + location */}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="flex items-start gap-3 rounded-lg border bg-slate-50/40 p-3">
-                                <CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                                <div className="text-sm">
-                                    <p className="font-medium text-slate-700">When</p>
-                                    <p className="text-slate-600">{event.start_datetime ?? '—'}</p>
-                                    <p className="text-xs text-slate-500">to {event.end_datetime ?? '—'}</p>
+                                {/* Title */}
+                                <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl">
+                                    {event.title}
+                                </h1>
+
+                                {/* Info Grid (When / Where) */}
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="flex items-start gap-4 rounded-2xl border-2 border-slate-50 bg-slate-50/50 p-4 transition-all hover:border-primary/10 hover:bg-white">
+                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary shadow-sm">
+                                            <CalendarRange className="h-5 w-5" />
+                                        </div>
+                                        <div className="min-w-0 flex-1 space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kailan</p>
+                                            <div className="text-sm font-bold text-slate-700">
+                                                <p>{event.start_datetime ?? '—'}</p>
+                                                {event.end_datetime && event.end_datetime !== event.start_datetime && (
+                                                    <p className="text-xs text-slate-500">hanggang {event.end_datetime}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-4 rounded-2xl border-2 border-slate-50 bg-slate-50/50 p-4 transition-all hover:border-primary/10 hover:bg-white">
+                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary shadow-sm">
+                                            <MapPin className="h-5 w-5" />
+                                        </div>
+                                        <div className="min-w-0 flex-1 space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Saan</p>
+                                            <p className="text-sm font-bold text-slate-700 leading-tight">
+                                                {event.location_name}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                <div className="prose prose-slate max-w-none">
+                                    <div className="text-base leading-relaxed whitespace-pre-wrap text-slate-700 sm:text-lg">
+                                        {event.description}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 rounded-lg border bg-slate-50/40 p-3">
-                                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                                <div className="text-sm">
-                                    <p className="font-medium text-slate-700">Where</p>
-                                    <p className="text-slate-600">{event.location_name}</p>
-                                </div>
-                            </div>
-                        </div>
+                        </CardContent>
+                    </Card>
 
-                        {/* Description */}
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{event.description}</div>
-                    </CardContent>
-                </Card>
+                    {/* Brand Footer */}
+                    <div className="text-center pt-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+                            Ligtas at Mabilis na Serbisyo • {currentMunicipality.name}
+                        </p>
+                    </div>
+                </article>
             </div>
         </PublicLayout>
     );
 }
+

@@ -2,55 +2,87 @@
 
 namespace App\External\Api\Request\Cemetery;
 
-use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
- * Validates a NEW plot creation. Single-purpose — the update flow gets its own
- * UpdatePlotRequest so unique-rule ignore logic stays explicit per intent.
+ * Validates a NEW plot registration — single-capacity OR multi-capacity (the
+ * BulkGenerateMultiCapacityPlotsAction handles both based on `capacity`).
+ *
+ * Tenant boundary: `municipal_id` is NEVER read from the payload — it is sourced
+ * from `app('municipal_id')` (bound by SetMunicipalityContext middleware). The
+ * existence check on `block_id` is scoped by the same id so a forged block_id
+ * from another tenant fails closed.
+ *
+ * Initial status is NOT accepted from the payload: the Action chooses it
+ *  (parent = NULL, slots / single = AVAILABLE) per MD §7. Admins change status
+ *  later through dedicated maintenance/reservation flows.
  */
 class CreatePlotRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // Route already enforces auth + admin + municipalityContext middleware.
         return true;
     }
 
     public function rules(): array
     {
         $municipalId = app('municipal_id');
+        $blockId = $this->input('block_id');
 
         return [
-            'section_id' => [
+            'block_id' => [
                 'required',
                 'ulid',
-                // Scope: the section must belong to the caller's municipality so
-                // you cannot quietly create a plot under another tenant's section.
-                Rule::exists('cemetery_sections', 'id')->where('municipal_id', $municipalId),
-            ],
-            'plot_number' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('cemetery_plots', 'plot_number')
-                    ->where(fn ($query) => $query->where('municipal_id', $municipalId)
+                // The block must exist, belong to this tenant, and not be
+                // soft-deleted — a forged or stale id fails closed here.
+                Rule::exists('cemetery_blocks', 'id')
+                    ->where(fn ($query) => $query
+                        ->where('municipal_id', $municipalId)
                         ->whereNull('deleted_at')),
             ],
-            'name' => ['nullable', 'string', 'max:150'],
+
+            // Identifier carrying the plot/container name (e.g. "APARTMENT A-12").
+            // UPPERCASE happens at the DTO; we only validate shape here.
+            'name' => [
+                'required',
+                'string',
+                'max:150',
+                // Catch the obvious collision early: a parent/single plot with
+                // this name already exists in the same block. The DB composite
+                // unique still backs us up for cross-row edge cases.
+                Rule::unique('cemetery_plots', 'name')
+                    ->where(fn ($query) => $query
+                        ->where('municipal_id', $municipalId)
+                        ->where('block_id', $blockId)
+                        ->whereNull('parent_plot_id')
+                        ->whereNull('deleted_at')),
+            ],
+
             'type' => ['required', new Enum(PlotTypes::class)],
-            'status' => ['nullable', new Enum(PlotStatus::class)],
-            'total_capacity' => ['nullable', 'integer', 'min:1', 'max:50'],
+
+            // BR-9 — capacity bounds. 1 = single-capacity plot (FR-1);
+            // 2..50 = multi-capacity parent + that many child slots (FR-2).
+            'capacity' => ['required', 'integer', 'min:1', 'max:50'],
+
+            // Spatial locators. For multi-capacity, `row` is inherited by all
+            // children; `position` is intra-level and stays NULL on auto-
+            // generated children (admin edits per slot per BR-5).
+            'row' => ['nullable', 'string', 'max:50'],
+            'position' => ['nullable', 'string', 'max:50'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'section_id.exists' => 'The selected section is not part of this municipality.',
-            'plot_number.unique' => 'A plot with this number already exists in this municipality.',
+            'block_id.exists' => 'The selected block is not part of this municipality.',
+            'name.unique' => 'A plot with this name already exists in the selected block.',
+            'capacity.min' => 'Capacity must be at least 1.',
+            'capacity.max' => 'Capacity may not exceed 50 — anything larger is almost certainly a data-entry error.',
         ];
     }
 }

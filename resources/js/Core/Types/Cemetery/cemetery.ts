@@ -3,7 +3,17 @@
 export type PlotStatusValue = 'available' | 'occupied' | 'reserved' | 'maintenance';
 export type PlotTypeValue = 'lawn_lot' | 'apartment_niche' | 'bone_ossuary' | 'mausoleum';
 export type DecedentTypeValue = 'standard' | 'child' | 'fetal' | 'unknown';
-export type IntermentStatusValue = 'pending' | 'interred' | 'exhumed' | 'transferred' | 'unassigned';
+
+/**
+ * Surfaced to the UI as the per-decedent assignment state. With the event-typed
+ * interment schema there is no DB `status` column — `interred` means an active
+ * (non-soft-deleted) interment row exists; `unassigned` means none. The
+ * `exhumed`/`transferred` legacy values are kept as types so older UI cells
+ * keep compiling, but the API no longer emits them.
+ */
+export type IntermentStatusValue = 'interred' | 'unassigned' | 'exhumed' | 'transferred' | 'pending';
+
+export type IntermentTypeValue = 'initial' | 'transfer';
 
 export interface SelectOption<T extends string = string> {
     value: T;
@@ -12,6 +22,19 @@ export interface SelectOption<T extends string = string> {
 
 export interface PlotStatusOption extends SelectOption<PlotStatusValue> {
     tone: string;
+}
+
+// ─── Spatial hierarchy lookups (passed as Inertia page props) ────────────
+
+export interface SectionLookup {
+    id: string;
+    name: string;
+}
+
+export interface BlockLookup {
+    id: string;
+    name: string;
+    section: SectionLookup | null;
 }
 
 // ─── Decedents ───────────────────────────────────────────────────────────
@@ -53,16 +76,23 @@ export interface DecedentProfile {
         url: string;
         mime_type: string;
     }[];
+    // Schema pivot: interment is now an event row (type = initial | transfer).
+    // No row-level status; existence of the row is the "interred" signal.
     interment: {
         id: string;
-        status: IntermentStatusValue;
+        type: IntermentTypeValue;
+        notes: string | null;
         interment_date: string | null;
         plot: {
             id: string;
-            plot_number: string | null;
             name: string | null;
+            slot_label: string;
             type: PlotTypeValue | null;
             status: PlotStatusValue | null;
+            level: number | null;
+            position: string | null;
+            parent: { id: string; name: string } | null;
+            block: { id: string; name: string } | null;
             section: { id: string; name: string } | null;
         } | null;
     } | null;
@@ -102,24 +132,41 @@ export type RegisterDecedentForm = {
 
 export interface PlotListItem {
     id: string;
-    plot_number: string | null;
     name: string | null;
+    slot_label: string; // canonical UI identifier (e.g. "A-12", "A-12-L3", "A-12-L3-LEFT")
+    parent_plot_id: string | null; // NULL = container or single-capacity
+    row: string | null;
+    level: number | null;
+    position: string | null;
+    capacity: number;
     type: PlotTypeValue | null;
     type_label: string | null;
-    status: PlotStatusValue | null;
+    status: PlotStatusValue | null; // NULL for parent containers — they are not bookable
     status_label: string | null;
     status_tone: string | null;
-    total_capacity: number | null;
-    section: { id: string; name: string } | null;
+    block: {
+        id: string;
+        name: string;
+        section: SectionLookup | null;
+    } | null;
+}
+
+/** Leaf-level inventory counts (REQ-2.2) — server-computed, container-excluded. */
+export interface PlotInventoryCounts {
+    total: number;
+    available: number;
+    occupied: number;
+    reserved: number;
+    maintenance: number;
 }
 
 export type CreatePlotForm = {
-    section_id: string;
-    plot_number: string;
+    block_id: string;
     name: string;
     type: PlotTypeValue | '';
-    status: PlotStatusValue;
-    total_capacity: number | '';
+    capacity: number | '';
+    row: string;
+    position: string;
 };
 
 // ─── Interments ──────────────────────────────────────────────────────────
@@ -128,5 +175,6 @@ export type CreateIntermentForm = {
     decedent_id: string;
     plot_id: string;
     interment_date: string;
-    status: 'interred' | 'pending';
+    type: IntermentTypeValue;
+    notes: string;
 };

@@ -1,7 +1,7 @@
 import Interments from '@/actions/App/External/Api/Controllers/Cemetery/Interments';
 import { DatePicker } from '@/components/Shared/DatePicker';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CreateIntermentForm, PlotListItem } from '@/Core/Types/Cemetery/cemetery';
+import { CreateIntermentForm, IntermentTypeValue, PlotListItem } from '@/Core/Types/Cemetery/cemetery';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
@@ -21,16 +21,35 @@ interface Props {
     available_plots: { data: PlotListItem[] };
 }
 
+/**
+ * BR-4 — interments may NEVER attach to a parent container. The server-side
+ * `GetAvailablePlotsAction` already filters to AVAILABLE leaves only, but this
+ * client-side guard is the defense-in-depth: if the payload ever drifts (e.g.
+ * a future caller swaps the action), the picker will still refuse containers.
+ *
+ * A leaf is either: a child slot (parent_plot_id IS NOT NULL), or a single-
+ * capacity plot (capacity = 1, no children).
+ */
+const isAssignableLeaf = (plot: PlotListItem): boolean =>
+    plot.parent_plot_id !== null || plot.capacity === 1;
+
 export default function AssignDecedent({ decedent, available_plots }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const plots = available_plots.data;
+
+    // Defensive filter — server already returns leaves only. See isAssignableLeaf().
+    const plots = useMemo(
+        () => (available_plots.data ?? []).filter(isAssignableLeaf),
+        [available_plots.data],
+    );
+
     const [typeFilter, setTypeFilter] = useState<string>('all');
 
     const { data, setData, post, processing, errors } = useForm<CreateIntermentForm>({
         decedent_id: decedent.id,
         plot_id: '',
         interment_date: '',
-        status: 'interred',
+        type: 'initial',
+        notes: '',
     });
 
     const filteredPlots = useMemo(
@@ -38,7 +57,10 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
         [plots, typeFilter],
     );
 
-    const selectedPlot = useMemo(() => plots.find((p) => p.id === data.plot_id) ?? null, [plots, data.plot_id]);
+    const selectedPlot = useMemo(
+        () => plots.find((p) => p.id === data.plot_id) ?? null,
+        [plots, data.plot_id],
+    );
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -64,7 +86,10 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
                     </span>
                     <div>
                         <h1 className="text-xl font-semibold text-slate-900">Assign Decedent to Plot</h1>
-                        <p className="text-sm text-slate-500">Link this decedent to an available cemetery plot and record the interment.</p>
+                        <p className="text-sm text-slate-500">
+                            Link this decedent to an available cemetery slot and record the interment. Only individual slots
+                            (single-capacity plots or specific levels inside a container) are bookable.
+                        </p>
                     </div>
                 </header>
 
@@ -85,7 +110,9 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
                 <form onSubmit={submit} className="space-y-6">
                     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                         <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h2 className="text-sm font-semibold tracking-wide text-slate-700 uppercase">Choose an Available Plot</h2>
+                            <h2 className="text-sm font-semibold tracking-wide text-slate-700 uppercase">
+                                Choose an Available Slot
+                            </h2>
                             <Select value={typeFilter} onValueChange={setTypeFilter}>
                                 <SelectTrigger className="w-52">
                                     <SelectValue placeholder="Filter by type" />
@@ -104,7 +131,7 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
 
                         {filteredPlots.length === 0 ? (
                             <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">
-                                No available plots match the current filter. Register a new plot or change the type filter.
+                                No available slots match the current filter. Register a new plot or change the type filter.
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -122,13 +149,20 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
                                             }`}
                                         >
                                             <div className="flex items-start justify-between">
-                                                <span className="font-mono text-sm font-semibold text-slate-900">{plot.plot_number}</span>
+                                                {/* Canonical slot identifier from the Plot::slotLabel accessor
+                                                    (e.g. "A-12-L3", "A-12-L3-LEFT", or "L-100" for single-capacity). */}
+                                                <span className="font-mono text-sm font-semibold text-slate-900">{plot.slot_label}</span>
                                                 <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
                                                     {plot.status_label}
                                                 </span>
                                             </div>
-                                            <p className="mt-2 text-sm font-medium text-slate-800">{plot.name ?? '—'}</p>
-                                            <p className="text-xs text-slate-500">{plot.section?.name ?? '—'}</p>
+                                            {/* Section / Block / Row are reached via the new hierarchy. */}
+                                            <p className="mt-2 text-xs text-slate-500">
+                                                {plot.block?.section?.name ?? '—'}
+                                                <span className="mx-1 opacity-40">/</span>
+                                                {plot.block?.name ?? '—'}
+                                                {plot.row && <span className="ml-1 text-slate-400">· Row {plot.row}</span>}
+                                            </p>
                                             <p className="mt-1 text-xs text-slate-500">{plot.type_label}</p>
                                         </button>
                                     );
@@ -154,29 +188,54 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
                             />
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
-                                <Select value={data.status} onValueChange={(v) => setData('status', v as CreateIntermentForm['status'])}>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">Interment Type *</label>
+                                <Select
+                                    value={data.type}
+                                    onValueChange={(v) => setData('type', v as IntermentTypeValue)}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="interred">Interred (Confirmed)</SelectItem>
-                                            <SelectItem value="pending">Pending</SelectItem>
+                                            <SelectItem value="initial">Initial Interment</SelectItem>
+                                            <SelectItem value="transfer">Transfer From Another Slot</SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    "Interred" will flip the plot status to <span className="font-medium">Occupied</span>.
+                                    {/* Event-typed schema (Task 1): the existence of an active interment row
+                                        flips the slot to OCCUPIED via RecordIntermentAction (BR-3). */}
+                                    Confirming will flip the slot status to <span className="font-medium">Occupied</span>.
                                 </p>
+                                {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="mb-1 block text-sm font-medium text-slate-700">Notes (optional)</label>
+                                <textarea
+                                    rows={3}
+                                    value={data.notes}
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    placeholder="Add operational context (e.g. transfer origin, ceremony details, lease info)."
+                                    className={`block w-full rounded-md border bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 ${
+                                        errors.notes ? 'border-red-500' : 'border-slate-300'
+                                    }`}
+                                />
+                                {errors.notes && <p className="mt-1 text-xs text-red-600">{errors.notes}</p>}
                             </div>
                         </div>
 
                         {selectedPlot && (
                             <div className="mt-4 rounded-md border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900">
-                                <p className="font-semibold">Selected plot</p>
-                                <p className="mt-1">
-                                    {selectedPlot.plot_number} · {selectedPlot.name ?? '—'} · {selectedPlot.section?.name ?? '—'}
+                                <p className="font-semibold">Selected slot</p>
+                                <p className="mt-1 font-mono">{selectedPlot.slot_label}</p>
+                                <p className="text-xs text-indigo-700">
+                                    {selectedPlot.block?.section?.name ?? '—'}
+                                    <span className="mx-1 opacity-50">/</span>
+                                    {selectedPlot.block?.name ?? '—'}
+                                    {selectedPlot.row && <span className="ml-1">· Row {selectedPlot.row}</span>}
+                                    {selectedPlot.level !== null && <span className="ml-1">· Level {selectedPlot.level}</span>}
                                 </p>
                             </div>
                         )}

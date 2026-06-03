@@ -117,8 +117,12 @@ export default function DecedentProfile({ decedent }: Props) {
                     <div className="grid grid-cols-2 divide-slate-100 border-t border-slate-100 sm:grid-cols-4 sm:divide-x">
                         <Field label="Registered On" value={record.date_of_registration} />
                         <Field label="Death Cert No." value={record.death_certificate_no} mono />
-                        <Field label="Interment Status" value={record.interment?.status ?? 'Unassigned'} />
-                        <Field label="Current Plot" value={record.interment?.plot?.plot_number ?? '—'} />
+                        {/* Schema pivot: the interment row's existence (active = not
+                            soft-deleted) is the "interred" signal — there is no DB
+                            status column anymore. Plot identifier is now slot_label
+                            (e.g. "A-12-L3"), set by the Plot::slotLabel accessor. */}
+                        <Field label="Interment Status" value={record.interment ? 'Interred' : 'Unassigned'} />
+                        <Field label="Current Plot" value={record.interment?.plot?.slot_label ?? '—'} />
                     </div>
                 </section>
 
@@ -152,14 +156,20 @@ export default function DecedentProfile({ decedent }: Props) {
                             {record.interment ? (
                                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                                     <div className="space-y-4">
-                                        <DetailItem label="Plot Number" value={record.interment.plot?.plot_number} />
-                                        <DetailItem label="Location / Name" value={record.interment.plot?.name} />
+                                        {/* Slot label (e.g. "A-12-L3") is the canonical
+                                            identifier under the new schema. Block + section
+                                            are reached via the eager-loaded chain. */}
+                                        <DetailItem label="Slot Label" value={record.interment.plot?.slot_label} />
+                                        <DetailItem label="Container / Name" value={record.interment.plot?.parent?.name ?? record.interment.plot?.name} />
+                                        <DetailItem label="Block" value={record.interment.plot?.block?.name} />
                                         <DetailItem label="Cemetery Section" value={record.interment.plot?.section?.name} />
                                     </div>
                                     <div className="space-y-4">
                                         <DetailItem label="Interment Date" value={record.interment.interment_date} />
                                         <DetailItem label="Plot Type" value={record.interment.plot?.type} className="capitalize" />
-                                        <DetailItem label="Interment Status" value={record.interment.status} className="capitalize" />
+                                        {/* Event-typed schema — show type/notes instead of the removed `status`. */}
+                                        <DetailItem label="Interment Type" value={record.interment.type} className="capitalize" />
+                                        <DetailItem label="Notes" value={record.interment.notes} />
                                     </div>
                                 </div>
                             ) : (

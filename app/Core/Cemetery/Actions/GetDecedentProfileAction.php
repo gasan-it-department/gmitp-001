@@ -13,7 +13,14 @@ class GetDecedentProfileAction
 {
     public function execute(string $decedentId, string $municipalId): Decedent
     {
-        return Decedent::with(['currentInterment.plot.section', 'media'])
+        // New hierarchy: plot → block → section (sections no longer live
+        // directly on the plot). `plot.parent` is loaded so the profile can
+        // display the container name (e.g. "A-12") alongside the slot label.
+        return Decedent::with([
+            'currentInterment.plot.block.section',
+            'currentInterment.plot.parent',
+            'media',
+        ])
             ->where('municipal_id', $municipalId)
             ->findOrFail($decedentId);
     }

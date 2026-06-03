@@ -45,27 +45,46 @@ class DecedentDetailsResource extends JsonResource
                 'mime_type' => $media->mime_type,
             ])->values()->all(),
 
-            // Current interment summary (null when no plot is assigned yet)
+            // Current interment summary (null when no plot is assigned yet).
+            // Schema note: interment.status was removed in the event-typed
+            // pivot — exhumation/transfer soft-delete the row. We surface
+            // `type` ('initial' | 'transfer') instead. Plot section is now
+            // reached via block; `slot_label` is the canonical display id.
             'interment' => $this->whenLoaded('currentInterment', function () {
                 if (! $this->currentInterment) {
                     return null;
                 }
 
                 $plot = $this->currentInterment->plot;
+                $parent = $plot?->relationLoaded('parent') ? $plot->parent : null;
+                $block = $plot?->relationLoaded('block') ? $plot->block : null;
+                $section = $block?->relationLoaded('section') ? $block->section : null;
 
                 return [
                     'id' => $this->currentInterment->id,
-                    'status' => $this->currentInterment->status,
-                    'interment_date' => $this->currentInterment->interment_date,
+                    'type' => $this->currentInterment->type,
+                    'notes' => $this->currentInterment->notes,
+                    'interment_date' => $this->currentInterment->interment_date?->format('Y-m-d'),
                     'plot' => $plot ? [
                         'id' => $plot->id,
-                        'plot_number' => $plot->plot_number,
                         'name' => $plot->name,
-                        'type' => $plot->type,
-                        'status' => $plot->status,
-                        'section' => $plot->relationLoaded('section') && $plot->section
-                            ? ['id' => $plot->section->id, 'name' => $plot->section->name]
-                            : null,
+                        'slot_label' => $plot->slotLabel,
+                        'type' => $plot->type?->value,
+                        'status' => $plot->status?->value,
+                        'level' => $plot->level,
+                        'position' => $plot->position,
+                        'parent' => $parent ? [
+                            'id' => $parent->id,
+                            'name' => $parent->name,
+                        ] : null,
+                        'block' => $block ? [
+                            'id' => $block->id,
+                            'name' => $block->name,
+                        ] : null,
+                        'section' => $section ? [
+                            'id' => $section->id,
+                            'name' => $section->name,
+                        ] : null,
                     ] : null,
                 ];
             }),

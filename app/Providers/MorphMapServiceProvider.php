@@ -16,6 +16,7 @@ use App\Core\Government\Models\OfficialTerm;
 use App\Core\Government\Models\Position;
 use App\Core\Government\Models\Term;
 use App\Core\Municipality\Models\Municipality;
+use App\Core\Municipality\Models\MunicipalityHotline;
 use App\Core\Municipality\Models\MunicipalitySettings;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
@@ -57,6 +58,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'official_term' => OfficialTerm::class,
             'term' => Term::class,
             'decedent' => Decedent::class,
+            'municipality_hotline' => MunicipalityHotline::class,
         ]);
     }
 }

@@ -5,17 +5,18 @@ namespace App\Core\Cemetery\Models;
 use App\Core\Cemetery\Traits\BelongsToMunicipality;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-class Interment extends Model
+class Block extends Model
 {
     use BelongsToMunicipality, LogsActivity, SoftDeletes;
 
-    protected $table = 'cemetery_interments';
+    protected $table = 'cemetery_blocks';
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -23,29 +24,19 @@ class Interment extends Model
     protected $fillable = [
         'id',
         'municipal_id',
-        'decedent_id',
-        'plot_id',
-        'interment_date',
-        'type',
-        'notes',
+        'section_id',
+        'name',
+        'status',
     ];
 
-    protected $casts = [
-        'interment_date' => 'date',
-    ];
-
-    public function decedent(): BelongsTo
+    public function section(): BelongsTo
     {
-        return $this->belongsTo(Decedent::class, 'decedent_id');
+        return $this->belongsTo(Section::class, 'section_id');
     }
 
-    /**
-     * Always a LEAF/CHILD plot row (BR-4). Reach the container via
-     * `$this->plot->parent` when the UI needs to display the parent name.
-     */
-    public function plot(): BelongsTo
+    public function plots(): HasMany
     {
-        return $this->belongsTo(Plot::class, 'plot_id');
+        return $this->hasMany(Plot::class, 'block_id');
     }
 
     public function activities(): MorphMany
@@ -56,15 +47,9 @@ class Interment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly([
-                'decedent_id',
-                'plot_id',
-                'interment_date',
-                'type',
-                'notes',
-            ])
+            ->logOnly(['section_id', 'name', 'status'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
-            ->useLogName('cemetery_interment');
+            ->useLogName('cemetery_block');
     }
 }

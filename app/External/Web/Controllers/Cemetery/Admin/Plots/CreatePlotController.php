@@ -2,35 +2,49 @@
 
 namespace App\External\Web\Controllers\Cemetery\Admin\Plots;
 
-use App\Core\Cemetery\Enums\PlotStatus;
+use App\Core\Cemetery\Actions\ListBlocksAction;
 use App\Core\Cemetery\Enums\PlotTypes;
-use App\Core\Cemetery\Actions\ListSectionsAction;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
- * Renders the "create plot" form. The actual POST is handled by the API
- * StorePlotController; this controller only delivers the page + dropdown
- * options.
+ * Renders the "register new plot" form. Web layer — pure Inertia render. The
+ * actual POST is handled by `Api\StorePlotController` which runs the
+ * `BulkGenerateMultiCapacityPlotsAction`.
+ *
+ * The new spatial hierarchy is Section → Block → Plot, so this page hydrates
+ * the BLOCK dropdown (each entry carries its section name for context). The
+ * initial-status selector was removed: the Action chooses the status
+ * deterministically (container = NULL, single / slot = AVAILABLE), so accepting
+ * a status from the payload would just be a vector for inconsistency.
  */
 class CreatePlotController extends Controller
 {
     public function __construct(
-        private ListSectionsAction $listSections,
+        private ListBlocksAction $listBlocks,
     ) {
     }
 
-    public function __invoke()
+    public function __invoke(): Response
     {
         $municipalId = app('municipal_id');
 
+        $blocks = $this->listBlocks->execute($municipalId)
+            ->map(fn ($block) => [
+                'id' => $block->id,
+                'name' => $block->name,
+                'section' => $block->section ? [
+                    'id' => $block->section->id,
+                    'name' => $block->section->name,
+                ] : null,
+            ])
+            ->values();
+
         return Inertia::render('Cemetery/Admin/Plots/Create/CreatePlot', [
             'municipality' => app('current_municipality'),
-            'sections' => $this->listSections->execute($municipalId)
-                ->map(fn ($section) => ['id' => $section->id, 'name' => $section->name])
-                ->values(),
+            'blocks' => $blocks,
             'type_options' => PlotTypes::toOptions(),
-            'status_options' => PlotStatus::toOptions(),
         ]);
     }
 }
