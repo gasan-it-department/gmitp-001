@@ -122,7 +122,6 @@ class ReportSubmission extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('report_submission_evidence')
-            ->useDisk('s3')
             ->acceptsMimeTypes([
                 'image/jpeg',
                 'image/png',
