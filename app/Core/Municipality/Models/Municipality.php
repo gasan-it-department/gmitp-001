@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Municipality extends Model implements HasMedia
 {
@@ -58,5 +59,21 @@ class Municipality extends Model implements HasMedia
                 'image/png',
                 'image/webp',
             ]);
+    }
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('optimized_banner')
+            ->performOnCollections('banners')
+            ->width(1200)
+            ->format('webp')
+            ->quality(80)
+            ->nonQueued();
+
+        $this->addMediaConversion('optimized_logo')
+            ->performOnCollections('logo')
+            ->width(400)
+            ->format('webp')
+            ->quality(80)
+            ->nonQueued();
     }
 }
