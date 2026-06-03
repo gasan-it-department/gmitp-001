@@ -19,13 +19,13 @@ class ClientAnnouncementListResource extends AnnouncementBaseResource
             'content' => $this->content,
             'cover_image_url' => $cover
                 ? ($cover->disk === 's3'
-                    ? $cover->getTemporaryUrl(now()->addMinutes(15))
-                    : $cover->getUrl())
+                    ? $cover->getTemporaryUrl(now()->addMinutes(15), 'optimized')
+                    : $cover->getUrl('optimized'))
                 : null,
             'images' => $media->map(fn ($m) => [
                 'url' => $m->disk === 's3'
-                    ? $m->getTemporaryUrl(now()->addMinutes(15))
-                    : $m->getUrl(),
+                    ? $m->getTemporaryUrl(now()->addMinutes(15), 'optimized')
+                    : $m->getUrl('optimized'),
             ])->values(),
         ]);
     }

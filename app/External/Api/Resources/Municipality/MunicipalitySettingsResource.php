@@ -25,20 +25,20 @@ class MunicipalitySettingsResource extends JsonResource
                 'facebook_url' => optional($this->settings)->facebook_url,
             ],
 
-            'logo_url' => $logo ? $this->resolveMediaUrl($logo) : null,
+            'logo_url' => $logo ? $this->resolveMediaUrl($logo, 'optimized_logo') : null,
 
             'banner_urls' => $this->getMedia('banners')->map(fn(Media $m) => [
                 'id' => $m->id,
                 'name' => $m->file_name,
-                'url' => $this->resolveMediaUrl($m),
+                'url' => $this->resolveMediaUrl($m, 'optimized_banner'),
             ])->values(),
         ];
     }
 
-    private function resolveMediaUrl(Media $media): string
+    private function resolveMediaUrl(Media $media, string $conversion = ''): string
     {
         return $media->disk === 's3'
-            ? $media->getTemporaryUrl(now()->addMinutes(15))
-            : $media->getUrl();
+            ? $media->getTemporaryUrl(now()->addMinutes(15), $conversion)
+            : $media->getUrl($conversion);
     }
 }
