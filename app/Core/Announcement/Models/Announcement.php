@@ -67,4 +67,13 @@ class Announcement extends Model implements HasMedia
                 'image/webp',
             ]);
     }
+
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('optimized')
+            ->width(1200)
+            ->format('webp')
+            ->quality(80)
+            ->nonQueued();
+    }
 }

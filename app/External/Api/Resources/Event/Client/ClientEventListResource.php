@@ -19,8 +19,8 @@ class ClientEventListResource extends EventBaseResource
             'description' => $this->description,
             'banner_url'  => $banner
                 ? ($banner->disk === 's3'
-                    ? $banner->getTemporaryUrl(now()->addMinutes(15))
-                    : $banner->getUrl())
+                    ? $banner->getTemporaryUrl(now()->addMinutes(15), 'optimized')
+                    : $banner->getUrl('optimized'))
                 : null,
         ]);
     }
