@@ -1,7 +1,7 @@
 import Plots from '@/actions/App/External/Api/Controllers/Cemetery/Plots';
 import { FormInput } from '@/components/FormInputField';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CreatePlotForm, PlotStatusOption, PlotTypeValue, SelectOption } from '@/Core/Types/Cemetery/cemetery';
+import { BlockLookup, CreatePlotForm, PlotTypeValue, SelectOption } from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
@@ -11,19 +11,18 @@ import { FormEvent } from 'react';
 
 interface Props {
     municipality: MunicipalityType;
-    sections: { id: string; name: string }[];
+    blocks: BlockLookup[];
     type_options: SelectOption<PlotTypeValue>[];
-    status_options: PlotStatusOption[];
 }
 
-export default function CreatePlot({ municipality, sections, type_options, status_options }: Props) {
+export default function CreatePlot({ municipality, blocks, type_options }: Props) {
     const { data, setData, post, processing, errors } = useForm<CreatePlotForm>({
-        section_id: '',
-        plot_number: '',
+        block_id: '',
         name: '',
         type: '',
-        status: 'available',
-        total_capacity: 1,
+        capacity: 1,
+        row: '',
+        position: '',
     });
 
     const submit = (e: FormEvent) => {
@@ -35,7 +34,10 @@ export default function CreatePlot({ municipality, sections, type_options, statu
         });
     };
 
-    const showCapacity = data.type === 'apartment_niche' || data.type === 'bone_ossuary' || data.type === 'mausoleum';
+    // Multi-level structures auto-generate slots when capacity > 1; single
+    // lawn lots are typically single-capacity but family lots can exceed 1.
+    const capacityNumber = typeof data.capacity === 'number' ? data.capacity : 0;
+    const generatesSlots = capacityNumber > 1;
 
     return (
         <AppLayout>
@@ -54,7 +56,10 @@ export default function CreatePlot({ municipality, sections, type_options, statu
                     </span>
                     <div>
                         <h1 className="text-xl font-semibold text-slate-900">Register New Plot</h1>
-                        <p className="text-sm text-slate-500">Add a physical burial location to the municipal cemetery inventory.</p>
+                        <p className="text-sm text-slate-500">
+                            Add a physical burial location to the municipal cemetery inventory. Capacity &gt; 1 will automatically
+                            create individual levels (slots) inside this plot.
+                        </p>
                     </div>
                 </header>
 
@@ -65,48 +70,58 @@ export default function CreatePlot({ municipality, sections, type_options, statu
                         </h2>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-slate-700">SECTION *</label>
-                                <Select value={data.section_id} onValueChange={(v) => setData('section_id', v)}>
-                                    <SelectTrigger className={errors.section_id ? 'border-red-500' : ''}>
-                                        <SelectValue placeholder="Select a section" />
+                            <div className="md:col-span-2">
+                                <label className="mb-1 block text-sm font-medium text-slate-700">BLOCK *</label>
+                                <Select value={data.block_id} onValueChange={(v) => setData('block_id', v)}>
+                                    <SelectTrigger className={errors.block_id ? 'border-red-500' : ''}>
+                                        <SelectValue placeholder="Select a block" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            {sections.length === 0 && (
+                                            {blocks.length === 0 && (
                                                 <SelectItem value="__none" disabled>
-                                                    No sections configured yet
+                                                    No active blocks configured yet
                                                 </SelectItem>
                                             )}
-                                            {sections.map((s) => (
-                                                <SelectItem key={s.id} value={s.id}>
-                                                    {s.name}
+                                            {blocks.map((b) => (
+                                                <SelectItem key={b.id} value={b.id}>
+                                                    {b.section ? `${b.section.name} / ${b.name}` : b.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                                {errors.section_id && <p className="mt-1 text-xs text-red-600">{errors.section_id}</p>}
+                                {errors.block_id && <p className="mt-1 text-xs text-red-600">{errors.block_id}</p>}
                             </div>
 
                             <FormInput
-                                id="plot_number"
-                                label="PLOT NUMBER *"
-                                placeholder="e.g. A-12 / N-04-L2"
-                                value={data.plot_number}
-                                onChange={(e) => setData('plot_number', e.target.value)}
-                                isUppercase
-                                error={errors.plot_number}
-                            />
-
-                            <FormInput
                                 id="name"
-                                label="DISPLAY NAME"
-                                placeholder="e.g. St. Peter Lawn"
+                                label="PLOT NAME *"
+                                placeholder="e.g. APARTMENT A-12"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 isUppercase
                                 error={errors.name}
+                            />
+
+                            <FormInput
+                                id="row"
+                                label="ROW"
+                                placeholder="e.g. R-7"
+                                value={data.row}
+                                onChange={(e) => setData('row', e.target.value)}
+                                isUppercase
+                                error={errors.row}
+                            />
+
+                            <FormInput
+                                id="position"
+                                label="POSITION (optional)"
+                                placeholder="e.g. LEFT / RIGHT"
+                                value={data.position}
+                                onChange={(e) => setData('position', e.target.value)}
+                                isUppercase
+                                error={errors.position}
                             />
                         </div>
                     </section>
@@ -140,42 +155,25 @@ export default function CreatePlot({ municipality, sections, type_options, statu
                             </div>
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-slate-700">INITIAL STATUS</label>
-                                <Select
-                                    value={data.status}
-                                    onValueChange={(v) => setData('status', v as CreatePlotForm['status'])}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Available" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            {status_options.map((opt) => (
-                                                <SelectItem key={opt.value} value={opt.value}>
-                                                    {opt.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                {errors.status && <p className="mt-1 text-xs text-red-600">{errors.status}</p>}
-                            </div>
-
-                            {showCapacity && (
-                                <div className="md:col-span-2">
-                                    <FormInput
-                                        id="total_capacity"
-                                        label="TOTAL CAPACITY (levels / slots)"
-                                        type="number"
-                                        value={String(data.total_capacity)}
-                                        onChange={(e) => setData('total_capacity', e.target.value === '' ? '' : Number(e.target.value))}
-                                        error={errors.total_capacity}
-                                    />
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        Multi-level structures (apartments, ossuaries, mausoleums) can list more than one slot.
+                                <FormInput
+                                    id="capacity"
+                                    label="CAPACITY *"
+                                    type="number"
+                                    value={String(data.capacity)}
+                                    onChange={(e) =>
+                                        setData('capacity', e.target.value === '' ? '' : Number(e.target.value))
+                                    }
+                                    error={errors.capacity}
+                                />
+                                <p className="mt-1 text-xs text-slate-500">
+                                    Capacity &gt; 1 will automatically create individual levels (slots) inside this plot.
+                                </p>
+                                {generatesSlots && (
+                                    <p className="mt-1 text-xs font-medium text-emerald-700">
+                                        This will create 1 container row + {capacityNumber} child slots (levels 1–{capacityNumber}).
                                     </p>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </section>
 

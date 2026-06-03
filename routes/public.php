@@ -18,7 +18,6 @@ Route::prefix('{municipality}')
         Route::get('/contact-us', [PublicController::class, 'showContactUsPage'])->name('contact');
         Route::get('/travel', [PublicController::class, 'showTravelPage'])->name('travel');
         Route::get('/executive-orders', [PublicController::class, 'showExecutiveOrdersPage'])->name('executiveOrders');
-        Route::get('/all-announcements', [PublicController::class, 'showAllAnnouncementPage'])->name('announcements');
         Route::get('/all-events', [PublicController::class, 'showAllEventsPage'])->name('events');
         Route::get('/schedule-wedding', [PublicController::class, 'showWeddingPage'])->name('wedding');
     });

@@ -21,8 +21,8 @@ class MunicipalityResource extends JsonResource
         $logo = $this->getFirstMedia('logo');
         $logoUrl = $logo
             ? ($logo->disk === 's3'
-                ? $logo->getTemporaryUrl(now()->addMinutes(15))
-                : $logo->getUrl())
+                ? $logo->getTemporaryUrl(now()->addMinutes(15), 'optimized_logo')
+                : $logo->getUrl('optimized_logo'))
             : null;
 
         $data = [

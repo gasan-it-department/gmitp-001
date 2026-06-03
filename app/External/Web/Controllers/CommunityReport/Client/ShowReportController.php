@@ -42,11 +42,11 @@ class ShowReportController extends Controller
                 'reached' => true,
             ],
             [
-                'key' => 'reviewed',
-                'label' => 'Reviewed',
+                'key' => 'acknowledged',
+                'label' => 'Acknowledged',
                 'description' => 'Acknowledged by municipal staff.',
-                'at' => $report->reviewed_at?->format('M d, Y g:i A'),
-                'reached' => $report->reviewed_at !== null,
+                'at' => $report->acknowledged_at?->format('M d, Y g:i A'),
+                'reached' => $report->acknowledged_at !== null,
             ],
             [
                 'key' => 'in_progress',

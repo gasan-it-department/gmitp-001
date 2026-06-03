@@ -1,4 +1,5 @@
-import Decedents from '@/actions/App/External/Api/Controllers/Cemetery/Decedents';
+import Decedent from '@/actions/App/External/Api/Controllers/Cemetery/Decedent';
+import { FileUploader } from '@/components/ActionCenter/Form/FileUploader';
 import { FormInput } from '@/components/FormInputField';
 import { BarangaySelect } from '@/components/Shared/BarangaySelect';
 import { DatePicker } from '@/components/Shared/DatePicker';
@@ -41,6 +42,8 @@ export default function RegisterDecedents({ municipality }: Props) {
         psgc_barangay_id: '',
         street_name: '',
         memorial_name: '',
+        avatar: null,
+        identification: [],
     });
     const handleTypeChange = (type: RegisterDecedentForm['decedent_type']) => {
         setData((prevData) => {
@@ -89,7 +92,7 @@ export default function RegisterDecedents({ municipality }: Props) {
     };
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(Decedents.RegisterDecedentController.url(), {
+        post(Decedent.StoreDecedentController.url(), {
             headers: {
                 'X-Municipality-Slug': municipality.slug,
             },
@@ -378,15 +381,38 @@ export default function RegisterDecedents({ municipality }: Props) {
                     {/* Card 3: Administrative Notes */}
                     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                         <h2 className="mb-4 border-b pb-2 text-lg font-semibold text-gray-800">Administrative</h2>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Remarks / Notes</label>
-                            <Textarea
-                                value={data.notes}
-                                placeholder="ADDITIONAL INFORMATION FOR THE DECEDENT"
-                                onChange={(e) => setData('notes', e.target.value)}
-                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${errors.notes ? 'border-red-500 focus-visible:ring-red-500' : 'border-input'}`}
-                            />
-                            {errors.notes && <span className="animate-pulse text-sm text-red-500">{errors.notes}</span>}
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Remarks / Notes</label>
+                                <Textarea
+                                    value={data.notes}
+                                    placeholder="ADDITIONAL INFORMATION FOR THE DECEDENT"
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${errors.notes ? 'border-red-500 focus-visible:ring-red-500' : 'border-input'}`}
+                                />
+                                {errors.notes && <span className="animate-pulse text-sm text-red-500">{errors.notes}</span>}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-2">
+                                <FileUploader
+                                    label="Profile Photo (Avatar)"
+                                    description="Upload a photo of the decedent or a representative image (Max 5MB)"
+                                    files={data.avatar ? [data.avatar] : []}
+                                    onFilesChange={(files) => setData('avatar', files[0] || null)}
+                                    maxFiles={1}
+                                    accept="image/*"
+                                    error={errors.avatar}
+                                />
+
+                                <FileUploader
+                                    label="Identification Documents"
+                                    description="Upload death certificates, IDs, or other supporting documents (Max 10 files)"
+                                    files={data.identification}
+                                    onFilesChange={(files) => setData('identification', files)}
+                                    maxFiles={10}
+                                    error={errors.identification}
+                                />
+                            </div>
                         </div>
                     </div>
 

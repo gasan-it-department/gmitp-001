@@ -2,8 +2,8 @@
 
 namespace App\External\Web\Controllers\Cemetery\Admin\Interments;
 
-use App\Core\Cemetery\UseCase\GetAvailablePlotsUseCase;
-use App\Core\Cemetery\UseCase\ViewDecedentProfileUseCase;
+use App\Core\Cemetery\Actions\GetAvailablePlotsAction;
+use App\Core\Cemetery\Actions\GetDecedentProfileAction;
 use App\External\Api\Resources\Cemetery\PlotListResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
@@ -16,8 +16,8 @@ use Inertia\Inertia;
 class AssignDecedentToPlotController extends Controller
 {
     public function __construct(
-        private ViewDecedentProfileUseCase $viewDecedent,
-        private GetAvailablePlotsUseCase $getAvailablePlots,
+        private GetDecedentProfileAction $getDecedentProfile,
+        private GetAvailablePlotsAction $getAvailablePlots,
     ) {
     }
 
@@ -25,7 +25,7 @@ class AssignDecedentToPlotController extends Controller
     {
         $municipalId = app('municipal_id');
 
-        $decedent = $this->viewDecedent->execute($decedentId, $municipalId);
+        $decedent = $this->getDecedentProfile->execute($decedentId, $municipalId);
         $plots = $this->getAvailablePlots->execute($municipalId);
 
         return Inertia::render('Cemetery/Admin/Interments/Assign/AssignDecedent', [

@@ -7,13 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, FileIcon, Loader2, MapPin, Upload, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, FileIcon, Loader2, MapPin, Upload, X } from 'lucide-react';
 import React, { useState } from 'react';
 
 type CategoryOption = { value: string; label: string };
 
 interface CreateReportProps {
     categories: CategoryOption[];
+    is_eligible: boolean;
 }
 
 type ReportFormShape = {
@@ -29,7 +30,7 @@ type ReportFormShape = {
 const MAX_FILES = 5;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50 MB
 
-export default function Create({ categories }: CreateReportProps) {
+export default function Create({ categories, is_eligible }: CreateReportProps) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     const { data, setData, post, processing, errors, reset } = useForm<ReportFormShape>({
@@ -50,7 +51,7 @@ export default function Create({ categories }: CreateReportProps) {
         setGeoError(null);
 
         if (!('geolocation' in navigator)) {
-            setGeoError('Geolocation is not supported by your browser.');
+            setGeoError('Hindi suportado ng iyong browser ang geolocation.');
             return;
         }
 
@@ -65,7 +66,7 @@ export default function Create({ categories }: CreateReportProps) {
                 setIsLocating(false);
             },
             (err) => {
-                setGeoError(err.message || 'Unable to retrieve your location.');
+                setGeoError('Hindi makuha ang iyong lokasyon. Pakisuri ang iyong settings.');
                 setIsLocating(false);
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
@@ -83,7 +84,7 @@ export default function Create({ categories }: CreateReportProps) {
 
         const totalSize = combined.reduce((acc, file) => acc + file.size, 0);
         if (totalSize > MAX_TOTAL_SIZE) {
-            setFileError('Total file size exceeds 50 MB limit.');
+            setFileError('Sobra sa 50 MB ang laki ng iyong mga litrato.');
             return;
         }
         setFileError(null);
@@ -100,6 +101,8 @@ export default function Create({ categories }: CreateReportProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!is_eligible) return;
+
         setFileError(null);
 
         post('/api/community-report', {
@@ -116,211 +119,247 @@ export default function Create({ categories }: CreateReportProps) {
 
     return (
         <PublicLayout description="" title="">
-            <Head title="Report a Community Issue" />
+            <Head title="I-ulat ang Problema sa Komunidad" />
 
-            <div className="container mx-auto max-w-2xl py-8">
-                <Card className="shadow-lg">
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold">Report a Community Issue</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                            Help us improve your community by reporting potholes, broken streetlights, water leaks, and other local problems.
+            <div className="mx-auto max-w-2xl px-4 py-6 sm:py-10">
+                <Card className="border-none shadow-xl sm:border sm:shadow-lg">
+                    <CardHeader className="space-y-2 pb-6">
+                        <CardTitle className="text-xl font-extrabold tracking-tight sm:text-2xl">
+                            I-ulat ang Problema sa Komunidad
+                        </CardTitle>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            Tulungan kaming mapabuti ang ating bayan. I-ulat ang mga butas sa kalsada, sirang ilaw, tagas ng tubig, at iba pang problema.
                         </p>
                     </CardHeader>
 
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* CATEGORY */}
-                            <div>
-                                <Label className="mb-3 block font-semibold text-foreground">
-                                    Issue Category <span className="text-destructive">*</span>
-                                </Label>
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                    {categories.map((cat) => {
-                                        const isSelected = data.category === cat.value;
-                                        return (
-                                            <button
-                                                key={cat.value}
-                                                type="button"
-                                                onClick={() => setData('category', cat.value)}
-                                                className={`flex min-h-[60px] items-center justify-center rounded-xl border p-3 text-center text-sm font-semibold transition-all duration-200 active:scale-95 ${
-                                                    isSelected
-                                                        ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                                                        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/50 hover:text-foreground'
-                                                }`}
-                                            >
-                                                {cat.label}
-                                            </button>
-                                        );
-                                    })}
+                        {!is_eligible ? (
+                            <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl bg-amber-50 p-8 text-center border border-amber-200">
+                                <AlertCircle className="h-12 w-12 text-amber-500" />
+                                <div className="space-y-2">
+                                    <h3 className="text-lg font-bold text-amber-900">Naabot mo na ang limitasyon</h3>
+                                    <p className="text-sm text-amber-700">
+                                        Paumanhin, ang bawat mamamayan ay pinapayagan lamang ng hanggang <b>3 ulat kada araw</b>.
+                                        Maaari kang muling mag-ulat bukas. Maraming salamat sa iyong malasakit!
+                                    </p>
                                 </div>
-                                {errors.category && <p className="mt-2 text-sm text-destructive">{errors.category}</p>}
                             </div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-8">
+                                {/* CATEGORY */}
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                                        Uri ng Problema <span className="text-destructive">*</span>
+                                    </Label>
+                                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+                                        {categories.map((cat) => {
+                                            const isSelected = data.category === cat.value;
+                                            return (
+                                                <button
+                                                    key={cat.value}
+                                                    type="button"
+                                                    onClick={() => setData('category', cat.value)}
+                                                    className={`flex min-h-[50px] items-center justify-center rounded-xl border-2 p-3 text-center text-xs font-bold transition-all duration-200 active:scale-95 sm:min-h-[60px] sm:text-sm ${
+                                                        isSelected
+                                                            ? 'border-primary bg-primary/10 text-primary'
+                                                            : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    {cat.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {errors.category && <p className="text-xs font-medium text-destructive">{errors.category}</p>}
+                                </div>
 
-                            {/* LOCATION TEXT */}
-                            <div>
-                                <Label className="font-semibold text-foreground">
-                                    Location Description <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    value={data.location_text}
-                                    onChange={(e) => setData('location_text', e.target.value)}
-                                    placeholder="e.g. Corner of Rizal St. and Mabini Ave., near barangay hall"
-                                    className={errors.location_text ? 'border-destructive' : ''}
-                                />
-                                {errors.location_text && <p className="text-sm text-destructive">{errors.location_text}</p>}
-                            </div>
+                                {/* LOCATION TEXT */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                                        Eksaktong Lokasyon <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        value={data.location_text}
+                                        onChange={(e) => setData('location_text', e.target.value)}
+                                        placeholder="Hal: Kanto ng Rizal St. at Mabini Ave., tapat ng barangay hall"
+                                        className={`rounded-xl h-12 ${errors.location_text ? 'border-destructive ring-destructive/20' : 'bg-slate-50'}`}
+                                    />
+                                    {errors.location_text && <p className="text-xs font-medium text-destructive">{errors.location_text}</p>}
+                                </div>
 
-                            {/* GEOLOCATION */}
-                            <div>
-                                <Label className="mb-2 block font-semibold text-foreground">GPS Coordinates (Optional)</Label>
-
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <Button type="button" variant="outline" onClick={handleGetLocation} disabled={isLocating}>
-                                        {isLocating ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Locating…
-                                            </>
-                                        ) : (
-                                            <>
-                                                <MapPin className="mr-2 h-4 w-4" />
-                                                Get My Location
-                                            </>
-                                        )}
-                                    </Button>
-
-                                    {data.latitude !== null && data.longitude !== null && (
-                                        <div className="flex items-center gap-3 text-sm text-foreground">
-                                            <span>
-                                                Lat: <b>{data.latitude}</b>, Lng: <b>{data.longitude}</b>
-                                            </span>
+                                {/* GEOLOCATION */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">GPS Coordinates (Optional)</Label>
+                                        {data.latitude !== null && (
                                             <button
                                                 type="button"
                                                 onClick={clearLocation}
-                                                className="text-xs text-muted-foreground underline hover:text-destructive"
+                                                className="text-xs font-bold text-destructive hover:underline"
                                             >
-                                                Clear
+                                                Alisin
                                             </button>
+                                        )}
+                                    </div>
+
+                                    {!data.latitude ? (
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            onClick={handleGetLocation}
+                                            disabled={isLocating}
+                                            className="w-full h-12 rounded-xl bg-slate-100 text-slate-900 hover:bg-slate-200"
+                                        >
+                                            {isLocating ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                    Kinukuha ang lokasyon…
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <MapPin className="mr-2 h-5 w-5 text-primary" />
+                                                    Gamitin ang aking lokasyon
+                                                </>
+                                            )}
+                                        </Button>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="overflow-hidden rounded-2xl border-2 border-slate-100 shadow-sm">
+                                                <iframe
+                                                    width="100%"
+                                                    height="200"
+                                                    style={{ border: 0 }}
+                                                    loading="lazy"
+                                                    src={`https://maps.google.com/maps?q=${data.latitude},${data.longitude}&z=16&output=embed`}
+                                                ></iframe>
+                                            </div>
+                                            <p className="text-center text-[11px] font-bold text-slate-400">
+                                                LAT: {data.latitude} • LNG: {data.longitude}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {geoError && (
+                                        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs font-medium text-destructive">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            {geoError}
                                         </div>
                                     )}
                                 </div>
 
-                                {geoError && (
-                                    <div className="mt-2 flex items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-2 text-sm text-destructive">
-                                        <AlertTriangle className="h-4 w-4" />
-                                        {geoError}
+                                {/* DESCRIPTION */}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                                        Karagdagang Detalye <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Textarea
+                                        rows={5}
+                                        maxLength={5000}
+                                        value={data.description}
+                                        onChange={(e) => setData('description', e.target.value)}
+                                        placeholder="I-larawan ang problema: gaano ito kalubha, kailan mo napansin, atbp."
+                                        className={`rounded-xl resize-none ${errors.description ? 'border-destructive ring-destructive/20' : 'bg-slate-50'}`}
+                                    />
+                                    {errors.description && <p className="text-xs font-medium text-destructive">{errors.description}</p>}
+                                </div>
+
+                                {/* EVIDENCE PHOTOS */}
+                                <div className="space-y-3">
+                                    <Label className="text-sm font-bold uppercase tracking-wider text-slate-500">Litrato (Optional)</Label>
+                                    
+                                    <div 
+                                        onClick={() => data.evidence_photos.length < MAX_FILES && document.getElementById('evidence-photos')?.click()}
+                                        className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 transition-colors ${
+                                            data.evidence_photos.length >= MAX_FILES 
+                                                ? 'bg-slate-50 border-slate-200 cursor-not-allowed' 
+                                                : 'bg-slate-50/50 border-slate-200 hover:border-primary/50 cursor-pointer'
+                                        }`}
+                                    >
+                                        <Upload className={`h-8 w-8 mb-2 ${data.evidence_photos.length >= MAX_FILES ? 'text-slate-300' : 'text-primary/60'}`} />
+                                        <p className="text-xs font-bold text-slate-600">
+                                            {data.evidence_photos.length >= MAX_FILES ? 'Puno na ang limitasyon' : 'Mag-upload ng Litrato'}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 mt-1">Hanggang 5 litrato (Max 50MB)</p>
                                     </div>
-                                )}
-                                {(errors.latitude || errors.longitude) && (
-                                    <p className="mt-2 text-sm text-destructive">{errors.latitude ?? errors.longitude}</p>
-                                )}
-                            </div>
 
-                            {/* DESCRIPTION */}
-                            <div>
-                                <Label className="font-semibold text-foreground">
-                                    Description <span className="text-destructive">*</span>
-                                </Label>
-                                <Textarea
-                                    rows={6}
-                                    maxLength={5000}
-                                    value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
-                                    placeholder="Describe the issue: when you noticed it, severity, any safety concerns…"
-                                    className={errors.description ? 'border-destructive' : ''}
-                                />
-                                {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-                            </div>
+                                    <input
+                                        id="evidence-photos"
+                                        type="file"
+                                        multiple
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
 
-                            {/* IS ANONYMOUS */}
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="is-anonymous"
-                                    checked={data.is_anonymous}
-                                    onCheckedChange={(checked) => setData('is_anonymous', checked === true)}
-                                />
-                                <Label htmlFor="is-anonymous" className="cursor-pointer font-medium text-foreground">
-                                    Submit anonymously (your name will be hidden on public displays)
-                                </Label>
-                            </div>
-
-                            {/* EVIDENCE PHOTOS */}
-                            <div>
-                                <Label className="font-semibold text-foreground">Evidence Photos (Optional)</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Upload up to <b>5 photos</b>, total size must not exceed <b>50 MB</b>. JPEG, PNG, or WebP.
-                                </p>
-
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => document.getElementById('evidence-photos')?.click()}
-                                    className="mt-2"
-                                    disabled={data.evidence_photos.length >= MAX_FILES}
-                                >
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {data.evidence_photos.length >= MAX_FILES ? 'Max Photos Reached' : 'Choose Photos'}
-                                </Button>
-
-                                <input
-                                    id="evidence-photos"
-                                    type="file"
-                                    multiple
-                                    accept="image/jpeg,image/png,image/webp"
-                                    onChange={handleFileChange}
-                                    className="hidden"
-                                />
-
-                                {(fileError || errors.evidence_photos) && (
-                                    <div className="mt-2 flex items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-2 text-sm text-destructive">
-                                        <AlertTriangle className="h-4 w-4" />
-                                        {fileError ?? errors.evidence_photos}
-                                    </div>
-                                )}
-
-                                {data.evidence_photos.length > 0 && (
-                                    <div className="mt-2 space-y-2">
-                                        {data.evidence_photos.map((file, index) => (
-                                            <div
-                                                key={`${file.name}-${index}`}
-                                                className="flex items-center justify-between gap-2 rounded-md border border-border bg-secondary/30 px-3 py-2 text-sm"
-                                            >
-                                                <div className="flex min-w-0 flex-1 items-center gap-2">
-                                                    <FileIcon className="h-4 w-4 text-primary" />
-                                                    <span className="max-w-[200px] truncate text-foreground">{file.name}</span>
-                                                    <span className="text-xs whitespace-nowrap text-muted-foreground">
-                                                        ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                                                    </span>
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => removeFile(index)}
-                                                    className="h-6 w-6 flex-shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                                    {data.evidence_photos.length > 0 && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {data.evidence_photos.map((file, index) => (
+                                                <div
+                                                    key={`${file.name}-${index}`}
+                                                    className="group relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                                                 >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                                    <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
+                                                        <FileIcon className="h-6 w-6 text-primary/40 mb-1" />
+                                                        <span className="line-clamp-1 text-[10px] font-bold text-slate-600 px-2">{file.name}</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeFile(index)}
+                                                        className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-destructive shadow-sm hover:bg-destructive hover:text-white transition-colors"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
-                            {/* SUBMIT */}
-                            <div className="pt-4">
-                                <Button
-                                    type="submit"
-                                    className="w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-                                    disabled={processing}
-                                >
-                                    {processing ? 'Submitting…' : 'Submit Report'}
-                                </Button>
-                            </div>
-                        </form>
+                                {/* IS ANONYMOUS */}
+                                <div className="flex items-center space-x-3 rounded-2xl border-2 border-slate-100 bg-slate-50/50 p-4">
+                                    <Checkbox
+                                        id="is-anonymous"
+                                        checked={data.is_anonymous}
+                                        onCheckedChange={(checked) => setData('is_anonymous', checked === true)}
+                                        className="h-5 w-5 rounded-md"
+                                    />
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="is-anonymous" className="cursor-pointer text-sm font-bold text-slate-700">
+                                            I-ulat bilang Anonymous
+                                        </Label>
+                                        <p className="text-[10px] text-slate-500 font-medium leading-tight">
+                                            Itatago ang iyong pangalan sa mga pampublikong display.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* SUBMIT */}
+                                <div className="pt-2">
+                                    <Button
+                                        type="submit"
+                                        size="lg"
+                                        className="h-14 w-full rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] transition-all"
+                                        disabled={processing}
+                                    >
+                                        {processing ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                I-sinusumite…
+                                            </>
+                                        ) : (
+                                            'I-sumite ang Ulat'
+                                        )}
+                                    </Button>
+                                    <p className="mt-4 text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Ligtas at Mabilis na Serbisyo
+                                    </p>
+                                </div>
+                            </form>
+                        )}
                     </CardContent>
                 </Card>
             </div>
         </PublicLayout>
     );
 }
+

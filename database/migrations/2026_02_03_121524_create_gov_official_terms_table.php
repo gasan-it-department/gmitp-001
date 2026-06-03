@@ -5,15 +5,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('gov_official_terms', function (Blueprint $table) {
 
             $table->ulid('id')->primary();
-
 
             $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')
@@ -39,10 +35,6 @@ return new class extends Migration {
 
             $table->string('political_party')->nullable();
 
-            $table->string('profile_url')->nullable();
-
-            $table->string('profile_public_id')->nullable();
-
             $table->text('remarks')->nullable();
 
             $table->timestamps();
@@ -52,9 +44,6 @@ return new class extends Migration {
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('gov_official_terms');

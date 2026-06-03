@@ -1,4 +1,3 @@
-import { DepartmentOption } from '@/components/Department/DepartmentOption';
 import { FormInput } from '@/components/FormInputField';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,10 +17,21 @@ interface ProjectDetailsProps {
     fundingSources: any;
     statuses: SelectOption[];
     categories: SelectOption[];
+    departments: any[];
     isHistorical: boolean;
 }
 
-export const ProjectDetails = ({ data, setData, errors, processing, fundingSources, statuses, categories, isHistorical }: ProjectDetailsProps) => {
+export const ProjectDetails = ({
+    data,
+    setData,
+    errors,
+    processing,
+    fundingSources,
+    statuses,
+    categories,
+    departments,
+    isHistorical,
+}: ProjectDetailsProps) => {
     return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Reference Number - Keeps standard width */}
@@ -92,13 +102,24 @@ export const ProjectDetails = ({ data, setData, errors, processing, fundingSourc
                 </Select>
                 {errors.category && <span className="animate-pulse text-sm text-red-500">{errors.category}</span>}
             </div>
-            <DepartmentOption
-                className="flex flex-col gap-1.5"
-                placeholder="Select Department"
-                value={data.department_id || ''}
-                onValueChange={(value) => setData('department_id', value)}
-                error={errors.department_id}
-            />
+
+            <div className="flex flex-col gap-1.5">
+                <Label className="text-sm font-medium text-gray-700">Department</Label>
+                <Select value={data.department_id || ''} onValueChange={(value) => setData('department_id', value)}>
+                    <SelectTrigger className={errors.department_id ? 'border-destructive' : ''}>
+                        <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {departments &&
+                            departments.map((dept: any) => (
+                                <SelectItem key={dept.id} value={dept.id}>
+                                    {dept.name}
+                                </SelectItem>
+                            ))}
+                    </SelectContent>
+                </Select>
+                {errors.department_id && <span className="animate-pulse text-sm text-red-500">{errors.department_id}</span>}
+            </div>
 
             <div className="flex flex-col gap-1.5">
                 <label className="mb-1 block text-sm font-medium text-gray-700">Funding Source</label>

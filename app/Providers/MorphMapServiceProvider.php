@@ -6,11 +6,17 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
+use App\Core\Cemetery\Models\Decedent;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
 use App\Core\Event\Models\Event;
 use App\Core\Feedback\Models\FeedbackSubmission;
+use App\Core\Government\Models\Official;
+use App\Core\Government\Models\OfficialTerm;
+use App\Core\Government\Models\Position;
+use App\Core\Government\Models\Term;
 use App\Core\Municipality\Models\Municipality;
+use App\Core\Municipality\Models\MunicipalityHotline;
 use App\Core\Municipality\Models\MunicipalitySettings;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\Tourism\Models\TourismAsset;
@@ -47,6 +53,12 @@ class MorphMapServiceProvider extends ServiceProvider
             'event' => Event::class,
             'municipality' => Municipality::class,
             'municipality_settings' => MunicipalitySettings::class,
+            'official' => Official::class,
+            'position' => Position::class,
+            'official_term' => OfficialTerm::class,
+            'term' => Term::class,
+            'decedent' => Decedent::class,
+            'municipality_hotline' => MunicipalityHotline::class,
         ]);
     }
 }

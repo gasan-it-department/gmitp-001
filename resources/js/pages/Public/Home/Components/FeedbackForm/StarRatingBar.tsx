@@ -11,9 +11,9 @@ export default function StarRating({ value = 0, max = 5, onChange }: StarRatingP
   const [hover, setHover] = useState<number>(0);
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="font-semibold text-foreground">
-        Service Rating
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-bold uppercase tracking-wider text-slate-500">
+        Antas ng Serbisyo
       </label>
 
       <div className="flex items-center gap-2">
@@ -24,12 +24,12 @@ export default function StarRating({ value = 0, max = 5, onChange }: StarRatingP
             onClick={() => onChange(rating)}
             onMouseEnter={() => setHover(rating)}
             onMouseLeave={() => setHover(0)}
-            className="focus:outline-none transition-transform duration-150 hover:scale-110"
+            className="focus:outline-none transition-transform duration-150 active:scale-90 hover:scale-110"
           >
             <Star
-              className={`w-8 h-8 ${rating <= (hover || value)
+              className={`w-10 h-10 ${rating <= (hover || value)
                   ? "text-yellow-400 fill-yellow-400"
-                  : "text-gray-300 dark:text-gray-600"
+                  : "text-slate-200"
                 } transition-colors duration-200`}
             />
           </button>
@@ -38,18 +38,18 @@ export default function StarRating({ value = 0, max = 5, onChange }: StarRatingP
 
       {value > 0 && (
         <p
-          className={`text-sm font-medium transition-colors duration-300 ${value <= 2
-              ? "text-red-600 dark:text-red-400" // low rating
+          className={`text-sm font-bold transition-colors duration-300 ${value <= 2
+              ? "text-red-500" // low rating
               : value === 3
-                ? "text-yellow-600 dark:text-yellow-400" // neutral
-                : "text-green-600 dark:text-green-400" // high rating
+                ? "text-amber-500" // neutral
+                : "text-green-500" // high rating
             }`}
         >
           {value <= 2
-            ? "We’re sorry to hear that 😔"
+            ? "Paumanhin, susubukan naming ayusin ito 😔"
             : value === 3
-              ? "Thanks! We’ll keep improving 😊"
-              : "Awesome! Glad you’re satisfied 🎉"}
+              ? "Salamat! Patuloy kaming magsisikap 😊"
+              : "Maraming salamat! Masaya kaming nasiyahan kayo 🎉"}
         </p>
       )}
 

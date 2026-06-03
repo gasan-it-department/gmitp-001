@@ -1,13 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { DecedentListItem, IntermentStatusValue } from '@/Core/Types/Cemetery/cemetery';
+import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
+import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
+import FilterDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
+import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import LoadingDialog from '@/pages/Utility/LoadingDialog';
+import PaginationView from '@/pages/Utility/PaginationView';
 import cemetery from '@/routes/cemetery';
-import { Link } from '@inertiajs/react';
-import { Eye, MapPin } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { EyeIcon, MapPin, Pencil } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import DecedentsTableHeader from './DecedentsTableHeader';
 
 interface Props {
-    decedents: DecedentListItem[];
-    municipalitySlug: string;
+    decedents: PaginatedResponse<DecedentListItem>;
 }
 
 const STATUS_PILL: Record<IntermentStatusValue, string> = {
@@ -33,69 +42,172 @@ const DECEDENT_TYPE_LABEL: Record<string, string> = {
     unknown: 'Unknown',
 };
 
-export const DecedentsTable = ({ decedents, municipalitySlug }: Props) => {
+export function DecedentsTable({ decedents }: Props) {
+    const decedentList = decedents.data;
+    const { currentMunicipality } = useMunicipality();
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [isFilterOpened, setIsFilterOpened] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [totalItems, setTotalItems] = useState(0);
+    const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
+    const meta = decedents.meta;
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    const handleSort = (currentSelectedSort: string | null) => {
+        console.log('Decedents selected filter: ', currentSelectedSort);
+        // Implement server-side filtering here if needed
+    };
+
+    useEffect(() => {
+        setCurrentPage(meta.current_page);
+        setLastPage(meta.last_page);
+        setPerPage(meta.per_page);
+        setTotalItems(meta.total);
+    }, [decedents.meta]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 200);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
+    };
+
+    const handlePageChange = (page: number) => {
+        if (page < 1 || page > lastPage) return;
+
+        setIsLoading(true);
+
+        router.get(
+            cemetery.admin.decedents.index.url({
+                municipality: currentMunicipality.slug,
+            }),
+            {
+                page,
+                ...(currentFilter ? { sort: currentFilter.sub } : {}),
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onFinish: () => setIsLoading(false),
+            },
+        );
+    };
+
     return (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="max-h-[70vh] overflow-y-auto">
-                <Table className="w-full">
-                    <TableHeader className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur">
-                        <TableRow className="border-slate-200">
-                            <TableHead className="w-14 pl-4 text-xs font-semibold tracking-wide text-slate-600 uppercase">#</TableHead>
-                            <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Full Name</TableHead>
-                            <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Type</TableHead>
-                            <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Death Cert. No.</TableHead>
-                            <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Date of Death</TableHead>
-                            <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Plot</TableHead>
-                            <TableHead className="text-xs font-semibold tracking-wide text-slate-600 uppercase">Status</TableHead>
-                            <TableHead className="pr-4 text-right text-xs font-semibold tracking-wide text-slate-600 uppercase">
-                                Actions
-                            </TableHead>
+        <div>
+            {/* HEADER */}
+            <div className="my-5 flex items-center justify-between">
+                <h1 className="text-3xl font-bold tracking-tight">Decedents Registry</h1>
+                <DecedentsTableHeader
+                    onAddNewButtonClicked={() => {
+                        router.visit(cemetery.admin.decedents.create.page.url(currentMunicipality.slug));
+                    }}
+                    onSearch={() => {}}
+                    onFilterButtonClicked={() => {
+                        setIsFilterOpened(true);
+                    }}
+                    onExportButtonClicked={() => {}}
+                />
+            </div>
+
+            {/* TABLE */}
+            <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200">
+                <Table className="min-w-full table-fixed">
+                    <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                        <TableRow>
+                            <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
+                            <TableHead className="text-[12px] font-bold">Full Name</TableHead>
+                            <TableHead className="text-[12px] font-bold">Type</TableHead>
+                            <TableHead className="text-[12px] font-bold">Death Cert. No.</TableHead>
+                            <TableHead className="text-[12px] font-bold">Date of Death</TableHead>
+                            <TableHead className="text-[12px] font-bold">Plot</TableHead>
+                            <TableHead className="text-[12px] font-bold">Status</TableHead>
+                            <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
-                        {decedents.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={8} className="h-32 text-center text-sm text-slate-500">
-                                    No decedent records registered yet.
-                                </TableCell>
-                            </TableRow>
+                        {decedentList.length === 0 ? (
+                            <AdminEmptyListItem title="No Decedents yet." message="Decedent records will appear here." />
                         ) : (
-                            decedents.map((decedent, index) => (
-                                <TableRow key={decedent.id} className="border-slate-100 transition-colors hover:bg-slate-50">
-                                    <TableCell className="pl-4 text-xs text-slate-500">{index + 1}</TableCell>
-                                    <TableCell className="text-sm font-medium text-slate-900">{decedent.full_name}</TableCell>
-                                    <TableCell className="text-xs text-slate-600">
-                                        {decedent.decedent_type ? DECEDENT_TYPE_LABEL[decedent.decedent_type] : '—'}
+                            decedentList.map((item, index) => (
+                                <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
+                                    <TableCell className="text-center text-[13px] font-medium whitespace-nowrap">
+                                        {index + 1 + (currentPage - 1) * perPage}
                                     </TableCell>
-                                    <TableCell className="font-mono text-xs text-slate-600">{decedent.death_certificate_no}</TableCell>
-                                    <TableCell className="text-xs text-slate-600">{decedent.date_of_death}</TableCell>
-                                    <TableCell className="text-xs text-slate-600">{decedent.plot_label ?? '—'}</TableCell>
-                                    <TableCell className="text-xs">
+                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">
+                                        {item.full_name}
+                                    </TableCell>
+                                    <TableCell className="text-[12px] whitespace-nowrap">
+                                        {item.decedent_type ? DECEDENT_TYPE_LABEL[item.decedent_type] : '—'}
+                                    </TableCell>
+                                    <TableCell className="font-mono text-[12px] whitespace-nowrap">
+                                        {item.death_certificate_no}
+                                    </TableCell>
+                                    <TableCell className="text-[12px] whitespace-nowrap">
+                                        {item.date_of_death}
+                                    </TableCell>
+                                    <TableCell className="text-[12px] whitespace-nowrap">
+                                        {item.plot_label ?? '—'}
+                                    </TableCell>
+                                    <TableCell className="text-[12px]">
                                         <span
-                                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_PILL[decedent.interment_status]}`}
+                                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_PILL[item.interment_status]}`}
                                         >
-                                            {STATUS_LABEL[decedent.interment_status]}
+                                            {STATUS_LABEL[item.interment_status]}
                                         </span>
                                     </TableCell>
-                                    <TableCell className="pr-4 text-right">
-                                        <div className="inline-flex gap-1">
-                                            <Link href={cemetery.admin.decedents.profile.page.url([municipalitySlug, decedent.id])}>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-indigo-600 hover:bg-indigo-50">
-                                                    <Eye size={16} />
+                                    <TableCell className="">
+                                        <div className="flex justify-center gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    router.visit(
+                                                        cemetery.admin.decedents.profile.page.url([currentMunicipality.slug, item.id]),
+                                                    );
+                                                }}
+                                                className="border-green-200 text-green-600 hover:bg-green-50"
+                                            >
+                                                <EyeIcon size={14} />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    router.visit(
+                                                        cemetery.admin.decedents.edit.page.url([currentMunicipality.slug, item.id]),
+                                                    );
+                                                }}
+                                                className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                                            >
+                                                <Pencil size={14} />
+                                            </Button>
+                                            {item.interment_status === 'unassigned' && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        router.visit(
+                                                            cemetery.admin.interments.assign.page.url([currentMunicipality.slug, item.id]),
+                                                        );
+                                                    }}
+                                                    className="border-amber-200 text-amber-600 hover:bg-amber-50"
+                                                >
+                                                    <MapPin size={14} />
                                                 </Button>
-                                            </Link>
-                                            {decedent.interment_status === 'unassigned' && (
-                                                <Link href={cemetery.admin.interments.assign.page.url([municipalitySlug, decedent.id])}>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
-                                                        title="Assign to plot"
-                                                    >
-                                                        <MapPin size={16} />
-                                                    </Button>
-                                                </Link>
                                             )}
                                         </div>
                                     </TableCell>
@@ -105,6 +217,52 @@ export const DecedentsTable = ({ decedents, municipalitySlug }: Props) => {
                     </TableBody>
                 </Table>
             </div>
+            {/* PAGINATION */}
+            <div className="border-t bg-white py-4">
+                {lastPage > 1 && (
+                    <PaginationView
+                        currentPage={currentPage}
+                        totalPages={lastPage}
+                        totalItems={totalItems}
+                        itemsPerPage={perPage}
+                        onPageChange={handlePageChange}
+                    />
+                )}
+            </div>
+
+            <LoadingDialog isOpen={isLoading} />
+
+            <FilterDialog
+                isOpen={isFilterOpened}
+                onClose={function (): void {
+                    setIsFilterOpened(false);
+                }}
+                filters={[
+                    { title: 'Name (a-z)', sub: 'full_name' },
+                    { title: 'Date of Death (latest)', sub: 'date_of_death' },
+                ]}
+                currentFilter={currentFilter}
+                onApply={(selectedFilter) => {
+                    setCurrentFilter(selectedFilter);
+
+                    if (selectedFilter) {
+                        handleSort(selectedFilter?.sub);
+                    }
+                }}
+            />
+
+            <ClassicDialog title={''} message={''} open={false} />
+
+            {showScrollTop && (
+                <Button
+                    size="icon"
+                    onClick={scrollToTop}
+                    className="fixed right-6 bottom-6 z-50 h-9 w-9 rounded-full bg-gray-900 text-white shadow-lg hover:bg-gray-800"
+                    aria-label="Scroll to top"
+                >
+                    ↑
+                </Button>
+            )}
         </div>
     );
-};
+}

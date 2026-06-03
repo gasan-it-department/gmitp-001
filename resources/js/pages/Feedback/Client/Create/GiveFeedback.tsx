@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowLeft, Heart } from 'lucide-react';
 import { useState } from 'react';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { DepartmentOption, FeedbackFormContent } from '../../../Public/Home/Components/FeedbackForm/FeedbackFormContent';
 
 interface GiveFeedbackProps {
@@ -11,6 +13,9 @@ interface GiveFeedbackProps {
 }
 
 export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbackProps) {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const slug = currentMunicipality.slug;
+
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: '',
@@ -23,9 +28,9 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
     const handleSuccess = (message: string) => {
         setClassicDialog({
             isOpen: true,
-            title: 'Feedback Submitted',
-            message: message || 'Thank you for your feedback! We appreciate you taking the time to help us improve.',
-            positiveButtonText: 'Close',
+            title: 'Salamat sa iyong Feedback!',
+            message: message || 'Lubos kaming nagpapasalamat sa iyong oras upang matulungan kaming mapabuti ang aming serbisyo.',
+            positiveButtonText: 'Isara',
             negativeButtonText: '',
             hideNegativeButton: true,
         });
@@ -34,9 +39,9 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
     const handleError = (message: string) => {
         setClassicDialog({
             isOpen: true,
-            title: 'Something went wrong!',
+            title: 'May mali sa pagpapadala!',
             message: message,
-            positiveButtonText: 'Close',
+            positiveButtonText: 'Isara',
             negativeButtonText: '',
             hideNegativeButton: true,
         });
@@ -44,13 +49,30 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
 
     return (
         <PublicLayout description="" title="">
-            <Head title="Give Feedback" />
+            <Head title="I-abot ang iyong Feedback" />
 
-            <div className="container mx-auto max-w-2xl py-8">
-                <Card className="shadow-lg">
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold">Share Your Feedback</CardTitle>
-                        <p className="text-sm text-muted-foreground">Your input helps us improve our services. Please fill out the form below.</p>
+            <div className="mx-auto max-w-2xl px-4 py-6 sm:py-10">
+                {/* Back Button */}
+                <div className="mb-6">
+                    <Link href={`/${slug}/home`}>
+                        <button className="flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Bumalik sa Home
+                        </button>
+                    </Link>
+                </div>
+
+                <Card className="border-none shadow-xl sm:border sm:shadow-lg">
+                    <CardHeader className="space-y-2 pb-6 text-center sm:text-left">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:mx-0">
+                            <Heart className="h-8 w-8 fill-current" />
+                        </div>
+                        <CardTitle className="text-xl font-extrabold tracking-tight sm:text-2xl">
+                            I-abot ang iyong Feedback
+                        </CardTitle>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            Ang iyong opinyon ay mahalaga sa amin. Tulungan kaming mapabuti ang aming serbisyo para sa buong bayan.
+                        </p>
                     </CardHeader>
                     <CardContent>
                         <FeedbackFormContent 
@@ -61,6 +83,10 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
                         />
                     </CardContent>
                 </Card>
+
+                <p className="mt-8 text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                    Ligtas at Mabilis na Serbisyo para sa mga Mamamayan
+                </p>
             </div>
 
             <ClassicDialog
@@ -86,3 +112,4 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
         </PublicLayout>
     );
 }
+

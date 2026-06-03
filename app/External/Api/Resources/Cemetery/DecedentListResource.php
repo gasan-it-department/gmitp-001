@@ -19,10 +19,14 @@ class DecedentListResource extends JsonResource
             'death_certificate_no' => $this->death_certificate_no ?: 'N/A',
             'date_of_death' => $this->date_of_death?->format('M d, Y') ?? 'N/A',
             'date_of_registration' => $this->date_of_registration?->format('M d, Y'),
-            'interment_status' => $this->currentInterment?->status ?? 'unassigned',
-            'plot_label' => $this->currentInterment?->plot
-                ? trim(($this->currentInterment->plot->name ?: '') . ' ' . ($this->currentInterment->plot->plot_number ?: ''))
-                : null,
+            // Event-typed schema: interment.status is gone. An ACTIVE
+            // (non-soft-deleted) currentInterment row means the decedent is
+            // interred; absence means unassigned. Exhumation soft-deletes the
+            // row, removing it from this scope.
+            'interment_status' => $this->currentInterment ? 'interred' : 'unassigned',
+            // Canonical UI identifier — "A-12-L3" via the Plot::slotLabel
+            // accessor (SR-7). Falls back to null when no plot is assigned.
+            'plot_label' => $this->currentInterment?->plot?->slotLabel,
         ];
     }
 
