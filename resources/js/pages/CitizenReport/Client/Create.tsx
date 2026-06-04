@@ -9,6 +9,7 @@ import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, AlertTriangle, FileIcon, Loader2, MapPin, Upload, X } from 'lucide-react';
 import React, { useState } from 'react';
+import imageCompression from 'browser-image-compression';
 
 type CategoryOption = { value: string; label: string };
 
@@ -46,6 +47,7 @@ export default function Create({ categories, is_eligible }: CreateReportProps) {
     const [fileError, setFileError] = useState<string | null>(null);
     const [geoError, setGeoError] = useState<string | null>(null);
     const [isLocating, setIsLocating] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
 
     const handleGetLocation = () => {
         setGeoError(null);
@@ -77,18 +79,58 @@ export default function Create({ categories, is_eligible }: CreateReportProps) {
         setData((prev) => ({ ...prev, latitude: null, longitude: null }));
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
+        
         const incoming = Array.from(e.target.files);
-        const combined = [...data.evidence_photos, ...incoming].slice(0, MAX_FILES);
+        const availableSlots = MAX_FILES - data.evidence_photos.length;
+        const filesToProcess = incoming.slice(0, availableSlots);
 
+        if (filesToProcess.length === 0) return;
+
+        setIsCompressing(true);
+        setFileError(null);
+
+        // Yield to the main thread so React can render the "Inihahanda..." UI
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const compressedFiles: File[] = [];
+
+        const options = {
+            maxSizeMB: 1,           // Shrink to ~1MB
+            maxWidthOrHeight: 1920,  // Standard HD
+            useWebWorker: true,
+        };
+
+        for (const file of filesToProcess) {
+            if (file.type.startsWith('image/')) {
+                try {
+                    const compressedBlob = await imageCompression(file, options);
+                    const finalFile = new File([compressedBlob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now(),
+                    });
+                    compressedFiles.push(finalFile);
+                } catch (error) {
+                    console.error("Compression failed for:", file.name, error);
+                    compressedFiles.push(file); 
+                }
+            } else {
+                compressedFiles.push(file);
+            }
+        }
+
+        const combined = [...data.evidence_photos, ...compressedFiles];
         const totalSize = combined.reduce((acc, file) => acc + file.size, 0);
+
         if (totalSize > MAX_TOTAL_SIZE) {
-            setFileError('Sobra sa 50 MB ang laki ng iyong mga litrato.');
+            setFileError('Sobra sa 50 MB ang kabuuang laki ng iyong mga litrato kahit pagkatapos ng compression.');
+            setIsCompressing(false);
             return;
         }
-        setFileError(null);
+
         setData('evidence_photos', combined);
+        setIsCompressing(false);
         e.target.value = '';
     };
 
@@ -101,7 +143,7 @@ export default function Create({ categories, is_eligible }: CreateReportProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!is_eligible) return;
+        if (!is_eligible || isCompressing) return;
 
         setFileError(null);
 
@@ -333,18 +375,22 @@ export default function Create({ categories, is_eligible }: CreateReportProps) {
                                     </div>
                                 </div>
 
-                                {/* SUBMIT */}
                                 <div className="pt-2">
                                     <Button
                                         type="submit"
                                         size="lg"
                                         className="h-14 w-full rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] transition-all"
-                                        disabled={processing}
+                                        disabled={processing || isCompressing}
                                     >
                                         {processing ? (
                                             <>
                                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                                 I-sinusumite…
+                                            </>
+                                        ) : isCompressing ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                Inihahanda…
                                             </>
                                         ) : (
                                             'I-sumite ang Ulat'

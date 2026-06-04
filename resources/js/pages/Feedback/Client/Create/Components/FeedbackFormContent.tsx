@@ -67,6 +67,9 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
         setIsCompressing(true);
         setFileError(null);
 
+        // Yield to the main thread so React can render the "Inihahanda..." UI
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
         const compressedFiles: File[] = [];
 
         const options = {
@@ -367,7 +370,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                     ) : isCompressing ? (
                         <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            I-compress…
+                            Inihahanda…
                         </>
                     ) : (
                         'I-sumite ang Feedback'

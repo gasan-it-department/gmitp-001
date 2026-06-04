@@ -15,6 +15,13 @@ class OfficialResource extends JsonResource
     public function toArray(Request $request): array
     {
 
+        $portrait = $this->getFirstMedia('official_portrait');
+        $profileUrl = $portrait
+            ? ($portrait->disk === 's3'
+                ? $portrait->getTemporaryUrl(now()->addMinutes(15), 'optimized')
+                : $portrait->getUrl('optimized'))
+            : null;
+
         return [
             'id' => $this->id,
 
@@ -30,7 +37,7 @@ class OfficialResource extends JsonResource
 
             'biography' => $this->biography,
 
-            'profile_url' => $this->getFirstMediaUrl('official_portrait') ?: null,
+            'profile_url' => $profileUrl,
 
             'formatted_name' => $this->full_name_with_title,
 
