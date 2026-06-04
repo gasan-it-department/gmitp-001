@@ -60,6 +60,15 @@ class Official extends Model implements HasMedia
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
     }
 
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('optimized')
+            ->width(600)
+            ->format('webp')
+            ->quality(90)
+            ->nonQueued();
+    }
+
     public function terms()
     {
 

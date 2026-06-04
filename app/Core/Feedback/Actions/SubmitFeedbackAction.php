@@ -3,6 +3,7 @@
 namespace App\Core\Feedback\Actions;
 
 use App\Core\Feedback\Dto\SubmitFeedbackDto;
+use App\Core\Feedback\Exceptions\FeedbackLimitExceededException;
 use App\Core\Feedback\Models\FeedbackSubmission;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Http\UploadedFile;
@@ -12,11 +13,16 @@ class SubmitFeedbackAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
+        private CheckEligibilityToSendFeedbackAction $checkEligibility,
     ) {
     }
 
     public function execute(SubmitFeedbackDto $dto): FeedbackSubmission
     {
+        if (!$this->checkEligibility->execute($dto->userId, $dto->municipalId)) {
+            throw FeedbackLimitExceededException::forDailyLimit(3);
+        }
+
         return DB::transaction(function () use ($dto) {
             $submission = FeedbackSubmission::create([
                 'id' => $this->idGenerator->generate(),

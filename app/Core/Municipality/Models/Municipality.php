@@ -66,14 +66,14 @@ class Municipality extends Model implements HasMedia
             ->performOnCollections('banners')
             ->width(1200)
             ->format('webp')
-            ->quality(80)
+            ->quality(90)
             ->nonQueued();
 
         $this->addMediaConversion('optimized_logo')
             ->performOnCollections('logo')
             ->width(400)
             ->format('webp')
-            ->quality(80)
+            ->quality(90)
             ->nonQueued();
     }
 }

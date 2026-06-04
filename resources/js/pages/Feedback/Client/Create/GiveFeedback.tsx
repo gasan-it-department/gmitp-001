@@ -3,16 +3,17 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Heart } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Heart } from 'lucide-react';
 import { useState } from 'react';
 import { DepartmentOption, FeedbackFormContent } from './Components/FeedbackFormContent';
 
 interface GiveFeedbackProps {
     departments: DepartmentOption[];
     feedbackTypes: { value: string; label: string }[];
+    is_eligible: boolean;
 }
 
-export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbackProps) {
+export default function GiveFeedback({ departments, feedbackTypes, is_eligible }: GiveFeedbackProps) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
 
@@ -73,12 +74,25 @@ export default function GiveFeedback({ departments, feedbackTypes }: GiveFeedbac
                         </p>
                     </CardHeader>
                     <CardContent>
-                        <FeedbackFormContent
-                            departments={departments}
-                            feedbackTypes={feedbackTypes}
-                            onSuccess={handleSuccess}
-                            onError={handleError}
-                        />
+                        {!is_eligible ? (
+                            <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl bg-amber-50 p-8 text-center border border-amber-200">
+                                <AlertCircle className="h-12 w-12 text-amber-500" />
+                                <div className="space-y-2">
+                                    <h3 className="text-lg font-bold text-amber-900">Naabot mo na ang limitasyon</h3>
+                                    <p className="text-sm text-amber-700">
+                                        Paumanhin, ang bawat mamamayan ay pinapayagan lamang ng hanggang <b>3 feedback kada araw</b>.
+                                        Maaari kang muling mag-abot ng feedback bukas. Maraming salamat sa iyong malasakit!
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <FeedbackFormContent
+                                departments={departments}
+                                feedbackTypes={feedbackTypes}
+                                onSuccess={handleSuccess}
+                                onError={handleError}
+                            />
+                        )}
                     </CardContent>
                 </Card>
 
