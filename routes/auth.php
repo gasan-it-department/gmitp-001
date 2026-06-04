@@ -1,19 +1,20 @@
 <?php
 
+use App\External\Api\Controllers\Auth\AuthenticateUserController;
+use App\External\Api\Controllers\Auth\CreateAdminController;
+use App\External\Api\Controllers\Auth\CreateUserController;
+use App\External\Api\Controllers\Auth\ForgotPasswordController;
+use App\External\Api\Controllers\Auth\Login\AuthenticateSocialUserController;
 use App\External\Api\Controllers\Auth\ResetPasswordController;
 use App\External\Api\Controllers\Auth\UpdatePasswordController;
 use App\External\Api\Controllers\Auth\UpdatePhoneController;
-use Illuminate\Support\Facades\Route;
-use App\External\Web\Controllers\Auth\AuthController;
-use App\External\Api\Controllers\Auth\CreateUserController;
-use App\External\Api\Controllers\Auth\CreateAdminController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
-use App\External\Api\Controllers\Auth\ForgotPasswordController;
-use App\External\Api\Controllers\Auth\AuthenticateUserController;
-use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
+use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
+use App\External\Web\Controllers\Auth\ShowLoginController;
+use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
-
+use Illuminate\Support\Facades\Route;
 
 //for unauthenticated users
 Route::prefix('api/auth')
@@ -28,7 +29,9 @@ Route::prefix('api/auth')
             ->name('login')
             ->middleware('municipalityContext');
 
-
+        Route::post('/social', AuthenticateSocialUserController::class)
+            ->name('login.social')
+            ->middleware('municipalityContext');
     });
 
 
@@ -50,11 +53,10 @@ Route::middleware('auth')->group(function () {
 
 });
 
-
 //CRITICAL: for forgot password routings (if any issue ask harvey)
 Route::middleware(['guest'])
     ->group(function () {
-
+        Route::get('login', ShowLoginController::class)->name('login.page');
         //
         Route::get('/forgot-password', [ForgotPasswordViewController::class, 'index'])->name('password.request');
 

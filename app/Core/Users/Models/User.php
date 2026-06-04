@@ -6,8 +6,10 @@ namespace App\Core\Users\Models;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use App\Core\Auth\Models\UserSocialAccount;
 use App\Core\Municipality\Models\Municipality;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
@@ -74,6 +76,11 @@ class User extends Authenticatable
     public function municipality(): BelongsTo
     {
         return $this->belongsTo(Municipality::class, 'municipal_id');
+    }
+
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(UserSocialAccount::class);
     }
 
     public function getFullNameAttribute(): string
