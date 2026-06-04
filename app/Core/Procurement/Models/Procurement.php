@@ -5,18 +5,21 @@ namespace App\Core\Procurement\Models;
 use App\Core\Department\Models\Department;
 use App\Core\Municipality\Models\Municipality;
 use App\Core\Procurement\Enums\ProcurementCategory;
+use App\Core\Procurement\Enums\ProcurementDocumentType;
 use App\Core\Procurement\Enums\ProcurementStatus;
-use App\Core\Procurement\Models\ProcurementDocument;
 use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Procurement extends Model
+class Procurement extends Model implements HasMedia
 {
-    use HasUlids, SoftDeletes; // Automatically generates the ULID on creation
+    use HasUlids, SoftDeletes, LogsActivity, InteractsWithMedia; // Automatically generates the ULID on creation
 
     protected $table = 'procurements';
 
@@ -28,45 +31,25 @@ class Procurement extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-
         'id',
-
         'created_by',
-
         'municipal_id',
-
         'department_id',
-
         'funding_source_id',
-
         'reference_number',
-
         'title',
-
         'description',
-
         'abc_amount',
-
         'contract_amount',
-
         'category',
-
         'status',
-
         'notes',
-
         'published_at',
-
         'pre_bid_date',
-
         'closing_date',
-
         'awarded_date',
-
         'winning_bidder_name',
-
         'failure_reason',
-
         'failed_date'
     ];
 
@@ -87,10 +70,23 @@ class Procurement extends Model
         'deleted_at' => 'datetime',
     ];
 
-    public function documents(): HasMany
+    public function getActivitylogOptions(): LogOptions
     {
-        return $this->hasMany(ProcurementDocument::class);
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
+public function registerMediaCollections(): void
+{
+    $disk = config('filesystems.disks.procurement', config('filesystems.default', 'public'));
+
+    foreach (ProcurementDocumentType::cases() as $type) {
+        $this->addMediaCollection($type->value)
+            ->useDisk($disk)
+            ->acceptsMimeTypes(['application/pdf']); // FR-2.2
+    }
+}
 
     public function creator(): BelongsTo
     {

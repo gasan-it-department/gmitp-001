@@ -6,7 +6,6 @@ use App\Core\Procurement\Dto\ProcurementFilterDto;
 use App\Core\Procurement\Dto\StoreProcurementsDto;
 use App\Core\Procurement\Dto\UpdateProcurementDto;
 use App\Core\Procurement\Models\Procurement;
-use App\Core\Procurement\Models\ProcurementDocument;
 
 class ProcurementsRepository
 {
@@ -65,31 +64,6 @@ class ProcurementsRepository
 
     }
 
-    public function saveFiles(array $fileData, string $procurementId, string $type, string $fileId, string $uploadedBy)
-    {
-
-        ProcurementDocument::create([
-
-            'id' => $fileId,
-
-            'uploaded_by' => $uploadedBy,
-
-            'procurement_id' => $procurementId,
-
-            'file_path' => $fileData['file_path'],
-
-            'file_name' => $fileData['original_name'],
-
-            'file_size' => $fileData['file_size'],
-
-            'type' => $type,
-
-            'mime_type' => $fileData['mime_type'],
-
-        ]);
-
-    }
-
     public function findById(string $id)
     {
 
@@ -101,7 +75,7 @@ class ProcurementsRepository
     {
 
         return Procurement::where('municipal_id', $municipalId)
-            ->with('documents')
+            ->with('media')
             ->with('department')
             ->with('fundingSource')
             ->with('creator')
@@ -135,7 +109,7 @@ class ProcurementsRepository
             ])
 
             // 4. Eager load safe relationships (Public needs to know the department)
-            ->with(['department:id,name', 'documents']) // Notice the :id,name - this only grabs those two columns from the departments table!
+            ->with(['department:id,name', 'media']) // Notice the :id,name - this only grabs those two columns from the departments table!
 
             // 5. Apply the Public Filters (Omni-Search, Category, Status)
             ->when($dto->search, function ($query) use ($dto) {
@@ -185,17 +159,6 @@ class ProcurementsRepository
             ->orderBy($dto->sortField, $dto->sortDirection)
             ->paginate(25)
             ->withQueryString();
-    }
-
-    public function getDocumentCount(string $procurementId, string $municipalId): int
-    {
-        $procurement = Procurement::where('id', $procurementId)
-            ->where('municipal_id', $municipalId) // Always check the municipality for security!
-            ->withCount('documents')
-            ->first();
-
-        // If procurement exists, return the count. Otherwise, return 0.
-        return $procurement ? $procurement->documents_count : 0;
     }
 
     public function deleteProcurement(string $procurementId): bool

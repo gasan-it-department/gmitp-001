@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\Procurement\Admin;
 
+use App\Core\Department\Actions\ListActiveDepartmentAction;
 use App\Core\Procurement\UseCases\GetProcurementFormOptions;
 use App\External\Api\Resources\Procurement\ProcurementFundingSourceResource;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,7 @@ class CreateProcurementController extends Controller
 
     public function __construct(
         private GetProcurementFormOptions $formOptionUseCase,
+        private ListActiveDepartmentAction $listActiveDepartmentAction
     ) {
     }
     public function __invoke()
@@ -23,6 +25,7 @@ class CreateProcurementController extends Controller
             'categories' => $options['categories'],
             'statuses' => $options['statuses'],
             'documentTypes' => $options['document_types'],
+            'departments' => $this->listActiveDepartmentAction->execute(app('municipal_id')),
         ]);
 
     }

@@ -300,7 +300,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                         {/* The Extracted Document Component! */}
                         <ProcurementDocumentSection
                             procurementId={data.id}
-                            documents={data.documents}
+                            documents={data.media || []}
                             status={data.status}
                             documentTypes={documentTypes}
                         />

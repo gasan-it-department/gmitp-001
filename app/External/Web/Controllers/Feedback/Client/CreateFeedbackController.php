@@ -24,7 +24,7 @@ class CreateFeedbackController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn ($d) => ['id' => $d->id, 'name' => $d->name])
+            ->map(fn($d) => ['id' => $d->id, 'name' => $d->name])
             ->values();
 
         return Inertia::render('Feedback/Client/Create/GiveFeedback', [

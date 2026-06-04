@@ -20,9 +20,10 @@ interface SharedFormProps {
     fundingSources: FundingSource[];
     categories: Category[];
     statuses: any;
+    departments: any;
 }
 
-export default function SharedProcurementForm({ initialData, mode, procurementId, fundingSources, categories, statuses }: SharedFormProps) {
+export default function SharedProcurementForm({ initialData, mode, procurementId, fundingSources, categories, statuses, departments }: SharedFormProps) {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
@@ -138,6 +139,7 @@ export default function SharedProcurementForm({ initialData, mode, procurementId
                                             fundingSources={fundingSources}
                                             statuses={statuses}
                                             categories={categories}
+                                            departments={departments}
                                             isHistorical={data.is_historical}
                                         />
                                     </div>

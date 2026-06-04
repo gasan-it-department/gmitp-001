@@ -40,7 +40,6 @@ interface Props {
 }
 
 export default function CreateProcurement({ fundingSources, categories, statuses, documentTypes, departments }: Props) {
-    console.log(departments);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
 

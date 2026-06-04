@@ -53,23 +53,27 @@ class ProcurementDetailResource extends JsonResource
                 ];
             }),
 
-            'documents' => $this->whenLoaded('documents', function () {
+            'media' => $this->whenLoaded('media', function () {
+                return $this->media->map(function ($item) {
+                    try {
+                        // Attempt to get the URL normally
+                        $url = $item->getUrl();
+                    } catch (\Exception $e) {
+                        // Fallback: If S3 fails (e.g. missing region in local), 
+                        // manually construct the public path as a last resort.
+                        $url = asset("storage/{$item->id}/{$item->file_name}");
+                    }
 
-                $municipality = app('current_municipality');
-                return $this->documents->map(function ($doc) use ($municipality) {
                     return [
-                        'id' => $doc->id,
-                        'file_name' => $doc->file_name,
-                        'type' => $doc->type?->value ?? $doc->type,
-                        'file_size' => (int) $doc->file_size,
-
-                        'file_path' => route('procurement.download.document', [
-                            'documentId' => $doc->id,
-                            'municipality' => $municipality->slug, // Or however you access the slug in the resource
-                        ]),
+                        'id' => $item->id,
+                        'file_name' => $item->file_name,
+                        'mime_type' => $item->mime_type,
+                        'size' => (int) $item->size,
+                        'url' => $url,
+                        'collection' => $item->collection_name,
                     ];
                 });
-            }, []),
+            }),
         ];
     }
 }

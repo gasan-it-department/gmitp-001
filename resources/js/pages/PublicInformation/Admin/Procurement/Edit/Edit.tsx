@@ -9,9 +9,10 @@ interface EditProps {
     fundingSources: { data: FundingSource[] };
     categories: Category[];
     statuses: any;
+    departments: any;
 }
 
-export default function Edit({ procurement, fundingSources, categories, statuses }: EditProps) {
+export default function Edit({ procurement, fundingSources, categories, statuses, departments }: EditProps) {
     const existingData = procurement.data;
     //  Explicitly cast this to ProcurementFormData so TypeScript checks our work
     const mappedInitialData: ProcurementFormData = {
@@ -48,6 +49,7 @@ export default function Edit({ procurement, fundingSources, categories, statuses
                 fundingSources={fundingSources.data}
                 categories={categories}
                 statuses={statuses}
+                departments={departments}
             />
             <FlashHandler />
             <ToastProvider position="top-right" />

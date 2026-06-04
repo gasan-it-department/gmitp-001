@@ -17,7 +17,7 @@ interface ProjectDetailsProps {
     fundingSources: any;
     statuses: SelectOption[];
     categories: SelectOption[];
-    departments: any[];
+    departments: any;
     isHistorical: boolean;
 }
 
@@ -32,6 +32,7 @@ export const ProjectDetails = ({
     departments,
     isHistorical,
 }: ProjectDetailsProps) => {
+    console.log(departments, 'ji');
     return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Reference Number - Keeps standard width */}

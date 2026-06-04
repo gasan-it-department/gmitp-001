@@ -61,21 +61,20 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
 
         setIsDeleting(true);
         try {
-            // TODO: Add your axios/api call here
-            // await api.delete(`/procurements/${procurementId}/documents/${documentToDelete.id}`);
-            router.delete(procurement.document.delete.url({ procurementId: procurementId, documentId: documentToDelete.id }), {
+            // Updated to use the correct route if it exists, or a general media delete route
+            // For now, I'll assume we might need a specific media delete controller or use a general one.
+            // Let's check the routes again if needed, but usually it's a delete request to a media endpoint.
+            router.delete(procurement.media.delete.url({ procurementId: procurementId, mediaId: documentToDelete.id }), {
                 headers: {
                     'X-Municipality-Slug': currentMunicipality.slug,
                 },
+                onSuccess: () => {
+                    setDocumentToDelete(null);
+                },
+                onFinish: () => setIsDeleting(false),
             });
-
-            // Reload the data and close the dialog
-            router.reload({ only: ['procurement'] });
-            setDocumentToDelete(null);
         } catch (error) {
             console.error('Failed to delete document', error);
-            // Error toast will be handled by your global interceptor
-        } finally {
             setIsDeleting(false);
         }
     };
@@ -87,11 +86,11 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                     <FileText className="h-5 w-5 text-orange-500" />
                     <h3 className="font-bold text-slate-900">Bidding Documents</h3>
                 </div>
-                <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-700">{documents.length}</span>
+                <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-700">{documents?.length || 0}</span>
             </div>
 
             <div className="flex-1 p-4">
-                {documents.length === 0 ? (
+                {!documents || documents.length === 0 ? (
                     <div className="flex flex-col items-center py-8 text-center text-slate-500">
                         <AlertCircle className="mb-2 h-8 w-8 text-slate-300" />
                         <p className="text-sm">No documents attached yet.</p>
@@ -111,16 +110,18 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                                         {doc.file_name}
                                     </p>
                                     <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                                        <span className="font-medium tracking-wide uppercase">{doc.type.replace(/_/g, ' ')}</span>
+                                        <span className="font-medium tracking-wide uppercase">
+                                            {(doc.collection || 'document').replace(/_/g, ' ')}
+                                        </span>
                                         <span>•</span>
-                                        <span>{formatBytes(doc.file_size)}</span>
+                                        <span>{formatBytes(doc.size)}</span>
                                     </div>
                                 </div>
 
                                 {/* Action Buttons Container */}
                                 <div className="flex items-center gap-1">
                                     <button
-                                        onClick={() => downloadDocument(doc.file_path, doc.file_name)}
+                                        onClick={() => downloadDocument(doc.url, doc.file_name)}
                                         type="button"
                                         className="rounded-md p-2 text-slate-400 transition hover:bg-blue-100 hover:text-blue-600"
                                         title="Download Document"
@@ -146,7 +147,7 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
 
             {canUpload && (
                 <div className="border-t bg-slate-50 p-4">
-                    {documents.length < MAX_DOCUMENTS ? (
+                    {(documents?.length || 0) < MAX_DOCUMENTS ? (
                         <button
                             onClick={() => setIsDocumentUploadOpen(true)}
                             className="w-full rounded-lg border-2 border-dashed border-slate-300 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-400 hover:bg-slate-100"
@@ -204,7 +205,7 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                                         {documentToDelete.file_name}
                                     </p>
                                     <p className="mt-1 text-xs font-medium tracking-wide text-slate-500 uppercase">
-                                        {documentToDelete.type.replace(/_/g, ' ')} • {formatBytes(documentToDelete.file_size)}
+                                        {(documentToDelete.collection || 'document').replace(/_/g, ' ')} • {formatBytes(documentToDelete.size)}
                                     </p>
                                 </div>
                             </div>
