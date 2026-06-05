@@ -34,12 +34,17 @@ class HandleInertiaRequests extends Middleware
     {
         $user = request()->user();
 
+        // Eager-load lightweight relations once here so they are available
+        // on every page via usePage().props.auth — no per-page Auth:: calls needed.
+        if ($user) {
+            $user->load('socialAccounts');
+        }
+
         $roleChecker = app(UserRoleCheckerService::class);
 
         return [
             ...parent::share($request),
 
-            // Keep only the essential auth data
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
@@ -48,10 +53,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? (new UserResource($user))->resolve() : null,
                 'roles' => [
-                    'isClient' => $user ? $roleChecker->isClient($user) : false,
-                    'isAdmin' => $user ? $roleChecker->isAdmin($user) : false,
+                    'isClient'    => $user ? $roleChecker->isClient($user) : false,
+                    'isAdmin'     => $user ? $roleChecker->isAdmin($user) : false,
                     'isSuperAdmin' => $user ? $roleChecker->isSuperAdmin($user) : false,
-                ]
+                ],
             ],
         ];
     }

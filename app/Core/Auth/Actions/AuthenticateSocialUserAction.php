@@ -18,43 +18,58 @@ class AuthenticateSocialUserAction
 
     /**
      * Finds or creates a local user based on social provider data.
-     * Handles linking to existing emails and creating new profiles.
+     *
+     * @param  SocialUserDto  $dto
+     * @param  string|null    $authenticatedUserId  Pass auth()->id() when called from the
+     *                                               profile "Link Account" flow so the action
+     *                                               attaches to the existing user instead of
+     *                                               trying to match by email (which would fail
+     *                                               for phone-only registrants whose email is null).
      */
-    public function execute(SocialUserDto $dto): User
+    public function execute(SocialUserDto $dto, ?string $authenticatedUserId = null): User
     {
-        return DB::transaction(function () use ($dto) {
-            // 1. Try to find by provider details (returning social user)
+        return DB::transaction(function () use ($dto, $authenticatedUserId) {
+
+            // 1. Already linked — returning social user (covers both login and re-link attempts)
             $socialAccount = UserSocialAccount::query()
                 ->where('provider_name', $dto->providerName)
                 ->where('provider_id', $dto->providerId)
                 ->first();
 
             if ($socialAccount) {
-                // Update avatar if it changed
                 if ($dto->avatarUrl && $socialAccount->avatar_url !== $dto->avatarUrl) {
                     $socialAccount->update(['avatar_url' => $dto->avatarUrl]);
                 }
                 return $socialAccount->user;
             }
 
-            // 2. Try to find by email (linking an existing local user)
-            $user = User::query()
-                ->where('email', $dto->email)
-                ->first();
+            // 2. Profile linking flow — authenticated user is connecting their Google account
+            if ($authenticatedUserId) {
+                $user = User::findOrFail($authenticatedUserId);
 
-            if (!$user) {
-                // 3. Create a brand new user (first time visitor)
-                $user = User::create([
-                    'id'                => $this->idGenerator->generate(),
+                // Write Google's pre-verified email back onto the user record
+                $user->update([
                     'email'             => $dto->email,
-                    'first_name'        => $dto->firstName ?? 'User',
-                    'last_name'         => $dto->lastName ?? 'Social',
                     'email_verified_at' => now(),
-                    'password'          => Str::random(32), // Placeholder for nullable password field
                 ]);
+            } else {
+                // 3. Login/signup flow — try to match an existing account by email
+                $user = User::query()->where('email', $dto->email)->first();
+
+                if (!$user) {
+                    // 4. First-time Google user — create a new account
+                    $user = User::create([
+                        'id'                => $this->idGenerator->generate(),
+                        'email'             => $dto->email,
+                        'first_name'        => $dto->firstName ?? 'User',
+                        'last_name'         => $dto->lastName ?? 'Social',
+                        'email_verified_at' => now(),
+                        'password'          => Str::random(32),
+                    ]);
+                }
             }
 
-            // 4. Create the social link
+            // 5. Create the social link (same for all paths)
             UserSocialAccount::create([
                 'id'            => $this->idGenerator->generate(),
                 'user_id'       => $user->id,

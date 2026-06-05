@@ -1,6 +1,7 @@
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import login from '@/routes/login';
+import signup from '@/routes/signup';
 import { Link } from '@inertiajs/react';
 import { ArrowRight, UserPlus } from 'lucide-react'; // Added UserPlus icon
 import { useState } from 'react';
@@ -24,7 +25,7 @@ export function LogInSignUpForm() {
                 {/* Primary Action: Sign Up */}
                 {/* Note: Update the href="#" to your actual registration route when you are ready */}
                 <Link
-                    href="#"
+                    href={signup.show.url(currentMunicipality.slug)}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
                 >
                     Sign Up <UserPlus size={16} />

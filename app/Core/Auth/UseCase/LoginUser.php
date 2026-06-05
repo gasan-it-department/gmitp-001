@@ -43,8 +43,10 @@ class LoginUser
             throw new AccountLockedExceptions(ceil($remainingSeconds / 60));
         }
 
-        //find the user identifier and add rate limiter hit if not found
-        $users = $this->userRepository->findByPhone($dto->identifier);
+        // Resolve the user by phone or email — whichever the identifier looks like
+        $users = filter_var($dto->identifier, FILTER_VALIDATE_EMAIL)
+            ? $this->userRepository->findByEmail($dto->identifier)
+            : $this->userRepository->findByPhone($dto->identifier);
 
         if (!$users) {
             $this->rateLimiter->hit($rateLimitKey, self::RATE_LIMIT_MINUTES);

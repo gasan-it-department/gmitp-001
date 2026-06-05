@@ -9,6 +9,7 @@ use App\External\Api\Controllers\Auth\Signup\CreateUserController;
 use App\External\Api\Controllers\Auth\UpdatePasswordController;
 use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
+use App\External\Api\Controllers\Profile\LinkSocialAccountController;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
 use App\External\Web\Controllers\Auth\ShowLoginController;
@@ -35,6 +36,14 @@ Route::prefix('api/auth')
             ->name('login.social')
             ->middleware('municipalityContext');
 
+    });
+
+// Authenticated profile actions
+Route::prefix('api/profile')
+    ->middleware(['auth'])
+    ->group(function () {
+        Route::post('/social/link', LinkSocialAccountController::class)
+            ->name('profile.social.link');
     });
 
 

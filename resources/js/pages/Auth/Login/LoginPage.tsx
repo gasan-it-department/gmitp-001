@@ -1,5 +1,6 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import api from '@/lib/axios';
+import { PasswordInput } from '@/pages/UserManagement/Profile/Components/PasswordInput';
 import { home } from '@/routes';
 import { social } from '@/routes/login';
 import signup from '@/routes/signup';
@@ -143,16 +144,16 @@ export default function LoginPage() {
                                     Forgot your password?
                                 </Link>
                             </div>
-                            <input
+                            <PasswordInput
                                 id="password"
-                                type="password"
                                 name="password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 transition-colors focus:border-black focus:ring-2 focus:ring-black"
+                                className="w-full"
+                                placeholder="••••••••"
                                 required
+                                error={errors.password}
                             />
-                            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                         </div>
 
                         {/* Remember Me */}
