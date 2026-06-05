@@ -34,14 +34,13 @@ class RegisterUserUseCase
 
             $phoneNumber = new Phone($dto->phone);
 
-            $this->ensureUserDoesNotExist($dto->userName, $phoneNumber->toString());
+            $this->ensureUserDoesNotExist($phoneNumber->toString());
 
             $user = $this->userRepository->save([
                 'id' => $userId,
                 'firstName' => $dto->firstName,
                 'middleName' => $dto->middleName,
                 'lastName' => $dto->lastName,
-                'userName' => $dto->userName,
                 'phone' => $phoneNumber->toString(),
                 'password' => $password,
             ]);
@@ -56,18 +55,10 @@ class RegisterUserUseCase
     }
 
 
-    private function ensureUserDoesNotExist(string $userName, string $phone): void
+    private function ensureUserDoesNotExist(string $phone): void
     {
-        if ($this->userRepository->findByUsername($userName) !== null) {
-
-            throw UserAlreadyExistExceptions::withUserName($userName);
-
-        }
-
         if ($this->userRepository->findByPhone($phone) !== null) {
-
             throw UserAlreadyExistExceptions::withPhone($phone);
-
         }
     }
 }

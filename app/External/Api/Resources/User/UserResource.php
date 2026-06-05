@@ -30,8 +30,6 @@ class UserResource extends JsonResource
 
             'email' => $this->email,
 
-            'user_name' => $this->user_name,
-
             'roles' => $this->getRoleNames(),
 
             'direct_permissions' => $this->whenLoaded('permissions', fn() => $this->permissions->pluck('name')),

@@ -44,7 +44,6 @@ class User extends Authenticatable
         'middle_name',
         'phone',
         'email',
-        'user_name',
         'municipal_id',
         'password',
         'phone_verified_at'

@@ -2,17 +2,19 @@
 
 use App\External\Api\Controllers\Auth\AuthenticateUserController;
 use App\External\Api\Controllers\Auth\CreateAdminController;
-use App\External\Api\Controllers\Auth\CreateUserController;
 use App\External\Api\Controllers\Auth\ForgotPasswordController;
 use App\External\Api\Controllers\Auth\Login\AuthenticateSocialUserController;
 use App\External\Api\Controllers\Auth\ResetPasswordController;
+use App\External\Api\Controllers\Auth\Signup\CreateUserController;
 use App\External\Api\Controllers\Auth\UpdatePasswordController;
 use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
 use App\External\Web\Controllers\Auth\ShowLoginController;
+use App\External\Web\Controllers\Auth\ShowSignupController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
+use App\External\Web\Controllers\UserManagement\Public\ShowUserProfileController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,7 +23,7 @@ Route::prefix('api/auth')
     ->middleware(['guest'])
     ->group(function () {
         //api
-        Route::post('/store-account', [CreateUserController::class, 'createUser'])
+        Route::post('/store-account', CreateUserController::class)
             ->name('user.store')
             ->middleware(['municipalityContext']);
 
@@ -32,11 +34,13 @@ Route::prefix('api/auth')
         Route::post('/social', AuthenticateSocialUserController::class)
             ->name('login.social')
             ->middleware('municipalityContext');
+
     });
 
 
 // Basically for auth related pls read the URI and NAMES    
 Route::middleware('auth')->group(function () {
+    Route::get('{municipality}/profile', ShowUserProfileController::class)->name('profile.show')->middleware('municipalityContext');
 
     Route::post('/logout', [AuthenticateUserController::class, 'logout'])->name('logout');
 
@@ -56,7 +60,9 @@ Route::middleware('auth')->group(function () {
 //CRITICAL: for forgot password routings (if any issue ask harvey)
 Route::middleware(['guest'])
     ->group(function () {
-        Route::get('login', ShowLoginController::class)->name('login.page');
+        Route::get('{municipality}/login', ShowLoginController::class)->name('login.page')->middleware('municipalityContext');
+
+        Route::get('{municipality}/sign-up', ShowSignupController::class)->name('signup.show')->middleware('municipalityContext');
         //
         Route::get('/forgot-password', [ForgotPasswordViewController::class, 'index'])->name('password.request');
 

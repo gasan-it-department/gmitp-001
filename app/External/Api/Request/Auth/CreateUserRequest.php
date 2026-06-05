@@ -29,15 +29,6 @@ class CreateUserRequest extends FormRequest
 
             'last_name' => ['required', 'max:100', 'min:2', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
 
-            'user_name' => [
-                'required',
-                'string',
-                'min:3',
-                'max:30',
-                'regex:/^[a-z0-9]+$/',
-                'unique:users,user_name'
-            ],
-
             'email' => [
                 'nullable',
                 'email:rfc,dns',
@@ -80,13 +71,6 @@ class CreateUserRequest extends FormRequest
             'last_name.min' => 'Last name must be at least :min characters.',
             'last_name.max' => 'Last name cannot exceed :max characters.',
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens, apostrophes, and periods.',
-
-            // Username
-            'user_name.required' => 'Please choose a username.',
-            'user_name.min' => 'Username must be at least :min characters.',
-            'user_name.max' => 'Username cannot exceed :max characters.',
-            'user_name.regex' => 'Username can only contain lowercase letters and numbers, with no spaces or special symbols.',
-            'user_name.unique' => 'This username is already taken. Please choose another one.',
 
             // Phone
             'phone.required' => 'Please enter your phone number.',

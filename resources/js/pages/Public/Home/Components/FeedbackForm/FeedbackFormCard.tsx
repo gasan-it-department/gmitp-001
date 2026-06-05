@@ -3,8 +3,9 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import feedback from '@/routes/feedback';
+import login from '@/routes/login';
 import { SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ArrowRight, MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FeedbackFormDialog } from './FeedbackFormDialog';
@@ -57,10 +58,10 @@ export default function FeedbackUi() {
                         href={feedback.create.url(currentMunicipality.slug)}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
                         onClick={(e) => {
-                            // If the user isn't logged in, intercept the click, stop the navigation, and show the modal
+                            // If the user isn't logged in, redirect to the login page
                             if (auth.user === null) {
                                 e.preventDefault();
-                                setLogInSignUpDialogVisible(true);
+                                router.visit(login.page.url({ municipality: currentMunicipality.slug }));
                             }
                         }}
                     >

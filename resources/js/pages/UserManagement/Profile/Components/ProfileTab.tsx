@@ -1,0 +1,365 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AuthApi } from '@/Core/Api/Auth/AuthApi';
+import ClassicDialog from '@/pages/Utility/ClassicDialog';
+import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
+import { Camera, ImageIcon, LogOut, Minus, Plus, Save, ShieldCheck, Trash2, User, UserCog } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Cropper from 'react-easy-crop';
+import { useForm } from 'react-hook-form';
+
+type ProfileFormData = {
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    phone: string;
+};
+
+export default function ProfileTab() {
+    const { auth } = usePage<SharedData>().props;
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Cropper states
+    const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [userAvatarURL, setUserAvatarURL] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+    // Dialogs
+    const [classicDialog, setClassicDialog] = useState({
+        title: '',
+        message: '',
+        isOpen: false,
+        positiveButtonText: 'Ok',
+        negativeButtonText: 'Cancel',
+        isNegativeButtonVisible: false,
+        currentAction: '',
+    });
+
+    // React Hook Form
+    const { register, handleSubmit, setValue } = useForm<ProfileFormData>({
+        defaultValues: {
+            first_name: '',
+            middle_name: '',
+            last_name: '',
+            phone: '',
+        },
+    });
+
+    useEffect(() => {
+        if (auth.user) {
+            setValue('first_name', auth.user.first_name || '');
+            setValue('middle_name', auth.user.middle_name || '');
+            setValue('last_name', auth.user.last_name || '');
+            setValue('phone', auth.user.phone || '');
+            setUserAvatarURL(null);
+        }
+    }, [auth.user, setValue]);
+
+    const onCropComplete = useCallback((_: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    const getCroppedImage = useCallback(async () => {
+        if (!selectedImage || !croppedAreaPixels) return null;
+        const image = await createImage(selectedImage);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        const { width, height, x, y } = croppedAreaPixels;
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+        return new Promise<string>((resolve) => {
+            canvas.toBlob((blob) => {
+                if (blob) resolve(URL.createObjectURL(blob));
+            }, 'image/png');
+        });
+    }, [selectedImage, croppedAreaPixels]);
+
+    async function handleCropSave() {
+        const croppedImgUrl = await getCroppedImage();
+        if (croppedImgUrl) {
+            setUserAvatarURL(croppedImgUrl);
+            // TODO: Upload logic here
+        }
+        setIsCropDialogOpen(false);
+        setZoom(1);
+    }
+
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        setSelectedImage(url);
+        setIsCropDialogOpen(true);
+        e.target.value = '';
+    }
+
+    const onSubmit = async (data: ProfileFormData) => {
+        console.log({ ...data, avatarPreview: userAvatarURL });
+        // TODO: Backend Update Logic
+    };
+
+    const handleLogout = async () => {
+        try {
+            await AuthApi.logout();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
+    return (
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+            {/* Header Section */}
+            <div className="flex flex-col gap-1 px-1">
+                <div className="flex items-center gap-2 text-primary">
+                    <UserCog className="h-5 w-5" />
+                    <h2 className="text-xl font-bold tracking-tight">Personal Information</h2>
+                </div>
+                <p className="text-sm text-muted-foreground">Update your profile details and how others see you on the platform.</p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <Card className="overflow-hidden rounded-2xl border-border p-4 shadow-sm md:p-8">
+                    <div className="flex flex-col gap-8 md:flex-row md:gap-12">
+                        {/* Avatar Section */}
+                        <div className="flex shrink-0 flex-col items-center gap-4">
+                            <div className="group relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <div className="relative h-28 w-28 overflow-hidden rounded-full shadow-lg ring-4 ring-muted transition-all group-hover:ring-primary/50 md:h-36 md:w-36">
+                                    <Avatar className="h-full w-full">
+                                        <AvatarImage src={userAvatarURL || ''} alt="avatar" className="object-cover" />
+                                        <AvatarFallback className="bg-muted text-muted-foreground">
+                                            <User className="h-12 w-12 md:h-16 md:w-16" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <Camera className="mb-1 h-6 w-6 text-white" />
+                                        <span className="text-[10px] font-bold tracking-widest text-white uppercase">Change</span>
+                                    </div>
+                                </div>
+                                <div className="absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-md">
+                                    <Camera className="h-3.5 w-3.5" />
+                                </div>
+                            </div>
+
+                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+
+                            {userAvatarURL && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setClassicDialog({
+                                            title: 'Remove Picture',
+                                            message: 'Are you sure you want to revert to the default avatar?',
+                                            negativeButtonText: 'Cancel',
+                                            positiveButtonText: 'Remove',
+                                            isNegativeButtonVisible: true,
+                                            currentAction: 'remove-avatar',
+                                            isOpen: true,
+                                        });
+                                    }}
+                                    className="h-8 text-xs font-bold text-destructive hover:bg-destructive/10"
+                                >
+                                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                    Remove Photo
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Form Fields Section */}
+                        <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2 md:gap-x-6 md:gap-y-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="first_name" className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                    First Name
+                                </Label>
+                                <Input
+                                    id="first_name"
+                                    {...register('first_name')}
+                                    className="h-11 rounded-xl font-medium"
+                                    placeholder="Enter first name"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="middle_name" className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                    Middle Name
+                                </Label>
+                                <Input
+                                    id="middle_name"
+                                    {...register('middle_name')}
+                                    className="h-11 rounded-xl font-medium"
+                                    placeholder="Enter middle name"
+                                />
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="last_name" className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                    Last Name
+                                </Label>
+                                <Input
+                                    id="last_name"
+                                    {...register('last_name')}
+                                    className="h-11 rounded-xl font-medium"
+                                    placeholder="Enter last name"
+                                />
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="phone" className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                                    Mobile Number
+                                </Label>
+                                <Input
+                                    id="phone"
+                                    {...register('phone')}
+                                    disabled
+                                    className="h-11 cursor-not-allowed rounded-xl bg-muted/50 font-medium"
+                                    placeholder="09XXXXXXXXX"
+                                />
+                                <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <ShieldCheck className="h-3 w-3" />
+                                    Verified and linked to your account.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 md:flex-row">
+                        {/* <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl w-full md:w-auto">
+                            <div className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center">
+                                <span className="text-[10px] font-mono font-bold">{auth.user?.id || '--'}</span>
+                            </div>
+                            <span className="text-xs font-medium text-muted-foreground">Account Identifier</span>
+                        </div> */}
+
+                        <div className="flex w-full items-center gap-3 md:w-auto">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() =>
+                                    setClassicDialog({
+                                        title: 'Confirm Logout',
+                                        message: 'Are you sure you want to logout?',
+                                        negativeButtonText: 'Stay',
+                                        positiveButtonText: 'Logout',
+                                        isNegativeButtonVisible: true,
+                                        currentAction: 'logout',
+                                        isOpen: true,
+                                    })
+                                }
+                                className="h-11 flex-1 rounded-xl px-6 font-bold text-destructive hover:bg-destructive/10 md:flex-none"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Logout
+                            </Button>
+
+                            <Button
+                                type="submit"
+                                className="h-11 min-w-[140px] flex-1 rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-md hover:bg-primary/90 md:flex-none"
+                            >
+                                Save Changes
+                                <Save className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
+            </form>
+
+            {/* --- CROP DIALOG --- */}
+            <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
+                <DialogContent className="w-[95vw] overflow-hidden rounded-2xl border-0 p-0 shadow-2xl sm:max-w-lg">
+                    <DialogHeader className="border-b border-border bg-background px-4 py-3 md:px-6 md:py-4">
+                        <div className="flex items-center gap-2">
+                            <div className="rounded-lg bg-secondary p-2 text-primary">
+                                <ImageIcon className="h-5 w-5" />
+                            </div>
+                            <DialogTitle className="text-lg font-bold text-foreground md:text-xl">Adjust Photo</DialogTitle>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="bg-muted/30 p-4 md:p-6">
+                        <div className="relative h-64 w-full overflow-hidden rounded-xl border-2 border-border bg-black shadow-inner md:h-80">
+                            <Cropper
+                                image={selectedImage!}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={1}
+                                onCropChange={setCrop}
+                                onCropComplete={onCropComplete}
+                                onZoomChange={setZoom}
+                                showGrid={false}
+                            />
+                        </div>
+
+                        {/* Zoom Controls */}
+                        <div className="mt-6 flex items-center gap-4 px-2">
+                            <Minus className="h-4 w-4 text-muted-foreground" />
+                            <input
+                                type="range"
+                                value={zoom}
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                aria-labelledby="Zoom"
+                                onChange={(e) => setZoom(Number(e.target.value))}
+                                // Accent uses primary color now
+                                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-primary transition-all hover:accent-primary/80"
+                            />
+                            <Plus className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex-row justify-end gap-2 border-t border-border bg-background px-4 py-3 md:px-6 md:py-4">
+                        <Button variant="ghost" onClick={() => setIsCropDialogOpen(false)} className="h-10 font-bold text-muted-foreground">
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleCropSave}
+                            className="h-10 rounded-xl bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90"
+                        >
+                            Apply Photo
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* --- CONFIRMATION DIALOG --- */}
+            <ClassicDialog
+                title={classicDialog.title}
+                message={classicDialog.message}
+                hideNegativeButton={!classicDialog.isNegativeButtonVisible}
+                negativeButtonText={classicDialog.negativeButtonText}
+                positiveButtonText={classicDialog.positiveButtonText}
+                open={classicDialog.isOpen}
+                onNegativeClick={() => setClassicDialog((prev) => ({ ...prev, isOpen: false }))}
+                onPositiveClick={() => {
+                    setClassicDialog((prev) => ({ ...prev, isOpen: false }));
+                    if (classicDialog.currentAction === 'logout') handleLogout();
+                    if (classicDialog.currentAction === 'remove-avatar') setUserAvatarURL(null);
+                }}
+            />
+        </div>
+    );
+}
+
+/* Helper for cropper image creation */
+function createImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.addEventListener('load', () => resolve(image));
+        image.addEventListener('error', (error) => reject(error));
+        image.setAttribute('crossOrigin', 'anonymous');
+        image.src = url;
+    });
+}

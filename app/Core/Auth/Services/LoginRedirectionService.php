@@ -13,7 +13,7 @@ class LoginRedirectionService
     public function redirectUser(object $user, string $slug)
     {
 
-        if (is_null($user->phone_verified_at)) {
+        if (!is_null($user->phone) && is_null($user->phone_verified_at)) {
 
             return route('otp.verification.page');
 

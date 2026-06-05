@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->trustProxies(at: '*');
+        $middleware->redirectUsersTo(function (Request $request) {
+            $municipality = $request->route('municipality') ?? 'default';
+
+            return route('home', ['municipality' => $municipality]);
+        });
         $middleware->redirectGuestsTo(function (Request $request) {
 
             if ($request->expectsJson()) {

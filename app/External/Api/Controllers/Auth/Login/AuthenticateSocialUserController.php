@@ -2,53 +2,56 @@
 
 namespace App\External\Api\Controllers\Auth\Login;
 
-use App\Core\Auth\Actions\AuthenticateSocialUserAction;
 use App\Core\Auth\Dto\SocialUserDto;
+use App\Core\Auth\UseCase\LoginWithSocialProvider;
 use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthenticateSocialUserController extends Controller
 {
     public function __construct(
-        private AuthenticateSocialUserAction $authenticateSocialUserAction
+        private LoginWithSocialProvider $loginWithSocialProvider,
     ) {
     }
 
     /**
-     * Stateless API endpoint for social authentication.
-     * Expects a 'provider' (google, etc) and an 'access_token' from the client.
+     * Handles social (e.g. Google) authentication.
+     * Expects a 'provider' and an 'access_token' from the client-side OAuth flow.
+     * Creates a cookie session — identical to the phone/password login path.
      */
     public function __invoke(Request $request): JsonResponse
     {
         $request->validate([
-            'provider' => ['required', 'string'],
+            'provider'     => ['required', 'string'],
             'access_token' => ['required', 'string'],
         ]);
 
         try {
-            // Verify the token with the provider
-            $socialiteUser = Socialite::driver($request->string('provider'))
-                ->userFromToken($request->string('access_token'));
+            $provider = $request->input('provider');
+            $token    = $request->input('access_token');
 
-            // Hand off to the core logic layer
-            $user = $this->authenticateSocialUserAction->execute(
-                SocialUserDto::fromSocialite($request->string('provider'), $socialiteUser)
+            // Verify the access token directly with the provider (no redirect/callback needed)
+            $socialiteUser = Socialite::driver($provider)
+                ->stateless()
+                ->userFromToken($token);
+
+            $municipality = app('current_municipality');
+
+            $result = $this->loginWithSocialProvider->execute(
+                SocialUserDto::fromSocialite($provider, $socialiteUser),
+                $municipality->slug,
             );
 
-            // Log in for web sessions (if applicable)
-            Auth::login($user);
-
             return response()->json([
-                'user' => $user,
-                'token' => $user->createToken('social_login')->plainTextToken,
+                'success'  => true,
+                'redirect' => $result->redirect,
             ]);
+
         } catch (Exception $e) {
             return response()->json([
-                'error' => 'Social authentication failed.',
                 'message' => $e->getMessage(),
             ], 401);
         }

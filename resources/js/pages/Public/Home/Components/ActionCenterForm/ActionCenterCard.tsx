@@ -1,11 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { portal } from '@/routes/actionCenter';
-import { Link } from '@inertiajs/react';
+import login from '@/routes/login';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ArrowRight, LayoutDashboard } from 'lucide-react';
 
 export default function ActionCenterUi() {
-    const { currentMunicipality } = useMunicipality();
+    const { auth, currentMunicipality } = usePage<SharedData>().props;
 
     return (
         <Card className="m-3 flex h-full flex-col rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-7">
@@ -33,6 +34,13 @@ export default function ActionCenterUi() {
                     <Link
                         href={portal.url({ municipality: currentMunicipality.slug })}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
+                        onClick={(e) => {
+                            // If the user isn't logged in, redirect to the login page
+                            if (auth.user === null) {
+                                e.preventDefault();
+                                router.visit(login.page.url({ municipality: currentMunicipality.slug }));
+                            }
+                        }}
                     >
                         Open Action Center
                         <ArrowRight size={16} />

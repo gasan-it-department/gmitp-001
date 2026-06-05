@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import communityReport from '@/routes/communityReport';
+import login from '@/routes/login';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
@@ -53,7 +54,7 @@ export default function ReportIssueCard() {
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
                         onClick={() => {
                             if (auth.user === null) {
-                                setLogInSignUpDialogVisible(true);
+                                router.visit(login.page.url({ municipality: currentMunicipality.slug }));
                                 return;
                             }
                             router.visit(communityReport.create.url({ municipality: currentMunicipality.slug }));

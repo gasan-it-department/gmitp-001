@@ -44,8 +44,7 @@ class LoginUser
         }
 
         //find the user identifier and add rate limiter hit if not found
-        $users = $this->userRepository->findByUserName($dto->identifier)
-            ?? $this->userRepository->findByPhone($dto->identifier);
+        $users = $this->userRepository->findByPhone($dto->identifier);
 
         if (!$users) {
             $this->rateLimiter->hit($rateLimitKey, self::RATE_LIMIT_MINUTES);
@@ -66,7 +65,7 @@ class LoginUser
 
         $redirectUrl = $this->loginRedirectionService->redirectUser($users, $slug);
 
-        if (is_null($users->phone_verified_at)) {
+        if (!is_null($users->phone) && is_null($users->phone_verified_at)) {
 
             $this->verificationSenderService->send($users->phone);
 

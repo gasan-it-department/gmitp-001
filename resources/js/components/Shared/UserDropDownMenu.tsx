@@ -10,8 +10,8 @@ import {
 import { AuthApi } from '@/Core/Api/Auth/AuthApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { account } from '@/routes';
 import { dashboard } from '@/routes/admin';
+import profile from '@/routes/profile';
 import superAdmin from '@/routes/superAdmin';
 import transaction from '@/routes/transaction';
 import { type SharedData } from '@/types';
@@ -90,7 +90,7 @@ export function UserDropdownMenu() {
                     {/* Personal Group */}
                     <DropdownMenuGroup>
                         <DropdownMenuItem
-                            onClick={() => router.visit(account.url({ municipality: currentMunicipality.slug }))}
+                            onClick={() => router.visit(profile.show.url({ municipality: currentMunicipality.slug }))}
                             className="cursor-pointer"
                         >
                             <User className="mr-2 h-4 w-4" />

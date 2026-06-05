@@ -21,15 +21,6 @@ class CreateAdminRequest extends FormRequest
             'middle_name' => ['nullable', 'max:100', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
             'last_name' => ['required', 'max:100', 'min:2', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
 
-            'user_name' => [
-                'required',
-                'string',
-                'min:3',
-                'max:30',
-                'unique:users,user_name',
-                'regex:/^[a-z0-9\._]+$/'
-            ],
-
             'email' => [
                 'required',
                 'email:rfc,dns',

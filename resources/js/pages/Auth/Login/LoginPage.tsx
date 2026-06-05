@@ -1,12 +1,19 @@
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import api from '@/lib/axios';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { home } from '@/routes';
+import { social } from '@/routes/login';
+import signup from '@/routes/signup';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useGoogleLogin } from '@react-oauth/google';
+import { ChevronLeft } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
     const [isSocialLoading, setIsSocialLoading] = useState(false);
 
+    // Shared by SetMunicipalityContext middleware on the /{municipality}/login route
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     // Inertia's built-in form helper
     const { data, setData, processing, errors } = useForm({
         user_identifier: '', // Matches backend LoginRequest
@@ -26,9 +33,9 @@ export default function LoginPage() {
                     remember_me: data.remember_me,
                 },
                 {
-                    // headers: {
-                    //     'X-Municipality-Slug': currentMunicipality.slug
-                    // }
+                    headers: {
+                        'X-Municipality-Slug': currentMunicipality.slug,
+                    },
                 },
             );
 
@@ -55,21 +62,21 @@ export default function LoginPage() {
         setIsSocialLoading(true);
         try {
             const response = await api.post(
-                '/api/auth/social',
+                social.url(),
                 {
                     provider: 'google',
                     access_token: googleAccessToken,
                 },
                 {
-                    // headers: {
-                    //     'X-Municipality-Slug': currentMunicipality.slug,
-                    // },
+                    headers: {
+                        'X-Municipality-Slug': currentMunicipality.slug,
+                    },
                 },
             );
 
-            if (response.status === 200) {
+            if (response.data.success) {
                 toast.success('Successfully logged in with Google!');
-                router.visit('/');
+                router.visit(response.data.redirect ?? '/');
             }
         } catch (error: any) {
             console.error('Google login failed', error);
@@ -94,6 +101,14 @@ export default function LoginPage() {
             <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex-row">
                 {/* Left Side: Form Section */}
                 <div className="flex w-full flex-col justify-center p-8 sm:p-12 md:w-1/2">
+                    <Link
+                        href={home.url({ municipality: currentMunicipality.slug })}
+                        className="group mb-6 flex w-fit items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black"
+                    >
+                        <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                        Back
+                    </Link>
+
                     <div className="mb-8 text-center">
                         <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
                         <p className="mt-2 text-sm text-gray-500">Login to your account</p>
@@ -140,6 +155,20 @@ export default function LoginPage() {
                             {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                         </div>
 
+                        {/* Remember Me */}
+                        <div className="flex items-center space-x-2">
+                            <input
+                                id="remember_me"
+                                type="checkbox"
+                                checked={data.remember_me}
+                                onChange={(e) => setData('remember_me', e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                            />
+                            <label htmlFor="remember_me" className="text-sm text-gray-600">
+                                Keep me logged in
+                            </label>
+                        </div>
+
                         {/* Submit Button */}
                         <button
                             type="submit"
@@ -182,7 +211,8 @@ export default function LoginPage() {
                                         fill="#FBBC05"
                                     />
                                     <path
-                                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                        // The missing 3.99 has been added below right before the 3.47
+                                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                                         fill="#EA4335"
                                     />
                                 </svg>
@@ -193,7 +223,7 @@ export default function LoginPage() {
 
                     <p className="mt-8 text-center text-sm text-gray-600">
                         Don't have an account?{' '}
-                        <Link href="/register" className="font-medium text-black hover:underline">
+                        <Link href={signup.show.url(currentMunicipality.slug)} className="font-medium text-black hover:underline">
                             Sign up
                         </Link>
                     </p>
@@ -218,11 +248,11 @@ export default function LoginPage() {
             {/* Footer Legal Text */}
             <div className="mt-8 text-center text-xs text-gray-500">
                 By clicking continue, you agree to our{' '}
-                <a href="/terms" className="underline hover:text-gray-700">
+                <a href="#" className="underline hover:text-gray-700">
                     Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="/privacy" className="underline hover:text-gray-700">
+                <a href="#" className="underline hover:text-gray-700">
                     Privacy Policy
                 </a>
                 .
