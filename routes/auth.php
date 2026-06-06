@@ -1,8 +1,5 @@
 <?php
 
-use App\External\Api\Controllers\UserManagement\CreateAdminController;
-use App\External\Api\Controllers\UserManagement\UpdateAdminProfileController;
-use App\External\Web\Controllers\UserManagement\SuperAdmin\EditAdminController;
 use App\External\Api\Controllers\Auth\ForgotPasswordController;
 use App\External\Api\Controllers\Auth\Login\AuthenticateSocialUserController;
 use App\External\Api\Controllers\Auth\LoginController;
@@ -13,12 +10,15 @@ use App\External\Api\Controllers\Auth\UpdatePasswordController;
 use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
 use App\External\Api\Controllers\Profile\LinkSocialAccountController;
+use App\External\Api\Controllers\UserManagement\CreateAdminController;
+use App\External\Api\Controllers\UserManagement\UpdateAdminProfileController;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
 use App\External\Web\Controllers\Auth\ShowLoginController;
 use App\External\Web\Controllers\Auth\ShowSignupController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use App\External\Web\Controllers\UserManagement\Public\ShowUserProfileController;
+use App\External\Web\Controllers\UserManagement\SuperAdmin\EditAdminController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
