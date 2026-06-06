@@ -1,15 +1,17 @@
 <?php
 
-use App\External\Api\Controllers\Cemetery\Decedents\RegisterDecedentController;
+use App\External\Api\Controllers\Cemetery\Decedent\StoreDecedentController;
+use App\External\Api\Controllers\Cemetery\Decedent\UpdateDecedentController;
 use App\External\Api\Controllers\Cemetery\Interments\StoreIntermentController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotController;
-use App\External\Web\Controllers\Cemetery\Admin\Decedents\ListDecedentsController;
-use App\External\Web\Controllers\Cemetery\Admin\Decedents\RegisterDecedentsController;
-use App\External\Web\Controllers\Cemetery\Admin\Decedents\ShowDecedentProfile;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\CreatePlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\ListPlotsController;
 use App\External\Web\Controllers\Cemetery\CemeteryController;
+use App\External\Web\Controllers\Cemetery\Decedent\CreateDecedentController;
+use App\External\Web\Controllers\Cemetery\Decedent\EditDecedentController;
+use App\External\Web\Controllers\Cemetery\Decedent\IndexDecedentController;
+use App\External\Web\Controllers\Cemetery\Decedent\ShowDecedentController;
 use App\External\Web\Controllers\Cemetery\Interements\CreateIntermentController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,9 +39,10 @@ Route::prefix('/{municipality}/cemetery')
                 Route::prefix('decedents')
                     ->name('decedents.')
                     ->group(function () {
-                        Route::get('/', ListDecedentsController::class)->name('list.page');
-                        Route::get('register', RegisterDecedentsController::class)->name('create.page');
-                        Route::get('profile/{decedent_id}', ShowDecedentProfile::class)->name('profile.page');
+                        Route::get('/', IndexDecedentController::class)->name('list.page');
+                        Route::get('register', CreateDecedentController::class)->name('create.page');
+                        Route::get('profile/{decedent_id}', ShowDecedentController::class)->name('profile.page');
+                        Route::get('edit/{decedent_id}', EditDecedentController::class)->name('edit.page');
                     });
 
                 // Plots
@@ -71,7 +74,8 @@ Route::prefix('api/decedents')
     ->name('decedents.')
     ->middleware(['municipalityContext', 'admin', 'auth'])
     ->group(function () {
-        Route::post('store', RegisterDecedentController::class)->name('store');
+        Route::post('store', StoreDecedentController::class)->name('store');
+        Route::put('{decedent_id}', UpdateDecedentController::class)->name('update');
     });
 
 Route::prefix('api/plots')

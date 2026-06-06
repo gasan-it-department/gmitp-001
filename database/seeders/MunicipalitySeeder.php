@@ -15,24 +15,34 @@ class MunicipalitySeeder extends Seeder
      */
     public function run(): void
     {
-        $psgcMunicipal = DB::table('psgc_municipalities')
-            ->where('name', 'Gasan')
-            ->first();
-
-        $municipalities = [
-            [
-                'name' => strtoupper($psgcMunicipal->name),
-                'psgc_municipal_id' => $psgcMunicipal->id,
-                'slug' => 'gasan-4905',
-                'municipal_code' => $psgcMunicipal->psgc_code,
-                'zip_code' => '4905',
-                'is_active' => true,
-            ],
-            // Add more municipalities as needed
+        $towns = [
+            ['name' => 'Boac', 'zip' => '4900'],
+            ['name' => 'Buenavista', 'zip' => '4901'],
+            ['name' => 'Santa Cruz', 'zip' => '4902'],
+            ['name' => 'Torrijos', 'zip' => '4903'],
+            ['name' => 'Gasan', 'zip' => '4905'],
         ];
 
-        foreach ($municipalities as $data) {
-            Municipality::firstOrCreate(array_merge($data, ['id' => Str::ulid()]));
+        foreach ($towns as $town) {
+            $psgc = DB::table('psgc_municipalities')
+                ->where('name', $town['name'])
+                ->first();
+
+            if (!$psgc) {
+                continue;
+            }
+
+            Municipality::firstOrCreate(
+                ['psgc_municipal_id' => $psgc->id],
+                [
+                    'id' => Str::ulid(),
+                    'name' => strtoupper($psgc->name),
+                    'slug' => Str::slug($psgc->name) . '-' . $town['zip'],
+                    'municipal_code' => $psgc->psgc_code,
+                    'zip_code' => $town['zip'],
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }

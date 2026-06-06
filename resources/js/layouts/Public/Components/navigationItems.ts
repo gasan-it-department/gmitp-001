@@ -1,7 +1,8 @@
-import { LucideIcon, Folders, House, Phone, MapPinned, Landmark, ShieldCheck } from "lucide-react";
+import { LucideIcon, Folders, House, Phone, MapPinned, Landmark, ShieldCheck, Bug } from "lucide-react";
 import { travel, home, executiveOrders, contact } from '@/routes';
 import transparency from "@/routes/transparency";
 import { roster } from "@/routes/government";
+import supportTicket from "@/routes/supportTicket";
 
 export type NavigationItem = {
   title: string;
@@ -40,10 +41,16 @@ export const useNavigation = (): NavigationItem[] => [
     icon: ShieldCheck,
     id: "transparency"
   },
-  {
-    title: "Executive Orders",
-    route: executiveOrders,
-    icon: Folders,
-    id: "executive-orders"
-  },
+  // {
+  //   title: "Report a Bug",
+  //   route: supportTicket.create,
+  //   icon: Bug,
+  //   id: "report"
+  // },
+  // {
+  //   title: "Executive Orders",
+  //   route: executiveOrders,
+  //   icon: Folders,
+  //   id: "executive-orders"
+  // },
 ];

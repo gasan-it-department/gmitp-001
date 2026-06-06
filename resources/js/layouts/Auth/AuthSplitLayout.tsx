@@ -18,14 +18,6 @@ export default function AuthSplitLayout({ children, title, description }: PropsW
                 <Link href={route('home.show')} className="relative z-20 flex items-center text-lg font-medium">
                     <AuthLogo className="mr-2 size-8 fill-current text-white" />
                 </Link>
-                {quote && (
-                    <div className="relative z-20 mt-auto p-5">
-                        <blockquote className="space-y-2">
-                            <p className="text-lg">&ldquo;{quote.message}&rdquo;</p>
-                            <footer className="teassext-neutral-300 text-sm">{quote.author}</footer>
-                        </blockquote>
-                    </div>
-                )}
             </div>
             <div className="w-full lg:p-8">
                 <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">

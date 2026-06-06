@@ -4,15 +4,14 @@ import * as React from 'react';
 
 // Define the type for a single banner
 export type Banner = {
-    id: string;
-    title: string | null;
-    bannerUrl: string;
-    sortOrder: number | null;
+    id: string | number;
+    name: string;
+    url: string;
 };
 
 // Define props interface
 interface CarouselProps {
-    slides: Banner[];
+    slides?: Banner[];
 }
 
 // --- CONSTANTS ---
@@ -58,11 +57,14 @@ export default function Carousel({ slides }: CarouselProps) {
     }, []);
 
     // 2. Tracking Movement (Mouse/Touch Move)
-    const handleMove = React.useCallback((clientX: number) => {
-        if (!isDragging) return;
-        touchEndX.current = clientX;
-        setDragOffset(touchEndX.current - touchStartX.current);
-    }, [isDragging]);
+    const handleMove = React.useCallback(
+        (clientX: number) => {
+            if (!isDragging) return;
+            touchEndX.current = clientX;
+            setDragOffset(touchEndX.current - touchStartX.current);
+        },
+        [isDragging],
+    );
 
     // 3. End Tracking (Mouse Up or Touch End)
     const handleEnd = React.useCallback(() => {
@@ -91,7 +93,6 @@ export default function Carousel({ slides }: CarouselProps) {
         touchStartX.current = 0;
         touchEndX.current = 0;
     }, [isDragging, next, prev]);
-
 
     // --- BINDING FUNCTIONS ---
 
@@ -126,7 +127,6 @@ export default function Carousel({ slides }: CarouselProps) {
         }
     };
 
-
     // Calculate dynamic transform value
     const baseTransform = index * 100;
     const finalTransform = `translateX(calc(-${baseTransform}% + ${dragOffset}px))`;
@@ -144,7 +144,7 @@ export default function Carousel({ slides }: CarouselProps) {
                 className="flex transition-transform duration-700 ease-in-out"
                 style={{
                     transform: finalTransform,
-                    cursor: isDragging ? 'grabbing' : 'grab'
+                    cursor: isDragging ? 'grabbing' : 'grab',
                 }}
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
@@ -155,18 +155,18 @@ export default function Carousel({ slides }: CarouselProps) {
                     <div
                         key={banner.id}
                         // 1. Set the container's height responsively using the 2.4:1 aspect ratio.
-                        className="flex w-full min-w-full justify-center items-center bg-gray-100 aspect-[24/10] overflow-hidden"
+                        className="flex aspect-[24/10] w-full min-w-full items-center justify-center overflow-hidden bg-gray-100"
                     >
                         <img
-                            src={banner.bannerUrl}
-                            alt={banner.title || `Banner ${i}`}
-
-                            // 2. Change object-cover to object-contain. 
-                            // Since container ratio (2.4:1) matches image ratio (2.4:1), this results in a perfect fit 
+                            loading="lazy"
+                            decoding="async"
+                            src={banner.url}
+                            alt={banner.name || `Banner ${i}`}
+                            // 2. Change object-cover to object-contain.
+                            // Since container ratio (2.4:1) matches image ratio (2.4:1), this results in a perfect fit
                             // with NO cropping and NO white space.
                             // Removed mb-2 and rounded-lg for a clean banner fit.
                             className="h-full w-full flex-shrink-0 object-fill"
-
                             draggable={false}
                             style={{ pointerEvents: 'none' }}
                         />

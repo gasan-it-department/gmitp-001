@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { EventsApi } from '@/Core/Api/BulletinBoard/EventsApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { EventFormData } from '@/Core/Types/BulletinBoard/Events';
 import { AxiosError } from 'axios';
@@ -58,21 +57,21 @@ export default function AddEditEventsDialog({ isOpen, editData, onClose, onSucce
     const onSubmit = async (data: EventFormData) => {
         setServerError(null);
         try {
-            if (editData) {
-                await EventsApi.updateEvent(editData.id, currentMunicipality.slug, data);
-                onSuccess!(data, true);
-            } else {
-                const response = await EventsApi.storeEvents(data, currentMunicipality.slug);
-                const reconstructedResponse = {
-                    id: response.data.id,
-                    title: response.data.title,
-                    description: response.data.description,
-                    event_date: response.data.event_date.date,
-                    event_created_at: response.data.created_at.date,
-                };
-                console.log('Response data:', response.data);
-                onSuccess!(reconstructedResponse, false);
-            }
+            // if (editData) {
+            //     await EventsApi.updateEvent(editData.id, currentMunicipality.slug, data);
+            //     onSuccess!(data, true);
+            // } else {
+            //     const response = await EventsApi.storeEvents(data, currentMunicipality.slug);
+            //     const reconstructedResponse = {
+            //         id: response.data.id,
+            //         title: response.data.title,
+            //         description: response.data.description,
+            //         event_date: response.data.event_date.date,
+            //         event_created_at: response.data.created_at.date,
+            //     };
+            //     console.log('Response data:', response.data);
+            //     onSuccess!(reconstructedResponse, false);
+            // }
             reset();
             onClose();
         } catch (error: any) {

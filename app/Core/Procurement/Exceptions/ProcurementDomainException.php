@@ -13,7 +13,7 @@ class ProcurementDomainException extends DomainException
     }
     public function status(): int
     {
-        return 404;
+        return 422;
     }
 
 }

@@ -2,10 +2,18 @@
 
 namespace App\Core\Cemetery\Dto;
 
-use App\External\Api\Request\Cemetery\CreateIntermentRequest;
+use Carbon\Carbon;
 
 /**
- * Immutable transport for "assign decedent to plot" payloads.
+ * Immutable transport for "record interment" — one interment EVENT (initial OR
+ * transfer). The plot_id MUST reference a LEAF/SLOT row (BR-4); the
+ * RecordIntermentAction enforces this defensively and the assignment picker
+ * pre-filters parent containers out (BR-1).
+ *
+ * Tenancy (SR-1): `municipalId` is sourced from `app('municipal_id')` —
+ * bound by SetMunicipalityContext — and never from the payload. `notes` are
+ * free-form prose, so they are trimmed but NOT uppercased (SR-3 applies only
+ * to identifier fields).
  */
 final readonly class IntermentDto
 {
@@ -13,24 +21,42 @@ final readonly class IntermentDto
         public string  $municipalId,
         public string  $decedentId,
         public string  $plotId,
-        public string  $intermentDate,
-        public string  $status,
+        public string  $intermentDate, // normalized 'Y-m-d'
+        public string  $type,          // 'initial' | 'transfer'
+        public ?string $notes,
     ) {
     }
 
-    public static function fromCreateRequest(CreateIntermentRequest $request): self
+    public static function fromRequest(array $validated): self
     {
-        $data = $request->validated();
-
         return new self(
             municipalId: app('municipal_id'),
-            decedentId: $data['decedent_id'],
-            plotId: $data['plot_id'],
-            intermentDate: $data['interment_date'],
-            // Default is "interred" because the LGU admin only confirms an
-            // assignment once the burial is happening; "pending" is reserved
-            // for future scheduling flows.
-            status: $data['status'] ?? 'interred',
+            decedentId: $validated['decedent_id'],
+            plotId: $validated['plot_id'],
+            intermentDate: self::normalizeDate($validated['interment_date']),
+            type: $validated['type'] ?? 'initial',
+            notes: self::cleanText($validated['notes'] ?? null),
         );
+    }
+
+    /**
+     * Coerce any accepted input shape (Y-m-d, m/d/Y, ISO 8601) to the
+     * canonical Y-m-d string so the column behaves identically across DB
+     * drivers and downstream reads are predictable.
+     */
+    private static function normalizeDate(string $value): string
+    {
+        return Carbon::parse($value)->format('Y-m-d');
+    }
+
+    private static function cleanText(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

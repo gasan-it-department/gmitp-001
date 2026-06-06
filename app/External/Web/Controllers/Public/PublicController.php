@@ -2,8 +2,8 @@
 
 namespace App\External\Web\Controllers\Public;
 
+use App\Core\Municipality\Actions\GetMunicipalitySettingsAction;
 use App\Core\Municipality\Services\GetActiveMunicipality;
-use App\External\Api\Resources\Municipality\MunicipalBannerResource;
 use App\External\Api\Resources\Municipality\MunicipalityResource;
 use App\Http\Controllers\Controller;
 use inertia\Inertia;
@@ -11,32 +11,19 @@ use inertia\Inertia;
 class PublicController extends Controller
 {
 
-    public function showMainLandingPage(GetActiveMunicipality $getActiveMunicipality)
-    {
+    public function showMainLandingPage(
+        GetActiveMunicipality $getActiveMunicipality,
+        GetMunicipalitySettingsAction $getMunicipalitySettingsAction
+    ) {
 
-        // $municipality = $getActiveMunicipality->execute();
+        $municipality = $getActiveMunicipality->execute();
 
-        // return Inertia::render('Public/MainLandingPage/MainLandingPage', [
+        return Inertia::render('Public/MainLandingPage/MainLandingPage', [
 
-        //     'municipality' => MunicipalityResource::collection($municipality)
+            'municipality' => MunicipalityResource::collection($municipality)
 
-        // ]);
-        return Inertia::render('Public/MainLandingPage/MainLandingPage');
-
-    }
-
-    public function showHomePage()
-    {
-
-        $municipality = app('current_municipality');
-
-        $banners = $municipality->banners()
-            ->get();
-
-        return Inertia::render('Public/Home/HomePage', [
-
-            'banners' => (MunicipalBannerResource::collection($banners))->resolve()
         ]);
+
     }
 
     public function showServicePage()

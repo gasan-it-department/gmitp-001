@@ -15,9 +15,11 @@ import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
-import bulletinBoard from '@/routes/bulletin-board';
+import announcement from '@/routes/announcement';
 import cemetery from '@/routes/cemetery';
 import communityReport from '@/routes/communityReport';
+import department from '@/routes/department';
+import event from '@/routes/event';
 import feedback from '@/routes/feedback';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
@@ -134,13 +136,13 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             items: [
                 {
                     title: 'Announcements',
-                    url: bulletinBoard.announcement.admin.index.url({ municipality: currentMunicipality.slug }),
+                    url: announcement.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Megaphone,
                     permission: 'bulletin_board.access',
                 },
                 {
                     title: 'Events Calendar',
-                    url: bulletinBoard.events.admin.index.url({ municipality: currentMunicipality.slug }),
+                    url: event.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: CalendarDays,
                     permission: 'bulletin_board.access',
                 },
@@ -152,7 +154,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Incident Reports',
-                    url: communityReport.page.url({ municipality: currentMunicipality.slug }),
+                    url: communityReport.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Siren,
                     permission: 'community_report.access',
                 },
@@ -206,13 +208,19 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 },
                 {
                     title: 'Site Pages (CMS)',
-                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    url: municipality.admin.settings.edit.url({ municipality: currentMunicipality.slug }),
                     icon: LayoutTemplate,
                     permission: 'municipality_settings.access',
                 },
+            ],
+        },
+        {
+            title: 'DEPARTMENTS',
+            icon: Landmark,
+            items: [
                 {
                     title: 'Departments',
-                    url: municipality.admin.page.url({ municipality: currentMunicipality.slug }),
+                    url: department.index.url({ municipality: currentMunicipality.slug }),
                     icon: Landmark,
                     permission: 'municipality_settings.access',
                 },

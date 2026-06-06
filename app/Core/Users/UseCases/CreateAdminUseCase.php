@@ -36,7 +36,7 @@ class CreateAdminUseCase
 
         $normalizePhone = $this->phoneFormatterService->normalize($dto->phone);
 
-        $this->ensureUserDoesNotExist($dto->userName, $normalizePhone, $dto->email);
+        $this->ensureUserDoesNotExist($normalizePhone, $dto->email);
 
         $admin = $this->userRepo->save([
 
@@ -47,8 +47,6 @@ class CreateAdminUseCase
             'middleName' => $dto->middleName,
 
             'lastName' => $dto->lastName,
-
-            'userName' => $dto->userName,
 
             'phone' => $normalizePhone,
 
@@ -70,14 +68,8 @@ class CreateAdminUseCase
 
     }
 
-    private function ensureUserDoesNotExist(string $userName, string $phone, string $email): void
+    private function ensureUserDoesNotExist(string $phone, string $email): void
     {
-        if ($this->userRepo->findByUsername($userName) !== null) {
-
-            throw UserAlreadyExistExceptions::withUserName($userName);
-
-        }
-
         if ($this->userRepo->findByPhone($phone) !== null) {
 
             throw UserAlreadyExistExceptions::withPhone($phone);

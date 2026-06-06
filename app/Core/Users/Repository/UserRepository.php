@@ -15,7 +15,6 @@ class UserRepository
             'first_name' => $data['firstName'],
             'middle_name' => $data['middleName'],
             'last_name' => $data['lastName'],
-            'user_name' => $data['userName'],
             'phone' => $data['phone'],
             'password' => $data['password'],
             'municipal_id' => $data['municipalId'] ?? null,
@@ -28,11 +27,6 @@ class UserRepository
 
         return user::findOrFail($userId);
 
-    }
-
-    public function findByUserName(string $userName): ?User
-    {
-        return User::where('user_name', $userName)->first();
     }
 
     public function findByEmail(string $email): ?User
@@ -57,7 +51,7 @@ class UserRepository
                 $q->where('first_name', 'like', "%{$dto->search}%")
                     ->orWhere('last_name', 'like', "%{$dto->search}%")
                     ->orWhere('email', 'like', "%{$dto->search}%")
-                    ->orWhere('user_name', 'like', "%{$dto->search}%");
+                    ->orWhere('phone', 'like', "%{$dto->search}%");
             });
         }
 

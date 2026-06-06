@@ -9,7 +9,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "cloudinary/cloudinary_php": "*",
         "inertiajs/inertia-laravel": "^2.0",
@@ -17,6 +17,7 @@
         "laravel/passport": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/scout": "^10.22",
+        "laravel/socialite": "^5.27",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.12",
         "league/flysystem-aws-s3-v3": "3.0",

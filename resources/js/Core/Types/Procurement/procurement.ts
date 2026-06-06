@@ -39,7 +39,7 @@ export interface Procurement {
 export interface ProcurementDetail extends Procurement {
     department: Department;
     funding_source: FundingSource;
-    documents: ProcurementFile[];
+    media: ProcurementFile[];
     prepared_by: {
         id: string;
         full_name: string;

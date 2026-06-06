@@ -41,22 +41,31 @@ enum ProcurementDocumentType: string
 
     /**
      * Defines which project statuses allow the upload of this document type.
-     * This acts as the central rule engine for both the backend and frontend.
      */
     public function allowedStatuses(): array
     {
-        return ProcurementStatus::cases(); // 🌟 Beautiful shortcut! Returns ALL cases automatically.
+        return match ($this) {
+            self::INVITATION, self::BID_DOCS, self::BULLETIN => [
+                ProcurementStatus::DRAFT,
+                ProcurementStatus::OPEN
+            ],
+            self::ABSTRACT_OF_BIDS, self::BAC_RESOLUTION => [
+                ProcurementStatus::EVALUATING,
+                ProcurementStatus::AWARDED
+            ],
+            self::NOTICE_OF_AWARD, self::CONTRACT, self::NOTICE_TO_PROCEED => [
+                ProcurementStatus::AWARDED
+            ],
+            self::OTHERS => ProcurementStatus::cases(),
+        };
     }
 
-    /**
-     * Enhanced toOptionsArray to send the allowed statuses to React!
-     */
     public static function toOptionsArray(): array
     {
         return array_map(fn($case) => [
             'value' => $case->value,
             'label' => $case->label(),
-            'allowed_statuses' => $case->allowedStatuses(), // 🌟 Frontend can use this to filter!
-        ], ProcurementDocumentType::cases());
+            'allowed_statuses' => array_map(fn($status) => $status->value, $case->allowedStatuses()),
+        ], self::cases());
     }
 }

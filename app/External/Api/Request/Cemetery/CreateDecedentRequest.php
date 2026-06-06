@@ -8,12 +8,12 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 /**
- * Validates the LGU admin payload when creating a NEW decedent record.
+ * Validates the LGU admin payload when creating a NEW decedent record from the
+ * Inertia web form.
  *
- * Single-purpose: this request is wired only to the "register decedent" use case.
- * Do not reuse for updates — that flow gets its own UpdateDecedentRequest so the
- * unique-rule ignore logic and conditional clearing of fields stay explicit per
- * intent (layered request convention).
+ * Single-purpose: wired only to StoreDecedentController. Do not reuse for updates
+ * — UpdateDecedentRequest owns the unique-rule ignore logic so each intent stays
+ * explicit (layered request convention).
  *
  * Tenant boundary: municipal_id is NOT accepted from the payload — it is sourced
  * from the bound `municipal_id` container instance set by SetMunicipalityContext
@@ -154,6 +154,11 @@ class CreateDecedentRequest extends FormRequest
                 'max:1000',
                 Rule::requiredIf(fn () => $this->input('decedent_type') === DecedentTypes::UNKNOWN->value),
             ],
+
+            // Identification layer (Spatie MediaLibrary). Optional on create.
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'identification' => ['nullable', 'array', 'max:10'],
+            'identification.*' => ['file', 'mimes:jpeg,jpg,png,webp,pdf', 'max:10240'],
         ];
     }
 
@@ -170,6 +175,12 @@ class CreateDecedentRequest extends FormRequest
             'memorial_name.required_if' => 'A memorial name is required when no official name is available.',
             'notes.required_if' => 'Please provide additional context for unknown decedents.',
             'psgc_barangay_id.required_with' => 'Please select a barangay for the chosen municipality.',
+            'avatar.image' => 'The profile photo must be a valid image file.',
+            'avatar.mimes' => 'The profile photo must be a JPG, PNG, or WEBP image.',
+            'avatar.max' => 'The profile photo may not be larger than 5 MB.',
+            'identification.max' => 'You may upload at most 10 identification files.',
+            'identification.*.mimes' => 'Identification files must be JPG, PNG, WEBP, or PDF.',
+            'identification.*.max' => 'Each identification file may not be larger than 10 MB.',
         ];
     }
 

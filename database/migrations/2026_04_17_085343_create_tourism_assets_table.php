@@ -15,8 +15,6 @@ return new class extends Migration {
 
             $table->foreignUlid('municipal_id')->constrained('municipalities')->cascadeOnDelete();
 
-            $table->foreignUlid('category_id')->constrained('tourism_categories');
-
             $table->string('type')->index();
 
             $table->string('name');

@@ -1,56 +1,71 @@
 <?php
 
-use App\External\Api\Controllers\CommunityReport\CommunityReportController;
-use App\External\Api\Controllers\CommunityReport\CommunityReportTypeController;
-use App\External\Web\Controllers\CommunityReport\Client\CommunityReportClientController;
-use App\External\Web\Controllers\CommunityReport\CommunityReportAdminController;
+use App\External\Api\Controllers\CommunityReport\Admin\AcknowledgeReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\RejectReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\ResolveReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\StartReportProgressController;
+use App\External\Api\Controllers\CommunityReport\StoreReportController;
+use App\External\Web\Controllers\CommunityReport\Admin\IndexReportController as AdminIndexReportController;
+use App\External\Web\Controllers\CommunityReport\Admin\ShowReportController as AdminShowReportController;
+use App\External\Web\Controllers\CommunityReport\Client\CreateReportController;
+use App\External\Web\Controllers\CommunityReport\Client\ListReportsController;
+use App\External\Web\Controllers\CommunityReport\Client\ShowReportController;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Web (Inertia page rendering) — citizen-facing.
+ */
 Route::prefix('{municipality}/community-report')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'auth'])
     ->name('communityReport.')
-    ->controller(CommunityReportAdminController::class)
     ->group(function () {
 
-        Route::get('/admin', 'index')->name('page');
-
-        Route::get('/show/{id}', 'show')->name('show');
+        Route::get('/', ListReportsController::class)->name('index');
+        Route::get('/create', CreateReportController::class)->name('create');
+        Route::get('/{report_submission}', ShowReportController::class)
+            ->whereUlid('report_submission')
+            ->name('show');
 
     });
 
+/*
+ * Web (Inertia page rendering) — admin-facing.
+ */
+Route::prefix('{municipality}/admin/community-reports')
+    ->middleware(['municipalityContext', 'admin'])
+    ->name('communityReport.admin.')
+    ->group(function () {
 
+        Route::get('/', AdminIndexReportController::class)->name('index');
+        Route::get('/{report_submission}', AdminShowReportController::class)
+            ->whereUlid('report_submission')
+            ->name('show');
+
+    });
+
+/*
+ * API (form mutations) — returns Inertia redirects, not JSON.
+ */
 Route::prefix('api/community-report')
     ->middleware(['municipalityContext', 'auth'])
-    ->name('communityReport')
-    ->controller(CommunityReportController::class)
+    ->name('api.communityReport.')
     ->group(function () {
 
-        Route::middleware(['admin', 'auth', 'municipalityContext'])
-            ->group(function () {
+        Route::post('/', StoreReportController::class)->name('store');
 
-                Route::get('/', 'fetch')->name('fetch');
+        // Admin Lifecycle Transitions
+        Route::middleware('admin')->group(function () {
+            Route::post('/{report_submission}/acknowledge', AcknowledgeReportController::class)
+                ->name('acknowledge');
 
-                Route::patch('/resolve/{id}', 'resolve')->name('resolve');
+            Route::post('/{report_submission}/start-progress', StartReportProgressController::class)
+                ->name('start-progress');
 
-                Route::patch('/reject/{id}', 'reject')->name('reject');
+            Route::post('/{report_submission}/resolve', ResolveReportController::class)
+                ->name('resolve');
 
-            });
-
-        Route::post('/', 'store')->name('store');
-
-        Route::get('/report-type', [CommunityReportTypeController::class, 'getCommunityReportType'])
-            ->name('reportType');
-
-    });
-
-Route::prefix('{municipality}/community-report')
-    ->middleware(['municipalityContext', 'auth'])
-    ->name('communityReport.')
-    ->controller(CommunityReportClientController::class)
-    ->group(function () {
-
-        Route::get('/client', 'index')->name('client.page');
-
-        Route::get('/show/{id}', 'show')->name('show');
+            Route::post('/{report_submission}/reject', RejectReportController::class)
+                ->name('reject');
+        });
 
     });

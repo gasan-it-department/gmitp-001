@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import password from '@/routes/password';
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
-import LoginForm from './Login';
+import LoginForm from './Login/Components/Login';
 import SignUp from './SignUp';
 
 interface Props {

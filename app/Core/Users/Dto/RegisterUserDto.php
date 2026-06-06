@@ -14,27 +14,22 @@ class RegisterUserDto
 
         public readonly string $lastName,
 
-        public readonly string $userName,
-
         public readonly string $phone,
 
         public readonly string $password,
     ) {
     }
 
-    public static function fromRequest(CreateUserRequest $request)
+    public static function fromRequest(CreateUserRequest $request): self
     {
-
         $validated = $request->validated();
 
         return new self(
             firstName: strtoupper($validated['first_name']),
-            middleName: strtoupper($validated['middle_name']),
+            middleName: isset($validated['middle_name']) ? strtoupper($validated['middle_name']) : null,
             lastName: strtoupper($validated['last_name']),
-            userName: $validated['user_name'],
             phone: $validated['phone'],
             password: $validated['password'],
         );
-
     }
 }

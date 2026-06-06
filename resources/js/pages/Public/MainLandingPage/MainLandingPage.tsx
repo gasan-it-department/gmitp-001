@@ -10,16 +10,16 @@ export default function MainLandingPage() {
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Shield className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Opisyal na Portal ng Pamahalaan ng Lalawigan ng Marinduque</span>
+                        <span className="hidden sm:inline">Opisyal na Portal ng Pamahalaan ng Gasan</span>
                         <span className="sm:hidden">Gov.PH Portal</span>
                     </div>
                     <div className="flex items-center gap-4 font-medium">
-                        <Link href="#" className="hover:underline">
+                        {/* <Link href="#" className="hover:underline">
                             Transparency Seal
                         </Link>
                         <Link href="#" className="hidden hover:underline sm:inline">
                             Makipag-ugnayan
-                        </Link>
+                        </Link> */}
                     </div>
                 </div>
             </div>
@@ -34,7 +34,7 @@ export default function MainLandingPage() {
                             className="h-10 w-10 object-contain drop-shadow-sm"
                         />
                         <div>
-                            <h1 className="text-lg leading-none font-black tracking-tight text-foreground">AGA WEB SERVICE</h1>
+                            <h1 className="text-lg leading-none font-black tracking-tight text-foreground">GMITP</h1>
                             <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Unified Services Portal</p>
                         </div>
                     </div>

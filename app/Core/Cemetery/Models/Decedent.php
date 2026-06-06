@@ -8,11 +8,17 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Decedent extends Model
+class Decedent extends Model implements HasMedia
 {
-    use SoftDeletes;
+    use InteractsWithMedia, LogsActivity, SoftDeletes;
 
     protected $table = 'cemetery_decedents';
 
@@ -61,6 +67,67 @@ class Decedent extends Model
     public function interments(): HasMany
     {
         return $this->hasMany(Interment::class, 'decedent_id');
+    }
+
+    public function activities(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject');
+    }
+
+    /**
+     * Strict audit trail (REQ — Spatie Activitylog). We log only the business
+     * columns and only when they actually change. Tenancy/identity columns
+     * (id, municipal_id) are intentionally excluded — they never mutate.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'first_name',
+                'last_name',
+                'middle_name',
+                'suffix',
+                'memorial_name',
+                'date_of_birth',
+                'date_of_death',
+                'date_of_registration',
+                'decedent_type',
+                'reference_document_type',
+                'reference_document_number',
+                'place_of_death',
+                'gender',
+                'cause_of_death',
+                'death_certificate_no',
+                'notes',
+                'address_id',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('cemetery_decedent');
+    }
+
+    /**
+     * Identification layer (Spatie MediaLibrary). `avatar` is a single profile
+     * photo; `identification` holds the supporting documents (IDs, reference
+     * papers) and accepts multiple files including PDFs.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ]);
+
+        $this->addMediaCollection('identification')
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+                'application/pdf',
+            ]);
     }
 
     /**

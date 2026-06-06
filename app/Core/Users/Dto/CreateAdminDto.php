@@ -14,8 +14,6 @@ class CreateAdminDto
 
         public readonly string $lastName,
 
-        public readonly string $userName,
-
         public readonly string $phone,
 
         public readonly string $email,
@@ -35,9 +33,8 @@ class CreateAdminDto
 
         return new self(
             firstName: strtoupper($validated['first_name']),
-            middleName: strtoupper($validated['middle_name'] ?? null),
+            middleName: isset($validated['middle_name']) ? strtoupper($validated['middle_name']) : null,
             lastName: strtoupper($validated['last_name']),
-            userName: $validated['user_name'],
             phone: $validated['phone'],
             email: $validated['email'],
             municipalId: $validated['municipal_id'],

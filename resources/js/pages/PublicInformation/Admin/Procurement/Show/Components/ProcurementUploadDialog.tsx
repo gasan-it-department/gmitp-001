@@ -11,9 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import api from '@/lib/axios';
-import procurement from '@/routes/procurement';
-import axios from 'axios'; // Raw, clean slate for Cloudflare
 import { toast } from 'sonner';
+import procurement from '@/routes/procurement';
 
 interface SelectOption {
     value: string;
@@ -70,68 +69,27 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
         setStatus('idle');
 
         try {
-            const extension = file.name.split('.').pop();
-            const genUrlEndpoint = procurement.generate.upload.url(procurementId);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', docType);
 
-            // 🟢 STEP 1: Talk to Laravel (Use 'api')
-            const { data: ticket } = await api.post(
-                genUrlEndpoint,
-                {
-                    extension,
-                    content_type: file.type,
-                    file_size: file.size,
-                    type: docType,
+            // Use the new simplified endpoint
+            await api.post(procurement.media.upload.url({ procurementId: procurementId }), formData, {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
+                    'Content-Type': 'multipart/form-data',
                 },
-                {
-                    headers: { 'X-Municipality-Slug': currentMunicipality.slug },
-                },
-            );
-
-            if (!ticket || !ticket.upload_url) {
-                setStatus('error');
-                return;
-            }
-
-            // 🟠 STEP 2: Talk to Cloudflare R2 (Use RAW 'axios')
-            // Using raw axios guarantees no 'withCredentials' CORS errors!
-            await axios.put(ticket.upload_url, file, {
-                headers: { 'Content-Type': file.type },
                 onUploadProgress: (p) => {
                     const pct = Math.round((p.loaded * 100) / (p.total ?? 1));
                     setProgress(pct);
                 },
             });
 
-            // 🟢 STEP 3: Talk to Laravel (Use 'api')
-            const saveUrlEndpoint = procurement.document.upload.url(procurementId);
-            await api.post(
-                saveUrlEndpoint,
-                {
-                    file_path: ticket.storage_path,
-                    type: docType,
-                    file_name: file.name,
-                    file_size: file.size,
-                    mime_type: file.type,
-                },
-                {
-                    headers: { 'X-Municipality-Slug': currentMunicipality.slug },
-                },
-            );
-
             setStatus('success');
             onSuccess();
         } catch (error) {
             console.error('Upload Error:', error);
             setStatus('error');
-
-            // 🛡️ ERROR HANDLING LOGIC
-            // If the error came from Laravel (api), the global interceptor ALREADY showed the toast.
-            // We only need to show a toast if the RAW axios (Cloudflare upload) failed.
-            if (axios.isAxiosError(error) && !error.response?.data?.message) {
-                toast.error('Cloud Upload Failed', {
-                    description: 'There was an issue sending the file to the storage bucket.',
-                });
-            }
         } finally {
             setIsUploading(false);
         }
@@ -205,11 +163,15 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
                                         <SelectValue placeholder="Select document type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {docTypes.map((type) => (
-                                            <SelectItem key={type.value} value={type.value}>
-                                                {type.label}
-                                            </SelectItem>
-                                        ))}
+                                        {docTypes && docTypes.length > 0 ? (
+                                            docTypes.map((type) => (
+                                                <SelectItem key={type.value} value={type.value}>
+                                                    {type.label}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-sm text-muted-foreground">No categories available</div>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>

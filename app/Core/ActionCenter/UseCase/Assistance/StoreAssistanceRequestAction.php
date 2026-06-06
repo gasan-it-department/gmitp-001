@@ -170,6 +170,7 @@ class StoreAssistanceRequestAction
     private function attachUploadedDocuments(AssistanceRequest $request, array $documents): void
     {
         foreach ($documents as $documentKey => $file) {
+
             if (!$file instanceof UploadedFile) {
                 continue;
             }
@@ -180,7 +181,7 @@ class StoreAssistanceRequestAction
                 ->withCustomProperties([
                     'document_key' => $documentKey,
                 ])
-                ->toMediaCollection($documentKey, 'action_center');
+                ->toMediaCollection('documents');
         }
     }
 

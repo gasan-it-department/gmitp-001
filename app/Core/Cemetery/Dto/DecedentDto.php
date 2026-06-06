@@ -2,7 +2,7 @@
 
 namespace App\Core\Cemetery\Dto;
 
-use App\External\Api\Request\Cemetery\CreateDecedentRequest;
+use Illuminate\Http\UploadedFile;
 
 /**
  * Immutable transport for a decedent-create payload moving from the HTTP
@@ -36,12 +36,18 @@ final readonly class DecedentDto
         public ?string $psgcMunicipalityId,
         public ?string $psgcBarangayId,
         public ?string $streetName,
+
+        // Identification layer (Spatie MediaLibrary). Carried as framework upload
+        // value objects — matching the system-wide pattern (e.g. StoreAnnouncementDto).
+        public ?UploadedFile $avatar = null,
+        /** @var UploadedFile[] */
+        public array $identificationFiles = [],
     ) {
     }
 
-    public static function fromRequest(CreateDecedentRequest $request): self
+    public static function fromRequest(array $validated): self
     {
-        $data = $request->validated();
+        $data = $validated;
 
         return new self(
             firstName: self::upper($data['first_name'] ?? null),
@@ -67,6 +73,9 @@ final readonly class DecedentDto
             psgcMunicipalityId: $data['psgc_municipal_id'] ?? null,
             psgcBarangayId: $data['psgc_barangay_id'] ?? null,
             streetName: self::upper($data['street_name'] ?? null),
+
+            avatar: $data['avatar'] ?? null,
+            identificationFiles: $data['identification'] ?? [],
         );
     }
 

@@ -25,7 +25,7 @@ class ProcurementTransparencyResource extends JsonResource
 
             'status' => $this->status,
 
-            'documents' => ProcurementFileResource::collection($this->whenLoaded('documents')),
+            'documents' => ProcurementFileResource::collection($this->whenLoaded('media')),
 
             'winning_bidder' => $this->when($this->status->value === 'awarded', $this->winning_bidder_name),
             'contract_amount' => $this->when($this->status->value === 'awarded', (float) $this->contract_amount),

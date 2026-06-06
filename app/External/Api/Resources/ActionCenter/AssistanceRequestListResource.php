@@ -91,6 +91,7 @@ class AssistanceRequestListResource extends JsonResource
             'snapshot_barangay_psgc_code' => $this->snapshot_barangay_psgc_code,
 
             // ── FK references (admin drill-down) ─────────────────────────────
+            'municipal_id'   => $this->municipal_id,
             'beneficiary_id' => $this->beneficiary_id,
             'household_id'   => $this->household_id,
 

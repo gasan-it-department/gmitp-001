@@ -5,6 +5,7 @@ namespace App\External\Api\Resources\User;
 use App\External\Api\Resources\Municipality\MunicipalityResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\External\Api\Resources\User\UserSocialAccountResource;
 
 class UserResource extends JsonResource
 {
@@ -30,8 +31,6 @@ class UserResource extends JsonResource
 
             'email' => $this->email,
 
-            'user_name' => $this->user_name,
-
             'roles' => $this->getRoleNames(),
 
             'direct_permissions' => $this->whenLoaded('permissions', fn() => $this->permissions->pluck('name')),
@@ -39,6 +38,8 @@ class UserResource extends JsonResource
             'all_permission' => $this->getAllPermissions()->pluck('name'),
 
             'municipality' => $this->municipality ? (new MunicipalityResource($this->municipality))->resolve() : null,
+
+            'social_accounts' => UserSocialAccountResource::collection($this->whenLoaded('socialAccounts'))->resolve(),
 
         ];
 

@@ -10,13 +10,14 @@ import {
 import { AuthApi } from '@/Core/Api/Auth/AuthApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { account } from '@/routes';
 import { dashboard } from '@/routes/admin';
+import profile from '@/routes/profile';
 import superAdmin from '@/routes/superAdmin';
+import supportTicket from '@/routes/supportTicket';
 import transaction from '@/routes/transaction';
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { FileText, LayoutDashboard, LogOut, ShieldCheck, User } from 'lucide-react';
+import { FileText, LayoutDashboard, LogOut, MessageCircleQuestion, ShieldCheck, User } from 'lucide-react';
 import { useState } from 'react';
 
 export function UserDropdownMenu() {
@@ -24,7 +25,7 @@ export function UserDropdownMenu() {
     const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const { currentMunicipality } = useMunicipality();
-
+    const google = auth.user?.social_accounts.find((a: any) => a.provider_name === 'google');
     const adminMunicipalSlug = auth.user.municipality?.slug;
 
     const handleLogout = async () => {
@@ -40,15 +41,7 @@ export function UserDropdownMenu() {
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
                     <button className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-transparent transition-all hover:border-gray-300 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">
-                        <img
-                            src={
-                                auth.user?.avatarUrl && auth.user.avatarUrl !== 'string'
-                                    ? auth.user.avatarUrl
-                                    : 'https://www.gravatar.com/avatar/?d=mp'
-                            }
-                            alt={auth.user?.first_name || 'User'}
-                            className="h-full w-full object-cover"
-                        />
+                        <img src={google?.avatar_url} alt={auth.user?.first_name || 'User'} className="h-full w-full object-cover" />
                     </button>
                 </DropdownMenuTrigger>
 
@@ -90,7 +83,7 @@ export function UserDropdownMenu() {
                     {/* Personal Group */}
                     <DropdownMenuGroup>
                         <DropdownMenuItem
-                            onClick={() => router.visit(account.url({ municipality: currentMunicipality.slug }))}
+                            onClick={() => router.visit(profile.show.url({ municipality: currentMunicipality.slug }))}
                             className="cursor-pointer"
                         >
                             <User className="mr-2 h-4 w-4" />
@@ -106,6 +99,17 @@ export function UserDropdownMenu() {
                         >
                             <FileText className="mr-2 h-4 w-4" />
                             <span>My Transactions</span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                            onClick={() => {
+                                // Updated to visit a page instead of opening logout dialog
+                                router.visit(supportTicket.create.url(currentMunicipality.slug)); // Update this to your actual route
+                            }}
+                            className="cursor-pointer"
+                        >
+                            <MessageCircleQuestion className="mr-2 h-4 w-4" />
+                            <span>Help & Support</span>
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
 

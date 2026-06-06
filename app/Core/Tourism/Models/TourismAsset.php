@@ -15,7 +15,6 @@ class TourismAsset extends Model implements HasMedia
 
     protected $fillable = [
         'municipal_id',
-        'category_id',
         'type',              // Discriminator: 'spot', 'event', 'establishment', 'heritage'
         'name',
         'slug',

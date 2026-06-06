@@ -26,7 +26,6 @@ class AuthenticateUserController extends Controller
     public function login(LoginRequest $request)
     {
         try {
-
             $municipality = app('current_municipality');
 
             //convert the users input to dto to service

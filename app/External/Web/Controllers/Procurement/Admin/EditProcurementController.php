@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\Procurement\Admin;
 
+use App\Core\Department\Actions\ListActiveDepartmentAction;
 use App\Core\Procurement\UseCases\GetProcurementFormOptions;
 use App\Core\Procurement\UseCases\GetProcurementUseCase;
 use App\External\Api\Resources\Procurement\ProcurementDetailResource;
@@ -14,6 +15,7 @@ class EditProcurementController extends Controller
 
     public function __construct(
         private GetProcurementFormOptions $formOptionUseCase,
+        private ListActiveDepartmentAction $listActiveDepartmentAction
     ) {
     }
 
@@ -28,6 +30,7 @@ class EditProcurementController extends Controller
             'fundingSources' => ProcurementFundingSourceResource::collection($options['funding_sources']),
             'categories' => $options['categories'],
             'documentTypes' => $options['document_types'],
+            'departments' => $this->listActiveDepartmentAction->execute(app('municipal_id')),
         ]);
 
     }

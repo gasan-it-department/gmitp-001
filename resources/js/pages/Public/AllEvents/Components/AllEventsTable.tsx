@@ -1,5 +1,4 @@
 import { Card } from '@/components/ui/card';
-import { EventsApi } from '@/Core/Api/BulletinBoard/EventsApi';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import { EventData } from '@/Core/Types/BulletinBoard/Events';
 import LoadingSpinner from '@/pages/Utility/LoadingSpinner';
@@ -9,7 +8,6 @@ import { home } from '@/routes';
 import { router } from '@inertiajs/react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { ViewEventDetails } from '../../Home/Components/ViewEventDetails';
 
 export default function AllEvenntsTable() {
     const [eventList, setEventList] = useState<EventData[]>([]);
@@ -30,21 +28,19 @@ export default function AllEvenntsTable() {
 
     const loadEvents = async (currentPage: number = 1) => {
         try {
-            setIsLoading(true);
-            const response = await EventsApi.getPublished(currentMunicipality.slug, currentPage);
-            if (response.success) {
-                console.log('Response data: ', response);
-                setEventList(response.data);
-            }
-
-            setLastPage(response.last_page);
-            setPerPage(response.per_page);
-            setTotalItems(response.total);
-
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth',
-            });
+            // setIsLoading(true);
+            // const response = await EventsApi.getPublished(currentMunicipality.slug, currentPage);
+            // if (response.success) {
+            //     console.log('Response data: ', response);
+            //     setEventList(response.data);
+            // }
+            // setLastPage(response.last_page);
+            // setPerPage(response.per_page);
+            // setTotalItems(response.total);
+            // window.scrollTo({
+            //     top: 0,
+            //     behavior: 'smooth',
+            // });
         } catch (error: any) {
             console.error(error);
         } finally {
@@ -67,9 +63,7 @@ export default function AllEvenntsTable() {
                 <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                         <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Upcoming Events</h2>
-                        <p className="text-sm text-muted-foreground sm:text-base">
-                            Stay updated on upcoming municipal events and activities.
-                        </p>
+                        <p className="text-sm text-muted-foreground sm:text-base">Stay updated on upcoming municipal events and activities.</p>
                     </div>
                 </div>
 
@@ -97,7 +91,7 @@ export default function AllEvenntsTable() {
 
                                     <div className="flex items-center gap-3 sm:gap-4">
                                         {/* Date Box: Primary theme color */}
-                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary text-primary-foreground font-semibold shadow-sm sm:h-14 sm:w-14">
+                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary font-semibold text-primary-foreground shadow-sm sm:h-14 sm:w-14">
                                             <span className="text-xs leading-none uppercase opacity-80 sm:text-sm">
                                                 {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('MMM')}
                                             </span>
@@ -112,16 +106,12 @@ export default function AllEvenntsTable() {
                                                 {moment(item.event_date, 'YYYY-MM-DD HH:mm:ss').format('YYYY')}
                                             </span>
                                             {/* Title: 'text-foreground' */}
-                                            <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">
-                                                {item.title}
-                                            </h3>
+                                            <h3 className="truncate text-base font-semibold text-foreground sm:text-lg">{item.title}</h3>
                                         </div>
                                     </div>
 
                                     {/* Description: 'text-muted-foreground' */}
-                                    <p className="mt-3 line-clamp-3 text-sm text-muted-foreground sm:text-base">
-                                        {item.description}
-                                    </p>
+                                    <p className="mt-3 line-clamp-3 text-sm text-muted-foreground sm:text-base">{item.description}</p>
                                 </Card>
                             );
                         })
@@ -144,7 +134,7 @@ export default function AllEvenntsTable() {
                 </div>
             </div>
 
-            <ViewEventDetails isOpen={isEventDetailDialogShowing} data={selectedEventData} onClose={() => setIsEventDialogShowing(false)} />
+            {/* <ViewEventDetails isOpen={isEventDetailDialogShowing} data={selectedEventData} onClose={() => setIsEventDialogShowing(false)} /> */}
         </div>
     );
 }

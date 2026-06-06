@@ -2,35 +2,13 @@
 
 namespace App\Core\CommunityReport\Dto;
 
-use Illuminate\Http\Request;
-
-class RejectReportDto
+readonly class RejectReportDto
 {
-
     public function __construct(
-
-        public readonly string $reportId,
-
-        public readonly string $municipalId,
-
-        public readonly string $remarks,
-
+        public string $municipalId,
+        public string $reportId,
+        public string $actorUserId,
+        public string $rejectionReason,
     ) {
-    }
-
-
-    public static function fromRequest(Request $request, $reportId): RejectReportDto
-    {
-
-        return new self(
-
-            reportId: $reportId,
-
-            municipalId: app('municipal_id'),
-
-            remarks: $request->get('remarks')
-
-        );
-
     }
 }

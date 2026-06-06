@@ -31,10 +31,10 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_identifier.required' => 'The username or phone field is required.',
-            'user_identifier.string' => 'The username or phone must be a valid string.',
-            'user_identifier.min' => 'The username must be at least :min characters.',
-            'user_identifier.max' => 'The username or phone may not be greater than :max characters.',
+            'user_identifier.required' => 'Please enter your phone number or email address.',
+            'user_identifier.string' => 'The identifier must be a valid string.',
+            'user_identifier.min' => 'The identifier must be at least :min characters.',
+            'user_identifier.max' => 'The identifier may not be greater than :max characters.',
 
             'password.required' => 'Please enter your password.',
             'password.string' => 'The password must be a valid string.',

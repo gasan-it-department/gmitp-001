@@ -6,7 +6,7 @@ use App\External\Api\Resources\Municipality\MunicipalityResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserDetailResource extends JsonResource
+class UserDetailResource extends UserResource
 {
     /**
      * Transform the resource into an array.
@@ -31,8 +31,6 @@ class UserDetailResource extends JsonResource
             'phone' => $this->phone,
 
             'email' => $this->email,
-
-            'user_name' => $this->user_name,
 
             'roles' => $this->getRoleNames(),
 

@@ -18,6 +18,13 @@ class MunicipalityResource extends JsonResource
 
         $roleChecker = app(UserRoleCheckerService::class);
 
+        $logo = $this->getFirstMedia('logo');
+        $logoUrl = $logo
+            ? ($logo->disk === 's3'
+                ? $logo->getTemporaryUrl(now()->addMinutes(15), 'optimized_logo')
+                : $logo->getUrl('optimized_logo'))
+            : null;
+
         $data = [
             'id' => $this->id,
             'name' => $this->name,
@@ -25,7 +32,7 @@ class MunicipalityResource extends JsonResource
             'zip_code' => $this->zip_code,
             'municipal_code' => $this->municipal_code,
             'settings' => [
-                'logo_url' => $this->settings?->logo_url,
+                'logo_url' => $logoUrl,
             ],
         ];
 

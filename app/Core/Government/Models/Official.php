@@ -5,9 +5,16 @@ namespace App\Core\Government\Models;
 use App\Core\Government\Models\OfficialTerm;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Sluggable\SlugOptions;
+use Spatie\Sluggable\HasSlug;
 
-class Official extends Model
+class Official extends Model implements HasMedia
 {
+    use InteractsWithMedia, LogsActivity, HasSlug;
 
     public $incrementing = false;
 
@@ -33,11 +40,34 @@ class Official extends Model
 
         'municipal_id',
 
-        'profile_url',
-
-        'profile_public_id',
+        'slug',
 
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['first_name', 'last_name', 'middle_name', 'suffix', 'gender', 'biography'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('government_official');
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('official_portrait')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+    }
+
+    public function registerMediaConversions(?\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('optimized')
+            ->width(600)
+            ->format('webp')
+            ->quality(90)
+            ->nonQueued();
+    }
 
     public function terms()
     {
@@ -56,6 +86,14 @@ class Official extends Model
         return $this->appointments()->whereHas('term', function ($query) {
             $query->where('is_current', true);
         });
+    }
+
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()
+            ->generateSlugsFrom(['first_name', 'last_name', 'suffix'])
+            ->saveSlugsTo('slug')
+            ->allowDuplicateSlugs(); // Spatie will automatically append -1, -2 if duplicates occur
     }
 
     public function fullNameWithTitle(): Attribute

@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import { User } from '@/Core/Types/User/UserTypes';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 
 
 export interface Auth {
@@ -30,6 +31,7 @@ export interface NavItem {
 }
 
 export interface SharedData {
+    currentMunicipality: Municipality
     app_name: string;
     auth: Auth;
     sidebarOpen: boolean;

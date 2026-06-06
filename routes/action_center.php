@@ -18,8 +18,9 @@ use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestControl
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ShowAssistanceRequestProfileController;
-use App\External\Web\Controllers\ActionCenter\Client\ClientActionCenterController;
+use App\External\Web\Controllers\ActionCenter\Client\GetUserAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
+use App\External\Web\Controllers\ActionCenter\Client\ShowClientAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\ApplyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\IndexAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\ShowProfileSetupController;
@@ -80,7 +81,9 @@ Route::prefix('{municipality}/action-center')
 
         Route::get('/portal', IndexAssistanceRequestController::class)->name('portal');
 
-        Route::get('/', [ClientActionCenterController::class, 'index'])->name('index');
+        Route::get('/', GetUserAssistanceRequestController::class)->name('index');
+
+        Route::get('/requests/{assistanceRequestId}', ShowClientAssistanceRequestController::class)->name('show');
 
         Route::get('/household', [HouseholdController::class, 'index'])->name('household.index');
 

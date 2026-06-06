@@ -3,7 +3,7 @@
 namespace App\Http\Middleware\Municipality;
 
 use App\Core\Municipality\Models\Municipality;
-use App\External\Api\Resources\Municipality\MunicipalitysettingsResource;
+use App\External\Api\Resources\Municipality\MunicipalitySettingsResource;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +21,8 @@ class SetMunicipalityContext
     {
         $slug = $request->route('municipality')
             ?? $request->header('X-Municipality-Slug')
-            ?? $request->query('municipality');
+            ?? $request->query('municipality')
+            ?? $request->segment(1);
 
         if (!is_string($slug) || empty($slug)) {
 
@@ -46,13 +47,13 @@ class SetMunicipalityContext
 
     public function setContext(Municipality $municipality)
     {
-        session(['municipal_id' => $municipality->id]);
+        // session(['municipal_id' => $municipality->id]);
 
         app()->instance('municipal_id', $municipality->id);
 
         app()->instance('current_municipality', $municipality);
 
-        $municipality->load('settings');
+        $municipality->load(['settings', 'media']);
 
         Inertia::share([
             'currentMunicipality' => function () use ($municipality) {
@@ -62,9 +63,7 @@ class SetMunicipalityContext
                     'slug' => $municipality->slug,
                     'zip_code' => $municipality->zip_code,
                     'psgc_municipal_id' => $municipality->psgc_municipal_id,
-                    'settings' => $municipality->settings
-                        ? (new MunicipalitysettingsResource($municipality->settings))->resolve()
-                        : null,
+                    'settings' => (new MunicipalitySettingsResource($municipality))->resolve(),
                 ];
             },
         ]);

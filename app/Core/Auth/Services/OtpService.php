@@ -59,7 +59,7 @@ class OtpService
 
             'channel' => $channel,
 
-            'code' => '000000',
+            'code' => $code,
             // 'code' => $code,
 
 

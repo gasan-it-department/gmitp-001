@@ -1,33 +1,43 @@
-import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import { Head } from '@inertiajs/react';
-import { Pagination } from '@/components/Shared/Pagination';
-import { 
-    MessageSquareQuote, 
-    Star, 
-    Clock, 
-    ChevronLeft, 
-    ArrowUp, 
-    MessageCircle,
+import { Head, Link, usePage } from '@inertiajs/react';
+import {
+    ArrowLeft,
     Building2,
-    UserCircle,
-    User,           
-    VenetianMask    
+    Calendar,
+    ChevronRight,
+    MessageSquare,
+    MessageSquareQuote,
+    Star,
+    User,
+    VenetianMask,
+    X,
 } from 'lucide-react';
+import { useState } from 'react';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 
 // ----------------------------------------------------------------------
 // TYPES
 // ----------------------------------------------------------------------
+interface Attachment {
+    id: string;
+    name: string;
+    mime_type: string;
+    size: number;
+    url: string;
+}
+
 interface FeedbackData {
     id: string;
-    sender_name: string | null;
+    subject: string;
     message: string;
     rating: number | null;
-    feedback_target: 'employee' | 'department' | string; 
+    is_anonymous: boolean;
+    citizen_name: string | null;
     employee_name: string | null;
-    department_id: string | null;
+    department: { id: string; name: string } | null;
     created_at: string;
-    attachments: any[];
+    attachments: Attachment[];
 }
 
 interface FeedbackListProps {
@@ -39,24 +49,70 @@ interface FeedbackListProps {
 }
 
 // ----------------------------------------------------------------------
+// SUB-COMPONENT: Lightbox
+// ----------------------------------------------------------------------
+const Lightbox = ({ url, onClose }: { url: string; onClose: () => void }) => {
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm sm:p-10" onClick={onClose}>
+            <button
+                onClick={onClose}
+                className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
+            >
+                <X className="h-6 w-6" />
+            </button>
+            <img
+                src={url}
+                alt="Feedback attachment"
+                className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            />
+        </div>
+    );
+};
+
+// ----------------------------------------------------------------------
+// SUB-COMPONENT: Image Gallery
+// ----------------------------------------------------------------------
+const FeedbackImageGallery = ({ attachments }: { attachments: Attachment[] }) => {
+    const images = attachments.filter((a) => a.mime_type.startsWith('image/'));
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+    if (images.length === 0) return null;
+
+    return (
+        <div className="mt-3 flex flex-wrap gap-2">
+            {images.map((img) => (
+                <button
+                    key={img.id}
+                    onClick={() => setSelectedImage(img.url)}
+                    className="group relative h-16 w-16 overflow-hidden rounded-xl border-2 border-slate-100 transition-all hover:border-primary active:scale-95"
+                >
+                    <img
+                        src={img.url}
+                        alt={img.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                </button>
+            ))}
+            {selectedImage && <Lightbox url={selectedImage} onClose={() => setSelectedImage(null)} />}
+        </div>
+    );
+};
+
+// ----------------------------------------------------------------------
 // SUB-COMPONENT: Star Rating
 // ----------------------------------------------------------------------
 const StarRating = ({ rating }: { rating: number | null }) => {
-    if (rating === null) {
-        return (
-            <span className="text-[10px] font-bold italic text-muted-foreground/60 uppercase tracking-wide">No rating</span>
-        );
-    }
+    if (rating === null) return null;
 
     return (
         <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                    key={star} 
-                    className={`h-3.5 w-3.5 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'fill-muted/30 text-muted-foreground/30'}`} 
+                <Star
+                    key={star}
+                    className={`h-3 w-3 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'fill-slate-100 text-slate-200'}`}
                 />
             ))}
-            <span className="ml-1.5 text-xs font-bold text-foreground">({rating}.0)</span>
         </div>
     );
 };
@@ -65,207 +121,172 @@ const StarRating = ({ rating }: { rating: number | null }) => {
 // MAIN PAGE COMPONENT
 // ----------------------------------------------------------------------
 export default function FeedbackList({ feedback }: FeedbackListProps) {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const slug = currentMunicipality.slug;
+    
     const feedbackList = feedback.data || [];
-    const totalCount = feedback?.meta?.total || feedbackList.length || 0;
-
-    // --- State for Scroll Top ---
-    const [showScrollTop, setShowScrollTop] = useState(false);
-
-    // --- Scroll Handlers ---
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setShowScrollTop(window.scrollY > 400);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    // --- Helpers ---
-    const formatTargetLabel = (target: string) => {
-        return target.charAt(0).toUpperCase() + target.slice(1);
-    };
+    const meta = feedback.meta || {};
 
     return (
         <PublicLayout title="" description="">
-            <Head title="Citizen Feedback" />
+            <Head title="Aking mga Feedback" />
 
-            <div className="py-12 relative min-h-screen bg-muted/30">
-                <div className="mx-auto max-w-5xl sm:px-6 lg:px-8">
-                    
-                    {/* Main Card Container */}
-                    <div className="rounded-xl shadow-sm border border-border bg-card overflow-hidden">
-                        
-                        {/* THEMED CARD HEADER (Integrated Toolbar) */}
-                        <div className="border-b border-border p-5 bg-card/50 backdrop-blur-sm sticky top-0 z-20">
-                            <div className="flex items-center gap-4">
-                                
-                                {/* 1. Integrated Back Button */}
-                                <button
-                                    onClick={() => window.history.back()}
-                                    className="group flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background transition-all hover:border-primary hover:text-primary active:scale-95"
-                                    title="Go Back"
-                                >
-                                    <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
-                                </button>
-
-                                {/* Divider */}
-                                <div className="h-8 w-px bg-border" />
-
-                                {/* Icon */}
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
-                                    <MessageSquareQuote className="h-5 w-5" />
-                                </div>
-                                
-                                {/* Title Text */}
-                                <div className="flex flex-col">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="text-xl font-black uppercase tracking-widest text-foreground hidden sm:block">Citizen Feedback</h3>
-                                        <h3 className="text-xl font-black uppercase tracking-widest text-foreground sm:hidden">Feedback</h3>
-                                        
-                                        {/* Count Badge */}
-                                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary border border-primary/20">
-                                            {totalCount}
-                                        </span>
-                                    </div>
-                                    <p className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:block">
-                                        Reviews & Suggestions from the community
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Card Content */}
-                        <div className="p-4 sm:p-6 space-y-4">
-                            
-                            {/* Feedback List Grid */}
-                            <div className="grid grid-cols-1 gap-4">
-                                {feedbackList.map((item) => {
-                                    // LOGIC: Check if name is null OR string "null"
-                                    const isAnonymous = !item.sender_name || item.sender_name === 'null';
-                                    const displayName = isAnonymous ? 'Anonymous Citizen' : item.sender_name;
-
-                                    return (
-                                        <div 
-                                            key={item.id} 
-                                            className={`
-                                                group relative overflow-hidden rounded-xl border border-border p-5 transition-all duration-300
-                                                bg-card hover:shadow-lg hover:border-primary/50 hover:-translate-y-1
-                                            `}
-                                        >
-                                            <div className="flex flex-col gap-4 sm:flex-row">
-                                                
-                                                {/* Avatar Section */}
-                                                <div className="flex-shrink-0">
-                                                    <div className={`
-                                                        flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm transition-colors
-                                                        ${isAnonymous 
-                                                            ? 'bg-muted/50 text-muted-foreground border-border' 
-                                                            : 'bg-primary/5 text-primary border-primary/20' 
-                                                        }
-                                                    `}>
-                                                        {isAnonymous ? (
-                                                            <VenetianMask className="h-6 w-6" />
-                                                        ) : (
-                                                            <User className="h-6 w-6" />
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Content Section */}
-                                                <div className="flex-1">
-                                                    
-                                                    {/* Header Row */}
-                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                                                        <div>
-                                                            <h4 className={`text-base font-black uppercase tracking-tight transition-colors ${isAnonymous ? 'text-muted-foreground italic' : 'text-foreground group-hover:text-primary'}`}>
-                                                                {displayName}
-                                                            </h4>
-                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground/80 mt-0.5 font-bold uppercase tracking-wider">
-                                                                <Clock className="h-3 w-3" />
-                                                                <span>{item.created_at}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2 sm:mt-0">
-                                                            <StarRating rating={item.rating} />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Message Bubble */}
-                                                    <div className="relative mt-2 rounded-xl bg-muted/30 p-4 text-sm font-medium text-foreground/80 italic border border-border">
-                                                        <MessageSquareQuote className="absolute top-2 left-2 h-4 w-4 text-primary/20 -translate-x-1 -translate-y-1" />
-                                                        <span className="relative z-10">"{item.message}"</span>
-                                                    </div>
-
-                                                    {/* Target / Context (Employee or Department) */}
-                                                    <div className="mt-3 flex items-center gap-3">
-                                                        <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Regarding:</span>
-                                                        
-                                                        {item.feedback_target === 'employee' && item.employee_name ? (
-                                                            // EMPLOYEE BADGE
-                                                            <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-700 border border-blue-100/50">
-                                                                <UserCircle className="h-3.5 w-3.5" />
-                                                                {item.employee_name}
-                                                            </span>
-                                                        ) : (
-                                                            // DEPARTMENT BADGE
-                                                            <span className="inline-flex items-center gap-1.5 rounded-md bg-muted/50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground border border-border">
-                                                                <Building2 className="h-3.5 w-3.5" />
-                                                                {formatTargetLabel(item.feedback_target)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Empty State */}
-                            {feedbackList.length === 0 && (
-                                <div className="rounded-xl border border-dashed border-border bg-muted/30 py-20 text-center">
-                                    <div className="mb-2 flex justify-center">
-                                        <div className="rounded-full bg-muted p-4">
-                                            <MessageCircle className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                    </div>
-                                    <h3 className="mt-4 text-lg font-black uppercase tracking-wide text-foreground">No feedback yet</h3>
-                                    <p className="mt-2 text-sm font-medium text-muted-foreground">
-                                        Be the first to share your thoughts!
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Pagination */}
-                            {feedback.meta?.links && (
-                                <div className="mt-8 pt-6 border-t border-border">
-                                    <Pagination links={feedback.meta.links} />
-                                </div>
-                            )}
-
-                        </div>
+            <div className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
+                {/* Header Section */}
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-1 text-center sm:text-left">
+                        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                            Aking mga Feedback
+                        </h1>
+                        <p className="text-sm font-medium text-slate-500">
+                            Subaybayan ang iyong mga mungkahi at reklamo.
+                        </p>
                     </div>
+                    <Link href={`/${slug}/home`} className="hidden sm:block">
+                        <button className="flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Bumalik sa Home
+                        </button>
+                    </Link>
                 </div>
 
-                {/* SCROLL TO TOP FLOATING BUTTON */}
-                <button
-                    onClick={scrollToTop}
-                    className={`
-                        fixed bottom-8 right-8 z-40 rounded-full bg-primary p-3 text-primary-foreground shadow-lg shadow-primary/30 
-                        transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                        ${showScrollTop ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}
-                    `}
-                    aria-label="Scroll to top"
-                >
-                    <ArrowUp className="h-5 w-5" />
-                </button>
+                {feedbackList.length === 0 ? (
+                    <Card className="border-none bg-slate-50/50 shadow-none">
+                        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+                                <MessageSquare className="h-10 w-10 text-slate-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Wala pang nakatalang feedback</h3>
+                            <p className="mt-2 max-w-xs text-sm font-medium text-slate-500 leading-relaxed">
+                                Nais mo bang mag-abot ng mungkahi o reklamo? Ang iyong boses ay mahalaga sa amin.
+                            </p>
+                            <Link href={`/${slug}/give-feedback`} className="mt-6">
+                                <Button className="h-12 rounded-xl bg-primary px-8 font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90">
+                                    Mag-abot ng Feedback
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-4">
+                        {feedbackList.map((item) => (
+                            <Card key={item.id} className="overflow-hidden border-2 border-slate-100 shadow-sm transition-all duration-200">
+                                <CardContent className="p-4 sm:p-6">
+                                    <div className="flex items-start gap-4">
+                                        {/* Avatar / Icon */}
+                                        <div className={`hidden h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border-2 sm:flex ${
+                                            item.is_anonymous ? 'border-slate-100 bg-slate-50 text-slate-400' : 'border-primary/10 bg-primary/5 text-primary'
+                                        }`}>
+                                            {item.is_anonymous ? <VenetianMask className="h-6 w-6" /> : <User className="h-6 w-6" />}
+                                        </div>
 
+                                        <div className="min-w-0 flex-1 space-y-4">
+                                            {/* Header */}
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-xs font-black uppercase tracking-widest text-primary/80">
+                                                        {item.subject || 'Feedback'}
+                                                    </h4>
+                                                    <p className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {item.created_at}
+                                                    </p>
+                                                </div>
+                                                <StarRating rating={item.rating} />
+                                            </div>
+
+                                            {/* Message */}
+                                            <div className="relative rounded-2xl bg-slate-50 p-4">
+                                                <MessageSquareQuote className="absolute top-3 left-3 h-4 w-4 text-primary/10" />
+                                                <p className="relative z-10 text-sm font-medium leading-relaxed text-slate-700 italic">
+                                                    "{item.message}"
+                                                </p>
+                                            </div>
+
+                                            {/* Gallery */}
+                                            <FeedbackImageGallery attachments={item.attachments} />
+
+                                            {/* Footer / Meta */}
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-4">
+                                                {item.department && (
+                                                    <div className="flex items-center gap-1.5 rounded-lg bg-slate-100/50 px-2 py-1">
+                                                        <Building2 className="h-3.5 w-3.5 text-slate-500" />
+                                                        <span className="text-[10px] font-bold text-slate-600 uppercase">
+                                                            {item.department.name}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                                    Isinumite ni: <b className="text-slate-600">{item.is_anonymous ? 'Anonymous' : item.citizen_name}</b>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+
+                        {/* Pagination Section */}
+                        {meta.links && meta.last_page > 1 && (
+                            <div className="mt-10 space-y-4">
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                    {meta.links.map((link: any, idx: number) => {
+                                        const label = link.label
+                                            .replace('&laquo;', '‹')
+                                            .replace('&raquo;', '›')
+                                            .replace('Previous', '')
+                                            .replace('Next', '');
+                                        
+                                        if (!link.url) {
+                                            return (
+                                                <span
+                                                    key={idx}
+                                                    className="flex h-10 min-w-[40px] items-center justify-center rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-300"
+                                                    dangerouslySetInnerHTML={{ __html: label }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={idx}
+                                                href={link.url}
+                                                preserveScroll
+                                                className={`flex h-10 min-w-[40px] items-center justify-center rounded-xl px-3 text-xs font-bold transition-all ${
+                                                    link.active
+                                                        ? 'bg-primary text-white shadow-md shadow-primary/20'
+                                                        : 'bg-white text-slate-600 border-2 border-slate-100 hover:border-primary/30 hover:text-primary'
+                                                }`}
+                                                dangerouslySetInnerHTML={{ __html: label }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                    Ipinapakita ang {meta.from} hanggang {meta.to} ng {meta.total} feedback
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Mobile Bottom Action */}
+                <div className="mt-8 flex justify-center sm:hidden">
+                    <Link href={`/${slug}/home`}>
+                        <button className="flex items-center text-sm font-bold text-slate-400 hover:text-primary transition-colors">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Bumalik sa Home
+                        </button>
+                    </Link>
+                </div>
             </div>
         </PublicLayout>
     );
 }
+
+// Add simple Button helper since it's used in empty state
+const Button = ({ children, className, ...props }: any) => (
+    <button className={`inline-flex items-center justify-center transition-all active:scale-95 ${className}`} {...props}>
+        {children}
+    </button>
+);
+

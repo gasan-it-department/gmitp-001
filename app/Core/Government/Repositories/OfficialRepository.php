@@ -43,6 +43,7 @@ class OfficialRepository
 
         return Official::query()
             ->where('municipal_id', $municipalId)
+            ->with('media')
             ->withCount(['appointments'])
             ->withExists('activeAppointments')
 
@@ -72,6 +73,7 @@ class OfficialRepository
 
         return Official::query()
             ->where('municipal_id', $municipalId) // Don't forget the tenant isolation!
+            ->with('media')
             ->where(function ($q) use ($terms) {
                 foreach ($terms as $term) {
                     $q->where(function ($sub) use ($term) {
@@ -94,6 +96,7 @@ class OfficialRepository
             ->withCount('appointments')
             ->withExists('activeAppointments')
             ->with([
+                'media',
                 'appointments.position',
                 'appointments.term'
             ])

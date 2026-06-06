@@ -3,12 +3,9 @@
 use App\External\Api\Controllers\Procurement\AwardProcurementController;
 use App\External\Api\Controllers\Procurement\DeclareFailureProcurementController;
 use App\External\Api\Controllers\Procurement\DeleteProcurementController;
-use App\External\Api\Controllers\Procurement\Document\DeleteProcurementDocumentController;
-use App\External\Api\Controllers\Procurement\Document\DownloadProcurementDocumentController;
-use App\External\Api\Controllers\Procurement\Document\GenerateProcurementDocumentController;
-use App\External\Api\Controllers\Procurement\Document\StoreProcurementDocumentController;
-use App\External\Api\Controllers\Procurement\Document\ViewProcurementDocumentController;
 use App\External\Api\Controllers\Procurement\EvaluateProcurementController;
+use App\External\Api\Controllers\Procurement\Media\DeleteProcurementMediaController;
+use App\External\Api\Controllers\Procurement\Media\UploadProcurementMediaController;
 use App\External\Api\Controllers\Procurement\OpenProcurementController;
 use App\External\Api\Controllers\Procurement\StoreProcurementsController;
 use App\External\Api\Controllers\Procurement\UpdateProcurementController;
@@ -60,15 +57,9 @@ Route::prefix('api/procurement')
 
                 Route::put('{procurementId}/open/', OpenProcurementController::class)->name('status.open');
 
-                Route::get('documents/{documentId}/download', DownloadProcurementDocumentController::class)->name('download.document');
+                Route::post('{procurementId}/media/upload', UploadProcurementMediaController::class)->name('media.upload');
 
-                Route::get('documents/{documentId}/view', ViewProcurementDocumentController::class)->name('view.document');
-
-                Route::post('document/upload/{procurementId}', StoreProcurementDocumentController::class)->name('document.upload');
-
-                Route::post('document/generate/upload/url/{procurementId}', GenerateProcurementDocumentController::class)->name('generate.upload');
-
-                Route::delete('delete/procurement/document/{procurementId}/{documentId}', DeleteProcurementDocumentController::class)->name('document.delete');
+                Route::delete('{procurementId}/media/{mediaId}', DeleteProcurementMediaController::class)->name('media.delete');
 
                 Route::delete('delete/procurement/{procurementId}', DeleteProcurementController::class)->name('delete.draft');
 

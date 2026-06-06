@@ -24,7 +24,7 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
     });
 
     // 2. Hard Requirements Check (Must have documents to open bidding)
-    const hasDocuments = procurement.documents && procurement.documents.length > 0;
+    const hasDocuments = procurement.media && procurement.media.length > 0;
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -69,7 +69,7 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
                             {hasDocuments ? (
                                 <div className="flex items-center gap-2 text-sm text-green-700">
                                     <CheckCircle2 className="h-5 w-5" />
-                                    <span>{procurement.documents!.length} document(s) attached and ready.</span>
+                                    <span>{procurement.media!.length} document(s) attached and ready.</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2 text-sm text-red-600">

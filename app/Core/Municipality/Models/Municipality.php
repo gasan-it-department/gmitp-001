@@ -3,13 +3,16 @@
 namespace App\Core\Municipality\Models;
 
 use App\Core\Users\Models\User;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Municipality extends Model
+class Municipality extends Model implements HasMedia
 {
-    // protected $table = 'municipalities';
+    use InteractsWithMedia;
 
     public $incrementing = false;
 
@@ -27,23 +30,50 @@ class Municipality extends Model
 
     public function settings(): HasOne
     {
-
         return $this->hasOne(MunicipalitySettings::class, 'municipal_id');
-
     }
 
-    public function banners()
+    public function hotlines(): HasMany
     {
-
-        return $this->hasMany(MunicipalityBanner::class, 'municipal_id');
-
+        return $this->hasMany(MunicipalityHotline::class, 'municipal_id');
     }
 
-    public function users()
+    public function users(): HasMany
     {
-
         return $this->hasMany(User::class);
-
     }
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ]);
+
+        $this->addMediaCollection('banners')
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ]);
+    }
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('optimized_banner')
+            ->performOnCollections('banners')
+            ->width(1200)
+            ->format('webp')
+            ->quality(90)
+            ->nonQueued();
+
+        $this->addMediaConversion('optimized_logo')
+            ->performOnCollections('logo')
+            ->width(400)
+            ->format('webp')
+            ->quality(90)
+            ->nonQueued();
+    }
 }
