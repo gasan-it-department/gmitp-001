@@ -57,6 +57,11 @@ class HandleInertiaRequests extends Middleware
                     'isAdmin'     => $user ? $roleChecker->isAdmin($user) : false,
                     'isSuperAdmin' => $user ? $roleChecker->isSuperAdmin($user) : false,
                 ],
+                // Permission names the admin holds — drives `{module}.access`
+                // menu visibility in the sidebar. super_admin carries none
+                // explicitly (they bypass via Gate), so gate menus on
+                // `roles.isSuperAdmin || permissions.includes('x.access')`.
+                'permissions' => $user ? $user->getAllPermissions()->pluck('name')->all() : [],
             ],
         ];
     }

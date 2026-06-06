@@ -47,7 +47,7 @@ Route::prefix('municipality')
  * Admin web (Inertia render) — unified Settings & Hotlines management page.
  */
 Route::prefix('{municipality}/admin/municipality')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:municipality_settings.access'])
     ->name('municipality.admin.')
     ->group(function () {
         Route::get('/settings', EditMunicipalitySettingsController::class)
@@ -58,7 +58,7 @@ Route::prefix('{municipality}/admin/municipality')
  * Admin API (form mutations) — returns Inertia redirects, not JSON.
  */
 Route::prefix('api/municipality')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:municipality_settings.access'])
     ->name('api.municipality.')
     ->group(function () {
         Route::put('/settings', UpdateSettingsController::class)

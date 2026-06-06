@@ -40,8 +40,22 @@ export function UserDropdownMenu() {
         <>
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
-                    <button className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-transparent transition-all hover:border-gray-300 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">
-                        <img src={google?.avatar_url} alt={auth.user?.first_name || 'User'} className="h-full w-full object-cover" />
+                    <button className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-transparent bg-muted transition-all hover:border-gray-300 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">
+                        {google?.avatar_url ? (
+                            <img
+                                src={google.avatar_url}
+                                alt={auth.user?.first_name || 'User'}
+                                className="h-full w-full object-cover"
+                                referrerPolicy="no-referrer" // Keeps the Google image from breaking!
+                            />
+                        ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground">
+                                <span className="text-sm font-semibold uppercase">
+                                    {auth.user?.first_name?.[0]}
+                                    {auth.user?.last_name?.[0]}
+                                </span>
+                            </div>
+                        )}
                     </button>
                 </DropdownMenuTrigger>
 

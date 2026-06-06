@@ -35,7 +35,7 @@ Route::prefix('{municipality}/action-center')
         //eg. https://gasan-4905/action-center/admin
         // for admin pages
         Route::prefix('/admin')
-            ->middleware(['admin'])
+            ->middleware(['admin', 'permission:action_center.access'])
             ->name('admin.')
             ->group(function () {
 
@@ -105,7 +105,7 @@ Route::prefix('/api/action-center')
     ->name('actionCenter.')
     ->group(function () {
 
-        Route::middleware(['municipalityContext', 'admin'])
+        Route::middleware(['municipalityContext', 'admin', 'permission:action_center.access'])
             ->group(function () {
                 Route::post('store/assistance-type', StoreAssistanceTypeController::class)->name('assistance.type.store');
 

@@ -71,7 +71,7 @@ export const AuthApi = {
     },
 
     async logout() {
-        const { url, method } = Auth.AuthenticateUserController.logout()
+        const { url, method } = Auth.LogoutController()
 
         const { data } = await axios({
             url,

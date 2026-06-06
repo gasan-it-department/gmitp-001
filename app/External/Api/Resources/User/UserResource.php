@@ -35,11 +35,11 @@ class UserResource extends JsonResource
 
             'direct_permissions' => $this->whenLoaded('permissions', fn() => $this->permissions->pluck('name')),
 
-            'all_permission' => $this->getAllPermissions()->pluck('name'),
+            'all_permission' => $this->when($this->relationLoaded('roles') || $this->relationLoaded('permissions'), fn() => $this->getAllPermissions()->pluck('name')),
 
             'municipality' => $this->municipality ? (new MunicipalityResource($this->municipality))->resolve() : null,
 
-            'social_accounts' => UserSocialAccountResource::collection($this->whenLoaded('socialAccounts'))->resolve(),
+            'social_accounts' => $this->whenLoaded('socialAccounts', fn() => UserSocialAccountResource::collection($this->socialAccounts)->resolve()),
 
         ];
 

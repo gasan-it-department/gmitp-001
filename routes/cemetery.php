@@ -29,7 +29,7 @@ Route::prefix('/{municipality}/cemetery')
     ->group(function () {
 
         Route::prefix('/admin')
-            ->middleware(['admin'])
+            ->middleware(['admin', 'permission:cemetery.access'])
             ->name('admin.')
             ->group(function () {
 
@@ -72,7 +72,7 @@ Route::prefix('/{municipality}/cemetery')
 
 Route::prefix('api/decedents')
     ->name('decedents.')
-    ->middleware(['municipalityContext', 'admin', 'auth'])
+    ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
         Route::post('store', StoreDecedentController::class)->name('store');
         Route::put('{decedent_id}', UpdateDecedentController::class)->name('update');
@@ -80,14 +80,14 @@ Route::prefix('api/decedents')
 
 Route::prefix('api/plots')
     ->name('plots.')
-    ->middleware(['municipalityContext', 'admin', 'auth'])
+    ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
         Route::post('store', StorePlotController::class)->name('store');
     });
 
 Route::prefix('api/interments')
     ->name('interments.')
-    ->middleware(['municipalityContext', 'admin', 'auth'])
+    ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
         Route::post('store', StoreIntermentController::class)->name('store');
     });

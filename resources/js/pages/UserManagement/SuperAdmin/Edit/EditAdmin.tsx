@@ -1,42 +1,45 @@
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { Permission } from '@/Core/Types/User/UserTypes';
+import { Permission, User } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
 import { useForm } from '@inertiajs/react';
-import { PermissionSelector } from './Components/Permission';
+import { MunicipalitySelect } from '../UserRegistry/Components/MunicipalitySelect';
+import { PermissionSelector } from '../UserRegistry/Components/Permission';
 
 // UI Components
-import CreateAdminController from '@/actions/App/External/Api/Controllers/UserManagement/CreateAdminController';
+import UpdateAdminProfileController from '@/actions/App/External/Api/Controllers/UserManagement/UpdateAdminProfileController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Save } from 'lucide-react';
-import { MunicipalitySelect } from './Components/MunicipalitySelect';
 
 interface Props {
+    user: { data: User };
     data: {
         permissions: Permission[];
         municipality: MunicipalityType[];
     };
 }
 
-export default function UserRegistry({ data }: Props) {
+export default function EditAdmin({ user, data }: Props) {
+    const userData = user.data;
+
     const {
         data: formData,
         setData,
-        post,
+        put,
         processing,
         errors,
     } = useForm({
-        first_name: '',
-        last_name: '',
-        middle_name: '',
-        email: '',
-        phone: '',
-        municipal_id: '',
+        first_name: userData.first_name ?? '',
+        last_name: userData.last_name ?? '',
+        middle_name: userData.middle_name ?? '',
+        email: userData.email ?? '',
+        phone: userData.phone ?? '',
+        municipal_id: userData.municipality?.id ?? '',
         password: '',
         password_confirmation: '',
-        permission: [] as string[],
+        permission: (userData.all_permission ?? []) as string[],
     });
 
     const handleToggle = (value: string) => {
@@ -47,7 +50,7 @@ export default function UserRegistry({ data }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(CreateAdminController.url());
+        put(UpdateAdminProfileController.url(userData.id));
     };
 
     return (
@@ -58,8 +61,10 @@ export default function UserRegistry({ data }: Props) {
                     <div className="mx-auto flex max-w-5xl items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div>
-                                <h1 className="text-xl font-bold text-gray-900">Create Administrator</h1>
-                                <p className="text-xs text-gray-500">New Account Entry</p>
+                                <h1 className="text-xl font-bold text-gray-900">Edit Administrator</h1>
+                                <p className="text-xs text-gray-500">
+                                    Updating {userData.first_name} {userData.last_name}
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -71,7 +76,7 @@ export default function UserRegistry({ data }: Props) {
                                     'Saving...'
                                 ) : (
                                     <>
-                                        <Save className="mr-2 h-4 w-4" /> Save Account
+                                        <Save className="mr-2 h-4 w-4" /> Update Account
                                     </>
                                 )}
                             </Button>
@@ -136,7 +141,7 @@ export default function UserRegistry({ data }: Props) {
 
                             <Separator className="my-2" />
 
-                            {/* Row 3: Contact (Optional) */}
+                            {/* Row 3: Contact */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Email (Required)</Label>
@@ -150,29 +155,38 @@ export default function UserRegistry({ data }: Props) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={(e) => setData('password', e.target.value)}
-                                    />
-                                    {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="password_confirmation">Confirm Password</Label>
-                                    <Input
-                                        id="password_confirmation"
-                                        type="password"
-                                        value={formData.password_confirmation}
-                                        onChange={(e) => setData('password_confirmation', e.target.value)}
-                                    />
-                                    {/* Laravel's 'confirmed' rule will send errors here if they don't match */}
-                                    {errors.password && !formData.password_confirmation && (
-                                        <p className="text-xs text-red-500">Please confirm the password.</p>
-                                    )}
+                            <Separator className="my-2" />
+
+                            {/* Row 4: Password (optional on edit) */}
+                            <div>
+                                <p className="mb-4 text-xs text-gray-500">
+                                    Leave the password fields blank to keep the current password.
+                                </p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password">New Password</Label>
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            value={formData.password}
+                                            onChange={(e) => setData('password', e.target.value)}
+                                        />
+                                        {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password_confirmation">Confirm New Password</Label>
+                                        <Input
+                                            id="password_confirmation"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            value={formData.password_confirmation}
+                                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                                        />
+                                        {errors.password && !formData.password_confirmation && (
+                                            <p className="text-xs text-red-500">Please confirm the password.</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -180,7 +194,6 @@ export default function UserRegistry({ data }: Props) {
 
                     {/* SECTION B: Permissions */}
                     <div className="rounded-xl border bg-white p-8 shadow-sm">
-                        {/* We reuse your component here, but it sits naturally in the flow now */}
                         <PermissionSelector allPermissions={data.permissions} selectedValues={formData.permission} onToggle={handleToggle} />
                         {errors.permission && <p className="mt-4 text-center text-sm text-red-500">{errors.permission}</p>}
                     </div>

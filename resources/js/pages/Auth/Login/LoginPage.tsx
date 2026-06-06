@@ -1,7 +1,7 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import api from '@/lib/axios';
 import { PasswordInput } from '@/pages/UserManagement/Profile/Components/PasswordInput';
-import { home } from '@/routes';
+import { home, login } from '@/routes';
 import { social } from '@/routes/login';
 import signup from '@/routes/signup';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
@@ -16,44 +16,27 @@ export default function LoginPage() {
     // Shared by SetMunicipalityContext middleware on the /{municipality}/login route
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     // Inertia's built-in form helper
-    const { data, setData, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         user_identifier: '', // Matches backend LoginRequest
         password: '',
-        remember_me: false,
+        remember_me: false as boolean,
     });
 
-    const submit: FormEventHandler = async (e) => {
+    const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        clearErrors();
 
-        try {
-            const response = await api.post(
-                '/api/auth/login',
-                {
-                    user_identifier: data.user_identifier,
-                    password: data.password,
-                    remember_me: data.remember_me,
-                },
-                {
-                    headers: {
-                        'X-Municipality-Slug': currentMunicipality.slug,
-                    },
-                },
-            );
-
-            if (response.data.success) {
+        post(login.url(), {
+            headers: {
+                'X-Municipality-Slug': currentMunicipality.slug,
+            },
+            onSuccess: () => {
                 toast.success('Successfully logged in!');
-
-                // Align with your controller's 'redirect' field
-                const redirectUrl = response.data.redirect;
-                if (redirectUrl) {
-                    router.visit(redirectUrl);
-                } else {
-                    router.visit('/');
-                }
-            }
-        } catch (error: any) {
-            console.error('Login failed', error);
-        }
+            },
+            onError: (errors) => {
+                toast.error('Login failed. Please check your credentials.');
+            },
+        });
     };
 
     /**

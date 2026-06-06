@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::prefix('{municipality}/tourism')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:tourism.access'])
     ->name('tourism.admin.')
     ->group(function () {
 
@@ -27,7 +27,7 @@ Route::prefix('api/tourism')
     ->name('tourism.')
     ->group(function () {
 
-        Route::middleware(['admin', 'auth'])
+        Route::middleware(['admin', 'auth', 'permission:tourism.access'])
             ->group(function () {
 
                 Route::post('create/category', StoreTourismCategoryController::class)->name('category.store');

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 //eg. https://gasan-4905/feedback/
 Route::prefix('{municipality}')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:feedback.access'])
     ->group(function () {
 
         // ADMIN DASHBOARD (web page)
@@ -47,7 +47,7 @@ Route::prefix('api/feedback')
     ->group(function () {
 
 
-        Route::middleware(['admin', 'auth'])
+        Route::middleware(['admin', 'auth', 'permission:feedback.access'])
             ->group(function () {
 
                 Route::get('/', FetchFeedbackController::class)->name('fetch');

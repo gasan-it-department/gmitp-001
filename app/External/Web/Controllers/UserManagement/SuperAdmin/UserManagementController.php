@@ -21,6 +21,8 @@ class UserManagementController
 
         $users = $getAllUsersUseCase->execute($dto);
 
+        $users->load(['roles', 'permissions']);
+
         return Inertia::render('UserManagement/SuperAdmin/List/UserManagement', [
 
             'users' => UserResource::collection($users),
@@ -34,6 +36,8 @@ class UserManagementController
     {
 
         $user = $getUser->execute($id);
+
+        $user->load(['socialAccounts', 'roles', 'permissions']);
 
         return Inertia::render('UserManagement/SuperAdmin/Details/UserDetails', [
 

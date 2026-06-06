@@ -18,7 +18,7 @@ export default function UserDetails({ user }: Props) {
             window.history.back();
         } else {
             // Fallback: If they opened the link in a new tab, go to the default list
-            router.visit(route('superAdmin.users.index'));
+            router.visit(route('superAdmin.users.page'));
         }
     };
 
@@ -38,7 +38,7 @@ export default function UserDetails({ user }: Props) {
             <Head title={`${userData.first_name} ${userData.last_name}`} />
 
             <div className="mx-auto max-w-5xl p-6">
-                {/* 4. Updated Back Button */}man
+                {/* 4. Updated Back Button */}
                 <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                     {' '}
                     <Button
@@ -68,10 +68,6 @@ export default function UserDetails({ user }: Props) {
                                     {userData.first_name} {userData.middle_name} {userData.last_name}
                                 </h1>
                                 <div className="mt-1 flex flex-wrap items-center gap-3">
-                                    <span className="flex items-center gap-1 text-sm text-gray-500">
-                                        <span className="font-medium text-gray-900">@{userData.user_name}</span>
-                                    </span>
-
                                     {userData.roles.map((role) => (
                                         <span
                                             key={role}
