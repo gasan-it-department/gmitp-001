@@ -4,6 +4,7 @@ import { PasswordInput } from '@/pages/UserManagement/Profile/Components/Passwor
 import { home, login } from '@/routes';
 import { social } from '@/routes/login';
 import signup from '@/routes/signup';
+import { cn } from '@/lib/utils';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { ChevronLeft } from 'lucide-react';
@@ -22,8 +23,11 @@ export default function LoginPage() {
         remember_me: false as boolean,
     });
 
+    const isBusy = processing || isSocialLoading;
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (isBusy) return;
         clearErrors();
 
         post(login.url(), {
@@ -82,12 +86,18 @@ export default function LoginPage() {
             <Head title="Log in" />
 
             {/* Main Card Container */}
-            <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex-row">
+            <div className={cn(
+                "flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex-row transition-all",
+                isBusy && "opacity-90 grayscale-[0.2]"
+            )}>
                 {/* Left Side: Form Section */}
                 <div className="flex w-full flex-col justify-center p-8 sm:p-12 md:w-1/2">
                     <Link
-                        href={home.url({ municipality: currentMunicipality.slug })}
-                        className="group mb-6 flex w-fit items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black"
+                        href={isBusy ? '#' : home.url({ municipality: currentMunicipality.slug })}
+                        className={cn(
+                            "group mb-6 flex w-fit items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black",
+                            isBusy && "pointer-events-none opacity-50"
+                        )}
                     >
                         <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
                         Back
@@ -110,7 +120,8 @@ export default function LoginPage() {
                                 name="user_identifier"
                                 value={data.user_identifier}
                                 onChange={(e) => setData('user_identifier', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 transition-colors focus:border-black focus:ring-2 focus:ring-black"
+                                disabled={isBusy}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 transition-colors focus:border-black focus:ring-2 focus:ring-black disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                                 placeholder="e.g. 09171234567 or email@domain.com"
                                 required
                             />
@@ -123,7 +134,13 @@ export default function LoginPage() {
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                     Password
                                 </label>
-                                <Link href="/forgot-password" className="text-sm text-gray-600 transition-colors hover:text-black hover:underline">
+                                <Link 
+                                    href="/forgot-password" 
+                                    className={cn(
+                                        "text-sm text-gray-600 transition-colors hover:text-black hover:underline",
+                                        isBusy && "pointer-events-none opacity-50"
+                                    )}
+                                >
                                     Forgot your password?
                                 </Link>
                             </div>
@@ -136,6 +153,7 @@ export default function LoginPage() {
                                 placeholder="••••••••"
                                 required
                                 error={errors.password}
+                                disabled={isBusy}
                             />
                         </div>
 
@@ -146,7 +164,8 @@ export default function LoginPage() {
                                 type="checkbox"
                                 checked={data.remember_me}
                                 onChange={(e) => setData('remember_me', e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                                disabled={isBusy}
+                                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black disabled:opacity-50"
                             />
                             <label htmlFor="remember_me" className="text-sm text-gray-600">
                                 Keep me logged in
@@ -156,9 +175,10 @@ export default function LoginPage() {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={processing}
-                            className="w-full rounded-lg bg-black py-2.5 font-medium text-white transition-all hover:bg-gray-800 focus:ring-4 focus:ring-gray-200 disabled:opacity-50"
+                            disabled={isBusy}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-black py-2.5 font-medium text-white transition-all hover:bg-gray-800 focus:ring-4 focus:ring-gray-200 disabled:opacity-50"
                         >
+                            {processing && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>}
                             {processing ? 'Signing in...' : 'Login'}
                         </button>
                     </form>
@@ -174,7 +194,7 @@ export default function LoginPage() {
                     <div className="mt-6 flex justify-center">
                         <button
                             onClick={() => loginWithGoogle()}
-                            disabled={isSocialLoading}
+                            disabled={isBusy}
                             type="button"
                             className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                         >
@@ -195,7 +215,6 @@ export default function LoginPage() {
                                         fill="#FBBC05"
                                     />
                                     <path
-                                        // The missing 3.99 has been added below right before the 3.47
                                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                                         fill="#EA4335"
                                     />
@@ -207,7 +226,13 @@ export default function LoginPage() {
 
                     <p className="mt-8 text-center text-sm text-gray-600">
                         Don't have an account?{' '}
-                        <Link href={signup.show.url(currentMunicipality.slug)} className="font-medium text-black hover:underline">
+                        <Link 
+                            href={signup.show.url(currentMunicipality.slug)} 
+                            className={cn(
+                                "font-medium text-black hover:underline",
+                                isBusy && "pointer-events-none opacity-50"
+                            )}
+                        >
                             Sign up
                         </Link>
                     </p>
