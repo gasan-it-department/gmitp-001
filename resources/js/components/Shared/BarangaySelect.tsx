@@ -8,14 +8,27 @@ interface BarangaySelection {
     psgc_code: string;
 }
 
+const ANY = '__any__';
+
 interface BarangaySelectProps {
     municipalityId: string;
     value: string;
     onChange: (selection: BarangaySelection) => void;
     disabled?: boolean;
+    showLabel?: boolean;
+    useNameAsValue?: boolean;
+    includeAny?: boolean;
 }
 
-export function BarangaySelect({ municipalityId, value, onChange, disabled }: BarangaySelectProps) {
+export function BarangaySelect({
+    municipalityId,
+    value,
+    onChange,
+    disabled,
+    showLabel = true,
+    useNameAsValue = false,
+    includeAny = false,
+}: BarangaySelectProps) {
     const [barangays, setBarangays] = useState<PsgcBarangay[]>([]);
 
     useEffect(() => {
@@ -29,23 +42,34 @@ export function BarangaySelect({ municipalityId, value, onChange, disabled }: Ba
             .then(setBarangays);
     }, [municipalityId]);
 
+    const displayValue = includeAny && !value ? ANY : value;
+
     return (
         <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Barangay</label>
+            {showLabel && (
+                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">
+                    Barangay
+                </label>
+            )}
             <Select
                 disabled={disabled || !municipalityId}
-                value={value}
-                onValueChange={(code) => {
-                    const found = barangays.find((b) => b.psgc_code === code);
+                value={displayValue}
+                onValueChange={(val) => {
+                    if (includeAny && val === ANY) {
+                        onChange({ name: '', psgc_code: '' });
+                        return;
+                    }
+                    const found = barangays.find((b) => (useNameAsValue ? b.name === val : b.psgc_code === val));
                     if (found) onChange({ name: found.name, psgc_code: found.psgc_code });
                 }}
             >
-                <SelectTrigger>
+                <SelectTrigger className="h-10">
                     <SelectValue placeholder="Select Barangay..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] overflow-y-auto">
+                    {includeAny && <SelectItem value={ANY}>Any Barangay</SelectItem>}
                     {barangays.map((b) => (
-                        <SelectItem key={b.id} value={b.psgc_code}>
+                        <SelectItem key={b.id} value={useNameAsValue ? b.name : b.psgc_code}>
                             {b.name}
                         </SelectItem>
                     ))}

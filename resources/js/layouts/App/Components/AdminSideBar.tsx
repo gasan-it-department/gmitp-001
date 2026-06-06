@@ -49,6 +49,7 @@ import {
     Palmtree,
     ScrollText,
     Siren,
+    UserSearch,
 } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
@@ -126,6 +127,18 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Assistance Types',
                     url: actionCenter.admin.list.assistance.types.url({ municipality: currentMunicipality.slug }),
                     icon: Layers,
+                    permission: 'action_center.access',
+                },
+                {
+                    title: 'Search Beneficiary',
+                    url: actionCenter.admin.beneficiary.search.url({ municipality: currentMunicipality.slug }),
+                    icon: UserSearch,
+                    permission: 'action_center.access',
+                },
+                {
+                    title: 'Walk in Beneficiary',
+                    url: actionCenter.admin.walkin.create.url({ municipality: currentMunicipality.slug }),
+                    icon: UserSearch,
                     permission: 'action_center.access',
                 },
             ],

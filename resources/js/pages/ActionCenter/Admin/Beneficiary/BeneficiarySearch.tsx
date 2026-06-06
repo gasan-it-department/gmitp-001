@@ -1,0 +1,298 @@
+import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
+import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
+import ShowCreateWalkInBeneficiaryController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Walkin/ShowCreateWalkInBeneficiaryController';
+import { Pagination } from '@/components/Shared/Pagination';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import AdminLayout from '@/layouts/App/AppLayout';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Loader2, SearchX, ShieldCheck, UserPlus, UserSearch } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import BeneficiaryResultCard from './Components/BeneficiaryResultCard';
+import SearchFilters from './Components/SearchFilters';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types — mirror App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryListResource
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BeneficiaryRow {
+    id: string;
+    full_name: string;
+    first_name: string;
+    middle_name: string | null;
+    last_name: string;
+    suffix: string | null;
+    sex: string | null;
+    sex_label: string | null;
+    birth_date: string | null;
+    age: number | null;
+    civil_status: string | null;
+    civil_status_label: string | null;
+    occupation: string | null;
+    monthly_income: number | null;
+    barangay?: string | null;
+    street?: string | null;
+    has_account: boolean;
+    account_email?: string | null;
+    total_requests: number;
+    released_count: number;
+    last_released_at: string | null;
+    last_request_at: string | null;
+}
+
+interface PaginatorLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface Meta {
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    links: PaginatorLink[];
+}
+
+interface ResultsPaginator {
+    data: BeneficiaryRow[];
+    meta?: Meta;
+}
+
+interface Filters {
+    search?: string | null;
+    birth_date?: string | null;
+    barangay?: string | null;
+    sex?: string | null;
+}
+
+interface Props {
+    results: ResultsPaginator;
+    filters: Filters;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Admin beneficiary lookup — the interview screen.
+ *
+ * Search state lives in the URL (Inertia partial reloads, same pattern as the
+ * assistance-request list), so a search is bookmarkable and survives a refresh.
+ *
+ * This is the system's primary duplicate-control point: the admin compares each
+ * hit against the uploaded government ID. The server search is deliberately
+ * fuzzy; on top of that we flag client-side when two results share the same
+ * name + birthdate (a possible duplicate registration).
+ */
+export default function BeneficiarySearch({ results, filters }: Props) {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const baseUrl = ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug });
+
+    // Local mirror of the server-side filter state.
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [birthDate, setBirthDate] = useState(filters.birth_date ?? '');
+    const [barangay, setBarangay] = useState(filters.barangay ?? '');
+    const [sex, setSex] = useState(filters.sex ?? '');
+    const [searching, setSearching] = useState(false);
+
+    const rows = results.data ?? [];
+    const meta = results.meta ?? null;
+    const hasCriteria = Boolean(search.trim() || birthDate || barangay.trim() || sex);
+
+    // ── Debounced text filters (name + barangay) ─────────────────────────────
+    // Skip the first run so navigating to the page doesn't re-fetch immediately.
+    const isFirstRender = useRef(true);
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+        const handle = setTimeout(() => applyFilters({}), 350);
+        return () => clearTimeout(handle);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search, barangay]);
+
+    // ── Filter dispatch → Inertia partial reload (URL = state) ───────────────
+    const applyFilters = (overrides: Partial<Filters>) => {
+        const next = stripEmpty({
+            search: firstDefined(overrides.search, search),
+            birth_date: firstDefined(overrides.birth_date, birthDate),
+            barangay: firstDefined(overrides.barangay, barangay),
+            sex: firstDefined(overrides.sex, sex),
+        });
+
+        router.get(baseUrl, next, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => setSearching(true),
+            onFinish: () => setSearching(false),
+        });
+    };
+
+    const clearFilters = () => {
+        setSearch('');
+        setBirthDate('');
+        setBarangay('');
+        setSex('');
+        router.get(baseUrl, {}, { preserveState: false, preserveScroll: true, replace: true });
+    };
+
+    // ── Client-side duplicate flagging (same name + birthdate) ───────────────
+    const duplicateKeys = useMemo(() => {
+        const counts = new Map<string, number>();
+        for (const r of rows) {
+            counts.set(dupKey(r), (counts.get(dupKey(r)) ?? 0) + 1);
+        }
+        return new Set([...counts.entries()].filter(([, c]) => c > 1).map(([k]) => k));
+    }, [rows]);
+
+    return (
+        <AdminLayout>
+            <div className="m-5 mt-0 bg-white">
+                {/* ── Header ── */}
+                <div className="mt-5 mb-2 flex items-start gap-3">
+                    <div className="rounded-xl bg-slate-900 p-2.5 text-white">
+                        <UserSearch className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800">Find a Beneficiary</h2>
+                        <p className="text-sm text-gray-500">
+                            Search the registry for {currentMunicipality.name} during the interview. Match every result against the
+                            applicant&rsquo;s uploaded government ID before approving.
+                        </p>
+                    </div>
+                </div>
+
+                {/* ── ID-verification reminder ── */}
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                    <span>
+                        A new account does not mean a new person. Confirm identity against the uploaded ID — duplicates are caught here, by
+                        you.
+                    </span>
+                </div>
+
+                {/* ── Filters ── */}
+                <SearchFilters
+                    search={search}
+                    onSearch={setSearch}
+                    birthDate={birthDate}
+                    onBirthDate={(v) => {
+                        setBirthDate(v);
+                        applyFilters({ birth_date: v });
+                    }}
+                    barangay={barangay}
+                    onBarangay={setBarangay}
+                    sex={sex}
+                    onSex={(v) => {
+                        setSex(v);
+                        applyFilters({ sex: v });
+                    }}
+                    onClear={clearFilters}
+                    hasCriteria={hasCriteria}
+                    loading={searching}
+                />
+
+                {/* ── Result count / status line ── */}
+                {hasCriteria && (
+                    <div className="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-500">
+                        {searching ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+                            </>
+                        ) : meta ? (
+                            <span>
+                                {meta.total} {meta.total === 1 ? 'match' : 'matches'} found
+                                {duplicateKeys.size > 0 && (
+                                    <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
+                                        {duplicateKeys.size} possible duplicate{duplicateKeys.size === 1 ? '' : 's'}
+                                    </span>
+                                )}
+                            </span>
+                        ) : null}
+                    </div>
+                )}
+
+                {/* ── Empty prompt (no criteria yet) ── */}
+                {!hasCriteria && (
+                    <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-16 text-center">
+                        <UserSearch className="h-9 w-9 text-gray-400" />
+                        <p className="text-sm font-medium text-gray-700">Start typing to search the beneficiary registry.</p>
+                        <p className="max-w-md text-xs text-gray-500">
+                            Try a last name, or narrow down with a birthdate — spelling can vary, but a birthdate rarely does.
+                        </p>
+                    </div>
+                )}
+
+                {/* ── No results ── */}
+                {hasCriteria && !searching && rows.length === 0 && (
+                    <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-16 text-center">
+                        <SearchX className="h-9 w-9 text-gray-400" />
+                        <p className="text-sm font-medium text-gray-700">No beneficiary matches these details.</p>
+                        <p className="max-w-md text-xs text-gray-500">
+                            Loosen the search (fewer words, drop the middle name) before concluding this is a first-time applicant.
+                        </p>
+                        <Link
+                            href={ShowCreateWalkInBeneficiaryController.url({ municipality: currentMunicipality.slug })}
+                            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                        >
+                            <UserPlus className="h-4 w-4" />
+                            Register walk-in beneficiary
+                        </Link>
+                    </div>
+                )}
+
+                {/* ── Results ── */}
+                {rows.length > 0 && (
+                    <div className="grid grid-cols-1 gap-3">
+                        {rows.map((row) => (
+                            <BeneficiaryResultCard
+                                key={row.id}
+                                row={row}
+                                isPossibleDuplicate={duplicateKeys.has(dupKey(row))}
+                                profileHref={ShowBeneficiaryProfileController.url({
+                                    municipality: currentMunicipality.slug,
+                                    beneficiaryId: row.id,
+                                })}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* ── Pagination (URL-param links, preserves filters) ── */}
+                <Pagination links={meta?.links ?? []} />
+            </div>
+        </AdminLayout>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Identity key used to flag two results as a possible duplicate registration. */
+function dupKey(r: BeneficiaryRow): string {
+    return `${r.last_name}|${r.first_name}|${r.middle_name ?? ''}|${r.birth_date ?? ''}`.toLowerCase().trim();
+}
+
+/** Returns the first defined argument (treats `undefined` as "not provided"). */
+function firstDefined<T>(...values: (T | null | undefined)[]): T | undefined {
+    for (const v of values) {
+        if (v !== undefined && v !== null) return v;
+    }
+    return undefined;
+}
+
+/** Drops empty / undefined values so the URL stays clean. */
+function stripEmpty(obj: Record<string, string | undefined>): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(obj)) {
+        if (v !== undefined && v.trim() !== '') {
+            out[k] = v;
+        }
+    }
+    return out;
+}

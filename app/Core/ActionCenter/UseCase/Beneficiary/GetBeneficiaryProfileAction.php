@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Core\ActionCenter\UseCase\Beneficiary;
+
+use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\HouseholdMember;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+/**
+ * Assembles the full admin "review the person" view for one beneficiary.
+ *
+ * Unlike the assistance-request detail page (which reads frozen snapshot_*
+ * columns for COA), this is the LIVE picture used to DECIDE: current household
+ * composition, current total income, and the person's entire assistance
+ * history across every program. The reviewer cross-checks it against the
+ * uploaded government ID before processing a request.
+ *
+ * Tenant guard mirrors GetAssistanceRequestProfileAction: a beneficiary whose
+ * household belongs to another municipality returns 404 (not 403 — confirming
+ * "this ID exists but isn't yours" is itself a leak).
+ *
+ * @return array{
+ *     beneficiary: Beneficiary,
+ *     householdMembers: \Illuminate\Database\Eloquent\Collection,
+ *     assistanceHistory: \Illuminate\Database\Eloquent\Collection,
+ *     householdTotalIncome: float,
+ *     summary: array{total_requests:int, released_count:int, total_released_amount:float, active_member_count:int},
+ * }
+ */
+class GetBeneficiaryProfileAction
+{
+    public function execute(string $municipalId, string $beneficiaryId): array
+    {
+        $beneficiary = Beneficiary::with([
+            'household',
+            'religion',
+            'user:id,email',
+        ])->findOrFail($beneficiaryId);
+
+        // Tenant scope — municipal_id lives on the household.
+        if ($beneficiary->household?->municipal_id !== $municipalId) {
+            throw new ModelNotFoundException();
+        }
+
+        // Active family composition, head first (matches the request-detail page).
+        $householdMembers = HouseholdMember::query()
+            ->where('household_id', $beneficiary->household_id)
+            ->where('is_active', true)
+            ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
+            ->orderBy('created_at')
+            ->get();
+
+        // Every request this beneficiary has ever filed, across all programs.
+        $assistanceHistory = AssistanceRequest::query()
+            ->where('beneficiary_id', $beneficiary->id)
+            ->with('assistanceType')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $householdTotalIncome = (float) $householdMembers->sum(fn (HouseholdMember $m) => (float) $m->monthly_income);
+
+        // status is cast to the AssistanceStatus enum, so filter on its value
+        // (a loose ->where('status', 'released') would compare enum !== string
+        // and silently match nothing).
+        $releasedHistory = $assistanceHistory->filter(
+            fn (AssistanceRequest $r) => $r->status?->value === 'released'
+        );
+
+        return [
+            'beneficiary'          => $beneficiary,
+            'householdMembers'     => $householdMembers,
+            'assistanceHistory'    => $assistanceHistory,
+            'householdTotalIncome' => $householdTotalIncome,
+            'summary'              => [
+                'total_requests'        => $assistanceHistory->count(),
+                'released_count'        => $releasedHistory->count(),
+                'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
+                'active_member_count'   => $householdMembers->count(),
+            ],
+        ];
+    }
+}

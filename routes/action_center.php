@@ -8,12 +8,17 @@ use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestR
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
+use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreInlineHouseholdMemberController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
+use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryProfileController;
+use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
+use App\External\Web\Controllers\ActionCenter\Admin\Walkin\ShowCreateWalkInBeneficiaryController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
@@ -40,6 +45,24 @@ Route::prefix('{municipality}/action-center')
             ->group(function () {
 
             Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
+
+            // Beneficiary lookup screen used during the interview. Search state
+            // lives in the query string (Inertia + URL params).
+            Route::get('beneficiary/search', ShowBeneficiarySearchController::class)
+                ->name('beneficiary.search');
+
+            // Full LIVE beneficiary review page — household composition + full
+            // cross-program assistance history. Drill-down target from the
+            // search results and the request-detail page.
+            Route::get('beneficiary/{beneficiaryId}/profile', ShowBeneficiaryProfileController::class)
+                ->name('beneficiary.profile');
+
+            // Walk-in intake form — display only. The admin encodes a person
+            // who has no portal account (user_id stays NULL). Reached from the
+            // search page's "no results" state after confirming the applicant
+            // isn't already in the registry.
+            Route::get('walkin/create', ShowCreateWalkInBeneficiaryController::class)
+                ->name('walkin.create');
 
             // Personal worklist — only under_review cases assigned to the
             // current admin. Pinned scope is set server-side; query-string
@@ -140,6 +163,22 @@ Route::prefix('/api/action-center')
                     '/assistance-request/{assistanceRequestId}/release',
                     ReleaseAssistanceRequestController::class,
                 )->name('assistance.release');
+
+                // Link a beneficiary to a portal account, or change which
+                // account it points to. Deliberate, audited admin action done
+                // at interview time against the verified government ID — keeps
+                // ONE lifelong record per person instead of spawning duplicates.
+                // All rules + the audit trail live in the action.
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/link-account',
+                    LinkBeneficiaryAccountController::class,
+                )->name('beneficiary.link-account');
+
+                // Encode a walk-in beneficiary (no portal account). Mirrors the
+                // online profile-setup store, minus the user_id, plus a soft
+                // name+DOB duplicate guard. Rules + audit live in the action.
+                Route::post('/walkin', StoreWalkInBeneficiaryController::class)
+                    ->name('walkin.store');
             });
 
         Route::middleware(['auth', 'municipalityContext'])

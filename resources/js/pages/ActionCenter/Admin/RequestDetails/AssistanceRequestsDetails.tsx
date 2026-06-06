@@ -1,3 +1,4 @@
+import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
 import { Badge } from '@/components/ui/badge';
@@ -590,6 +591,18 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
 
                         {/* ─── Right Column (Static Action Control Panel) ─── */}
                         <div className="space-y-6 lg:col-span-4">
+                            {/* Drill into the LIVE beneficiary record (household + full
+                                history) to review the person before processing. */}
+                            <Link
+                                href={ShowBeneficiaryProfileController.url({
+                                    municipality: currentMunicipality.slug,
+                                    beneficiaryId: detail.beneficiary_id,
+                                })}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                            >
+                                <User className="h-4 w-4" /> View Beneficiary Profile
+                            </Link>
+
                             <Card className="sticky top-4">
                                 <CardHeader>
                                     <CardTitle className="text-base">Actions</CardTitle>

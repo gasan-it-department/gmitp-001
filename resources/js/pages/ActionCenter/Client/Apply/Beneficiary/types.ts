@@ -16,7 +16,7 @@
  * data shape, so we keep the input value as a string and let the backend
  * cast to float at the DTO boundary.
  */
-export interface HouseholdMemberDraft {
+export type HouseholdMemberDraft = {
     first_name: string;
     middle_name: string;
     last_name: string;
@@ -32,7 +32,7 @@ export interface HouseholdMemberDraft {
 }
 
 /** The exact shape Inertia's useForm hook manages for profile setup. */
-export interface ProfileSetupFormData {
+export type ProfileSetupFormData = {
     first_name: string;
     middle_name: string;
     last_name: string;
