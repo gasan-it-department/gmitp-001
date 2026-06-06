@@ -25,7 +25,7 @@ class SuperAdminSeeder extends Seeder
                 'id' => Str::ulid(),
                 'first_name' => 'super',
                 'last_name' => 'admin',
-                'phone' => '09994587693',
+                'phone' => '639994587693',
                 'phone_verified_at' => now(),
                 'email_verified_at' => now(),
                 'password' => Hash::make('capstone'),

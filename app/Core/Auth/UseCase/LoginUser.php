@@ -14,6 +14,8 @@ use App\Core\Auth\Interfaces\PasswordHasherInterface;
 use App\Core\Auth\Interfaces\TokenServiceInterface;
 use App\Core\Auth\Interfaces\RateLimiterInterface;
 use App\Core\Auth\Interfaces\CookieSessionInterface;
+use App\Core\Users\ValueObjects\Phone;
+
 class LoginUser
 {
 
@@ -44,9 +46,20 @@ class LoginUser
         }
 
         // Resolve the user by phone or email — whichever the identifier looks like
-        $users = filter_var($dto->identifier, FILTER_VALIDATE_EMAIL)
-            ? $this->userRepository->findByEmail($dto->identifier)
-            : $this->userRepository->findByPhone($dto->identifier);
+        $isEmail = filter_var($dto->identifier, FILTER_VALIDATE_EMAIL);
+        $identifier = $dto->identifier;
+
+        if (!$isEmail) {
+            try {
+                $identifier = (new Phone($dto->identifier))->toString();
+            } catch (\InvalidArgumentException $e) {
+                // Not a valid phone format, search using raw string
+            }
+        }
+
+        $users = $isEmail
+            ? $this->userRepository->findByEmail($identifier)
+            : $this->userRepository->findByPhone($identifier);
 
         if (!$users) {
             $this->rateLimiter->hit($rateLimitKey, self::RATE_LIMIT_MINUTES);

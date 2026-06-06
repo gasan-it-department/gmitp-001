@@ -69,6 +69,7 @@ class User extends Authenticatable
     {
         return [
             'phone_verified_at' => 'datetime',
+            'phone' => 'string',
         ];
     }
 
