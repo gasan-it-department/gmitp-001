@@ -40,7 +40,8 @@ class ProcurementResource extends JsonResource
 
             'created_at' => $this->created_at?->toIso8601String(),
 
-            'files' => ProcurementFileResource::collection($this->whenLoaded('files')),
+            'files' => ''
+            //'ProcurementFileResource::collection($this->whenLoaded('files'))',
 
         ];
     }

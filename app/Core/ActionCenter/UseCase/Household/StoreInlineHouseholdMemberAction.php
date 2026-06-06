@@ -14,7 +14,7 @@ use App\Core\ActionCenter\Models\HouseholdMember;
  * portal account), and the admin can later link the row to a beneficiary
  * during their interview.
  */
-class CreateInlineHouseholdMemberAction
+class StoreInlineHouseholdMemberAction
 {
     public function execute(CreateInlineHouseholdMemberDto $dto): HouseholdMember
     {
