@@ -4,20 +4,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import municipality from '@/routes/municipality';
 import { useForm } from '@inertiajs/react';
 
-// 1. Local Interface: No 'export', strictly typed.
-interface MunicipalityFormState {
-    zip_code: string;
-    psgc_municipal_id: string; // Strictly string, no undefined allowed
-    is_active: boolean;
-}
-
 interface AddEditMunicipalityProps {
     isOpen: boolean;
-    editData?: Municipality | null;
+    editData?: MunicipalityType | null;
     onClose: () => void;
     provinceId?: string;
 }
@@ -43,15 +36,20 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData, p
         e.preventDefault();
 
         if (editData) {
-            put(route('super-admin.municipalities.update', editData.id), {
+            put(municipality.superAdmin.update.url(editData.id), {
+                preserveScroll: true,
                 onSuccess: () => handleClose(),
             });
         } else {
             post(municipality.superAdmin.add.url(), {
+                preserveScroll: true,
                 onSuccess: () => handleClose(),
             });
         }
     };
+
+    // Uniqueness errors from UpdateMunicipalityController are flashed under "municipality".
+    const generalError = (errors as Record<string, string>).municipality;
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -63,6 +61,10 @@ export default function AddEditMunicipalityDialog({ isOpen, onClose, editData, p
 
                 <div className="custom-scrollbar max-h-[60vh] overflow-y-auto px-1 pr-2">
                     <form key={editData?.id ?? 'new-form'} onSubmit={handleSubmit} className="mt-4 space-y-6">
+                        {generalError && (
+                            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{generalError}</div>
+                        )}
+
                         {/* --- Municipality Select --- */}
                         <div className="space-y-1">
                             <Label className="text-sm font-semibold text-gray-700">
