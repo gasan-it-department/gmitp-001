@@ -15,6 +15,7 @@ require __DIR__ . '/municipality.php';
 require __DIR__ . '/Feedback.php';
 require __DIR__ . '/super_admin.php';
 require __DIR__ . '/communityReport.php';
+require __DIR__ . '/support_ticket.php';
 require __DIR__ . '/viewing_feedback.php';
 require __DIR__ . '/travel_editor_page.php';
 require __DIR__ . '/procurement.php';

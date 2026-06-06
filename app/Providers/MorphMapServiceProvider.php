@@ -19,6 +19,7 @@ use App\Core\Municipality\Models\Municipality;
 use App\Core\Municipality\Models\MunicipalityHotline;
 use App\Core\Municipality\Models\MunicipalitySettings;
 use App\Core\Procurement\Models\Procurement;
+use App\Core\SupportTicket\Models\SupportTicket;
 use App\Core\Tourism\Models\TourismAsset;
 use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -59,6 +60,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'term' => Term::class,
             'decedent' => Decedent::class,
             'municipality_hotline' => MunicipalityHotline::class,
+            'support_ticket' => SupportTicket::class,
         ]);
     }
 }

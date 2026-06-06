@@ -2,8 +2,9 @@ import ListFeedbackController from '@/actions/App/External/Web/Controllers/Feedb
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import actionCenter from '@/routes/actionCenter';
 import communityReport from '@/routes/communityReport';
+import supportTicket from '@/routes/supportTicket';
 import { Link, usePage } from '@inertiajs/react';
-import { AlertTriangle, FileWarning, HandHeart } from 'lucide-react';
+import { AlertTriangle, ChevronRight, FileWarning, HandHeart } from 'lucide-react';
 
 type SharedProps = {
     currentMunicipality: {
@@ -45,64 +46,63 @@ export default function TransactionHub({ counts = { assistance: 0, reports: 0 } 
             href: ListFeedbackController.url(currentMunicipality.slug),
             pendingCount: 0,
         },
-        // {
-        //     title: 'Other Transactions',
-        //     description: 'Non-emergency service requests, permits, and miscellaneous municipal transactions.',
-        //     icon: Layers,
-        //     href: communityReport.client.page.url(currentMunicipality.slug), // Placeholder route
-        //     pendingCount: 0,
-        // },
+        {
+            title: 'Support Ticket',
+            description: 'Review, validate, and resolve reported incidents or issues submitted.',
+            icon: AlertTriangle,
+            href: supportTicket.index.url(currentMunicipality.slug),
+            pendingCount: 0,
+        },
     ];
 
     return (
         <PublicLayout title="My Transactions" description="Track your requests and reports">
-            <div className="min-h-screen bg-muted/30 px-4 py-12">
-                <div className="mx-auto max-w-5xl">
-                    {/* Header */}
-                    <div className="mb-10 space-y-2 text-center md:text-left">
-                        <h1 className="flex items-center justify-center gap-3 text-3xl font-black tracking-widest text-foreground uppercase md:justify-start">
-                            My Transactions
-                        </h1>
-                        <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-                            Viewing activity for <span className="font-bold text-primary">{currentMunicipality.name}</span>
-                        </p>
+            <div className="min-h-screen bg-background pt-8 pb-20 md:py-12">
+                <div className="mx-auto max-w-4xl px-4 sm:px-6 md:px-8">
+                    {/* Minimalist Header */}
+                    <div className="mb-8 md:mb-10">
+                        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">My Transactions</h1>
+                        <p className="mt-2 text-sm text-muted-foreground">Viewing activity for {currentMunicipality.name}</p>
                     </div>
 
-                    {/* The Grid of Cards */}
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* The Clean Grid */}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                         {modules.map((item, index) => (
                             <Link
                                 key={index}
                                 href={item.href}
-                                className="group relative flex transform flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg"
+                                className="group flex flex-col justify-between rounded-2xl border border-border/40 bg-transparent p-6 transition-colors hover:border-border/80 hover:bg-muted/30"
                             >
-                                <div>
-                                    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                                        <item.icon className="h-7 w-7" />
+                                <div className="flex items-start justify-between">
+                                    {/* Icon & Text Wrapper */}
+                                    <div className="flex gap-4">
+                                        <div className="mt-1 flex-shrink-0 text-muted-foreground transition-colors group-hover:text-foreground">
+                                            <item.icon size={24} strokeWidth={1.5} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-base font-medium text-foreground">{item.title}</h3>
+                                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                                        </div>
                                     </div>
-                                    <h3 className="text-xl font-black tracking-tight text-foreground uppercase transition-colors group-hover:text-primary">
-                                        {item.title}
-                                    </h3>
-                                    <p className="mt-2 text-sm leading-relaxed font-medium text-muted-foreground">{item.description}</p>
+
+                                    {/* Navigation Hint */}
+                                    <ChevronRight
+                                        size={20}
+                                        strokeWidth={1.5}
+                                        className="text-muted-foreground/30 transition-transform group-hover:translate-x-1 group-hover:text-foreground"
+                                    />
                                 </div>
 
-                                {/* <div className="mt-8 flex items-center justify-between border-t border-border pt-4">
-                                    <div>
-                                        {item.pendingCount > 0 ? (
-                                            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary">
-                                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"></span>
-                                                {item.pendingCount} Pending Updates
-                                            </span>
-                                        ) : (
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                                                No pending updates
-                                            </span>
-                                        )}
+                                {/* Minimalist Pending Count Badge (if you want to re-enable it) */}
+                                {item.pendingCount > 0 && (
+                                    <div className="mt-6 flex items-center gap-2 pl-10">
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-foreground opacity-75"></span>
+                                            <span className="relative inline-flex h-2 w-2 rounded-full bg-foreground"></span>
+                                        </span>
+                                        <span className="text-xs font-medium text-foreground">{item.pendingCount} pending</span>
                                     </div>
-                                    <div className="rounded-full bg-muted/50 p-2 transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary-foreground" />
-                                    </div>
-                                </div> */}
+                                )}
                             </Link>
                         ))}
                     </div>

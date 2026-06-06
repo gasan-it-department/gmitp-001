@@ -6,35 +6,41 @@ import SecurityTab from './Components/SecurityTab';
 export default function UserAccount() {
     return (
         <PublicLayout title="Account Settings" description="Manage your profile and security settings">
-            <div className="min-h-screen w-full bg-background/50 pb-20 md:pb-10">
-                <div className="max-w-5xl mx-auto">
+            {/* Clean, spacious wrapper without heavy background tint */}
+            <div className="min-h-screen w-full bg-background pt-8 pb-20 md:py-12">
+                <div className="mx-auto max-w-4xl px-4 sm:px-6 md:px-8">
+                    {/* Minimalist Page Header */}
+                    <div className="mb-8 md:mb-10">
+                        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Account Settings</h1>
+                        <p className="mt-2 text-sm text-muted-foreground">Manage your profile details and security preferences.</p>
+                    </div>
+
                     <Tabs defaultValue="account" className="w-full">
-                        {/* Sticky Tabs Header for Mobile */}
-                        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border mb-6 md:static md:bg-transparent md:border-none md:mb-8">
-                            <div className="px-4 md:px-0">
-                                <TabsList className="h-14 md:h-12 w-full justify-start gap-6 bg-transparent p-0 border-none rounded-none overflow-x-auto no-scrollbar">
-                                    <TabsTrigger 
-                                        value="account" 
-                                        className="h-full px-1 py-0 bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none text-sm font-bold uppercase tracking-wider transition-all"
-                                    >
-                                        Account
-                                    </TabsTrigger>
-                                    <TabsTrigger 
-                                        value="security" 
-                                        className="h-full px-1 py-0 bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none text-sm font-bold uppercase tracking-wider transition-all"
-                                    >
-                                        Security
-                                    </TabsTrigger>
-                                </TabsList>
-                            </div>
+                        {/* Refined sticky header: smooth blur, faint border, aligned properly */}
+                        <div className="sticky top-0 z-20 -mx-4 bg-background/80 px-4 backdrop-blur-xl sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
+                            <TabsList className="mb-8 inline-flex h-auto items-center justify-center rounded-xl bg-muted/50 p-1 text-muted-foreground">
+                                <TabsTrigger
+                                    value="account"
+                                    className="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium whitespace-nowrap ring-offset-background transition-all hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                                >
+                                    Profile
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="security"
+                                    className="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium whitespace-nowrap ring-offset-background transition-all hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                                >
+                                    Security
+                                </TabsTrigger>
+                            </TabsList>
                         </div>
 
-                        <div className="px-4 md:px-0">
-                            <TabsContent value="account" className="mt-0 outline-none">
+                        {/* Added a subtle fade-in animation for smoother tab switching */}
+                        <div className="mt-2">
+                            <TabsContent value="account" className="m-0 duration-500 animate-in fade-in-50 focus-visible:outline-none">
                                 <ProfileTab />
                             </TabsContent>
 
-                            <TabsContent value="security" className="mt-0 outline-none">
+                            <TabsContent value="security" className="m-0 duration-500 animate-in fade-in-50 focus-visible:outline-none">
                                 <SecurityTab />
                             </TabsContent>
                         </div>
