@@ -1,5 +1,6 @@
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
+import EditBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/EditBeneficiaryProfileController';
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +8,14 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Download, HandCoins, Home, Link2, Mail, MapPin, User, Users } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Download, HandCoins, Home, Link2, Mail, MapPin, Pencil, User, Users } from 'lucide-react';
 import { useState } from 'react';
+import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
-import HouseholdMembersTable, { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
+import HouseholdMembersManager from './Components/HouseholdMembersManager';
+import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
 import LinkAccountDialog from './Components/LinkAccountDialog';
+import { type RelationshipOption } from './Components/MemberFormDialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror BeneficiaryProfileResource + the controller props
@@ -56,6 +60,10 @@ interface Props {
     householdTotalIncome: number;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
     summary: Summary;
+    religions: ReligionOption[];
+    civilStatus: EnumOption[];
+    educationalAttainment: EnumOption[];
+    relationships: RelationshipOption[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +77,10 @@ export default function BeneficiaryProfile({
     householdTotalIncome,
     crossMunicipalityMatches,
     summary,
+    religions,
+    civilStatus,
+    educationalAttainment,
+    relationships,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const utils = Utility();
@@ -97,17 +109,31 @@ export default function BeneficiaryProfile({
                             Back to Beneficiary Search
                         </Link>
 
-                        {/* Primary action: file an assistance request for this person */}
-                        <Link
-                            href={CreateAssistanceRequestController.url({
-                                municipality: currentMunicipality.slug,
-                                beneficiaryId: profile.id,
-                            })}
-                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                        >
-                            <HandCoins className="h-4 w-4" />
-                            File assistance request
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Secondary action: correct a mistake on this record (admin-only) */}
+                            <Link
+                                href={EditBeneficiaryProfileController.url({
+                                    municipality: currentMunicipality.slug,
+                                    beneficiaryId: profile.id,
+                                })}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                            >
+                                <Pencil className="h-4 w-4" />
+                                Edit profile
+                            </Link>
+
+                            {/* Primary action: file an assistance request for this person */}
+                            <Link
+                                href={CreateAssistanceRequestController.url({
+                                    municipality: currentMunicipality.slug,
+                                    beneficiaryId: profile.id,
+                                })}
+                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                            >
+                                <HandCoins className="h-4 w-4" />
+                                File assistance request
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
@@ -202,10 +228,18 @@ export default function BeneficiaryProfile({
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <Users className="h-4 w-4 text-slate-600" /> Household Composition
                                     </CardTitle>
-                                    <span className="text-xs text-slate-400">{members.length} active members</span>
+                                    <span className="text-xs text-slate-400">{summary.active_member_count} active members</span>
                                 </CardHeader>
                                 <CardContent>
-                                    <HouseholdMembersTable members={members} totalIncome={householdTotalIncome} />
+                                    <HouseholdMembersManager
+                                        members={members}
+                                        totalIncome={householdTotalIncome}
+                                        beneficiaryId={profile.id}
+                                        religions={religions}
+                                        civilStatus={civilStatus}
+                                        educationalAttainment={educationalAttainment}
+                                        relationships={relationships}
+                                    />
                                 </CardContent>
                             </Card>
 

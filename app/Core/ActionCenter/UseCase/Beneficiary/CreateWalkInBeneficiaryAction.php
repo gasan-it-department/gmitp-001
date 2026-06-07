@@ -96,10 +96,16 @@ class CreateWalkInBeneficiaryAction
             // Fan out the other household members the admin listed. Each entry
             // was shape-validated by the FormRequest; the action enforces the
             // per-household cap. beneficiary_id stays NULL for unregistered
-            // members (identity reconciliation links them on future registration).
+            // members; when the admin recognised a member as already-registered
+            // and the form carried that id, we LINK the row (don't duplicate) —
+            // after re-verifying the id belongs to THIS municipality.
             foreach ($dto->householdMembers as $memberData) {
                 $this->storeHouseholdMember->execute(
                     StoreHouseholdMemberDto::fromArray($memberData, $household->id),
+                    beneficiaryId: $this->resolveTenantBeneficiaryId(
+                        $memberData['beneficiary_id'] ?? null,
+                        $dto->municipalId,
+                    ),
                 );
             }
 
@@ -120,6 +126,26 @@ class CreateWalkInBeneficiaryAction
 
             return $beneficiary;
         }, attempts: 3);
+    }
+
+    /**
+     * Only allow linking a roster row to a beneficiary that actually lives in
+     * THIS municipality (tenant key is on the household). Anything else — a
+     * stray, forged, or cross-tenant id — is treated as "no link" rather than
+     * aborting the whole registration.
+     */
+    private function resolveTenantBeneficiaryId(?string $beneficiaryId, string $municipalId): ?string
+    {
+        if (! $beneficiaryId) {
+            return null;
+        }
+
+        $belongsToTenant = Beneficiary::query()
+            ->whereKey($beneficiaryId)
+            ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
+            ->exists();
+
+        return $belongsToTenant ? $beneficiaryId : null;
     }
 
     /**

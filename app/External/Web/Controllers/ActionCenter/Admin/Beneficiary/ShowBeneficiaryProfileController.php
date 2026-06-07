@@ -2,6 +2,10 @@
 
 namespace App\External\Web\Controllers\ActionCenter\Admin\Beneficiary;
 
+use App\Core\ActionCenter\Enums\CivilStatus;
+use App\Core\ActionCenter\Enums\EducationalAttainment;
+use App\Core\ActionCenter\Enums\Relationship;
+use App\Core\ActionCenter\Models\Religion;
 use App\Core\ActionCenter\UseCase\Beneficiary\GetBeneficiaryProfileAction;
 use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryProfileResource;
 use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
@@ -41,6 +45,11 @@ class ShowBeneficiaryProfileController extends Controller
             'householdTotalIncome' => $data['householdTotalIncome'],
             'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
             'summary'              => $data['summary'],
+            // Dropdown sources for the inline roster manager (add / edit member).
+            'religions'             => Religion::active()->get(['id', 'name']),
+            'civilStatus'           => CivilStatus::option(),
+            'educationalAttainment' => EducationalAttainment::toOptions(),
+            'relationships'         => Relationship::toOptions(),
         ]);
     }
 }

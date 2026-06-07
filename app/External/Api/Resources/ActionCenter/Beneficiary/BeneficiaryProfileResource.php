@@ -39,6 +39,9 @@ class BeneficiaryProfileResource extends JsonResource
 
             'educational_attainment' => $this->educational_attainment,
             'religion'               => $this->whenLoaded('religion', fn () => $this->religion?->name),
+            // Raw FK so the admin edit form can pre-select the religion dropdown
+            // (the human-readable name above is for read-only display).
+            'religion_id'            => $this->religion_id,
 
             // ── Economic snapshot (indigency cues) ───────────────────────────
             'civil_status'       => $this->civil_status?->value,

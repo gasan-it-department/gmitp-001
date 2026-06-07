@@ -77,6 +77,12 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'household_members.*.occupation'             => ['nullable', 'string', 'max:120'],
             'household_members.*.monthly_income'         => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'household_members.*.religion_id'            => ['nullable', 'ulid', 'exists:ac_religions,id'],
+
+            // Link-don't-duplicate: when the admin recognises a listed member is
+            // already registered, the form may carry that beneficiary's id so the
+            // row is linked at creation instead of duplicated. The action
+            // re-verifies the id belongs to this municipality before linking.
+            'household_members.*.beneficiary_id'         => ['nullable', 'ulid', 'exists:ac_beneficiaries,id'],
         ];
     }
 

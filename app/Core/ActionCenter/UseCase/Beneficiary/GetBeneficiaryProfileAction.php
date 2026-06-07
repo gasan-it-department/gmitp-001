@@ -49,13 +49,18 @@ class GetBeneficiaryProfileAction
             throw new ModelNotFoundException();
         }
 
-        // Active family composition, head first (matches the request-detail page).
+        // Full family composition for the admin roster manager — head first,
+        // then current (active) members, then moved-out (inactive) ones last.
+        // Income + the active count below are computed from the active subset
+        // only, so moving someone out drops them from the household economics.
         $householdMembers = HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
-            ->where('is_active', true)
             ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
+            ->orderByDesc('is_active')
             ->orderBy('created_at')
             ->get();
+
+        $activeMembers = $householdMembers->where('is_active', true);
 
         // Every request this beneficiary has ever filed, across all programs.
         $assistanceHistory = AssistanceRequest::query()
@@ -74,7 +79,7 @@ class GetBeneficiaryProfileAction
             $municipalId,
         );
 
-        $householdTotalIncome = (float) $householdMembers->sum(fn (HouseholdMember $m) => (float) $m->monthly_income);
+        $householdTotalIncome = (float) $activeMembers->sum(fn (HouseholdMember $m) => (float) $m->monthly_income);
 
         // status is cast to the AssistanceStatus enum, so filter on its value
         // (a loose ->where('status', 'released') would compare enum !== string
@@ -93,7 +98,7 @@ class GetBeneficiaryProfileAction
                 'total_requests'        => $assistanceHistory->count(),
                 'released_count'        => $releasedHistory->count(),
                 'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
-                'active_member_count'   => $householdMembers->count(),
+                'active_member_count'   => $activeMembers->count(),
             ],
         ];
     }

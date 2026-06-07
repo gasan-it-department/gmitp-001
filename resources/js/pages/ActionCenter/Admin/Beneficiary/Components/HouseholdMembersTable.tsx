@@ -12,8 +12,14 @@ export interface HouseholdMemberRow {
     age: number | null;
     sex: string | null;
     civil_status: string | null;
+    educational_attainment: string | null;
     occupation: string | null;
     monthly_income: number;
+    religion_id: string | null;
+    /** True for the server-managed head row (mirrors the beneficiary). */
+    beneficiary_id: string | null;
+    /** False = moved out (kept as history, dropped from active composition). */
+    is_active: boolean;
 }
 
 interface Props {

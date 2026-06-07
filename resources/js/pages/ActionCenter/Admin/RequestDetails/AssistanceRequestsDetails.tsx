@@ -1,5 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
+import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ import {
     Info,
     MapPin,
     MessageSquare,
+    Pencil,
     Printer,
     Send,
     ShieldCheck,
@@ -322,6 +324,21 @@ export default function AssistanceRequestsDetails({
                                     >
                                         <User className="h-4 w-4" /> View Beneficiary Profile
                                     </Link>
+
+                                    {/* Correct a mistake — only while the request is still
+                                        editable (pending / under_review). Locked states show
+                                        no button; the server enforces the same gate. */}
+                                    {(detail.status === 'pending' || detail.status === 'under_review') && (
+                                        <Link
+                                            href={EditAssistanceRequestController.url({
+                                                municipality: currentMunicipality.slug,
+                                                assistanceRequest: detail.id,
+                                            })}
+                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                        >
+                                            <Pencil className="h-4 w-4" /> Edit Request
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
 

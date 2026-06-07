@@ -1,6 +1,8 @@
-import { AlertCircle, ClipboardCheck, Eye, Globe, MessageSquare } from 'lucide-react';
+import { ArrowDown, ClipboardCheck, Eye, FileText, LifeBuoy, MapPinned, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MunicipalityCard } from './MunicipalityCard';
+
+const MARINDUQUE_MARK = 'https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png';
 
 export default function LandingPageHeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
@@ -13,140 +15,140 @@ export default function LandingPageHeroBanner() {
     const features = [
         {
             title: 'Sentro ng Aksyon',
-            description: 'Mabilis na pagproseso ng mga dokumento at mga aplikasyon.',
+            description: 'Magpadala ng request at subaybayan ang proseso mula sa inyong bayan.',
             icon: ClipboardCheck,
         },
         {
+            title: 'Dokumento at Permit',
+            description: 'Makahanap ng forms, requirements, at local service information.',
+            icon: FileText,
+        },
+        {
             title: 'Puna at Suhestiyon',
-            description: 'Ibahagi ang inyong karanasan upang mapabuti ang aming serbisyo.',
+            description: 'Ibahagi ang karanasan upang mas mapabuti ang serbisyo publiko.',
             icon: MessageSquare,
         },
         {
-            title: 'Pag-uulat',
-            description: 'Iulat ang mga insidente o mahahalagang concerns sa inyong komunidad.',
-            icon: AlertCircle,
-        },
-        {
-            title: 'Katapatan',
-            description: 'Buksan at tingnan ang mga ulat at paggamit ng pondo ng bayan.',
+            title: 'Transparency',
+            description: 'Tingnan ang mahahalagang ulat, abiso, at impormasyon ng pamahalaan.',
             icon: Eye,
         },
     ];
 
+    const serviceStats = [
+        { label: 'Municipal portals', value: '6' },
+        { label: 'Citizen services', value: '24/7' },
+        { label: 'Province', value: '1' },
+    ];
+
     return (
-        <div className="relative min-h-screen overflow-hidden bg-background">
-            {/* HERO SECTION */}
-            <div className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
-                {/* Background Decor */}
-                <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-                <div className="absolute top-0 right-0 left-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]"></div>
+        <div className="relative overflow-hidden bg-[#f8faf9]">
+            <section className="relative min-h-[calc(100vh-6rem)] overflow-hidden border-b border-[#d9e2df] bg-[#f8faf9]">
+                <img
+                    src={MARINDUQUE_MARK}
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-1/2 left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.06] sm:h-[42rem] sm:w-[42rem]"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-white" />
 
-                <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
-                    {/* LEFT: Text Content */}
+                <div className="relative mx-auto flex min-h-[calc(100vh-6rem)] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
                     <div
-                        className={`space-y-8 transition-all duration-1000 ease-out ${fadeVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
+                        className={`mx-auto max-w-4xl space-y-8 text-center transition-all duration-700 ease-out ${
+                            fadeVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                        }`}
                     >
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-bold tracking-widest text-primary uppercase shadow-sm backdrop-blur-sm">
-                            <Globe className="h-3.5 w-3.5" />
-                            <span>Isang Lalawigan. Isang Portal.</span>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-[#b7cbc5] bg-white px-4 py-2 text-xs font-bold tracking-widest text-[#163832] uppercase shadow-sm">
+                            <ShieldCheck className="h-4 w-4 text-[#d6a62a]" />
+                            Serbisyong Bayan, Isang Portal
                         </div>
 
-                        {/* Heading */}
-                        <h1 className="text-5xl leading-[1.05] font-black tracking-tight text-foreground sm:text-6xl lg:text-[5rem]">
-                            PORTAL NG <br />
-                            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">SERBISYO</span> <br />
-                        </h1>
+                        <div className="space-y-5">
+                            <h1 className="text-4xl leading-tight font-black tracking-tight text-[#102a26] sm:text-5xl lg:text-7xl">
+                                Mas malapit na serbisyo para sa bawat mamamayan.
+                            </h1>
+                            <p className="mx-auto max-w-2xl text-base leading-8 font-medium text-[#4d675f] sm:text-lg">
+                                Piliin ang inyong munisipalidad at makapasok sa lokal na portal para sa impormasyon, requests, permits, reports, at
+                                iba pang serbisyong pampubliko.
+                            </p>
+                        </div>
 
-                        {/* Subheading */}
-                        <p className="max-w-xl text-lg leading-relaxed font-medium text-muted-foreground sm:text-xl">
-                            Pinag-iisa ang mga serbisyo ng gobyerno sa buong Marinduque. I-access ang mga dokumento, permits, at impormasyon sa isang
-                            sentralisadong hub.
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-4 pt-4">
-                            {/* <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:scale-105">
-                                Magsimula Na
-                                <ArrowRight className="h-4 w-4" />
-                            </button>
-                            <button className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-border bg-background px-8 text-sm font-semibold text-foreground shadow-sm transition-all hover:bg-muted">
-                                Alamin ang Higit Pa
-                            </button> */}
+                        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                            <a
+                                href="#municipalities"
+                                className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#163832] px-6 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#255149] focus:ring-2 focus:ring-[#163832] focus:ring-offset-2 focus:outline-none"
+                            >
+                                Piliin ang Bayan
+                                <ArrowDown className="h-4 w-4" />
+                            </a>
+                            <a
+                                href="#services"
+                                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-[#b7cbc5] bg-white px-6 text-sm font-bold text-[#163832] shadow-sm transition-colors hover:bg-[#edf4f1] focus:ring-2 focus:ring-[#163832] focus:ring-offset-2 focus:outline-none"
+                            >
+                                Tingnan ang Serbisyo
+                                <LifeBuoy className="h-4 w-4" />
+                            </a>
                         </div>
                     </div>
 
-                    {/* RIGHT: Map Visual */}
-                    <div
-                        className={`relative hidden items-center justify-center transition-all delay-300 duration-1000 ease-out lg:flex ${fadeVisible ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'}`}
-                    >
-                        {/* Glowing orb */}
-                        <div className="absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/30 blur-[120px]" />
-
-                        {/* Map Container */}
-                        <div className="relative z-10 w-full max-w-[550px] transform transition-transform duration-500 hover:-translate-y-2">
-                            <img
-                                src="https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png"
-                                alt="Marinduque Map"
-                                className="h-auto w-full object-contain drop-shadow-2xl"
-                            />
-                        </div>
+                    <div className="relative z-10 mx-auto mt-14 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-lg border border-[#d9e2df] bg-white shadow-sm sm:grid-cols-3">
+                        {serviceStats.map((item) => (
+                            <div
+                                key={item.label}
+                                className="border-b border-[#d9e2df] px-6 py-5 text-center last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
+                            >
+                                <p className="text-2xl font-black text-[#163832]">{item.value}</p>
+                                <p className="mt-1 text-xs font-bold tracking-widest text-[#6c817a] uppercase">{item.label}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {/* E-SERVICES HIGHLIGHT SECTION - INFORMATIVE ONLY */}
-            <div className="relative z-20 border-y border-border bg-card/50 backdrop-blur-sm">
-                <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-                    <div className="mx-auto mb-16 max-w-3xl space-y-4 text-center">
-                        <h2 className="text-3xl font-black tracking-tight text-foreground uppercase italic sm:text-4xl lg:text-5xl">
-                            Serbisyong Digital sa Iyong mga Kamay
-                        </h2>
-                        <div className="mx-auto h-1.5 w-20 rounded-full bg-primary" />
-                        <p className="text-lg leading-relaxed font-medium text-muted-foreground">
-                            Ang aming layunin ay gawing mas madali, mabilis, at transparent ang bawat transaksyon sa pamahalaan. Narito ang apat na
-                            haligi ng aming serbisyo.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-                        {features.map((feature, idx) => {
-                            const Icon = feature.icon;
-                            return (
-                                <div key={idx} className="relative flex flex-col items-center space-y-4 text-center">
-                                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary shadow-sm">
-                                        <Icon className="h-8 w-8" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-bold tracking-tight text-foreground">{feature.title}</h3>
-                                        <p className="text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
-                                    </div>
-                                    {/* Subtle separator for mobile/tablet */}
-                                    {idx < features.length - 1 && (
-                                        <div className="absolute top-1/2 -right-4 hidden h-12 w-[1px] -translate-y-1/2 bg-border/50 lg:block" />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-
-            {/* MUNICIPALITY SELECTION SECTION */}
-            <div className="relative z-20 bg-muted/20 py-24">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="mb-16 space-y-4 text-center">
-                        <span className="text-sm font-bold tracking-widest text-primary uppercase">Piliin ang Iyong Lokal na Pamahalaan</span>
-                        <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl lg:text-5xl">Galugarin ang mga Bayan</h2>
-                        <div className="mx-auto mt-4 h-1.5 w-24 rounded-full bg-primary" />
-                        <p className="mx-auto mt-6 max-w-2xl text-lg font-medium text-muted-foreground">
-                            Pumili ng iyong lokal na yunit ng pamahalaan upang ma-access ang mga serbisyo, mag-apply ng permits, o mag-ulat sa
-                            komunidad.
+            <section id="municipalities" className="relative bg-white px-4 py-20 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl">
+                    <div className="mx-auto mb-12 max-w-3xl space-y-4 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-[#c9d8d3] bg-[#edf4f1] text-[#163832]">
+                            <MapPinned className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-bold tracking-widest text-[#d6a62a] uppercase">Piliin ang Iyong Lokal na Pamahalaan</p>
+                        <h2 className="text-3xl font-black tracking-tight text-[#102a26] sm:text-4xl">Saan ang inyong bayan?</h2>
+                        <p className="mx-auto max-w-2xl text-base leading-7 text-[#5f746e]">
+                            Nasa gitna ang listahan upang mabilis ninyong makita ang tamang municipal portal bago pumili ng serbisyo.
                         </p>
                     </div>
 
                     <MunicipalityCard />
                 </div>
-            </div>
+            </section>
+
+            <section id="services" className="border-y border-[#d9e2df] bg-[#edf4f1] px-4 py-20 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl">
+                    <div className="mx-auto mb-12 max-w-3xl space-y-4 text-center">
+                        <p className="text-sm font-bold tracking-widest text-[#d6a62a] uppercase">Digital na Serbisyo</p>
+                        <h2 className="text-3xl font-black tracking-tight text-[#102a26] sm:text-4xl">Mas malinaw, mas mabilis, mas maaasahan.</h2>
+                        <p className="text-base leading-7 text-[#5f746e]">
+                            Isang maayos na entry point para sa mahahalagang transaksyon at impormasyon ng lokal na pamahalaan.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {features.map((feature) => {
+                            const Icon = feature.icon;
+
+                            return (
+                                <article key={feature.title} className="rounded-lg border border-[#c9d8d3] bg-white p-6 shadow-sm">
+                                    <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-[#163832] text-white">
+                                        <Icon className="h-5 w-5" />
+                                    </div>
+                                    <h3 className="text-lg font-black text-[#102a26]">{feature.title}</h3>
+                                    <p className="mt-3 text-sm leading-6 text-[#5f746e]">{feature.description}</p>
+                                </article>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }
