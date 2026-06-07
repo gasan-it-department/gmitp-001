@@ -58,8 +58,8 @@ export default function LandingPageHeroBanner() {
                             fadeVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
                         }`}
                     >
-                        <div className="inline-flex items-center gap-2 rounded-full border border-[#b7cbc5] bg-white px-4 py-2 text-xs font-bold tracking-widest text-[#163832] uppercase shadow-sm">
-                            <ShieldCheck className="h-4 w-4 text-[#d6a62a]" />
+                        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold tracking-widest text-slate-900 uppercase shadow-sm">
+                            <ShieldCheck className="h-4 w-4 text-slate-700" />
                             Serbisyong Bayan, Isang Portal
                         </div>
 
@@ -67,7 +67,7 @@ export default function LandingPageHeroBanner() {
                             <h1 className="text-4xl leading-tight font-black tracking-tight text-[#102a26] sm:text-5xl lg:text-7xl">
                                 Mas malapit na serbisyo para sa bawat mamamayan.
                             </h1>
-                            <p className="mx-auto max-w-2xl text-base leading-8 font-medium text-[#4d675f] sm:text-lg">
+                            <p className="mx-auto max-w-2xl text-base leading-8 font-medium text-slate-600 sm:text-lg">
                                 Piliin ang inyong munisipalidad at makapasok sa lokal na portal para sa impormasyon, requests, permits, reports, at
                                 iba pang serbisyong pampubliko.
                             </p>
@@ -76,14 +76,14 @@ export default function LandingPageHeroBanner() {
                         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                             <a
                                 href="#municipalities"
-                                className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#163832] px-6 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#255149] focus:ring-2 focus:ring-[#163832] focus:ring-offset-2 focus:outline-none"
+                                className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-slate-900 px-6 text-sm font-bold text-white shadow-sm transition-colors hover:bg-slate-800 focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 focus:outline-none"
                             >
                                 Piliin ang Bayan
                                 <ArrowDown className="h-4 w-4" />
                             </a>
                             <a
                                 href="#services"
-                                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-[#b7cbc5] bg-white px-6 text-sm font-bold text-[#163832] shadow-sm transition-colors hover:bg-[#edf4f1] focus:ring-2 focus:ring-[#163832] focus:ring-offset-2 focus:outline-none"
+                                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-6 text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-slate-50 focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 focus:outline-none"
                             >
                                 Tingnan ang Serbisyo
                                 <LifeBuoy className="h-4 w-4" />
@@ -97,8 +97,8 @@ export default function LandingPageHeroBanner() {
                                 key={item.label}
                                 className="border-b border-[#d9e2df] px-6 py-5 text-center last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
                             >
-                                <p className="text-2xl font-black text-[#163832]">{item.value}</p>
-                                <p className="mt-1 text-xs font-bold tracking-widest text-[#6c817a] uppercase">{item.label}</p>
+                                <p className="text-2xl font-black text-slate-900">{item.value}</p>
+                                <p className="mt-1 text-xs font-bold tracking-widest text-slate-500 uppercase">{item.label}</p>
                             </div>
                         ))}
                     </div>
@@ -108,12 +108,12 @@ export default function LandingPageHeroBanner() {
             <section id="municipalities" className="relative bg-white px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mx-auto mb-12 max-w-3xl space-y-4 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-[#c9d8d3] bg-[#edf4f1] text-[#163832]">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-900">
                             <MapPinned className="h-6 w-6" />
                         </div>
-                        <p className="text-sm font-bold tracking-widest text-[#d6a62a] uppercase">Piliin ang Iyong Lokal na Pamahalaan</p>
+                        <p className="text-sm font-bold tracking-widest text-slate-700 uppercase">Piliin ang Iyong Lokal na Pamahalaan</p>
                         <h2 className="text-3xl font-black tracking-tight text-[#102a26] sm:text-4xl">Saan ang inyong bayan?</h2>
-                        <p className="mx-auto max-w-2xl text-base leading-7 text-[#5f746e]">
+                        <p className="mx-auto max-w-2xl text-base leading-7 text-slate-600">
                             Nasa gitna ang listahan upang mabilis ninyong makita ang tamang municipal portal bago pumili ng serbisyo.
                         </p>
                     </div>
@@ -122,12 +122,12 @@ export default function LandingPageHeroBanner() {
                 </div>
             </section>
 
-            <section id="services" className="border-y border-[#d9e2df] bg-[#edf4f1] px-4 py-20 sm:px-6 lg:px-8">
+            <section id="services" className="border-y border-[#d9e2df] bg-slate-100 px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mx-auto mb-12 max-w-3xl space-y-4 text-center">
-                        <p className="text-sm font-bold tracking-widest text-[#d6a62a] uppercase">Digital na Serbisyo</p>
+                        <p className="text-sm font-bold tracking-widest text-slate-700 uppercase">Digital na Serbisyo</p>
                         <h2 className="text-3xl font-black tracking-tight text-[#102a26] sm:text-4xl">Mas malinaw, mas mabilis, mas maaasahan.</h2>
-                        <p className="text-base leading-7 text-[#5f746e]">
+                        <p className="text-base leading-7 text-slate-600">
                             Isang maayos na entry point para sa mahahalagang transaksyon at impormasyon ng lokal na pamahalaan.
                         </p>
                     </div>
@@ -137,12 +137,12 @@ export default function LandingPageHeroBanner() {
                             const Icon = feature.icon;
 
                             return (
-                                <article key={feature.title} className="rounded-lg border border-[#c9d8d3] bg-white p-6 shadow-sm">
-                                    <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-[#163832] text-white">
+                                <article key={feature.title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                                    <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-slate-900 text-white">
                                         <Icon className="h-5 w-5" />
                                     </div>
                                     <h3 className="text-lg font-black text-[#102a26]">{feature.title}</h3>
-                                    <p className="mt-3 text-sm leading-6 text-[#5f746e]">{feature.description}</p>
+                                    <p className="mt-3 text-sm leading-6 text-slate-600">{feature.description}</p>
                                 </article>
                             );
                         })}

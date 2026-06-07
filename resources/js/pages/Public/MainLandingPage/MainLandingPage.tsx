@@ -6,7 +6,7 @@ export default function MainLandingPage() {
     return (
         <div className="flex min-h-screen flex-col bg-[#f8faf9] font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
             {/* Top Bar */}
-            <div className="bg-[#163832] px-4 py-2 text-xs text-white sm:px-6 lg:px-8">
+            <div className="bg-slate-900 px-4 py-2 text-xs text-white sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Shield className="h-3.5 w-3.5" />
@@ -14,10 +14,10 @@ export default function MainLandingPage() {
                         <span className="sm:hidden">Citizen Portal</span>
                     </div>
                     <div className="hidden items-center gap-4 font-medium sm:flex">
-                        <a href="#municipalities" className="transition-colors hover:text-[#f4c95d]">
+                        <a href="#municipalities" className="transition-colors hover:text-slate-200">
                             Mga Bayan
                         </a>
-                        <a href="#services" className="transition-colors hover:text-[#f4c95d]">
+                        <a href="#services" className="transition-colors hover:text-slate-200">
                             Serbisyo
                         </a>
                     </div>
@@ -35,17 +35,17 @@ export default function MainLandingPage() {
                         />
                         <div>
                             <h1 className="text-lg leading-none font-black tracking-tight text-foreground">GMITP</h1>
-                            <p className="text-[10px] font-bold tracking-wider text-[#4d675f] uppercase">Municipality Citizen Portal</p>
+                            <p className="text-[10px] font-bold tracking-wider text-slate-600 uppercase">Municipality Citizen Portal</p>
                         </div>
                     </div>
-                    <nav className="ml-auto hidden items-center gap-6 text-sm font-semibold text-[#38524b] md:flex">
-                        <a href="#municipalities" className="transition-colors hover:text-[#163832]">
+                    <nav className="ml-auto hidden items-center gap-6 text-sm font-semibold text-slate-700 md:flex">
+                        <a href="#municipalities" className="transition-colors hover:text-slate-900">
                             Mga Bayan
                         </a>
-                        <a href="#services" className="transition-colors hover:text-[#163832]">
+                        <a href="#services" className="transition-colors hover:text-slate-900">
                             Digital Services
                         </a>
-                        <a href="#contact" className="transition-colors hover:text-[#163832]">
+                        <a href="#contact" className="transition-colors hover:text-slate-900">
                             Kontak
                         </a>
                     </nav>
