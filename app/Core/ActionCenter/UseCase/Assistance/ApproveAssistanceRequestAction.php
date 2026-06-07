@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -40,6 +41,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ApproveAssistanceRequestAction
 {
+    public function __construct(
+        protected LockAssistanceRequestAction $lockRequest
+    ) {}
+
     public function execute(ApproveAssistanceRequestDto $dto): AssistanceRequest
     {
         return DB::transaction(function () use ($dto) {
@@ -47,15 +52,14 @@ class ApproveAssistanceRequestAction
             // / fan-out need. Loading inside the lock window means we
             // operate on the most recent committed state — no stale-read
             // risk if a prior transaction just committed.
-            $request = AssistanceRequest::query()
-                ->with(['assistanceType.documents', 'media'])
-                ->whereKey($dto->assistanceRequestId)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $request = $this->lockRequest->execute(
+                id: $dto->assistanceRequestId,
+                municipalId: $dto->municipalId,
+                with: ['assistanceType.documents', 'media'],
+            );
 
             // Run all hard gates (cheap to expensive). Any failure aborts
             // the transaction without writing anything.
-            $this->ensureTenantMatch($request, $dto->municipalId);
             $this->ensureTransitionAllowed($request);
             $this->ensureReviewerAssigned($request);
             $this->ensureAmountWithinLimits($request, $dto->amountApproved);
@@ -86,15 +90,6 @@ class ApproveAssistanceRequestAction
     // ─────────────────────────────────────────────────────────────────────
     // Hard gates
     // ─────────────────────────────────────────────────────────────────────
-
-    private function ensureTenantMatch(AssistanceRequest $request, string $municipalId): void
-    {
-        if ($request->municipal_id !== $municipalId) {
-            throw new AuthorizationException(
-                'You may only approve requests from your own municipality.',
-            );
-        }
-    }
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {

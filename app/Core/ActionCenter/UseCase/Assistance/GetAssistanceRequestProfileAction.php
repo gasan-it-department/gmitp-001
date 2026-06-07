@@ -4,11 +4,17 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Beneficiary\FindCrossMunicipalityMatchesAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Spatie\Activitylog\Models\Activity;
 
 class GetAssistanceRequestProfileAction
 {
+    public function __construct(
+        private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
+    ) {
+    }
+
     public function execute(string $municipalId, string $assistanceRequestId)
     {
         // Eager-load every user-role relation the resource exposes via
@@ -22,6 +28,9 @@ class GetAssistanceRequestProfileAction
             'reviewedBy',
             'approvedBy',
             'media',
+            // Live beneficiary — powers the cross-LGU warning AND the
+            // beneficiary_number on the detail resource.
+            'beneficiary',
         ])->findOrFail($assistanceRequestId);
 
         if ($assistanceRequest->municipal_id !== $municipalId) {
@@ -55,11 +64,25 @@ class GetAssistanceRequestProfileAction
             ->limit(50)
             ->get();
 
+        // Advisory cross-LGU double-dip signal for the cashier at the release
+        // gate. Prefer the LIVE beneficiary identity; fall back to the frozen
+        // snapshot if the beneficiary row is gone.
+        $beneficiary = $assistanceRequest->beneficiary;
+
+        $crossMunicipalityMatches = $this->findCrossMunicipalityMatches->execute(
+            $beneficiary->first_name ?? $assistanceRequest->snapshot_first_name,
+            $beneficiary->last_name ?? $assistanceRequest->snapshot_last_name,
+            $beneficiary->birth_date ?? $assistanceRequest->snapshot_birth_date,
+            $beneficiary->sex ?? $assistanceRequest->snapshot_sex,
+            $municipalId,
+        );
+
         return [
             'request' => $assistanceRequest,
             'recentHistory' => $recentHistory,
             'activityLog' => $activityLog,
             'householdMembers' => $householdMembers,
+            'crossMunicipalityMatches' => $crossMunicipalityMatches,
         ];
     }
 }

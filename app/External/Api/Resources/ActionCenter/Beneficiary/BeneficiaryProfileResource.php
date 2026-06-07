@@ -23,7 +23,8 @@ class BeneficiaryProfileResource extends JsonResource
     {
         return [
             // ── Identity ─────────────────────────────────────────────────────
-            'id'          => $this->id,
+            'id'                 => $this->id,
+            'beneficiary_number' => $this->beneficiary_number,
             'full_name'   => $this->full_name,
             'first_name'  => $this->first_name,
             'middle_name' => $this->middle_name,

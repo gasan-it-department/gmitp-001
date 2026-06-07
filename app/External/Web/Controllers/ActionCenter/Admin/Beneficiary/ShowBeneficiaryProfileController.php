@@ -4,6 +4,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin\Beneficiary;
 
 use App\Core\ActionCenter\UseCase\Beneficiary\GetBeneficiaryProfileAction;
 use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryProfileResource;
+use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
 use App\External\Api\Resources\ActionCenter\HouseholdMemberDetailsResource;
 use App\External\Api\Resources\ActionCenter\RecentAssistanceRequestResource;
 use App\Http\Controllers\Controller;
@@ -38,6 +39,7 @@ class ShowBeneficiaryProfileController extends Controller
             'householdMembers'     => HouseholdMemberDetailsResource::collection($data['householdMembers']),
             'assistanceHistory'    => RecentAssistanceRequestResource::collection($data['assistanceHistory']),
             'householdTotalIncome' => $data['householdTotalIncome'],
+            'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
             'summary'              => $data['summary'],
         ]);
     }

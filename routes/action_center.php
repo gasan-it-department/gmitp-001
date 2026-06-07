@@ -5,6 +5,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequest
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
+use App\External\Api\Controllers\ActionCenter\Assistance\StoreAdminAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
@@ -70,7 +71,13 @@ Route::prefix('{municipality}/action-center')
             Route::get('list/my-assistance-requests', ListMyAssistanceRequestController::class)
                 ->name('list.my.assistance');
 
-            Route::get('create', CreateAssistanceRequestController::class)->name('assistance.create');
+            // File an assistance request on behalf of a specific beneficiary
+            // (walk-in counter, or for an online beneficiary who can't use the
+            // portal). Anchored to the verified beneficiary — identity is shown
+            // read-only, never re-typed. Display only; POST goes to the Api
+            // StoreAdminAssistanceRequestController.
+            Route::get('beneficiary/{beneficiaryId}/file-assistance', CreateAssistanceRequestController::class)
+                ->name('assistance.create');
 
             Route::get('create/assistance-type', CreateAssistanceTypeController::class)->name('create.assistance.type');
 
@@ -179,6 +186,12 @@ Route::prefix('/api/action-center')
                 // name+DOB duplicate guard. Rules + audit live in the action.
                 Route::post('/walkin', StoreWalkInBeneficiaryController::class)
                     ->name('walkin.store');
+
+                // Admin-encoded assistance request, filed on behalf of a
+                // beneficiary. Reuses StoreAssistanceRequestAction with
+                // encoded_by_user_id = the acting admin. Tenant via header.
+                Route::post('/assistance-request', StoreAdminAssistanceRequestController::class)
+                    ->name('assistance.admin-store');
             });
 
         Route::middleware(['auth', 'municipalityContext'])

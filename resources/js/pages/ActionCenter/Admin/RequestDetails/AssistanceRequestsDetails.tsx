@@ -1,6 +1,7 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
+import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -175,6 +176,7 @@ interface Props {
     recentHistory: { data: RecentHistoryRow[] };
     activityLog: { data: ActivityEntry[] };
     householdMembers: { data: HouseholdMemberBlock[] }; // 🚀 Injected family structure
+    crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -193,8 +195,15 @@ const STATUS_BADGE: Record<string, string> = {
 const humanizeStatus = (s: string) => s.replace(/_/g, ' ');
 const statusClass = (s: string): string => STATUS_BADGE[s] ?? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
 
-export default function AssistanceRequestsDetails({ request, requiredDocuments, recentHistory, activityLog, householdMembers }: Props) {
-    console.log(activityLog.data);
+export default function AssistanceRequestsDetails({
+    request,
+    requiredDocuments,
+    recentHistory,
+    activityLog,
+    householdMembers,
+    crossMunicipalityMatches,
+}: Props) {
+    console.log(request);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
     const utils = Utility();
@@ -202,6 +211,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
     const recentHistoryData = recentHistory.data;
     const activityLogData = activityLog.data;
     const householdMembersData = householdMembers.data;
+    const crossMatches = crossMunicipalityMatches?.data ?? [];
     const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
 
     const isMine = detail.reviewed_by?.id === auth.user?.id;
@@ -271,7 +281,7 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                 <header className="border-b border-slate-200 bg-white">
                     <div className="container mx-auto max-w-7xl px-6 py-6">
                         <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div>
+                            <div className="flex-1">
                                 <div className="flex items-center gap-3">
                                     <h1 className="font-mono text-2xl font-bold tracking-tight text-slate-900">{detail.transaction_number}</h1>
                                     <span
@@ -290,6 +300,29 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                     {' • '}
                                     Submitted {utils.formatToReadableDate(detail.submitted_at ?? undefined)}
                                 </p>
+
+                                {/* Action Buttons moved here */}
+                                <div className="mt-6 flex flex-wrap items-center gap-3">
+                                    <ActionButtons
+                                        status={detail.status}
+                                        onAction={handleAction}
+                                        onPickUp={handlePickUp}
+                                        isMine={isMine}
+                                        reviewerName={detail.reviewed_by?.name ?? null}
+                                    />
+
+                                    <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+
+                                    <Link
+                                        href={ShowBeneficiaryProfileController.url({
+                                            municipality: currentMunicipality.slug,
+                                            beneficiaryId: detail.beneficiary_id,
+                                        })}
+                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                    >
+                                        <User className="h-4 w-4" /> View Beneficiary Profile
+                                    </Link>
+                                </div>
                             </div>
 
                             {detail.amount_approved !== null && (
@@ -591,54 +624,9 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
 
                         {/* ─── Right Column (Static Action Control Panel) ─── */}
                         <div className="space-y-6 lg:col-span-4">
-                            {/* Drill into the LIVE beneficiary record (household + full
-                                history) to review the person before processing. */}
-                            <Link
-                                href={ShowBeneficiaryProfileController.url({
-                                    municipality: currentMunicipality.slug,
-                                    beneficiaryId: detail.beneficiary_id,
-                                })}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-                            >
-                                <User className="h-4 w-4" /> View Beneficiary Profile
-                            </Link>
-
-                            <Card className="sticky top-4">
-                                <CardHeader>
-                                    <CardTitle className="text-base">Actions</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <ActionButtons
-                                        status={detail.status}
-                                        onAction={handleAction}
-                                        onPickUp={handlePickUp}
-                                        isMine={isMine}
-                                        reviewerName={detail.reviewed_by?.name ?? null}
-                                    />
-
-                                    <div className="border-t border-slate-100 pt-3">
-                                        <label className="mb-1.5 block text-[11px] font-bold tracking-widest text-slate-600 uppercase">
-                                            Internal case note
-                                        </label>
-                                        <Textarea
-                                            value={adminNote}
-                                            onChange={(e) => setAdminNote(e.target.value)}
-                                            placeholder="Append details to case history…"
-                                            rows={3}
-                                            className="resize-none text-sm"
-                                        />
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            className="mt-2 w-full"
-                                            disabled={!adminNote.trim()}
-                                            onClick={stubAction('Add Note')}
-                                        >
-                                            <Send className="mr-2 h-3.5 w-3.5" /> Append Note
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            {/* Cross-municipality double-dip advisory — shown to the
+                                cashier BEFORE release so they can coordinate. */}
+                            {crossMatches.length > 0 && <CrossMunicipalityWarning matches={crossMatches} context="release" />}
 
                             {/* ─── Documents: printable PDFs for case folder / COA ─── */}
                             <Card>
@@ -734,6 +722,35 @@ export default function AssistanceRequestsDetails({ request, requiredDocuments, 
                                             ))}
                                         </ul>
                                     )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Internal Note</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="pt-1">
+                                        <label className="mb-1.5 block text-[11px] font-bold tracking-widest text-slate-600 uppercase">
+                                            Append detail to case history
+                                        </label>
+                                        <Textarea
+                                            value={adminNote}
+                                            onChange={(e) => setAdminNote(e.target.value)}
+                                            placeholder="Type internal remarks here…"
+                                            rows={3}
+                                            className="resize-none text-sm"
+                                        />
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="mt-2 w-full"
+                                            disabled={!adminNote.trim()}
+                                            onClick={stubAction('Add Note')}
+                                        >
+                                            <Send className="mr-2 h-3.5 w-3.5" /> Append Note
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -879,36 +896,28 @@ function ActionButtons({
     switch (status) {
         case 'pending':
             return (
-                <>
-                    <Button className="w-full" onClick={onPickUp}>
-                        <UserCheck className="mr-2 h-4 w-4" /> Pick Up Case
-                    </Button>
-                    <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700" onClick={onAction('Approve')}>
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
-                    </Button>
-                    <Button variant="destructive" className="w-full" onClick={onAction('Reject')}>
-                        <XCircle className="mr-2 h-4 w-4" /> Reject
-                    </Button>
-                </>
+                <Button className="w-full sm:w-auto" onClick={onPickUp}>
+                    <UserCheck className="mr-2 h-4 w-4" /> Pick Up Case
+                </Button>
             );
         case 'under_review':
             if (!isMine) {
                 return (
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
-                        <p className="font-semibold text-slate-700">Claimed by {reviewerName ?? 'another reviewer'}</p>
-                        <p className="mt-1 leading-relaxed">Read-only state active. Only the assigned reviewer can process this validation record.</p>
+                    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                        <UserCheck className="h-4 w-4 text-slate-400" />
+                        <span className="font-semibold text-slate-700">Claimed by {reviewerName ?? 'another reviewer'}</span>
                     </div>
                 );
             }
             return (
                 <>
-                    <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700" onClick={onAction('Approve')}>
+                    <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto" onClick={onAction('Approve')}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                     </Button>
-                    <Button variant="destructive" className="w-full" onClick={onAction('Reject')}>
+                    <Button variant="destructive" className="w-full sm:w-auto" onClick={onAction('Reject')}>
                         <XCircle className="mr-2 h-4 w-4" /> Reject
                     </Button>
-                    <Button variant="outline" className="w-full" onClick={onAction('Request More Info')}>
+                    <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Request More Info')}>
                         <AlertTriangle className="mr-2 h-4 w-4" /> Request More Info
                     </Button>
                 </>
@@ -916,23 +925,23 @@ function ActionButtons({
         case 'approved':
             return (
                 <>
-                    <Button className="w-full bg-blue-600 text-white hover:bg-blue-700" onClick={onAction('Mark Released')}>
+                    <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
                     </Button>
-                    <Button variant="outline" className="w-full" onClick={onAction('Print Voucher')}>
+                    <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Print Voucher')}>
                         <Printer className="mr-2 h-4 w-4" /> Print Voucher
                     </Button>
                 </>
             );
         case 'released':
             return (
-                <Button variant="outline" className="w-full" onClick={onAction('Print Receipt')}>
+                <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Print Receipt')}>
                     <Printer className="mr-2 h-4 w-4" /> Print Receipt
                 </Button>
             );
         case 'rejected':
             return (
-                <Button variant="outline" className="w-full" onClick={onAction('Reopen')}>
+                <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Reopen')}>
                     <AlertTriangle className="mr-2 h-4 w-4" /> Reopen
                 </Button>
             );

@@ -26,10 +26,16 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  *     assistanceHistory: \Illuminate\Database\Eloquent\Collection,
  *     householdTotalIncome: float,
  *     summary: array{total_requests:int, released_count:int, total_released_amount:float, active_member_count:int},
+ *     crossMunicipalityMatches: \Illuminate\Support\Collection,
  * }
  */
 class GetBeneficiaryProfileAction
 {
+    public function __construct(
+        private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
+    ) {
+    }
+
     public function execute(string $municipalId, string $beneficiaryId): array
     {
         $beneficiary = Beneficiary::with([
@@ -58,6 +64,16 @@ class GetBeneficiaryProfileAction
             ->orderByDesc('created_at')
             ->get();
 
+        // Advisory cross-LGU double-dip signal — same person on record in
+        // another municipality. Minimal disclosure (see the detector).
+        $crossMunicipalityMatches = $this->findCrossMunicipalityMatches->execute(
+            $beneficiary->first_name,
+            $beneficiary->last_name,
+            $beneficiary->birth_date,
+            $beneficiary->sex,
+            $municipalId,
+        );
+
         $householdTotalIncome = (float) $householdMembers->sum(fn (HouseholdMember $m) => (float) $m->monthly_income);
 
         // status is cast to the AssistanceStatus enum, so filter on its value
@@ -68,11 +84,12 @@ class GetBeneficiaryProfileAction
         );
 
         return [
-            'beneficiary'          => $beneficiary,
-            'householdMembers'     => $householdMembers,
-            'assistanceHistory'    => $assistanceHistory,
-            'householdTotalIncome' => $householdTotalIncome,
-            'summary'              => [
+            'beneficiary'              => $beneficiary,
+            'householdMembers'         => $householdMembers,
+            'assistanceHistory'        => $assistanceHistory,
+            'householdTotalIncome'     => $householdTotalIncome,
+            'crossMunicipalityMatches' => $crossMunicipalityMatches,
+            'summary'                  => [
                 'total_requests'        => $assistanceHistory->count(),
                 'released_count'        => $releasedHistory->count(),
                 'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),

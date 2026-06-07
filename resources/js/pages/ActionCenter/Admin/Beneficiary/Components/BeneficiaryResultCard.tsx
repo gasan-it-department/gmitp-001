@@ -34,6 +34,11 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-semibold text-gray-900">{row.full_name}</h3>
+                            {row.beneficiary_number && (
+                                <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-slate-600">
+                                    {row.beneficiary_number}
+                                </span>
+                            )}
                             {isPossibleDuplicate && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
                                     <AlertTriangle className="h-3 w-3" /> Possible duplicate

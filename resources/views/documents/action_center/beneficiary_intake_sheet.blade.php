@@ -42,6 +42,7 @@
         @include('documents.action_center.partials._section_header', ['title' => 'I. Beneficiary Identity'])
 
         <div class="grid grid-cols-3 gap-3">
+            @include('documents.action_center.partials._field', ['label' => 'Beneficiary No.', 'value' => $data->beneficiary->beneficiary_number ?? '—'])
             @include('documents.action_center.partials._field', ['label' => 'Full Name',   'value' => $data->beneficiary->full_name])
             @include('documents.action_center.partials._field', ['label' => 'Sex',         'value' => ucfirst((string) $data->beneficiary->sex)])
             @include('documents.action_center.partials._field', ['label' => 'Date of Birth','value' => optional($data->beneficiary->birth_date)->format('F j, Y') ?? '—'])

@@ -5,6 +5,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
 use App\External\Api\Resources\ActionCenter\HouseholdMemberDetailsResource;
 use App\External\Api\Resources\ActionCenter\RecentAssistanceRequestResource;
 use App\External\Api\Resources\ActionCenter\RequiredDocumentResource;
@@ -52,6 +53,8 @@ class ShowAssistanceRequestProfileController extends Controller
             'activityLog' => ActivityLogResource::collection($data['activityLog']),
 
             'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
+
+            'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
 
         ]);
     }

@@ -38,6 +38,7 @@ class CreateWalkInBeneficiaryAction
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
+        private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
     ) {
     }
 
@@ -68,6 +69,9 @@ class CreateWalkInBeneficiaryAction
                 // Walk-in: no portal account is linked. The admin can link one
                 // later (LinkBeneficiaryToUserAction) if the person registers.
                 'user_id'                => null,
+                // Human-friendly lifelong ID (e.g. GAS-000123). Allocated under
+                // a per-municipality row lock inside this same transaction.
+                'beneficiary_number'     => $this->generateBeneficiaryNumber->execute($dto->municipalId),
                 'first_name'             => $dto->firstName,
                 'last_name'              => $dto->lastName,
                 'middle_name'            => $dto->middleName,
