@@ -3,6 +3,7 @@ import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
+import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
 import actionCenter from '@/routes/actionCenter';
 import { SharedData } from '@/types';
@@ -796,6 +798,8 @@ export default function AssistanceRequestsDetails({
                 isOpen={isReleaseOpen}
                 onClose={() => setIsReleaseOpen(false)}
             />
+            <FlashHandler />
+            <ToastProvider position="top-right" />
         </>
     );
 }

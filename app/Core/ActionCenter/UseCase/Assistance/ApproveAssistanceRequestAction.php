@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
+use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
@@ -94,25 +95,14 @@ class ApproveAssistanceRequestAction
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
         if (!$request->status->canTransitionTo(AssistanceStatus::Approved)) {
-            throw new \DomainException(
-                match ($request->status) {
-                    AssistanceStatus::Pending => 'This case is still pending — pick it up first before approving.',
-                    AssistanceStatus::Approved => 'This case has already been approved.',
-                    AssistanceStatus::Released => 'This case has already been released and cannot be re-approved.',
-                    AssistanceStatus::Rejected => 'This case was rejected and cannot be approved.',
-                    AssistanceStatus::Cancelled => 'This case was cancelled and cannot be approved.',
-                    default => 'This case cannot be approved from its current state.',
-                },
-            );
+            throw AssistanceApprovalException::invalidTransition($request->status);
         }
     }
 
     private function ensureReviewerAssigned(AssistanceRequest $request): void
     {
         if ($request->reviewed_by_user_id === null) {
-            throw new \DomainException(
-                'This case has no assigned reviewer. Pick it up first before approving.',
-            );
+            throw AssistanceApprovalException::noReviewerAssigned();
         }
     }
 
@@ -121,17 +111,11 @@ class ApproveAssistanceRequestAction
         $type = $request->assistanceType;
 
         if ($type->min_amount !== null && $amount < (float) $type->min_amount) {
-            throw new \DomainException(sprintf(
-                'Approved amount must be at least ₱%s for this program.',
-                number_format((float) $type->min_amount, 2),
-            ));
+            throw AssistanceApprovalException::amountBelowMinimum((float) $type->min_amount);
         }
 
         if ($type->max_amount !== null && $amount > (float) $type->max_amount) {
-            throw new \DomainException(sprintf(
-                'Approved amount cannot exceed ₱%s for this program.',
-                number_format((float) $type->max_amount, 2),
-            ));
+            throw AssistanceApprovalException::amountAboveMaximum((float) $type->max_amount);
         }
     }
 
@@ -144,11 +128,9 @@ class ApproveAssistanceRequestAction
      * method gains a second check after the uploaded-presence check:
      *
      *   foreach ($request->media as $media) {
-     *       if ($requiredKeys->contains($media->collection_name)
+     *       if ($requiredKeys->contains($media->getCustomProperty('document_key'))
      *           && empty($media->custom_properties['verified_at'])) {
-     *           throw new \DomainException(
-     *               'Document "' . $media->collection_name . '" not yet verified.'
-     *           );
+     *           throw AssistanceApprovalException::documentNotVerified(...);
      *       }
      *   }
      *
@@ -157,22 +139,31 @@ class ApproveAssistanceRequestAction
      */
     private function ensureRequiredDocumentsReady(AssistanceRequest $request): void
     {
-        $requiredKeys = $request->assistanceType->documents
-            ->filter(fn($doc) => (bool) $doc->pivot->is_required)
-            ->pluck('key');
+        $requiredDocs = $request->assistanceType->documents
+            ->filter(fn($doc) => (bool) $doc->pivot->is_required);
 
-        if ($requiredKeys->isEmpty()) {
+        if ($requiredDocs->isEmpty()) {
             return;
         }
 
-        $uploadedKeys = $request->media->pluck('collection_name')->unique();
-        $missing = $requiredKeys->diff($uploadedKeys);
+        // Every upload lives in the single "documents" media collection — the
+        // slot it satisfies is stored in the `document_key` custom property,
+        // NOT the collection name (which is always literally "documents").
+        // Plucking collection_name made every required slot look unmet, so
+        // EVERY approval was blocked even when all scans were attached. Read
+        // the slot keys back from the custom property instead.
+        $uploadedKeys = $request->media
+            ->map(fn($media) => $media->getCustomProperty('document_key'))
+            ->filter()
+            ->unique();
+
+        // Report the human-readable labels ("Valid ID"), not the raw keys.
+        $missing = $requiredDocs
+            ->reject(fn($doc) => $uploadedKeys->contains($doc->key))
+            ->pluck('label');
 
         if ($missing->isNotEmpty()) {
-            throw new \DomainException(
-                'Cannot approve — the following required document(s) are missing: '
-                . $missing->implode(', '),
-            );
+            throw AssistanceApprovalException::missingRequiredDocuments($missing);
         }
     }
 
