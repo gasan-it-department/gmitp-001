@@ -12,6 +12,8 @@ use App\External\Api\Controllers\Auth\VerifiyPhoneController;
 use App\External\Api\Controllers\Profile\LinkSocialAccountController;
 use App\External\Api\Controllers\UserManagement\CreateAdminController;
 use App\External\Api\Controllers\UserManagement\UpdateAdminProfileController;
+use App\External\Api\Controllers\UserManagement\DeactivateAdminController;
+use App\External\Api\Controllers\UserManagement\ReactivateAdminController;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
 use App\External\Web\Controllers\Auth\ShowLoginController;
@@ -120,4 +122,8 @@ Route::prefix('api/user-management')
 
         // Invokable controller. Resulting name: 'user.management.updateAdmin'
         Route::put('/update-admin/{id}', UpdateAdminProfileController::class)->name('updateAdmin');
+
+        // Offboarding. Resulting names: 'user.management.deactivateAdmin' / '...reactivateAdmin'
+        Route::put('/deactivate-admin/{id}', DeactivateAdminController::class)->name('deactivateAdmin');
+        Route::put('/reactivate-admin/{id}', ReactivateAdminController::class)->name('reactivateAdmin');
     });

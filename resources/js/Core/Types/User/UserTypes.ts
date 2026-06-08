@@ -13,6 +13,8 @@ export interface User {
     all_permission: string[];
     municipality?: MunicipalityType;
     social_accounts: UserSocialAccount[];
+    is_active: boolean;
+    deactivated_at?: string | null;
 }
 
 export interface Permission {

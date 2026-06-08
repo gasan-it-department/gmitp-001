@@ -4,9 +4,11 @@ namespace App\Core\Auth\Actions;
 
 use App\Core\Auth\Dto\SocialUserDto;
 use App\Core\Auth\Models\UserSocialAccount;
+use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Models\User;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class AuthenticateSocialUserAction
@@ -49,7 +51,7 @@ class AuthenticateSocialUserAction
 
                 // Write Google's pre-verified email back onto the user record
                 $user->update([
-                    'email'             => $dto->email,
+                    'email' => $dto->email,
                     'email_verified_at' => now(),
                 ]);
             } else {
@@ -59,24 +61,32 @@ class AuthenticateSocialUserAction
                 if (!$user) {
                     // 4. First-time Google user — create a new account
                     $user = User::create([
-                        'id'                => $this->idGenerator->generate(),
-                        'email'             => $dto->email,
-                        'first_name'        => $dto->firstName ?? 'User',
-                        'last_name'         => $dto->lastName ?? 'Social',
+                        'id' => $this->idGenerator->generate(),
+                        'email' => $dto->email,
+                        'first_name' => $dto->firstName ?? 'User',
+                        'last_name' => $dto->lastName ?? 'Social',
                         'email_verified_at' => now(),
-                        'password'          => Str::random(32),
+                        'password' => null,
                     ]);
                 }
             }
 
             // 5. Create the social link (same for all paths)
             UserSocialAccount::create([
-                'id'            => $this->idGenerator->generate(),
-                'user_id'       => $user->id,
+                'id' => $this->idGenerator->generate(),
+                'user_id' => $user->id,
                 'provider_name' => $dto->providerName,
-                'provider_id'   => $dto->providerId,
-                'avatar_url'    => $dto->avatarUrl,
+                'provider_id' => $dto->providerId,
+                'avatar_url' => $dto->avatarUrl,
             ]);
+
+            // 6. Guarantee a role. New Google users and any role-less match get
+            //    'client' (municipal_id stays null — clients are municipality-less).
+            //    Existing admins linking their Google account already have a role,
+            //    so this never overrides them.
+            if ($user->roles()->doesntExist()) {
+                $user->assignRole(EnumRoles::CLIENT->value);
+            }
 
             return $user;
         }, attempts: 3);

@@ -1,3 +1,5 @@
+import DeactivateAdminController from '@/actions/App/External/Api/Controllers/UserManagement/DeactivateAdminController';
+import ReactivateAdminController from '@/actions/App/External/Api/Controllers/UserManagement/ReactivateAdminController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -9,14 +11,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import superAdmin from '@/routes/superAdmin';
 import { router } from '@inertiajs/react';
-import { Ban, Edit, KeyRound, MoreVertical, Settings } from 'lucide-react';
+import { Ban, Edit, KeyRound, MoreVertical, RotateCcw, Settings } from 'lucide-react';
 
 interface Props {
     userId: string;
-    userName: string; // Optional: Used if you want to show alerts with their name later
+    userName: string;
+    isActive: boolean;
 }
 
-export function UserDetailsActionMenu({ userId, userName }: Props) {
+export function UserDetailsActionMenu({ userId, userName, isActive }: Props) {
     // Action Handlers
     const handleEdit = () => {
         router.visit(superAdmin.users.edit.url(userId));
@@ -28,8 +31,14 @@ export function UserDetailsActionMenu({ userId, userName }: Props) {
     };
 
     const handleDeactivate = () => {
-        if (confirm(`Are you sure you want to deactivate ${userName}?`)) {
-            // router.delete(route('superAdmin.users.destroy', userId));
+        if (confirm(`Deactivate ${userName}? They will lose all access and their module permissions will be revoked.`)) {
+            router.put(DeactivateAdminController.url(userId));
+        }
+    };
+
+    const handleReactivate = () => {
+        if (confirm(`Reactivate ${userName}? You will need to re-grant their module permissions afterwards.`)) {
+            router.put(ReactivateAdminController.url(userId));
         }
     };
 
@@ -65,10 +74,18 @@ export function UserDetailsActionMenu({ userId, userName }: Props) {
 
                     <DropdownMenuSeparator />
 
-                    <DropdownMenuItem onClick={handleDeactivate} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
-                        <Ban className="mr-2 h-4 w-4" />
-                        Deactivate Account
-                    </DropdownMenuItem>
+                    {/* Offboarding: deactivate (active) / reactivate (deactivated) */}
+                    {isActive ? (
+                        <DropdownMenuItem onClick={handleDeactivate} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
+                            <Ban className="mr-2 h-4 w-4" />
+                            Deactivate Account
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem onClick={handleReactivate} className="cursor-pointer text-green-700 focus:bg-green-50 focus:text-green-800">
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Reactivate Account
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>

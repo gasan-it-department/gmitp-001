@@ -31,6 +31,10 @@ class UserResource extends JsonResource
 
             'email' => $this->email,
 
+            'is_active' => is_null($this->deactivated_at),
+
+            'deactivated_at' => $this->deactivated_at,
+
             'roles' => $this->getRoleNames(),
 
             'direct_permissions' => $this->whenLoaded('permissions', fn() => $this->permissions->pluck('name')),

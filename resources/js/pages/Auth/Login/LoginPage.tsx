@@ -1,10 +1,12 @@
+import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import api from '@/lib/axios';
+import { cn } from '@/lib/utils';
 import { PasswordInput } from '@/pages/UserManagement/Profile/Components/PasswordInput';
+import ToastProvider from '@/pages/Utility/ToastShower';
 import { home, login } from '@/routes';
 import { social } from '@/routes/login';
 import signup from '@/routes/signup';
-import { cn } from '@/lib/utils';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { ChevronLeft } from 'lucide-react';
@@ -86,17 +88,19 @@ export default function LoginPage() {
             <Head title="Log in" />
 
             {/* Main Card Container */}
-            <div className={cn(
-                "flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex-row transition-all",
-                isBusy && "opacity-90 grayscale-[0.2]"
-            )}>
+            <div
+                className={cn(
+                    'flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all md:flex-row',
+                    isBusy && 'opacity-90 grayscale-[0.2]',
+                )}
+            >
                 {/* Left Side: Form Section */}
                 <div className="flex w-full flex-col justify-center p-8 sm:p-12 md:w-1/2">
                     <Link
                         href={isBusy ? '#' : home.url({ municipality: currentMunicipality.slug })}
                         className={cn(
-                            "group mb-6 flex w-fit items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black",
-                            isBusy && "pointer-events-none opacity-50"
+                            'group mb-6 flex w-fit items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black',
+                            isBusy && 'pointer-events-none opacity-50',
                         )}
                     >
                         <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
@@ -121,7 +125,7 @@ export default function LoginPage() {
                                 value={data.user_identifier}
                                 onChange={(e) => setData('user_identifier', e.target.value)}
                                 disabled={isBusy}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 transition-colors focus:border-black focus:ring-2 focus:ring-black disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 transition-colors focus:border-black focus:ring-2 focus:ring-black disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                                 placeholder="e.g. 09171234567 or email@domain.com"
                                 required
                             />
@@ -134,11 +138,11 @@ export default function LoginPage() {
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                     Password
                                 </label>
-                                <Link 
-                                    href="/forgot-password" 
+                                <Link
+                                    href="/forgot-password"
                                     className={cn(
-                                        "text-sm text-gray-600 transition-colors hover:text-black hover:underline",
-                                        isBusy && "pointer-events-none opacity-50"
+                                        'text-sm text-gray-600 transition-colors hover:text-black hover:underline',
+                                        isBusy && 'pointer-events-none opacity-50',
                                     )}
                                 >
                                     Forgot your password?
@@ -226,12 +230,9 @@ export default function LoginPage() {
 
                     <p className="mt-8 text-center text-sm text-gray-600">
                         Don't have an account?{' '}
-                        <Link 
-                            href={signup.show.url(currentMunicipality.slug)} 
-                            className={cn(
-                                "font-medium text-black hover:underline",
-                                isBusy && "pointer-events-none opacity-50"
-                            )}
+                        <Link
+                            href={signup.show.url(currentMunicipality.slug)}
+                            className={cn('font-medium text-black hover:underline', isBusy && 'pointer-events-none opacity-50')}
                         >
                             Sign up
                         </Link>
@@ -266,6 +267,8 @@ export default function LoginPage() {
                 </a>
                 .
             </div>
+            <FlashHandler />
+            <ToastProvider position="top-center" />
         </div>
     );
 }

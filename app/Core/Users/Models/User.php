@@ -46,7 +46,8 @@ class User extends Authenticatable
         'email',
         'municipal_id',
         'password',
-        'phone_verified_at'
+        'phone_verified_at',
+        'deactivated_at',
 
     ];
 
@@ -70,7 +71,13 @@ class User extends Authenticatable
         return [
             'phone_verified_at' => 'datetime',
             'phone' => 'string',
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    public function isDeactivated(): bool
+    {
+        return ! is_null($this->deactivated_at);
     }
 
     public function municipality(): BelongsTo
