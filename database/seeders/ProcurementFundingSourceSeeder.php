@@ -56,6 +56,12 @@ class ProcurementFundingSourceSeeder extends Seeder
                 'type' => 'Supplemental',
                 'is_active' => true,
             ],
+            [
+                'name' => 'Others',
+                'code' => 'OTHERS',
+                'type' => 'Others',
+                'is_active' => true,
+            ],
         ];
 
         foreach ($sources as $source) {

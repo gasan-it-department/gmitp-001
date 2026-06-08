@@ -217,7 +217,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Officials Directory',
                     url: government.admin.officials.page.url({ municipality: currentMunicipality.slug }),
                     icon: Contact,
-                    permission: 'public_information.access',
+                    permission: 'government.access',
                 },
                 {
                     title: 'Site Pages (CMS)',

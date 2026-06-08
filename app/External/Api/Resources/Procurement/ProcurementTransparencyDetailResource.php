@@ -16,7 +16,8 @@ class ProcurementTransparencyDetailResource extends JsonResource
             'title' => $this->title,
             'category' => $this->category,
             'status' => $this->status,
-            'department_name' => $this->department->name,
+            'department_name' => $this->whenLoaded('department', fn() => $this->department->name, 'Unknown Department'),
+            'funding_source' => $this->custom_funding_source ?? $this->whenLoaded('fundingSource', fn() => $this->fundingSource->name, 'Unknown Funding Source'),
 
             'abc_amount' => (float) $this->abc_amount,
 
@@ -29,7 +30,22 @@ class ProcurementTransparencyDetailResource extends JsonResource
 
             'failure_reason' => $this->when($this->status->value === 'failed', $this->failure_reason),
 
-            'documents' => ProcurementFileResource::collection($this->whenLoaded('media')),
+            'documents' => $this->whenLoaded('media', function () {
+                return $this->media->map(function ($item) {
+                    $url = str_starts_with($item->disk, 's3')
+                        ? $item->getTemporaryUrl(now()->addHour())
+                        : $item->getUrl();
+
+                    $docType = \App\Core\Procurement\Enums\ProcurementDocumentType::tryFrom($item->collection_name);
+
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->file_name,
+                        'url' => $url,
+                        'type_label' => $docType ? $docType->label() : 'Document',
+                    ];
+                });
+            }),
         ];
     }
 

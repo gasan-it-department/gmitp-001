@@ -2,22 +2,14 @@
 
 namespace App\Core\Procurement\UseCases;
 
-use App\Core\Procurement\Repositories\ProcurementsRepository;
-
+use App\Core\Procurement\Models\Procurement;
 
 class GetProcurementUseCase
 {
-
-    public function __construct(
-
-        protected ProcurementsRepository $procurementsRepo
-
-    ) {
-    }
-
     public function execute(string $procurementId, string $municipalId)
     {
-        return $this->procurementsRepo->findByIdAndMunicipality($procurementId, $municipalId);
+        return Procurement::where('municipal_id', $municipalId)
+            ->with(['media', 'department', 'fundingSource', 'creator'])
+            ->findOrFail($procurementId);
     }
-
 }

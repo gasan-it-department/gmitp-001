@@ -16,6 +16,7 @@ export type ProcurementFormData = {
     funding_source_id: string | null;
     is_historical: boolean;
     notes?: string | null;
+    custom_funding_source?: string | null;
 }
 
 export interface Procurement {
@@ -34,6 +35,7 @@ export interface Procurement {
     notes: string;
     department_id: string | null;
     funding_source_id: string | null;
+    custom_funding_source?: string | null;
 }
 
 export interface ProcurementDetail extends Procurement {

@@ -27,6 +27,7 @@ const initialValues: ProcurementFormData = {
     documents: [],
     department_id: '',
     funding_source_id: '',
+    custom_funding_source: null,
     notes: '',
     is_historical: true,
 };

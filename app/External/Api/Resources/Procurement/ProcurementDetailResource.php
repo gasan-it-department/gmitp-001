@@ -39,6 +39,8 @@ class ProcurementDetailResource extends JsonResource
 
             'funding_source' => $this->whenLoaded('fundingSource', fn() => new ProcurementFundingSourceResource($this->fundingSource)),
 
+            'custom_funding_source' => $this->custom_funding_source,
+
             'category' => $this->category ? [
                 'value' => $this->category->value,
                 'label' => $this->category->label(),
@@ -55,14 +57,10 @@ class ProcurementDetailResource extends JsonResource
 
             'media' => $this->whenLoaded('media', function () {
                 return $this->media->map(function ($item) {
-                    try {
-                        // Attempt to get the URL normally
-                        $url = $item->getUrl();
-                    } catch (\Exception $e) {
-                        // Fallback: If S3 fails (e.g. missing region in local), 
-                        // manually construct the public path as a last resort.
-                        $url = asset("storage/{$item->id}/{$item->file_name}");
-                    }
+                    // Automatically handle temporary URLs for S3, fallback to standard URL for local dev
+                    $url = str_starts_with($item->disk, 's3')
+                        ? $item->getTemporaryUrl(now()->addHour())
+                        : $item->getUrl();
 
                     return [
                         'id' => $item->id,
