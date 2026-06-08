@@ -146,6 +146,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     <span className="mr-2 text-sm font-semibold text-slate-500">Actions:</span>
 
                     {/* 🌟 UX Fix 1: Make Edit an 'Outline' button so it doesn't fight the primary colors */}
+
                     <Link
                         className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                         href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
@@ -165,12 +166,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             </Button>
                         </>
                     )}
-                    <button
-                        onClick={() => setIsDeleteOpen(true)}
-                        className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                    >
-                        Delete Draft
-                    </button>
+
                     {/* --- OPEN STATE --- */}
                     {data.status === 'open' && (
                         <>
@@ -191,24 +187,31 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     )}
 
                     {/* --- EVALUATING STATE --- */}
-                    {data.status === 'evaluating' && (
-                        <>
-                            {/* Primary Action (Solid Green) */}
-                            <button
-                                onClick={() => setIsAwarding(true)}
-                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-                            >
-                                Award Project
-                            </button>
-                            <button
-                                onClick={() => setIsFailedOpen(true)}
-                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                            >
-                                Declare Failure
-                            </button>
-                        </>
-                    )}
-
+                    <div>
+                        {data.status === 'evaluating' && (
+                            <>
+                                {/* Primary Action (Solid Green) */}
+                                <button
+                                    onClick={() => setIsAwarding(true)}
+                                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+                                >
+                                    Award Project
+                                </button>
+                                <button
+                                    onClick={() => setIsFailedOpen(true)}
+                                    className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                                >
+                                    Declare Failure
+                                </button>
+                            </>
+                        )}
+                        <button
+                            onClick={() => setIsDeleteOpen(true)}
+                            className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                        >
+                            Delete Draft
+                        </button>
+                    </div>
                     {/* --- AWARDED STATE --- */}
                     {data.status === 'awarded' && <span className="ml-auto text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
                 </div>
