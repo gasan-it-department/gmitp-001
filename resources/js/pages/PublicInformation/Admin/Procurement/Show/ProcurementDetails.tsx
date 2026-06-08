@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/App/AppLayout';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import procurementRoute from '@/routes/procurement';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Wallet } from 'lucide-react';
+import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Trash2, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { AwardBiddingDialog } from './Components/AwardBiddingDialog';
 import CloseBiddingDialog from './Components/CloseBiddingDialog';
@@ -187,33 +187,35 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     )}
 
                     {/* --- EVALUATING STATE --- */}
-                    <div>
-                        {data.status === 'evaluating' && (
-                            <>
-                                {/* Primary Action (Solid Green) */}
-                                <button
-                                    onClick={() => setIsAwarding(true)}
-                                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-                                >
-                                    Award Project
-                                </button>
-                                <button
-                                    onClick={() => setIsFailedOpen(true)}
-                                    className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                                >
-                                    Declare Failure
-                                </button>
-                            </>
-                        )}
-                        <button
-                            onClick={() => setIsDeleteOpen(true)}
-                            className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                        >
-                            Delete Draft
-                        </button>
-                    </div>
+                    {data.status === 'evaluating' && (
+                        <>
+                            {/* Primary Action (Solid Green) */}
+                            <button
+                                onClick={() => setIsAwarding(true)}
+                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+                            >
+                                Award Project
+                            </button>
+                            <button
+                                onClick={() => setIsFailedOpen(true)}
+                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                            >
+                                Declare Failure
+                            </button>
+                        </>
+                    )}
+
+                    {/* --- ALWAYS VISIBLE DELETE ACTION --- */}
+                    <button
+                        onClick={() => setIsDeleteOpen(true)}
+                        className="ml-auto flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Record
+                    </button>
+
                     {/* --- AWARDED STATE --- */}
-                    {data.status === 'awarded' && <span className="ml-auto text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
+                    {data.status === 'awarded' && <span className="text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
                 </div>
 
                 {/* 3. MAIN GRID */}
