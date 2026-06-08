@@ -29,6 +29,7 @@ class MunicipalityResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'psgc_municipal_id' => $this->psgc_municipal_id,
             'zip_code' => $this->zip_code,
             'municipal_code' => $this->municipal_code,
             'settings' => [

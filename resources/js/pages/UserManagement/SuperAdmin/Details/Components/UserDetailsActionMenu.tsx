@@ -7,6 +7,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import superAdmin from '@/routes/superAdmin';
 import { router } from '@inertiajs/react';
 import { Ban, Edit, KeyRound, MoreVertical, Settings } from 'lucide-react';
 
@@ -18,7 +19,7 @@ interface Props {
 export function UserDetailsActionMenu({ userId, userName }: Props) {
     // Action Handlers
     const handleEdit = () => {
-        router.visit(route('superAdmin.users.edit', userId));
+        router.visit(superAdmin.users.edit.url(userId));
     };
 
     const handleResetPassword = () => {

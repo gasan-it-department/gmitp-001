@@ -4,28 +4,28 @@ import { Mail, MapPin, Phone, Shield } from 'lucide-react';
 
 export default function MainLandingPage() {
     return (
-        <div className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
-            {/* Top Bar - Government Standard */}
-            <div className="bg-primary px-4 py-1.5 text-xs text-primary-foreground sm:px-6 lg:px-8">
+        <div className="text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-screen flex-col bg-[#f8faf9] font-sans antialiased">
+            {/* Top Bar */}
+            <div className="bg-slate-900 px-4 py-2 text-xs text-white sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Shield className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Opisyal na Portal ng Pamahalaan ng Gasan</span>
-                        <span className="sm:hidden">Gov.PH Portal</span>
+                        <span className="hidden sm:inline">Opisyal na Portal ng Mamamayan ng Marinduque</span>
+                        <span className="sm:hidden">Citizen Portal</span>
                     </div>
-                    <div className="flex items-center gap-4 font-medium">
-                        {/* <Link href="#" className="hover:underline">
-                            Transparency Seal
-                        </Link>
-                        <Link href="#" className="hidden hover:underline sm:inline">
-                            Makipag-ugnayan
-                        </Link> */}
+                    <div className="hidden items-center gap-4 font-medium sm:flex">
+                        <a href="#municipalities" className="transition-colors hover:text-slate-200">
+                            Mga Bayan
+                        </a>
+                        <a href="#services" className="transition-colors hover:text-slate-200">
+                            Serbisyo
+                        </a>
                     </div>
                 </div>
             </div>
 
             {/* Main Navigation */}
-            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <header className="sticky top-0 z-50 w-full border-b border-[#d9e2df] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80">
                 <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3">
                         <img
@@ -34,10 +34,20 @@ export default function MainLandingPage() {
                             className="h-10 w-10 object-contain drop-shadow-sm"
                         />
                         <div>
-                            <h1 className="text-lg leading-none font-black tracking-tight text-foreground">GMITP</h1>
-                            <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Unified Services Portal</p>
+                            <p className="text-sm font-bold uppercase tracking-wider text-slate-600">Municipality Citizen Portal</p>
                         </div>
                     </div>
+                    <nav className="ml-auto hidden items-center gap-6 text-sm font-semibold text-slate-700 md:flex">
+                        <a href="#municipalities" className="transition-colors hover:text-slate-900">
+                            Mga Bayan
+                        </a>
+                        <a href="#services" className="transition-colors hover:text-slate-900">
+                            Digital Services
+                        </a>
+                        <a href="#contact" className="transition-colors hover:text-slate-900">
+                            Kontak
+                        </a>
+                    </nav>
                 </div>
             </header>
 
@@ -47,7 +57,7 @@ export default function MainLandingPage() {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-border bg-card text-card-foreground">
+            <footer id="contact" className="text-card-foreground border-t border-[#d9e2df] bg-white">
                 <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
                         <div className="lg:col-span-2">
@@ -58,35 +68,34 @@ export default function MainLandingPage() {
                                     className="h-12 w-12 object-contain opacity-80 grayscale"
                                 />
                                 <div>
-                                    <h2 className="text-lg font-bold">E-MARINDUQUE</h2>
-                                    <p className="text-xs text-muted-foreground">Unified Services Portal</p>
+                                    <p className="text-muted-foreground text-xs">Municipality Citizen Portal</p>
                                 </div>
                             </div>
-                            <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-                                Pagbibigay ng ligtas, mabilis, at transparent na serbisyo ng pamahalaan para sa mga mamamayan ng Marinduque.
+                            <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                                Simple, ligtas, at bukas na access sa lokal na serbisyo para sa bawat mamamayan ng Marinduque.
                             </p>
                         </div>
 
                         <div>
-                            <h3 className="mb-4 font-semibold text-foreground">Mabilis na Links</h3>
-                            <ul className="space-y-2 text-sm text-muted-foreground">
+                            <h3 className="text-foreground mb-4 font-semibold">Mabilis na Links</h3>
+                            <ul className="text-muted-foreground space-y-2 text-sm">
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Pamahalaang Panlalawigan
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Opisina ng Turismo
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Pagtugon sa Sakuna
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Portal ng Trabaho
                                     </Link>
                                 </li>
@@ -94,25 +103,25 @@ export default function MainLandingPage() {
                         </div>
 
                         <div>
-                            <h3 className="mb-4 font-semibold text-foreground">Legal</h3>
-                            <ul className="space-y-2 text-sm text-muted-foreground">
+                            <h3 className="text-foreground mb-4 font-semibold">Legal</h3>
+                            <ul className="text-muted-foreground space-y-2 text-sm">
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Patakaran sa Privacy
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Kasunduan sa Serbisyo
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Data Privacy Act
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="transition-colors hover:text-primary">
+                                    <Link href="#" className="hover:text-primary transition-colors">
                                         Kalayaan sa Impormasyon
                                     </Link>
                                 </li>
@@ -120,30 +129,30 @@ export default function MainLandingPage() {
                         </div>
 
                         <div>
-                            <h3 className="mb-4 font-semibold text-foreground">Kontak</h3>
-                            <ul className="space-y-3 text-sm text-muted-foreground">
+                            <h3 className="text-foreground mb-4 font-semibold">Kontak</h3>
+                            <ul className="text-muted-foreground space-y-3 text-sm">
                                 <li className="flex items-start gap-3">
-                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                    <MapPin className="text-primary mt-0.5 h-4 w-4 shrink-0" />
                                     <span>Provincial Capitol Compound, Boac, Marinduque, Philippines</span>
                                 </li>
                                 <li className="flex items-center gap-3">
-                                    <Phone className="h-4 w-4 shrink-0 text-primary" />
+                                    <Phone className="text-primary h-4 w-4 shrink-0" />
                                     <span>(042) 332-1002</span>
                                 </li>
                                 <li className="flex items-center gap-3">
-                                    <Mail className="h-4 w-4 shrink-0 text-primary" />
+                                    <Mail className="text-primary h-4 w-4 shrink-0" />
                                     <span>info@marinduque.gov.ph</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
 
-                    <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 md:flex-row">
-                        <p className="text-xs text-muted-foreground">
-                            © {new Date().getFullYear()} Pamahalaang Panlalawigan ng Marinduque. Lahat ng karapatan ay rezebado.
+                    <div className="border-border/50 mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
+                        <p className="text-muted-foreground text-xs">
+                            &copy; {new Date().getFullYear()} Pamahalaang Panlalawigan ng Marinduque. Lahat ng karapatan ay reserbado.
                         </p>
                         <div className="flex items-center gap-4">
-                            <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Bagong Pilipinas</span>
+                            <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Bagong Pilipinas</span>
                         </div>
                     </div>
                 </div>

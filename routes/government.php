@@ -35,7 +35,7 @@ Route::prefix('{municipality}/government')
 
 Route::prefix('{municipality}/government')
     ->name('government.admin.')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:government.access'])
     ->group(function () {
 
         //terms
@@ -74,7 +74,7 @@ Route::prefix('{municipality}/government')
 
 Route::prefix('api/government')
     ->name('government.admin.')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:government.access'])
     ->group(function () {
 
         Route::prefix('terms')

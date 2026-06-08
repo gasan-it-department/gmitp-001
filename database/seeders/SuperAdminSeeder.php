@@ -19,15 +19,14 @@ class SuperAdminSeeder extends Seeder
 
         $superAdmin = User::firstOrCreate(
 
-            ['user_name' => 'super_admin'],
+            ['email' => 'gasanmarinduque.itdepartment@gmail.com'],
 
             [
                 'id' => Str::ulid(),
                 'first_name' => 'super',
                 'last_name' => 'admin',
-                'phone' => '+639994587693',
+                'phone' => '639994587693',
                 'phone_verified_at' => now(),
-                'email' => 'gasanmarinduque.itdepartment@gmail.com',
                 'email_verified_at' => now(),
                 'password' => Hash::make('capstone'),
             ]
@@ -35,7 +34,7 @@ class SuperAdminSeeder extends Seeder
         );
 
         $superAdmin->syncRoles(EnumRoles::SUPER_ADMIN->value);
-        $this->command->info('Super Admin created! Username: super_admin | Password: password');
+        $this->command->info('Super Admin created! Email: gasanmarinduque.itdepartment@gmail.com | Password: capstone');
 
     }
 }

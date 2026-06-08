@@ -5,7 +5,7 @@ import { useForm } from '@inertiajs/react';
 import { PermissionSelector } from './Components/Permission';
 
 // UI Components
-import CreateAdminController from '@/actions/App/External/Api/Controllers/Auth/CreateAdminController';
+import CreateAdminController from '@/actions/App/External/Api/Controllers/UserManagement/CreateAdminController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,6 @@ export default function UserRegistry({ data }: Props) {
         first_name: '',
         last_name: '',
         middle_name: '',
-        user_name: '',
         email: '',
         phone: '',
         municipal_id: '',
@@ -48,7 +47,7 @@ export default function UserRegistry({ data }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(CreateAdminController.store.url());
+        post(CreateAdminController.url());
     };
 
     return (
@@ -114,12 +113,16 @@ export default function UserRegistry({ data }: Props) {
                                 </div>
                             </div>
 
-                            {/* Row 2: user_name & Municipality */}
+                            {/* Row 2: Middle Name & Municipality */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Username</Label>
-                                    <Input value={formData.user_name} onChange={(e) => setData('user_name', e.target.value)} />
-                                    {errors.user_name && <p className="text-xs text-red-500">{errors.user_name}</p>}
+                                    <Label>Middle Name (Optional)</Label>
+                                    <Input
+                                        value={formData.middle_name}
+                                        onChange={(e) => setData('middle_name', e.target.value)}
+                                        placeholder="e.g. Santos"
+                                    />
+                                    {errors.middle_name && <p className="text-xs text-red-500">{errors.middle_name}</p>}
                                 </div>
                                 <div>
                                     <MunicipalitySelect

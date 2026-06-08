@@ -34,7 +34,7 @@ Route::prefix('{municipality}/support')
  * Web (Inertia page rendering) — admin-facing support queue.
  */
 Route::prefix('{municipality}/admin/support')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:support_ticket.access'])
     ->name('supportTicket.admin.')
     ->group(function () {
 
@@ -66,7 +66,7 @@ Route::prefix('api/support')
             ->name('reopen');
 
         // Admin Lifecycle Transitions
-        Route::middleware('admin')->group(function () {
+        Route::middleware(['admin', 'permission:support_ticket.access'])->group(function () {
             Route::post('/{support_ticket}/acknowledge', AcknowledgeTicketController::class)
                 ->whereUlid('support_ticket')
                 ->name('acknowledge');

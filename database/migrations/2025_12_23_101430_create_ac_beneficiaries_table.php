@@ -22,6 +22,10 @@ return new class extends Migration {
                 ->constrained('users')
                 ->nullOnDelete();
 
+            $table->string('beneficiary_number')
+                ->nullable()
+                ->unique();
+
             $table->string('first_name');
             $table->string('last_name');
             $table->string('middle_name')->nullable();

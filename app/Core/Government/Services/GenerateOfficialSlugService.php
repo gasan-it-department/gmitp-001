@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Core\Government\Officials\Services;
+namespace App\Core\Government\Services;
 
 class GenerateOfficialSlugService
 {

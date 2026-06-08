@@ -18,17 +18,14 @@ enum Relationship: string
     case Child = 'child';    // must be 18+
     case Sibling = 'sibling';  // must be 18+
 
-    case Bading = 'bading';
-
     public function label(): string
     {
         return match ($this) {
-            self::Head    => 'Head of Household',
-            self::Spouse  => 'Spouse',
-            self::Parent  => 'Parent',
-            self::Child   => 'Son / Daughter',
+            self::Head => 'Head of Household',
+            self::Spouse => 'Spouse',
+            self::Parent => 'Parent',
+            self::Child => 'Son / Daughter',
             self::Sibling => 'Brother / Sister',
-            self::Bading  => 'bading nga',
         };
     }
 
@@ -61,8 +58,8 @@ enum Relationship: string
             // Head is server-managed (assigned automatically to the registered
             // citizen). Hide it from the citizen-facing dropdown — they can
             // never pick "Head" for another household member.
-            ->reject(fn (self $case) => $case === self::Head)
-            ->map(fn (self $case) => [
+            ->reject(fn(self $case) => $case === self::Head)
+            ->map(fn(self $case) => [
                 'value' => $case->value,
                 'label' => $case->label(),
                 'requires_legal_age' => $case->requiresLegalAge(),

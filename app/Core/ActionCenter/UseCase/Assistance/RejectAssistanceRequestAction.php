@@ -5,11 +5,11 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Dto\Assistance\RejectAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
-
 /**
- * Reject an assistance request that's pending or under_review.
+ * Reject an assistance request that's under_review.
  *
  * Sibling to ApproveAssistanceRequestAction but much simpler:
  *   - no amount commitment
@@ -25,24 +25,29 @@ use Illuminate\Support\Facades\DB;
  * ── Hard gates (cheap → expensive) ─────────────────────────────────────
  *   1. Tenant match     — request belongs to the current municipality
  *   2. Transition rule  — enum's canTransitionTo() permits the move to Rejected
- *                         (allowed from Pending or UnderReview; blocked from
- *                         Approved/Released/Rejected/Cancelled)
+ *                         (allowed from UnderReview; blocked from
+ *                         Pending/Approved/Released/Rejected/Cancelled)
+ *   3. Reviewer assigned — reviewed_by_user_id must NOT be null
  *
  * `attempts: 3` retries on the rare serialization conflict (two admins
  * double-clicking Reject on the same case).
  */
 class RejectAssistanceRequestAction
 {
+    public function __construct(
+        protected LockAssistanceRequestAction $lockRequest
+    ) {}
+
     public function execute(RejectAssistanceRequestDto $dto): AssistanceRequest
     {
         return DB::transaction(function () use ($dto) {
-            $request = AssistanceRequest::query()
-                ->whereKey($dto->assistanceRequestId)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $request = $this->lockRequest->execute(
+                id: $dto->assistanceRequestId,
+                municipalId: $dto->municipalId
+            );
 
-            $this->ensureTenantMatch($request, $dto->municipalId);
             $this->ensureTransitionAllowed($request);
+            $this->ensureReviewerAssigned($request);
 
             $request->update([
                 'status' => AssistanceStatus::Rejected,
@@ -63,23 +68,24 @@ class RejectAssistanceRequestAction
     // Hard gates
     // ─────────────────────────────────────────────────────────────────────
 
-    private function ensureTenantMatch(AssistanceRequest $request, string $municipalId): void
+    private function ensureReviewerAssigned(AssistanceRequest $request): void
     {
-        if ($request->municipal_id !== $municipalId) {
-            throw new AuthorizationException(
-                'You may only reject requests from your own municipality.',
+        if ($request->reviewed_by_user_id === null) {
+            throw new \DomainException(
+                'This case has no assigned reviewer. Pick it up first before Rejecting.',
             );
         }
     }
+
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
         if (!$request->status->canTransitionTo(AssistanceStatus::Rejected)) {
             throw new \DomainException(
                 match ($request->status) {
-                    AssistanceStatus::Approved  => 'This case is already approved and can no longer be rejected.',
-                    AssistanceStatus::Released  => 'This case was already released and cannot be rejected.',
-                    AssistanceStatus::Rejected  => 'This case has already been rejected.',
+                    AssistanceStatus::Approved => 'This case is already approved and can no longer be rejected.',
+                    AssistanceStatus::Released => 'This case was already released and cannot be rejected.',
+                    AssistanceStatus::Rejected => 'This case has already been rejected.',
                     AssistanceStatus::Cancelled => 'This case was cancelled and cannot be rejected.',
                     default => 'This case cannot be rejected from its current state.',
                 },

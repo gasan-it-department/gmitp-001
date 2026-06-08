@@ -5,6 +5,7 @@ use App\External\Api\Controllers\Municipality\MunicipalityController;
 use App\External\Api\Controllers\Municipality\StoreHotlineController;
 use App\External\Api\Controllers\Municipality\StoreMunicipalityController;
 use App\External\Api\Controllers\Municipality\UpdateHotlineController;
+use App\External\Api\Controllers\Municipality\UpdateMunicipalityController;
 use App\External\Api\Controllers\Municipality\UpdateSettingsController;
 use App\External\Api\Controllers\Psgc\LocationController;
 use App\External\Web\Controllers\Municipality\Admin\EditMunicipalitySettingsController;
@@ -28,17 +29,14 @@ Route::prefix('municipality')
             Route::post('/add', StoreMunicipalityController::class)
                 ->name('add');
 
-            Route::get('/list', [MunicipalityController::class, 'index'])
-                ->name('index');
-
-            Route::put('/update/{id}', [MunicipalityController::class, 'update'])
+            Route::put('/update/{id}', UpdateMunicipalityController::class)
                 ->name('update');
         });
 
         // ========================
         // PUBLIC MUNICIPAL ROUTES
         // ========================
-
+    
         Route::get('/', [MunicipalityController::class, 'indexActiveMunicipalities'])
             ->name('index');
 
@@ -49,7 +47,7 @@ Route::prefix('municipality')
  * Admin web (Inertia render) — unified Settings & Hotlines management page.
  */
 Route::prefix('{municipality}/admin/municipality')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:municipality_settings.access'])
     ->name('municipality.admin.')
     ->group(function () {
         Route::get('/settings', EditMunicipalitySettingsController::class)
@@ -60,7 +58,7 @@ Route::prefix('{municipality}/admin/municipality')
  * Admin API (form mutations) — returns Inertia redirects, not JSON.
  */
 Route::prefix('api/municipality')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:municipality_settings.access'])
     ->name('api.municipality.')
     ->group(function () {
         Route::put('/settings', UpdateSettingsController::class)

@@ -35,28 +35,20 @@ class ApproveAssistanceRequestController extends Controller
         string $assistanceRequestId,
         ApproveAssistanceRequestRequest $request,
     ): RedirectResponse {
-        try {
-            $dto = ApproveAssistanceRequestDto::fromRequest(
-                request: $request,
-                assistanceRequestId: $assistanceRequestId,
-                municipalId: app('municipal_id'),
-                approverId: Auth::id(),
-            );
 
-            $this->approve->execute($dto);
+        $dto = ApproveAssistanceRequestDto::fromRequest(
+            request: $request,
+            assistanceRequestId: $assistanceRequestId,
+            municipalId: app('municipal_id'),
+            approverId: Auth::id(),
+        );
 
-            return back()->with(
-                'success',
-                'Request approved. Cooldown is now in effect against future applications.',
-            );
-        } catch (\DomainException $e) {
-            // Illegal transition, missing required documents, amount out of
-            // bounds, no reviewer assigned, etc. Surface the action's
-            // message verbatim — they're already user-friendly.
-            return back()->withErrors(['approve' => $e->getMessage()]);
-        } catch (AuthorizationException $e) {
-            // Cross-tenant attempt.
-            return back()->withErrors(['approve' => $e->getMessage()]);
-        }
+        $this->approve->execute($dto);
+
+        return back()->with(
+            'success',
+            'Request approved. Cooldown is now in effect against future applications.',
+        );
+
     }
 }

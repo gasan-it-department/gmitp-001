@@ -1,28 +1,32 @@
 <?php
 
-namespace App\Core\Municipality\Services;
+namespace App\Core\Municipality\Actions;
 
-use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use App\Core\Municipality\Dto\AddMunicipalityDto;
-use App\Core\Municipality\Repositories\MunicipalityRepository;
 use App\Core\Municipality\Models\Municipality;
 use App\Core\Municipality\Services\SlugMunicipalityService;
-class AddMunicipalityService
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
+
+class AddMunicipalityAction
 {
     public function __construct(
         protected IdGeneratorInterface $idGenerator,
-        protected MunicipalityRepository $municipalityRepository,
         protected SlugMunicipalityService $slugService,
     ) {
     }
-
 
     public function execute(AddMunicipalityDto $dto): Municipality
     {
         $slug = $this->slugService->slugMunicipality($dto->name, $dto->zipCode);
 
-        $municipalityId = $this->idGenerator->generate();
-
-        return $this->municipalityRepository->save($dto, $municipalityId, $slug);
+        return Municipality::create([
+            'id' => $this->idGenerator->generate(),
+            'name' => $dto->name,
+            'psgc_municipal_id' => $dto->psgcMunicipalId,
+            'municipal_code' => $dto->code,
+            'is_active' => $dto->isActive,
+            'slug' => $slug,
+            'zip_code' => $dto->zipCode,
+        ]);
     }
 }

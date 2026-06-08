@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 // WEB — Inertia pages
 Route::prefix('{municipality}/department')
-    ->middleware(['municipalityContext', 'auth', 'admin'])
+    ->middleware(['municipalityContext', 'auth', 'admin', 'permission:department.access'])
     ->name('department.')
     ->group(function () {
         Route::get('/', IndexDepartmentController::class)->name('index');
@@ -22,7 +22,7 @@ Route::prefix('{municipality}/department')
 
 // API — mutations (Inertia redirects)
 Route::prefix('api/department')
-    ->middleware(['municipalityContext', 'auth', 'admin'])
+    ->middleware(['municipalityContext', 'auth', 'admin', 'permission:department.access'])
     ->name('api.department.')
     ->group(function () {
         Route::post('/store', StoreDepartmentController::class)->name('store');

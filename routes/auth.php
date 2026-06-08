@@ -1,21 +1,24 @@
 <?php
 
-use App\External\Api\Controllers\Auth\AuthenticateUserController;
-use App\External\Api\Controllers\Auth\CreateAdminController;
 use App\External\Api\Controllers\Auth\ForgotPasswordController;
 use App\External\Api\Controllers\Auth\Login\AuthenticateSocialUserController;
+use App\External\Api\Controllers\Auth\LoginController;
+use App\External\Api\Controllers\Auth\LogoutController;
 use App\External\Api\Controllers\Auth\ResetPasswordController;
 use App\External\Api\Controllers\Auth\Signup\CreateUserController;
 use App\External\Api\Controllers\Auth\UpdatePasswordController;
 use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
 use App\External\Api\Controllers\Profile\LinkSocialAccountController;
+use App\External\Api\Controllers\UserManagement\CreateAdminController;
+use App\External\Api\Controllers\UserManagement\UpdateAdminProfileController;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
 use App\External\Web\Controllers\Auth\ShowLoginController;
 use App\External\Web\Controllers\Auth\ShowSignupController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use App\External\Web\Controllers\UserManagement\Public\ShowUserProfileController;
+use App\External\Web\Controllers\UserManagement\SuperAdmin\EditAdminController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,7 +31,7 @@ Route::prefix('api/auth')
             ->name('user.store')
             ->middleware(['municipalityContext']);
 
-        Route::post('/login', [AuthenticateUserController::class, 'login'])
+        Route::post('/login', LoginController::class)
             ->name('login')
             ->middleware('municipalityContext');
 
@@ -51,7 +54,7 @@ Route::prefix('api/profile')
 Route::middleware('auth')->group(function () {
     Route::get('{municipality}/profile', ShowUserProfileController::class)->name('profile.show')->middleware('municipalityContext');
 
-    Route::post('/logout', [AuthenticateUserController::class, 'logout'])->name('logout');
+    Route::post('/logout', LogoutController::class)->name('logout');
 
     Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
 
@@ -104,13 +107,17 @@ Route::middleware('superAdmin')
 
         Route::get('/user-view/{id}', [UserManagementController::class, 'show'])->name('show.user');
 
+        Route::get('/user-edit/{id}', EditAdminController::class)->name('users.edit');
+
     });
 
 Route::prefix('api/user-management')
     ->name('user.management.')
     ->middleware(['superAdmin', 'auth'])
-    ->controller(CreateAdminController::class)
     ->group(function () {
-        // Resulting Name: 'user.management.createAdmin'
-        Route::post('/create-admin', 'store')->name('createAdmin');
+        // Invokable controller. Resulting name: 'user.management.createAdmin'
+        Route::post('/create-admin', CreateAdminController::class)->name('createAdmin');
+
+        // Invokable controller. Resulting name: 'user.management.updateAdmin'
+        Route::put('/update-admin/{id}', UpdateAdminProfileController::class)->name('updateAdmin');
     });

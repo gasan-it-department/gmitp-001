@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Users\UseCases;
 
+use App\Core\Users\Models\User;
 use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Dto\CreateAdminDto;
 use App\Core\Users\Repository\UserRepository;
@@ -27,8 +28,35 @@ class CreateAdminUseCase
     ) {
     }
 
-    public function execute(CreateAdminDto $dto)
+    public function execute(CreateAdminDto $dto, ?User $actor = null)
     {
+
+        // When no actor is supplied (seeders, CLI, tests) the call is treated
+        // as fully privileged. In HTTP flows the controller always passes the
+        // authenticated user, so the delegation guards below apply. super_admin
+        // is unrestricted (it already bypasses everything via Gate::before).
+        $actorIsSuperAdmin = $actor === null
+            || $actor->hasRole(EnumRoles::SUPER_ADMIN->value);
+
+        // Defaults come straight from the request; a delegated (non-super)
+        // admin gets them clamped below before anything is persisted.
+        $permissions = $dto->permissions ?? [];
+
+        $municipalId = $dto->municipalId;
+
+        if (! $actorIsSuperAdmin) {
+
+            // Anti-escalation: a delegated admin can only grant permissions
+            // they themselves already hold.
+            $permissions = array_values(
+                array_intersect($permissions, $actor->getPermissionNames()->all())
+            );
+
+            // Municipality lock: force the new admin into the actor's own
+            // municipality, ignoring whatever municipal_id was submitted.
+            $municipalId = $actor->municipal_id;
+
+        }
 
         $adminId = $this->idGenerator->generate();
 
@@ -54,14 +82,16 @@ class CreateAdminUseCase
 
             'email' => $dto->email,
 
-            'municipalId' => $dto->municipalId,
+            'municipalId' => $municipalId,
 
         ]);
 
+        // Role ceiling: this use case only ever assigns ADMIN, so a delegated
+        // admin can never mint a super_admin.
         $admin->assignRole(EnumRoles::ADMIN->value);
 
-        if (!empty($dto->permissions)) {
-            $admin->givePermissionTo($dto->permissions);
+        if (! empty($permissions)) {
+            $admin->givePermissionTo($permissions);
         }
 
         return $admin;

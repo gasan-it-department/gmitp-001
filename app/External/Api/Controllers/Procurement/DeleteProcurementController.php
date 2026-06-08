@@ -21,7 +21,7 @@ class DeleteProcurementController extends Controller
         $municipality = app('current_municipality');
 
         return redirect()->route('procurement.admin.page', ['municipality' => $municipality->slug])
-            ->with('success', 'Draft procurement has been successfully removed.');
+            ->with('success', 'Procurement record has been successfully removed.');
     }
 
 }

@@ -30,8 +30,15 @@ class HouseholdMemberDetailsResource extends JsonResource
             'age' => $this->birth_date?->age,
             'sex' => $this->sex,
             'civil_status' => $this->civil_status,
+            'educational_attainment' => $this->educational_attainment,
             'occupation' => $this->occupation,
             'monthly_income' => (float) $this->monthly_income,
+            'religion_id' => $this->religion_id,
+            // Admin roster management (profile page): is this person the
+            // server-managed head (mirrors the beneficiary), and are they
+            // currently living in the household?
+            'beneficiary_id' => $this->beneficiary_id,
+            'is_active' => (bool) $this->is_active,
         ];
     }
 }

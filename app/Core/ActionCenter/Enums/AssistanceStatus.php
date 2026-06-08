@@ -100,6 +100,22 @@ enum AssistanceStatus: string
     }
 
     /**
+     * Whether an admin may still CORRECT the request's content (description +
+     * documents). Editable only while the request is in-flight and undecided —
+     * once approved/released/rejected/cancelled the record is COA evidence and
+     * is content-locked (corrections then go through reject/cancel + re-file,
+     * never a silent edit). Single source of truth for the edit action, the Web
+     * editability guard, and the React "Edit request" button.
+     */
+    public function isEditable(): bool
+    {
+        return match ($this) {
+            self::Pending, self::UnderReview => true,
+            default => false,
+        };
+    }
+
+    /**
      * Allowed transitions. Centralizing them here means the model event,
      * the controllers, and the React action buttons all agree on the rules.
      *

@@ -2,6 +2,7 @@ export interface MunicipalityType {
     id: string;
     name: string;
     slug: string;
+    psgc_municipal_id?: string;
     zip_code: string;
     municipal_code: string;
     is_active?: boolean;

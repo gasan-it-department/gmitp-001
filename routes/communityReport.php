@@ -32,7 +32,7 @@ Route::prefix('{municipality}/community-report')
  * Web (Inertia page rendering) — admin-facing.
  */
 Route::prefix('{municipality}/admin/community-reports')
-    ->middleware(['municipalityContext', 'admin'])
+    ->middleware(['municipalityContext', 'admin', 'permission:community_report.access'])
     ->name('communityReport.admin.')
     ->group(function () {
 
@@ -54,7 +54,7 @@ Route::prefix('api/community-report')
         Route::post('/', StoreReportController::class)->name('store');
 
         // Admin Lifecycle Transitions
-        Route::middleware('admin')->group(function () {
+        Route::middleware(['admin', 'permission:community_report.access'])->group(function () {
             Route::post('/{report_submission}/acknowledge', AcknowledgeReportController::class)
                 ->name('acknowledge');
 

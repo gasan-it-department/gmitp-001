@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Api\Resources\PublicInformation;
+namespace App\External\Api\Resources\Procurement;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -40,7 +40,8 @@ class ProcurementResource extends JsonResource
 
             'created_at' => $this->created_at?->toIso8601String(),
 
-            'files' => ProcurementFileResource::collection($this->whenLoaded('files')),
+            'files' => ''
+            //'ProcurementFileResource::collection($this->whenLoaded('files'))',
 
         ];
     }

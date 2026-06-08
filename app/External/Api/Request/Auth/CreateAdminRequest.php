@@ -9,9 +9,12 @@ class CreateAdminRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Security: Only Super Admins should be creating other Admins
-        // You can add: return $this->user()->hasRole('super_admin');
-        return true;
+        // super_admin always passes (Gate::before grants them everything).
+        // Designed for delegation: a municipal admin granted `users.create`
+        // can create admins too. The route is still super_admin-only for now —
+        // see docs/permissions.md. `can()` safely returns false for a
+        // not-yet-seeded permission, so this never throws.
+        return (bool) $this->user()?->can('users.create');
     }
 
     public function rules(): array

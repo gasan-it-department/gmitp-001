@@ -2,9 +2,10 @@
 
 namespace App\External\Web\Controllers\SuperAdmin;
 
-use Inertia\Inertia;
-
+use App\Core\Municipality\Services\GetAllMunicipalities;
+use App\External\Api\Resources\Municipality\MunicipalityResource;
 use App\Http\Controllers\Controller;
+use Inertia\Inertia;
 
 class SuperAdminController extends Controller
 {
@@ -13,8 +14,12 @@ class SuperAdminController extends Controller
         return Inertia::render('SuperAdmin/Dashboard/Dashboard');
     }
 
-    public function showMunicipalityPage()
+    public function showMunicipalityPage(GetAllMunicipalities $getAllMunicipalities)
     {
-        return Inertia::render('SuperAdmin/Municipality/MunicipalityPage');
+        $municipalities = $getAllMunicipalities->execute();
+
+        return Inertia::render('SuperAdmin/Municipality/MunicipalityPage', [
+            'municipalities' => MunicipalityResource::collection($municipalities),
+        ]);
     }
 }

@@ -24,10 +24,22 @@ export function LeftNavigation() {
     const { auth } = usePage<SharedData>().props;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
+<<<<<<< HEAD
     // Find the first social account that has an avatar URL (prioritizing Google)
     const socialAccountWithAvatar =
         auth.user?.social_accounts?.find((a: any) => a.provider_name === 'google' && a.avatar_url) ||
         auth.user?.social_accounts?.find((a: any) => a.avatar_url);
+=======
+    // Helper to safely get the social accounts array regardless of wrapping
+    const socialAccounts = Array.isArray(auth.user?.social_accounts) 
+        ? auth.user.social_accounts 
+        : (auth.user?.social_accounts as any)?.data || [];
+
+    // Find the first social account that has an avatar URL (prioritizing Google)
+    const socialAccountWithAvatar =
+        socialAccounts.find((a: any) => a.provider_name === 'google' && a.avatar_url) ||
+        socialAccounts.find((a: any) => a.avatar_url);
+>>>>>>> harvey
 
     const profilePic = socialAccountWithAvatar?.avatar_url;
 

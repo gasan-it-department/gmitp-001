@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/App/AppLayout';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import procurementRoute from '@/routes/procurement';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Wallet } from 'lucide-react';
+import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Trash2, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { AwardBiddingDialog } from './Components/AwardBiddingDialog';
 import CloseBiddingDialog from './Components/CloseBiddingDialog';
@@ -83,15 +83,10 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
     };
 
     const handleBack = () => {
-        // 1. Get the URL of the page that sent us here (The List Page)
-        const previousUrl = document.referrer;
-
-        // 2. Safety Check: Only go back if the referrer is from our own site/municipality
-        if (previousUrl && previousUrl.includes(currentMunicipality.slug)) {
-            router.visit(previousUrl); // This triggers a fresh server request
+        if (window.history.length > 1) {
+            window.history.back();
         } else {
-            // 3. Fallback: If no referrer (new tab), go to the general index
-            // router.visit(procurementRoute.index.url({ municipality: currentMunicipality.slug }));
+            router.visit(procurementRoute.admin.index.url({ municipality: currentMunicipality.slug }));
         }
     };
     return (
@@ -146,6 +141,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     <span className="mr-2 text-sm font-semibold text-slate-500">Actions:</span>
 
                     {/* 🌟 UX Fix 1: Make Edit an 'Outline' button so it doesn't fight the primary colors */}
+
                     <Link
                         className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                         href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
@@ -163,12 +159,6 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             >
                                 Open Bidding
                             </Button>
-                            <button
-                                onClick={() => setIsDeleteOpen(true)}
-                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                            >
-                                Delete Draft
-                            </button>
                         </>
                     )}
 
@@ -210,8 +200,17 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                         </>
                     )}
 
+                    {/* --- ALWAYS VISIBLE DELETE ACTION --- */}
+                    <button
+                        onClick={() => setIsDeleteOpen(true)}
+                        className="ml-auto flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Record
+                    </button>
+
                     {/* --- AWARDED STATE --- */}
-                    {data.status === 'awarded' && <span className="ml-auto text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
+                    {data.status === 'awarded' && <span className="text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
                 </div>
 
                 {/* 3. MAIN GRID */}

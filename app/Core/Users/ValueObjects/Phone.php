@@ -13,16 +13,19 @@ class Phone
     {
         $clean = preg_replace('/[^0-9]/', '', $number);
 
-        // Normalize all variants to the 11-digit local format: 09XXXXXXXXX
-        if (str_starts_with($clean, '639') && strlen($clean) === 12) {
-            // 639XXXXXXXXX → 09XXXXXXXXX
-            $clean = '0' . substr($clean, 2);
+        // Normalize all variants to the 12-digit international format: 639XXXXXXXXX
+        if (str_starts_with($clean, '09') && strlen($clean) === 11) {
+            // 09XXXXXXXXX → 639XXXXXXXXX
+            $clean = '63' . substr($clean, 1);
         } elseif (str_starts_with($clean, '9') && strlen($clean) === 10) {
-            // 9XXXXXXXXX → 09XXXXXXXXX
-            $clean = '0' . $clean;
+            // 9XXXXXXXXX → 639XXXXXXXXX
+            $clean = '63' . $clean;
+        } elseif (str_starts_with($clean, '6309') && strlen($clean) === 13) {
+            // 6309XXXXXXXXX → 639XXXXXXXXX
+            $clean = '63' . substr($clean, 3);
         }
 
-        if (!preg_match('/^09\d{9}$/', $clean)) {
+        if (!preg_match('/^639\d{9}$/', $clean)) {
             throw new InvalidArgumentException("Invalid PH phone number format: {$number}");
         }
 
@@ -46,10 +49,9 @@ class Phone
 
     /**
      * Returns the E.164 format (+639XXXXXXXXX) for use with SMS gateway APIs.
-     * Do NOT store this — only use it at the point of the API call.
      */
     public function toE164(): string
     {
-        return '+63' . substr($this->value, 1);
+        return '+' . $this->value;
     }
 }
