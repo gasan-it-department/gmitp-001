@@ -83,15 +83,10 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
     };
 
     const handleBack = () => {
-        // 1. Get the URL of the page that sent us here (The List Page)
-        const previousUrl = document.referrer;
-
-        // 2. Safety Check: Only go back if the referrer is from our own site/municipality
-        if (previousUrl && previousUrl.includes(currentMunicipality.slug)) {
-            router.visit(previousUrl); // This triggers a fresh server request
+        if (window.history.length > 1) {
+            window.history.back();
         } else {
-            // 3. Fallback: If no referrer (new tab), go to the general index
-            // router.visit(procurementRoute.index.url({ municipality: currentMunicipality.slug }));
+            router.visit(procurementRoute.admin.index.url({ municipality: currentMunicipality.slug }));
         }
     };
     return (
