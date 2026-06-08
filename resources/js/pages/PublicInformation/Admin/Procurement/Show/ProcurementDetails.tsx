@@ -163,15 +163,14 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             >
                                 Open Bidding
                             </Button>
-                            <button
-                                onClick={() => setIsDeleteOpen(true)}
-                                className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                            >
-                                Delete Draft
-                            </button>
                         </>
                     )}
-
+                    <button
+                        onClick={() => setIsDeleteOpen(true)}
+                        className="ml-auto rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                    >
+                        Delete Draft
+                    </button>
                     {/* --- OPEN STATE --- */}
                     {data.status === 'open' && (
                         <>
