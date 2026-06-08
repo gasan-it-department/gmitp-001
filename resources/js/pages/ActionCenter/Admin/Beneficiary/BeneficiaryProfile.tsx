@@ -12,6 +12,7 @@ import { ArrowLeft, BadgeCheck, Download, HandCoins, Home, Link2, Mail, MapPin, 
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
+import AvatarUploader from './Components/AvatarUploader';
 import HouseholdMembersManager from './Components/HouseholdMembersManager';
 import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
 import LinkAccountDialog from './Components/LinkAccountDialog';
@@ -24,6 +25,7 @@ import { type RelationshipOption } from './Components/MemberFormDialog';
 interface BeneficiaryProfileData {
     id: string;
     beneficiary_number: string | null;
+    avatar_url: string | null;
     full_name: string;
     first_name: string;
     middle_name: string | null;
@@ -92,7 +94,6 @@ export default function BeneficiaryProfile({
 
     const [linkOpen, setLinkOpen] = useState(false);
 
-    const initials = (profile.first_name[0] ?? '') + (profile.last_name[0] ?? '');
     const address = [profile.household?.street, profile.household?.barangay].filter(Boolean).join(', ') || '—';
 
     return (
@@ -142,9 +143,12 @@ export default function BeneficiaryProfile({
                     <div className="container mx-auto max-w-7xl px-6 py-6">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-start gap-4">
-                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xl font-bold text-blue-600 uppercase">
-                                    {initials}
-                                </div>
+                                <AvatarUploader
+                                    beneficiaryId={profile.id}
+                                    avatarUrl={profile.avatar_url}
+                                    fullName={profile.full_name}
+                                    sizeClass="h-16 w-16"
+                                />
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h1 className="text-2xl font-bold tracking-tight text-slate-900 capitalize">{profile.full_name}</h1>

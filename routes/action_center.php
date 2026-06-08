@@ -26,6 +26,8 @@ use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeControll
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\EditBeneficiaryProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryProfileController;
+use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
+use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
 use App\External\Web\Controllers\ActionCenter\Admin\Walkin\ShowCreateWalkInBeneficiaryController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
@@ -72,6 +74,12 @@ Route::prefix('{municipality}/action-center')
             // household Head row in the same transaction.
             Route::get('beneficiary/{beneficiaryId}/edit', EditBeneficiaryProfileController::class)
                 ->name('beneficiary.edit');
+
+            // Stream a beneficiary's profile photo (private disk → authenticated
+            // inline stream). Source for the <img> on the profile, edit form,
+            // and search cards. Upload is the API route below.
+            Route::get('beneficiary/{beneficiaryId}/avatar', ShowBeneficiaryAvatarController::class)
+                ->name('beneficiary.avatar');
 
             // Walk-in intake form — display only. The admin encodes a person
             // who has no portal account (user_id stays NULL). Reached from the
@@ -220,6 +228,13 @@ Route::prefix('/api/action-center')
                     '/beneficiary/{beneficiaryId}',
                     UpdateBeneficiaryProfileController::class,
                 )->name('beneficiary.update');
+
+                // Upload / replace a beneficiary's profile photo (webcam → PC).
+                // Admin-only; single-file replace handled in the action.
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/avatar',
+                    UploadBeneficiaryAvatarController::class,
+                )->name('beneficiary.avatar.upload');
 
                 // ── Admin household-roster management ─────────────────────────
                 // Edit a non-head member, toggle moved-out (is_active, never

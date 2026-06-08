@@ -42,6 +42,7 @@ class GetBeneficiaryProfileAction
             'household',
             'religion',
             'user:id,email',
+            'media', // profile photo (avatar collection)
         ])->findOrFail($beneficiaryId);
 
         // Tenant scope — municipal_id lives on the household.

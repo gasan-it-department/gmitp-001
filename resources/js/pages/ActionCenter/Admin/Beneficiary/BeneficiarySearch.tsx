@@ -17,6 +17,7 @@ import SearchFilters from './Components/SearchFilters';
 export interface BeneficiaryRow {
     id: string;
     beneficiary_number: string | null;
+    avatar_url: string | null;
     full_name: string;
     first_name: string;
     middle_name: string | null;

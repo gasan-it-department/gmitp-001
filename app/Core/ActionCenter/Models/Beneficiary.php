@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * The permanent identity record for any person served by the MSWD —
@@ -18,9 +20,9 @@ use Spatie\Activitylog\Support\LogOptions;
  *
  * One row per real person, forever. Never hard-deleted.
  */
-class Beneficiary extends Model
+class Beneficiary extends Model implements HasMedia
 {
-    use HasUlids, SoftDeletes, LogsActivity;
+    use HasUlids, SoftDeletes, LogsActivity, InteractsWithMedia;
 
     protected $table = 'ac_beneficiaries';
     protected $keyType = 'string';
@@ -128,5 +130,26 @@ class Beneficiary extends Model
             $this->last_name,
             $this->suffix,
         ])));
+    }
+
+    /**
+     * Profile photo, captured by the admin during the interview (webcam → PC →
+     * upload). `singleFile()` means a new upload REPLACES the previous one —
+     * one current photo per beneficiary, no orphans. Lives on the same private
+     * disk as request documents; served only through the authenticated
+     * ShowBeneficiaryAvatarController, never a public URL.
+     *
+     * Only beneficiaries carry a photo. Household-member roster rows do not —
+     * they earn one only once they're promoted to a beneficiary.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ]);
     }
 }

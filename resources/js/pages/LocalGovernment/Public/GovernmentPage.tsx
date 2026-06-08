@@ -47,7 +47,7 @@ export default function GovernmentPage({ municipality, term, publishedTerms, ros
     const rawViceMayor = rosterData.find((pos) => pos.title.includes('Vice Mayor'));
 
     const rawCouncilors = rosterData
-        .filter((pos) => pos.title.includes('Sangguniang') || pos.title.includes('Councilor'))
+        .filter((pos) => (pos.title.includes('Sangguniang') || pos.title.includes('Councilor')) && !pos.title.includes('Secretary'))
         .sort((a, b) => a.sequence - b.sequence);
 
     const rawExOfficios = rosterData

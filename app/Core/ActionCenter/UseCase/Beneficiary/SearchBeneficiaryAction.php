@@ -64,6 +64,7 @@ class SearchBeneficiaryAction
             ->with([
                 'household:id,barangay,street',
                 'user:id,email',
+                'media', // profile photo (avatar) — keeps the card thumbnail off N+1
             ])
             // Tenant scope — the municipal_id lives on the household row.
             ->whereHas('household', fn (Builder $q) => $q->where('municipal_id', $municipalId))

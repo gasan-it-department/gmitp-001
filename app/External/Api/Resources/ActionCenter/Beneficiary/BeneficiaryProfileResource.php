@@ -25,6 +25,7 @@ class BeneficiaryProfileResource extends JsonResource
             // ── Identity ─────────────────────────────────────────────────────
             'id'                 => $this->id,
             'beneficiary_number' => $this->beneficiary_number,
+            'avatar_url'  => $this->avatarUrl($request),
             'full_name'   => $this->full_name,
             'first_name'  => $this->first_name,
             'middle_name' => $this->middle_name,
@@ -65,5 +66,32 @@ class BeneficiaryProfileResource extends JsonResource
             'terms_consented_at' => $this->terms_consented_at?->toIso8601String(),
             'registered_at'      => $this->created_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Authenticated stream URL for the profile photo, or null when none is set.
+     * Uses the {municipality} slug from the current route (present on the admin
+     * profile / edit / search routes). Appends `?v={timestamp}` so the browser
+     * refetches after a re-upload (the base URL is otherwise static per id).
+     */
+    private function avatarUrl(Request $request): ?string
+    {
+        $municipality = $request->route('municipality');
+
+        if (! $municipality) {
+            return null;
+        }
+
+        $media = $this->getFirstMedia('avatar');
+
+        if ($media === null) {
+            return null;
+        }
+
+        return route('actionCenter.admin.beneficiary.avatar', [
+            'municipality'  => $municipality,
+            'beneficiaryId' => $this->id,
+            'v'             => $media->updated_at?->timestamp,
+        ]);
     }
 }

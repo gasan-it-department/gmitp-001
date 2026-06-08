@@ -27,6 +27,7 @@ class BeneficiaryListResource extends JsonResource
             // ── Identity ─────────────────────────────────────────────────────
             'id'                 => $this->id,
             'beneficiary_number' => $this->beneficiary_number,
+            'avatar_url'  => $this->avatarUrl($request),
             'full_name'   => $this->full_name,   // getFullNameAttribute() accessor
             'first_name'  => $this->first_name,
             'middle_name' => $this->middle_name,
@@ -66,5 +67,31 @@ class BeneficiaryListResource extends JsonResource
                 ? Carbon::parse($this->last_request_at)->toIso8601String()
                 : null,
         ];
+    }
+
+    /**
+     * Authenticated stream URL for the profile photo, or null when none is set.
+     * Relies on the search query eager-loading `media` so the thumbnail check
+     * doesn't N+1 across the result page.
+     */
+    private function avatarUrl(Request $request): ?string
+    {
+        $municipality = $request->route('municipality');
+
+        if (! $municipality) {
+            return null;
+        }
+
+        $media = $this->getFirstMedia('avatar');
+
+        if ($media === null) {
+            return null;
+        }
+
+        return route('actionCenter.admin.beneficiary.avatar', [
+            'municipality'  => $municipality,
+            'beneficiaryId' => $this->id,
+            'v'             => $media->updated_at?->timestamp,
+        ]);
     }
 }

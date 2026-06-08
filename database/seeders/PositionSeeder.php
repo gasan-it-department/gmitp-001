@@ -19,6 +19,9 @@ class PositionSeeder extends Seeder
      */
     public function run(): void
     {
+        // 0. Cleanup: Remove existing Secretariat positions if they exist
+        Position::where('category', PositionCategory::SECRETARIAT)->delete();
+
         // 1. Initialize the Executive and top Legislative seat
         $positions = [
             [
@@ -42,7 +45,7 @@ class PositionSeeder extends Seeder
             ];
         }
 
-        // 3. Add the Ex-Officios and Secretariat
+        // 3. Add the Ex-Officios
         $additionalPositions = [
             [
                 'title' => 'ABC President (Liga ng mga Barangay)',
@@ -58,11 +61,6 @@ class PositionSeeder extends Seeder
                 'title' => 'IPMR (Indigenous Peoples Mandatory Rep)',
                 'sequence' => 13,
                 'category' => PositionCategory::EX_OFFICIO,
-            ],
-            [
-                'title' => 'Secretary to the Sangguniang Bayan',
-                'sequence' => 14,
-                'category' => PositionCategory::SECRETARIAT,
             ],
         ];
 

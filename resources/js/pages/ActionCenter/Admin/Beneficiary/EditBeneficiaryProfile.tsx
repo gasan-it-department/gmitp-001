@@ -11,12 +11,14 @@ import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Com
 import { PersonalInformationSection } from '../../Client/Apply/Beneficiary/Components/PersonalInformationSection';
 import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
+import AvatarUploader from './Components/AvatarUploader';
 
 // ─── The slice of BeneficiaryProfileResource this form pre-fills from ─────────
 
 interface BeneficiaryEditData {
     id: string;
     beneficiary_number: string | null;
+    avatar_url: string | null;
     full_name: string;
     first_name: string;
     middle_name: string | null;
@@ -120,12 +122,16 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
                 <div className="container mx-auto mt-8 max-w-3xl px-6">
                     {/* Header */}
                     <div className="mb-8 flex items-start gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white">
-                            <User className="h-7 w-7" />
-                        </div>
+                        <AvatarUploader
+                            beneficiaryId={b.id}
+                            avatarUrl={b.avatar_url}
+                            fullName={b.full_name}
+                            sizeClass="h-14 w-14"
+                        />
                         <div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1 className="text-xl font-bold tracking-tight text-slate-900">Edit Beneficiary Profile</h1>
+                                <span className="text-xs font-medium text-slate-400">— click the photo to change it</span>
                                 {b.beneficiary_number && (
                                     <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-slate-600">
                                         {b.beneficiary_number}

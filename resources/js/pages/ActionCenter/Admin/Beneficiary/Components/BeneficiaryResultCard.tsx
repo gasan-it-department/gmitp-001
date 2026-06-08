@@ -30,7 +30,15 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
             {/* ── Header row ── */}
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                    <UserCircle2 className="mt-0.5 h-9 w-9 shrink-0 text-slate-400" />
+                    {row.avatar_url ? (
+                        <img
+                            src={row.avatar_url}
+                            alt={row.full_name}
+                            className="mt-0.5 h-9 w-9 shrink-0 rounded-full border border-slate-200 object-cover"
+                        />
+                    ) : (
+                        <UserCircle2 className="mt-0.5 h-9 w-9 shrink-0 text-slate-400" />
+                    )}
                     <div>
                         <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-semibold text-gray-900">{row.full_name}</h3>
