@@ -69,7 +69,6 @@ export default function MainLandingPage() {
                                     className="h-12 w-12 object-contain opacity-80 grayscale"
                                 />
                                 <div>
-                                    <h2 className="text-lg font-bold">GMITP</h2>
                                     <p className="text-xs text-muted-foreground">Municipality Citizen Portal</p>
                                 </div>
                             </div>
