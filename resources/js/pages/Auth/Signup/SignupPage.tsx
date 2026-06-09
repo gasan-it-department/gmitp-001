@@ -216,7 +216,7 @@ export default function SignupPage() {
                         </div>
 
                         {/* Password */}
-                        <div className="grid-cols-2 space-y-3 md:grid">
+                        <div className="grid-cols-2 space-y-3 space-x-3 md:grid">
                             <div>
                                 <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
                                     Password <span className="text-red-500">*</span>
