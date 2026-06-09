@@ -37,15 +37,16 @@ export default function EventsCalendarUi({ events }: Props) {
     const dashboardList = events.data;
 
     return (
-        <div className="mx-auto w-full px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-            <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="mx-auto w-full px-4 py-5 sm:px-5 lg:px-6">
+            <div className="mb-5 flex flex-col items-start justify-between gap-3 border-b border-primary/10 pb-4 sm:flex-row sm:items-center">
                 <div>
-                    <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Upcoming Events</h2>
-                    <p className="text-sm text-muted-foreground sm:text-base">Stay updated on upcoming municipal events and activities.</p>
+                    <span className="text-xs font-bold tracking-widest text-primary uppercase">Event Space</span>
+                    <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">Upcoming Events</h2>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Municipal activities, programs, and community gatherings.</p>
                 </div>
             </div>
 
-            <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
                 {dashboardList.length > 0 ? (
                     dashboardList.slice(0, 5).map((item, index) => {
                         return (
@@ -66,16 +67,16 @@ export default function EventsCalendarUi({ events }: Props) {
                                         setSelectedEventData(item);
                                         setIsEventDialogShowing(true);
                                     }}
-                                    className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md"
+                                    className="relative overflow-hidden rounded-lg border border-border/70 bg-background p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10"
                                 >
                                     {/* Days Remaining Badge */}
-                                    <div className="absolute top-2 right-2 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground uppercase shadow-sm">
+                                    <div className="absolute top-2 right-2 rounded-full border border-primary/10 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase shadow-sm">
                                         {Utility().calculateArrivingDays(item.start_datetime)}
                                     </div>
 
                                     <div className="flex items-center gap-3 sm:gap-4">
                                         {/* Date Box */}
-                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary font-semibold text-primary-foreground shadow-sm sm:h-14 sm:w-14">
+                                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary font-semibold text-primary-foreground shadow-sm shadow-primary/20 sm:h-14 sm:w-14">
                                             <span className="text-xs leading-none uppercase opacity-80 sm:text-sm">
                                                 {moment(item.start_datetime, 'MMM DD, YYYY g:i A').format('MMM')}
                                             </span>
@@ -98,15 +99,15 @@ export default function EventsCalendarUi({ events }: Props) {
                         );
                     })
                 ) : (
-                    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center text-sm text-muted-foreground sm:text-base">
+                    <div className="rounded-lg border border-dashed border-primary/20 bg-background/70 p-8 text-center text-sm text-muted-foreground sm:text-base">
                         No events yet
                     </div>
                 )}
             </div>
 
             {dashboardList.length > 0 && (
-                <div className="mt-6 flex w-full items-end justify-end">
-                    <Button variant="outline" onClick={() => router.visit(event.index.url(currentMunicipality.slug))}>
+                <div className="mt-5 flex w-full items-end justify-end">
+                    <Button className="rounded-lg" variant="outline" onClick={() => router.visit(event.index.url(currentMunicipality.slug))}>
                         View More
                     </Button>
                 </div>

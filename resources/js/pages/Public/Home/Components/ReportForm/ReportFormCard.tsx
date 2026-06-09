@@ -28,30 +28,24 @@ export default function ReportIssueCard() {
     }, [auth.user]);
 
     return (
-        <Card className="m-3 flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-7">
+        <Card className="group flex h-full flex-col rounded-xl border border-amber-200/90 bg-white p-6 shadow-sm shadow-amber-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md hover:shadow-amber-900/10 sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
-                {/* Header + Description */}
                 <div className="flex items-start gap-4">
-                    {/* Icon Box: Slate background for a professional look */}
-                    <div className="flex items-center justify-center rounded-lg bg-slate-100 p-3 text-slate-700">
+                    <div className="flex items-center justify-center rounded-lg bg-amber-50 p-3 text-amber-700 ring-1 ring-amber-100 transition-colors group-hover:bg-amber-100">
                         <AlertTriangle className="h-6 w-6" />
                     </div>
 
                     <div>
-                        {/* Title: Dark Slate (Official/Serious) */}
-                        <h2 className="text-xl font-bold text-slate-900">Report Community Issue</h2>
-
-                        {/* Description: Muted Slate text */}
+                        <h2 className="text-xl font-bold text-slate-950">Report Community Issue</h2>
                         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                            Help keep our community safe and clean — report damaged roads, broken street lights, garbage, and other local issues.
+                            Help keep our community safe and clean - report damaged roads, broken street lights, garbage, and other local issues.
                         </p>
                     </div>
                 </div>
 
-                {/* Footer Button (stays bottom right) */}
                 <div className="mt-6 flex justify-end">
                     <Button
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
                         onClick={() => {
                             if (auth.user === null) {
                                 router.visit(login.page.url({ municipality: currentMunicipality.slug }));

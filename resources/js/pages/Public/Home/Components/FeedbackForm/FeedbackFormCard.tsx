@@ -36,29 +36,26 @@ export default function FeedbackUi() {
     };
 
     return (
-        <Card className="m-3 flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-7">
+        <Card className="group flex h-full flex-col rounded-xl border border-teal-200/80 bg-white p-6 shadow-sm shadow-teal-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md hover:shadow-teal-900/10 sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
-                {/* Header + Description */}
                 <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-lg bg-slate-100 p-3 text-slate-700">
+                    <div className="flex items-center justify-center rounded-lg bg-teal-50 p-3 text-teal-700 ring-1 ring-teal-100 transition-colors group-hover:bg-teal-100">
                         <MessageSquare className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">We’d Love Your Feedback</h2>
+                        <h2 className="text-xl font-bold text-slate-950">We'd Love Your Feedback</h2>
                         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                            Tell us what you think — your feedback helps us improve your experience.
+                            Tell us what you think - your feedback helps us improve your experience.
                         </p>
                     </div>
                 </div>
 
-                {/* Footer Button (stays bottom-right) */}
                 <div className="mt-6 flex justify-end">
                     <Link
                         href={feedback.create.url(currentMunicipality.slug)}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
                         onClick={(e) => {
-                            // If the user isn't logged in, redirect to the login page
                             if (auth.user === null) {
                                 e.preventDefault();
                                 router.visit(login.page.url({ municipality: currentMunicipality.slug }));
@@ -70,7 +67,6 @@ export default function FeedbackUi() {
                     </Link>
                 </div>
 
-                {/* Feedback Form Modal */}
                 <FeedbackFormDialog
                     open={isDialogOpen}
                     onOpenChange={setIsDialogOpen}

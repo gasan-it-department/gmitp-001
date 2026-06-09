@@ -41,33 +41,35 @@ export default function HomePage({ announcements, events }: HomePageProps) {
                 <Carousel slides={currentMunicipality.settings?.banner_urls} />
 
                 <div className="mx-auto max-w-screen-2xl">
-                    <div className="h-8" />
+                    <div className="h-6 sm:h-8" />
 
                     {/* Primary Actions Grid */}
                     <div className="px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
                             <FeedbackUi />
                             <ActionCenterUi />
                             <Report />
                         </div>
                     </div>
 
-                    <div className="h-12" />
+                    <div className="h-8 sm:h-10" />
 
                     {/* Information Dashboard */}
                     <div className="px-4 sm:px-6 lg:px-8">
                         <InformationDashboard />
                     </div>
 
-                    <div className="h-12" />
+                    <div className="h-8 sm:h-10" />
 
                     {/* Announcements & Events Section */}
-                    <div className="grid grid-cols-1 gap-0 divide-border border-t border-border lg:grid-cols-12 lg:divide-x">
-                        <div className="lg:col-span-8">
-                            <GeneralAnnouncementUi announcements={announcements} />
-                        </div>
-                        <div className="bg-muted/10 lg:col-span-4">
-                            <EventsCalendarUi events={events} />
+                    <div className="px-4 pb-10 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 gap-6 rounded-xl border border-border/70 bg-background/80 p-4 shadow-sm shadow-primary/5 backdrop-blur lg:grid-cols-12 lg:p-5">
+                            <div className="lg:col-span-8">
+                                <GeneralAnnouncementUi announcements={announcements} />
+                            </div>
+                            <div className="rounded-lg border border-primary/10 bg-primary/[0.03] lg:col-span-4">
+                                <EventsCalendarUi events={events} />
+                            </div>
                         </div>
                     </div>
                 </div>
