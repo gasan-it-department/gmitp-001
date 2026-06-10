@@ -18,7 +18,7 @@ class GetUserAssistanceRequestController extends Controller
     {
         $userId = $request->user()->id;
 
-        $requests = $action->execute($userId);
+        $requests = $action->execute($userId, app('municipal_id'));
 
         return Inertia::render('ActionCenter/Client/List/AssistanceList', [
             'requests' => AssistanceRequestListResource::collection($requests),

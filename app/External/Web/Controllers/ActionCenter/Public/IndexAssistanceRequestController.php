@@ -42,7 +42,7 @@ class IndexAssistanceRequestController extends Controller
         $eligibilityByType = [];
 
         if ($user = $request->user()) {
-            $beneficiary = $this->resolveProfile->execute($user->id);
+            $beneficiary = $this->resolveProfile->execute($user->id, app('municipal_id'));
 
             if ($beneficiary !== null) {
                 $eligibilityByType = collect(

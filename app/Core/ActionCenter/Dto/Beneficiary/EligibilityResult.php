@@ -20,6 +20,7 @@ final class EligibilityResult
     public const REASON_ON_COOLDOWN      = 'on_cooldown';
     public const REASON_PERMANENT_BLOCK  = 'permanent_block';
     public const REASON_IN_FLIGHT        = 'in_flight_request';
+    public const REASON_BLACKLISTED      = 'blacklisted';
 
     private function __construct(
         public readonly bool $eligible,
@@ -53,6 +54,16 @@ final class EligibilityResult
     }
 
     /**
+     * An active blacklist flag exists on the identity group — a deliberate
+     * admin hold (e.g. confirmed duplicate-account fraud). Hard-blocks all
+     * standard self-service until an admin lifts it.
+     */
+    public static function blocked(): self
+    {
+        return new self(false, self::REASON_BLACKLISTED);
+    }
+
+    /**
      * Human-readable explanation for citizen UI and admin tooltips.
      * Kept here (not in the frontend) so the same wording is used for both
      * the rendered page and any server-side flash message / exception.
@@ -69,6 +80,8 @@ final class EligibilityResult
             ),
             self::REASON_IN_FLIGHT       => 'You already have a request being processed for this program. '
                 . 'We will notify you once it has been reviewed.',
+            self::REASON_BLACKLISTED     => 'There is a hold on your records that needs to be sorted out in person. '
+                . 'Please visit the MSWD office and our staff will assist you.',
             default                      => 'Eligible to apply.',
         };
     }

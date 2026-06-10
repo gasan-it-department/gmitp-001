@@ -15,7 +15,7 @@ class ClientActionCenterController extends Controller
 
         $userId = auth()->user()->id;
 
-        $assistance = $getUserAssistanceRequestsUseCase->execute($userId);
+        $assistance = $getUserAssistanceRequestsUseCase->execute($userId, app('municipal_id'));
 
         return Inertia::render('ActionCenter/Client/List/Assistance', [
 

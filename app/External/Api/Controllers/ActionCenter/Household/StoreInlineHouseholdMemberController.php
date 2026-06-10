@@ -31,10 +31,11 @@ class StoreInlineHouseholdMemberController extends Controller
 
     public function __invoke(StoreInlineHouseholdMemberRequest $request): JsonResponse
     {
-        // Resolve the beneficiary from the authenticated user — the
-        // citizen can ONLY add members to their own household. Same gate
-        // as the profile-setup path uses implicitly.
+        // Resolve the beneficiary from the authenticated user — the citizen can
+        // ONLY add members to their own household, scoped to THIS municipality
+        // (they hold one record per LGU). Same gate as profile-setup.
         $beneficiary = Beneficiary::where('user_id', $request->user()->id)
+            ->where('municipal_id', app('municipal_id'))
             ->firstOrFail();
 
         $dto = StoreHouseholdMemberDto::fromArray(

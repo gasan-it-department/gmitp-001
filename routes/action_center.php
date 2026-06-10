@@ -10,6 +10,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestC
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\UpdateBeneficiaryProfileController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
@@ -219,6 +220,16 @@ Route::prefix('/api/action-center')
                     '/beneficiary/{beneficiaryId}/link-account',
                     LinkBeneficiaryAccountController::class,
                 )->name('beneficiary.link-account');
+
+                // Non-destructive duplicate merge: mark {beneficiaryId} as a
+                // duplicate and link it into the canonical record (by number).
+                // Deactivates the duplicate's account, flags the canonical, and
+                // resolves the two as one identity group going forward. All
+                // guards + audit live in MergeBeneficiaryAction.
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/merge',
+                    MergeBeneficiaryController::class,
+                )->name('beneficiary.merge');
 
                 // Admin correction of a beneficiary's identity / demographics /
                 // income. The action tenant-guards the record, updates it, and

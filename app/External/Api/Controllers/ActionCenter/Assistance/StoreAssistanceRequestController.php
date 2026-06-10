@@ -43,7 +43,7 @@ class StoreAssistanceRequestController extends Controller
 
         // The beneficiary record is the verified identity for the citizen.
         // We refuse to submit on behalf of users who haven't completed the profile wizard.
-        $beneficiary = $this->resolveApplicantProfileAction->execute($request->user()->id);
+        $beneficiary = $this->resolveApplicantProfileAction->execute($request->user()->id, app('municipal_id'));
 
         if (!$beneficiary->household) {
             return redirect()

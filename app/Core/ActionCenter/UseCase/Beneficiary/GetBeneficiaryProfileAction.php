@@ -27,12 +27,14 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  *     householdTotalIncome: float,
  *     summary: array{total_requests:int, released_count:int, total_released_amount:float, active_member_count:int},
  *     crossMunicipalityMatches: \Illuminate\Support\Collection,
+ *     merge: array{is_merged_duplicate:bool, merged_into:?array, merged_duplicates:array},
  * }
  */
 class GetBeneficiaryProfileAction
 {
     public function __construct(
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
+        private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
     ) {
     }
 
@@ -43,12 +45,19 @@ class GetBeneficiaryProfileAction
             'religion',
             'user:id,email',
             'media', // profile photo (avatar collection)
+            // Duplicate-merge links for the banner / merged-duplicates panel.
+            'mergedInto',
+            'mergedDuplicates',
         ])->findOrFail($beneficiaryId);
 
         // Tenant scope — municipal_id lives on the household.
         if ($beneficiary->household?->municipal_id !== $municipalId) {
             throw new ModelNotFoundException();
         }
+
+        // Resolve the identity group so history + summary span the canonical
+        // plus any merged duplicates (read-only — frozen rows are never moved).
+        $group = $this->resolveGroup->execute($beneficiary);
 
         // Full family composition for the admin roster manager — head first,
         // then current (active) members, then moved-out (inactive) ones last.
@@ -63,9 +72,12 @@ class GetBeneficiaryProfileAction
 
         $activeMembers = $householdMembers->where('is_active', true);
 
-        // Every request this beneficiary has ever filed, across all programs.
+        // Every request the identity GROUP has ever filed, across all programs.
+        // After a merge this includes the duplicate's frozen history so the
+        // canonical profile shows one complete record (rows stay owned by their
+        // original beneficiary_id — nothing is rewritten).
         $assistanceHistory = AssistanceRequest::query()
-            ->where('beneficiary_id', $beneficiary->id)
+            ->whereIn('beneficiary_id', $group->beneficiaryIds)
             ->with('assistanceType')
             ->orderByDesc('created_at')
             ->get();
@@ -95,6 +107,27 @@ class GetBeneficiaryProfileAction
             'assistanceHistory'        => $assistanceHistory,
             'householdTotalIncome'     => $householdTotalIncome,
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
+            // Duplicate-merge state for the profile banner + merged-duplicates
+            // panel. is_merged_duplicate → THIS record was merged away (read-only);
+            // merged_duplicates → records merged INTO this canonical.
+            'merge'                    => [
+                'is_merged_duplicate' => $beneficiary->merged_into_beneficiary_id !== null,
+                'merged_into'         => $beneficiary->mergedInto
+                    ? [
+                        'id'                 => $beneficiary->mergedInto->id,
+                        'beneficiary_number' => $beneficiary->mergedInto->beneficiary_number,
+                        'full_name'          => $beneficiary->mergedInto->full_name,
+                    ]
+                    : null,
+                'merged_duplicates'   => $beneficiary->mergedDuplicates
+                    ->map(fn (Beneficiary $d) => [
+                        'id'                 => $d->id,
+                        'beneficiary_number' => $d->beneficiary_number,
+                        'full_name'          => $d->full_name,
+                    ])
+                    ->values()
+                    ->all(),
+            ],
             'summary'                  => [
                 'total_requests'        => $assistanceHistory->count(),
                 'released_count'        => $releasedHistory->count(),

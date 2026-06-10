@@ -1,6 +1,7 @@
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import EditBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/EditBeneficiaryProfileController';
+import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Download, HandCoins, Home, Link2, Mail, MapPin, Pencil, User, Users } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BadgeCheck, Download, GitMerge, HandCoins, Home, Link2, Mail, MapPin, Pencil, User, Users } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
@@ -16,6 +17,7 @@ import AvatarUploader from './Components/AvatarUploader';
 import HouseholdMembersManager from './Components/HouseholdMembersManager';
 import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
 import LinkAccountDialog from './Components/LinkAccountDialog';
+import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
 import { type RelationshipOption } from './Components/MemberFormDialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,12 +57,28 @@ interface Summary {
     active_member_count: number;
 }
 
+interface MergeRef {
+    id: string;
+    beneficiary_number: string | null;
+    full_name: string;
+}
+
+interface MergeInfo {
+    /** This record was merged away into another (read-only). */
+    is_merged_duplicate: boolean;
+    /** The canonical this record was merged into, when is_merged_duplicate. */
+    merged_into: MergeRef | null;
+    /** Duplicates that were merged INTO this (canonical) record. */
+    merged_duplicates: MergeRef[];
+}
+
 interface Props {
     beneficiary: { data: BeneficiaryProfileData } | BeneficiaryProfileData;
     householdMembers: { data: HouseholdMemberRow[] };
     assistanceHistory: { data: AssistanceHistoryRow[] };
     householdTotalIncome: number;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
+    merge: MergeInfo;
     summary: Summary;
     religions: ReligionOption[];
     civilStatus: EnumOption[];
@@ -78,6 +96,7 @@ export default function BeneficiaryProfile({
     assistanceHistory,
     householdTotalIncome,
     crossMunicipalityMatches,
+    merge,
     summary,
     religions,
     civilStatus,
@@ -93,6 +112,7 @@ export default function BeneficiaryProfile({
     const crossMatches = crossMunicipalityMatches?.data ?? [];
 
     const [linkOpen, setLinkOpen] = useState(false);
+    const [mergeOpen, setMergeOpen] = useState(false);
 
     const address = [profile.household?.street, profile.household?.barangay].filter(Boolean).join(', ') || '—';
 
@@ -122,6 +142,19 @@ export default function BeneficiaryProfile({
                                 <Pencil className="h-4 w-4" />
                                 Edit profile
                             </Link>
+
+                            {/* Identity reconciliation: mark this record as a duplicate of
+                                another. Hidden once it's already been merged away. */}
+                            {!merge.is_merged_duplicate && (
+                                <button
+                                    type="button"
+                                    onClick={() => setMergeOpen(true)}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-50"
+                                >
+                                    <GitMerge className="h-4 w-4" />
+                                    Mark as duplicate
+                                </button>
+                            )}
 
                             {/* Primary action: file an assistance request for this person */}
                             <Link
@@ -185,6 +218,31 @@ export default function BeneficiaryProfile({
                         </div>
                     </div>
                 </header>
+
+                {/* This record was merged into a canonical — read-only notice */}
+                {merge.is_merged_duplicate && merge.merged_into && (
+                    <div className="container mx-auto max-w-7xl px-6 pt-6">
+                        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                            <GitMerge className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                            <div className="text-sm text-amber-900">
+                                <p className="font-semibold">This record was merged into a canonical beneficiary.</p>
+                                <p className="mt-0.5 text-amber-800">
+                                    Eligibility and history are now managed on{' '}
+                                    <Link
+                                        href={ShowBeneficiaryProfileController.url({
+                                            municipality: currentMunicipality.slug,
+                                            beneficiaryId: merge.merged_into.id,
+                                        })}
+                                        className="font-semibold underline underline-offset-2 hover:text-amber-950"
+                                    >
+                                        {merge.merged_into.beneficiary_number ?? merge.merged_into.full_name}
+                                    </Link>
+                                    . This profile is kept for the record.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Cross-municipality double-dip advisory */}
                 {crossMatches.length > 0 && (
@@ -318,6 +376,39 @@ export default function BeneficiaryProfile({
                                     </a>
                                 </CardContent>
                             </Card>
+
+                            {/* Merged duplicates — records absorbed into this canonical.
+                                Their history is already folded into the list above. */}
+                            {merge.merged_duplicates.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <GitMerge className="h-4 w-4 text-amber-600" /> Merged Duplicates
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        <p className="flex items-start gap-2 text-xs text-amber-700">
+                                            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                            These records were merged into this one. Their assistance history is included above.
+                                        </p>
+                                        {merge.merged_duplicates.map((dup) => (
+                                            <Link
+                                                key={dup.id}
+                                                href={ShowBeneficiaryProfileController.url({
+                                                    municipality: currentMunicipality.slug,
+                                                    beneficiaryId: dup.id,
+                                                })}
+                                                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+                                            >
+                                                <span className="font-medium text-slate-800 capitalize">{dup.full_name}</span>
+                                                {dup.beneficiary_number && (
+                                                    <span className="font-mono text-[11px] text-slate-500">{dup.beneficiary_number}</span>
+                                                )}
+                                            </Link>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -329,6 +420,13 @@ export default function BeneficiaryProfile({
                 currentEmail={profile.account_email}
                 isOpen={linkOpen}
                 onClose={() => setLinkOpen(false)}
+            />
+
+            <MergeDuplicateDialog
+                beneficiaryId={profile.id}
+                beneficiaryName={profile.full_name}
+                isOpen={mergeOpen}
+                onClose={() => setMergeOpen(false)}
             />
         </AdminLayout>
     );

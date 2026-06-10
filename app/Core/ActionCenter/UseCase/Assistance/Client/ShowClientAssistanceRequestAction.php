@@ -17,20 +17,23 @@ class ShowClientAssistanceRequestAction
      *
      * @param string $userId
      * @param string $assistanceRequestId
+     * @param string $municipalId
      * @return AssistanceRequest
      *
      * @throws ModelNotFoundException
      * @throws AccessDeniedHttpException
      */
-    public function execute(string $userId, string $assistanceRequestId): AssistanceRequest
+    public function execute(string $userId, string $assistanceRequestId, string $municipalId): AssistanceRequest
     {
         // 1. Find the request or fail
         $request = AssistanceRequest::findOrFail($assistanceRequestId);
 
-        // 2. Security Check: Does this request belong to the current user?
-        // We traverse through the beneficiary link.
+        // 2. Security Check: does this request belong to the current user's
+        // record IN THIS municipality? Traversing the beneficiary link and
+        // scoping to the tenant keeps a Boac request off the Gasan portal.
         $beneficiary = Beneficiary::where('id', $request->beneficiary_id)
             ->where('user_id', $userId)
+            ->where('municipal_id', $municipalId)
             ->first();
 
         if (!$beneficiary) {

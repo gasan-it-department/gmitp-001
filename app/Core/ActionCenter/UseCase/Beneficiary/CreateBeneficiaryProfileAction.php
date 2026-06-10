@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\BeneficiaryFlag;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class CreateBeneficiaryProfileAction
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
+        private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
     ) {
     }
 
@@ -51,7 +53,13 @@ class CreateBeneficiaryProfileAction
                 ->lockForUpdate()
                 ->first();
 
-            $existing = Beneficiary::where('user_id', $dto->userId)->first();
+            // Idempotency is PER MUNICIPALITY: a citizen already registered in
+            // THIS LGU gets their existing record back, but the same login in a
+            // DIFFERENT LGU falls through to create a fresh, separate record
+            // there (one beneficiary per (user, municipality)).
+            $existing = Beneficiary::where('user_id', $dto->userId)
+                ->where('municipal_id', $dto->municipalId)
+                ->first();
             if ($existing) {
 
                 return $existing;
@@ -66,6 +74,8 @@ class CreateBeneficiaryProfileAction
             $beneficiary = Beneficiary::create([
                 'household_id' => $household->id,
                 'user_id' => $dto->userId,
+                // Intrinsic tenant key — must mirror the household's municipality.
+                'municipal_id' => $dto->municipalId,
                 // Human-friendly lifelong ID (e.g. GAS-000123). Allocated under
                 // a per-municipality row lock inside this same transaction.
                 'beneficiary_number' => $this->generateBeneficiaryNumber->execute($dto->municipalId),
@@ -110,6 +120,32 @@ class CreateBeneficiaryProfileAction
                 $this->storeHouseholdMember->execute(
                     StoreHouseholdMemberDto::fromArray($memberData, $household->id),
                 );
+            }
+
+            // ── Soft duplicate detection (online self-service) ───────────
+            // Never blocks — twins and common name+DOB collisions are real, so
+            // hard-stopping a citizen's own registration would be hostile. We
+            // instead raise a WARNING flag so an admin reviews it at interview
+            // (where the government-ID check is the real gate). A confirmed
+            // duplicate is later reconciled via MergeBeneficiaryAction.
+            $possibleDuplicates = $this->findPotentialDuplicates->execute(
+                firstName: $dto->firstName,
+                lastName: $dto->lastName,
+                birthDate: $dto->birthDate,
+                municipalId: $dto->municipalId,
+                excludeBeneficiaryId: $beneficiary->id,
+            );
+
+            if ($possibleDuplicates->isNotEmpty()) {
+                BeneficiaryFlag::create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'user_id'        => null, // system-raised, not an admin action
+                    'reason'         => 'potential_duplicate',
+                    'severity'       => BeneficiaryFlag::SEVERITY_WARNING,
+                    'notes'          => 'Possible duplicate of: ' . $possibleDuplicates
+                        ->map(fn (Beneficiary $b) => $b->beneficiary_number ?? $b->id)
+                        ->implode(', ') . '. Verify against government ID before assisting.',
+                ]);
             }
 
             return $beneficiary;

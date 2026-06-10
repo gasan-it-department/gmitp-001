@@ -31,6 +31,20 @@ class Beneficiary extends Model implements HasMedia
     protected $fillable = [
         'household_id',
         'user_id',
+        // Intrinsic tenant key. INVARIANT: always equals household.municipal_id
+        // (the household is the source of truth) — it's a denormalised mirror
+        // that also lets us enforce unique(user_id, municipal_id): one portal
+        // login owns one beneficiary PER municipality, so a citizen served by
+        // more than one LGU exists as separate, independently-owned records.
+        'municipal_id',
+        // Lifecycle flag (default true). Reserved for a future moved-out/deceased
+        // flow that retires a record while keeping its history; nothing reads it
+        // yet. Mirrors ac_household_members.is_active.
+        'is_active',
+        // Non-destructive duplicate merge: when set, THIS row is a duplicate
+        // that was merged into the referenced canonical beneficiary. NULL for a
+        // normal standalone record. See MergeBeneficiaryAction.
+        'merged_into_beneficiary_id',
         'beneficiary_number',
         'first_name',
         'middle_name',
@@ -52,6 +66,7 @@ class Beneficiary extends Model implements HasMedia
         'birth_date' => 'date',
         'terms_consented_at' => 'datetime',
         'monthly_income' => 'decimal:2',
+        'is_active' => 'boolean',
         'civil_status' => CivilStatus::class,
 
     ];
@@ -76,6 +91,8 @@ class Beneficiary extends Model implements HasMedia
                 'civil_status',
                 'occupation',
                 'monthly_income',
+                // The merge link is an admin identity decision — audit it.
+                'merged_into_beneficiary_id',
             ])
             ->logOnlyDirty()        // skip no-op saves
             ->dontLogEmptyChanges() // skip if nothing actually changed
@@ -99,6 +116,24 @@ class Beneficiary extends Model implements HasMedia
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * The canonical record THIS row was merged into (when it's a duplicate).
+     * NULL for a standalone / canonical record.
+     */
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(Beneficiary::class, 'merged_into_beneficiary_id');
+    }
+
+    /**
+     * The duplicate records that were merged INTO this (canonical) row. Empty
+     * for an ordinary record. The identity group = $this + these.
+     */
+    public function mergedDuplicates(): HasMany
+    {
+        return $this->hasMany(Beneficiary::class, 'merged_into_beneficiary_id');
     }
 
     /**

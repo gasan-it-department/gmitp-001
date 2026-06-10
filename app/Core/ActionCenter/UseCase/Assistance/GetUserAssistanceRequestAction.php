@@ -9,15 +9,21 @@ use Illuminate\Database\Eloquent\Collection;
 class GetUserAssistanceRequestAction
 {
     /**
-     * Get all assistance requests for a given user.
-     * 
+     * Get all assistance requests for a given user IN THE CURRENT MUNICIPALITY.
+     *
+     * A citizen holds one beneficiary record per LGU, so we resolve the record
+     * for this municipality — the Gasan portal lists Gasan requests, not Boac.
+     *
      * @param string $userId
+     * @param string $municipalId
      * @return Collection
      */
-    public function execute(string $userId): Collection
+    public function execute(string $userId, string $municipalId): Collection
     {
-        // First, find the beneficiary record associated with this user
-        $beneficiary = Beneficiary::where('user_id', $userId)->first();
+        // First, find the beneficiary record for this user in this municipality
+        $beneficiary = Beneficiary::where('user_id', $userId)
+            ->where('municipal_id', $municipalId)
+            ->first();
 
         if (!$beneficiary) {
             return new Collection();

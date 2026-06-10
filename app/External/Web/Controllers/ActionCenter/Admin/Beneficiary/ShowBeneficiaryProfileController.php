@@ -44,6 +44,7 @@ class ShowBeneficiaryProfileController extends Controller
             'assistanceHistory'    => RecentAssistanceRequestResource::collection($data['assistanceHistory']),
             'householdTotalIncome' => $data['householdTotalIncome'],
             'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
+            'merge'                => $data['merge'],
             'summary'              => $data['summary'],
             // Dropdown sources for the inline roster manager (add / edit member).
             'religions'             => Religion::active()->get(['id', 'name']),

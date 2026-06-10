@@ -22,7 +22,7 @@ class ShowClientAssistanceRequestController extends Controller
     ): Response {
         $userId = $request->user()->id;
 
-        $assistanceRequest = $action->execute($userId, $assistanceRequestId);
+        $assistanceRequest = $action->execute($userId, $assistanceRequestId, app('municipal_id'));
 
         return Inertia::render('ActionCenter/Client/Details/AssistanceDetails', [
             'request' => new AssistanceRequestDetailsResource($assistanceRequest),

@@ -9,7 +9,6 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\Core\Users\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -39,6 +38,7 @@ class CreateWalkInBeneficiaryAction
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
+        private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
     ) {
     }
 
@@ -51,7 +51,12 @@ class CreateWalkInBeneficiaryAction
             // for NULL-user walk-ins. Skipped once the admin reviews the
             // surfaced matches and confirms an override.
             if (! $dto->force) {
-                $matches = $this->findPossibleDuplicates($dto);
+                $matches = $this->findPotentialDuplicates->execute(
+                    firstName: $dto->firstName,
+                    lastName: $dto->lastName,
+                    birthDate: $dto->birthDate,
+                    municipalId: $dto->municipalId,
+                );
 
                 if ($matches->isNotEmpty()) {
                     throw new PotentialDuplicateBeneficiaryException($matches);
@@ -66,6 +71,8 @@ class CreateWalkInBeneficiaryAction
 
             $beneficiary = Beneficiary::create([
                 'household_id'           => $household->id,
+                // Intrinsic tenant key — must mirror the household's municipality.
+                'municipal_id'           => $dto->municipalId,
                 // Walk-in: no portal account is linked. The admin can link one
                 // later (LinkBeneficiaryToUserAction) if the person registers.
                 'user_id'                => null,
@@ -146,22 +153,5 @@ class CreateWalkInBeneficiaryAction
             ->exists();
 
         return $belongsToTenant ? $beneficiaryId : null;
-    }
-
-    /**
-     * Beneficiaries in THIS municipality sharing the same first name, last name,
-     * and birth date (case-insensitive). Tenant scope lives on the household.
-     *
-     * @return Collection<int, Beneficiary>
-     */
-    private function findPossibleDuplicates(CreateWalkInBeneficiaryDto $dto): Collection
-    {
-        return Beneficiary::query()
-            ->whereHas('household', fn ($q) => $q->where('municipal_id', $dto->municipalId))
-            ->whereRaw('LOWER(first_name) = ?', [mb_strtolower($dto->firstName)])
-            ->whereRaw('LOWER(last_name) = ?', [mb_strtolower($dto->lastName)])
-            ->whereDate('birth_date', $dto->birthDate)
-            ->with(['household', 'user:id,email'])
-            ->get();
     }
 }

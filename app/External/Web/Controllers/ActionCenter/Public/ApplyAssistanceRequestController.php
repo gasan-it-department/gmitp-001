@@ -46,7 +46,7 @@ class ApplyAssistanceRequestController extends Controller
             'documents' => fn($q) => $q->orderBy('ac_assistance_type_documents.sort_order'),
         ]);
 
-        $beneficiary = $this->resolveProfile->execute($request->user()->id);
+        $beneficiary = $this->resolveProfile->execute($request->user()->id, app('municipal_id'));
 
         if (!$beneficiary || !$beneficiary->household) {
             session()->put('url.intended', url()->current());
