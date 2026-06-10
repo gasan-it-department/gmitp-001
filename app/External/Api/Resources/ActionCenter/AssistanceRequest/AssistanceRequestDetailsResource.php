@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Api\Resources\ActionCenter;
+namespace App\External\Api\Resources\ActionCenter\AssistanceRequest;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -118,7 +118,10 @@ class AssistanceRequestDetailsResource extends JsonResource
             'household_id' => $this->household_id,
 
             // ── Uploaded documents (via spatie media) ────────────────────────
-            // `collection_name` = ac_document_types.key (e.g. valid_id).
+            // All uploads share the single spatie collection "documents"; the
+            // ac_document_types.key slot each file satisfies is in
+            // `custom_properties.document_key` (NOT collection_name). The
+            // frontend must match required-document slots on document_key.
             // `uuid` is spatie's public identifier; the frontend uses it to
             // build a signed download URL when that route exists.
             'documents' => $this->whenLoaded(
@@ -132,6 +135,7 @@ class AssistanceRequestDetailsResource extends JsonResource
                         'file_name' => $m->file_name,
                         'mime_type' => $m->mime_type,
                         'size' => (int) $m->size,
+                        'url' => $m->disk === 's3' ? $m->getTemporaryUrl(now()->addMinutes(60)) : $m->getUrl(),
                         'uploaded_at' => $m->created_at?->toIso8601String(),
                         'custom_properties' => $m->custom_properties ?? [],
                     ])

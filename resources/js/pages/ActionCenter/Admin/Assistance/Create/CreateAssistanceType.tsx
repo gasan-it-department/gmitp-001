@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
@@ -12,10 +13,11 @@ interface Props {
 export default function CreateAssistanceType({ documentTypes }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    const emptyInitialData = {
+    const emptyInitialData: AssistanceTypeFormData = {
         name: '',
         description: '',
-        max_amount: 0,
+        max_amount: null,
+        min_amount: null,
         cooldown_months: 0,
         is_active: true,
         documents: [],

@@ -4,7 +4,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\UseCase\Assistance\GetActiveDocumentTypesForDropdown;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceTypeAction;
-use App\External\Api\Resources\ActionCenter\AssistanceTypeDetailsResource;
+use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeDetailsResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 

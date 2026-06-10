@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Api\Resources\ActionCenter;
+namespace App\External\Api\Resources\ActionCenter\Beneficiary;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

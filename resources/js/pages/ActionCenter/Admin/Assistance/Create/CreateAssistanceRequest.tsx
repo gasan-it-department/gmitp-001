@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, FileText, HandCoins, Loader2, Paperclip, User } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowLeft, FileText, HandCoins, Loader2, Paperclip, User } from 'lucide-react';
 import { FormEvent } from 'react';
 import { OnBehalfAffirmation } from './Components/OnBehalfAffirmation';
 
@@ -44,10 +44,21 @@ interface BeneficiaryData {
     account_email: string | null;
 }
 
+// Mirrors EligibilityResult::toArray() — advisory only on the admin desk.
+interface Eligibility {
+    eligible: boolean;
+    reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | null;
+    message: string;
+    cooldown_ends_at: string | null;
+}
+
 interface Props {
     beneficiary: { data: BeneficiaryData } | BeneficiaryData;
     assistanceTypes: { data: AssistanceTypeOption[] };
     submitUrl: string;
+    // Per-program eligibility for THIS beneficiary. Advisory only — the admin can
+    // file despite a cooldown for a verified emergency (the override is audited).
+    eligibilityByType?: Record<string, Eligibility>;
 }
 
 /**
@@ -73,7 +84,7 @@ type RequestFormData = {
  * scans, and affirms RA 10173 consent. Posts to StoreAdminAssistanceRequest-
  * Controller, which reuses the same action as the online citizen flow.
  */
-export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, submitUrl }: Props) {
+export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, submitUrl, eligibilityByType }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     const profile: BeneficiaryData = 'data' in beneficiary ? beneficiary.data : beneficiary;
@@ -88,6 +99,11 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
     });
 
     const selectedType = data.assistance_type_id ? types.find((t) => t.id === data.assistance_type_id) ?? null : null;
+
+    // Advisory cooldown state for the chosen program (NOT a hard block — the
+    // admin may override for an emergency; the override is recorded server-side).
+    const selectedEligibility = selectedType ? eligibilityByType?.[selectedType.id] : undefined;
+    const selectedBlocked = selectedEligibility ? !selectedEligibility.eligible : false;
 
     // Non-field server errors come back under their own keys.
     const fieldErrors = errors as Record<string, string | undefined>;
@@ -200,6 +216,20 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
                                 {errors.assistance_type_id && <p className="text-xs text-red-500">{errors.assistance_type_id}</p>}
                             </div>
 
+                            {/* Cooldown advisory — non-blocking. The admin may proceed for a
+                                verified emergency; the override is recorded in the audit trail. */}
+                            {selectedBlocked && selectedEligibility && (
+                                <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <div>
+                                        <p className="font-semibold">{advisoryText(selectedEligibility)}</p>
+                                        <p className="mt-0.5 text-amber-700">
+                                            Proceed only for a verified emergency — this override will be recorded in the audit trail.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Description */}
                             <div className="space-y-2">
                                 <Label>
@@ -283,6 +313,25 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
             </div>
         </AdminLayout>
     );
+}
+
+// Professional, admin-facing phrasing for the cooldown advisory (the citizen
+// "you…" copy in EligibilityResult is reused for the portal, not here).
+function advisoryText(e: Eligibility): string {
+    const date = e.cooldown_ends_at
+        ? new Date(e.cooldown_ends_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+        : null;
+
+    if (e.reason === 'on_cooldown') {
+        return `This beneficiary is on cooldown for this program${date ? ` until ${date}` : ''}.`;
+    }
+    if (e.reason === 'in_flight_request') {
+        return 'This beneficiary already has a request being processed for this program.';
+    }
+    if (e.reason === 'permanent_block') {
+        return 'This beneficiary has already received this one-time assistance.';
+    }
+    return 'This beneficiary may not be eligible for this program right now.';
 }
 
 function ReadOnly({

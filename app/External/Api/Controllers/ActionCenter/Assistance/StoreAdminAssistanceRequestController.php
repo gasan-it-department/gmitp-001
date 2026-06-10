@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\External\Api\Request\ActionCenter\StoreAdminAssistanceRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -28,6 +29,7 @@ class StoreAdminAssistanceRequestController extends Controller
 {
     public function __construct(
         private readonly StoreAssistanceRequestAction $storeAssistanceRequest,
+        private readonly CheckElegibilityAction $checkEligibility,
     ) {
     }
 
@@ -62,6 +64,16 @@ class StoreAdminAssistanceRequestController extends Controller
                 ->withErrors(['assistance_type_id' => 'That assistance program is not available in your municipality.']);
         }
 
+        // Eligibility is ADVISORY for the admin — never a block. We evaluate it
+        // up-front (with the on-behalf deceased context for Burial) so that, if
+        // the officer files anyway, we can record an override entry for COA.
+        $eligibility = $this->checkEligibility->execute(
+            $beneficiary,
+            $assistanceType,
+            $request->input('on_behalf_household_member_id') ?: null,
+            $request->input('on_behalf_date_of_death') ?: null,
+        );
+
         try {
             $dto = StoreAssistanceRequestDto::fromAdmin(
                 $request,
@@ -75,6 +87,24 @@ class StoreAdminAssistanceRequestController extends Controller
             return back()
                 ->withInput()
                 ->withErrors(['request' => $e->getMessage()]);
+        }
+
+        // The officer filed despite a standing cooldown / in-flight block. Record
+        // the override on the request's audit trail (same log name the request's
+        // history queries) so COA can see who authorized the exception and why.
+        if (! $eligibility->eligible) {
+            activity('assistance_request')
+                ->performedOn($created)
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'override' => true,
+                    'reason' => $eligibility->reason,
+                    'cooldown_ends_at' => $eligibility->cooldownEndsAt?->toIso8601String(),
+                    'message' => $eligibility->message(),
+                    'assistance_type_id' => $assistanceType->id,
+                    'beneficiary_id' => $beneficiary->id,
+                ])
+                ->log('Filed despite active cooldown');
         }
 
         return redirect()

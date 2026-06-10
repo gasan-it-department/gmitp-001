@@ -115,8 +115,8 @@ export interface AssistanceTypeFormData {
     slug?: string;
     description?: string;
     is_active: boolean;
-    max_amount: number;
-    min_amount?: number;
+    max_amount: number | null;
+    min_amount: number | null;
     cooldown_months: number;
     cooldown_type?: CooldownType;
     cooldown_scope?: CooldownScope;
@@ -128,7 +128,8 @@ export interface AssistanceType {
     id: string;
     name: string;
     slug?: string;
-    max_amount: number;
+    max_amount: number | null;
+    min_amount?: number | null;
     cooldown_months: number;
     description: string | null;
     is_active: boolean;

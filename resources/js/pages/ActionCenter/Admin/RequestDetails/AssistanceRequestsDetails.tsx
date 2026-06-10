@@ -224,8 +224,12 @@ export default function AssistanceRequestsDetails({
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
 
-    const uploadedByKey = new Map((detail.documents ?? []).map((d) => [d.collection_name, d]));
-    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === d.collection_name));
+    // Every upload lives in the single spatie collection "documents"; the slot
+    // it fills is in custom_properties.document_key — NOT collection_name. Match
+    // on that, falling back to collection_name for any legacy/unkeyed media.
+    const documentKeyOf = (d: DocumentBlock) => (d.custom_properties?.document_key as string | undefined) ?? d.collection_name;
+    const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
+    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
 
     const handleAction = (label: string) => () => {
         if (label === 'Approve') {
@@ -845,7 +849,7 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
     const utils = Utility();
     const isMissing = required && !file;
     const isOptional = required && !required.is_required;
-    const label = required?.label ?? file?.collection_name.replace(/_/g, ' ');
+    const label = required?.label ?? ((file?.custom_properties?.document_key as string | undefined) ?? file?.collection_name)?.replace(/_/g, ' ');
 
     if (isMissing && !isOptional) {
         return (

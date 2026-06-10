@@ -116,7 +116,7 @@ class LinkBeneficiaryToUserAction
             ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
             ->first();
 
-        if (! $user) {
+        if (!$user) {
             throw new \DomainException(
                 'No portal account with that email exists in this municipality. '
                 . 'Ask the applicant to confirm the email they registered with.',
@@ -163,12 +163,12 @@ class LinkBeneficiaryToUserAction
             ->performedOn($beneficiary)
             ->causedBy(User::find($dto->actingAdminId))
             ->withProperties([
-                'municipal_id'     => $dto->municipalId,
-                'beneficiary_id'   => $beneficiary->id,
-                'from_user_id'     => $previousUserId,
-                'to_user_id'       => $user->id,
+                'municipal_id' => $dto->municipalId,
+                'beneficiary_id' => $beneficiary->id,
+                'from_user_id' => $previousUserId,
+                'to_user_id' => $user->id,
                 'to_account_email' => $user->email,
-                'reason'           => $dto->reason,
+                'reason' => $dto->reason,
             ])
             ->log($previousUserId
                 ? 'Re-linked beneficiary to a different portal account'

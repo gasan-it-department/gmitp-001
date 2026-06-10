@@ -35,11 +35,7 @@ export default function LandingPageHeroBanner() {
         },
     ];
 
-    const serviceStats = [
-        { label: 'Municipal portals', value: '6' },
-        { label: 'Citizen services', value: '24/7' },
-        { label: 'Province', value: '1' },
-    ];
+    const serviceStats = [{ label: 'Citizen services', value: '24/7' }];
 
     return (
         <div className="relative overflow-hidden bg-[#f8faf9]">
@@ -89,18 +85,6 @@ export default function LandingPageHeroBanner() {
                                 <LifeBuoy className="h-4 w-4" />
                             </a>
                         </div>
-                    </div>
-
-                    <div className="relative z-10 mx-auto mt-14 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-lg border border-[#d9e2df] bg-white shadow-sm sm:grid-cols-3">
-                        {serviceStats.map((item) => (
-                            <div
-                                key={item.label}
-                                className="border-b border-[#d9e2df] px-6 py-5 text-center last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0"
-                            >
-                                <p className="text-2xl font-black text-slate-900">{item.value}</p>
-                                <p className="mt-1 text-xs font-bold tracking-widest text-slate-500 uppercase">{item.label}</p>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </section>

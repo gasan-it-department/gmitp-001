@@ -219,6 +219,14 @@ class ApproveAssistanceRequestAction
             'assistance_type_id' => $request->assistance_type_id,
             'assistance_request_id' => $request->id,
             'household_id' => $request->household_id,
+            // For an INDEPENDENT, on-behalf-of-deceased program (Burial) the
+            // cooldown is keyed to the deceased (the on-behalf household member)
+            // so a DIFFERENT death in the household within the window is NOT
+            // blocked. Standard programs leave this null — they cool down the
+            // filer (per_beneficiary) or the whole household (per_household).
+            'household_member_id' => $type->is_independent
+                ? $request->on_behalf_household_member_id
+                : null,
             'cooldown_starts_at' => now(),
             'cooldown_expires_at' => $expiresAt,
         ];

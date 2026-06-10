@@ -4,9 +4,9 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
-use App\External\Api\Resources\ActionCenter\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
-use App\External\Api\Resources\ActionCenter\HouseholdMemberDetailsResource;
+use App\External\Api\Resources\ActionCenter\Household\HouseholdMemberDetailsResource;
 use App\External\Api\Resources\ActionCenter\RecentAssistanceRequestResource;
 use App\External\Api\Resources\ActionCenter\RequiredDocumentResource;
 use App\Http\Controllers\Controller;

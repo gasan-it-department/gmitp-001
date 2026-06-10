@@ -22,6 +22,8 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
     // 1. Initialize form with whatever data the wrapper passed in
     const { data, setData, post, put, processing, errors } = useForm<AssistanceTypeFormData>(initialData);
 
+    const amountValue = (value: number | null | undefined) => (value === null || value === undefined ? '' : value);
+
     // --- Handlers ---
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,7 +81,6 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                     Assistance Name <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
-                                    disabled
                                     id="name"
                                     placeholder="e.g., AICS - Medical Assistance"
                                     value={data.name}
@@ -102,8 +103,29 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 />
                             </div>
 
-                            {/* Business Rules Grid (Max Amount & Cooldown) */}
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {/* Business Rules Grid (Amount Bounds & Cooldown) */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div className="space-y-2">
+                                    <Label htmlFor="min_amount" className="text-sm font-semibold text-gray-700">
+                                        Minimum Amount Floor (₱)
+                                    </Label>
+                                    <div className="relative">
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 font-medium text-gray-500">₱</span>
+                                        <Input
+                                            id="min_amount"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="Leave blank"
+                                            value={amountValue(data.min_amount)}
+                                            onChange={(e) => setData('min_amount', e.target.value === '' ? null : Number(e.target.value))}
+                                            className={`bg-gray-50 pl-8 ${errors.min_amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                        />
+                                    </div>
+                                    {errors.min_amount && <p className="text-xs font-medium text-red-600">{errors.min_amount}</p>}
+                                    <p className="text-xs text-gray-500">Leave blank for no minimum.</p>
+                                </div>
+
                                 <div className="space-y-2">
                                     <Label htmlFor="max_amount" className="text-sm font-semibold text-gray-700">
                                         Max Amount Cap (₱)
@@ -115,14 +137,14 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                             type="number"
                                             min="0"
                                             step="0.01"
-                                            placeholder="0.00"
-                                            value={data.max_amount}
-                                            onChange={(e) => setData('max_amount', Number(e.target.value))}
+                                            placeholder="Leave blank"
+                                            value={amountValue(data.max_amount)}
+                                            onChange={(e) => setData('max_amount', e.target.value === '' ? null : Number(e.target.value))}
                                             className={`bg-gray-50 pl-8 ${errors.max_amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                         />
                                     </div>
                                     {errors.max_amount && <p className="text-xs font-medium text-red-600">{errors.max_amount}</p>}
-                                    <p className="text-xs text-gray-500">Leave as 0 for no limit.</p>
+                                    <p className="text-xs text-gray-500">Leave blank for no limit.</p>
                                 </div>
 
                                 <div className="space-y-2">

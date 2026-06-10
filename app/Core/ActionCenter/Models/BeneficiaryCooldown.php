@@ -33,6 +33,7 @@ class BeneficiaryCooldown extends Model
         'beneficiary_id',
         'assistance_type_id',
         'assistance_request_id',
+        'household_member_id',
         'household_id',
         'cooldown_starts_at',
         'cooldown_expires_at',
@@ -56,6 +57,16 @@ class BeneficiaryCooldown extends Model
     public function assistanceRequest(): BelongsTo
     {
         return $this->belongsTo(AssistanceRequest::class, 'assistance_request_id');
+    }
+
+    /**
+     * The deceased / subject this cooldown is keyed to, for per-deceased
+     * (independent) programs like Burial. NULL for ordinary per-beneficiary or
+     * per-household cooldowns.
+     */
+    public function householdMember(): BelongsTo
+    {
+        return $this->belongsTo(HouseholdMember::class, 'household_member_id');
     }
 
     public function household(): BelongsTo

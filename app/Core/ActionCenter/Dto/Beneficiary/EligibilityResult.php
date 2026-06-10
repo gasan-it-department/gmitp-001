@@ -60,12 +60,15 @@ final class EligibilityResult
     public function message(): string
     {
         return match ($this->reason) {
-            self::REASON_PERMANENT_BLOCK => 'You have already received this one-time assistance.',
+            self::REASON_PERMANENT_BLOCK => 'You have already received this one-time assistance. '
+                . 'For anything further, please visit the MSWD office.',
             self::REASON_ON_COOLDOWN     => sprintf(
-                'You may apply again on %s.',
+                'You recently received assistance and can apply again on %s. '
+                . 'If you have an urgent need before then, please visit the MSWD office and our staff will assist you.',
                 $this->cooldownEndsAt?->toFormattedDateString() ?? 'a later date',
             ),
-            self::REASON_IN_FLIGHT       => 'You already have a pending request for this program.',
+            self::REASON_IN_FLIGHT       => 'You already have a request being processed for this program. '
+                . 'We will notify you once it has been reviewed.',
             default                      => 'Eligible to apply.',
         };
     }

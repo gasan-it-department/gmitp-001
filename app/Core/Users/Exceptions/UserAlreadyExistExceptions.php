@@ -26,7 +26,7 @@ final class UserAlreadyExistExceptions extends Exception
     public static function withPhone(string $phone): self
     {
 
-        return new self("This '{$phone}' is already registered.", 'phone');
+        return new self('This phone number is already registered.', 'phone');
 
     }
 

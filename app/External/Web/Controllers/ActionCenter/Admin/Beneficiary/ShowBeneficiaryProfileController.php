@@ -9,7 +9,7 @@ use App\Core\ActionCenter\Models\Religion;
 use App\Core\ActionCenter\UseCase\Beneficiary\GetBeneficiaryProfileAction;
 use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryProfileResource;
 use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
-use App\External\Api\Resources\ActionCenter\HouseholdMemberDetailsResource;
+use App\External\Api\Resources\ActionCenter\Household\HouseholdMemberDetailsResource;
 use App\External\Api\Resources\ActionCenter\RecentAssistanceRequestResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;

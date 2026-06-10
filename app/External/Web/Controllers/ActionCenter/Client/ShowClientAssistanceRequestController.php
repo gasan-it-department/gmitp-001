@@ -3,7 +3,7 @@
 namespace App\External\Web\Controllers\ActionCenter\Client;
 
 use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestAction;
-use App\External\Api\Resources\ActionCenter\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

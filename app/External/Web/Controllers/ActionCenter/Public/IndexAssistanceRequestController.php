@@ -5,7 +5,7 @@ namespace App\External\Web\Controllers\ActionCenter\Public;
 use App\Core\ActionCenter\UseCase\Assistance\ListActiveAssistanceTypeAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
-use App\External\Api\Resources\ActionCenter\AssistanceTypeListResource;
+use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeListResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -56,7 +56,10 @@ class IndexAssistanceRequestController extends Controller
 
         return Inertia::render('ActionCenter/Public/ActionCenterPortal', [
             'assistanceTypes' => AssistanceTypeListResource::collection($assistanceTypes),
-            'eligibilityByType' => null,
+            // Per-card eligibility so the grid can disable cards the citizen
+            // can't currently apply for. Empty map (guest / no profile) → the
+            // frontend treats every card as enabled.
+            'eligibilityByType' => $eligibilityByType,
         ]);
     }
 }

@@ -4,7 +4,8 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
-use App\External\Api\Resources\ActionCenter\AssistanceTypeDetailsResource;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
+use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeDetailsResource;
 use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryProfileResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
@@ -24,6 +25,11 @@ use Inertia\Response;
  */
 class CreateAssistanceRequestController extends Controller
 {
+    public function __construct(
+        private readonly CheckElegibilityAction $checkEligibility,
+    ) {
+    }
+
     public function __invoke(string $municipality, string $beneficiaryId): Response
     {
         $municipalId = app('municipal_id');
@@ -45,9 +51,18 @@ class CreateAssistanceRequestController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Advisory cooldown state per program for this beneficiary. The admin is
+        // NOT blocked (emergency override) — this only surfaces a warning. Burial
+        // is independent + per-deceased, so it shows eligible here (no deceased
+        // chosen yet); its real gate is the per-deceased check at submit time.
+        $eligibilityByType = collect($this->checkEligibility->executeBatch($beneficiary, $assistanceTypes))
+            ->map(fn ($result) => $result->toArray())
+            ->all();
+
         return Inertia::render('ActionCenter/Admin/Assistance/Create/CreateAssistanceRequest', [
             'beneficiary' => new BeneficiaryProfileResource($beneficiary),
             'assistanceTypes' => AssistanceTypeDetailsResource::collection($assistanceTypes),
+            'eligibilityByType' => $eligibilityByType,
             'submitUrl' => route('actionCenter.assistance.admin-store'),
         ]);
     }

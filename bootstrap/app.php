@@ -55,6 +55,27 @@ return Application::configure(basePath: dirname(__DIR__))
             'municipalityContext' => SetMunicipalityContext::class,
             'verified.phone' => EnsurePhoneIsVerified::class,
         ]);
+
+        // Tenant context (app('municipal_id')) MUST be bound before route-model
+        // binding runs, otherwise tenant-scoped resolvers like
+        // AssistanceType::resolveRouteBinding() can't filter by municipality and
+        // a shared slug (e.g. "medical") resolves the first match across all
+        // LGUs. This replays Laravel 12's default priority list with
+        // SetMunicipalityContext inserted immediately before SubstituteBindings.
+        $middleware->priority([
+            \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            \Illuminate\Routing\Middleware\ThrottleRequests::class,
+            \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+            \Illuminate\Contracts\Session\Middleware\AuthenticatesSessions::class,
+            SetMunicipalityContext::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \Illuminate\Auth\Middleware\Authorize::class,
+        ]);
     })
 
     ->withEvents(discover: [

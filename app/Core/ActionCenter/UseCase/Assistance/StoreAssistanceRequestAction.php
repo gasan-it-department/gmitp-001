@@ -92,7 +92,10 @@ class StoreAssistanceRequestAction
 
                 // Representative — null when filing for self.
                 'relationship_to_beneficiary' => $dto->relationshipToBeneficiary,
-                // 'on_behalf_household_member_id' => $member?->id,
+                // Live FK to the roster row being assisted (null when self-filed or
+                // when the subject — e.g. a deceased person — isn't on the roster).
+                // The on_behalf_* fields below remain the frozen COA snapshot.
+                'on_behalf_household_member_id' => $member?->id,
                 'on_behalf_first_name' => $onBehalfFirstName,
                 'on_behalf_middle_name' => $onBehalfMiddleName,
                 'on_behalf_last_name' => $onBehalfLastName,

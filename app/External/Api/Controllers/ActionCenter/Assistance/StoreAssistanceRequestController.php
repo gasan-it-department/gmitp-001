@@ -3,9 +3,11 @@
 namespace App\External\Api\Controllers\ActionCenter\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
+use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
 use App\External\Api\Request\ActionCenter\StoreAssistanceRequest;
 use App\Http\Controllers\Controller;
@@ -28,6 +30,7 @@ class StoreAssistanceRequestController extends Controller
     public function __construct(
         private StoreAssistanceRequestAction $storeAssistanceRequest,
         private ResolveApplicantProfileAction $resolveApplicantProfileAction,
+        private CheckElegibilityAction $checkEligibility,
     ) {
     }
 
@@ -48,6 +51,24 @@ class StoreAssistanceRequestController extends Controller
                 ->withErrors([
                     'profile' => 'Please complete your address and household profile before requesting assistance.',
                 ]);
+        }
+
+        // Server-side eligibility gate (cooldown / in-flight / one-time). This is
+        // the REAL lock — the disabled portal card is only UI. For Burial the
+        // on-behalf deceased context makes the check per-deceased. Throwing the
+        // domain exception surfaces the friendly message as a toast.
+        //
+        // Enforced here (citizen path) and NOT inside StoreAssistanceRequestAction,
+        // so the admin walk-in flow that shares the action keeps its override.
+        $eligibility = $this->checkEligibility->execute(
+            $beneficiary,
+            $assistanceType,
+            $request->input('on_behalf_household_member_id') ?: null,
+            $request->input('on_behalf_date_of_death') ?: null,
+        );
+
+        if (!$eligibility->eligible) {
+            throw AssistanceEligibilityException::from($eligibility);
         }
 
         $dto = StoreAssistanceRequestDto::fromRequest($request, $assistanceType, $beneficiary);

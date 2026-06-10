@@ -21,6 +21,7 @@ class UpdateAssistanceTypeAction
             $assistanceType->update([
                 'name' => $dto->name,
                 'description' => $dto->description,
+                'min_amount' => $dto->minAmount,
                 'max_amount' => $dto->maxAmount,
                 'cooldown_months' => $dto->cooldownMonths,
                 'is_active' => $dto->isActive,

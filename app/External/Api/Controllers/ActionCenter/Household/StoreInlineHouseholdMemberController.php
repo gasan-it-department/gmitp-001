@@ -6,7 +6,7 @@ use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\External\Api\Request\ActionCenter\StoreInlineHouseholdMemberRequest;
-use App\External\Api\Resources\ActionCenter\HouseholdMemberOptionResource;
+use App\External\Api\Resources\ActionCenter\Household\HouseholdMemberOptionResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 

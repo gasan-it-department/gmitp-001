@@ -107,7 +107,7 @@ class AssistanceTypeSeeder extends Seeder
      * Returns the 7 assistance programs aligned with the Gasan AICS Executive Order.
      *
      *   1. Medical Assistance          (sort 10) — 6 months, per_beneficiary
-     *   2. Burial Assistance           (sort 20) — one_time, per_beneficiary
+     *   2. Burial Assistance           (sort 20) — 12 months, per_beneficiary (per-deceased, independent)
      *   3. Educational (Elementary)    (sort 30) — 12 months, per_beneficiary
      *   4. Educational (High School)   (sort 40) — 12 months, per_beneficiary
      *   5. Educational (College)       (sort 50) —  6 months, per_beneficiary
@@ -119,11 +119,18 @@ class AssistanceTypeSeeder extends Seeder
      *
      * cooldown_type:
      *   per_request — cooldown_months enforced between each approved request
-     *   one_time    — permanently blocked after first approval (burial)
+     *   one_time    — permanently blocked after first approval (capability kept,
+     *                 but no program currently uses it; Burial is per_request/12mo)
      *
      * cooldown_scope:
      *   per_beneficiary — cooldown follows the individual across households
      *   per_household   — any member of the same household triggers the block
+     *
+     * is_independent:
+     *   false — participates in the cross-program lockout (default)
+     *   true  — evaluated in isolation; only cools down itself (Burial). For an
+     *           on-behalf-of-deceased program this means the cooldown is per
+     *           deceased person, keyed on the on-behalf household member.
      *
      * Amount fields:
      *   min_amount / max_amount bound what the approver can grant.
@@ -161,16 +168,22 @@ class AssistanceTypeSeeder extends Seeder
             // ----------------------------------------------------------------
             // 2. Burial Assistance
             // EO: Funeral Expenses ₱5,000–₱10,000 | Transfer of Cadaver ₱5,000–₱10,000
-            //     Casualties ₱10,000/casualty. one_time per deceased person (beneficiary).
+            //     Casualties ₱10,000/casualty.
+            //     NOT one-time: a household can suffer more than one death over time.
+            //     Modeled as a 12-month cooldown scoped PER DECEASED PERSON (keyed on
+            //     the on-behalf household member), and INDEPENDENT of the cross-program
+            //     lockout — a death is an emergency and must not be gated by an
+            //     unrelated medical/educational cooldown.
             //     Applied for by an authorized representative — the deceased cannot apply.
             // ----------------------------------------------------------------
             [
                 'name' => 'Burial Assistance',
                 'slug' => 'burial',
-                'description' => 'One-time financial aid for funeral expenses, transfer of cadaver, and related burial costs of a deceased household member. Applied for by an authorized family representative.',
-                'cooldown_months' => 0,    // cooldown_type = one_time; months field is irrelevant
-                'cooldown_type' => 'one_time',
-                'cooldown_scope' => 'per_beneficiary', // scoped to the deceased
+                'description' => 'Financial aid for funeral expenses, transfer of cadaver, and related burial costs of a deceased household member. Applied for by an authorized family representative.',
+                'cooldown_months' => 12,   // one approved burial per deceased person every 12 months
+                'cooldown_type' => 'per_request',
+                'cooldown_scope' => 'per_beneficiary',
+                'is_independent' => true,  // per-deceased; does not cross-block other programs
                 'min_amount' => 5000.00,
                 'max_amount' => 10000.00,
                 'sort_order' => 20,

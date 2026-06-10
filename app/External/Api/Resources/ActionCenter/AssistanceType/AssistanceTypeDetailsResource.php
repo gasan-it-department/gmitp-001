@@ -1,6 +1,6 @@
 <?php
 
-namespace App\External\Api\Resources\ActionCenter;
+namespace App\External\Api\Resources\ActionCenter\AssistanceType;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -21,7 +21,7 @@ class AssistanceTypeDetailsResource extends JsonResource
             'description' => $this->description ?? '',
             'is_active' => (bool) $this->is_active,
             'max_amount' => $this->max_amount !== null ? (float) $this->max_amount : null,
-            'min_amount' => (float) $this->min_amount,
+            'min_amount' => $this->min_amount !== null ? (float) $this->min_amount : null,
             'cooldown_months' => (int) $this->cooldown_months,
             'cooldown_type' => $this->cooldown_type,
             'cooldown_scope' => $this->cooldown_scope,

@@ -28,9 +28,17 @@ class UpdateAssistanceTypeRequest extends FormRequest
                 'max:1000'
             ],
 
+            'min_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:50000',
+            ],
+
             'max_amount' => [
                 'nullable',
-                'integer',
+                'numeric',
+                'min:0',
                 'max:50000'
             ],
             'cooldown_months' => [
