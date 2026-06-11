@@ -167,7 +167,7 @@ export default function ProfileTab() {
             <div className="flex flex-col gap-1 px-1">
                 <div className="flex items-center gap-2 text-primary">
                     <UserCog className="h-5 w-5" />
-                    <h2 className="text-xl font-bold tracking-tight">Personal Information</h2>
+                    <h2 className="font-heading text-xl font-bold tracking-tight">Personal Information</h2>
                 </div>
                 <p className="text-sm text-muted-foreground">Update your profile details and how others see you on the platform.</p>
             </div>
@@ -177,44 +177,26 @@ export default function ProfileTab() {
                     <div className="flex flex-col gap-8 md:flex-row md:gap-12">
                         {/* Avatar Section */}
                         <div className="flex shrink-0 flex-col items-center gap-4">
-                            <div className="group relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                <div className="relative h-28 w-28 overflow-hidden rounded-full shadow-lg ring-4 ring-muted transition-all group-hover:ring-primary/50 md:h-36 md:w-36">
+                            <div className="group relative cursor-default">
+                                <div className="relative h-28 w-28 overflow-hidden rounded-full shadow-lg ring-4 ring-muted md:h-36 md:w-36">
                                     <Avatar className="h-full w-full">
                                         <AvatarImage src={userAvatarURL || ''} alt="avatar" className="object-cover" />
                                         <AvatarFallback className="bg-muted text-muted-foreground">
                                             <User className="h-12 w-12 md:h-16 md:w-16" />
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <Camera className="mb-1 h-6 w-6 text-white" />
-                                        <span className="text-[10px] font-bold tracking-widest text-white uppercase">Change</span>
-                                    </div>
-                                </div>
-                                <div className="absolute right-1 bottom-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-md">
-                                    <Camera className="h-3.5 w-3.5" />
                                 </div>
                             </div>
 
-                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" disabled />
 
                             {userAvatarURL && (
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setClassicDialog({
-                                            title: 'Remove Picture',
-                                            message: 'Are you sure you want to revert to the default avatar?',
-                                            negativeButtonText: 'Cancel',
-                                            positiveButtonText: 'Remove',
-                                            isNegativeButtonVisible: true,
-                                            currentAction: 'remove-avatar',
-                                            isOpen: true,
-                                        });
-                                    }}
-                                    className="h-8 text-xs font-bold text-destructive hover:bg-destructive/10"
+                                    disabled
+                                    className="h-8 text-xs font-bold text-destructive hover:bg-destructive/10 cursor-not-allowed opacity-50"
                                 >
                                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                                     Remove Photo
@@ -231,7 +213,8 @@ export default function ProfileTab() {
                                 <Input
                                     id="first_name"
                                     {...register('first_name')}
-                                    className="h-11 rounded-xl font-medium"
+                                    disabled
+                                    className="h-11 rounded-xl font-medium bg-muted/40 cursor-not-allowed"
                                     placeholder="Enter first name"
                                 />
                             </div>
@@ -243,7 +226,8 @@ export default function ProfileTab() {
                                 <Input
                                     id="middle_name"
                                     {...register('middle_name')}
-                                    className="h-11 rounded-xl font-medium"
+                                    disabled
+                                    className="h-11 rounded-xl font-medium bg-muted/40 cursor-not-allowed"
                                     placeholder="Enter middle name"
                                 />
                             </div>
@@ -255,7 +239,8 @@ export default function ProfileTab() {
                                 <Input
                                     id="last_name"
                                     {...register('last_name')}
-                                    className="h-11 rounded-xl font-medium"
+                                    disabled
+                                    className="h-11 rounded-xl font-medium bg-muted/40 cursor-not-allowed"
                                     placeholder="Enter last name"
                                 />
                             </div>
@@ -280,14 +265,7 @@ export default function ProfileTab() {
                     </div>
 
                     <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 md:flex-row">
-                        {/* <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl w-full md:w-auto">
-                            <div className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center">
-                                <span className="text-[10px] font-mono font-bold">{auth.user?.id || '--'}</span>
-                            </div>
-                            <span className="text-xs font-medium text-muted-foreground">Account Identifier</span>
-                        </div> */}
-
-                        <div className="flex w-full items-center gap-3 md:w-auto">
+                        <div className="flex flex-col-reverse w-full gap-3 sm:flex-row sm:w-auto">
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -302,7 +280,7 @@ export default function ProfileTab() {
                                         isOpen: true,
                                     })
                                 }
-                                className="h-11 flex-1 rounded-xl px-6 font-bold text-destructive hover:bg-destructive/10 md:flex-none"
+                                className="h-11 w-full rounded-xl px-6 font-bold text-destructive hover:bg-destructive/10 sm:w-auto"
                             >
                                 <LogOut className="mr-2 h-4 w-4" />
                                 Logout
@@ -310,7 +288,8 @@ export default function ProfileTab() {
 
                             <Button
                                 type="submit"
-                                className="h-11 min-w-[140px] flex-1 rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-md hover:bg-primary/90 md:flex-none"
+                                disabled
+                                className="h-11 w-full rounded-xl bg-primary px-8 font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto min-w-[160px] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Save Changes
                                 <Save className="ml-2 h-4 w-4" />
@@ -325,7 +304,7 @@ export default function ProfileTab() {
                 <div className="mb-5 flex items-center gap-2">
                     <Link2 className="h-5 w-5 text-primary" />
                     <div>
-                        <h3 className="text-base font-bold tracking-tight">Connected Accounts</h3>
+                        <h3 className="font-heading text-base font-bold tracking-tight">Connected Accounts</h3>
                         <p className="text-xs text-muted-foreground">Link your Google account to enable social sign-in and auto-fill your email.</p>
                     </div>
                 </div>
@@ -400,7 +379,7 @@ export default function ProfileTab() {
                             <div className="rounded-lg bg-secondary p-2 text-primary">
                                 <ImageIcon className="h-5 w-5" />
                             </div>
-                            <DialogTitle className="text-lg font-bold text-foreground md:text-xl">Adjust Photo</DialogTitle>
+                            <DialogTitle className="font-heading text-lg font-bold text-foreground md:text-xl">Adjust Photo</DialogTitle>
                         </div>
                     </DialogHeader>
 

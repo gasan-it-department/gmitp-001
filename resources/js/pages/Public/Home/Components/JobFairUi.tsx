@@ -22,7 +22,7 @@ export default function JobFairUi() {
                     </div>
                     <div>
                         <CardTitle className="text-lg font-black uppercase tracking-widest text-primary-foreground">
-                            Job Opportunities
+                            Mga Oportunidad sa Trabaho
                         </CardTitle>
                         <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground/70">
                             Public Employment Service Office
@@ -48,7 +48,7 @@ export default function JobFairUi() {
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
                         {/* Status Badge */}
                         <span className="mb-4 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-lg backdrop-blur-md">
-                            Coming Soon
+                            Malapit Na
                         </span>
                         
                         {/* Title */}
@@ -59,7 +59,7 @@ export default function JobFairUi() {
 
                         {/* Description */}
                         <p className="mt-4 max-w-xs text-sm font-medium text-gray-200 leading-relaxed">
-                            We are currently preparing for our upcoming Job Fair event. Stay tuned for updates on schedules, participating companies, and how to register!
+                            Kasalukuyan kaming naghahanda para sa aming paparating na Job Fair. Manatiling nakatutok para sa mga update sa iskedyul, mga kumpanyang lalahok, at kung paano magparehistro!
                         </p>
 
                         {/* Action Button

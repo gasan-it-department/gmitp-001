@@ -40,9 +40,9 @@ export default function EventsCalendarUi({ events }: Props) {
         <div className="mx-auto w-full px-4 py-5 sm:px-5 lg:px-6">
             <div className="mb-5 flex flex-col items-start justify-between gap-3 border-b border-primary/10 pb-4 sm:flex-row sm:items-center">
                 <div>
-                    <span className="text-xs font-bold tracking-widest text-primary uppercase">Event Space</span>
-                    <h2 className="mt-1 text-xl font-bold text-foreground sm:text-2xl">Upcoming Events</h2>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Municipal activities, programs, and community gatherings.</p>
+                    <span className="text-xs font-bold tracking-widest text-primary uppercase">Lugar ng Kaganapan</span>
+                    <h2 className="font-heading mt-1 text-xl font-bold text-foreground sm:text-2xl">Mga Paparating na Kaganapan</h2>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Mga aktibidad, programa, at pagtitipon ng komunidad sa munisipyo.</p>
                 </div>
             </div>
 
@@ -100,7 +100,7 @@ export default function EventsCalendarUi({ events }: Props) {
                     })
                 ) : (
                     <div className="rounded-lg border border-dashed border-primary/20 bg-background/70 p-8 text-center text-sm text-muted-foreground sm:text-base">
-                        No events yet
+                        Wala pang mga kaganapan
                     </div>
                 )}
             </div>
@@ -108,7 +108,7 @@ export default function EventsCalendarUi({ events }: Props) {
             {dashboardList.length > 0 && (
                 <div className="mt-5 flex w-full items-end justify-end">
                     <Button className="rounded-lg" variant="outline" onClick={() => router.visit(event.index.url(currentMunicipality.slug))}>
-                        View More
+                        Tingnan Pa
                     </Button>
                 </div>
             )}

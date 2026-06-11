@@ -28,17 +28,17 @@ export default function ReportIssueCard() {
     }, [auth.user]);
 
     return (
-        <Card className="group flex h-full flex-col rounded-xl border border-amber-200/90 bg-white p-6 shadow-sm shadow-amber-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md hover:shadow-amber-900/10 sm:p-7">
+        <Card className="group flex h-full flex-col rounded-xl border border-primary/20 bg-white p-6 shadow-sm shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-primary/10 sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
                 <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-lg bg-amber-50 p-3 text-amber-700 ring-1 ring-amber-100 transition-colors group-hover:bg-amber-100">
+                    <div className="flex items-center justify-center rounded-lg bg-primary/5 p-3 text-primary ring-1 ring-primary/20 transition-colors group-hover:bg-primary/10">
                         <AlertTriangle className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-bold text-slate-950">Report Community Issue</h2>
+                        <h2 className="font-heading text-xl font-bold text-slate-950">I-report ang Isyu sa Komunidad</h2>
                         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                            Help keep our community safe and clean - report damaged roads, broken street lights, garbage, and other local issues.
+                            Tulungan kaming panatilihing ligtas at malinis ang komunidad - i-report ang mga sirang kalsada, sirang ilaw sa poste, basura, at iba pang lokal na isyu.
                         </p>
                     </div>
                 </div>
@@ -54,7 +54,7 @@ export default function ReportIssueCard() {
                             router.visit(communityReport.create.url({ municipality: currentMunicipality.slug }));
                         }}
                     >
-                        Submit Report
+                        Magpadala ng Report
                         <ArrowRight size={16} />
                     </Button>
                 </div>

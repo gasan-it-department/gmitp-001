@@ -9,17 +9,18 @@ export default function ActionCenterUi() {
     const { auth, currentMunicipality } = usePage<SharedData>().props;
 
     return (
-        <Card className="group flex h-full flex-col rounded-xl border border-indigo-200/80 bg-white p-6 shadow-sm shadow-indigo-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md hover:shadow-indigo-900/10 sm:p-7">
+        <Card className="group flex h-full flex-col rounded-xl border border-primary/20 bg-white p-6 shadow-sm shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-primary/10 sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
                 <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-lg bg-indigo-50 p-3 text-indigo-700 ring-1 ring-indigo-100 transition-colors group-hover:bg-indigo-100">
+                    <div className="flex items-center justify-center rounded-lg bg-primary/5 p-3 text-primary ring-1 ring-primary/20 transition-colors group-hover:bg-primary/10">
                         <LayoutDashboard className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-bold text-slate-950">Action Center</h2>
+                        <h2 className="font-heading text-xl font-bold text-slate-950">Action Center</h2>
                         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                            Get the support you need - access assistance programs for food, financial aid, burial services, and more.
+                            Kunin ang suportang kailangan mo - i-access ang mga programa para sa tulong sa pagkain, pinansyal, serbisyo sa
+                            pagpapalibing, at iba pa.
                         </p>
                     </div>
                 </div>
@@ -36,7 +37,7 @@ export default function ActionCenterUi() {
                             }
                         }}
                     >
-                        Open Action Center
+                        Buksan ang Action Center
                         <ArrowRight size={16} />
                     </Link>
                 </div>

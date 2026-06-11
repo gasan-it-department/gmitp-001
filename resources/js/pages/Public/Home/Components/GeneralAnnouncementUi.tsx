@@ -44,10 +44,10 @@ export default function GeneralAnnouncement({ announcements }: Props) {
         <div className="mx-auto w-full px-1 py-2 sm:px-2 sm:py-3">
             <div className="flex flex-1 flex-col">
                 <div className="mb-6 rounded-lg border border-border/60 bg-muted/20 px-5 py-4">
-                    <span className="text-xs font-bold tracking-widest text-primary uppercase">Municipal Updates</span>
-                    <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">General Announcements</h2>
+                    <span className="text-xs font-bold tracking-widest text-primary uppercase">Mga Update ng Munisipyo</span>
+                    <h2 className="font-heading mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Mga Pangkalahatang Anunsyo</h2>
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                        Stay updated with important notices, reminders, and community information.
+                        Manatiling updated sa mga mahalagang abiso, paalala, at impormasyon sa komunidad.
                     </p>
                 </div>
 
@@ -134,7 +134,7 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                                                         });
                                                     }}
                                                 >
-                                                    Read More
+                                                    Magbasa pa
                                                     <span aria-hidden="true" className="ml-1 transition-transform group-hover:translate-x-0.5">
                                                         -&gt;
                                                     </span>
@@ -150,8 +150,8 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                             <div className="mb-4 rounded-full bg-muted p-4">
                                 <img src="/assets/announcement.png" alt="Empty" className="h-12 w-12 opacity-20" />
                             </div>
-                            <h3 className="text-lg font-semibold text-foreground">No announcements yet</h3>
-                            <p className="mt-1 text-muted-foreground">Important updates will appear here once published.</p>
+                            <h3 className="text-lg font-semibold text-foreground">Wala pang mga anunsyo</h3>
+                            <p className="mt-1 text-muted-foreground">Ang mga mahahalagang update ay lilitaw dito sa sandaling mailathala.</p>
                         </div>
                     )}
 
@@ -164,7 +164,7 @@ export default function GeneralAnnouncement({ announcements }: Props) {
                                     router.visit(announcement.index.url(currentMunicipality.slug));
                                 }}
                             >
-                                View All Announcements
+                                Tingnan ang Lahat ng Anunsyo
                             </Button>
                         </div>
                     )}

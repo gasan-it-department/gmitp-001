@@ -166,7 +166,7 @@ export default function Carousel({ slides }: CarouselProps) {
                             // Since container ratio (2.4:1) matches image ratio (2.4:1), this results in a perfect fit
                             // with NO cropping and NO white space.
                             // Removed mb-2 and rounded-lg for a clean banner fit.
-                            className="h-full w-full flex-shrink-0 object-fill"
+                            className="h-full w-full flex-shrink-0 object-fill transition-transform duration-700 ease-in-out group-hover:scale-105"
                             draggable={false}
                             style={{ pointerEvents: 'none' }}
                         />
@@ -183,7 +183,7 @@ export default function Carousel({ slides }: CarouselProps) {
                             size="icon"
                             onClick={prev}
                             className="pointer-events-auto border-none bg-black/30 text-white hover:bg-black/50"
-                            aria-label="Previous slide"
+                            aria-label="Nakaraang slide"
                         >
                             <ChevronLeft className="h-6 w-6" />
                         </Button>
@@ -192,7 +192,7 @@ export default function Carousel({ slides }: CarouselProps) {
                             size="icon"
                             onClick={next}
                             className="pointer-events-auto border-none bg-black/30 text-white hover:bg-black/50"
-                            aria-label="Next slide"
+                            aria-label="Susunod na slide"
                         >
                             <ChevronRight className="h-6 w-6" />
                         </Button>
@@ -205,7 +205,7 @@ export default function Carousel({ slides }: CarouselProps) {
                                 key={i}
                                 onClick={() => setIndex(i)}
                                 className={`h-2.5 w-2.5 rounded-full shadow-sm transition-all ${i === index ? 'scale-125 bg-white' : 'bg-white/50 hover:bg-white/80'}`}
-                                aria-label={`Go to slide ${i + 1}`}
+                                aria-label={`Pumunta sa slide ${i + 1}`}
                             />
                         ))}
                     </div>
