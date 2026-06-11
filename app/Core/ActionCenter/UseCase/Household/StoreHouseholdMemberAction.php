@@ -38,8 +38,11 @@ class StoreHouseholdMemberAction
      */
     public const ACTIVE_MEMBER_HARD_LIMIT = 20;
 
-    public function execute(StoreHouseholdMemberDto $dto, ?string $beneficiaryId = null): HouseholdMember
-    {
+    public function execute(
+        StoreHouseholdMemberDto $dto,
+        ?string $beneficiaryId = null,
+        bool $isVerifiedDependent = false,
+    ): HouseholdMember {
         $isHead = $dto->relationship === Relationship::Head->value;
 
         // ── Head-uniqueness guard ────────────────────────────────────────────
@@ -70,7 +73,7 @@ class StoreHouseholdMemberAction
         if ($activeCount >= self::ACTIVE_MEMBER_HARD_LIMIT) {
             throw new \DomainException(
                 sprintf(
-                    'This household already has %d active members. ' .
+                    'This household already has %d active members. '.
                     'If this is accurate, please visit the MSWD office to add more.',
                     self::ACTIVE_MEMBER_HARD_LIMIT,
                 ),
@@ -78,24 +81,25 @@ class StoreHouseholdMemberAction
         }
 
         return HouseholdMember::create([
-            'household_id'           => $dto->householdId,
-            'first_name'             => $dto->firstName,
-            'last_name'              => $dto->lastName,
-            'middle_name'            => $dto->middleName,
-            'suffix'                 => $dto->suffix,
-            'relationship'           => $dto->relationship,
-            'birth_date'             => $dto->birthDate,
-            'sex'                    => $dto->sex,
-            'civil_status'           => $dto->civilStatus,
+            'household_id' => $dto->householdId,
+            'first_name' => $dto->firstName,
+            'last_name' => $dto->lastName,
+            'middle_name' => $dto->middleName,
+            'suffix' => $dto->suffix,
+            'relationship' => $dto->relationship,
+            'birth_date' => $dto->birthDate,
+            'sex' => $dto->sex,
+            'civil_status' => $dto->civilStatus,
             'educational_attainment' => $dto->educationalAttainment,
-            'occupation'             => $dto->occupation,
-            'monthly_income'         => $dto->monthlyIncome ?? 0,
-            'religion_id'            => $dto->religionId,
-            'is_active'              => true,
+            'occupation' => $dto->occupation,
+            'monthly_income' => $dto->monthlyIncome ?? 0,
+            'religion_id' => $dto->religionId,
+            'is_active' => true,
+            'is_verified_dependent' => $isHead ? false : $isVerifiedDependent,
             // beneficiary_id is set ONLY for the Head row at registration time
             // (or later via identity reconciliation when a member registers
             // their own portal account).
-            'beneficiary_id'         => $beneficiaryId,
+            'beneficiary_id' => $beneficiaryId,
         ]);
     }
 }

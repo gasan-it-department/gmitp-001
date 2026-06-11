@@ -4,14 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('ac_household_members', function (Blueprint $table) {
-
             $table->ulid('id')->primary();
 
             $table->foreignUlid('household_id')
@@ -19,24 +19,15 @@ return new class extends Migration {
                 ->cascadeOnDelete();
 
             $table->string('first_name');
-
             $table->string('last_name');
-
             $table->string('middle_name')->nullable();
-
             $table->string('suffix')->nullable();
-
             $table->date('birth_date')->nullable();
-
             $table->string('educational_attainment')->nullable();
-
             $table->string('sex')->nullable();
-
             $table->string('relationship')->nullable();
-
             $table->string('civil_status')->nullable();
             $table->string('occupation')->nullable();
-            // Storing income as decimal: 10 digits total, 2 decimal places (e.g., 99999999.99)
             $table->decimal('monthly_income', 10, 2)->default(0);
 
             $table->foreignUlid('religion_id')
@@ -44,20 +35,22 @@ return new class extends Migration {
                 ->constrained('ac_religions')
                 ->nullOnDelete();
 
-            // Optional FK back to ac_beneficiaries when this member is also a registered citizen.
-            // NULL means the member exists only inline here (encoded by the admin, no portal account).
             $table->foreignUlid('beneficiary_id')
                 ->nullable()
                 ->constrained('ac_beneficiaries')
                 ->nullOnDelete();
 
-            $table->boolean('is_active')->default(true); // false = moved out, never hard deleted
+            $table->boolean('is_active')->default(true);
+            $table->boolean('is_verified_dependent')->default(false);
 
             $table->softDeletes();
             $table->timestamps();
 
             $table->index(['first_name', 'last_name', 'birth_date']);
-
+            $table->index(
+                ['household_id', 'is_active', 'is_verified_dependent'],
+                'ac_household_members_authoritative_idx',
+            );
         });
     }
 

@@ -35,6 +35,7 @@ type MemberFormData = {
     occupation: string;
     monthly_income: string;
     religion_id: string;
+    is_verified_dependent: boolean;
 };
 
 interface Props {
@@ -72,7 +73,7 @@ export default function MemberFormDialog({
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm<MemberFormData>({
+    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>({
         first_name: member?.first_name ?? '',
         middle_name: member?.middle_name ?? '',
         last_name: member?.last_name ?? '',
@@ -85,6 +86,7 @@ export default function MemberFormDialog({
         occupation: member?.occupation ?? '',
         monthly_income: member && member.monthly_income > 0 ? String(member.monthly_income) : '',
         religion_id: member?.religion_id ?? '',
+        is_verified_dependent: member?.is_verified_dependent ?? false,
     });
 
     const serverError = (errors as Record<string, string | undefined>).member;
@@ -95,8 +97,8 @@ export default function MemberFormDialog({
         onClose();
     };
 
-    const handleSubmit: FormEventHandler = (e) => {
-        e.preventDefault();
+    const submitWithVerification = (verified: boolean) => {
+        transform((current) => ({ ...current, is_verified_dependent: verified }));
         const options = {
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
             preserveScroll: true,
@@ -113,16 +115,18 @@ export default function MemberFormDialog({
         }
     };
 
-    const canSubmit =
-        data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing;
+    const handleSubmit: FormEventHandler = (e) => {
+        e.preventDefault();
+        submitWithVerification(false);
+    };
+
+    const canSubmit = data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing;
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-xl text-slate-900">
-                        {mode === 'add' ? 'Add household member' : 'Edit household member'}
-                    </DialogTitle>
+                    <DialogTitle className="text-xl text-slate-900">{mode === 'add' ? 'Add household member' : 'Edit household member'}</DialogTitle>
                     <DialogDescription className="text-slate-500">
                         {mode === 'add'
                             ? 'Add another person who lives in this household. The change is logged.'
@@ -260,9 +264,18 @@ export default function MemberFormDialog({
                         <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-500 hover:bg-slate-100">
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={!canSubmit} className="bg-slate-900 text-white hover:bg-slate-800">
+                        <Button type="submit" variant="outline" disabled={!canSubmit}>
                             {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {mode === 'add' ? 'Add member' : 'Save changes'}
+                            Save pending
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => submitWithVerification(true)}
+                            disabled={!canSubmit}
+                            className="bg-emerald-700 text-white hover:bg-emerald-800"
+                        >
+                            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save verified
                         </Button>
                     </DialogFooter>
                 </form>

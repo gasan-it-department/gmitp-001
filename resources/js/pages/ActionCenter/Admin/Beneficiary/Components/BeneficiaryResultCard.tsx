@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, Home, Mail, UserCircle2, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, Clock3, Home, Mail, UserCircle2, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { BeneficiaryRow } from '../BeneficiarySearch';
 
@@ -52,15 +52,18 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
                                     <AlertTriangle className="h-3 w-3" /> Possible duplicate
                                 </span>
                             )}
+                            {row.identity_verified ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                    <BadgeCheck className="h-3 w-3" /> Identity verified
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                    <Clock3 className="h-3 w-3" /> Pending intake
+                                </span>
+                            )}
                         </div>
                         <p className="mt-0.5 text-sm text-gray-500">
-                            {[
-                                row.sex_label,
-                                row.age !== null ? `${row.age} yrs` : null,
-                                row.civil_status_label,
-                            ]
-                                .filter(Boolean)
-                                .join(' • ') || '—'}
+                            {[row.sex_label, row.age !== null ? `${row.age} yrs` : null, row.civil_status_label].filter(Boolean).join(' • ') || '—'}
                         </p>
                     </div>
                 </div>
@@ -88,11 +91,7 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
             {/* ── Detail grid ── */}
             <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 border-t border-gray-100 pt-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
                 <Detail icon={<CalendarClock className="h-4 w-4" />} label="Birthdate" value={formatDate(row.birth_date)} />
-                <Detail
-                    icon={<Home className="h-4 w-4" />}
-                    label="Address"
-                    value={[row.street, row.barangay].filter(Boolean).join(', ') || '—'}
-                />
+                <Detail icon={<Home className="h-4 w-4" />} label="Address" value={[row.street, row.barangay].filter(Boolean).join(', ') || '—'} />
                 <Detail icon={<Wallet className="h-4 w-4" />} label="Occupation" value={row.occupation || '—'} />
                 <Detail label="Monthly income" value={formatPeso(row.monthly_income)} />
                 {row.account_email && <Detail icon={<Mail className="h-4 w-4" />} label="Account" value={row.account_email} />}

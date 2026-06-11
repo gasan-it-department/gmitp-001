@@ -25,8 +25,7 @@ class StoreAdminHouseholdMemberController extends Controller
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeMember,
-    ) {
-    }
+    ) {}
 
     public function __invoke(string $beneficiaryId, AdminHouseholdMemberRequest $request): RedirectResponse
     {
@@ -41,7 +40,10 @@ class StoreAdminHouseholdMemberController extends Controller
                 $beneficiary->household_id,
             );
 
-            $this->storeMember->execute($dto);
+            $this->storeMember->execute(
+                $dto,
+                isVerifiedDependent: $request->boolean('is_verified_dependent'),
+            );
 
             return back()->with('success', 'Household member added.');
         } catch (ModelNotFoundException $e) {

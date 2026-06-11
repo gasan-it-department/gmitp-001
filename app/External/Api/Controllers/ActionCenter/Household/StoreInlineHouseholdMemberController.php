@@ -26,8 +26,7 @@ class StoreInlineHouseholdMemberController extends Controller
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeMember,
-    ) {
-    }
+    ) {}
 
     public function __invoke(StoreInlineHouseholdMemberRequest $request): JsonResponse
     {
@@ -37,6 +36,10 @@ class StoreInlineHouseholdMemberController extends Controller
         $beneficiary = Beneficiary::where('user_id', $request->user()->id)
             ->where('municipal_id', app('municipal_id'))
             ->firstOrFail();
+
+        if (! $beneficiary->isIdentityVerified()) {
+            abort(422, 'Your beneficiary profile must be verified before adding household members.');
+        }
 
         $dto = StoreHouseholdMemberDto::fromArray(
             $request->validated(),

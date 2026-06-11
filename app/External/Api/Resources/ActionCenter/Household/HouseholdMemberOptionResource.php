@@ -15,13 +15,14 @@ class HouseholdMemberOptionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'           => $this->id,
-            'first_name'   => $this->first_name,
-            'middle_name'  => $this->middle_name,
-            'last_name'    => $this->last_name,
-            'suffix'       => $this->suffix,
+            'id' => $this->id,
+            'first_name' => $this->first_name,
+            'middle_name' => $this->middle_name,
+            'last_name' => $this->last_name,
+            'suffix' => $this->suffix,
             'relationship' => $this->relationship,
-            'birth_date'   => $this->birth_date?->toDateString(),
+            'birth_date' => $this->birth_date?->toDateString(),
+            'is_verified_dependent' => (bool) $this->is_verified_dependent,
         ];
     }
 }

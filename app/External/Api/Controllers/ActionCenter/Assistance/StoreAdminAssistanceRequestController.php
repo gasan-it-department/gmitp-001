@@ -30,8 +30,7 @@ class StoreAdminAssistanceRequestController extends Controller
     public function __construct(
         private readonly StoreAssistanceRequestAction $storeAssistanceRequest,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(StoreAdminAssistanceRequest $request): RedirectResponse
     {
@@ -83,15 +82,13 @@ class StoreAdminAssistanceRequestController extends Controller
             );
 
             $created = $this->storeAssistanceRequest->execute($dto);
-        } catch (AuthorizationException | \DomainException $e) {
+        } catch (AuthorizationException|\DomainException $e) {
             return back()
                 ->withInput()
                 ->withErrors(['request' => $e->getMessage()]);
         }
 
-        // The officer filed despite a standing cooldown / in-flight block. Record
-        // the override on the request's audit trail (same log name the request's
-        // history queries) so COA can see who authorized the exception and why.
+        // The officer filed despite a standing eligibility or verification gate.
         if (! $eligibility->eligible) {
             activity('assistance_request')
                 ->performedOn($created)
@@ -101,10 +98,11 @@ class StoreAdminAssistanceRequestController extends Controller
                     'reason' => $eligibility->reason,
                     'cooldown_ends_at' => $eligibility->cooldownEndsAt?->toIso8601String(),
                     'message' => $eligibility->message(),
+                    'admin_reason' => $request->input('verification_override_reason'),
                     'assistance_type_id' => $assistanceType->id,
                     'beneficiary_id' => $beneficiary->id,
                 ])
-                ->log('Filed despite active cooldown');
+                ->log('Filed with an administrator override');
         }
 
         return redirect()

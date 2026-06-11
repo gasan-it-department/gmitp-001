@@ -29,17 +29,18 @@ class SearchBeneficiaryRequest extends FormRequest
     {
         return [
             // Free-text name search (multi-word, order-independent — see action).
-            'search'     => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:100'],
 
             // Exact birthdate narrows misspelled-name matches hard.
             'birth_date' => ['nullable', 'date', 'before_or_equal:today'],
 
             // Partial barangay match.
-            'barangay'   => ['nullable', 'string', 'max:100'],
+            'barangay' => ['nullable', 'string', 'max:100'],
 
-            'sex'        => ['nullable', Rule::in($this->sexValues())],
+            'sex' => ['nullable', Rule::in($this->sexValues())],
 
-            'per_page'   => ['nullable', 'integer', 'min:5', 'max:50'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
+            'verification' => ['nullable', Rule::in(['pending', 'verified'])],
         ];
     }
 

@@ -27,8 +27,7 @@ class CreateAssistanceRequestController extends Controller
 {
     public function __construct(
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(string $municipality, string $beneficiaryId): Response
     {
@@ -37,7 +36,7 @@ class CreateAssistanceRequestController extends Controller
         // Tenant guard: the beneficiary must live in this municipality (tenant
         // key is on the household). 404 on a miss — never leak existence.
         $beneficiary = Beneficiary::query()
-            ->with(['household', 'religion', 'user'])
+            ->with(['household', 'religion', 'user', 'identityVerifier'])
             ->whereKey($beneficiaryId)
             ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
             ->firstOrFail();

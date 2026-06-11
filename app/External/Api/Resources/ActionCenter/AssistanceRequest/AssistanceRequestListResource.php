@@ -29,9 +29,11 @@ class AssistanceRequestListResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $snapshot = $this->resource->snapshot;
+
         return [
             // ── Identification ───────────────────────────────────────────────
-            'id'                 => $this->id,
+            'id' => $this->id,
             'transaction_number' => $this->transaction_number,
 
             // ── Workflow state ───────────────────────────────────────────────
@@ -41,8 +43,8 @@ class AssistanceRequestListResource extends JsonResource
 
             // ── Program ──────────────────────────────────────────────────────
             'assistance_type_id' => $this->assistance_type_id,
-            'assistance_type'    => $this->whenLoaded('assistanceType', fn () => [
-                'id'   => $this->assistanceType->id,
+            'assistance_type' => $this->whenLoaded('assistanceType', fn () => [
+                'id' => $this->assistanceType->id,
                 'name' => $this->assistanceType->name,
                 'slug' => $this->assistanceType->slug,
             ]),
@@ -59,8 +61,8 @@ class AssistanceRequestListResource extends JsonResource
             // `submitted_at` mirrors created_at semantically — kept distinct so
             // the frontend doesn't have to reason about which timestamp to show.
             'submitted_at' => $this->created_at?->toIso8601String(),
-            'approved_at'  => $this->approved_at?->toIso8601String(),
-            'released_at'  => $this->released_at?->toIso8601String(),
+            'approved_at' => $this->approved_at?->toIso8601String(),
+            'released_at' => $this->released_at?->toIso8601String(),
 
             // ── Applicant context ────────────────────────────────────────────
             // True = citizen filed for themselves.
@@ -87,13 +89,13 @@ class AssistanceRequestListResource extends JsonResource
             'is_walkin' => $this->encoded_by_user_id !== null,
 
             // ── Address snapshot (for admin barangay filters) ────────────────
-            'snapshot_barangay'           => $this->snapshot_barangay,
-            'snapshot_barangay_psgc_code' => $this->snapshot_barangay_psgc_code,
+            'snapshot_barangay' => $snapshot?->barangay,
+            'snapshot_barangay_psgc_code' => $snapshot?->barangay_psgc_code,
 
             // ── FK references (admin drill-down) ─────────────────────────────
-            'municipal_id'   => $this->municipal_id,
+            'municipal_id' => $this->municipal_id,
             'beneficiary_id' => $this->beneficiary_id,
-            'household_id'   => $this->household_id,
+            'household_id' => $this->household_id,
 
             // ── Attachments summary ──────────────────────────────────────────
             // Only emitted when the `media` relation is eager-loaded.
@@ -134,12 +136,14 @@ class AssistanceRequestListResource extends JsonResource
      */
     private function resolveSubjectFullName(): string
     {
+        $snapshot = $this->resource->snapshot;
+
         $parts = $this->relationship_to_beneficiary === null
             ? [
-                $this->snapshot_first_name,
-                $this->snapshot_middle_name,
-                $this->snapshot_last_name,
-                $this->snapshot_suffix,
+                $snapshot?->first_name,
+                $snapshot?->middle_name,
+                $snapshot?->last_name,
+                $snapshot?->suffix,
             ]
             : [
                 $this->on_behalf_first_name,

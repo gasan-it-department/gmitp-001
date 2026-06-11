@@ -11,7 +11,6 @@ use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
 use App\External\Api\Request\ActionCenter\StoreAssistanceRequest;
 use App\Http\Controllers\Controller;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -31,8 +30,7 @@ class StoreAssistanceRequestController extends Controller
         private StoreAssistanceRequestAction $storeAssistanceRequest,
         private ResolveApplicantProfileAction $resolveApplicantProfileAction,
         private CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         StoreAssistanceRequest $request,
@@ -45,7 +43,7 @@ class StoreAssistanceRequestController extends Controller
         // We refuse to submit on behalf of users who haven't completed the profile wizard.
         $beneficiary = $this->resolveApplicantProfileAction->execute($request->user()->id, app('municipal_id'));
 
-        if (!$beneficiary->household) {
+        if (! $beneficiary || ! $beneficiary->household) {
             return redirect()
                 ->route('actionCenter.index', ['municipality' => $municipality])
                 ->withErrors([
@@ -67,7 +65,7 @@ class StoreAssistanceRequestController extends Controller
             $request->input('on_behalf_date_of_death') ?: null,
         );
 
-        if (!$eligibility->eligible) {
+        if (! $eligibility->eligible) {
             throw AssistanceEligibilityException::from($eligibility);
         }
 

@@ -35,6 +35,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class SearchBeneficiaryAction
 {
     private const DEFAULT_PER_PAGE = 15;
+
     private const MAX_PER_PAGE = 50;
 
     /**
@@ -93,6 +94,7 @@ class SearchBeneficiaryAction
         $this->applyBirthDate($query, $filters['birth_date'] ?? null);
         $this->applyBarangay($query, $filters['barangay'] ?? null);
         $this->applySex($query, $filters['sex'] ?? null);
+        $this->applyVerification($query, $filters['verification'] ?? null);
 
         return $query->paginate($this->perPage($filters))->withQueryString();
     }
@@ -102,7 +104,8 @@ class SearchBeneficiaryAction
         return filled($filters['search'] ?? null)
             || filled($filters['birth_date'] ?? null)
             || filled($filters['barangay'] ?? null)
-            || filled($filters['sex'] ?? null);
+            || filled($filters['sex'] ?? null)
+            || filled($filters['verification'] ?? null);
     }
 
     /**
@@ -127,7 +130,7 @@ class SearchBeneficiaryAction
         $words = preg_split('/\s+/', $search) ?: [];
 
         foreach ($words as $word) {
-            $like = '%' . mb_strtolower($word) . '%';
+            $like = '%'.mb_strtolower($word).'%';
 
             $query->where(function (Builder $q) use ($like) {
                 $q->whereRaw('LOWER(first_name) LIKE ?', [$like])
@@ -151,7 +154,7 @@ class SearchBeneficiaryAction
             return;
         }
 
-        $like = '%' . mb_strtolower(trim($barangay)) . '%';
+        $like = '%'.mb_strtolower(trim($barangay)).'%';
 
         $query->whereHas('household', fn (Builder $q) => $q->whereRaw('LOWER(barangay) LIKE ?', [$like]));
     }
@@ -160,6 +163,15 @@ class SearchBeneficiaryAction
     {
         if (filled($sex)) {
             $query->where('sex', $sex);
+        }
+    }
+
+    private function applyVerification(Builder $query, ?string $verification): void
+    {
+        if ($verification === 'pending') {
+            $query->whereNull('identity_verified_at');
+        } elseif ($verification === 'verified') {
+            $query->whereNotNull('identity_verified_at');
         }
     }
 

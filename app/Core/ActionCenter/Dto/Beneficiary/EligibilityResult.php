@@ -17,17 +17,23 @@ use DateTimeInterface;
  */
 final class EligibilityResult
 {
-    public const REASON_ON_COOLDOWN      = 'on_cooldown';
-    public const REASON_PERMANENT_BLOCK  = 'permanent_block';
-    public const REASON_IN_FLIGHT        = 'in_flight_request';
-    public const REASON_BLACKLISTED      = 'blacklisted';
+    public const REASON_ON_COOLDOWN = 'on_cooldown';
+
+    public const REASON_PERMANENT_BLOCK = 'permanent_block';
+
+    public const REASON_IN_FLIGHT = 'in_flight_request';
+
+    public const REASON_BLACKLISTED = 'blacklisted';
+
+    public const REASON_IDENTITY_UNVERIFIED = 'identity_unverified';
+
+    public const REASON_DEPENDENT_UNVERIFIED = 'dependent_unverified';
 
     private function __construct(
         public readonly bool $eligible,
         public readonly ?string $reason,
         public readonly ?CarbonImmutable $cooldownEndsAt = null,
-    ) {
-    }
+    ) {}
 
     public static function eligible(): self
     {
@@ -63,6 +69,24 @@ final class EligibilityResult
         return new self(false, self::REASON_BLACKLISTED);
     }
 
+    public static function identityUnverified(): self
+    {
+        return new self(false, self::REASON_IDENTITY_UNVERIFIED);
+    }
+
+    public static function dependentUnverified(): self
+    {
+        return new self(false, self::REASON_DEPENDENT_UNVERIFIED);
+    }
+
+    public function requiresVerificationOverride(): bool
+    {
+        return in_array($this->reason, [
+            self::REASON_IDENTITY_UNVERIFIED,
+            self::REASON_DEPENDENT_UNVERIFIED,
+        ], true);
+    }
+
     /**
      * Human-readable explanation for citizen UI and admin tooltips.
      * Kept here (not in the frontend) so the same wording is used for both
@@ -72,17 +96,20 @@ final class EligibilityResult
     {
         return match ($this->reason) {
             self::REASON_PERMANENT_BLOCK => 'You have already received this one-time assistance. '
-                . 'For anything further, please visit the MSWD office.',
-            self::REASON_ON_COOLDOWN     => sprintf(
+                .'For anything further, please visit the MSWD office.',
+            self::REASON_ON_COOLDOWN => sprintf(
                 'You recently received assistance and can apply again on %s. '
-                . 'If you have an urgent need before then, please visit the MSWD office and our staff will assist you.',
+                .'If you have an urgent need before then, please visit the MSWD office and our staff will assist you.',
                 $this->cooldownEndsAt?->toFormattedDateString() ?? 'a later date',
             ),
-            self::REASON_IN_FLIGHT       => 'You already have a request being processed for this program. '
-                . 'We will notify you once it has been reviewed.',
-            self::REASON_BLACKLISTED     => 'There is a hold on your records that needs to be sorted out in person. '
-                . 'Please visit the MSWD office and our staff will assist you.',
-            default                      => 'Eligible to apply.',
+            self::REASON_IN_FLIGHT => 'You already have a request being processed for this program. '
+                .'We will notify you once it has been reviewed.',
+            self::REASON_BLACKLISTED => 'There is a hold on your records that needs to be sorted out in person. '
+                .'Please visit the MSWD office and our staff will assist you.',
+            self::REASON_IDENTITY_UNVERIFIED => 'Your beneficiary profile is awaiting identity verification by MSWD. '
+                .'You can apply after an administrator completes the review.',
+            self::REASON_DEPENDENT_UNVERIFIED => 'This household member is still awaiting MSWD verification and cannot be selected yet.',
+            default => 'Eligible to apply.',
         };
     }
 
@@ -95,9 +122,9 @@ final class EligibilityResult
     public function toArray(): array
     {
         return [
-            'eligible'         => $this->eligible,
-            'reason'           => $this->reason,
-            'message'          => $this->message(),
+            'eligible' => $this->eligible,
+            'reason' => $this->reason,
+            'message' => $this->message(),
             'cooldown_ends_at' => $this->cooldownEndsAt?->toIso8601String(),
         ];
     }

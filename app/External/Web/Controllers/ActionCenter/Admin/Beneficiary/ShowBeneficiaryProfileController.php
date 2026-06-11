@@ -29,8 +29,7 @@ class ShowBeneficiaryProfileController extends Controller
 {
     public function __construct(
         private readonly GetBeneficiaryProfileAction $getProfile,
-    ) {
-    }
+    ) {}
 
     public function __invoke(string $municipality, string $beneficiaryId): Response
     {
@@ -39,18 +38,19 @@ class ShowBeneficiaryProfileController extends Controller
         $data = $this->getProfile->execute($municipalId, $beneficiaryId);
 
         return Inertia::render('ActionCenter/Admin/Beneficiary/BeneficiaryProfile', [
-            'beneficiary'          => new BeneficiaryProfileResource($data['beneficiary']),
-            'householdMembers'     => HouseholdMemberDetailsResource::collection($data['householdMembers']),
-            'assistanceHistory'    => RecentAssistanceRequestResource::collection($data['assistanceHistory']),
+            'beneficiary' => new BeneficiaryProfileResource($data['beneficiary']),
+            'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
+            'assistanceHistory' => RecentAssistanceRequestResource::collection($data['assistanceHistory']),
             'householdTotalIncome' => $data['householdTotalIncome'],
             'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
-            'merge'                => $data['merge'],
-            'summary'              => $data['summary'],
+            'householdMatches' => $data['householdMatches'],
+            'merge' => $data['merge'],
+            'summary' => $data['summary'],
             // Dropdown sources for the inline roster manager (add / edit member).
-            'religions'             => Religion::active()->get(['id', 'name']),
-            'civilStatus'           => CivilStatus::option(),
+            'religions' => Religion::active()->get(['id', 'name']),
+            'civilStatus' => CivilStatus::option(),
             'educationalAttainment' => EducationalAttainment::toOptions(),
-            'relationships'         => Relationship::toOptions(),
+            'relationships' => Relationship::toOptions(),
         ]);
     }
 }

@@ -20,6 +20,8 @@ export interface HouseholdMemberRow {
     beneficiary_id: string | null;
     /** False = moved out (kept as history, dropped from active composition). */
     is_active: boolean;
+    /** Trust gate for a non-head roster member. */
+    is_verified_dependent: boolean;
 }
 
 interface Props {

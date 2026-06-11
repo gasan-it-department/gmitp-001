@@ -22,8 +22,7 @@ class StoreProfileSetupController extends Controller
 {
     public function __construct(
         private readonly CreateBeneficiaryProfileAction $createProfile,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         StoreProfileSetupRequest $request,
@@ -41,6 +40,6 @@ class StoreProfileSetupController extends Controller
         $fallback = route('actionCenter.portal', ['municipality' => $municipality->slug]);
 
         return redirect(session()->pull('url.intended', $fallback))
-            ->with('success', 'Profile saved! You can now apply for assistance.');
+            ->with('success', 'Profile submitted for MSWD review. You can apply after your identity is verified.');
     }
 }

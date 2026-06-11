@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\Models;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\Users\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,10 +23,12 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  */
 class Beneficiary extends Model implements HasMedia
 {
-    use HasUlids, SoftDeletes, LogsActivity, InteractsWithMedia;
+    use HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     protected $table = 'ac_beneficiaries';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -45,6 +48,8 @@ class Beneficiary extends Model implements HasMedia
         // that was merged into the referenced canonical beneficiary. NULL for a
         // normal standalone record. See MergeBeneficiaryAction.
         'merged_into_beneficiary_id',
+        'identity_verified_at',
+        'identity_verified_by_user_id',
         'beneficiary_number',
         'first_name',
         'middle_name',
@@ -67,6 +72,7 @@ class Beneficiary extends Model implements HasMedia
         'terms_consented_at' => 'datetime',
         'monthly_income' => 'decimal:2',
         'is_active' => 'boolean',
+        'identity_verified_at' => 'datetime',
         'civil_status' => CivilStatus::class,
 
     ];
@@ -93,6 +99,8 @@ class Beneficiary extends Model implements HasMedia
                 'monthly_income',
                 // The merge link is an admin identity decision — audit it.
                 'merged_into_beneficiary_id',
+                'identity_verified_at',
+                'identity_verified_by_user_id',
             ])
             ->logOnlyDirty()        // skip no-op saves
             ->dontLogEmptyChanges() // skip if nothing actually changed
@@ -116,6 +124,26 @@ class Beneficiary extends Model implements HasMedia
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function identityVerifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'identity_verified_by_user_id');
+    }
+
+    public function scopeIdentityVerified(Builder $query): Builder
+    {
+        return $query->whereNotNull('identity_verified_at');
+    }
+
+    public function scopePendingIdentityVerification(Builder $query): Builder
+    {
+        return $query->whereNull('identity_verified_at');
+    }
+
+    public function isIdentityVerified(): bool
+    {
+        return $this->identity_verified_at !== null;
     }
 
     /**

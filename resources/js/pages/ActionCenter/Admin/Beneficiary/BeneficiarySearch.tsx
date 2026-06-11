@@ -39,6 +39,8 @@ export interface BeneficiaryRow {
     released_count: number;
     last_released_at: string | null;
     last_request_at: string | null;
+    identity_verified: boolean;
+    identity_verified_at: string | null;
 }
 
 interface PaginatorLink {
@@ -66,6 +68,7 @@ interface Filters {
     birth_date?: string | null;
     barangay?: string | null;
     sex?: string | null;
+    verification?: string | null;
 }
 
 interface Props {
@@ -97,11 +100,12 @@ export default function BeneficiarySearch({ results, filters }: Props) {
     const [birthDate, setBirthDate] = useState(filters.birth_date ?? '');
     const [barangay, setBarangay] = useState(filters.barangay ?? '');
     const [sex, setSex] = useState(filters.sex ?? '');
+    const [verification, setVerification] = useState(filters.verification ?? '');
     const [searching, setSearching] = useState(false);
 
     const rows = results.data ?? [];
     const meta = results.meta ?? null;
-    const hasCriteria = Boolean(search.trim() || birthDate || barangay.trim() || sex);
+    const hasCriteria = Boolean(search.trim() || birthDate || barangay.trim() || sex || verification);
 
     // ── Debounced text filters (name + barangay) ─────────────────────────────
     // Skip the first run so navigating to the page doesn't re-fetch immediately.
@@ -123,6 +127,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
             birth_date: firstDefined(overrides.birth_date, birthDate),
             barangay: firstDefined(overrides.barangay, barangay),
             sex: firstDefined(overrides.sex, sex),
+            verification: firstDefined(overrides.verification, verification),
         });
 
         router.get(baseUrl, next, {
@@ -139,6 +144,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
         setBirthDate('');
         setBarangay('');
         setSex('');
+        setVerification('');
         router.get(baseUrl, {}, { preserveState: false, preserveScroll: true, replace: true });
     };
 
@@ -162,8 +168,8 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                     <div>
                         <h2 className="text-lg font-semibold text-gray-800">Find a Beneficiary</h2>
                         <p className="text-sm text-gray-500">
-                            Search the registry for {currentMunicipality.name} during the interview. Match every result against the
-                            applicant&rsquo;s uploaded government ID before approving.
+                            Search the registry for {currentMunicipality.name} during the interview. Match every result against the applicant&rsquo;s
+                            uploaded government ID before approving.
                         </p>
                     </div>
                 </div>
@@ -172,8 +178,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                 <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
                     <ShieldCheck className="h-4 w-4 shrink-0" />
                     <span>
-                        A new account does not mean a new person. Confirm identity against the uploaded ID — duplicates are caught here, by
-                        you.
+                        A new account does not mean a new person. Confirm identity against the uploaded ID — duplicates are caught here, by you.
                     </span>
                 </div>
 
@@ -192,6 +197,11 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                     onSex={(v) => {
                         setSex(v);
                         applyFilters({ sex: v });
+                    }}
+                    verification={verification}
+                    onVerification={(v) => {
+                        setVerification(v);
+                        applyFilters({ verification: v });
                     }}
                     onClear={clearFilters}
                     hasCriteria={hasCriteria}

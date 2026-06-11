@@ -15,10 +15,6 @@ class ShowClientAssistanceRequestAction
      * Ensures the request exists and actually belongs to the authenticated user
      * before returning it with necessary relations eager-loaded.
      *
-     * @param string $userId
-     * @param string $assistanceRequestId
-     * @param string $municipalId
-     * @return AssistanceRequest
      *
      * @throws ModelNotFoundException
      * @throws AccessDeniedHttpException
@@ -36,12 +32,13 @@ class ShowClientAssistanceRequestAction
             ->where('municipal_id', $municipalId)
             ->first();
 
-        if (!$beneficiary) {
+        if (! $beneficiary) {
             throw new AccessDeniedHttpException('You are not authorized to view this assistance request.');
         }
 
         // 3. Eager load relations for the detail view
         return $request->load([
+            'snapshot',
             'assistanceType',
             'encodedBy',
             'reviewedBy',

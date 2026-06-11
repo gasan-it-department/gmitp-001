@@ -43,6 +43,7 @@ class StoreAdminAssistanceRequest extends FormRequest
 
             // Admin affirmation that on-behalf RA 10173 consent was obtained.
             'privacy_consent' => ['required', 'accepted'],
+            'verification_override_reason' => ['nullable', 'string', 'min:10', 'max:500'],
 
             // Optional for the admin path — see class docblock.
             'documents' => ['nullable', 'array'],

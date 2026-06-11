@@ -23,48 +23,56 @@ class BeneficiaryProfileResource extends JsonResource
     {
         return [
             // ── Identity ─────────────────────────────────────────────────────
-            'id'                 => $this->id,
+            'id' => $this->id,
             'beneficiary_number' => $this->beneficiary_number,
-            'avatar_url'  => $this->avatarUrl($request),
-            'full_name'   => $this->full_name,
-            'first_name'  => $this->first_name,
+            'avatar_url' => $this->avatarUrl($request),
+            'full_name' => $this->full_name,
+            'first_name' => $this->first_name,
             'middle_name' => $this->middle_name,
-            'last_name'   => $this->last_name,
-            'suffix'      => $this->suffix,
+            'last_name' => $this->last_name,
+            'suffix' => $this->suffix,
 
-            'sex'       => $this->sex,
+            'sex' => $this->sex,
             'sex_label' => $this->sex ? Sex::tryFrom($this->sex)?->label() : null,
 
             'birth_date' => $this->birth_date?->toDateString(),
-            'age'        => $this->birth_date ? (int) $this->birth_date->age : null,
+            'age' => $this->birth_date ? (int) $this->birth_date->age : null,
 
             'educational_attainment' => $this->educational_attainment,
-            'religion'               => $this->whenLoaded('religion', fn () => $this->religion?->name),
+            'religion' => $this->whenLoaded('religion', fn () => $this->religion?->name),
             // Raw FK so the admin edit form can pre-select the religion dropdown
             // (the human-readable name above is for read-only display).
-            'religion_id'            => $this->religion_id,
+            'religion_id' => $this->religion_id,
 
             // ── Economic snapshot (indigency cues) ───────────────────────────
-            'civil_status'       => $this->civil_status?->value,
+            'civil_status' => $this->civil_status?->value,
             'civil_status_label' => $this->civil_status?->label(),
-            'occupation'         => $this->occupation,
-            'monthly_income'     => $this->monthly_income !== null ? (float) $this->monthly_income : null,
+            'occupation' => $this->occupation,
+            'monthly_income' => $this->monthly_income !== null ? (float) $this->monthly_income : null,
 
             // ── Household address ────────────────────────────────────────────
             'household' => $this->whenLoaded('household', fn () => [
-                'id'             => $this->household?->id,
+                'id' => $this->household?->id,
                 'household_code' => $this->household?->household_code,
-                'barangay'       => $this->household?->barangay,
-                'street'         => $this->household?->street,
+                'barangay' => $this->household?->barangay,
+                'street' => $this->household?->street,
             ]),
 
             // ── Linked portal account ────────────────────────────────────────
-            'has_account'   => $this->user_id !== null,
+            'has_account' => $this->user_id !== null,
             'account_email' => $this->whenLoaded('user', fn () => $this->user?->email),
 
             // ── Registration / consent ───────────────────────────────────────
             'terms_consented_at' => $this->terms_consented_at?->toIso8601String(),
-            'registered_at'      => $this->created_at?->toIso8601String(),
+            'registered_at' => $this->created_at?->toIso8601String(),
+            'identity_verified_at' => $this->identity_verified_at?->toIso8601String(),
+            'identity_verified' => $this->identity_verified_at !== null,
+            'identity_verified_by' => $this->whenLoaded(
+                'identityVerifier',
+                fn () => $this->identityVerifier
+                    ? trim("{$this->identityVerifier->first_name} {$this->identityVerifier->last_name}")
+                    : null,
+            ),
         ];
     }
 
@@ -89,9 +97,9 @@ class BeneficiaryProfileResource extends JsonResource
         }
 
         return route('actionCenter.admin.beneficiary.avatar', [
-            'municipality'  => $municipality,
+            'municipality' => $municipality,
             'beneficiaryId' => $this->id,
-            'v'             => $media->updated_at?->timestamp,
+            'v' => $media->updated_at?->timestamp,
         ]);
     }
 }

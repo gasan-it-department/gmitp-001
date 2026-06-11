@@ -29,8 +29,7 @@ class StoreAssistanceRequestAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
-    ) {
-    }
+    ) {}
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
     {
@@ -44,6 +43,8 @@ class StoreAssistanceRequestAction
                 'You may only request assistance from the municipality where you reside.'
             );
         }
+
+        $this->ensureVerificationGate($beneficiary, $dto);
 
         // ── Compute derived economic snapshot BEFORE opening the transaction.
         //    These are read-only SELECTs that do not need to be inside the
@@ -70,7 +71,16 @@ class StoreAssistanceRequestAction
             $onBehalfLastName = $member?->last_name ?? $dto->onBehalfLastName;
             $onBehalfSuffix = $member?->suffix ?? $dto->onBehalfSuffix;
 
-            return AssistanceRequest::create([
+            $metadata = array_filter([
+                'relationship_to_beneficiary' => $dto->relationshipToBeneficiary,
+                'on_behalf_first_name' => $onBehalfFirstName,
+                'on_behalf_middle_name' => $onBehalfMiddleName,
+                'on_behalf_last_name' => $onBehalfLastName,
+                'on_behalf_suffix' => $onBehalfSuffix,
+                'on_behalf_date_of_death' => $dto->onBehalfDateOfDeath,
+            ], static fn ($value) => $value !== null);
+
+            $request = AssistanceRequest::create([
                 'id' => $requestId,
                 'municipal_id' => $dto->municipalId,
                 'beneficiary_id' => $dto->beneficiaryId,
@@ -91,41 +101,42 @@ class StoreAssistanceRequestAction
                 'privacy_notice_version' => $dto->privacyNoticeVersion,
 
                 // Representative — null when filing for self.
-                'relationship_to_beneficiary' => $dto->relationshipToBeneficiary,
+                // Frozen representative details; the roster link remains a real FK.
+                'metadata' => $metadata !== [] ? $metadata : null,
                 // Live FK to the roster row being assisted (null when self-filed or
                 // when the subject — e.g. a deceased person — isn't on the roster).
                 // The on_behalf_* fields below remain the frozen COA snapshot.
                 'on_behalf_household_member_id' => $member?->id,
-                'on_behalf_first_name' => $onBehalfFirstName,
-                'on_behalf_middle_name' => $onBehalfMiddleName,
-                'on_behalf_last_name' => $onBehalfLastName,
-                'on_behalf_suffix' => $onBehalfSuffix,
-                'on_behalf_date_of_death' => $dto->onBehalfDateOfDeath,
 
                 // Identity snapshot — frozen from ac_beneficiaries at submission time.
-                'snapshot_first_name' => $dto->snapshotFirstName,
-                'snapshot_last_name' => $dto->snapshotLastName,
-                'snapshot_middle_name' => $dto->snapshotMiddleName,
-                'snapshot_suffix' => $dto->snapshotSuffix,
-                'snapshot_sex' => $dto->snapshotSex,
-                'snapshot_birth_date' => $dto->snapshotBirthDate,
-                'snapshot_educational_attainment' => $dto->snapshotEducationalAttainment,
-                'snapshot_religion' => $dto->snapshotReligion,
 
                 // Economic snapshot — read straight from the loaded beneficiary
                 // for the three direct fields. The household total is the
                 // value computed above against ac_household_members at the
                 // moment of submission, frozen forever for COA traceability.
-                'snapshot_civil_status' => $beneficiary->civil_status?->value,
-                'snapshot_occupation' => $beneficiary->occupation,
-                'snapshot_monthly_income' => $beneficiary->monthly_income,
-                'snapshot_household_total_income' => $householdTotalIncome,
 
                 // Address snapshot — frozen from ac_households at submission time.
-                'snapshot_barangay' => $dto->snapshotBarangay,
-                'snapshot_barangay_psgc_code' => $dto->snapshotBarangayPsgcCode,
-                'snapshot_street' => $dto->snapshotStreet,
             ]);
+
+            $request->snapshot()->create([
+                'first_name' => $dto->snapshotFirstName,
+                'last_name' => $dto->snapshotLastName,
+                'middle_name' => $dto->snapshotMiddleName,
+                'suffix' => $dto->snapshotSuffix,
+                'sex' => $dto->snapshotSex,
+                'birth_date' => $dto->snapshotBirthDate,
+                'educational_attainment' => $dto->snapshotEducationalAttainment,
+                'religion' => $dto->snapshotReligion,
+                'civil_status' => $beneficiary->civil_status?->value,
+                'occupation' => $beneficiary->occupation,
+                'monthly_income' => $beneficiary->monthly_income,
+                'household_total_income' => $householdTotalIncome,
+                'barangay' => $dto->snapshotBarangay,
+                'barangay_psgc_code' => $dto->snapshotBarangayPsgcCode,
+                'street' => $dto->snapshotStreet,
+            ]);
+
+            return $request;
         }, attempts: 3);
 
         // ── Media uploads run OUTSIDE the transaction. If a file write
@@ -138,7 +149,7 @@ class StoreAssistanceRequestAction
         // Reload with the freshly-attached media so the return value
         // reflects the post-upload state (callers / API resources can
         // serialize `documents_uploaded` correctly on the very first read).
-        return $request->fresh(['media']);
+        return $request->fresh(['media', 'snapshot']);
     }
 
     /**
@@ -148,7 +159,7 @@ class StoreAssistanceRequestAction
      * by CreateBeneficiaryProfileAction), so this SUM alone IS the total —
      * no need to add the beneficiary's income separately.
      *
-     * The snapshot column on ac_assistance_requests holds this value
+     * The request snapshot row holds this value
      * immutably: even after the citizen's family composition or earnings
      * change, COA can still see the household income that justified the
      * original approval.
@@ -158,7 +169,48 @@ class StoreAssistanceRequestAction
         return (float) HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
             ->where('is_active', true)
+            ->where(function ($query) {
+                $query->where('relationship', 'head')
+                    ->orWhere('is_verified_dependent', true);
+            })
             ->sum('monthly_income');
+    }
+
+    private function ensureVerificationGate(
+        Beneficiary $beneficiary,
+        StoreAssistanceRequestDto $dto,
+    ): void {
+        $message = null;
+
+        if (! $beneficiary->isIdentityVerified()) {
+            $message = 'The claimant identity has not been verified by MSWD.';
+        } elseif ($dto->onBehalfHouseholdMemberId !== null) {
+            $member = HouseholdMember::query()
+                ->whereKey($dto->onBehalfHouseholdMemberId)
+                ->where('household_id', $beneficiary->household_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($member !== null
+                && $member->relationship !== 'head'
+                && ! $member->is_verified_dependent) {
+                $message = 'The selected household member has not been verified by MSWD.';
+            }
+        }
+
+        if ($message === null) {
+            return;
+        }
+
+        if ($dto->encodedByUserId === null) {
+            throw new \DomainException($message);
+        }
+
+        if (blank($dto->verificationOverrideReason)) {
+            throw new \DomainException(
+                $message.' Enter an override reason to continue as an administrator.',
+            );
+        }
     }
 
     /**
@@ -174,7 +226,7 @@ class StoreAssistanceRequestAction
     {
         foreach ($documents as $documentKey => $file) {
 
-            if (!$file instanceof UploadedFile) {
+            if (! $file instanceof UploadedFile) {
                 continue;
             }
 
@@ -199,7 +251,7 @@ class StoreAssistanceRequestAction
         $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $slug = preg_replace('/[^A-Za-z0-9_-]+/', '_', $base) ?: 'document';
 
-        return $slug . ($extension ? ".{$extension}" : '');
+        return $slug.($extension ? ".{$extension}" : '');
     }
 
     /**
@@ -209,15 +261,27 @@ class StoreAssistanceRequestAction
      */
     private function resolveOnBehalfMember(StoreAssistanceRequestDto $dto): ?HouseholdMember
     {
-        if (!$dto->onBehalfHouseholdMemberId) {
+        if (! $dto->onBehalfHouseholdMemberId) {
             return null;
         }
 
         $member = HouseholdMember::find($dto->onBehalfHouseholdMemberId);
 
-        if (!$member || $member->household_id !== $dto->householdId) {
+        if (! $member || $member->household_id !== $dto->householdId) {
             throw new AuthorizationException(
                 'The selected family member does not belong to your household.'
+            );
+        }
+
+        if (! $member->is_active) {
+            throw new AuthorizationException('The selected household member is no longer active.');
+        }
+
+        if ($member->relationship !== 'head'
+            && ! $member->is_verified_dependent
+            && $dto->encodedByUserId === null) {
+            throw new AuthorizationException(
+                'The selected household member is awaiting MSWD verification.',
             );
         }
 

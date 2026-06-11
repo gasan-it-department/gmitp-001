@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,7 +26,9 @@ class HouseholdMember extends Model
     use HasUlids, LogsActivity, SoftDeletes;
 
     protected $table = 'ac_household_members';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -44,12 +47,14 @@ class HouseholdMember extends Model
         'monthly_income',
         'religion_id',
         'is_active',
+        'is_verified_dependent',
     ];
 
     protected $casts = [
         'birth_date' => 'date',
         'monthly_income' => 'decimal:2',
         'is_active' => 'boolean',
+        'is_verified_dependent' => 'boolean',
     ];
 
     /**
@@ -74,6 +79,7 @@ class HouseholdMember extends Model
                 'educational_attainment',
                 'religion_id',
                 'is_active',
+                'is_verified_dependent',
                 'beneficiary_id',  // populated during identity reconciliation
             ])
             ->logOnlyDirty()
@@ -89,5 +95,19 @@ class HouseholdMember extends Model
     public function beneficiary(): BelongsTo
     {
         return $this->belongsTo(Beneficiary::class, 'beneficiary_id');
+    }
+
+    public function scopeVerifiedDependents(Builder $query): Builder
+    {
+        return $query->where('is_verified_dependent', true);
+    }
+
+    public function scopeAuthoritative(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->where(function (Builder $query) {
+                $query->where('relationship', 'head')
+                    ->orWhere('is_verified_dependent', true);
+            });
     }
 }

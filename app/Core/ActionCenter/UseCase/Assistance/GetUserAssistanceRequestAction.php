@@ -13,10 +13,6 @@ class GetUserAssistanceRequestAction
      *
      * A citizen holds one beneficiary record per LGU, so we resolve the record
      * for this municipality — the Gasan portal lists Gasan requests, not Boac.
-     *
-     * @param string $userId
-     * @param string $municipalId
-     * @return Collection
      */
     public function execute(string $userId, string $municipalId): Collection
     {
@@ -25,13 +21,13 @@ class GetUserAssistanceRequestAction
             ->where('municipal_id', $municipalId)
             ->first();
 
-        if (!$beneficiary) {
-            return new Collection();
+        if (! $beneficiary) {
+            return new Collection;
         }
 
         // Return all requests for this beneficiary, eager loading the assistance type and media
         return AssistanceRequest::query()
-            ->with(['assistanceType:id,name,slug', 'media'])
+            ->with(['assistanceType:id,name,slug', 'media', 'snapshot'])
             ->where('beneficiary_id', $beneficiary->id)
             ->latest()
             ->get();

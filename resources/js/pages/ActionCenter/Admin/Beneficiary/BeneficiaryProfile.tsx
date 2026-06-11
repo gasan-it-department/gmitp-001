@@ -1,24 +1,40 @@
-import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
-import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import EditBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/EditBeneficiaryProfileController';
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
+import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
+import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
 import { Link, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, BadgeCheck, Download, GitMerge, HandCoins, Home, Link2, Mail, MapPin, Pencil, User, Users } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowLeft,
+    BadgeCheck,
+    Clock3,
+    Download,
+    GitMerge,
+    HandCoins,
+    Home,
+    Link2,
+    Mail,
+    MapPin,
+    Pencil,
+    User,
+    Users,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
 import AvatarUploader from './Components/AvatarUploader';
 import HouseholdMembersManager from './Components/HouseholdMembersManager';
 import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
+import IntakeReviewPanel, { type HouseholdMatch } from './Components/IntakeReviewPanel';
 import LinkAccountDialog from './Components/LinkAccountDialog';
-import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
 import { type RelationshipOption } from './Components/MemberFormDialog';
+import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror BeneficiaryProfileResource + the controller props
@@ -48,6 +64,9 @@ interface BeneficiaryProfileData {
     account_email: string | null;
     terms_consented_at: string | null;
     registered_at: string | null;
+    identity_verified: boolean;
+    identity_verified_at: string | null;
+    identity_verified_by: string | null;
 }
 
 interface Summary {
@@ -78,6 +97,7 @@ interface Props {
     assistanceHistory: { data: AssistanceHistoryRow[] };
     householdTotalIncome: number;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
+    householdMatches: HouseholdMatch[];
     merge: MergeInfo;
     summary: Summary;
     religions: ReligionOption[];
@@ -96,6 +116,7 @@ export default function BeneficiaryProfile({
     assistanceHistory,
     householdTotalIncome,
     crossMunicipalityMatches,
+    householdMatches,
     merge,
     summary,
     religions,
@@ -199,6 +220,15 @@ export default function BeneficiaryProfile({
                                                 Walk-in
                                             </span>
                                         )}
+                                        {profile.identity_verified ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                                                <BadgeCheck className="h-3.5 w-3.5" /> Identity verified
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                                                <Clock3 className="h-3.5 w-3.5" /> Pending intake
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="mt-1 text-sm text-slate-500">
                                         {[profile.sex_label, profile.age !== null ? `${profile.age} yrs` : null, profile.civil_status_label]
@@ -256,6 +286,15 @@ export default function BeneficiaryProfile({
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                         {/* Left column */}
                         <div className="space-y-6 lg:col-span-8">
+                            <IntakeReviewPanel
+                                beneficiaryId={profile.id}
+                                identityVerified={profile.identity_verified}
+                                verifiedAt={profile.identity_verified_at}
+                                verifiedBy={profile.identity_verified_by}
+                                members={members}
+                                householdMatches={householdMatches ?? []}
+                            />
+
                             {/* Identity */}
                             <Card>
                                 <CardHeader>

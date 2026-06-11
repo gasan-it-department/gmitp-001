@@ -24,8 +24,7 @@ class ShowBeneficiarySearchController extends Controller
 {
     public function __construct(
         private readonly SearchBeneficiaryAction $searchBeneficiary,
-    ) {
-    }
+    ) {}
 
     public function __invoke(SearchBeneficiaryRequest $request): Response
     {
@@ -36,12 +35,12 @@ class ShowBeneficiarySearchController extends Controller
         // DPA (RA 10173) access trail: record WHO looked up citizen PII and on
         // what terms. Only logged when an actual search ran — the bare page
         // load (no filters) returns nothing and is not worth a row.
-        if ($request->hasAny(['search', 'birth_date', 'barangay', 'sex'])) {
+        if ($request->hasAny(['search', 'birth_date', 'barangay', 'sex', 'verification'])) {
             activity('beneficiary-search')
                 ->causedBy($request->user())
                 ->withProperties([
                     'municipal_id' => $municipalId,
-                    'filters'      => array_filter($filters, fn ($v) => filled($v)),
+                    'filters' => array_filter($filters, fn ($v) => filled($v)),
                 ])
                 ->log('Searched the beneficiary directory');
         }

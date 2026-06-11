@@ -64,6 +64,7 @@ export interface BeneficiarySummary {
     suffix: string | null;
     sex: string | null;
     birth_date: string | null;
+    is_verified_dependent: boolean;
 }
 
 /**

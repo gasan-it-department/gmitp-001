@@ -35,8 +35,8 @@ class GetBeneficiaryProfileAction
     public function __construct(
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
-    ) {
-    }
+        private readonly FindHouseholdMembershipMatchesAction $findHouseholdMatches,
+    ) {}
 
     public function execute(string $municipalId, string $beneficiaryId): array
     {
@@ -48,11 +48,12 @@ class GetBeneficiaryProfileAction
             // Duplicate-merge links for the banner / merged-duplicates panel.
             'mergedInto',
             'mergedDuplicates',
+            'identityVerifier',
         ])->findOrFail($beneficiaryId);
 
         // Tenant scope — municipal_id lives on the household.
         if ($beneficiary->household?->municipal_id !== $municipalId) {
-            throw new ModelNotFoundException();
+            throw new ModelNotFoundException;
         }
 
         // Resolve the identity group so history + summary span the canonical
@@ -70,7 +71,10 @@ class GetBeneficiaryProfileAction
             ->orderBy('created_at')
             ->get();
 
-        $activeMembers = $householdMembers->where('is_active', true);
+        $activeMembers = $householdMembers->filter(
+            fn (HouseholdMember $member) => $member->is_active
+                && ($member->relationship === 'head' || $member->is_verified_dependent)
+        );
 
         // Every request the identity GROUP has ever filed, across all programs.
         // After a merge this includes the duplicate's frozen history so the
@@ -102,37 +106,47 @@ class GetBeneficiaryProfileAction
         );
 
         return [
-            'beneficiary'              => $beneficiary,
-            'householdMembers'         => $householdMembers,
-            'assistanceHistory'        => $assistanceHistory,
-            'householdTotalIncome'     => $householdTotalIncome,
+            'beneficiary' => $beneficiary,
+            'householdMembers' => $householdMembers,
+            'assistanceHistory' => $assistanceHistory,
+            'householdTotalIncome' => $householdTotalIncome,
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
+            'householdMatches' => $this->findHouseholdMatches->execute($beneficiary)
+                ->map(fn (HouseholdMember $member) => [
+                    'member_id' => $member->id,
+                    'household_id' => $member->household_id,
+                    'household_code' => $member->household?->household_code,
+                    'barangay' => $member->household?->barangay,
+                    'street' => $member->household?->street,
+                    'head_name' => $member->household?->activeHead?->beneficiary?->full_name,
+                ])
+                ->values(),
             // Duplicate-merge state for the profile banner + merged-duplicates
             // panel. is_merged_duplicate → THIS record was merged away (read-only);
             // merged_duplicates → records merged INTO this canonical.
-            'merge'                    => [
+            'merge' => [
                 'is_merged_duplicate' => $beneficiary->merged_into_beneficiary_id !== null,
-                'merged_into'         => $beneficiary->mergedInto
+                'merged_into' => $beneficiary->mergedInto
                     ? [
-                        'id'                 => $beneficiary->mergedInto->id,
+                        'id' => $beneficiary->mergedInto->id,
                         'beneficiary_number' => $beneficiary->mergedInto->beneficiary_number,
-                        'full_name'          => $beneficiary->mergedInto->full_name,
+                        'full_name' => $beneficiary->mergedInto->full_name,
                     ]
                     : null,
-                'merged_duplicates'   => $beneficiary->mergedDuplicates
+                'merged_duplicates' => $beneficiary->mergedDuplicates
                     ->map(fn (Beneficiary $d) => [
-                        'id'                 => $d->id,
+                        'id' => $d->id,
                         'beneficiary_number' => $d->beneficiary_number,
-                        'full_name'          => $d->full_name,
+                        'full_name' => $d->full_name,
                     ])
                     ->values()
                     ->all(),
             ],
-            'summary'                  => [
-                'total_requests'        => $assistanceHistory->count(),
-                'released_count'        => $releasedHistory->count(),
+            'summary' => [
+                'total_requests' => $assistanceHistory->count(),
+                'released_count' => $releasedHistory->count(),
                 'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
-                'active_member_count'   => $activeMembers->count(),
+                'active_member_count' => $activeMembers->count(),
             ],
         ];
     }

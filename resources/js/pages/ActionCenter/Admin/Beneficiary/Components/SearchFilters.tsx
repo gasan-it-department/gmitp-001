@@ -18,6 +18,8 @@ interface Props {
     onBarangay: (v: string) => void;
     sex: string;
     onSex: (v: string) => void;
+    verification: string;
+    onVerification: (v: string) => void;
     onClear: () => void;
     hasCriteria: boolean;
     loading?: boolean;
@@ -38,6 +40,8 @@ export default function SearchFilters({
     onBarangay,
     sex,
     onSex,
+    verification,
+    onVerification,
     onClear,
     hasCriteria,
     loading = false,
@@ -89,6 +93,21 @@ export default function SearchFilters({
                         <SelectItem value={ANY}>Any</SelectItem>
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Clear */}
+            <div className="min-w-[160px]">
+                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Verification</label>
+                <Select value={verification || ANY} onValueChange={(v) => onVerification(v === ANY ? '' : v)}>
+                    <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={ANY}>Any</SelectItem>
+                        <SelectItem value="pending">Pending intake</SelectItem>
+                        <SelectItem value="verified">Verified</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

@@ -6,8 +6,8 @@ use App\Core\Users\Models\User;
 use Illuminate\Database\Seeder;
 use App\Core\Municipality\Models\Municipality;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use App\Core\ActionCenter\Beneficiaries\Models\Beneficiary;
-use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\Beneficiary;
 
 class ActionCenterSeeder extends Seeder
 {

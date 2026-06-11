@@ -9,7 +9,6 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -94,7 +93,7 @@ class ApproveAssistanceRequestAction
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
-        if (!$request->status->canTransitionTo(AssistanceStatus::Approved)) {
+        if (! $request->status->canTransitionTo(AssistanceStatus::Approved)) {
             throw AssistanceApprovalException::invalidTransition($request->status);
         }
     }
@@ -140,7 +139,7 @@ class ApproveAssistanceRequestAction
     private function ensureRequiredDocumentsReady(AssistanceRequest $request): void
     {
         $requiredDocs = $request->assistanceType->documents
-            ->filter(fn($doc) => (bool) $doc->pivot->is_required);
+            ->filter(fn ($doc) => (bool) $doc->pivot->is_required);
 
         if ($requiredDocs->isEmpty()) {
             return;
@@ -153,13 +152,13 @@ class ApproveAssistanceRequestAction
         // EVERY approval was blocked even when all scans were attached. Read
         // the slot keys back from the custom property instead.
         $uploadedKeys = $request->media
-            ->map(fn($media) => $media->getCustomProperty('document_key'))
+            ->map(fn ($media) => $media->getCustomProperty('document_key'))
             ->filter()
             ->unique();
 
         // Report the human-readable labels ("Valid ID"), not the raw keys.
         $missing = $requiredDocs
-            ->reject(fn($doc) => $uploadedKeys->contains($doc->key))
+            ->reject(fn ($doc) => $uploadedKeys->contains($doc->key))
             ->pluck('label');
 
         if ($missing->isNotEmpty()) {
@@ -184,11 +183,11 @@ class ApproveAssistanceRequestAction
             ? (trim("{$user->first_name} {$user->last_name}") ?: ($user->user_name ?? $approverId))
             : $approverId;
 
-        $stamp = '[APPROVED ' . now()->toDateTimeString() . ' by ' . $name . ']';
-        $block = $stamp . "\n" . $notes;
+        $stamp = '[APPROVED '.now()->toDateTimeString().' by '.$name.']';
+        $block = $stamp."\n".$notes;
 
         return $existing
-            ? rtrim($existing) . "\n\n" . $block
+            ? rtrim($existing)."\n\n".$block
             : $block;
     }
 
@@ -240,6 +239,10 @@ class ApproveAssistanceRequestAction
                 ->where('household_id', $request->household_id)
                 ->where('is_active', true)
                 ->whereNotNull('beneficiary_id')
+                ->where(function ($query) {
+                    $query->where('relationship', 'head')
+                        ->orWhere('is_verified_dependent', true);
+                })
                 ->orderBy('id')
                 ->get(['id', 'beneficiary_id']);
 

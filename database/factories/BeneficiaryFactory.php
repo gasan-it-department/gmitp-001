@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Core\ActionCenter\Beneficiaries\Models\Beneficiary;
+use App\Core\ActionCenter\Models\Beneficiary;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Model>

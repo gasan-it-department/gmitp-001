@@ -47,7 +47,7 @@ interface BeneficiaryData {
 // Mirrors EligibilityResult::toArray() — advisory only on the admin desk.
 interface Eligibility {
     eligible: boolean;
-    reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | null;
+    reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | 'blacklisted' | 'identity_unverified' | 'dependent_unverified' | null;
     message: string;
     cooldown_ends_at: string | null;
 }
@@ -73,6 +73,7 @@ type RequestFormData = {
     description: string;
     privacy_consent: boolean;
     documents: Record<string, File | null>;
+    verification_override_reason: string;
 };
 
 /**
@@ -96,14 +97,17 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
         description: '',
         privacy_consent: false,
         documents: {},
+        verification_override_reason: '',
     });
 
-    const selectedType = data.assistance_type_id ? types.find((t) => t.id === data.assistance_type_id) ?? null : null;
+    const selectedType = data.assistance_type_id ? (types.find((t) => t.id === data.assistance_type_id) ?? null) : null;
 
     // Advisory cooldown state for the chosen program (NOT a hard block — the
     // admin may override for an emergency; the override is recorded server-side).
     const selectedEligibility = selectedType ? eligibilityByType?.[selectedType.id] : undefined;
     const selectedBlocked = selectedEligibility ? !selectedEligibility.eligible : false;
+    const requiresVerificationOverride =
+        selectedEligibility?.reason === 'identity_unverified' || selectedEligibility?.reason === 'dependent_unverified';
 
     // Non-field server errors come back under their own keys.
     const fieldErrors = errors as Record<string, string | undefined>;
@@ -122,7 +126,11 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
     };
 
     const canSubmit =
-        data.assistance_type_id.length > 0 && data.description.trim().length >= 10 && data.privacy_consent && !processing;
+        data.assistance_type_id.length > 0 &&
+        data.description.trim().length >= 10 &&
+        data.privacy_consent &&
+        (!requiresVerificationOverride || data.verification_override_reason.trim().length >= 10) &&
+        !processing;
 
     const profileUrl = ShowBeneficiaryProfileController.url({
         municipality: currentMunicipality.slug,
@@ -157,8 +165,8 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
                         <div>
                             <h1 className="text-xl font-bold tracking-tight text-slate-900">File an Assistance Request</h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                Recording this request on behalf of the beneficiary below. Their identity is taken from the
-                                verified registry record — only the request details are entered here.
+                                Recording this request on behalf of the beneficiary below. Their identity is taken from the verified registry record —
+                                only the request details are entered here.
                             </p>
                         </div>
                     </div>
@@ -230,6 +238,23 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
                                 </div>
                             )}
 
+                            {requiresVerificationOverride && (
+                                <div className="space-y-2">
+                                    <Label>
+                                        Verification override reason <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Textarea
+                                        rows={3}
+                                        value={data.verification_override_reason}
+                                        onChange={(e) => setData('verification_override_reason', e.target.value)}
+                                        placeholder="Explain the urgent reason for filing before verification is complete."
+                                    />
+                                    {errors.verification_override_reason && (
+                                        <p className="text-xs text-red-500">{errors.verification_override_reason}</p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Description */}
                             <div className="space-y-2">
                                 <Label>
@@ -251,15 +276,16 @@ export default function CreateAssistanceRequest({ beneficiary, assistanceTypes, 
                                         <Paperclip className="h-4 w-4" /> Supporting documents
                                     </h4>
                                     <p className="mb-4 text-xs text-blue-800/80">
-                                        Optional — attach scans if available. You may also verify physical originals at the desk and
-                                        attach later.
+                                        Optional — attach scans if available. You may also verify physical originals at the desk and attach later.
                                     </p>
                                     <div className="space-y-4">
                                         {selectedType.documents.map((doc) => (
                                             <div key={doc.key} className="space-y-1.5">
                                                 <Label className="text-sm">
                                                     {doc.name}
-                                                    {doc.is_required && <span className="ml-1 text-[10px] font-medium text-amber-600">(usually required)</span>}
+                                                    {doc.is_required && (
+                                                        <span className="ml-1 text-[10px] font-medium text-amber-600">(usually required)</span>
+                                                    )}
                                                 </Label>
                                                 {doc.description && <p className="text-xs text-slate-500">{doc.description}</p>}
                                                 <Input
@@ -331,20 +357,16 @@ function advisoryText(e: Eligibility): string {
     if (e.reason === 'permanent_block') {
         return 'This beneficiary has already received this one-time assistance.';
     }
+    if (e.reason === 'identity_unverified') {
+        return 'This claimant has not completed MSWD identity verification.';
+    }
+    if (e.reason === 'dependent_unverified') {
+        return 'The selected dependent has not completed MSWD roster verification.';
+    }
     return 'This beneficiary may not be eligible for this program right now.';
 }
 
-function ReadOnly({
-    label,
-    value,
-    className = '',
-    capitalize = false,
-}: {
-    label: string;
-    value: string;
-    className?: string;
-    capitalize?: boolean;
-}) {
+function ReadOnly({ label, value, className = '', capitalize = false }: { label: string; value: string; className?: string; capitalize?: boolean }) {
     return (
         <div className={className}>
             <dt className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">{label}</dt>

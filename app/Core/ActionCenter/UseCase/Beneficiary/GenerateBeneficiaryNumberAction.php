@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
+use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,6 +27,10 @@ use Illuminate\Support\Facades\DB;
  */
 class GenerateBeneficiaryNumberAction
 {
+    public function __construct(
+        private readonly IdGeneratorInterface $idGeneratorInterface,
+    ) {
+    }
     public function execute(string $municipalId): string
     {
         $municipality = DB::table('municipalities')
@@ -58,6 +63,7 @@ class GenerateBeneficiaryNumberAction
             $next = 1;
 
             DB::table('ac_beneficiary_sequences')->insert([
+                'id' => $this->idGeneratorInterface->generate(),
                 'municipal_id' => $municipalId,
                 'last_seq' => $next,
                 'created_at' => now(),

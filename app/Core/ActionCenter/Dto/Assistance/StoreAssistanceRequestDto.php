@@ -34,6 +34,7 @@ readonly class StoreAssistanceRequestDto
         public string $submitterUserId,
         public ?string $encodedByUserId,   // null for self-filed online; admin user id for walk-in
         public string $description,
+        public ?string $verificationOverrideReason,
 
         // ── Data Privacy Act (RA 10173) consent ──────────────────────────────
         public CarbonImmutable $privacyConsentedAt,
@@ -76,8 +77,7 @@ readonly class StoreAssistanceRequestDto
         public ?string $snapshotStreet,
         public array $documents = [],
 
-    ) {
-    }
+    ) {}
 
     /**
      * Build the DTO from a validated request, the route-bound AssistanceType,
@@ -117,6 +117,7 @@ readonly class StoreAssistanceRequestDto
             submitterUserId: $request->user()->id,
             encodedByUserId: null, // online self-filed; admin walk-ins set this elsewhere
             description: $request->validated('description'),
+            verificationOverrideReason: null,
             documents: $documents,
 
             // Consent is server-stamped. The FormRequest enforced `accepted`;
@@ -197,6 +198,7 @@ readonly class StoreAssistanceRequestDto
             submitterUserId: $adminUserId,
             encodedByUserId: $adminUserId,
             description: $request->validated('description'),
+            verificationOverrideReason: $request->input('verification_override_reason') ?: null,
             documents: $documents,
 
             // Consent is the admin's on-behalf affirmation. The FormRequest

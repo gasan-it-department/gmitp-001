@@ -14,13 +14,14 @@ use Illuminate\Support\Facades\DB;
  * description and supporting-document scans. Admin-only, status-gated.
  *
  * ── Why status-gated, not free editing ─────────────────────────────────────
- * ac_assistance_requests is COA evidence: snapshot_* identity/income/address
- * are frozen, amount_approved is bound on approval, and release is immutable.
+ * The assistance request and its one-to-one snapshot are COA evidence:
+ * identity/income/address are frozen, amount_approved is bound on approval,
+ * and release is immutable.
  * So editing is allowed ONLY while the request is still undecided (pending /
  * under_review — AssistanceStatus::isEditable()). After that the record is
  * content-locked; corrections go through reject/cancel + re-file.
  *
- * Never touched here: snapshot_*, amount_approved, transaction_number,
+ * Never touched here: snapshot relation, amount_approved, transaction_number,
  * assistance_type_id, status. Identity fixes belong to the beneficiary-profile
  * editor; the request keeps its frozen snapshot on purpose.
  *
@@ -45,7 +46,7 @@ class UpdateAssistanceRequestAction
         if (! $request->status->isEditable()) {
             throw new \DomainException(
                 'This request can no longer be edited because it has already been '
-                . $request->status->label() . '. Use reject/cancel and re-file if a correction is needed.',
+                .$request->status->label().'. Use reject/cancel and re-file if a correction is needed.',
             );
         }
 
@@ -108,7 +109,7 @@ class UpdateAssistanceRequestAction
         $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $slug = preg_replace('/[^A-Za-z0-9_-]+/', '_', $base) ?: 'document';
 
-        return $slug . ($extension ? ".{$extension}" : '');
+        return $slug.($extension ? ".{$extension}" : '');
     }
 
     /**
@@ -139,8 +140,8 @@ class UpdateAssistanceRequestAction
             ->performedOn($request)
             ->causedBy(User::find($dto->actingAdminId))
             ->withProperties([
-                'municipal_id'       => $dto->municipalId,
-                'changed'            => $changed,
+                'municipal_id' => $dto->municipalId,
+                'changed' => $changed,
                 'replaced_documents' => $replacedKeys,
             ])
             ->log('Edited the request details');

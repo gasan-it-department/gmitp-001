@@ -39,8 +39,7 @@ class CreateWalkInBeneficiaryAction
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
-    ) {
-    }
+    ) {}
 
     public function execute(CreateWalkInBeneficiaryDto $dto): Beneficiary
     {
@@ -65,33 +64,35 @@ class CreateWalkInBeneficiaryAction
 
             $household = Household::create([
                 'municipal_id' => $dto->municipalId,
-                'barangay'     => $dto->barangay,
-                'street'       => $dto->street,
+                'barangay' => $dto->barangay,
+                'street' => $dto->street,
             ]);
 
             $beneficiary = Beneficiary::create([
-                'household_id'           => $household->id,
+                'household_id' => $household->id,
                 // Intrinsic tenant key — must mirror the household's municipality.
-                'municipal_id'           => $dto->municipalId,
+                'municipal_id' => $dto->municipalId,
                 // Walk-in: no portal account is linked. The admin can link one
                 // later (LinkBeneficiaryToUserAction) if the person registers.
-                'user_id'                => null,
+                'user_id' => null,
                 // Human-friendly lifelong ID (e.g. GAS-000123). Allocated under
                 // a per-municipality row lock inside this same transaction.
-                'beneficiary_number'     => $this->generateBeneficiaryNumber->execute($dto->municipalId),
-                'first_name'             => $dto->firstName,
-                'last_name'              => $dto->lastName,
-                'middle_name'            => $dto->middleName,
-                'suffix'                 => $dto->suffix,
-                'sex'                    => $dto->sex,
-                'birth_date'             => $dto->birthDate,
-                'religion_id'            => $dto->religionId,
+                'beneficiary_number' => $this->generateBeneficiaryNumber->execute($dto->municipalId),
+                'first_name' => $dto->firstName,
+                'last_name' => $dto->lastName,
+                'middle_name' => $dto->middleName,
+                'suffix' => $dto->suffix,
+                'sex' => $dto->sex,
+                'birth_date' => $dto->birthDate,
+                'religion_id' => $dto->religionId,
                 'educational_attainment' => $dto->educationalAttainment,
-                'civil_status'           => $dto->civilStatus,
-                'occupation'             => $dto->occupation,
-                'monthly_income'         => $dto->monthlyIncome,
-                'terms_consented_at'     => $dto->termsConsentedAt,
-                'terms_version'          => $dto->termsVersion,
+                'civil_status' => $dto->civilStatus,
+                'occupation' => $dto->occupation,
+                'monthly_income' => $dto->monthlyIncome,
+                'terms_consented_at' => $dto->termsConsentedAt,
+                'terms_version' => $dto->termsVersion,
+                'identity_verified_at' => $dto->verifyNow ? now() : null,
+                'identity_verified_by_user_id' => $dto->verifyNow ? $dto->encodedByUserId : null,
             ]);
 
             // Self-referencing "Head of Household" row (same as online).
@@ -113,6 +114,7 @@ class CreateWalkInBeneficiaryAction
                         $memberData['beneficiary_id'] ?? null,
                         $dto->municipalId,
                     ),
+                    isVerifiedDependent: $dto->verifyNow,
                 );
             }
 
@@ -124,9 +126,9 @@ class CreateWalkInBeneficiaryAction
                 ->performedOn($beneficiary)
                 ->causedBy(User::find($dto->encodedByUserId))
                 ->withProperties([
-                    'municipal_id'          => $dto->municipalId,
-                    'beneficiary_id'        => $beneficiary->id,
-                    'household_id'          => $household->id,
+                    'municipal_id' => $dto->municipalId,
+                    'beneficiary_id' => $beneficiary->id,
+                    'household_id' => $household->id,
                     'forced_over_duplicate' => $dto->force,
                 ])
                 ->log('Encoded a walk-in beneficiary');

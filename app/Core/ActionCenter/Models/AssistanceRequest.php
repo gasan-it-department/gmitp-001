@@ -5,12 +5,13 @@ namespace App\Core\ActionCenter\Models;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\Users\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Factories\AssistanceRequestFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -20,18 +21,18 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * The main transaction table for the Action Center. One row per citizen
- * assistance request. Records accumulate over time and are never hard-deleted.
- *
- * Important: the citizen does NOT propose an amount. amount_approved is set
- * only when the mayor / authorized approver grants the request, bounded by
- * the assistance type's min_amount / max_amount.
+ * assistance request. The frozen snapshot payload now lives in the
+ * ac_assistance_request_snapshots table; the request row keeps only metadata
+ * for the representative/on-behalf block.
  */
 class AssistanceRequest extends Model implements HasMedia
 {
     use HasFactory, HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     protected $table = 'ac_assistance_requests';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -47,72 +48,32 @@ class AssistanceRequest extends Model implements HasMedia
         'released_by_user_id',
         'release_reference_number',
         'assistance_type_id',
-
-        // Authorized-representative fields (null = applicant is the beneficiary)
-        'relationship_to_beneficiary',  // spouse | parent | child | sibling | null
-        'on_behalf_first_name',
-        'on_behalf_middle_name',
-        'on_behalf_last_name',
-        'on_behalf_suffix',
-        'on_behalf_date_of_death',      // burial only
-        'on_behalf_household_member_id',// FK to ac_household_members when filing for a family member
-
-        'amount_approved',       // set only on approval
-        'transaction_number',    // #REQ-YYYY-XXXX
-
-        'status',                // pending | under_review | approved | released | rejected
-        'description',           // citizen's reason for the request
-        'remarks',               // admin notes during review
-
+        'metadata',
+        'on_behalf_household_member_id',
+        'amount_approved',
+        'transaction_number',
+        'status',
+        'description',
+        'remarks',
         'approved_at',
         'released_at',
         'rejected_at',
         'cancelled_at',
-
-        // Data Privacy Act (RA 10173) consent record.
         'privacy_consented_at',
         'privacy_notice_version',
-
-        // Identity snapshot — frozen copy of ac_beneficiaries at request time.
-        // Preserves historical accuracy if the citizen edits their profile later.
-        'snapshot_first_name',
-        'snapshot_last_name',
-        'snapshot_middle_name',
-        'snapshot_suffix',
-        'snapshot_sex',
-        'snapshot_birth_date',
-        'snapshot_educational_attainment',
-        'snapshot_religion',
-        'snapshot_civil_status',
-        'snapshot_occupation',
-        'snapshot_monthly_income',
-        'snapshot_household_total_income',
-
-        // Address snapshot — frozen copy of ac_households at request time.
-        // Province omitted; municipal_id FK already captures that context.
-        'snapshot_barangay',
-        'snapshot_barangay_psgc_code',
-        'snapshot_street',
     ];
 
     protected $casts = [
         'status' => AssistanceStatus::class,
-        'relationship_to_beneficiary' => Relationship::class,
-        'on_behalf_date_of_death' => 'date',
-        'snapshot_birth_date' => 'date',
         'amount_approved' => 'decimal:2',
         'approved_at' => 'datetime',
         'released_at' => 'datetime',
         'rejected_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'privacy_consented_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
-    /**
-     * Log workflow mutations that matter for COA audit:
-     * status transitions, approver assignment, approved amount, and admin remarks.
-     * `logOnlyDirty` + `dontSubmitEmptyLogs` keeps the table clean on no-op saves.
-     */
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -147,10 +108,11 @@ class AssistanceRequest extends Model implements HasMedia
         return $this->belongsTo(Household::class, 'household_id');
     }
 
-    /**
-     * The household member being assisted, when filing on behalf of a family
-     * member. NULL means the filer is also the beneficiary.
-     */
+    public function snapshot(): HasOne
+    {
+        return $this->hasOne(AssistanceRequestSnapshot::class, 'assistance_request_id');
+    }
+
     public function onBehalfHouseholdMember(): BelongsTo
     {
         return $this->belongsTo(HouseholdMember::class, 'on_behalf_household_member_id');
@@ -219,5 +181,114 @@ class AssistanceRequest extends Model implements HasMedia
             ->performOnCollections('photos')
             ->width(1200)
             ->quality(85);
+    }
+
+    public function getRelationshipToBeneficiaryAttribute(): ?Relationship
+    {
+        $value = data_get($this->metadata, 'relationship_to_beneficiary');
+
+        return $value ? Relationship::tryFrom($value) : null;
+    }
+
+    public function getOnBehalfFirstNameAttribute(): ?string
+    {
+        return data_get($this->metadata, 'on_behalf_first_name');
+    }
+
+    public function getOnBehalfMiddleNameAttribute(): ?string
+    {
+        return data_get($this->metadata, 'on_behalf_middle_name');
+    }
+
+    public function getOnBehalfLastNameAttribute(): ?string
+    {
+        return data_get($this->metadata, 'on_behalf_last_name');
+    }
+
+    public function getOnBehalfSuffixAttribute(): ?string
+    {
+        return data_get($this->metadata, 'on_behalf_suffix');
+    }
+
+    public function getOnBehalfDateOfDeathAttribute(): ?CarbonImmutable
+    {
+        $value = data_get($this->metadata, 'on_behalf_date_of_death');
+
+        return $value ? CarbonImmutable::parse($value) : null;
+    }
+
+    public function getSnapshotFirstNameAttribute(): ?string
+    {
+        return $this->snapshot?->first_name;
+    }
+
+    public function getSnapshotLastNameAttribute(): ?string
+    {
+        return $this->snapshot?->last_name;
+    }
+
+    public function getSnapshotMiddleNameAttribute(): ?string
+    {
+        return $this->snapshot?->middle_name;
+    }
+
+    public function getSnapshotSuffixAttribute(): ?string
+    {
+        return $this->snapshot?->suffix;
+    }
+
+    public function getSnapshotSexAttribute(): ?string
+    {
+        return $this->snapshot?->sex;
+    }
+
+    public function getSnapshotBirthDateAttribute(): mixed
+    {
+        return $this->snapshot?->birth_date;
+    }
+
+    public function getSnapshotEducationalAttainmentAttribute(): ?string
+    {
+        return $this->snapshot?->educational_attainment;
+    }
+
+    public function getSnapshotReligionAttribute(): ?string
+    {
+        return $this->snapshot?->religion;
+    }
+
+    public function getSnapshotCivilStatusAttribute(): ?string
+    {
+        return $this->snapshot?->civil_status;
+    }
+
+    public function getSnapshotOccupationAttribute(): ?string
+    {
+        return $this->snapshot?->occupation;
+    }
+
+    public function getSnapshotMonthlyIncomeAttribute(): mixed
+    {
+        return $this->snapshot?->monthly_income;
+    }
+
+    public function getSnapshotHouseholdTotalIncomeAttribute(): mixed
+    {
+        return $this->snapshot?->household_total_income;
+    }
+
+    public function getSnapshotBarangayAttribute(): ?string
+    {
+        return $this->snapshot?->barangay;
+    }
+
+    public function getSnapshotBarangayPsgcCodeAttribute(): ?string
+    {
+        return $this->snapshot?->barangay_psgc_code;
+    }
+
+    public function getSnapshotStreetAttribute(): ?string
+    {
+        return $this->snapshot?->street;
     }
 }

@@ -28,8 +28,7 @@ class IndexAssistanceRequestController extends Controller
         private readonly ListActiveAssistanceTypeAction $listAssistanceTypes,
         private readonly ResolveApplicantProfileAction $resolveProfile,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request)
     {
@@ -40,15 +39,20 @@ class IndexAssistanceRequestController extends Controller
         // The frontend treats an empty map as "no per-card gating" and just
         // shows every card enabled.
         $eligibilityByType = [];
+        $profileVerification = null;
 
         if ($user = $request->user()) {
             $beneficiary = $this->resolveProfile->execute($user->id, app('municipal_id'));
 
             if ($beneficiary !== null) {
+                $profileVerification = [
+                    'has_profile' => true,
+                    'identity_verified' => $beneficiary->isIdentityVerified(),
+                ];
                 $eligibilityByType = collect(
                     $this->checkEligibility->executeBatch($beneficiary, $assistanceTypes)
                 )
-                    ->map(fn($result) => $result->toArray())
+                    ->map(fn ($result) => $result->toArray())
                     ->all();
 
             }
@@ -60,6 +64,7 @@ class IndexAssistanceRequestController extends Controller
             // can't currently apply for. Empty map (guest / no profile) → the
             // frontend treats every card as enabled.
             'eligibilityByType' => $eligibilityByType,
+            'profileVerification' => $profileVerification,
         ]);
     }
 }

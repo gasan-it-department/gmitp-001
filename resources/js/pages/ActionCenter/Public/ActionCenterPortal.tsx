@@ -6,7 +6,21 @@ import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import apply from '@/routes/actionCenter/apply';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Ambulance, Banknote, BookOpen, Bus, CalendarClock, Clock, FileText, HandHeart, Heart, Lock, ShieldCheck, Utensils, Wallet } from 'lucide-react';
+import {
+    Ambulance,
+    Banknote,
+    BookOpen,
+    Bus,
+    CalendarClock,
+    Clock,
+    FileText,
+    HandHeart,
+    Heart,
+    Lock,
+    ShieldCheck,
+    Utensils,
+    Wallet,
+} from 'lucide-react';
 import { useState } from 'react';
 
 // 1. Define the Expected Interface from Laravel
@@ -15,7 +29,7 @@ import { useState } from 'react';
 // guests / profile-incomplete users — the page treats that as "no gating."
 interface Eligibility {
     eligible: boolean;
-    reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | null;
+    reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | 'blacklisted' | 'identity_unverified' | 'dependent_unverified' | null;
     message: string;
     cooldown_ends_at: string | null;
 }
@@ -23,6 +37,7 @@ interface Eligibility {
 interface Props {
     assistanceTypes: { data: AssistanceTypeListItem[] };
     eligibilityByType: Record<string, Eligibility>;
+    profileVerification: { has_profile: boolean; identity_verified: boolean } | null;
 }
 // 2. Dynamic Icon Mapper
 const getAssistanceIcon = (name: string) => {
@@ -36,7 +51,7 @@ const getAssistanceIcon = (name: string) => {
     return FileText; // Default fallback icon
 };
 
-export default function ActionCenterPortal({ assistanceTypes, eligibilityByType }: Props) {
+export default function ActionCenterPortal({ assistanceTypes, eligibilityByType, profileVerification }: Props) {
     const assistanceData = assistanceTypes.data;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
@@ -81,6 +96,17 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType 
             {/* --- DYNAMIC SERVICES OVERVIEW --- */}
             <section className="container mx-auto px-4 py-16">
                 <div className="mx-auto max-w-6xl">
+                    {profileVerification && !profileVerification.identity_verified && (
+                        <div className="mb-8 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+                            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                            <div>
+                                <p className="font-semibold">Your beneficiary profile is awaiting MSWD review.</p>
+                                <p className="mt-0.5 text-sm text-amber-800">
+                                    Assistance programs will become available after an administrator verifies your identity and household intake.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     <div className="mb-12 space-y-2 text-center">
                         <h3 className="text-2xl font-black tracking-widest text-foreground uppercase md:text-3xl">Assistance Programs</h3>
                         <div className="mx-auto h-1 w-20 rounded-full bg-primary" />

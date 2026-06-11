@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\DB;
  * Step 2 — Beneficiary: inserts one row into ac_beneficiaries linked to the
  *           household above and to the portal user account (user_id).
  *
- * After this action succeeds the citizen will pass the profile gate in
- * ApplyAssistanceRequestController and can submit assistance requests.
+ * After this action succeeds the citizen has a provisional household and
+ * remains pending until an MSWD administrator verifies the intake.
  *
  * ── Lock-order contract ────────────────────────────────────────────────
  * Locks in this order: users row → households insert → beneficiaries
@@ -41,8 +41,7 @@ class CreateBeneficiaryProfileAction
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
-    ) {
-    }
+    ) {}
 
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
@@ -139,12 +138,12 @@ class CreateBeneficiaryProfileAction
             if ($possibleDuplicates->isNotEmpty()) {
                 BeneficiaryFlag::create([
                     'beneficiary_id' => $beneficiary->id,
-                    'user_id'        => null, // system-raised, not an admin action
-                    'reason'         => 'potential_duplicate',
-                    'severity'       => BeneficiaryFlag::SEVERITY_WARNING,
-                    'notes'          => 'Possible duplicate of: ' . $possibleDuplicates
+                    'user_id' => null, // system-raised, not an admin action
+                    'reason' => 'potential_duplicate',
+                    'severity' => BeneficiaryFlag::SEVERITY_WARNING,
+                    'notes' => 'Possible duplicate of: '.$possibleDuplicates
                         ->map(fn (Beneficiary $b) => $b->beneficiary_number ?? $b->id)
-                        ->implode(', ') . '. Verify against government ID before assisting.',
+                        ->implode(', ').'. Verify against government ID before assisting.',
                 ]);
             }
 

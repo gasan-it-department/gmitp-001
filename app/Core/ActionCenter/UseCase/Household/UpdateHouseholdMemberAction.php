@@ -46,19 +46,30 @@ class UpdateHouseholdMemberAction
                 );
             }
 
+            $materialIdentityChanged = $member->first_name !== $dto->firstName
+                || $member->last_name !== $dto->lastName
+                || $member->middle_name !== $dto->middleName
+                || $member->suffix !== $dto->suffix
+                || $member->birth_date?->toDateString() !== $dto->birthDate
+                || $member->sex !== $dto->sex
+                || $member->relationship !== $dto->relationship;
+
             $member->update([
-                'first_name'             => $dto->firstName,
-                'last_name'              => $dto->lastName,
-                'middle_name'            => $dto->middleName,
-                'suffix'                 => $dto->suffix,
-                'relationship'           => $dto->relationship,
-                'birth_date'             => $dto->birthDate,
-                'sex'                    => $dto->sex,
-                'civil_status'           => $dto->civilStatus,
+                'first_name' => $dto->firstName,
+                'last_name' => $dto->lastName,
+                'middle_name' => $dto->middleName,
+                'suffix' => $dto->suffix,
+                'relationship' => $dto->relationship,
+                'birth_date' => $dto->birthDate,
+                'sex' => $dto->sex,
+                'civil_status' => $dto->civilStatus,
                 'educational_attainment' => $dto->educationalAttainment,
-                'occupation'             => $dto->occupation,
-                'monthly_income'         => $dto->monthlyIncome ?? 0,
-                'religion_id'            => $dto->religionId,
+                'occupation' => $dto->occupation,
+                'monthly_income' => $dto->monthlyIncome ?? 0,
+                'religion_id' => $dto->religionId,
+                'is_verified_dependent' => $materialIdentityChanged
+                    ? false
+                    : ($dto->isVerifiedDependent || $member->is_verified_dependent),
             ]);
 
             return $member->fresh();

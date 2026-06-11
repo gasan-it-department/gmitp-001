@@ -4,7 +4,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Briefcase, Home, Loader2, User, UserPlus, Users } from 'lucide-react';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 // Reuse the online profile-setup sections verbatim — same fields, same
 // validators — so the two intake forms can never drift.
 import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Components/CivilStatusEmploymentSection';
@@ -48,6 +48,7 @@ export default function CreateWalkInBeneficiary({
     duplicateMatches,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const [lastVerifyChoice, setLastVerifyChoice] = useState(false);
 
     const { data, setData, post, processing, errors, transform } = useForm<ProfileSetupFormData>({
         first_name: '',
@@ -73,8 +74,9 @@ export default function CreateWalkInBeneficiary({
     const duplicateError = (errors as Record<string, string | undefined>).duplicate;
     const walkinError = (errors as Record<string, string | undefined>).walkin;
 
-    const submitWith = (force: boolean) => {
-        transform((d) => ({ ...d, force }));
+    const submitWith = (force: boolean, verifyNow: boolean) => {
+        setLastVerifyChoice(verifyNow);
+        transform((d) => ({ ...d, force, verify_now: verifyNow }));
         post(submitUrl, {
             headers: {
                 'X-Municipality-Slug': currentMunicipality.slug,
@@ -84,7 +86,7 @@ export default function CreateWalkInBeneficiary({
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        submitWith(false);
+        submitWith(false, false);
     };
 
     // Mirrors the server's required-field set (StoreWalkInBeneficiaryRequest).
@@ -127,8 +129,8 @@ export default function CreateWalkInBeneficiary({
                         <div>
                             <h1 className="text-xl font-bold tracking-tight text-slate-900">Register a Walk-in Beneficiary</h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                Encode a person who has no online account. Make sure you searched the registry first — a new
-                                record should only be created when no existing match is found.
+                                Encode a person who has no online account. Make sure you searched the registry first — a new record should only be
+                                created when no existing match is found.
                             </p>
                         </div>
                     </div>
@@ -138,7 +140,7 @@ export default function CreateWalkInBeneficiary({
                         <DuplicateMatchWarning
                             matches={duplicateMatches}
                             municipalitySlug={currentMunicipality.slug}
-                            onRegisterAnyway={() => submitWith(true)}
+                            onRegisterAnyway={() => submitWith(true, lastVerifyChoice)}
                             processing={processing}
                         />
 
@@ -181,8 +183,8 @@ export default function CreateWalkInBeneficiary({
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<Users className="h-4 w-4 text-[#005088]" />} title="Household" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                List the other family members who live with the applicant. The applicant is counted automatically
-                                as the head of the household.
+                                List the other family members who live with the applicant. The applicant is counted automatically as the head of the
+                                household.
                             </p>
                             <div className="mt-6">
                                 <HouseholdMembersSection
@@ -207,30 +209,37 @@ export default function CreateWalkInBeneficiary({
 
                         {/* Non-field server error (cap hit, etc.) */}
                         {walkinError && (
-                            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600">
-                                {walkinError}
-                            </p>
+                            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600">{walkinError}</p>
                         )}
                         {duplicateError && duplicateMatches.length === 0 && (
-                            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600">
-                                {duplicateError}
-                            </p>
+                            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600">{duplicateError}</p>
                         )}
 
                         {/* Submit */}
-                        <Button
-                            type="submit"
-                            disabled={!canSubmit}
-                            className="h-14 w-full rounded-2xl bg-slate-900 text-base font-bold tracking-wide text-white uppercase shadow-lg transition-all hover:bg-slate-800 active:scale-[0.99] disabled:opacity-50"
-                        >
-                            {processing ? (
-                                <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving…
-                                </>
-                            ) : (
-                                'Register Beneficiary'
-                            )}
-                        </Button>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Button
+                                type="submit"
+                                disabled={!canSubmit}
+                                variant="outline"
+                                className="h-14 w-full rounded-2xl text-base font-bold tracking-wide uppercase disabled:opacity-50"
+                            >
+                                {processing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving…
+                                    </>
+                                ) : (
+                                    'Save Pending'
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={() => submitWith(false, true)}
+                                disabled={!canSubmit}
+                                className="h-14 w-full rounded-2xl bg-emerald-700 text-base font-bold tracking-wide text-white uppercase shadow-lg hover:bg-emerald-800 disabled:opacity-50"
+                            >
+                                {processing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Save Verified'}
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </div>

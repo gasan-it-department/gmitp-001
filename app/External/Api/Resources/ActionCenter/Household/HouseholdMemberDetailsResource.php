@@ -1,4 +1,5 @@
 <?php
+
 // app/External/Api/Resources/ActionCenter/Household/HouseholdMemberDetailsResource.php
 
 namespace App\External\Api\Resources\ActionCenter\Household;
@@ -39,6 +40,7 @@ class HouseholdMemberDetailsResource extends JsonResource
             // currently living in the household?
             'beneficiary_id' => $this->beneficiary_id,
             'is_active' => (bool) $this->is_active,
+            'is_verified_dependent' => (bool) $this->is_verified_dependent,
         ];
     }
 }

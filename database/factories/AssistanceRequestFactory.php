@@ -2,38 +2,50 @@
 
 namespace Database\Factories;
 
-use Illuminate\Support\Str;
+use App\Core\ActionCenter\Models\AssistanceRequest;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
-use App\Core\ActionCenter\Requests\Services\TransactionNumberGenerator;
+use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Model>
+ * @extends Factory<AssistanceRequest>
  */
 class AssistanceRequestFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-
     protected $model = AssistanceRequest::class;
 
     public function definition(): array
     {
-
-        $trnGenerator = app(TransactionNumberGenerator::class);
-
         return [
-            'id' => Str::ulid(),
-            'assistance_type' => fake()->randomElement(['Medical', 'Burial', 'Financial', 'Educational']),
+            'transaction_number' => sprintf(
+                '#REQ-%s-%s',
+                now()->year,
+                Str::upper(Str::random(8)),
+            ),
+            'status' => 'pending',
             'description' => fake()->sentence(10),
-            'status' => fake()->randomElement(['pending', 'approved', 'rejected']),
-            // We leave user_id, municipal_id, and beneficiary_id null here
-            // because we will assign them in the Seeder
-            'transaction_number' => $trnGenerator->generate(),
-            'created_at' => fake()->dateTimeBetween('-1 year', 'now'),
+            'amount_approved' => null,
+            'metadata' => null,
+            'privacy_consented_at' => now(),
+            'privacy_notice_version' => 'v1.0',
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (AssistanceRequest $request) {
+            if ($request->snapshot()->exists()) {
+                return;
+            }
+
+            $request->snapshot()->create([
+                'first_name' => fake()->firstName(),
+                'last_name' => fake()->lastName(),
+                'birth_date' => fake()->dateTimeBetween('-80 years', '-18 years')->format('Y-m-d'),
+                'barangay' => fake()->city(),
+                'street' => fake()->streetAddress(),
+                'monthly_income' => fake()->randomFloat(2, 0, 30000),
+                'household_total_income' => fake()->randomFloat(2, 0, 60000),
+            ]);
+        });
     }
 }

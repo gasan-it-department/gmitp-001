@@ -23,15 +23,15 @@ import { RequestReasonSection } from './Components/RequestReasonSection';
 
 interface Props {
     assistanceType: { data: AssistanceTypeDetails } | AssistanceTypeDetails;
-    beneficiary:    BeneficiarySummary;
-    household:      HouseholdSummary;
+    beneficiary: BeneficiarySummary;
+    household: HouseholdSummary;
     // Driven by App\Core\ActionCenter\Enums\Relationship::toOptions() — the
     // enum is the single source of truth for both the label copy and the
     // legal-age rule that gates child/sibling representatives.
-    relationships:  RelationshipOption[];
+    relationships: RelationshipOption[];
     // Inertia ResourceCollection wraps the array under `data`.
     householdMembers: { data: HouseholdMemberOption[] } | HouseholdMemberOption[];
-    submitUrl:      string;
+    submitUrl: string;
     storeHouseholdMemberUrl: string;
 }
 
@@ -40,17 +40,17 @@ interface Props {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface FormData {
-    description:                 string;
-    privacy_consent:             boolean;
-    documents:                   Record<string, File | null>;
+    description: string;
+    privacy_consent: boolean;
+    documents: Record<string, File | null>;
     // Representative fields — submitted for ALL programs; null = "myself"
-    relationship_to_beneficiary:    RelationshipType;
-    on_behalf_household_member_id:  string; // FK to ac_household_members; '' when filing for self
-    on_behalf_first_name:           string;
-    on_behalf_middle_name:          string;
-    on_behalf_last_name:            string;
-    on_behalf_suffix:               string;
-    on_behalf_date_of_death:        string; // burial only
+    relationship_to_beneficiary: RelationshipType;
+    on_behalf_household_member_id: string; // FK to ac_household_members; '' when filing for self
+    on_behalf_first_name: string;
+    on_behalf_middle_name: string;
+    on_behalf_last_name: string;
+    on_behalf_suffix: string;
+    on_behalf_date_of_death: string; // burial only
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,19 +67,18 @@ export default function ApplyAssistance({
     storeHouseholdMemberUrl,
 }: Props) {
     // The Inertia resource may arrive wrapped ({ data: … }) or raw — handle both.
-    const program: AssistanceTypeDetails =
-        'data' in assistanceType ? assistanceType.data : assistanceType;
+    const program: AssistanceTypeDetails = 'data' in assistanceType ? assistanceType.data : assistanceType;
 
     const beneficiaryData = beneficiary;
-    const householdData   = household;
-    const formAction      = submitUrl;
+    const householdData = household;
+    const formAction = submitUrl;
 
     // householdMembers may arrive as { data: [...] } (ResourceCollection) or
     // a bare array; normalise once. Newly-created members are appended via
     // setHouseholdRoster so they show up in the picker without a page reload.
-    const initialMembers: HouseholdMemberOption[] =
-        'data' in householdMembers ? householdMembers.data : householdMembers;
-    const [householdRoster, setHouseholdRoster] = useState<HouseholdMemberOption[]>(initialMembers);
+    const initialMembers: HouseholdMemberOption[] = 'data' in householdMembers ? householdMembers.data : householdMembers;
+    const householdRoster = initialMembers;
+    const [pendingMemberMessage, setPendingMemberMessage] = useState<string | null>(null);
 
     const { props } = usePage<{ ziggy?: { url?: string } }>();
     const isBurial = program.slug === 'burial';
@@ -105,16 +104,16 @@ export default function ApplyAssistance({
 
     // ── Form ─────────────────────────────────────────────────────────────────
     const { data, setData, post, processing, errors, transform } = useForm<FormData>({
-        description:                   '',
-        privacy_consent:               false,
-        documents:                     {},
-        relationship_to_beneficiary:   '',
+        description: '',
+        privacy_consent: false,
+        documents: {},
+        relationship_to_beneficiary: '',
         on_behalf_household_member_id: '',
-        on_behalf_first_name:          '',
-        on_behalf_middle_name:         '',
-        on_behalf_last_name:           '',
-        on_behalf_suffix:              '',
-        on_behalf_date_of_death:       '',
+        on_behalf_first_name: '',
+        on_behalf_middle_name: '',
+        on_behalf_last_name: '',
+        on_behalf_suffix: '',
+        on_behalf_date_of_death: '',
     });
 
     transform((form) => {
@@ -126,14 +125,14 @@ export default function ApplyAssistance({
         if (effectiveFilingFor === 'self') {
             return {
                 ...form,
-                documents:                     flatDocs,
-                relationship_to_beneficiary:   null,
+                documents: flatDocs,
+                relationship_to_beneficiary: null,
                 on_behalf_household_member_id: null,
-                on_behalf_first_name:          null,
-                on_behalf_middle_name:         null,
-                on_behalf_last_name:           null,
-                on_behalf_suffix:              null,
-                on_behalf_date_of_death:       null,
+                on_behalf_first_name: null,
+                on_behalf_middle_name: null,
+                on_behalf_last_name: null,
+                on_behalf_suffix: null,
+                on_behalf_date_of_death: null,
             };
         }
         return { ...form, documents: flatDocs };
@@ -142,23 +141,23 @@ export default function ApplyAssistance({
     // ── Representative helpers ────────────────────────────────────────────────
     const onBehalfOfData: OnBehalfOfData = {
         household_member_id: data.on_behalf_household_member_id,
-        first_name:          data.on_behalf_first_name,
-        middle_name:         data.on_behalf_middle_name,
-        last_name:           data.on_behalf_last_name,
-        suffix:              data.on_behalf_suffix,
-        date_of_death:       data.on_behalf_date_of_death,
-        relationship:        data.relationship_to_beneficiary,
+        first_name: data.on_behalf_first_name,
+        middle_name: data.on_behalf_middle_name,
+        last_name: data.on_behalf_last_name,
+        suffix: data.on_behalf_suffix,
+        date_of_death: data.on_behalf_date_of_death,
+        relationship: data.relationship_to_beneficiary,
     };
 
     const handleBehalfChange = <K extends keyof OnBehalfOfData>(field: K, value: OnBehalfOfData[K]) => {
         const keyMap: Record<keyof OnBehalfOfData, keyof FormData> = {
             household_member_id: 'on_behalf_household_member_id',
-            first_name:          'on_behalf_first_name',
-            middle_name:         'on_behalf_middle_name',
-            last_name:           'on_behalf_last_name',
-            suffix:              'on_behalf_suffix',
-            date_of_death:       'on_behalf_date_of_death',
-            relationship:        'relationship_to_beneficiary',
+            first_name: 'on_behalf_first_name',
+            middle_name: 'on_behalf_middle_name',
+            last_name: 'on_behalf_last_name',
+            suffix: 'on_behalf_suffix',
+            date_of_death: 'on_behalf_date_of_death',
+            relationship: 'relationship_to_beneficiary',
         };
         setData(keyMap[field], value as string);
     };
@@ -167,15 +166,7 @@ export default function ApplyAssistance({
     // Posts to the API endpoint, appends the created row to the local roster,
     // and selects it so the on-behalf payload is wired up automatically.
     const handleMemberCreated = (member: HouseholdMemberOption) => {
-        setHouseholdRoster((current) => [...current, member]);
-        setData('on_behalf_household_member_id', member.id);
-        setData('on_behalf_first_name', member.first_name);
-        setData('on_behalf_middle_name', member.middle_name ?? '');
-        setData('on_behalf_last_name', member.last_name);
-        setData('on_behalf_suffix', member.suffix ?? '');
-        if (member.relationship) {
-            setData('relationship_to_beneficiary', member.relationship);
-        }
+        setPendingMemberMessage(`${member.first_name} ${member.last_name} was added and is awaiting MSWD verification before they can be selected.`);
     };
 
     // ── Validation ───────────────────────────────────────────────────────────
@@ -187,13 +178,11 @@ export default function ApplyAssistance({
     // Representative info is only required when not filing for self
     const representativeInfoComplete =
         effectiveFilingFor === 'self' ||
-        (
-            data.on_behalf_first_name.trim().length > 0 &&
-            data.on_behalf_last_name.trim().length  > 0 &&
-            data.relationship_to_beneficiary        !== '' &&
+        (data.on_behalf_first_name.trim().length > 0 &&
+            data.on_behalf_last_name.trim().length > 0 &&
+            data.relationship_to_beneficiary !== '' &&
             // Date of death is burial-specific
-            (!isBurial || data.on_behalf_date_of_death.length > 0)
-        );
+            (!isBurial || data.on_behalf_date_of_death.length > 0));
 
     const applicantAge = beneficiaryData.birth_date
         ? Math.floor((Date.now() - new Date(beneficiaryData.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -202,15 +191,15 @@ export default function ApplyAssistance({
     // single source of truth for the legal-age rule. Avoids re-hardcoding
     // ['child', 'sibling'] in three places.
     const selectedRelationship = relationships.find((r) => r.value === data.relationship_to_beneficiary);
-    const requiresLegalAge     = selectedRelationship?.requires_legal_age ?? false;
-    const isUnderAge           = effectiveFilingFor === 'family_member' && requiresLegalAge && applicantAge < 18;
+    const requiresLegalAge = selectedRelationship?.requires_legal_age ?? false;
+    const isUnderAge = effectiveFilingFor === 'family_member' && requiresLegalAge && applicantAge < 18;
 
     const canSubmit =
         data.description.trim().length >= 10 &&
-        data.privacy_consent                  &&
-        allRequiredUploaded                   &&
-        representativeInfoComplete            &&
-        !isUnderAge                           &&
+        data.privacy_consent &&
+        allRequiredUploaded &&
+        representativeInfoComplete &&
+        !isUnderAge &&
         !processing;
 
     // ── Submit ───────────────────────────────────────────────────────────────
@@ -240,7 +229,6 @@ export default function ApplyAssistance({
             <div className="min-h-screen bg-[#F8FAFC] pb-24">
                 <div className="container mx-auto mt-8 max-w-6xl px-4">
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-
                         {/* ── LEFT: program info + document checklist ── */}
                         <aside className="lg:col-span-4">
                             <ProgramInfoSidebar assistanceType={program} />
@@ -249,34 +237,33 @@ export default function ApplyAssistance({
                         {/* ── RIGHT: the form ── */}
                         <div className="lg:col-span-8">
                             <form onSubmit={handleSubmit} className="space-y-6">
-
                                 {/* ── 1. Who is this for? ── */}
-                                <WhoIsThisForSection
-                                    isBurial={isBurial}
-                                    value={effectiveFilingFor}
-                                    onChange={handleFilingForChange}
-                                />
+                                <WhoIsThisForSection isBurial={isBurial} value={effectiveFilingFor} onChange={handleFilingForChange} />
 
                                 {/* ── 2. Representative info (when not self) ── */}
                                 {effectiveFilingFor === 'family_member' && (
-                                    <OnBehalfOfSection
-                                        data={onBehalfOfData}
-                                        onChange={handleBehalfChange}
-                                        relationships={relationships}
-                                        isBurial={isBurial}
-                                        applicantBirthDate={beneficiaryData.birth_date}
-                                        householdMembers={householdRoster}
-                                        storeHouseholdMemberUrl={storeHouseholdMemberUrl}
-                                        onMemberCreated={handleMemberCreated}
-                                        errors={errors as Record<string, string | undefined>}
-                                    />
+                                    <>
+                                        {pendingMemberMessage && (
+                                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                                {pendingMemberMessage}
+                                            </div>
+                                        )}
+                                        <OnBehalfOfSection
+                                            data={onBehalfOfData}
+                                            onChange={handleBehalfChange}
+                                            relationships={relationships}
+                                            isBurial={isBurial}
+                                            applicantBirthDate={beneficiaryData.birth_date}
+                                            householdMembers={householdRoster}
+                                            storeHouseholdMemberUrl={storeHouseholdMemberUrl}
+                                            onMemberCreated={handleMemberCreated}
+                                            errors={errors as Record<string, string | undefined>}
+                                        />
+                                    </>
                                 )}
 
                                 {/* ── 3. Applicant's own identity (read-only) ── */}
-                                <BeneficiaryInfoBlock
-                                    beneficiary={beneficiaryData}
-                                    household={householdData}
-                                />
+                                <BeneficiaryInfoBlock beneficiary={beneficiaryData} household={householdData} />
 
                                 {/* ── 4. Reason / description ── */}
                                 <RequestReasonSection
@@ -289,9 +276,7 @@ export default function ApplyAssistance({
                                 <DocumentUploadsGrid
                                     documents={program.documents}
                                     files={data.documents}
-                                    onFileChange={(key, file) =>
-                                        setData('documents', { ...data.documents, [key]: file })
-                                    }
+                                    onFileChange={(key, file) => setData('documents', { ...data.documents, [key]: file })}
                                     errors={errors as Record<string, string | undefined>}
                                 />
 
@@ -313,18 +298,16 @@ export default function ApplyAssistance({
 
                                 {/* Inline hints */}
                                 {!allRequiredUploaded && program.documents.some((d) => d.is_required) && (
-                                    <p className="text-center text-xs text-slate-500">
-                                        Please upload all required documents to enable submission.
-                                    </p>
+                                    <p className="text-center text-xs text-slate-500">Please upload all required documents to enable submission.</p>
                                 )}
                                 {effectiveFilingFor === 'family_member' && !representativeInfoComplete && (
                                     <p className="text-center text-xs text-slate-500">
-                                        Please fill in the{isBurial ? " deceased person's" : " family member's"} information and your relationship to enable submission.
+                                        Please fill in the{isBurial ? " deceased person's" : " family member's"} information and your relationship to
+                                        enable submission.
                                     </p>
                                 )}
                             </form>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -338,16 +321,14 @@ export default function ApplyAssistance({
 
 interface WhoIsThisForProps {
     isBurial: boolean;
-    value:    'self' | 'family_member';
+    value: 'self' | 'family_member';
     onChange: (value: 'self' | 'family_member') => void;
 }
 
 function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">
-                Who is this request for?
-            </h3>
+            <h3 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">Who is this request for?</h3>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {/* Option: Myself */}
@@ -355,31 +336,27 @@ function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
                     type="button"
                     disabled={isBurial}
                     onClick={() => !isBurial && onChange('self')}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all
-                        ${isBurial
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                        isBurial
                             ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-50'
                             : value === 'self'
-                                ? 'border-[#005088] bg-[#005088]/5 shadow-sm'
-                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
+                              ? 'border-[#005088] bg-[#005088]/5 shadow-sm'
+                              : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
                 >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full
-                        ${value === 'self' && !isBurial ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'}`}>
+                    <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${value === 'self' && !isBurial ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'}`}
+                    >
                         <UserCheck className="h-5 w-5" />
                     </div>
                     <div>
-                        <p className={`text-sm font-bold ${value === 'self' && !isBurial ? 'text-[#005088]' : 'text-slate-700'}`}>
-                            Myself
-                        </p>
-                        <p className="text-xs text-slate-500">
-                            {isBurial ? 'Not applicable for burial' : 'I need assistance for myself'}
-                        </p>
+                        <p className={`text-sm font-bold ${value === 'self' && !isBurial ? 'text-[#005088]' : 'text-slate-700'}`}>Myself</p>
+                        <p className="text-xs text-slate-500">{isBurial ? 'Not applicable for burial' : 'I need assistance for myself'}</p>
                     </div>
                     {/* Radio indicator */}
-                    <div className={`ml-auto h-4 w-4 shrink-0 rounded-full border-2 transition-colors
-                        ${!isBurial && value === 'self'
-                            ? 'border-[#005088] bg-[#005088]'
-                            : 'border-slate-300 bg-white'
+                    <div
+                        className={`ml-auto h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
+                            !isBurial && value === 'self' ? 'border-[#005088] bg-[#005088]' : 'border-slate-300 bg-white'
                         }`}
                     />
                 </button>
@@ -388,29 +365,25 @@ function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
                 <button
                     type="button"
                     onClick={() => onChange('family_member')}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all
-                        ${value === 'family_member'
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                        value === 'family_member'
                             ? 'border-[#005088] bg-[#005088]/5 shadow-sm'
                             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
+                    }`}
                 >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full
-                        ${value === 'family_member' ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'}`}>
+                    <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${value === 'family_member' ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'}`}
+                    >
                         <Users className="h-5 w-5" />
                     </div>
                     <div>
-                        <p className={`text-sm font-bold ${value === 'family_member' ? 'text-[#005088]' : 'text-slate-700'}`}>
-                            A family member
-                        </p>
-                        <p className="text-xs text-slate-500">
-                            {isBurial ? 'Filing for a deceased member' : "I'm an authorized representative"}
-                        </p>
+                        <p className={`text-sm font-bold ${value === 'family_member' ? 'text-[#005088]' : 'text-slate-700'}`}>A family member</p>
+                        <p className="text-xs text-slate-500">{isBurial ? 'Filing for a deceased member' : "I'm an authorized representative"}</p>
                     </div>
                     {/* Radio indicator */}
-                    <div className={`ml-auto h-4 w-4 shrink-0 rounded-full border-2 transition-colors
-                        ${value === 'family_member'
-                            ? 'border-[#005088] bg-[#005088]'
-                            : 'border-slate-300 bg-white'
+                    <div
+                        className={`ml-auto h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
+                            value === 'family_member' ? 'border-[#005088] bg-[#005088]' : 'border-slate-300 bg-white'
                         }`}
                     />
                 </button>

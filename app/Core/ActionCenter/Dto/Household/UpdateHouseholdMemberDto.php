@@ -37,8 +37,8 @@ readonly class UpdateHouseholdMemberDto
 
         // Optional religion FK
         public ?string $religionId,
-    ) {
-    }
+        public bool $isVerifiedDependent,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -67,6 +67,7 @@ readonly class UpdateHouseholdMemberDto
             monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : null,
 
             religionId: $data['religion_id'] ?? null,
+            isVerifiedDependent: (bool) ($data['is_verified_dependent'] ?? false),
         );
     }
 }

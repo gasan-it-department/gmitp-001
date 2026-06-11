@@ -25,47 +25,49 @@ class BeneficiaryListResource extends JsonResource
     {
         return [
             // ── Identity ─────────────────────────────────────────────────────
-            'id'                 => $this->id,
+            'id' => $this->id,
             'beneficiary_number' => $this->beneficiary_number,
-            'avatar_url'  => $this->avatarUrl($request),
-            'full_name'   => $this->full_name,   // getFullNameAttribute() accessor
-            'first_name'  => $this->first_name,
+            'avatar_url' => $this->avatarUrl($request),
+            'full_name' => $this->full_name,   // getFullNameAttribute() accessor
+            'first_name' => $this->first_name,
             'middle_name' => $this->middle_name,
-            'last_name'   => $this->last_name,
-            'suffix'      => $this->suffix,
+            'last_name' => $this->last_name,
+            'suffix' => $this->suffix,
 
-            'sex'       => $this->sex,
+            'sex' => $this->sex,
             'sex_label' => $this->sex ? Sex::tryFrom($this->sex)?->label() : null,
 
             'birth_date' => $this->birth_date?->toDateString(),
-            'age'        => $this->birth_date ? (int) $this->birth_date->age : null,
+            'age' => $this->birth_date ? (int) $this->birth_date->age : null,
 
             // ── Economic snapshot (indigency cues) ───────────────────────────
-            'civil_status'       => $this->civil_status?->value,
+            'civil_status' => $this->civil_status?->value,
             'civil_status_label' => $this->civil_status?->label(),
-            'occupation'         => $this->occupation,
-            'monthly_income'     => $this->monthly_income !== null
+            'occupation' => $this->occupation,
+            'monthly_income' => $this->monthly_income !== null
                 ? (float) $this->monthly_income
                 : null,
 
             // ── Address (household) ──────────────────────────────────────────
             'barangay' => $this->whenLoaded('household', fn () => $this->household?->barangay),
-            'street'   => $this->whenLoaded('household', fn () => $this->household?->street),
+            'street' => $this->whenLoaded('household', fn () => $this->household?->street),
 
             // ── Linked portal account ────────────────────────────────────────
             // has_account = false → walk-in encoded by an admin (no login).
-            'has_account'   => $this->user_id !== null,
+            'has_account' => $this->user_id !== null,
             'account_email' => $this->whenLoaded('user', fn () => $this->user?->email),
 
             // ── Assistance-history summary (duplicate / recency signal) ──────
-            'total_requests'  => (int) ($this->total_requests_count ?? 0),
-            'released_count'  => (int) ($this->released_count ?? 0),
+            'total_requests' => (int) ($this->total_requests_count ?? 0),
+            'released_count' => (int) ($this->released_count ?? 0),
             'last_released_at' => $this->last_released_at
                 ? Carbon::parse($this->last_released_at)->toIso8601String()
                 : null,
             'last_request_at' => $this->last_request_at
                 ? Carbon::parse($this->last_request_at)->toIso8601String()
                 : null,
+            'identity_verified' => $this->identity_verified_at !== null,
+            'identity_verified_at' => $this->identity_verified_at?->toIso8601String(),
         ];
     }
 
@@ -89,9 +91,9 @@ class BeneficiaryListResource extends JsonResource
         }
 
         return route('actionCenter.admin.beneficiary.avatar', [
-            'municipality'  => $municipality,
+            'municipality' => $municipality,
             'beneficiaryId' => $this->id,
-            'v'             => $media->updated_at?->timestamp,
+            'v' => $media->updated_at?->timestamp,
         ]);
     }
 }

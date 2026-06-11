@@ -28,6 +28,8 @@ class AssistanceRequestDetailsResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $snapshot = $this->resource->snapshot;
+
         return [
             // ── Identification ───────────────────────────────────────────────
             'id' => $this->id,
@@ -35,7 +37,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             'status' => $this->status,
 
             // ── Program ──────────────────────────────────────────────────────
-            'assistance_type' => $this->whenLoaded('assistanceType', fn() => [
+            'assistance_type' => $this->whenLoaded('assistanceType', fn () => [
                 'id' => $this->assistanceType->id,
                 'name' => $this->assistanceType->name,
                 'slug' => $this->assistanceType->slug,
@@ -61,9 +63,9 @@ class AssistanceRequestDetailsResource extends JsonResource
 
             // ── Audit trail (who did what) ───────────────────────────────────
             'is_walkin' => $this->encoded_by_user_id !== null,
-            'encoded_by' => $this->whenLoaded('encodedBy', fn() => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
-            'reviewed_by' => $this->whenLoaded('reviewedBy', fn() => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
-            'approved_by' => $this->whenLoaded('approvedBy', fn() => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
+            'encoded_by' => $this->whenLoaded('encodedBy', fn () => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
+            'reviewed_by' => $this->whenLoaded('reviewedBy', fn () => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
+            'approved_by' => $this->whenLoaded('approvedBy', fn () => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
 
             // ── Representative — null when filed for self ────────────────────
             'filed_for_self' => $this->relationship_to_beneficiary === null,
@@ -86,23 +88,23 @@ class AssistanceRequestDetailsResource extends JsonResource
 
             // ── Identity snapshot (frozen at submission) ─────────────────────
             'identity_snapshot' => [
-                'first_name' => $this->snapshot_first_name,
-                'middle_name' => $this->snapshot_middle_name,
-                'last_name' => $this->snapshot_last_name,
-                'suffix' => $this->snapshot_suffix,
+                'first_name' => $snapshot?->first_name,
+                'middle_name' => $snapshot?->middle_name,
+                'last_name' => $snapshot?->last_name,
+                'suffix' => $snapshot?->suffix,
                 'full_name' => $this->resolveSnapshotFullName(),
-                'sex' => $this->snapshot_sex,
-                'birth_date' => $this->snapshot_birth_date?->toDateString(),
+                'sex' => $snapshot?->sex,
+                'birth_date' => $snapshot?->birth_date?->toDateString(),
                 'age_at_submission' => $this->calculateAgeAtSubmission(),
-                'educational_attainment' => $this->snapshot_educational_attainment,
-                'religion' => $this->snapshot_religion,
+                'educational_attainment' => $snapshot?->educational_attainment,
+                'religion' => $snapshot?->religion,
             ],
 
             // ── Address snapshot (frozen at submission) ──────────────────────
             'address_snapshot' => [
-                'street' => $this->snapshot_street,
-                'barangay' => $this->snapshot_barangay,
-                'barangay_psgc_code' => $this->snapshot_barangay_psgc_code,
+                'street' => $snapshot?->street,
+                'barangay' => $snapshot?->barangay,
+                'barangay_psgc_code' => $snapshot?->barangay_psgc_code,
                 'full_address' => $this->resolveSnapshotAddress(),
             ],
 
@@ -114,7 +116,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             'beneficiary_id' => $this->beneficiary_id,
             // Live human-friendly ID of the beneficiary (e.g. GAS-000123).
             // Present when the beneficiary relation is eager-loaded.
-            'beneficiary_number' => $this->whenLoaded('beneficiary', fn() => $this->beneficiary?->beneficiary_number),
+            'beneficiary_number' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->beneficiary_number),
             'household_id' => $this->household_id,
 
             // ── Uploaded documents (via spatie media) ────────────────────────
@@ -126,8 +128,8 @@ class AssistanceRequestDetailsResource extends JsonResource
             // build a signed download URL when that route exists.
             'documents' => $this->whenLoaded(
                 'media',
-                fn() => $this->media
-                    ->map(fn($m) => [
+                fn () => $this->media
+                    ->map(fn ($m) => [
                         'id' => $m->id,
                         'uuid' => $m->uuid,
                         'collection_name' => $m->collection_name,
@@ -174,11 +176,13 @@ class AssistanceRequestDetailsResource extends JsonResource
 
     private function resolveSnapshotFullName(): string
     {
+        $snapshot = $this->resource->snapshot;
+
         return trim(implode(' ', array_filter([
-            $this->snapshot_first_name,
-            $this->snapshot_middle_name,
-            $this->snapshot_last_name,
-            $this->snapshot_suffix,
+            $snapshot?->first_name,
+            $snapshot?->middle_name,
+            $snapshot?->last_name,
+            $snapshot?->suffix,
         ])));
     }
 
@@ -194,9 +198,11 @@ class AssistanceRequestDetailsResource extends JsonResource
 
     private function resolveSnapshotAddress(): string
     {
+        $snapshot = $this->resource->snapshot;
+
         return trim(implode(', ', array_filter([
-            $this->snapshot_street,
-            $this->snapshot_barangay,
+            $snapshot?->street,
+            $snapshot?->barangay,
         ])));
     }
 
@@ -207,10 +213,12 @@ class AssistanceRequestDetailsResource extends JsonResource
      */
     private function calculateAgeAtSubmission(): ?int
     {
-        if (!$this->snapshot_birth_date || !$this->created_at) {
+        $birthDate = $this->resource->snapshot?->birth_date;
+
+        if (! $birthDate || ! $this->created_at) {
             return null;
         }
 
-        return $this->snapshot_birth_date->diffInYears($this->created_at);
+        return $birthDate->diffInYears($this->created_at);
     }
 }

@@ -9,6 +9,7 @@ use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\BeneficiaryFlag;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -65,8 +66,7 @@ class CheckElegibilityAction
 
     public function __construct(
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
-    ) {
-    }
+    ) {}
 
     /**
      * Single-type evaluation. Use this in the Apply controller and the citizen
@@ -79,6 +79,24 @@ class CheckElegibilityAction
         ?string $onBehalfHouseholdMemberId = null,
         ?string $onBehalfDateOfDeath = null,
     ): EligibilityResult {
+        if (! $beneficiary->isIdentityVerified()) {
+            return EligibilityResult::identityUnverified();
+        }
+
+        if ($onBehalfHouseholdMemberId !== null) {
+            $member = HouseholdMember::query()
+                ->whereKey($onBehalfHouseholdMemberId)
+                ->where('household_id', $beneficiary->household_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($member !== null
+                && $member->relationship !== 'head'
+                && ! $member->is_verified_dependent) {
+                return EligibilityResult::dependentUnverified();
+            }
+        }
+
         $group = $this->resolveGroup->execute($beneficiary);
 
         // Rule 0 — blacklist hold on the identity group. Hard-blocks everything,
@@ -129,12 +147,18 @@ class CheckElegibilityAction
      * deferred to the store.
      *
      * @param  Collection<int, AssistanceType>  $types
-     * @return array<string, EligibilityResult>  keyed by assistance_type_id
+     * @return array<string, EligibilityResult> keyed by assistance_type_id
      */
     public function executeBatch(Beneficiary $beneficiary, Collection $types): array
     {
         if ($types->isEmpty()) {
             return [];
+        }
+
+        if (! $beneficiary->isIdentityVerified()) {
+            return $types->mapWithKeys(
+                fn (AssistanceType $type) => [$type->id => EligibilityResult::identityUnverified()]
+            )->all();
         }
 
         $group = $this->resolveGroup->execute($beneficiary);
@@ -180,11 +204,13 @@ class CheckElegibilityAction
             // Independent (Burial): eligible at the grid; gated per-deceased at store.
             if ($type->is_independent) {
                 $results[$type->id] = EligibilityResult::eligible();
+
                 continue;
             }
 
             if (in_array($type->id, $permanentBlockedTypeIds, true)) {
                 $results[$type->id] = EligibilityResult::permanentBlock();
+
                 continue;
             }
 
@@ -192,11 +218,13 @@ class CheckElegibilityAction
                 $results[$type->id] = EligibilityResult::onCooldown(
                     $longestActiveCooldown->cooldown_expires_at
                 );
+
                 continue;
             }
 
             if ($hasInFlight) {
                 $results[$type->id] = EligibilityResult::inFlightRequest();
+
                 continue;
             }
 
@@ -303,7 +331,7 @@ class CheckElegibilityAction
             ->whereIn('household_id', $group->householdIds)
             ->where('assistance_type_id', $type->id)
             ->whereNotNull('approved_at')
-            ->whereDate('on_behalf_date_of_death', $dateOfDeath)
+            ->whereDate('metadata->on_behalf_date_of_death', $dateOfDeath)
             ->orderByDesc('approved_at')
             ->first();
 

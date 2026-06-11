@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -21,7 +22,9 @@ class Household extends Model
     use HasUlids, SoftDeletes;
 
     protected $table = 'ac_households';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -42,6 +45,26 @@ class Household extends Model
     public function activeMembers(): HasMany
     {
         return $this->members()->where('is_active', true);
+    }
+
+    public function activeHead(): HasOne
+    {
+        return $this->hasOne(HouseholdMember::class, 'household_id')
+            ->where('relationship', 'head')
+            ->where('is_active', true);
+    }
+
+    public function isVerified(): bool
+    {
+        $head = $this->relationLoaded('activeHead')
+            ? $this->activeHead
+            : $this->activeHead()->with('beneficiary')->first();
+
+        if ($head !== null && ! $head->relationLoaded('beneficiary')) {
+            $head->load('beneficiary');
+        }
+
+        return $head?->beneficiary?->identity_verified_at !== null;
     }
 
     public function assistanceRequests(): HasMany

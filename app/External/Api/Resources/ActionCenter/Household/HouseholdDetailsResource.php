@@ -28,6 +28,7 @@ class HouseholdDetailsResource extends JsonResource
             // info" block render "Purok 3, Bati, Gasan" without storing the
             // municipality name redundantly on every household row.
             'municipality' => app('current_municipality')?->name,
+            'is_verified' => $this->resource->isVerified(),
         ];
     }
 }

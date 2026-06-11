@@ -116,8 +116,7 @@ export default function HouseholdMembersManager({
                         {active.map((member) => (
                             <TableRow key={member.id} className="hover:bg-slate-50/50">
                                 <TableCell className="text-xs font-medium text-slate-900 capitalize">
-                                    {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''} {member.last_name}{' '}
-                                    {member.suffix}
+                                    {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''} {member.last_name} {member.suffix}
                                     {isHead(member) && (
                                         <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
                                             <BadgeCheck className="h-3 w-3" /> Head
@@ -155,6 +154,15 @@ export default function HouseholdMembersManager({
                                                 >
                                                     <Link2 className="h-3.5 w-3.5" />
                                                 </button>
+                                            )}
+                                            {member.is_verified_dependent ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                                    <BadgeCheck className="h-3 w-3" /> Verified
+                                                </span>
+                                            ) : (
+                                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                                                    Pending
+                                                </span>
                                             )}
                                             <button
                                                 type="button"

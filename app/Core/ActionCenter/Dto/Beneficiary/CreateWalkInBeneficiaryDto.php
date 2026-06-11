@@ -61,14 +61,16 @@ readonly class CreateWalkInBeneficiaryDto
         // Override the soft duplicate guard after admin review.
         public bool $force,
 
+        // Admin chooses whether this in-person intake is trusted immediately.
+        public bool $verifyNow,
+
         // Household composition (optional). Same primitive-array shape the
         // online flow uses; each entry is hydrated into a StoreHouseholdMemberDto
         // inside the action's transaction.
         //
         // @var array<int, array<string, mixed>>
         public array $householdMembers = [],
-    ) {
-    }
+    ) {}
 
     /**
      * Build from the validated FormRequest plus controller context.
@@ -84,8 +86,8 @@ readonly class CreateWalkInBeneficiaryDto
             // Names uppercased; NOT the enums.
             firstName: mb_strtoupper($data['first_name']),
             lastName: mb_strtoupper($data['last_name']),
-            middleName: !empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
-            suffix: !empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
+            middleName: ! empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
+            suffix: ! empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
 
             // Left exactly as provided (enum backing value / raw date).
             sex: $data['sex'],
@@ -94,7 +96,7 @@ readonly class CreateWalkInBeneficiaryDto
             // Religion is a ULID FK — leave alone.
             religionId: $data['religion_id'] ?? null,
 
-            educationalAttainment: !empty($data['educational_attainment'])
+            educationalAttainment: ! empty($data['educational_attainment'])
                 ? mb_strtoupper($data['educational_attainment'])
                 : null,
 
@@ -106,13 +108,14 @@ readonly class CreateWalkInBeneficiaryDto
             // Address details uppercased; code (PSGC) left alone.
             barangay: mb_strtoupper($data['barangay']),
             barangayCode: $data['barangay_code'] ?? null,
-            street: !empty($data['street']) ? mb_strtoupper($data['street']) : null,
+            street: ! empty($data['street']) ? mb_strtoupper($data['street']) : null,
 
             // Consent is server-stamped, never trusted from the payload.
             termsConsentedAt: CarbonImmutable::now(),
             termsVersion: self::TERMS_VERSION,
 
             force: (bool) ($data['force'] ?? false),
+            verifyNow: (bool) ($data['verify_now'] ?? false),
 
             householdMembers: $data['household_members'] ?? [],
         );

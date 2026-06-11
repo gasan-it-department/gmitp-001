@@ -31,8 +31,7 @@ class ApplyAssistanceRequestController extends Controller
     public function __construct(
         private readonly ResolveApplicantProfileAction $resolveProfile,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         Request $request,
@@ -43,17 +42,23 @@ class ApplyAssistanceRequestController extends Controller
         // filters by app('municipal_id'), which SetMunicipalityContext binds
         // before SubstituteBindings runs (see bootstrap/app.php priority list).
         $assistanceType->load([
-            'documents' => fn($q) => $q->orderBy('ac_assistance_type_documents.sort_order'),
+            'documents' => fn ($q) => $q->orderBy('ac_assistance_type_documents.sort_order'),
         ]);
 
         $beneficiary = $this->resolveProfile->execute($request->user()->id, app('municipal_id'));
 
-        if (!$beneficiary || !$beneficiary->household) {
+        if (! $beneficiary || ! $beneficiary->household) {
             session()->put('url.intended', url()->current());
 
             return redirect()
                 ->route('actionCenter.profile.setup', ['municipality' => $municipality])
                 ->with('info', 'Please complete your profile before applying for assistance.');
+        }
+
+        if (! $beneficiary->isIdentityVerified()) {
+            return redirect()
+                ->route('actionCenter.portal', ['municipality' => $municipality])
+                ->with('info', 'Your beneficiary profile is awaiting MSWD identity verification.');
         }
 
         // Don't render a dead form: bounce STANDARD programs the citizen can't
@@ -62,10 +67,10 @@ class ApplyAssistanceRequestController extends Controller
         // gate depends on which deceased is chosen, so the form always loads and
         // the store enforces it.
 
-        if (!$assistanceType->is_independent) {
+        if (! $assistanceType->is_independent) {
             $eligibility = $this->checkEligibility->execute($beneficiary, $assistanceType);
 
-            if (!$eligibility->eligible) {
+            if (! $eligibility->eligible) {
                 return redirect()
                     ->route('actionCenter.portal', ['municipality' => $municipality])
                     ->with('error', $eligibility->message());
@@ -77,6 +82,10 @@ class ApplyAssistanceRequestController extends Controller
         $householdMembers = HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
             ->where('is_active', true)
+            ->where(function ($query) {
+                $query->where('relationship', 'head')
+                    ->orWhere('is_verified_dependent', true);
+            })
             ->orderBy('first_name')
             ->get();
 
