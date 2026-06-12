@@ -31,13 +31,21 @@ class DepartmentSeeder extends Seeder
             ['code' => 'MDRRMO', 'name' => 'Municipal Disaster Risk Reduction and Management Office'],
         ];
 
-        $municipalities = Municipality::first();
+        $municipalities = Municipality::all();
 
-        foreach ($departments as $dept) {
-            Department::updateOrCreate(
-                ['code' => $dept['code']],
-                ['name' => $dept['name'], 'is_active' => true, 'municipal_id' => $municipalities->id]
-            );
+        foreach ($municipalities as $municipality) {
+            foreach ($departments as $dept) {
+                Department::updateOrCreate(
+                    [
+                        'code' => $dept['code'],
+                        'municipal_id' => $municipality->id
+                    ],
+                    [
+                        'name' => $dept['name'],
+                        'is_active' => true,
+                    ]
+                );
+            }
         }
 
     }
