@@ -23,6 +23,7 @@ class AuthController extends Controller
     {
         $user = request()->user();
 
+        $seconds = null;
         if ($user->phone !== null && is_null($user->phone_verified_at)) {
 
             $seconds = $otpService->getTimeRemaining($user->phone, OtpService::PURPOSE_REGISTER);
