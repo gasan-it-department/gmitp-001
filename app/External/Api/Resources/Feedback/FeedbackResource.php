@@ -26,7 +26,10 @@ class FeedbackResource extends JsonResource
                 'name' => $media->file_name,
                 'mime_type' => $media->mime_type,
                 'size' => $media->size,
-                'url' => $media->disk === 's3'
+                'view_url' => $media->disk === 's3'
+                    ? $media->getTemporaryUrl(now()->addMinutes(15), (str_starts_with($media->mime_type ?? '', 'image/') && $media->hasGeneratedConversion('optimized_logo')) ? 'optimized_logo' : '')
+                    : $media->getUrl((str_starts_with($media->mime_type ?? '', 'image/') && $media->hasGeneratedConversion('optimized_logo')) ? 'optimized_logo' : ''),
+                'download_url' => $media->disk === 's3'
                     ? $media->getTemporaryUrl(now()->addMinutes(15))
                     : $media->getUrl(),
             ])->values(),

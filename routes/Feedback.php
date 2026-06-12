@@ -1,5 +1,6 @@
 <?php
 use App\External\Web\Controllers\Feedback\Admin\FeedbackAdminController;
+use App\External\Web\Controllers\Feedback\Admin\ShowFeedbackDetailsController;
 use App\External\Web\Controllers\Feedback\Client\CreateFeedbackController;
 use App\External\Web\Controllers\Feedback\Client\ListFeedbackController;
 use App\External\Web\Controllers\Feedback\Client\ShowFeedbackController;
@@ -17,12 +18,11 @@ Route::prefix('{municipality}')
         Route::middleware('admin')
             ->prefix('feedback')
             ->name('feedback.admin.')
-            ->controller(FeedbackAdminController::class)
             ->group(function () {
 
-            Route::get('/admin', 'index')->name('index');
+            Route::get('/admin', [FeedbackAdminController::class, 'index'])->name('index');
 
-            Route::get('/show/{feedback}', 'show')->name('show');
+            Route::get('/show/{feedback}', ShowFeedbackDetailsController::class)->name('show');
 
         });
 

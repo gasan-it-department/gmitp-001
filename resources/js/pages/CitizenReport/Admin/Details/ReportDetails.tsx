@@ -375,9 +375,9 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                     </div>
 
                     {/* RIGHT: ADMIN CONTROLS + TRACKING TRAIL */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 lg:sticky lg:top-6 self-start">
                         {/* Admin Controls */}
-                        <Card className="shadow-sm lg:sticky lg:top-6">
+                        <Card className="shadow-sm">
                             <CardHeader>
                                 <CardTitle className="text-base font-semibold">Admin Controls</CardTitle>
                                 <p className="text-xs text-slate-500">Update the lifecycle status of this report.</p>

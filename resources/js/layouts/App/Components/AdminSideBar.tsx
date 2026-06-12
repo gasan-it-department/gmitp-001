@@ -130,6 +130,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     permission: 'action_center.access',
                 },
                 {
+                    title: 'Beneficiaries',
+                    url: actionCenter.admin.beneficiary.index.url({ municipality: currentMunicipality.slug }),
+                    icon: Contact,
+                    permission: 'action_center.access',
+                },
+                {
                     title: 'Search Beneficiary',
                     url: actionCenter.admin.beneficiary.search.url({ municipality: currentMunicipality.slug }),
                     icon: UserSearch,

@@ -84,4 +84,14 @@ class FeedbackSubmission extends Model implements HasMedia
                 'video/mpeg',
             ]);
     }
+
+    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('optimized_logo')
+            ->performOnCollections('attachments')
+            ->width(400)
+            ->format('webp')
+            ->quality(90)
+            ->nonQueued();
+    }
 }

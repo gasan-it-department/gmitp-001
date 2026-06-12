@@ -24,6 +24,7 @@ use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryContr
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
 use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\EditBeneficiaryProfileController;
+use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ListBeneficiaryController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
@@ -57,6 +58,12 @@ Route::prefix('{municipality}/action-center')
             ->group(function () {
 
                 Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
+
+                // Full municipality beneficiary registry. Unlike the interview
+                // lookup below, this page intentionally lists records without
+                // requiring a search criterion.
+                Route::get('beneficiaries', ListBeneficiaryController::class)
+                    ->name('beneficiary.index');
 
                 // Beneficiary lookup screen used during the interview. Search state
                 // lives in the query string (Inertia + URL params).
