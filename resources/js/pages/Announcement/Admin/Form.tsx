@@ -58,7 +58,7 @@ export default function AnnouncementForm({ announcement, types }: Props) {
         ...(isEdit ? { _method: 'PUT' as const } : {}),
     };
 
-    const { data, setData, post, processing, errors, clearErrors, progress } = useForm<FormShape>(initialForm);
+    const { data, setData, post, processing, errors, clearErrors, progress, setError } = useForm<FormShape>(initialForm);
 
     const [previews, setPreviews] = useState<string[]>([]);
 
@@ -66,10 +66,35 @@ export default function AnnouncementForm({ announcement, types }: Props) {
         const incoming = Array.from(e.target.files ?? []);
         if (incoming.length === 0) return;
 
-        const merged = [...data.images, ...incoming].slice(0, MAX_IMAGES);
+        const imageErrorKeys = Object.keys(errors).filter((key) => key.startsWith('images.')) as (keyof FormShape)[];
+        clearErrors('images', ...imageErrorKeys);
+
+        const validIncoming: File[] = [];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        let hasSizeError = false;
+        let hasTypeError = false;
+
+        for (const file of incoming) {
+            if (file.size > maxSize) {
+                hasSizeError = true;
+            } else if (!validTypes.includes(file.type)) {
+                hasTypeError = true;
+            } else {
+                validIncoming.push(file);
+            }
+        }
+
+        if (hasSizeError || hasTypeError) {
+            let errorMsg = 'Some images were skipped. ';
+            if (hasSizeError) errorMsg += 'Each image must be 10MB or smaller. ';
+            if (hasTypeError) errorMsg += 'Must be JPEG, PNG, or WebP.';
+            setError('images', errorMsg.trim());
+        }
+
+        const merged = [...data.images, ...validIncoming].slice(0, MAX_IMAGES);
         setData('images', merged);
         setPreviews(merged.map((f) => URL.createObjectURL(f)));
-        clearErrors('images');
 
         e.target.value = '';
     };
@@ -236,6 +261,13 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                                 </p>
 
                                 {errors.images && <p className="mt-1 text-sm text-destructive">{errors.images}</p>}
+                                {Object.entries(errors)
+                                    .filter(([key]) => key.startsWith('images.'))
+                                    .map(([key, error]) => (
+                                        <p key={key} className="mt-1 text-sm text-destructive">
+                                            {error as string}
+                                        </p>
+                                    ))}
                                 {progress && (
                                     <div className="mt-2 h-1 w-full overflow-hidden rounded bg-slate-200">
                                         <div className="h-full bg-blue-500 transition-all" style={{ width: `${progress.percentage ?? 0}%` }} />

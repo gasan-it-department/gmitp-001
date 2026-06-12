@@ -123,8 +123,8 @@ class OtpService
 
         $message = match ($purpose) {
 
-            self::PURPOSE_REGISTER => "{$senderName}: Your Verification Code is: {$code}. Do not share this with anyone.",
-            self::PURPOSE_FORGOT_PASSWORD => "{$senderName}: Your password reset code is: {$code}. Valid for 10 minutes.",
+            self::PURPOSE_REGISTER => "Kababayan, your Verification Code is: {$code}. Do not share this with anyone.",
+            self::PURPOSE_FORGOT_PASSWORD => "Kababayan, your password reset code is: {$code}. Valid for 10 minutes.",
             self::UPDATE_PHONE_NUMBER => "Secure Code: {$code} to verify your new number.",
 
         };

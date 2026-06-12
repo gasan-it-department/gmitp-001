@@ -16,12 +16,12 @@ class StoreAnnouncementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'        => ['required', 'string', 'max:255'],
-            'content'      => ['required', 'string', 'max:10000'],
-            'type'         => ['required', 'string', Rule::enum(AnnouncementType::class)],
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string', 'max:10000'],
+            'type' => ['required', 'string', Rule::enum(AnnouncementType::class)],
             'is_published' => ['sometimes', 'boolean'],
-            'images'       => ['nullable', 'array', 'max:3'],
-            'images.*'     => [
+            'images' => ['nullable', 'array', 'max:3'],
+            'images.*' => [
                 'file',
                 'mimetypes:image/jpeg,image/png,image/webp',
                 'max:10240',
@@ -32,11 +32,11 @@ class StoreAnnouncementRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.required'   => 'Please provide an announcement title.',
+            'title.required' => 'Please provide an announcement title.',
             'content.required' => 'Please provide the announcement content.',
-            'type.required'    => 'Please choose an announcement type.',
-            'images.max'       => 'You may attach up to 3 images.',
-            'images.*.max'     => 'Each image must be 10MB or smaller.',
+            'type.required' => 'Please choose an announcement type.',
+            'images.max' => 'You may attach up to 3 images.',
+            'images.*.max' => 'Each image must be 10MB or smaller.',
         ];
     }
 }
