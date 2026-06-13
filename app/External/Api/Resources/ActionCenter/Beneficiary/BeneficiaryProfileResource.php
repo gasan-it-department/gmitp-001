@@ -67,6 +67,11 @@ class BeneficiaryProfileResource extends JsonResource
             'registered_at' => $this->created_at?->toIso8601String(),
             'identity_verified_at' => $this->identity_verified_at?->toIso8601String(),
             'identity_verified' => $this->identity_verified_at !== null,
+            'is_active' => (bool) $this->is_active,
+            'household_verified' => $this->whenLoaded(
+                'household',
+                fn () => $this->household?->isVerified() ?? false,
+            ),
             'identity_verified_by' => $this->whenLoaded(
                 'identityVerifier',
                 fn () => $this->identityVerifier

@@ -63,9 +63,10 @@ class StoreAdminAssistanceRequestController extends Controller
                 ->withErrors(['assistance_type_id' => 'That assistance program is not available in your municipality.']);
         }
 
-        // Eligibility is ADVISORY for the admin — never a block. We evaluate it
-        // up-front (with the on-behalf deceased context for Burial) so that, if
-        // the officer files anyway, we can record an override entry for COA.
+        // Cooldown, in-flight, and verification eligibility is advisory for an
+        // admin and may be overridden with a reason. An inactive beneficiary or
+        // a household without a verified active Head remains a hard block in
+        // StoreAssistanceRequestAction because the household is not authoritative.
         $eligibility = $this->checkEligibility->execute(
             $beneficiary,
             $assistanceType,

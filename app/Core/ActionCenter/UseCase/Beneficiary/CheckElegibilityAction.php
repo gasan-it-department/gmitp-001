@@ -79,8 +79,16 @@ class CheckElegibilityAction
         ?string $onBehalfHouseholdMemberId = null,
         ?string $onBehalfDateOfDeath = null,
     ): EligibilityResult {
+        if (! $beneficiary->is_active) {
+            return EligibilityResult::beneficiaryInactive();
+        }
+
         if (! $beneficiary->isIdentityVerified()) {
             return EligibilityResult::identityUnverified();
+        }
+
+        if (! $beneficiary->household?->isVerified()) {
+            return EligibilityResult::householdHeadRequired();
         }
 
         if ($onBehalfHouseholdMemberId !== null) {
@@ -155,9 +163,21 @@ class CheckElegibilityAction
             return [];
         }
 
+        if (! $beneficiary->is_active) {
+            return $types->mapWithKeys(
+                fn (AssistanceType $type) => [$type->id => EligibilityResult::beneficiaryInactive()]
+            )->all();
+        }
+
         if (! $beneficiary->isIdentityVerified()) {
             return $types->mapWithKeys(
                 fn (AssistanceType $type) => [$type->id => EligibilityResult::identityUnverified()]
+            )->all();
+        }
+
+        if (! $beneficiary->household?->isVerified()) {
+            return $types->mapWithKeys(
+                fn (AssistanceType $type) => [$type->id => EligibilityResult::householdHeadRequired()]
             )->all();
         }
 

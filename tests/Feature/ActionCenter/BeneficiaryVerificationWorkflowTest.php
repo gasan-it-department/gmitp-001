@@ -2,8 +2,10 @@
 
 use App\Core\ActionCenter\Dto\Beneficiary\ReviewBeneficiaryIntakeDto;
 use App\Core\ActionCenter\Dto\Beneficiary\UpdateBeneficiaryProfileDto;
+use App\Core\ActionCenter\Dto\Household\ChangeHouseholdHeadDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Dto\Household\UpdateHouseholdMemberDto;
+use App\Core\ActionCenter\Enums\HeadDepartureDisposition;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
@@ -12,6 +14,7 @@ use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveBeneficiaryIdentityGroupAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ReviewBeneficiaryIntakeAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\UpdateBeneficiaryProfileAction;
+use App\Core\ActionCenter\UseCase\Household\ChangeHouseholdHeadAction;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\Core\ActionCenter\UseCase\Household\UpdateHouseholdMemberAction;
 use Illuminate\Database\Schema\Blueprint;
@@ -308,6 +311,112 @@ it('lets direct admin member creation choose pending or verified', function () {
         ->and($verified->is_verified_dependent)->toBeTrue();
 });
 
+it('changes the household head only to an eligible verified adult', function () {
+    [$formerHead, $formerHeadRow] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        verifiedBy: $this->adminId,
+    );
+    [$successor, $successorRow] = createVerifiedSuccessor(
+        $formerHead->household_id,
+        $this->municipalId,
+        $this->adminId,
+    );
+
+    app(ChangeHouseholdHeadAction::class)->execute(new ChangeHouseholdHeadDto(
+        householdId: $formerHead->household_id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        successorMemberId: $successorRow->id,
+        currentHeadDisposition: HeadDepartureDisposition::RemainsMember,
+        formerHeadRelationship: 'parent',
+        reason: 'Family confirmed the new household representative.',
+    ));
+
+    expect($formerHeadRow->fresh()->relationship)->toBe('parent')
+        ->and($formerHeadRow->fresh()->is_active)->toBeTrue()
+        ->and($formerHeadRow->fresh()->is_verified_dependent)->toBeTrue()
+        ->and($formerHead->fresh()->is_active)->toBeTrue()
+        ->and($successorRow->fresh()->relationship)->toBe('head')
+        ->and($successorRow->fresh()->is_verified_dependent)->toBeFalse()
+        ->and($successor->fresh()->is_active)->toBeTrue()
+        ->and(HouseholdMember::query()
+            ->where('household_id', $formerHead->household_id)
+            ->where('relationship', 'head')
+            ->where('is_active', true)
+            ->count())->toBe(1);
+});
+
+it('places a household on hold and later assigns an eligible head', function () {
+    [$formerHead, $formerHeadRow] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        verifiedBy: $this->adminId,
+    );
+    [$successor, $successorRow] = createVerifiedSuccessor(
+        $formerHead->household_id,
+        $this->municipalId,
+        $this->adminId,
+    );
+    $action = app(ChangeHouseholdHeadAction::class);
+
+    $action->execute(new ChangeHouseholdHeadDto(
+        householdId: $formerHead->household_id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        successorMemberId: null,
+        currentHeadDisposition: HeadDepartureDisposition::MovedOut,
+        formerHeadRelationship: null,
+        reason: 'Former head moved to another residence.',
+    ));
+
+    expect($formerHeadRow->fresh()->is_active)->toBeFalse()
+        ->and($formerHead->fresh()->is_active)->toBeFalse()
+        ->and($formerHead->household->fresh()->activeHead()->exists())->toBeFalse();
+
+    $type = new AssistanceType(['name' => 'Medical']);
+    $type->id = (string) Str::ulid();
+    $eligibility = new CheckElegibilityAction(new ResolveBeneficiaryIdentityGroupAction);
+
+    expect($eligibility->execute($successor->fresh(), $type)->reason)
+        ->toBe('household_head_required');
+
+    $action->execute(new ChangeHouseholdHeadDto(
+        householdId: $formerHead->household_id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        successorMemberId: $successorRow->id,
+        currentHeadDisposition: null,
+        formerHeadRelationship: null,
+        reason: 'Adult successor completed identity and residence review.',
+    ));
+
+    expect($successorRow->fresh()->relationship)->toBe('head')
+        ->and($formerHead->household->fresh()->isVerified())->toBeTrue();
+});
+
+it('rejects an unverified or non-primary-household successor', function () {
+    [$formerHead] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        verifiedBy: $this->adminId,
+    );
+    $unverified = createDependent($formerHead->household_id, 'PEDRO', 'CRUZ', verified: false);
+
+    expect(fn () => app(ChangeHouseholdHeadAction::class)->execute(new ChangeHouseholdHeadDto(
+        householdId: $formerHead->household_id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        successorMemberId: $unverified->id,
+        currentHeadDisposition: HeadDepartureDisposition::MovedOut,
+        formerHeadRelationship: null,
+        reason: 'Attempted invalid successor assignment.',
+    )))->toThrow(DomainException::class, 'relationship is not verified');
+});
+
 function createClaimant(
     string $municipalId,
     string $firstName,
@@ -367,4 +476,39 @@ function createDependent(
         'is_active' => true,
         'is_verified_dependent' => $verified,
     ]);
+}
+
+function createVerifiedSuccessor(
+    string $householdId,
+    string $municipalId,
+    string $verifiedBy,
+): array {
+    $beneficiary = Beneficiary::create([
+        'household_id' => $householdId,
+        'municipal_id' => $municipalId,
+        'first_name' => 'PEDRO',
+        'last_name' => 'CRUZ',
+        'sex' => 'male',
+        'birth_date' => '1992-04-10',
+        'civil_status' => 'single',
+        'occupation' => 'FARMER',
+        'monthly_income' => 5000,
+        'terms_consented_at' => now(),
+        'terms_version' => 'v1.0',
+        'identity_verified_at' => now(),
+        'identity_verified_by_user_id' => $verifiedBy,
+    ]);
+
+    $member = HouseholdMember::create([
+        'household_id' => $householdId,
+        'beneficiary_id' => $beneficiary->id,
+        'first_name' => 'PEDRO',
+        'last_name' => 'CRUZ',
+        'birth_date' => '1992-04-10',
+        'relationship' => 'sibling',
+        'is_active' => true,
+        'is_verified_dependent' => true,
+    ]);
+
+    return [$beneficiary, $member];
 }

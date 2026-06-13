@@ -32,6 +32,7 @@ beforeEach(function () {
         $table->ulid('id')->primary();
         $table->ulid('household_id');
         $table->ulid('municipal_id');
+        $table->boolean('is_active')->default(true);
         $table->string('first_name');
         $table->string('last_name');
         $table->string('middle_name')->nullable();
@@ -51,6 +52,7 @@ beforeEach(function () {
     Schema::create('ac_household_members', function (Blueprint $table) {
         $table->ulid('id')->primary();
         $table->ulid('household_id');
+        $table->ulid('beneficiary_id')->nullable();
         $table->string('first_name');
         $table->string('last_name');
         $table->string('middle_name')->nullable();
@@ -160,6 +162,7 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
     $beneficiaryId = (string) Str::ulid();
     $assistanceTypeId = (string) Str::ulid();
     $memberId = (string) Str::ulid();
+    $headMemberId = (string) Str::ulid();
     $now = now();
 
     DB::table('ac_households')->insert([
@@ -176,6 +179,7 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
         'id' => $beneficiaryId,
         'household_id' => $householdId,
         'municipal_id' => $municipalId,
+        'is_active' => true,
         'first_name' => 'Juan',
         'last_name' => 'Dela Cruz',
         'sex' => 'male',
@@ -199,8 +203,22 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
     ]);
 
     DB::table('ac_household_members')->insert([
+        'id' => $headMemberId,
+        'household_id' => $householdId,
+        'beneficiary_id' => $beneficiaryId,
+        'first_name' => 'Juan',
+        'last_name' => 'Dela Cruz',
+        'relationship' => 'head',
+        'is_active' => true,
+        'is_verified_dependent' => false,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ac_household_members')->insert([
         'id' => $memberId,
         'household_id' => $householdId,
+        'beneficiary_id' => null,
         'first_name' => 'Pedro',
         'last_name' => 'Dela Cruz',
         'relationship' => 'parent',

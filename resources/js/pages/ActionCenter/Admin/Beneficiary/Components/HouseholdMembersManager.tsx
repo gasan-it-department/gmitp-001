@@ -3,9 +3,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import Utility from '@/pages/Utility/Utility';
 import { router, usePage } from '@inertiajs/react';
-import { BadgeCheck, Link2, LogOut, Pencil, RotateCcw, UserPlus } from 'lucide-react';
+import { BadgeCheck, Link2, LogOut, Pencil, RefreshCw, RotateCcw, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
+import ChangeHouseholdHeadDialog, { type HouseholdHeadState } from './ChangeHouseholdHeadDialog';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 import LinkMemberDialog from './LinkMemberDialog';
 import MemberFormDialog, { type RelationshipOption } from './MemberFormDialog';
@@ -18,6 +19,9 @@ interface Props {
     civilStatus: EnumOption[];
     educationalAttainment: EnumOption[];
     relationships: RelationshipOption[];
+    householdId: string;
+    headState: HouseholdHeadState;
+    headDispositions: EnumOption[];
 }
 
 /**
@@ -36,6 +40,9 @@ export default function HouseholdMembersManager({
     civilStatus,
     educationalAttainment,
     relationships,
+    householdId,
+    headState,
+    headDispositions,
 }: Props) {
     const utils = Utility();
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
@@ -46,6 +53,7 @@ export default function HouseholdMembersManager({
 
     const [linkOpen, setLinkOpen] = useState(false);
     const [linking, setLinking] = useState<HouseholdMemberRow | undefined>(undefined);
+    const [headDialogOpen, setHeadDialogOpen] = useState(false);
 
     const openLink = (member: HouseholdMemberRow) => {
         setLinking(member);
@@ -82,7 +90,17 @@ export default function HouseholdMembersManager({
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
+                {(headState.profile_is_current_head || headState.household_on_hold) && (
+                    <button
+                        type="button"
+                        onClick={() => setHeadDialogOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        {headState.household_on_hold ? 'Assign household head' : 'Change household head'}
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={openAdd}
@@ -249,6 +267,7 @@ export default function HouseholdMembersManager({
                 civilStatus={civilStatus}
                 educationalAttainment={educationalAttainment}
                 relationships={relationships}
+                headDispositions={headDispositions}
             />
 
             {linking && (
@@ -259,6 +278,16 @@ export default function HouseholdMembersManager({
                     memberName={`${linking.first_name} ${linking.last_name}`}
                 />
             )}
+
+            <ChangeHouseholdHeadDialog
+                open={headDialogOpen}
+                onClose={() => setHeadDialogOpen(false)}
+                householdId={householdId}
+                members={members}
+                headState={headState}
+                relationships={relationships}
+                headDispositions={headDispositions}
+            />
         </div>
     );
 }

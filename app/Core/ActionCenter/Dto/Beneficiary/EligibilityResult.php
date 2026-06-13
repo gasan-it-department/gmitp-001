@@ -29,6 +29,10 @@ final class EligibilityResult
 
     public const REASON_DEPENDENT_UNVERIFIED = 'dependent_unverified';
 
+    public const REASON_BENEFICIARY_INACTIVE = 'beneficiary_inactive';
+
+    public const REASON_HOUSEHOLD_HEAD_REQUIRED = 'household_head_required';
+
     private function __construct(
         public readonly bool $eligible,
         public readonly ?string $reason,
@@ -79,6 +83,16 @@ final class EligibilityResult
         return new self(false, self::REASON_DEPENDENT_UNVERIFIED);
     }
 
+    public static function beneficiaryInactive(): self
+    {
+        return new self(false, self::REASON_BENEFICIARY_INACTIVE);
+    }
+
+    public static function householdHeadRequired(): self
+    {
+        return new self(false, self::REASON_HOUSEHOLD_HEAD_REQUIRED);
+    }
+
     public function requiresVerificationOverride(): bool
     {
         return in_array($this->reason, [
@@ -109,6 +123,8 @@ final class EligibilityResult
             self::REASON_IDENTITY_UNVERIFIED => 'Your beneficiary profile is awaiting identity verification by MSWD. '
                 .'You can apply after an administrator completes the review.',
             self::REASON_DEPENDENT_UNVERIFIED => 'This household member is still awaiting MSWD verification and cannot be selected yet.',
+            self::REASON_BENEFICIARY_INACTIVE => 'Your beneficiary record is inactive. Please visit the MSWD office to update your residence or status.',
+            self::REASON_HOUSEHOLD_HEAD_REQUIRED => 'Your household is temporarily on hold until MSWD assigns and verifies a head of household.',
             default => 'Eligible to apply.',
         };
     }

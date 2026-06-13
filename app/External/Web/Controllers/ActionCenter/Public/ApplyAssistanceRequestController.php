@@ -61,6 +61,17 @@ class ApplyAssistanceRequestController extends Controller
                 ->with('info', 'Your beneficiary profile is awaiting MSWD identity verification.');
         }
 
+        if (! $beneficiary->is_active || ! $beneficiary->household->isVerified()) {
+            return redirect()
+                ->route('actionCenter.portal', ['municipality' => $municipality])
+                ->with(
+                    'error',
+                    ! $beneficiary->is_active
+                        ? 'Your beneficiary record is inactive. Please visit the MSWD office.'
+                        : 'Your household is on hold until MSWD assigns a verified head of household.',
+                );
+        }
+
         // Don't render a dead form: bounce STANDARD programs the citizen can't
         // currently file (cooldown / in-flight / one-time) back to the portal
         // with the friendly message. Burial is independent + per-deceased — its

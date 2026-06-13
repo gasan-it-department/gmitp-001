@@ -8,6 +8,7 @@ use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeDetailsResource;
 use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryProfileResource;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,17 +30,31 @@ class CreateAssistanceRequestController extends Controller
         private readonly CheckElegibilityAction $checkEligibility,
     ) {}
 
-    public function __invoke(string $municipality, string $beneficiaryId): Response
+    public function __invoke(string $municipality, string $beneficiaryId): Response|RedirectResponse
     {
         $municipalId = app('municipal_id');
 
         // Tenant guard: the beneficiary must live in this municipality (tenant
         // key is on the household). 404 on a miss — never leak existence.
         $beneficiary = Beneficiary::query()
-            ->with(['household', 'religion', 'user', 'identityVerifier'])
+            ->with(['household.activeHead.beneficiary', 'religion', 'user', 'identityVerifier'])
             ->whereKey($beneficiaryId)
             ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
             ->firstOrFail();
+
+        if (! $beneficiary->is_active || ! $beneficiary->household->isVerified()) {
+            return redirect()
+                ->route('actionCenter.admin.beneficiary.profile', [
+                    'municipality' => $municipality,
+                    'beneficiaryId' => $beneficiary->id,
+                ])
+                ->with(
+                    'error',
+                    ! $beneficiary->is_active
+                        ? 'This beneficiary record is inactive. Resolve their residence or status before filing assistance.'
+                        : 'This household is on hold until an eligible head of household is assigned.',
+                );
+        }
 
         // Active programs for this municipality, each with its required-document
         // slots so the form can render uploads once a type is chosen.

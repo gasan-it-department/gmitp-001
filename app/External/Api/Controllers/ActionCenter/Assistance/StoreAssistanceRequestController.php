@@ -56,8 +56,9 @@ class StoreAssistanceRequestController extends Controller
         // on-behalf deceased context makes the check per-deceased. Throwing the
         // domain exception surfaces the friendly message as a toast.
         //
-        // Enforced here (citizen path) and NOT inside StoreAssistanceRequestAction,
-        // so the admin walk-in flow that shares the action keeps its override.
+        // Cooldown and request-history rules are enforced here on the citizen
+        // path. StoreAssistanceRequestAction separately enforces the non-
+        // overridable active-beneficiary and active-household-head invariants.
         $eligibility = $this->checkEligibility->execute(
             $beneficiary,
             $assistanceType,

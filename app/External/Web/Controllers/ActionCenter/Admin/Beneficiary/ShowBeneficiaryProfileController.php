@@ -4,6 +4,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin\Beneficiary;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Enums\EducationalAttainment;
+use App\Core\ActionCenter\Enums\HeadDepartureDisposition;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Religion;
 use App\Core\ActionCenter\UseCase\Beneficiary\GetBeneficiaryProfileAction;
@@ -46,11 +47,13 @@ class ShowBeneficiaryProfileController extends Controller
             'householdMatches' => $data['householdMatches'],
             'merge' => $data['merge'],
             'summary' => $data['summary'],
+            'householdHead' => $data['householdHead'],
             // Dropdown sources for the inline roster manager (add / edit member).
             'religions' => Religion::active()->get(['id', 'name']),
             'civilStatus' => CivilStatus::option(),
             'educationalAttainment' => EducationalAttainment::toOptions(),
             'relationships' => Relationship::toOptions(),
+            'headDispositions' => HeadDepartureDisposition::options(),
         ]);
     }
 }

@@ -29,6 +29,7 @@ import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
 import AvatarUploader from './Components/AvatarUploader';
+import type { HouseholdHeadState } from './Components/ChangeHouseholdHeadDialog';
 import HouseholdMembersManager from './Components/HouseholdMembersManager';
 import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
 import IntakeReviewPanel, { type HouseholdMatch } from './Components/IntakeReviewPanel';
@@ -67,6 +68,8 @@ interface BeneficiaryProfileData {
     identity_verified: boolean;
     identity_verified_at: string | null;
     identity_verified_by: string | null;
+    is_active: boolean;
+    household_verified: boolean;
 }
 
 interface Summary {
@@ -104,6 +107,8 @@ interface Props {
     civilStatus: EnumOption[];
     educationalAttainment: EnumOption[];
     relationships: RelationshipOption[];
+    householdHead: HouseholdHeadState;
+    headDispositions: EnumOption[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,7 +128,25 @@ export default function BeneficiaryProfile({
     civilStatus,
     educationalAttainment,
     relationships,
+    householdHead,
+    headDispositions,
 }: Props) {
+    console.log(
+        beneficiary,
+        householdMembers,
+        assistanceHistory,
+        householdTotalIncome,
+        crossMunicipalityMatches,
+        householdMatches,
+        merge,
+        summary,
+        religions,
+        civilStatus,
+        educationalAttainment,
+        relationships,
+        householdHead,
+        headDispositions,
+    );
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const utils = Utility();
 
@@ -178,16 +201,26 @@ export default function BeneficiaryProfile({
                             )}
 
                             {/* Primary action: file an assistance request for this person */}
-                            <Link
-                                href={CreateAssistanceRequestController.url({
-                                    municipality: currentMunicipality.slug,
-                                    beneficiaryId: profile.id,
-                                })}
-                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                            >
-                                <HandCoins className="h-4 w-4" />
-                                File assistance request
-                            </Link>
+                            {profile.is_active && profile.household_verified ? (
+                                <Link
+                                    href={CreateAssistanceRequestController.url({
+                                        municipality: currentMunicipality.slug,
+                                        beneficiaryId: profile.id,
+                                    })}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                                >
+                                    <HandCoins className="h-4 w-4" />
+                                    File assistance request
+                                </Link>
+                            ) : (
+                                <span
+                                    title={!profile.is_active ? 'Beneficiary record is inactive' : 'Household has no verified active head'}
+                                    className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
+                                >
+                                    <HandCoins className="h-4 w-4" />
+                                    Assistance on hold
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -340,6 +373,9 @@ export default function BeneficiaryProfile({
                                         civilStatus={civilStatus}
                                         educationalAttainment={educationalAttainment}
                                         relationships={relationships}
+                                        householdId={profile.household!.id}
+                                        headState={householdHead}
+                                        headDispositions={headDispositions}
                                     />
                                 </CardContent>
                             </Card>

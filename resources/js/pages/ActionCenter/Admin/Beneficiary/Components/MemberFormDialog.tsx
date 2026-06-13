@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useEffect } from 'react';
 import { ShadcnSelectField } from '../../../Client/Apply/Beneficiary/Components/ShadcnSelectField';
 import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
@@ -37,6 +37,25 @@ type MemberFormData = {
     religion_id: string;
     is_verified_dependent: boolean;
 };
+
+/** Build a fresh form-data object from a member (or empty defaults for "add"). */
+function memberToFormData(member?: HouseholdMemberRow): MemberFormData {
+    return {
+        first_name: member?.first_name ?? '',
+        middle_name: member?.middle_name ?? '',
+        last_name: member?.last_name ?? '',
+        suffix: member?.suffix ?? '',
+        relationship: member && member.relationship !== 'head' ? member.relationship : '',
+        birth_date: member?.birth_date ?? '',
+        sex: member?.sex ?? '',
+        civil_status: member?.civil_status ?? '',
+        educational_attainment: member?.educational_attainment ?? '',
+        occupation: member?.occupation ?? '',
+        monthly_income: member && member.monthly_income > 0 ? String(member.monthly_income) : '',
+        religion_id: member?.religion_id ?? '',
+        is_verified_dependent: member?.is_verified_dependent ?? false,
+    };
+}
 
 interface Props {
     open: boolean;
@@ -73,21 +92,19 @@ export default function MemberFormDialog({
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>({
-        first_name: member?.first_name ?? '',
-        middle_name: member?.middle_name ?? '',
-        last_name: member?.last_name ?? '',
-        suffix: member?.suffix ?? '',
-        relationship: member && member.relationship !== 'head' ? member.relationship : '',
-        birth_date: member?.birth_date ?? '',
-        sex: member?.sex ?? '',
-        civil_status: member?.civil_status ?? '',
-        educational_attainment: member?.educational_attainment ?? '',
-        occupation: member?.occupation ?? '',
-        monthly_income: member && member.monthly_income > 0 ? String(member.monthly_income) : '',
-        religion_id: member?.religion_id ?? '',
-        is_verified_dependent: member?.is_verified_dependent ?? false,
-    });
+    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>(
+        memberToFormData(member),
+    );
+
+    // Re-seed form state when the dialog opens (or the target member changes).
+    // useForm only captures initial values on mount — the dialog stays mounted
+    // and is toggled via `open`, so without this the edit fields stay empty.
+    useEffect(() => {
+        if (open) {
+            reset(memberToFormData(member));
+            clearErrors();
+        }
+    }, [open, member?.id]);
 
     const serverError = (errors as Record<string, string | undefined>).member;
 

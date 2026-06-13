@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Household\EvaluateHouseholdHeadCandidateAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
@@ -36,6 +37,7 @@ class GetBeneficiaryProfileAction
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
         private readonly FindHouseholdMembershipMatchesAction $findHouseholdMatches,
+        private readonly EvaluateHouseholdHeadCandidateAction $evaluateHeadCandidate,
     ) {}
 
     public function execute(string $municipalId, string $beneficiaryId): array
@@ -65,6 +67,7 @@ class GetBeneficiaryProfileAction
         // Income + the active count below are computed from the active subset
         // only, so moving someone out drops them from the household economics.
         $householdMembers = HouseholdMember::query()
+            ->with('beneficiary')
             ->where('household_id', $beneficiary->household_id)
             ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
             ->orderByDesc('is_active')
@@ -104,6 +107,17 @@ class GetBeneficiaryProfileAction
         $releasedHistory = $assistanceHistory->filter(
             fn (AssistanceRequest $r) => $r->status?->value === 'released'
         );
+
+        $currentHead = $householdMembers->first(
+            fn (HouseholdMember $member) => $member->is_active
+                && $member->relationship === 'head',
+        );
+
+        $headCandidates = $householdMembers
+            ->reject(fn (HouseholdMember $member) => $member->id === $currentHead?->id)
+            ->mapWithKeys(fn (HouseholdMember $member) => [
+                $member->id => $this->evaluateHeadCandidate->execute($member, $beneficiary->household),
+            ]);
 
         return [
             'beneficiary' => $beneficiary,
@@ -147,6 +161,12 @@ class GetBeneficiaryProfileAction
                 'released_count' => $releasedHistory->count(),
                 'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
                 'active_member_count' => $activeMembers->count(),
+            ],
+            'householdHead' => [
+                'current_head_member_id' => $currentHead?->id,
+                'profile_is_current_head' => $currentHead?->beneficiary_id === $beneficiary->id,
+                'household_on_hold' => $currentHead === null,
+                'candidate_reasons' => $headCandidates->all(),
             ],
         ];
     }

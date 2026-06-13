@@ -31,6 +31,10 @@ class Beneficiary extends Model implements HasMedia
 
     public $incrementing = false;
 
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected $fillable = [
         'household_id',
         'user_id',
@@ -97,6 +101,7 @@ class Beneficiary extends Model implements HasMedia
                 'civil_status',
                 'occupation',
                 'monthly_income',
+                'is_active',
                 // The merge link is an admin identity decision — audit it.
                 'merged_into_beneficiary_id',
                 'identity_verified_at',

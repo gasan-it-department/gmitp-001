@@ -15,6 +15,7 @@ use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryContro
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReviewBeneficiaryIntakeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\UpdateBeneficiaryProfileController;
+use App\External\Api\Controllers\ActionCenter\Household\ChangeHouseholdHeadController;
 use App\External\Api\Controllers\ActionCenter\Household\LinkHouseholdMemberToBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\SetHouseholdMemberActiveController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreAdminHouseholdMemberController;
@@ -264,6 +265,9 @@ Route::prefix('/api/action-center')
 
                 Route::post('/household/members/{memberId}/set-active', SetHouseholdMemberActiveController::class)
                     ->name('household.members.set-active');
+
+                Route::post('/households/{householdId}/change-head', ChangeHouseholdHeadController::class)
+                    ->name('household.change-head');
 
                 Route::post('/beneficiary/{beneficiaryId}/household/members', StoreAdminHouseholdMemberController::class)
                     ->name('household.members.admin-store');

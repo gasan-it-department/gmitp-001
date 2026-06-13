@@ -44,6 +44,18 @@ class StoreAssistanceRequestAction
             );
         }
 
+        if (! $beneficiary->is_active) {
+            throw new \DomainException(
+                'This beneficiary record is inactive. Resolve the beneficiary residence or status before filing assistance.',
+            );
+        }
+
+        if (! $beneficiary->household->isVerified()) {
+            throw new \DomainException(
+                'This household is on hold until an active, identity-verified head is assigned.',
+            );
+        }
+
         $this->ensureVerificationGate($beneficiary, $dto);
 
         // ── Compute derived economic snapshot BEFORE opening the transaction.
