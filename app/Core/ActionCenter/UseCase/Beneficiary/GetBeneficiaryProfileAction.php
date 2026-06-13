@@ -38,7 +38,8 @@ class GetBeneficiaryProfileAction
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
         private readonly FindHouseholdMembershipMatchesAction $findHouseholdMatches,
         private readonly EvaluateHouseholdHeadCandidateAction $evaluateHeadCandidate,
-    ) {}
+    ) {
+    }
 
     public function execute(string $municipalId, string $beneficiaryId): array
     {
@@ -75,8 +76,8 @@ class GetBeneficiaryProfileAction
             ->get();
 
         $activeMembers = $householdMembers->filter(
-            fn (HouseholdMember $member) => $member->is_active
-                && ($member->relationship === 'head' || $member->is_verified_dependent)
+            fn(HouseholdMember $member) => $member->is_active
+            && ($member->relationship === 'head' || $member->is_verified_dependent)
         );
 
         // Every request the identity GROUP has ever filed, across all programs.
@@ -99,23 +100,23 @@ class GetBeneficiaryProfileAction
             $municipalId,
         );
 
-        $householdTotalIncome = (float) $activeMembers->sum(fn (HouseholdMember $m) => (float) $m->monthly_income);
+        $householdTotalIncome = (float) $activeMembers->sum(fn(HouseholdMember $m) => (float) $m->monthly_income);
 
         // status is cast to the AssistanceStatus enum, so filter on its value
         // (a loose ->where('status', 'released') would compare enum !== string
         // and silently match nothing).
         $releasedHistory = $assistanceHistory->filter(
-            fn (AssistanceRequest $r) => $r->status?->value === 'released'
+            fn(AssistanceRequest $r) => $r->status?->value === 'released'
         );
 
         $currentHead = $householdMembers->first(
-            fn (HouseholdMember $member) => $member->is_active
-                && $member->relationship === 'head',
+            fn(HouseholdMember $member) => $member->is_active
+            && $member->relationship === 'head',
         );
 
         $headCandidates = $householdMembers
-            ->reject(fn (HouseholdMember $member) => $member->id === $currentHead?->id)
-            ->mapWithKeys(fn (HouseholdMember $member) => [
+            ->reject(fn(HouseholdMember $member) => $member->id === $currentHead?->id)
+            ->mapWithKeys(fn(HouseholdMember $member) => [
                 $member->id => $this->evaluateHeadCandidate->execute($member, $beneficiary->household),
             ]);
 
@@ -126,7 +127,7 @@ class GetBeneficiaryProfileAction
             'householdTotalIncome' => $householdTotalIncome,
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
             'householdMatches' => $this->findHouseholdMatches->execute($beneficiary)
-                ->map(fn (HouseholdMember $member) => [
+                ->map(fn(HouseholdMember $member) => [
                     'member_id' => $member->id,
                     'household_id' => $member->household_id,
                     'household_code' => $member->household?->household_code,
@@ -148,7 +149,7 @@ class GetBeneficiaryProfileAction
                     ]
                     : null,
                 'merged_duplicates' => $beneficiary->mergedDuplicates
-                    ->map(fn (Beneficiary $d) => [
+                    ->map(fn(Beneficiary $d) => [
                         'id' => $d->id,
                         'beneficiary_number' => $d->beneficiary_number,
                         'full_name' => $d->full_name,
@@ -159,7 +160,7 @@ class GetBeneficiaryProfileAction
             'summary' => [
                 'total_requests' => $assistanceHistory->count(),
                 'released_count' => $releasedHistory->count(),
-                'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
+                'total_released_amount' => (float) $releasedHistory->sum(fn(AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
                 'active_member_count' => $activeMembers->count(),
             ],
             'householdHead' => [

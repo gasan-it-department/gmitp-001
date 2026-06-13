@@ -78,6 +78,7 @@ class CheckElegibilityAction
         AssistanceType $type,
         ?string $onBehalfHouseholdMemberId = null,
         ?string $onBehalfDateOfDeath = null,
+        bool $allowPendingDependent = false,
     ): EligibilityResult {
         if (! $beneficiary->is_active) {
             return EligibilityResult::beneficiaryInactive();
@@ -100,7 +101,8 @@ class CheckElegibilityAction
 
             if ($member !== null
                 && $member->relationship !== 'head'
-                && ! $member->is_verified_dependent) {
+                && ! $member->is_verified_dependent
+                && ! $allowPendingDependent) {
                 return EligibilityResult::dependentUnverified();
             }
         }

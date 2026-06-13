@@ -10,7 +10,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
  *
  * Used by every entry point that creates a household member:
  *   - CreateBeneficiaryProfileAction (fan-out at profile setup)
- *   - StoreInlineHouseholdMemberController (citizen on-behalf-of modal)
+ *   - DeclareHouseholdMemberForAssistanceAction (citizen on-behalf-of modal)
  *   - Future admin household editor during under_review
  *
  * NO model references — the calling action resolves household_id from
@@ -43,8 +43,7 @@ readonly class StoreHouseholdMemberDto
 
         // Optional religion FK
         public ?string $religionId,
-    ) {
-    }
+    ) {}
 
     /**
      * Build the self-referencing "head of household" row from a freshly
@@ -97,19 +96,19 @@ readonly class StoreHouseholdMemberDto
 
             firstName: mb_strtoupper($data['first_name']),
             lastName: mb_strtoupper($data['last_name']),
-            middleName: !empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
-            suffix: !empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
+            middleName: ! empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
+            suffix: ! empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
 
             relationship: $data['relationship'],
 
             birthDate: $data['birth_date'] ?? null,
             sex: $data['sex'] ?? null,
             civilStatus: $data['civil_status'] ?? null,
-            educationalAttainment: !empty($data['educational_attainment'])
+            educationalAttainment: ! empty($data['educational_attainment'])
                 ? mb_strtoupper($data['educational_attainment'])
                 : null,
 
-            occupation: !empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
+            occupation: ! empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
             monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : null,
 
             religionId: $data['religion_id'] ?? null,

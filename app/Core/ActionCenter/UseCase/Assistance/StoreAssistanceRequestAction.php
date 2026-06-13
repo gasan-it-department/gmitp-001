@@ -76,7 +76,7 @@ class StoreAssistanceRequestAction
             // from the FK'd row so the citizen cannot forge a name by editing
             // the submitted payload. The FK must also belong to the filer's
             // own household — otherwise it's a cross-household tamper attempt.
-            $member = $this->resolveOnBehalfMember($dto);
+            $member = $this->resolveOnBehalfMember($dto, $beneficiary);
 
             $onBehalfFirstName = $member?->first_name ?? $dto->onBehalfFirstName;
             $onBehalfMiddleName = $member?->middle_name ?? $dto->onBehalfMiddleName;
@@ -90,6 +90,11 @@ class StoreAssistanceRequestAction
                 'on_behalf_last_name' => $onBehalfLastName,
                 'on_behalf_suffix' => $onBehalfSuffix,
                 'on_behalf_date_of_death' => $dto->onBehalfDateOfDeath,
+                'on_behalf_verification_pending' => $member !== null
+                    && $member->relationship !== 'head'
+                    && ! $member->is_verified_dependent
+                        ? true
+                        : null,
             ], static fn ($value) => $value !== null);
 
             $request = AssistanceRequest::create([
@@ -206,7 +211,9 @@ class StoreAssistanceRequestAction
             if ($member !== null
                 && $member->relationship !== 'head'
                 && ! $member->is_verified_dependent) {
-                $message = 'The selected household member has not been verified by MSWD.';
+                if (! $this->isAllowedPendingCitizenMember($beneficiary, $member, $dto)) {
+                    $message = 'The selected household member has not been verified by MSWD.';
+                }
             }
         }
 
@@ -271,8 +278,10 @@ class StoreAssistanceRequestAction
      * it belongs to the filer's own household. Returns null when the request
      * is self-filed.
      */
-    private function resolveOnBehalfMember(StoreAssistanceRequestDto $dto): ?HouseholdMember
-    {
+    private function resolveOnBehalfMember(
+        StoreAssistanceRequestDto $dto,
+        Beneficiary $beneficiary,
+    ): ?HouseholdMember {
         if (! $dto->onBehalfHouseholdMemberId) {
             return null;
         }
@@ -291,13 +300,46 @@ class StoreAssistanceRequestAction
 
         if ($member->relationship !== 'head'
             && ! $member->is_verified_dependent
-            && $dto->encodedByUserId === null) {
+            && ! $this->isAllowedPendingCitizenMember(
+                $beneficiary,
+                $member,
+                $dto,
+            )) {
             throw new AuthorizationException(
                 'The selected household member is awaiting MSWD verification.',
             );
         }
 
         return $member;
+    }
+
+    private function isAllowedPendingCitizenMember(
+        Beneficiary $beneficiary,
+        HouseholdMember $member,
+        StoreAssistanceRequestDto $dto,
+    ): bool {
+        if ($dto->encodedByUserId !== null
+            || $beneficiary->user_id !== $dto->submitterUserId
+            || $member->household_id !== $beneficiary->household_id
+            || ! $member->is_active
+            || $member->relationship === 'head'
+            || $member->is_verified_dependent) {
+            return false;
+        }
+
+        return HouseholdMember::query()
+            ->where('household_id', $beneficiary->household_id)
+            ->where('is_active', true)
+            ->where('relationship', '!=', 'head')
+            ->where('is_verified_dependent', false)
+            ->whereKey($member->id)
+            ->exists()
+            && HouseholdMember::query()
+                ->where('household_id', $beneficiary->household_id)
+                ->where('is_active', true)
+                ->where('relationship', '!=', 'head')
+                ->where('is_verified_dependent', false)
+                ->count() === 1;
     }
 
     /**

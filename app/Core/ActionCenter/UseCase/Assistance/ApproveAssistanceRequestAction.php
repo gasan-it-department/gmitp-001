@@ -55,13 +55,14 @@ class ApproveAssistanceRequestAction
             $request = $this->lockRequest->execute(
                 id: $dto->assistanceRequestId,
                 municipalId: $dto->municipalId,
-                with: ['assistanceType.documents', 'media'],
+                with: ['assistanceType.documents', 'media', 'onBehalfHouseholdMember'],
             );
 
             // Run all hard gates (cheap to expensive). Any failure aborts
             // the transaction without writing anything.
             $this->ensureTransitionAllowed($request);
             $this->ensureReviewerAssigned($request);
+            $this->ensureOnBehalfMemberVerified($request);
             $this->ensureAmountWithinLimits($request, $dto->amountApproved);
             $this->ensureRequiredDocumentsReady($request);
 
@@ -102,6 +103,17 @@ class ApproveAssistanceRequestAction
     {
         if ($request->reviewed_by_user_id === null) {
             throw AssistanceApprovalException::noReviewerAssigned();
+        }
+    }
+
+    private function ensureOnBehalfMemberVerified(AssistanceRequest $request): void
+    {
+        $member = $request->onBehalfHouseholdMember;
+
+        if ($member !== null
+            && $member->relationship !== 'head'
+            && ! $member->is_verified_dependent) {
+            throw AssistanceApprovalException::dependentNotVerified();
         }
     }
 

@@ -90,9 +90,11 @@ class ReviewBeneficiaryIntakeAction
                     );
                 }
 
-                if (! $this->matchesBeneficiary($matchedMember, $beneficiary)) {
+                $isExactMatch = $this->matchesBeneficiary($matchedMember, $beneficiary);
+
+                if (! $isExactMatch && blank($dto->householdResolutionReason)) {
                     throw new \DomainException(
-                        'The selected household member no longer matches this beneficiary.',
+                        'Explain why the selected household member represents this claimant before joining the household.',
                     );
                 }
 
@@ -124,7 +126,7 @@ class ReviewBeneficiaryIntakeAction
                     if ($duplicate !== null) {
                         $duplicate->update([
                             'beneficiary_id' => $duplicate->beneficiary_id ?? $member->beneficiary_id,
-                            'is_verified_dependent' => true,
+                            'is_verified_dependent' => $duplicate->relationship !== Relationship::Head->value,
                         ]);
                         $member->delete();
 
@@ -160,6 +162,7 @@ class ReviewBeneficiaryIntakeAction
                     'resolved_household_id' => $targetHousehold->id,
                     'verified_member_ids' => $verifiedIds->all(),
                     'rejected_member_ids' => $rejectedIds->all(),
+                    'household_resolution_reason' => $dto->householdResolutionReason,
                 ])
                 ->log('Reviewed and verified beneficiary intake');
 

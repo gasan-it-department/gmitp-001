@@ -13,13 +13,14 @@ use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeCon
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReviewBeneficiaryIntakeController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\SearchHouseholdMembershipController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\UpdateBeneficiaryProfileController;
 use App\External\Api\Controllers\ActionCenter\Household\ChangeHouseholdHeadController;
+use App\External\Api\Controllers\ActionCenter\Household\DeclareHouseholdMemberForAssistanceController;
 use App\External\Api\Controllers\ActionCenter\Household\LinkHouseholdMemberToBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\SetHouseholdMemberActiveController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreAdminHouseholdMemberController;
-use App\External\Api\Controllers\ActionCenter\Household\StoreInlineHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
@@ -249,6 +250,11 @@ Route::prefix('/api/action-center')
                     ReviewBeneficiaryIntakeController::class,
                 )->name('beneficiary.review-intake');
 
+                Route::get(
+                    '/beneficiary/{beneficiaryId}/household-members/search',
+                    SearchHouseholdMembershipController::class,
+                )->name('beneficiary.household-members.search');
+
                 // Upload / replace a beneficiary's profile photo (webcam → PC).
                 // Admin-only; single-file replace handled in the action.
                 Route::post(
@@ -297,7 +303,7 @@ Route::prefix('/api/action-center')
                 Route::post('/profile/setup', StoreProfileSetupController::class)->name('profile.setup.store');
 
                 // Inline "Add a new family member" from the Apply form.
-                Route::post('/household/members', StoreInlineHouseholdMemberController::class)
+                Route::post('/household/members', DeclareHouseholdMemberForAssistanceController::class)
                     ->name('household.members.store');
 
                 // Citizen-initiated cancellation of their own pending /

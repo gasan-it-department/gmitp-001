@@ -1,8 +1,12 @@
 import ReviewBeneficiaryIntakeController from '@/actions/App/External/Api/Controllers/ActionCenter/Beneficiary/ReviewBeneficiaryIntakeController';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
-import { BadgeCheck, Clock3, Home, Loader2, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Clock3, Home, Info, Loader2, Search, ShieldCheck, UserRoundSearch } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 
 export interface HouseholdMatch {
@@ -12,6 +16,10 @@ export interface HouseholdMatch {
     barangay: string | null;
     street: string | null;
     head_name: string | null;
+    member_name?: string;
+    birth_date?: string | null;
+    relationship?: string | null;
+    is_exact_match?: boolean;
 }
 
 interface Props {
@@ -26,6 +34,7 @@ interface Props {
 type ReviewForm = {
     household_resolution: 'keep_existing' | 'join_existing';
     target_member_id: string;
+    household_resolution_reason: string;
     verified_member_ids: string[];
     rejected_member_ids: string[];
 };
@@ -33,10 +42,17 @@ type ReviewForm = {
 export default function IntakeReviewPanel({ beneficiaryId, identityVerified, verifiedAt, verifiedBy, members, householdMatches }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const dependents = members.filter((member) => member.is_active && member.relationship !== 'head');
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searching, setSearching] = useState(false);
+    const [searchError, setSearchError] = useState('');
+    const [searchResults, setSearchResults] = useState<HouseholdMatch[]>([]);
+    const [manualSelection, setManualSelection] = useState<HouseholdMatch | null>(null);
 
     const { data, setData, post, processing, errors } = useForm<ReviewForm>({
         household_resolution: 'keep_existing',
         target_member_id: '',
+        household_resolution_reason: '',
         verified_member_ids: dependents.map((member) => member.id),
         rejected_member_ids: [],
     });
@@ -79,6 +95,65 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
         });
     };
 
+    const keepProvisionalHousehold = () => {
+        setManualSelection(null);
+        setData((current) => ({
+            ...current,
+            household_resolution: 'keep_existing',
+            target_member_id: '',
+            household_resolution_reason: '',
+        }));
+    };
+
+    const joinHousehold = (match: HouseholdMatch, manual: boolean) => {
+        setManualSelection(manual ? match : null);
+        setData((current) => ({
+            ...current,
+            household_resolution: 'join_existing',
+            target_member_id: match.member_id,
+            household_resolution_reason: '',
+        }));
+        setSearchOpen(false);
+    };
+
+    const searchHouseholds = async (event: FormEvent) => {
+        event.preventDefault();
+        const query = searchTerm.trim();
+
+        if (query.length < 2) {
+            setSearchError('Enter at least two characters.');
+            return;
+        }
+
+        setSearching(true);
+        setSearchError('');
+
+        try {
+            const response = await fetch(`/api/action-center/beneficiary/${beneficiaryId}/household-members/search?q=${encodeURIComponent(query)}`, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Municipality-Slug': currentMunicipality.slug,
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error('Search failed');
+            }
+
+            const payload = (await response.json()) as { data: HouseholdMatch[] };
+            setSearchResults(payload.data);
+        } catch {
+            setSearchError('Unable to search households right now. Please try again.');
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const hasResolutionChoices = householdMatches.length > 0 || manualSelection !== null;
+    const selectedMatch = manualSelection ?? householdMatches.find((match) => match.member_id === data.target_member_id) ?? null;
+    const manualReasonRequired = manualSelection !== null && !manualSelection.is_exact_match;
+
     return (
         <div className="space-y-5 rounded-lg border border-amber-200 bg-amber-50 p-5">
             <div className="flex items-start gap-3">
@@ -93,18 +168,28 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
 
             <fieldset className="space-y-2">
                 <legend className="text-xs font-bold tracking-wide text-amber-900 uppercase">Household resolution</legend>
-                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-amber-200 bg-white px-3 py-2">
-                    <input
-                        type="radio"
-                        name="household_resolution"
-                        checked={data.household_resolution === 'keep_existing'}
-                        onChange={() => setData({ ...data, household_resolution: 'keep_existing', target_member_id: '' })}
-                        className="mt-1"
-                    />
-                    <span className="text-sm text-slate-800">
-                        <strong>Keep separate household.</strong> Use this when the claimant does not currently live with a suggested relative.
-                    </span>
-                </label>
+                {hasResolutionChoices ? (
+                    <label className="flex cursor-pointer items-start gap-3 rounded-md border border-amber-200 bg-white px-3 py-2">
+                        <input
+                            type="radio"
+                            name="household_resolution"
+                            checked={data.household_resolution === 'keep_existing'}
+                            onChange={keepProvisionalHousehold}
+                            className="mt-1"
+                        />
+                        <span className="text-sm text-slate-800">
+                            <strong>Keep claimant's provisional household.</strong> Use this when the claimant maintains a separate residence.
+                        </span>
+                    </label>
+                ) : (
+                    <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-white px-3 py-2">
+                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                        <span className="text-sm text-slate-700">
+                            <strong>No exact household match found.</strong> The provisional household will be retained unless you locate an existing
+                            roster entry.
+                        </span>
+                    </div>
+                )}
 
                 {householdMatches.map((match) => (
                     <label
@@ -115,7 +200,7 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                             type="radio"
                             name="household_resolution"
                             checked={data.household_resolution === 'join_existing' && data.target_member_id === match.member_id}
-                            onChange={() => setData({ ...data, household_resolution: 'join_existing', target_member_id: match.member_id })}
+                            onChange={() => joinHousehold(match, false)}
                             className="mt-1"
                         />
                         <Home className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
@@ -125,6 +210,46 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                         </span>
                     </label>
                 ))}
+
+                {manualSelection && !householdMatches.some((match) => match.member_id === manualSelection.member_id) && (
+                    <label className="flex cursor-pointer items-start gap-3 rounded-md border border-sky-300 bg-sky-50 px-3 py-2">
+                        <input
+                            type="radio"
+                            name="household_resolution"
+                            checked={data.household_resolution === 'join_existing' && data.target_member_id === manualSelection.member_id}
+                            onChange={() => joinHousehold(manualSelection, true)}
+                            className="mt-1"
+                        />
+                        <Home className="mt-0.5 h-4 w-4 shrink-0 text-sky-700" />
+                        <span className="text-sm text-slate-800">
+                            <strong>Join {manualSelection.head_name ? `${manualSelection.head_name}'s household` : 'selected household'}.</strong>{' '}
+                            Manual roster match: {manualSelection.member_name ?? 'Unnamed member'}.
+                        </span>
+                    </label>
+                )}
+
+                <Button type="button" variant="outline" size="sm" onClick={() => setSearchOpen(true)} className="border-amber-300 bg-white">
+                    <UserRoundSearch className="mr-2 h-4 w-4" />
+                    Find another household
+                </Button>
+
+                {manualReasonRequired && selectedMatch && (
+                    <div className="space-y-1.5">
+                        <label htmlFor="household-resolution-reason" className="text-xs font-semibold text-slate-700">
+                            Manual match reason
+                        </label>
+                        <Textarea
+                            id="household-resolution-reason"
+                            value={data.household_resolution_reason}
+                            onChange={(event) => setData('household_resolution_reason', event.target.value)}
+                            placeholder="Explain how the interview or documents confirmed this roster member is the claimant."
+                            rows={3}
+                        />
+                        <p className="text-xs text-amber-800">
+                            Required because the selected roster entry is not an exact name and birth-date match.
+                        </p>
+                    </div>
+                )}
             </fieldset>
 
             <div className="space-y-2">
@@ -175,6 +300,66 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                 {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                 Complete intake verification
             </Button>
+
+            <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Find an existing household member</DialogTitle>
+                        <DialogDescription>
+                            Search within this municipality by member, household head, household code, beneficiary number, or address.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={searchHouseholds} className="flex gap-2">
+                        <Input
+                            value={searchTerm}
+                            onChange={(event) => setSearchTerm(event.target.value)}
+                            placeholder="Pedro Cruz, GAS-000123, household code, or barangay"
+                            autoFocus
+                        />
+                        <Button type="submit" disabled={searching} aria-label="Search households">
+                            {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                        </Button>
+                    </form>
+
+                    {searchError && <p className="text-sm font-medium text-rose-700">{searchError}</p>}
+
+                    <div className="space-y-2">
+                        {searchResults.map((match) => (
+                            <button
+                                key={match.member_id}
+                                type="button"
+                                onClick={() => joinHousehold(match, true)}
+                                className="flex w-full items-start justify-between gap-4 rounded-md border border-slate-200 px-3 py-3 text-left hover:border-sky-400 hover:bg-sky-50"
+                            >
+                                <span>
+                                    <span className="block text-sm font-semibold text-slate-900">{match.member_name}</span>
+                                    <span className="block text-xs text-slate-600">
+                                        {[match.relationship, match.birth_date].filter(Boolean).join(' · ') || 'Roster details unavailable'}
+                                    </span>
+                                    <span className="mt-1 block text-xs text-slate-500">
+                                        {match.head_name ? `${match.head_name}'s household` : match.household_code || 'Household'} ·{' '}
+                                        {[match.street, match.barangay].filter(Boolean).join(', ') || 'Address unavailable'}
+                                    </span>
+                                </span>
+                                <span className={`shrink-0 text-xs font-semibold ${match.is_exact_match ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                    {match.is_exact_match ? 'Exact match' : 'Review required'}
+                                </span>
+                            </button>
+                        ))}
+
+                        {!searching && searchTerm.trim().length >= 2 && searchResults.length === 0 && !searchError && (
+                            <p className="rounded-md bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">No unlinked roster members found.</p>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setSearchOpen(false)}>
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

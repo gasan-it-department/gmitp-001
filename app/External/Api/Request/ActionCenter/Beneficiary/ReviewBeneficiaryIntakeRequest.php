@@ -22,6 +22,7 @@ class ReviewBeneficiaryIntakeRequest extends FormRequest
                 'exists:ac_household_members,id',
                 'required_if:household_resolution,join_existing',
             ],
+            'household_resolution_reason' => ['nullable', 'string', 'max:1000'],
             'verified_member_ids' => ['present', 'array'],
             'verified_member_ids.*' => ['ulid', 'distinct', 'exists:ac_household_members,id'],
             'rejected_member_ids' => ['present', 'array'],

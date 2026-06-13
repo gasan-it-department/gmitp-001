@@ -64,6 +64,7 @@ class StoreAssistanceRequestController extends Controller
             $assistanceType,
             $request->input('on_behalf_household_member_id') ?: null,
             $request->input('on_behalf_date_of_death') ?: null,
+            allowPendingDependent: true,
         );
 
         if (! $eligibility->eligible) {

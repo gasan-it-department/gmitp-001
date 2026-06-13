@@ -6,6 +6,7 @@ import {
     HouseholdSummary,
     RelationshipOption,
 } from '@/Core/Types/ActionCenter/assistance';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, UserCheck, Users } from 'lucide-react';
@@ -77,10 +78,10 @@ export default function ApplyAssistance({
     // a bare array; normalise once. Newly-created members are appended via
     // setHouseholdRoster so they show up in the picker without a page reload.
     const initialMembers: HouseholdMemberOption[] = 'data' in householdMembers ? householdMembers.data : householdMembers;
-    const householdRoster = initialMembers;
+    const [householdRoster, setHouseholdRoster] = useState<HouseholdMemberOption[]>(initialMembers);
     const [pendingMemberMessage, setPendingMemberMessage] = useState<string | null>(null);
 
-    const { props } = usePage<{ ziggy?: { url?: string } }>();
+    const { props } = usePage<{ currentMunicipality: Municipality; ziggy?: { url?: string } }>();
     const isBurial = program.slug === 'burial';
 
     // ── "Who is this for?" — separate UI state (not persisted in form data) ──
@@ -166,7 +167,19 @@ export default function ApplyAssistance({
     // Posts to the API endpoint, appends the created row to the local roster,
     // and selects it so the on-behalf payload is wired up automatically.
     const handleMemberCreated = (member: HouseholdMemberOption) => {
-        setPendingMemberMessage(`${member.first_name} ${member.last_name} was added and is awaiting MSWD verification before they can be selected.`);
+        setHouseholdRoster((current) => [...current.filter((item) => item.id !== member.id), member]);
+        setData((current) => ({
+            ...current,
+            on_behalf_household_member_id: member.id,
+            on_behalf_first_name: member.first_name,
+            on_behalf_middle_name: member.middle_name ?? '',
+            on_behalf_last_name: member.last_name,
+            on_behalf_suffix: member.suffix ?? '',
+            relationship_to_beneficiary: member.relationship ?? '',
+        }));
+        setPendingMemberMessage(
+            `${member.first_name} ${member.last_name} was added to this request and is awaiting MSWD verification. The request may be submitted, but it cannot be approved until the member is verified.`,
+        );
     };
 
     // ── Validation ───────────────────────────────────────────────────────────
@@ -256,6 +269,7 @@ export default function ApplyAssistance({
                                             applicantBirthDate={beneficiaryData.birth_date}
                                             householdMembers={householdRoster}
                                             storeHouseholdMemberUrl={storeHouseholdMemberUrl}
+                                            municipalitySlug={props.currentMunicipality.slug}
                                             onMemberCreated={handleMemberCreated}
                                             errors={errors as Record<string, string | undefined>}
                                         />

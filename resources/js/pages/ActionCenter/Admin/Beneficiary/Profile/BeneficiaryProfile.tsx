@@ -131,6 +131,7 @@ export default function BeneficiaryProfile({
     householdHead,
     headDispositions,
 }: Props) {
+    console.log(householdHead);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const utils = Utility();
 

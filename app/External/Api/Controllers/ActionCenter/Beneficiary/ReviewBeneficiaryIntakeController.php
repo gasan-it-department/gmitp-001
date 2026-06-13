@@ -26,6 +26,7 @@ class ReviewBeneficiaryIntakeController extends Controller
                 actingAdminId: $request->user()->id,
                 householdResolution: $request->string('household_resolution')->toString(),
                 targetMemberId: $request->input('target_member_id'),
+                householdResolutionReason: $request->input('household_resolution_reason'),
                 verifiedMemberIds: $request->validated('verified_member_ids'),
                 rejectedMemberIds: $request->validated('rejected_member_ids'),
             );

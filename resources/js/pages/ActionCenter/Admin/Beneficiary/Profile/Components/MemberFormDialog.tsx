@@ -73,7 +73,7 @@ interface Props {
 /**
  * Admin add / edit dialog for ONE non-head household member.
  *
- * Add  → POST StoreAdminHouseholdMemberController (reuses StoreHouseholdMemberAction).
+ * Add  → POST StoreAdminHouseholdMemberController (admin-specific create action).
  * Edit → PUT  UpdateHouseholdMemberController (head rows are rejected server-side).
  *
  * Tenant rides on the X-Municipality-Slug header — the API routes have no
@@ -101,7 +101,7 @@ export default function MemberFormDialog({
     // and is toggled via `open`, so without this the edit fields stay empty.
     useEffect(() => {
         if (open) {
-            reset(memberToFormData(member));
+            setData(memberToFormData(member));
             clearErrors();
         }
     }, [open, member?.id]);

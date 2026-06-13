@@ -30,6 +30,7 @@ beforeEach(function () {
 
     Schema::create('ac_beneficiaries', function (Blueprint $table) {
         $table->ulid('id')->primary();
+        $table->ulid('user_id')->nullable();
         $table->ulid('household_id');
         $table->ulid('municipal_id');
         $table->boolean('is_active')->default(true);
@@ -156,13 +157,14 @@ afterEach(function () {
     }
 });
 
-it('stores snapshots separately and on-behalf details in metadata', function () {
+it('stores snapshots and permits one newly declared pending member', function () {
     $municipalId = (string) Str::ulid();
     $householdId = (string) Str::ulid();
     $beneficiaryId = (string) Str::ulid();
     $assistanceTypeId = (string) Str::ulid();
     $memberId = (string) Str::ulid();
     $headMemberId = (string) Str::ulid();
+    $submitterUserId = (string) Str::ulid();
     $now = now();
 
     DB::table('ac_households')->insert([
@@ -177,6 +179,7 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
 
     DB::table('ac_beneficiaries')->insert([
         'id' => $beneficiaryId,
+        'user_id' => $submitterUserId,
         'household_id' => $householdId,
         'municipal_id' => $municipalId,
         'is_active' => true,
@@ -223,7 +226,7 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
         'last_name' => 'Dela Cruz',
         'relationship' => 'parent',
         'is_active' => true,
-        'is_verified_dependent' => true,
+        'is_verified_dependent' => false,
         'created_at' => $now,
         'updated_at' => $now,
     ]);
@@ -242,7 +245,7 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
             beneficiaryId: $beneficiaryId,
             householdId: $householdId,
             assistanceTypeId: $assistanceTypeId,
-            submitterUserId: (string) Str::ulid(),
+            submitterUserId: $submitterUserId,
             encodedByUserId: null,
             description: 'Burial assistance request for a verified family member.',
             verificationOverrideReason: null,
@@ -279,6 +282,7 @@ it('stores snapshots separately and on-behalf details in metadata', function () 
             'on_behalf_first_name' => 'Pedro',
             'on_behalf_last_name' => 'Dela Cruz',
             'on_behalf_date_of_death' => '2026-06-01',
+            'on_behalf_verification_pending' => true,
         ])
         ->and($created->snapshot->first_name)->toBe('Juan')
         ->and($created->snapshot_first_name)->toBe('Juan')

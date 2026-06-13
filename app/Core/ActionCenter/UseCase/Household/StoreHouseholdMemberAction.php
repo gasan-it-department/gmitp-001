@@ -16,8 +16,8 @@ use App\Core\ActionCenter\Models\HouseholdMember;
  *   - CreateBeneficiaryProfileAction wraps a single transaction around
  *     "create beneficiary + fan out N household members" so a partial
  *     write is impossible.
- *   - StoreInlineHouseholdMemberController calls this directly; if it
- *     wants atomicity it opens its own transaction.
+ *   - Citizen and admin intent-specific actions wrap this primitive inside
+ *     their own authorization and transaction boundaries.
  *
  * The HARD active-member cap (per-household limit) lives here, not in the
  * FormRequest. The form validates payload shape; the action enforces

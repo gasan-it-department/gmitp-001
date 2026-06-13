@@ -14,6 +14,7 @@ readonly class ReviewBeneficiaryIntakeDto
         public string $actingAdminId,
         public string $householdResolution,
         public ?string $targetMemberId,
+        public ?string $householdResolutionReason,
         public array $verifiedMemberIds,
         public array $rejectedMemberIds,
     ) {}

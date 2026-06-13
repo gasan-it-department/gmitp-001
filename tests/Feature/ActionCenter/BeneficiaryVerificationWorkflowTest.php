@@ -13,9 +13,11 @@ use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveBeneficiaryIdentityGroupAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ReviewBeneficiaryIntakeAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\SearchHouseholdMembershipAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\UpdateBeneficiaryProfileAction;
 use App\Core\ActionCenter\UseCase\Household\ChangeHouseholdHeadAction;
-use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Core\ActionCenter\UseCase\Household\DeclareHouseholdMemberForAssistanceAction;
+use App\Core\ActionCenter\UseCase\Household\StoreAdminHouseholdMemberAction;
 use App\Core\ActionCenter\UseCase\Household\UpdateHouseholdMemberAction;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -150,6 +152,7 @@ it('reviews a provisional household and verifies accepted dependents', function 
         actingAdminId: $this->adminId,
         householdResolution: 'keep_existing',
         targetMemberId: null,
+        householdResolutionReason: null,
         verifiedMemberIds: [$accepted->id],
         rejectedMemberIds: [$rejected->id],
     ));
@@ -165,6 +168,7 @@ it('reviews a provisional household and verifies accepted dependents', function 
         actingAdminId: $this->adminId,
         householdResolution: 'keep_existing',
         targetMemberId: null,
+        householdResolutionReason: null,
         verifiedMemberIds: [$accepted->id],
         rejectedMemberIds: [],
     )))->toThrow(DomainException::class, 'already been verified');
@@ -184,6 +188,7 @@ it('joins a verified household through an exact member match and retires the pro
         actingAdminId: $this->adminId,
         householdResolution: 'join_existing',
         targetMemberId: $pedroMatch->id,
+        householdResolutionReason: null,
         verifiedMemberIds: [$child->id],
         rejectedMemberIds: [],
     ));
@@ -194,6 +199,52 @@ it('joins a verified household through an exact member match and retires the pro
         ->and($child->fresh()->household_id)->toBe($juan->household_id)
         ->and(Household::withTrashed()->find($sourceHouseholdId)->trashed())->toBeTrue()
         ->and($juanHead->fresh()->beneficiary_id)->toBe($juan->id);
+});
+
+it('requires a reason for a controlled non-exact household membership match', function () {
+    [$juan] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+    $misspelledPedro = createDependent($juan->household_id, 'PEDROO', 'CRUZ', '1992-04-10', true);
+
+    [$pedro] = createClaimant($this->municipalId, 'PEDRO', 'CRUZ', '1992-04-10');
+
+    $review = fn (?string $reason) => app(ReviewBeneficiaryIntakeAction::class)->execute(new ReviewBeneficiaryIntakeDto(
+        beneficiaryId: $pedro->id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        householdResolution: 'join_existing',
+        targetMemberId: $misspelledPedro->id,
+        householdResolutionReason: $reason,
+        verifiedMemberIds: [],
+        rejectedMemberIds: [],
+    ));
+
+    expect(fn () => $review(null))->toThrow(DomainException::class, 'Explain why');
+
+    $review('Government ID and in-person interview confirmed the spelling error.');
+
+    expect($pedro->fresh()->household_id)->toBe($juan->household_id)
+        ->and($misspelledPedro->fresh()->beneficiary_id)->toBe($pedro->id);
+});
+
+it('searches only verified households in the acting municipality', function () {
+    [$claimant] = createClaimant($this->municipalId, 'PEDRO', 'CRUZ');
+    [$localHead] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+    $localMember = createDependent($localHead->household_id, 'PEDROO', 'CRUZ', '1992-04-10', true);
+
+    $otherMunicipalId = (string) Str::ulid();
+    DB::table('municipalities')->insert(['id' => $otherMunicipalId]);
+    [$otherHead] = createClaimant($otherMunicipalId, 'OTHER', 'HEAD', verifiedBy: $this->adminId);
+    createDependent($otherHead->household_id, 'PEDRO', 'CRUZ', '1992-04-10', true);
+
+    $results = app(SearchHouseholdMembershipAction::class)->execute(
+        $claimant,
+        $this->municipalId,
+        'Pedro',
+    );
+
+    expect($results)->toHaveCount(1)
+        ->and($results->first()['member_id'])->toBe($localMember->id)
+        ->and($results->first()['is_exact_match'])->toBeFalse();
 });
 
 it('excludes unverified dependents from the authoritative roster scope', function () {
@@ -291,23 +342,78 @@ it('revokes dependent verification on material edits and preserves it on non-mat
     expect($member->fresh()->is_verified_dependent)->toBeTrue();
 });
 
-it('lets direct admin member creation choose pending or verified', function () {
+it('allows only one unresolved citizen-declared member at a time', function () {
+    [$beneficiary] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        verifiedBy: $this->adminId,
+    );
+    $beneficiary->update(['user_id' => $this->adminId]);
+
+    $action = app(DeclareHouseholdMemberForAssistanceAction::class);
+    $declare = fn (string $firstName) => $action->execute(
+        beneficiary: $beneficiary->fresh(),
+        dto: StoreHouseholdMemberDto::fromArray([
+            'first_name' => $firstName,
+            'last_name' => 'CRUZ',
+            'relationship' => 'sibling',
+        ], $beneficiary->household_id),
+        actingUserId: $this->adminId,
+        municipalId: $this->municipalId,
+    );
+
+    $first = $declare('PEDRO');
+
+    expect($first->is_verified_dependent)->toBeFalse()
+        ->and(fn () => $declare('ANA'))->toThrow(
+            \App\Core\ActionCenter\Exceptions\HouseholdMemberDeclarationException::class,
+            'Only one unresolved member',
+        );
+
+    $first->update(['is_verified_dependent' => true]);
+
+    expect($declare('ANA')->is_verified_dependent)->toBeFalse();
+});
+
+it('lets direct admin member creation choose pending or verified without the citizen limit', function () {
     [$beneficiary] = createClaimant($this->municipalId, 'JUAN', 'CRUZ');
-    $action = app(StoreHouseholdMemberAction::class);
+    $action = app(StoreAdminHouseholdMemberAction::class);
     $dto = StoreHouseholdMemberDto::fromArray([
         'first_name' => 'PEDRO',
         'last_name' => 'CRUZ',
         'relationship' => 'sibling',
     ], $beneficiary->household_id);
 
-    $pending = $action->execute($dto);
-    $verified = $action->execute(StoreHouseholdMemberDto::fromArray([
-        'first_name' => 'ANA',
-        'last_name' => 'CRUZ',
-        'relationship' => 'child',
-    ], $beneficiary->household_id), isVerifiedDependent: true);
+    $pending = $action->execute(
+        beneficiary: $beneficiary,
+        dto: $dto,
+        municipalId: $this->municipalId,
+        isVerifiedDependent: false,
+    );
+    $secondPending = $action->execute(
+        beneficiary: $beneficiary,
+        dto: StoreHouseholdMemberDto::fromArray([
+            'first_name' => 'MARIA',
+            'last_name' => 'CRUZ',
+            'relationship' => 'parent',
+        ], $beneficiary->household_id),
+        municipalId: $this->municipalId,
+        isVerifiedDependent: false,
+    );
+    $verified = $action->execute(
+        beneficiary: $beneficiary,
+        dto: StoreHouseholdMemberDto::fromArray([
+            'first_name' => 'ANA',
+            'last_name' => 'CRUZ',
+            'relationship' => 'child',
+        ], $beneficiary->household_id),
+        municipalId: $this->municipalId,
+        isVerifiedDependent: true,
+    );
 
     expect($pending->is_verified_dependent)->toBeFalse()
+        ->and($secondPending->is_verified_dependent)->toBeFalse()
         ->and($verified->is_verified_dependent)->toBeTrue();
 });
 
