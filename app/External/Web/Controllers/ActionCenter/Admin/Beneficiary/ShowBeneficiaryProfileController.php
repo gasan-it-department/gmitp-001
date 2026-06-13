@@ -38,7 +38,7 @@ class ShowBeneficiaryProfileController extends Controller
 
         $data = $this->getProfile->execute($municipalId, $beneficiaryId);
 
-        return Inertia::render('ActionCenter/Admin/Beneficiary/BeneficiaryProfile', [
+        return Inertia::render('ActionCenter/Admin/Beneficiary/Profile/BeneficiaryProfile', [
             'beneficiary' => new BeneficiaryProfileResource($data['beneficiary']),
             'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
             'assistanceHistory' => RecentAssistanceRequestResource::collection($data['assistanceHistory']),

@@ -26,7 +26,7 @@ import {
     Users,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
+import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
 import AvatarUploader from './Components/AvatarUploader';
 import type { HouseholdHeadState } from './Components/ChangeHouseholdHeadDialog';
@@ -131,22 +131,6 @@ export default function BeneficiaryProfile({
     householdHead,
     headDispositions,
 }: Props) {
-    console.log(
-        beneficiary,
-        householdMembers,
-        assistanceHistory,
-        householdTotalIncome,
-        crossMunicipalityMatches,
-        householdMatches,
-        merge,
-        summary,
-        religions,
-        civilStatus,
-        educationalAttainment,
-        relationships,
-        householdHead,
-        headDispositions,
-    );
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const utils = Utility();
 

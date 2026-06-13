@@ -8,8 +8,8 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { FormEventHandler, useEffect } from 'react';
-import { ShadcnSelectField } from '../../../Client/Apply/Beneficiary/Components/ShadcnSelectField';
-import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
+import { ShadcnSelectField } from '../../../../Client/Apply/Beneficiary/Components/ShadcnSelectField';
+import type { EnumOption, ReligionOption } from '../../../../Client/Apply/Beneficiary/types';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 
 const SEX_OPTIONS = ['male', 'female'] as const;

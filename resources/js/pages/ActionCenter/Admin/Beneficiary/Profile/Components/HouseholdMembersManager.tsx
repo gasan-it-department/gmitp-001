@@ -5,7 +5,7 @@ import Utility from '@/pages/Utility/Utility';
 import { router, usePage } from '@inertiajs/react';
 import { BadgeCheck, Link2, LogOut, Pencil, RefreshCw, RotateCcw, UserPlus } from 'lucide-react';
 import { useState } from 'react';
-import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
+import type { EnumOption, ReligionOption } from '../../../../Client/Apply/Beneficiary/types';
 import ChangeHouseholdHeadDialog, { type HouseholdHeadState } from './ChangeHouseholdHeadDialog';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 import LinkMemberDialog from './LinkMemberDialog';

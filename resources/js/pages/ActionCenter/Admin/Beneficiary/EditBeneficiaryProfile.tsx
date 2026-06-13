@@ -11,7 +11,7 @@ import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Com
 import { PersonalInformationSection } from '../../Client/Apply/Beneficiary/Components/PersonalInformationSection';
 import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
-import AvatarUploader from './Components/AvatarUploader';
+import AvatarUploader from './Profile/Components/AvatarUploader';
 
 // ─── The slice of BeneficiaryProfileResource this form pre-fills from ─────────
 
