@@ -41,6 +41,7 @@ class CreateBeneficiaryProfileAction
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
+        private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
     ) {}
 
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
@@ -64,11 +65,11 @@ class CreateBeneficiaryProfileAction
                 return $existing;
             }
 
-            $household = Household::create([
-                'municipal_id' => $dto->municipalId,
-                'barangay' => $dto->barangay,
-                'street' => $dto->street,
-            ]);
+            $household = $this->createHousehold->execute(
+                $dto->municipalId,
+                $dto->barangay,
+                $dto->street,
+            );
 
             $beneficiary = Beneficiary::create([
                 'household_id' => $household->id,

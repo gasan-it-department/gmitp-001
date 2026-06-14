@@ -36,6 +36,7 @@ import IntakeReviewPanel, { type HouseholdMatch } from './Components/IntakeRevie
 import LinkAccountDialog from './Components/LinkAccountDialog';
 import { type RelationshipOption } from './Components/MemberFormDialog';
 import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
+import ReassignHouseholdDialog from './Components/ReassignHouseholdDialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror BeneficiaryProfileResource + the controller props
@@ -141,6 +142,8 @@ export default function BeneficiaryProfile({
     const crossMatches = crossMunicipalityMatches?.data ?? [];
 
     const [linkOpen, setLinkOpen] = useState(false);
+    const [avatarUploadOpen, setAvatarUploadOpen] = useState(false);
+    const [reassignOpen, setReassignOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
 
     const address = [profile.household?.street, profile.household?.barangay].filter(Boolean).join(', ') || '—';
@@ -171,6 +174,15 @@ export default function BeneficiaryProfile({
                                 <Pencil className="h-4 w-4" />
                                 Edit profile
                             </Link>
+
+                            <button
+                                type="button"
+                                onClick={() => setReassignOpen(true)}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                            >
+                                <Home className="h-4 w-4" />
+                                Change beneficiary residence
+                            </button>
 
                             {/* Identity reconciliation: mark this record as a duplicate of
                                 another. Hidden once it's already been merged away. */}
@@ -480,6 +492,14 @@ export default function BeneficiaryProfile({
                 currentEmail={profile.account_email}
                 isOpen={linkOpen}
                 onClose={() => setLinkOpen(false)}
+            />
+
+            <ReassignHouseholdDialog
+                open={reassignOpen}
+                onClose={() => setReassignOpen(false)}
+                beneficiaryId={profile.id}
+                members={members}
+                headState={householdHead}
             />
 
             <MergeDuplicateDialog

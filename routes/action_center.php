@@ -12,6 +12,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceRequest
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\ReassignBeneficiaryHouseholdController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReviewBeneficiaryIntakeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\SearchHouseholdMembershipController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
@@ -21,6 +22,7 @@ use App\External\Api\Controllers\ActionCenter\Household\DeclareHouseholdMemberFo
 use App\External\Api\Controllers\ActionCenter\Household\LinkHouseholdMemberToBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\SetHouseholdMemberActiveController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreAdminHouseholdMemberController;
+use App\External\Api\Controllers\ActionCenter\Household\UnlinkHouseholdMemberBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
@@ -250,6 +252,11 @@ Route::prefix('/api/action-center')
                     ReviewBeneficiaryIntakeController::class,
                 )->name('beneficiary.review-intake');
 
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/reassign-household',
+                    ReassignBeneficiaryHouseholdController::class,
+                )->name('beneficiary.reassign-household');
+
                 Route::get(
                     '/beneficiary/{beneficiaryId}/household-members/search',
                     SearchHouseholdMembershipController::class,
@@ -283,6 +290,9 @@ Route::prefix('/api/action-center')
                 // person's own primary household.
                 Route::post('/household/members/{memberId}/link-beneficiary', LinkHouseholdMemberToBeneficiaryController::class)
                     ->name('household.members.link');
+
+                Route::post('/household/members/{memberId}/unlink-beneficiary', UnlinkHouseholdMemberBeneficiaryController::class)
+                    ->name('household.members.unlink');
 
                 // Encode a walk-in beneficiary (no portal account). Mirrors the
                 // online profile-setup store, minus the user_id, plus a soft

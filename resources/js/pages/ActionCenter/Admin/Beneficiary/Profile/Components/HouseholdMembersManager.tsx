@@ -1,15 +1,18 @@
 import SetHouseholdMemberActiveController from '@/actions/App/External/Api/Controllers/ActionCenter/Household/SetHouseholdMemberActiveController';
+import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import Utility from '@/pages/Utility/Utility';
-import { router, usePage } from '@inertiajs/react';
-import { BadgeCheck, Link2, LogOut, Pencil, RefreshCw, RotateCcw, UserPlus } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { BadgeCheck, Link2, LogOut, MoreHorizontal, Pencil, RefreshCw, RotateCcw, Unlink, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../../../Client/Apply/Beneficiary/types';
 import ChangeHouseholdHeadDialog, { type HouseholdHeadState } from './ChangeHouseholdHeadDialog';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 import LinkMemberDialog from './LinkMemberDialog';
 import MemberFormDialog, { type RelationshipOption } from './MemberFormDialog';
+import UnlinkMemberDialog from './UnlinkMemberDialog';
 
 interface Props {
     members: HouseholdMemberRow[];
@@ -53,11 +56,18 @@ export default function HouseholdMembersManager({
 
     const [linkOpen, setLinkOpen] = useState(false);
     const [linking, setLinking] = useState<HouseholdMemberRow | undefined>(undefined);
+    const [unlinkOpen, setUnlinkOpen] = useState(false);
+    const [unlinking, setUnlinking] = useState<HouseholdMemberRow | undefined>(undefined);
     const [headDialogOpen, setHeadDialogOpen] = useState(false);
 
     const openLink = (member: HouseholdMemberRow) => {
         setLinking(member);
         setLinkOpen(true);
+    };
+
+    const openUnlink = (member: HouseholdMemberRow) => {
+        setUnlinking(member);
+        setUnlinkOpen(true);
     };
 
     const active = members.filter((m) => m.is_active);
@@ -156,22 +166,17 @@ export default function HouseholdMembersManager({
                                         <span className="text-[10px] text-slate-400 italic">Edit from profile</span>
                                     ) : (
                                         <div className="flex items-center justify-end gap-1">
-                                            {member.beneficiary_id ? (
-                                                <span
-                                                    title="Linked to an existing beneficiary record"
-                                                    className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600"
+                                            {member.beneficiary_id && (
+                                                <Link
+                                                    href={ShowBeneficiaryProfileController.url({
+                                                        municipality: currentMunicipality.slug,
+                                                        beneficiaryId: member.beneficiary_id,
+                                                    })}
+                                                    title="View linked beneficiary profile"
+                                                    className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-700"
                                                 >
-                                                    <Link2 className="h-3 w-3" /> Linked
-                                                </span>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openLink(member)}
-                                                    title="Link to an existing record"
-                                                    className="rounded p-1.5 text-indigo-500 transition hover:bg-indigo-50 hover:text-indigo-700"
-                                                >
-                                                    <Link2 className="h-3.5 w-3.5" />
-                                                </button>
+                                                    <Link2 className="h-3 w-3" /> View Profile
+                                                </Link>
                                             )}
                                             {member.is_verified_dependent ? (
                                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
@@ -182,22 +187,36 @@ export default function HouseholdMembersManager({
                                                     Pending
                                                 </span>
                                             )}
-                                            <button
-                                                type="button"
-                                                onClick={() => openEdit(member)}
-                                                title="Edit member"
-                                                className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setActive(member, false)}
-                                                title="Mark as moved out"
-                                                className="rounded p-1.5 text-amber-500 transition hover:bg-amber-50 hover:text-amber-700"
-                                            >
-                                                <LogOut className="h-3.5 w-3.5" />
-                                            </button>
+
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48">
+                                                    {member.beneficiary_id ? (
+                                                        <DropdownMenuItem onSelect={() => setTimeout(() => openUnlink(member), 150)} className="flex cursor-pointer items-center gap-2 text-rose-600 focus:text-rose-700">
+                                                            <Unlink className="h-4 w-4" /> Unlink Profile
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem onSelect={() => setTimeout(() => openLink(member), 150)} className="flex cursor-pointer items-center gap-2">
+                                                            <Link2 className="h-4 w-4" /> Link to Existing
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    
+                                                    <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)} className="flex cursor-pointer items-center gap-2">
+                                                        <Pencil className="h-4 w-4" /> Edit Member
+                                                    </DropdownMenuItem>
+                                                    
+                                                    <DropdownMenuItem onSelect={() => setTimeout(() => setActive(member, false), 150)} className="flex cursor-pointer items-center gap-2 text-amber-600 focus:text-amber-700">
+                                                        <LogOut className="h-4 w-4" /> Remove from Household
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     )}
                                 </TableCell>
@@ -227,22 +246,36 @@ export default function HouseholdMembersManager({
                                         <TableCell className="text-right text-xs text-slate-400">—</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEdit(member)}
-                                                    title="Edit member"
-                                                    className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                                                >
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setActive(member, true)}
-                                                    title="Move back in"
-                                                    className="rounded p-1.5 text-emerald-500 transition hover:bg-emerald-50 hover:text-emerald-700"
-                                                >
-                                                    <RotateCcw className="h-3.5 w-3.5" />
-                                                </button>
+                                                {member.beneficiary_id && (
+                                                    <Link
+                                                        href={ShowBeneficiaryProfileController.url({
+                                                            municipality: currentMunicipality.slug,
+                                                            beneficiaryId: member.beneficiary_id,
+                                                        })}
+                                                        title="View linked beneficiary profile"
+                                                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-700"
+                                                    >
+                                                        <Link2 className="h-3 w-3" /> View Profile
+                                                    </Link>
+                                                )}
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <button
+                                                            type="button"
+                                                            className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                                                        >
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48">
+                                                        <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)} className="flex cursor-pointer items-center gap-2">
+                                                            <Pencil className="h-4 w-4" /> Edit Member
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => setTimeout(() => setActive(member, true), 150)} className="flex cursor-pointer items-center gap-2 text-emerald-600 focus:text-emerald-700">
+                                                            <RotateCcw className="h-4 w-4" /> Move Back In
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -276,6 +309,15 @@ export default function HouseholdMembersManager({
                     onClose={() => setLinkOpen(false)}
                     memberId={linking.id}
                     memberName={`${linking.first_name} ${linking.last_name}`}
+                />
+            )}
+
+            {unlinking && (
+                <UnlinkMemberDialog
+                    open={unlinkOpen}
+                    onClose={() => setUnlinkOpen(false)}
+                    memberId={unlinking.id}
+                    memberName={`${unlinking.first_name} ${unlinking.last_name}`}
                 />
             )}
 

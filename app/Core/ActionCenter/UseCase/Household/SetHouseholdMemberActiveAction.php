@@ -38,10 +38,24 @@ class SetHouseholdMemberActiveAction
                 );
             }
 
-            if ($member->relationship === Relationship::Head->value) {
+            if ($member->relationship === Relationship::Head->value && ! $isActive) {
                 throw new \DomainException(
-                    'The head of the household cannot be marked as moved out.',
+                    'The head of the household cannot be marked as moved out from the roster manager. Use the Reassign Household workflow instead.',
                 );
+            }
+
+            if ($member->relationship === Relationship::Head->value && $isActive) {
+                $hasActiveHead = HouseholdMember::query()
+                    ->where('household_id', $member->household_id)
+                    ->where('relationship', Relationship::Head->value)
+                    ->where('is_active', true)
+                    ->exists();
+
+                if ($hasActiveHead) {
+                    throw new \DomainException(
+                        'This household already has an active head. You cannot move this member back in as a head without resolving the roster first.',
+                    );
+                }
             }
 
             // No-op — already in the requested state.
@@ -65,6 +79,12 @@ class SetHouseholdMemberActiveAction
             }
 
             $member->update(['is_active' => $isActive]);
+
+            if ($member->beneficiary_id !== null) {
+                \App\Core\ActionCenter\Models\Beneficiary::query()
+                    ->whereKey($member->beneficiary_id)
+                    ->update(['is_active' => $isActive]);
+            }
 
             return $member->fresh();
         }, attempts: 3);

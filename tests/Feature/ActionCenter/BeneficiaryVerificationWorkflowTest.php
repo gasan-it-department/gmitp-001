@@ -18,6 +18,7 @@ use App\Core\ActionCenter\UseCase\Beneficiary\UpdateBeneficiaryProfileAction;
 use App\Core\ActionCenter\UseCase\Household\ChangeHouseholdHeadAction;
 use App\Core\ActionCenter\UseCase\Household\DeclareHouseholdMemberForAssistanceAction;
 use App\Core\ActionCenter\UseCase\Household\StoreAdminHouseholdMemberAction;
+use App\Core\ActionCenter\UseCase\Household\UnlinkHouseholdMemberBeneficiaryAction;
 use App\Core\ActionCenter\UseCase\Household\UpdateHouseholdMemberAction;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,12 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('ac_assistance_requests', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('on_behalf_household_member_id')->nullable();
+        $table->softDeletes();
+    });
+
     $this->municipalId = (string) Str::ulid();
     $this->adminId = (string) Str::ulid();
 
@@ -117,6 +124,7 @@ beforeEach(function () {
 
 afterEach(function () {
     activity()->enableLogging();
+    Schema::dropIfExists('ac_assistance_requests');
     Schema::dropIfExists('ac_household_members');
     Schema::dropIfExists('ac_beneficiaries');
     Schema::dropIfExists('ac_households');
@@ -415,6 +423,58 @@ it('lets direct admin member creation choose pending or verified without the cit
     expect($pending->is_verified_dependent)->toBeFalse()
         ->and($secondPending->is_verified_dependent)->toBeFalse()
         ->and($verified->is_verified_dependent)->toBeTrue();
+});
+
+it('unlinks a secondary beneficiary profile without changing either record lifecycle', function () {
+    [$juan] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+    [$pedro] = createClaimant($this->municipalId, 'PEDRO', 'CRUZ', verifiedBy: $this->adminId);
+    $member = createDependent($juan->household_id, 'PEDRO', 'CRUZ', verified: true);
+    $member->update(['beneficiary_id' => $pedro->id]);
+
+    app(UnlinkHouseholdMemberBeneficiaryAction::class)->execute(
+        memberId: $member->id,
+        reason: 'Government ID confirmed this link was assigned to the wrong Pedro Cruz.',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    );
+
+    expect($member->fresh()->beneficiary_id)->toBeNull()
+        ->and($member->fresh()->is_verified_dependent)->toBeTrue()
+        ->and($member->fresh()->is_active)->toBeTrue()
+        ->and($pedro->fresh()->is_active)->toBeTrue()
+        ->and($pedro->fresh()->household_id)->not->toBe($juan->household_id);
+});
+
+it('blocks unlinking a primary household membership or an assistance-referenced member', function () {
+    [$beneficiary, $primaryMember] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        verifiedBy: $this->adminId,
+    );
+    $action = app(UnlinkHouseholdMemberBeneficiaryAction::class);
+
+    expect(fn () => $action->execute(
+        memberId: $primaryMember->id,
+        reason: 'Attempted primary membership correction through the simple unlink action.',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    ))->toThrow(DomainException::class, 'household head cannot be unlinked');
+
+    [$pedro] = createClaimant($this->municipalId, 'PEDRO', 'CRUZ', verifiedBy: $this->adminId);
+    $referencedMember = createDependent($beneficiary->household_id, 'PEDRO', 'CRUZ', verified: true);
+    $referencedMember->update(['beneficiary_id' => $pedro->id]);
+    DB::table('ac_assistance_requests')->insert([
+        'id' => (string) Str::ulid(),
+        'on_behalf_household_member_id' => $referencedMember->id,
+    ]);
+
+    expect(fn () => $action->execute(
+        memberId: $referencedMember->id,
+        reason: 'Attempted to unlink a member already used by an assistance request.',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    ))->toThrow(DomainException::class, 'referenced by an assistance request');
 });
 
 it('changes the household head only to an eligible verified adult', function () {

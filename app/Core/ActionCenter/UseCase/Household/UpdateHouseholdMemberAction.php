@@ -67,9 +67,7 @@ class UpdateHouseholdMemberAction
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome ?? 0,
                 'religion_id' => $dto->religionId,
-                'is_verified_dependent' => $materialIdentityChanged
-                    ? false
-                    : ($dto->isVerifiedDependent || $member->is_verified_dependent),
+                'is_verified_dependent' => $dto->isVerifiedDependent,
             ]);
 
             return $member->fresh();
