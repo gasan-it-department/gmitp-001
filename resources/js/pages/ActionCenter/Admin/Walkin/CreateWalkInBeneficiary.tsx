@@ -1,8 +1,7 @@
-import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Briefcase, Home, Loader2, User, UserPlus, Users } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 // Reuse the online profile-setup sections verbatim — same fields, same
@@ -102,7 +101,7 @@ export default function CreateWalkInBeneficiary({
         data.terms_consent &&
         !processing;
 
-    const searchUrl = ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug });
+    // const searchUrl = ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug });
 
     return (
         <AdminLayout>
@@ -110,13 +109,14 @@ export default function CreateWalkInBeneficiary({
                 {/* Back nav */}
                 <div className="border-b border-slate-200 bg-white">
                     <div className="container mx-auto max-w-3xl px-6 py-4">
-                        <Link
-                            href={searchUrl}
+                        <button
+                            type="button"
+                            onClick={() => window.history.back()}
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Beneficiary Search
-                        </Link>
+                            Back to Beneficiary List
+                        </button>
                     </div>
                 </div>
 

@@ -10,14 +10,13 @@ use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\FetalDeathDetail;
 use App\Core\Cemetery\Models\UnidentifiedDetail;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
-use App\Shared\Traits\HasAddress;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class UpdateDecedentAction
 {
-    use HasAddress, StoresDecedentDocuments;
+    use StoresDecedentDocuments;
 
     public function __construct(private IdGeneratorInterface $idGenerator) {}
 
@@ -44,16 +43,11 @@ class UpdateDecedentAction
                 ]);
             }
 
-            if ($dto->psgcBarangayId) {
-                $decedent->address_id = $this->createAddressSnapshot(
-                    $dto->psgcBarangayId,
-                    $dto->streetName,
-                    $this->idGenerator
-                );
-            }
-
             $submitted = $dto->submissionIntent === 'submit';
             $decedent->fill([
+                'psgc_municipality_id' => $dto->psgcMunicipalityId,
+                'psgc_barangay_code' => $dto->psgcBarangayCode,
+                'street_name' => $dto->streetName,
                 'vital_record_type' => $dto->vitalRecordType,
                 'identity_status' => $dto->identityStatus,
                 'registration_status' => $submitted

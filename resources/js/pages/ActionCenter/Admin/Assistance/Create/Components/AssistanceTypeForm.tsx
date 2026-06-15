@@ -105,11 +105,11 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
 
                             {/* Business Rules Grid (Amount Bounds & Cooldown) */}
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <div className="space-y-2">
-                                    <Label htmlFor="min_amount" className="text-sm font-semibold text-gray-700">
+                                <div className="flex flex-col">
+                                    <Label htmlFor="min_amount" className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end">
                                         Minimum Amount Floor (₱)
                                     </Label>
-                                    <div className="relative">
+                                    <div className="relative mb-2">
                                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 font-medium text-gray-500">₱</span>
                                         <Input
                                             id="min_amount"
@@ -122,15 +122,15 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                             className={`bg-gray-50 pl-8 ${errors.min_amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                         />
                                     </div>
-                                    {errors.min_amount && <p className="text-xs font-medium text-red-600">{errors.min_amount}</p>}
-                                    <p className="text-xs text-gray-500">Leave blank for no minimum.</p>
+                                    {errors.min_amount && <p className="mb-1 text-xs font-medium text-red-600">{errors.min_amount}</p>}
+                                    <p className="mt-auto text-xs text-gray-500">Leave blank for no minimum.</p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="max_amount" className="text-sm font-semibold text-gray-700">
+                                <div className="flex flex-col">
+                                    <Label htmlFor="max_amount" className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end">
                                         Max Amount Cap (₱)
                                     </Label>
-                                    <div className="relative">
+                                    <div className="relative mb-2">
                                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 font-medium text-gray-500">₱</span>
                                         <Input
                                             id="max_amount"
@@ -143,15 +143,15 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                             className={`bg-gray-50 pl-8 ${errors.max_amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                         />
                                     </div>
-                                    {errors.max_amount && <p className="text-xs font-medium text-red-600">{errors.max_amount}</p>}
-                                    <p className="text-xs text-gray-500">Leave blank for no limit.</p>
+                                    {errors.max_amount && <p className="mb-1 text-xs font-medium text-red-600">{errors.max_amount}</p>}
+                                    <p className="mt-auto text-xs text-gray-500">Leave blank for no limit.</p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="cooldown_months" className="text-sm font-semibold text-gray-700">
+                                <div className="flex flex-col">
+                                    <Label htmlFor="cooldown_months" className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end">
                                         Cooldown Period
                                     </Label>
-                                    <div className="relative">
+                                    <div className="relative mb-2">
                                         <Input
                                             id="cooldown_months"
                                             type="number"
@@ -164,8 +164,8 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                         />
                                         <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-gray-500">Months</span>
                                     </div>
-                                    {errors.cooldown_months && <p className="text-xs font-medium text-red-600">{errors.cooldown_months}</p>}
-                                    <p className="text-xs text-gray-500">Time before re-application.</p>
+                                    {errors.cooldown_months && <p className="mb-1 text-xs font-medium text-red-600">{errors.cooldown_months}</p>}
+                                    <p className="mt-auto text-xs text-gray-500">Time before re-application.</p>
                                 </div>
                             </div>
 

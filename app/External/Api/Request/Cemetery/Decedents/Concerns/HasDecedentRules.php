@@ -52,8 +52,15 @@ trait HasDecedentRules
             'cause_of_death' => ['nullable', 'string', 'max:255'],
             'place_of_death' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'psgc_municipal_id' => ['nullable', 'string', 'max:100'],
-            'psgc_barangay_id' => ['nullable', 'string', 'max:100'],
+            'psgc_municipality_id' => ['nullable', 'integer', 'exists:psgc_municipalities,id'],
+            'psgc_barangay_code' => [
+                'nullable',
+                'string',
+                'max:20',
+                Rule::exists('psgc_barangays', 'psgc_code')->where(
+                    fn ($query) => $query->where('municipality_id', $this->input('psgc_municipality_id'))
+                ),
+            ],
             'street_name' => ['nullable', 'string', 'max:150'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
 

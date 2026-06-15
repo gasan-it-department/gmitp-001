@@ -56,9 +56,9 @@ export default function DecedentForm({
         cause_of_death: record?.cause_of_death ?? '',
         place_of_death: record?.place_of_death ?? '',
         notes: record?.notes ?? '',
-        psgc_municipal_id: '',
-        psgc_barangay_id: '',
-        street_name: '',
+        psgc_municipality_id: record?.psgc_municipality_id ?? '',
+        psgc_barangay_code: record?.psgc_barangay_code ?? '',
+        street_name: record?.street_name ?? '',
         avatar: null,
         unidentified_details: {
             case_reference: record?.unidentified_details?.case_reference ?? '',
@@ -188,8 +188,8 @@ export default function DecedentForm({
 
                 <Card title="Historical Address Snapshot">
                     <div className="grid gap-4 md:grid-cols-3">
-                        <MunicipalitySelect provinceId="28" value={form.data.psgc_municipal_id} onChange={(value) => setNested('psgc_municipal_id', value)} />
-                        <BarangaySelect municipalityId={form.data.psgc_municipal_id} value={form.data.psgc_barangay_id} onChange={(selection) => setNested('psgc_barangay_id', selection.psgc_code)} />
+                        <MunicipalitySelect provinceId="28" value={form.data.psgc_municipality_id} onChange={(value) => setNested('psgc_municipality_id', value)} />
+                        <BarangaySelect municipalityId={form.data.psgc_municipality_id} value={form.data.psgc_barangay_code} onChange={(selection) => setNested('psgc_barangay_code', selection.psgc_code)} />
                         <Input label="Street / Purok" value={form.data.street_name} onChange={(value) => setNested('street_name', value)} />
                     </div>
                 </Card>

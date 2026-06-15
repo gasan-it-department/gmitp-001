@@ -16,14 +16,15 @@ class ListBeneficiaryController extends Controller
 {
     public function __construct(
         private readonly ListBeneficiaryAction $listBeneficiaries,
-    ) {}
+    ) {
+    }
 
     public function __invoke(SearchBeneficiaryRequest $request): Response
     {
         $filters = $request->validated();
         $beneficiaries = $this->listBeneficiaries->execute(app('municipal_id'), $filters);
 
-        return Inertia::render('ActionCenter/Admin/Beneficiary/BeneficiaryList', [
+        return Inertia::render('ActionCenter/Admin/Beneficiary/List/BeneficiaryList', [
             'beneficiaries' => BeneficiaryListResource::collection($beneficiaries),
             'filters' => $filters,
         ]);

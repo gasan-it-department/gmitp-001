@@ -27,7 +27,9 @@ beforeEach(function () {
     Schema::create('cemetery_decedents', function (Blueprint $table) {
         $table->ulid('id')->primary();
         $table->ulid('municipal_id');
-        $table->ulid('address_id')->nullable();
+        $table->unsignedBigInteger('psgc_municipality_id')->nullable();
+        $table->string('psgc_barangay_code', 20)->nullable();
+        $table->string('street_name', 150)->nullable();
         $table->string('first_name')->nullable();
         $table->string('last_name')->nullable();
         $table->string('middle_name')->nullable();
@@ -265,7 +267,8 @@ it('allows an incomplete fetal draft and keeps it out of review', function () {
         causeOfDeath: null,
         placeOfDeath: null,
         notes: null,
-        psgcBarangayId: null,
+        psgcMunicipalityId: null,
+        psgcBarangayCode: null,
         streetName: null,
         unidentifiedDetails: [],
         fetalDetails: [],
@@ -434,7 +437,8 @@ function testDto(string $municipalId, int $version): DecedentDto
         causeOfDeath: null,
         placeOfDeath: null,
         notes: null,
-        psgcBarangayId: null,
+        psgcMunicipalityId: null,
+        psgcBarangayCode: null,
         streetName: null,
         unidentifiedDetails: [],
         fetalDetails: [],

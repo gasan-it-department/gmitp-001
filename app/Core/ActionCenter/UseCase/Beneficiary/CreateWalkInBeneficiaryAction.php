@@ -6,7 +6,7 @@ use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
 use App\Core\ActionCenter\Models\Beneficiary;
-use App\Core\ActionCenter\Models\Household;
+use App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\Core\Users\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +39,7 @@ class CreateWalkInBeneficiaryAction
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
+        private readonly CreateHouseholdAction $createHousehold,
     ) {}
 
     public function execute(CreateWalkInBeneficiaryDto $dto): Beneficiary
@@ -62,11 +63,11 @@ class CreateWalkInBeneficiaryAction
                 }
             }
 
-            $household = Household::create([
-                'municipal_id' => $dto->municipalId,
-                'barangay' => $dto->barangay,
-                'street' => $dto->street,
-            ]);
+            $household = $this->createHousehold->execute(
+                $dto->municipalId,
+                $dto->barangay,
+                $dto->street,
+            );
 
             $beneficiary = Beneficiary::create([
                 'household_id' => $household->id,

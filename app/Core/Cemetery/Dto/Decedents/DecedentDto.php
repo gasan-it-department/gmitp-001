@@ -26,7 +26,8 @@ final readonly class DecedentDto
         public ?string $causeOfDeath,
         public ?string $placeOfDeath,
         public ?string $notes,
-        public ?string $psgcBarangayId,
+        public ?int $psgcMunicipalityId,
+        public ?string $psgcBarangayCode,
         public ?string $streetName,
         public array $unidentifiedDetails,
         public array $fetalDetails,
@@ -56,7 +57,10 @@ final readonly class DecedentDto
             causeOfDeath: self::upper($data['cause_of_death'] ?? null),
             placeOfDeath: self::upper($data['place_of_death'] ?? null),
             notes: self::clean($data['notes'] ?? null),
-            psgcBarangayId: $data['psgc_barangay_id'] ?? null,
+            psgcMunicipalityId: filled($data['psgc_municipality_id'] ?? null)
+                ? (int) $data['psgc_municipality_id']
+                : null,
+            psgcBarangayCode: self::clean($data['psgc_barangay_code'] ?? null),
             streetName: self::upper($data['street_name'] ?? null),
             unidentifiedDetails: self::normalizeArray($data['unidentified_details'] ?? []),
             fetalDetails: self::normalizeArray($data['fetal_details'] ?? []),

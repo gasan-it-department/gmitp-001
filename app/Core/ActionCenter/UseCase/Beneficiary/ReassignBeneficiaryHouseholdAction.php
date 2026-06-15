@@ -33,8 +33,9 @@ class ReassignBeneficiaryHouseholdAction
                 );
             }
 
-            if (! $beneficiary->is_active) {
-                throw new \DomainException('Cannot reassign an inactive beneficiary.');
+            // We allow reassigning inactive (moved-out) beneficiaries, but we cannot move-out an already inactive one.
+            if (! $beneficiary->is_active && $dto->operation === HouseholdReassignmentOperation::MoveOut) {
+                throw new \DomainException('Cannot move out an already inactive/suspended beneficiary.');
             }
 
             $sourceHousehold = Household::query()
@@ -42,15 +43,20 @@ class ReassignBeneficiaryHouseholdAction
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // Find their most recent roster row in this household (active or not)
             $sourceMember = HouseholdMember::query()
                 ->where('household_id', $sourceHousehold->id)
                 ->where('beneficiary_id', $beneficiary->id)
-                ->where('is_active', true)
+                ->orderByDesc('id')
                 ->lockForUpdate()
                 ->first();
 
             if ($sourceMember === null) {
-                throw new \DomainException('The beneficiary does not have an active roster row in their current household.');
+                throw new \DomainException('The beneficiary does not have a roster row in their current household.');
+            }
+
+            if ($beneficiary->is_active && ! $sourceMember->is_active) {
+                throw new \DomainException('The beneficiary is marked active but lacks an active household roster row. Data is inconsistent.');
             }
 
             if ($dto->operation === HouseholdReassignmentOperation::MoveOut) {
@@ -72,11 +78,14 @@ class ReassignBeneficiaryHouseholdAction
 
         $verificationBefore = $sourceMember->is_verified_dependent;
         
-        $sourceMember->update(['is_active' => false]);
+        if ($beneficiary->is_active) {
+            $sourceMember->update(['is_active' => false]);
+            $beneficiary->update(['is_active' => false]);
+        }
 
         $this->logActivity($beneficiary, clone $sourceMember, null, null, $verificationBefore, null, $dto);
 
-        return $beneficiary;
+        return $beneficiary->fresh();
     }
 
     private function processReassignment(
@@ -85,7 +94,9 @@ class ReassignBeneficiaryHouseholdAction
         HouseholdMember $sourceMember,
         ReassignBeneficiaryHouseholdDto $dto,
     ): Beneficiary {
-        if ($sourceMember->relationship === Relationship::Head->value) {
+        // Only cascade head if they are actually active right now.
+        // If they were already moved out (inactive), this was handled previously.
+        if ($beneficiary->is_active && $sourceMember->relationship === Relationship::Head->value) {
             $this->processHeadCascade($sourceMember, $sourceHousehold->id, $dto);
         }
 
@@ -181,9 +192,14 @@ class ReassignBeneficiaryHouseholdAction
         $verificationBefore = $sourceMember->is_verified_dependent;
         $verificationAfter = $destinationMember->is_verified_dependent;
 
-        $sourceMember->update(['is_active' => false]);
+        if ($beneficiary->is_active) {
+            $sourceMember->update(['is_active' => false]);
+        }
 
-        $beneficiary->update(['household_id' => $destinationHousehold->id]);
+        $beneficiary->update([
+            'household_id' => $destinationHousehold->id,
+            'is_active' => true,
+        ]);
 
         $this->logActivity(
             $beneficiary, 

@@ -94,6 +94,9 @@ export interface DecedentProfile {
     place_of_death: string | null;
     cause_of_death: string | null;
     notes: string | null;
+    psgc_municipality_id: string | null;
+    psgc_barangay_code: string | null;
+    street_name: string | null;
     verified_at: string | null;
     verified_by: string | null;
     avatar_url: string | null;
@@ -197,8 +200,8 @@ export type RegisterDecedentForm = {
     memorial_name: string;
 
     place_of_death: string;
-    psgc_municipal_id: string;
-    psgc_barangay_id: string;
+    psgc_municipality_id: string;
+    psgc_barangay_code: string;
     street_name: string;
 
     cause_of_death: string;

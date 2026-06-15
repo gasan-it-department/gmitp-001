@@ -36,6 +36,9 @@ class DecedentDetailsResource extends JsonResource
             'place_of_death' => $this->place_of_death,
             'cause_of_death' => $this->cause_of_death,
             'notes' => $this->notes,
+            'psgc_municipality_id' => $this->psgc_municipality_id ? (string) $this->psgc_municipality_id : null,
+            'psgc_barangay_code' => $this->psgc_barangay_code,
+            'street_name' => $this->street_name,
             'verified_at' => $this->verified_at?->toIso8601String(),
             'verified_by' => $this->verifier ? $this->verifier->full_name : null,
             'avatar_url' => $this->getFirstMedia('avatar')

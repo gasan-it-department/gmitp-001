@@ -13,7 +13,9 @@ import {
     AlertTriangle,
     ArrowLeft,
     BadgeCheck,
+    Check,
     Clock3,
+    Copy,
     Download,
     GitMerge,
     HandCoins,
@@ -238,9 +240,10 @@ export default function BeneficiaryProfile({
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h1 className="text-2xl font-bold tracking-tight text-slate-900 capitalize">{profile.full_name}</h1>
                                         {profile.beneficiary_number && (
-                                            <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-slate-600">
-                                                {profile.beneficiary_number}
-                                            </span>
+                                            <CopyableBadge
+                                                text={profile.beneficiary_number}
+                                                className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-slate-600 hover:bg-slate-200"
+                                            />
                                         )}
                                         {profile.has_account ? (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
@@ -356,10 +359,18 @@ export default function BeneficiaryProfile({
 
                             {/* Household */}
                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                                    <CardTitle className="flex items-center gap-2 text-base">
-                                        <Users className="h-4 w-4 text-slate-600" /> Household Composition
-                                    </CardTitle>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <Users className="h-4 w-4 text-slate-600" /> Household Composition
+                                        </CardTitle>
+                                        {profile.household?.household_code && (
+                                            <CopyableBadge
+                                                text={profile.household.household_code}
+                                                className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-slate-700 hover:bg-slate-200"
+                                            />
+                                        )}
+                                    </div>
                                     <span className="text-xs text-slate-400">{summary.active_member_count} active members</span>
                                 </CardHeader>
                                 <CardContent>
@@ -537,5 +548,31 @@ function Stat({ label, value, highlight = false }: { label: string; value: strin
             <p className={`text-[10px] font-bold tracking-widest uppercase ${highlight ? 'text-emerald-700' : 'text-slate-400'}`}>{label}</p>
             <p className={`mt-0.5 text-lg font-bold ${highlight ? 'text-emerald-900' : 'text-slate-800'}`}>{value}</p>
         </div>
+    );
+}
+
+function CopyableBadge({ text, className }: { text: string; className?: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={handleCopy}
+            className={`group inline-flex items-center gap-1.5 transition-colors ${className}`}
+            title="Click to copy"
+        >
+            <span>{text}</span>
+            {copied ? (
+                <Check className="h-3 w-3 text-emerald-600" />
+            ) : (
+                <Copy className="h-3 w-3 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+            )}
+        </button>
     );
 }

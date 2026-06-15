@@ -141,12 +141,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     icon: UserSearch,
                     permission: 'action_center.access',
                 },
-                {
-                    title: 'Walk in Beneficiary',
-                    url: actionCenter.admin.walkin.create.url({ municipality: currentMunicipality.slug }),
-                    icon: UserSearch,
-                    permission: 'action_center.access',
-                },
             ],
         },
         {
