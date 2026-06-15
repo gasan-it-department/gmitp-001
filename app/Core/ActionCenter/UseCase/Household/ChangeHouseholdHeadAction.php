@@ -153,7 +153,7 @@ class ChangeHouseholdHeadAction
             'is_verified_dependent' => false,
         ]);
 
-        if ($currentHead->beneficiary_id !== null) {
+        if ($currentHead->beneficiary_id !== null && in_array($disposition, [HeadDepartureDisposition::Deceased, HeadDepartureDisposition::Inactive])) {
             Beneficiary::query()
                 ->whereKey($currentHead->beneficiary_id)
                 ->lockForUpdate()

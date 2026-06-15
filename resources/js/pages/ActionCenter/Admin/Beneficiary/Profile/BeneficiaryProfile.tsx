@@ -64,6 +64,7 @@ interface BeneficiaryProfileData {
     household: { id: string; household_code: string | null; barangay: string | null; street: string | null } | null;
     has_account: boolean;
     account_email: string | null;
+    account_phone: string | null;
     terms_consented_at: string | null;
     registered_at: string | null;
     identity_verified: boolean;
@@ -412,9 +413,13 @@ export default function BeneficiaryProfile({
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <Mail className="mt-0.5 h-4 w-4 text-slate-400" />
-                                        <div>
-                                            <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Account</p>
-                                            <p className="text-sm text-slate-800">{profile.account_email ?? 'Walk-in (no portal account)'}</p>
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">Account</p>
+                                            <p className="text-sm text-slate-800">
+                                                {profile.has_account
+                                                    ? profile.account_email || profile.account_phone || 'Portal Account'
+                                                    : 'Walk-in (no portal account)'}
+                                            </p>
                                             <button
                                                 type="button"
                                                 onClick={() => setLinkOpen(true)}

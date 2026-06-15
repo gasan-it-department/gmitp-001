@@ -25,7 +25,7 @@ class CreateAdminRequest extends FormRequest
             'last_name' => ['required', 'max:100', 'min:2', 'regex:/^[\p{L}\s\-\'\.]+$/u'],
 
             'email' => [
-                'required',
+                'nullable',
                 'email:rfc,dns',
                 'unique:users,email'
             ],
@@ -46,7 +46,6 @@ class CreateAdminRequest extends FormRequest
         return [
             'municipal_id.required' => 'You must assign a municipality to this administrator.',
             'permission.*.exists' => 'One of the selected permissions is invalid.',
-            'email.required' => 'Administrative accounts require an official email address.',
         ];
     }
 }

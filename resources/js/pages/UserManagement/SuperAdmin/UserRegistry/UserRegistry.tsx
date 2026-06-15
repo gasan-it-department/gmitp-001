@@ -136,17 +136,19 @@ export default function UserRegistry({ data }: Props) {
 
                             <Separator className="my-2" />
 
-                            {/* Row 3: Contact (Optional) */}
+                            {/* Row 3: Contact */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Email (Required)</Label>
-                                    <Input value={formData.email} onChange={(e) => setData('email', e.target.value)} />
-                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                                    <Label>Phone (Required)</Label>
+                                    <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} placeholder="e.g. 09123456789" />
+                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                    <p className="text-xs text-gray-400">An OTP will be sent to verify this number.</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Phone (Required)</Label>
-                                    <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} />
-                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                    <Label>Email (Optional)</Label>
+                                    <Input value={formData.email} onChange={(e) => setData('email', e.target.value)} placeholder="e.g. admin@municipality.gov.ph" />
+                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                                    <p className="text-xs text-gray-400">Can be linked later via Google OAuth in profile settings.</p>
                                 </div>
                             </div>
 

@@ -61,6 +61,7 @@ class BeneficiaryProfileResource extends JsonResource
             // ── Linked portal account ────────────────────────────────────────
             'has_account' => $this->user_id !== null,
             'account_email' => $this->whenLoaded('user', fn () => $this->user?->email),
+            'account_phone' => $this->whenLoaded('user', fn () => $this->user?->phone),
 
             // ── Registration / consent ───────────────────────────────────────
             'terms_consented_at' => $this->terms_consented_at?->toIso8601String(),

@@ -80,11 +80,6 @@ class SetHouseholdMemberActiveAction
 
             $member->update(['is_active' => $isActive]);
 
-            if ($member->beneficiary_id !== null) {
-                \App\Core\ActionCenter\Models\Beneficiary::query()
-                    ->whereKey($member->beneficiary_id)
-                    ->update(['is_active' => $isActive]);
-            }
 
             return $member->fresh();
         }, attempts: 3);

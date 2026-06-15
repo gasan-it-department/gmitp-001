@@ -41,10 +41,8 @@ export const UsersTable = ({ users }: Props) => {
         router.visit(superAdmin.show.user.url(id));
     };
     return (
-        <div>
-            {/* TABLE */}
-            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
-                <Table className="w-full">
+        <>
+            <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
                         <TableRow>
                             <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">No.</TableHead>
@@ -105,8 +103,7 @@ export const UsersTable = ({ users }: Props) => {
                             })
                         )}
                     </TableBody>
-                </Table>
-            </div>
-        </div>
+            </Table>
+        </>
     );
 };

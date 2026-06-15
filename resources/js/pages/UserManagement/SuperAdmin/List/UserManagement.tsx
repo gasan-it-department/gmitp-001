@@ -1,7 +1,7 @@
 import { Pagination } from '@/components/Shared/Pagination';
 import { User } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
-import { PageHeaderTitle } from './Components/PageTitle';
+import { Head } from '@inertiajs/react';
 import { UserListHeader } from './Components/UserListHeader';
 import { UsersTable } from './Components/UsersTable';
 
@@ -26,23 +26,28 @@ interface Props {
     };
     filters: any;
 }
+
 export default function UserManagement({ users, filters }: Props) {
     return (
         <BaseLayout>
-            <div className="m-5 mt-0 grid grid-cols-1 bg-white">
-                <div className="my-5 flex justify-between">
-                    <PageHeaderTitle />
+            <Head title="User Management" />
+
+            <div className="m-6 space-y-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
+                        <p className="text-sm text-muted-foreground">Manage administrators and users across municipalities.</p>
+                    </div>
+
                     <UserListHeader filters={filters.filter} className="flex justify-end" />
                 </div>
 
-                <div>
-                    {/* 1. Pass data to table */}
+                <div className="rounded-lg border bg-white">
                     <UsersTable users={users.data} />
+                </div>
 
-                    {/* 2. ADD PAGINATION HERE */}
-                    <div className="mt-4">
-                        <Pagination links={users.meta.links} />{' '}
-                    </div>
+                <div className="mt-4">
+                    <Pagination links={users.meta.links} />
                 </div>
             </div>
         </BaseLayout>

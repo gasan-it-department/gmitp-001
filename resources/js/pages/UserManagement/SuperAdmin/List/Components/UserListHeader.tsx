@@ -94,12 +94,8 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
                 Export
             </Button> */}
 
-            <Button
-                onClick={handleAddAdmin}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md hover:from-orange-600 hover:to-red-600"
-            >
-                <PlusIcon className="h-4 w-4" />
-                Add New
+            <Button onClick={handleAddAdmin}>
+                <PlusIcon className="mr-2 h-4 w-4" /> Add New
             </Button>
         </div>
     );
