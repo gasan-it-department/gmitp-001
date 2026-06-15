@@ -39,6 +39,7 @@ class HouseholdMemberDetailsResource extends JsonResource
             // server-managed head (mirrors the beneficiary), and are they
             // currently living in the household?
             'beneficiary_id' => $this->beneficiary_id,
+            'beneficiary_has_portal_account' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->user_id !== null),
             'is_active' => (bool) $this->is_active,
             'is_verified_dependent' => (bool) $this->is_verified_dependent,
         ];

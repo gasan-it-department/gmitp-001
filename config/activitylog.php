@@ -1,6 +1,6 @@
 <?php
 
-use Spatie\Activitylog\Actions\CleanActivityLogAction;
+use App\Core\Cemetery\Actions\PreserveCemeteryActivityLogAction;
 use Spatie\Activitylog\Actions\LogActivityAction;
 use Spatie\Activitylog\Models\Activity;
 
@@ -68,6 +68,6 @@ return [
      */
     'actions' => [
         'log_activity' => LogActivityAction::class,
-        'clean_log' => CleanActivityLogAction::class,
+        'clean_log' => PreserveCemeteryActivityLogAction::class,
     ],
 ];

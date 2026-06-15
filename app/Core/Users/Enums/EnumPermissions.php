@@ -19,7 +19,6 @@ namespace App\Core\Users\Enums;
  */
 enum EnumPermissions: string
 {
-
     case ACTION_CENTER_ACCESS = 'action_center.access';
     case BULLETIN_BOARD_ACCESS = 'bulletin_board.access';
     case COMMUNITY_REPORT_ACCESS = 'community_report.access';
@@ -31,6 +30,12 @@ enum EnumPermissions: string
     case USERS_ACCESS = 'users.access';
     case WEDDING_ACCESS = 'wedding.access';
     case CEMETERY_ACCESS = 'cemetery.access';
+    case CEMETERY_DECEDENTS_VIEW = 'cemetery.decedents.view';
+    case CEMETERY_DECEDENTS_MANAGE = 'cemetery.decedents.manage';
+    case CEMETERY_DECEDENTS_VERIFY = 'cemetery.decedents.verify';
+    case CEMETERY_DECEDENTS_CORRECT = 'cemetery.decedents.correct';
+    case CEMETERY_DECEDENTS_OVERRIDE = 'cemetery.decedents.override';
+    case CEMETERY_DECEDENTS_DOCUMENTS_VIEW = 'cemetery.decedents.documents.view';
     case GOVERNMENT_ACCESS = 'government.access';
     case DEPARTMENT_ACCESS = 'department.access';
 
@@ -57,9 +62,14 @@ enum EnumPermissions: string
             self::USERS_ACCESS => 'User Management',
             self::WEDDING_ACCESS => 'Wedding Management',
             self::CEMETERY_ACCESS => 'Cemetery Management',
+            self::CEMETERY_DECEDENTS_VIEW => 'Cemetery - View Decedents',
+            self::CEMETERY_DECEDENTS_MANAGE => 'Cemetery - Manage Decedents',
+            self::CEMETERY_DECEDENTS_VERIFY => 'Cemetery - Verify Decedents',
+            self::CEMETERY_DECEDENTS_CORRECT => 'Cemetery - Correct Decedents',
+            self::CEMETERY_DECEDENTS_OVERRIDE => 'Cemetery - Readiness Override',
+            self::CEMETERY_DECEDENTS_DOCUMENTS_VIEW => 'Cemetery - View Documents',
             self::GOVERNMENT_ACCESS => 'Government Management',
             self::DEPARTMENT_ACCESS => 'Department Management',
         };
     }
-
 }

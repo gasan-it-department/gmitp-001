@@ -35,13 +35,6 @@ const STATUS_LABEL: Record<IntermentStatusValue, string> = {
     unassigned: 'Unassigned',
 };
 
-const DECEDENT_TYPE_LABEL: Record<string, string> = {
-    standard: 'Standard',
-    child: 'Child',
-    fetal: 'Fetal',
-    unknown: 'Unknown',
-};
-
 export function DecedentsTable({ decedents }: Props) {
     const decedentList = decedents.data;
     const { currentMunicipality } = useMunicipality();
@@ -90,7 +83,7 @@ export function DecedentsTable({ decedents }: Props) {
         setIsLoading(true);
 
         router.get(
-            cemetery.admin.decedents.index.url({
+            cemetery.admin.decedents.list.page.url({
                 municipality: currentMunicipality.slug,
             }),
             {
@@ -129,8 +122,8 @@ export function DecedentsTable({ decedents }: Props) {
                         <TableRow>
                             <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
                             <TableHead className="text-[12px] font-bold">Full Name</TableHead>
-                            <TableHead className="text-[12px] font-bold">Type</TableHead>
-                            <TableHead className="text-[12px] font-bold">Death Cert. No.</TableHead>
+                            <TableHead className="text-[12px] font-bold">Record / Identity</TableHead>
+                            <TableHead className="text-[12px] font-bold">Registry No.</TableHead>
                             <TableHead className="text-[12px] font-bold">Date of Death</TableHead>
                             <TableHead className="text-[12px] font-bold">Plot</TableHead>
                             <TableHead className="text-[12px] font-bold">Status</TableHead>
@@ -151,10 +144,11 @@ export function DecedentsTable({ decedents }: Props) {
                                         {item.full_name}
                                     </TableCell>
                                     <TableCell className="text-[12px] whitespace-nowrap">
-                                        {item.decedent_type ? DECEDENT_TYPE_LABEL[item.decedent_type] : '—'}
+                                        <span className="block">{item.vital_record_label}</span>
+                                        <span className="text-[10px] uppercase text-slate-400">{item.identity_status} · {item.life_stage ?? 'age unknown'}</span>
                                     </TableCell>
                                     <TableCell className="font-mono text-[12px] whitespace-nowrap">
-                                        {item.death_certificate_no}
+                                        {item.registry_number}
                                     </TableCell>
                                     <TableCell className="text-[12px] whitespace-nowrap">
                                         {item.date_of_death}
@@ -163,11 +157,10 @@ export function DecedentsTable({ decedents }: Props) {
                                         {item.plot_label ?? '—'}
                                     </TableCell>
                                     <TableCell className="text-[12px]">
-                                        <span
-                                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${STATUS_PILL[item.interment_status]}`}
-                                        >
-                                            {STATUS_LABEL[item.interment_status]}
-                                        </span>
+                                        <div className="space-y-1">
+                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${item.registration_status_tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : item.registration_status_tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{item.registration_status_label}</span>
+                                            <span className={`block w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${STATUS_PILL[item.interment_status]}`}>{STATUS_LABEL[item.interment_status]}</span>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="">
                                         <div className="flex justify-center gap-2">

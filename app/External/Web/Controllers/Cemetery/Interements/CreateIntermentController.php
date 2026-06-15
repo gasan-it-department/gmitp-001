@@ -7,16 +7,14 @@ use Inertia\Inertia;
 
 class CreateIntermentController extends Controller
 {
-
     public function __invoke()
     {
 
-        return Inertia::render('Cemetery/Admin/Interment/Create/CreateInterment', [
+        return Inertia::render('Cemetery/Admin/Interments/Create/CreateInterment', [
 
-            'municipality' => app('current_municipality')
+            'municipality' => app('current_municipality'),
 
         ]);
 
     }
-
 }

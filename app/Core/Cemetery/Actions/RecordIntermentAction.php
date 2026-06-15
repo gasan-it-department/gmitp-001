@@ -2,9 +2,12 @@
 
 namespace App\Core\Cemetery\Actions;
 
+use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
 use App\Core\Cemetery\Dto\IntermentDto;
 use App\Core\Cemetery\Enums\PlotStatus;
+use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\Interment;
+use App\Core\Cemetery\Models\IntermentReadinessOverride;
 use App\Core\Cemetery\Models\Plot;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Support\Facades\DB;
@@ -42,8 +45,8 @@ class RecordIntermentAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
-    ) {
-    }
+        private GetIntermentReadinessAction $getIntermentReadiness,
+    ) {}
 
     public function execute(IntermentDto $dto): Interment
     {
@@ -57,16 +60,33 @@ class RecordIntermentAction
                 ->findOrFail($dto->plotId);
 
             $this->assertAssignable($plot);
+
+            $decedent = Decedent::query()
+                ->where('municipal_id', $dto->municipalId)
+                ->lockForUpdate()
+                ->findOrFail($dto->decedentId);
+
             $this->assertDecedentHasNoActiveInterment($dto);
 
+            $readiness = $this->getIntermentReadiness->execute($decedent);
+            if (! $readiness['ready']) {
+                $missing = $readiness['registration_verified']
+                    ? implode(', ', $readiness['missing'])
+                    : 'verified registration';
+
+                throw new RuntimeException(
+                    "Decedent {$decedent->id} is not ready for interment. Missing: {$missing}."
+                );
+            }
+
             $interment = Interment::create([
-                'id'             => $this->idGenerator->generate(),
-                'municipal_id'   => $dto->municipalId,
-                'decedent_id'    => $dto->decedentId,
-                'plot_id'        => $plot->id,
+                'id' => $this->idGenerator->generate(),
+                'municipal_id' => $dto->municipalId,
+                'decedent_id' => $dto->decedentId,
+                'plot_id' => $plot->id,
                 'interment_date' => $dto->intermentDate,
-                'type'           => $dto->type,
-                'notes'          => $dto->notes,
+                'type' => $dto->type,
+                'notes' => $dto->notes,
             ]);
 
             // BR-3 — flip the locked slot to OCCUPIED. `save()` (not mass
@@ -74,6 +94,25 @@ class RecordIntermentAction
             // Activitylog captures the AVAILABLE → OCCUPIED transition.
             $plot->status = PlotStatus::OCCUPIED;
             $plot->save();
+
+            if ($readiness['via_override']) {
+                $override = IntermentReadinessOverride::query()
+                    ->where('municipal_id', $dto->municipalId)
+                    ->where('decedent_id', $decedent->id)
+                    ->whereKey($readiness['override']['id'])
+                    ->whereNull('consumed_at')
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if (! $override->isUsable()) {
+                    throw new RuntimeException('The readiness override expired or was already consumed.');
+                }
+
+                $override->forceFill([
+                    'consumed_at' => now(),
+                    'consumed_by' => auth()->id(),
+                ])->save();
+            }
 
             return $interment;
         });

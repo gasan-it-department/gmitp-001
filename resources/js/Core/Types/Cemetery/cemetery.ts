@@ -2,7 +2,20 @@
 
 export type PlotStatusValue = 'available' | 'occupied' | 'reserved' | 'maintenance';
 export type PlotTypeValue = 'lawn_lot' | 'apartment_niche' | 'bone_ossuary' | 'mausoleum';
-export type DecedentTypeValue = 'standard' | 'child' | 'fetal' | 'unknown';
+export type VitalRecordTypeValue = 'death' | 'fetal_death';
+export type IdentityStatusValue = 'identified' | 'unidentified';
+export type RegistrationStatusValue = 'draft' | 'pending_review' | 'verified' | 'archived';
+export type DocumentVerificationStatusValue = 'pending' | 'verified' | 'rejected' | 'superseded';
+export type DecedentDocumentTypeValue =
+    | 'death_certificate'
+    | 'fetal_death_certificate'
+    | 'burial_permit'
+    | 'police_report'
+    | 'medico_legal_report'
+    | 'health_office_clearance'
+    | 'identity_evidence'
+    | 'case_photo'
+    | 'other';
 
 /**
  * Surfaced to the UI as the per-decedent assignment state. With the event-typed
@@ -42,8 +55,14 @@ export interface BlockLookup {
 export interface DecedentListItem {
     id: string;
     full_name: string;
-    decedent_type: DecedentTypeValue | null;
-    death_certificate_no: string;
+    vital_record_type: VitalRecordTypeValue;
+    vital_record_label: string;
+    identity_status: IdentityStatusValue;
+    registration_status: RegistrationStatusValue;
+    registration_status_label: string;
+    registration_status_tone: string;
+    life_stage: 'fetal' | 'infant' | 'child' | 'adult' | null;
+    registry_number: string;
     date_of_death: string;
     date_of_registration: string | null;
     interment_status: IntermentStatusValue;
@@ -52,6 +71,7 @@ export interface DecedentListItem {
 
 export interface DecedentProfile {
     id: string;
+    version: number;
     first_name: string | null;
     last_name: string | null;
     middle_name: string | null;
@@ -62,20 +82,84 @@ export interface DecedentProfile {
     date_of_birth: string | null;
     date_of_death: string | null;
     date_of_registration: string | null;
-    decedent_type: DecedentTypeValue | null;
-    reference_document_type: string | null;
-    reference_document_number: string | null;
+    has_legal_name: boolean;
+    life_stage: 'fetal' | 'infant' | 'child' | 'adult' | null;
+    vital_record_type: VitalRecordTypeValue;
+    vital_record_label: string;
+    identity_status: IdentityStatusValue;
+    registration_status: RegistrationStatusValue;
+    registration_status_label: string;
+    registration_status_tone: string;
+    registry_number: string | null;
     place_of_death: string | null;
     cause_of_death: string | null;
-    death_certificate_no: string | null;
     notes: string | null;
+    verified_at: string | null;
+    verified_by: string | null;
     avatar_url: string | null;
-    identification: {
-        id: number;
-        name: string;
-        url: string;
-        mime_type: string;
+    documents: {
+        id: string;
+        supersedes_id: string | null;
+        type: DecedentDocumentTypeValue;
+        type_label: string;
+        restricted: boolean;
+        document_number: string | null;
+        issued_at: string | null;
+        notes: string | null;
+        verification_status: DocumentVerificationStatusValue;
+        verified_at: string | null;
+        verified_by: string | null;
+        file_name: string | null;
+        mime_type: string | null;
+        download_url: string;
     }[];
+    unidentified_details: {
+        case_reference: string;
+        found_location: string | null;
+        date_found: string | null;
+        reported_by: string | null;
+        reporting_agency: string | null;
+        estimated_age: string | null;
+        estimated_sex: string | null;
+        distinguishing_features: string | null;
+        physical_description: string | null;
+        requires_medico_legal: boolean;
+    } | null;
+    fetal_details: {
+        gestational_age_weeks: number | null;
+        fetal_weight_grams: number | null;
+        mother_name: string | null;
+    } | null;
+    corrections: {
+        id: string;
+        base_version: number;
+        status: 'pending' | 'approved' | 'rejected';
+        reason: string;
+        original_values: Record<string, unknown>;
+        proposed_changes: Record<string, unknown>;
+        requested_by: string | null;
+        reviewed_by: string | null;
+        review_notes: string | null;
+        evidence_url: string | null;
+        created_at: string;
+    }[];
+    audit_timeline: {
+        id: number;
+        event: string | null;
+        description: string;
+        causer: string | null;
+        changes: Record<string, unknown>;
+        properties: Record<string, unknown>;
+        created_at: string;
+    }[];
+    interment_readiness: {
+        ready: boolean;
+        registration_verified: boolean;
+        requirements: { type: DecedentDocumentTypeValue; label: string; satisfied: boolean }[];
+        missing: DecedentDocumentTypeValue[];
+        via_override: boolean;
+        override: { id: string; evidence_reference: string; expires_at: string } | null;
+    };
     // Schema pivot: interment is now an event row (type = initial | transfer).
     // No row-level status; existence of the row is the "interred" signal.
     interment: {
@@ -99,10 +183,12 @@ export interface DecedentProfile {
 }
 
 export type RegisterDecedentForm = {
-    decedent_type: DecedentTypeValue;
-    gender: 'male' | 'female' | '';
-
-    has_official_name: boolean;
+    vital_record_type: VitalRecordTypeValue;
+    identity_status: IdentityStatusValue;
+    has_legal_name: boolean;
+    submission_intent: 'draft' | 'submit';
+    version?: number;
+    gender: 'MALE' | 'FEMALE' | 'INDETERMINATE' | '';
 
     first_name: string;
     middle_name: string;
@@ -110,22 +196,43 @@ export type RegisterDecedentForm = {
     suffix: string;
     memorial_name: string;
 
-    reference_document_number: string;
-    reference_document_type: string;
     place_of_death: string;
     psgc_municipal_id: string;
     psgc_barangay_id: string;
     street_name: string;
 
     cause_of_death: string;
-    death_certificate_no: string;
+    registry_number: string;
     date_of_birth: string;
     date_of_death: string;
     date_of_registration: string;
 
     notes: string;
     avatar: File | null;
-    identification: File[];
+    unidentified_details: {
+        case_reference: string;
+        found_location: string;
+        date_found: string;
+        reported_by: string;
+        reporting_agency: string;
+        estimated_age: string;
+        estimated_sex: 'MALE' | 'FEMALE' | 'INDETERMINATE' | '';
+        distinguishing_features: string;
+        physical_description: string;
+        requires_medico_legal: boolean;
+    };
+    fetal_details: {
+        gestational_age_weeks: number | '';
+        fetal_weight_grams: number | '';
+        mother_name: string;
+    };
+    documents: {
+        type: DecedentDocumentTypeValue | '';
+        document_number: string;
+        issued_at: string;
+        notes: string;
+        file: File | null;
+    }[];
 };
 
 // ─── Plots ───────────────────────────────────────────────────────────────

@@ -60,6 +60,16 @@ export default function HouseholdMembersManager({
     const [unlinking, setUnlinking] = useState<HouseholdMemberRow | undefined>(undefined);
     const [headDialogOpen, setHeadDialogOpen] = useState(false);
 
+    const getLinkStatus = (member: HouseholdMemberRow) => {
+        if (!member.beneficiary_id) {
+            return { color: 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]', title: 'Not linked to a Beneficiary Profile' };
+        }
+        if (member.beneficiary_has_portal_account) {
+            return { color: 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]', title: 'Linked to a Beneficiary with a Portal Account' };
+        }
+        return { color: 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]', title: 'Linked to a Walk-in Beneficiary (No Portal Account)' };
+    };
+
     const openLink = (member: HouseholdMemberRow) => {
         setLinking(member);
         setLinkOpen(true);
@@ -143,13 +153,22 @@ export default function HouseholdMembersManager({
 
                         {active.map((member) => (
                             <TableRow key={member.id} className="hover:bg-slate-50/50">
-                                <TableCell className="text-xs font-medium text-slate-900 capitalize">
-                                    {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''} {member.last_name} {member.suffix}
-                                    {isHead(member) && (
-                                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
-                                            <BadgeCheck className="h-3 w-3" /> Head
+                                <TableCell>
+                                    <div className="flex items-center gap-2 text-xs font-medium text-slate-900 capitalize">
+                                        <div
+                                            className={`h-2 w-2 shrink-0 rounded-full ${getLinkStatus(member).color}`}
+                                            title={getLinkStatus(member).title}
+                                            aria-label={getLinkStatus(member).title}
+                                        />
+                                        <span>
+                                            {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''} {member.last_name} {member.suffix}
                                         </span>
-                                    )}
+                                        {isHead(member) && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                                <BadgeCheck className="h-3 w-3" /> Head
+                                            </span>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-xs text-slate-600 capitalize">{member.relationship.toLowerCase()}</TableCell>
                                 <TableCell className="text-xs text-slate-600">
@@ -162,23 +181,11 @@ export default function HouseholdMembersManager({
                                     {member.monthly_income > 0 ? utils.formatCurrency(member.monthly_income) : '—'}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    {isHead(member) ? (
-                                        <span className="text-[10px] text-slate-400 italic">Edit from profile</span>
-                                    ) : (
-                                        <div className="flex items-center justify-end gap-1">
-                                            {member.beneficiary_id && (
-                                                <Link
-                                                    href={ShowBeneficiaryProfileController.url({
-                                                        municipality: currentMunicipality.slug,
-                                                        beneficiaryId: member.beneficiary_id,
-                                                    })}
-                                                    title="View linked beneficiary profile"
-                                                    className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-700"
-                                                >
-                                                    <Link2 className="h-3 w-3" /> View Profile
-                                                </Link>
-                                            )}
-                                            {member.is_verified_dependent ? (
+                                    <div className="flex items-center justify-end gap-1">
+                                        {isHead(member) ? (
+                                            <span className="text-[10px] text-slate-400 italic mr-2">Edit from profile</span>
+                                        ) : (
+                                            member.is_verified_dependent ? (
                                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                                                     <BadgeCheck className="h-3 w-3" /> Verified
                                                 </span>
@@ -186,39 +193,63 @@ export default function HouseholdMembersManager({
                                                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                                                     Pending
                                                 </span>
-                                            )}
+                                            )
+                                        )}
 
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <button
-                                                        type="button"
-                                                        className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                                                    >
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48">
-                                                    {member.beneficiary_id ? (
-                                                        <DropdownMenuItem onSelect={() => setTimeout(() => openUnlink(member), 150)} className="flex cursor-pointer items-center gap-2 text-rose-600 focus:text-rose-700">
-                                                            <Unlink className="h-4 w-4" /> Unlink Profile
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                                                >
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-48">
+                                                {member.beneficiary_id && (
+                                                    member.beneficiary_id === beneficiaryId ? (
+                                                        <DropdownMenuItem disabled className="flex items-center gap-2 opacity-50">
+                                                            <Link2 className="h-4 w-4" /> Current Profile
                                                         </DropdownMenuItem>
                                                     ) : (
-                                                        <DropdownMenuItem onSelect={() => setTimeout(() => openLink(member), 150)} className="flex cursor-pointer items-center gap-2">
-                                                            <Link2 className="h-4 w-4" /> Link to Existing
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={ShowBeneficiaryProfileController.url({
+                                                                    municipality: currentMunicipality.slug,
+                                                                    beneficiaryId: member.beneficiary_id,
+                                                                })}
+                                                                className="flex cursor-pointer items-center gap-2"
+                                                            >
+                                                                <Link2 className="h-4 w-4" /> View Linked Profile
+                                                            </Link>
                                                         </DropdownMenuItem>
-                                                    )}
-                                                    
-                                                    <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)} className="flex cursor-pointer items-center gap-2">
-                                                        <Pencil className="h-4 w-4" /> Edit Member
-                                                    </DropdownMenuItem>
-                                                    
-                                                    <DropdownMenuItem onSelect={() => setTimeout(() => setActive(member, false), 150)} className="flex cursor-pointer items-center gap-2 text-amber-600 focus:text-amber-700">
-                                                        <LogOut className="h-4 w-4" /> Remove from Household
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    )}
+                                                    )
+                                                )}
+                                                
+                                                {!isHead(member) && (
+                                                    <>
+                                                        {member.beneficiary_id ? (
+                                                            <DropdownMenuItem onSelect={() => setTimeout(() => openUnlink(member), 150)} className="flex cursor-pointer items-center gap-2 text-rose-600 focus:text-rose-700">
+                                                                <Unlink className="h-4 w-4" /> Unlink Profile
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem onSelect={() => setTimeout(() => openLink(member), 150)} className="flex cursor-pointer items-center gap-2">
+                                                                <Link2 className="h-4 w-4" /> Link to Existing
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        
+                                                        <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)} className="flex cursor-pointer items-center gap-2">
+                                                            <Pencil className="h-4 w-4" /> Edit Member
+                                                        </DropdownMenuItem>
+                                                        
+                                                        <DropdownMenuItem onSelect={() => setTimeout(() => setActive(member, false), 150)} className="flex cursor-pointer items-center gap-2 text-amber-600 focus:text-amber-700">
+                                                            <LogOut className="h-4 w-4" /> Remove from Household
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -233,8 +264,17 @@ export default function HouseholdMembersManager({
                                 </TableRow>
                                 {inactive.map((member) => (
                                     <TableRow key={member.id} className="opacity-60 hover:bg-slate-50/50">
-                                        <TableCell className="text-xs font-medium text-slate-600 capitalize line-through">
-                                            {member.first_name} {member.last_name} {member.suffix}
+                                        <TableCell>
+                                            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 capitalize line-through">
+                                                <div
+                                                    className={`h-2 w-2 shrink-0 rounded-full ${getLinkStatus(member).color}`}
+                                                    title={getLinkStatus(member).title}
+                                                    aria-label={getLinkStatus(member).title}
+                                                />
+                                                <span>
+                                                    {member.first_name} {member.last_name} {member.suffix}
+                                                </span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-xs text-slate-500 capitalize">{member.relationship.toLowerCase()}</TableCell>
                                         <TableCell className="text-xs text-slate-500">
@@ -246,18 +286,6 @@ export default function HouseholdMembersManager({
                                         <TableCell className="text-right text-xs text-slate-400">—</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                                {member.beneficiary_id && (
-                                                    <Link
-                                                        href={ShowBeneficiaryProfileController.url({
-                                                            municipality: currentMunicipality.slug,
-                                                            beneficiaryId: member.beneficiary_id,
-                                                        })}
-                                                        title="View linked beneficiary profile"
-                                                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-700"
-                                                    >
-                                                        <Link2 className="h-3 w-3" /> View Profile
-                                                    </Link>
-                                                )}
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <button
@@ -268,6 +296,19 @@ export default function HouseholdMembersManager({
                                                         </button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-48">
+                                                        {member.beneficiary_id && (
+                                                            <DropdownMenuItem asChild>
+                                                                <Link
+                                                                    href={ShowBeneficiaryProfileController.url({
+                                                                        municipality: currentMunicipality.slug,
+                                                                        beneficiaryId: member.beneficiary_id,
+                                                                    })}
+                                                                    className="flex cursor-pointer items-center gap-2"
+                                                                >
+                                                                    <Link2 className="h-4 w-4" /> View Linked Profile
+                                                                </Link>
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)} className="flex cursor-pointer items-center gap-2">
                                                             <Pencil className="h-4 w-4" /> Edit Member
                                                         </DropdownMenuItem>
@@ -285,7 +326,20 @@ export default function HouseholdMembersManager({
                     </TableBody>
                 </Table>
                 <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/40 px-4 py-2">
-                    <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Est. Total Monthly Income</span>
+                    <div className="flex items-center gap-6">
+                        <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Est. Total Monthly Income</span>
+                        <div className="hidden sm:flex gap-4 text-[10px] text-slate-500">
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" /> Portal Account
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]" /> Walk-in
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]" /> Not Linked
+                            </div>
+                        </div>
+                    </div>
                     <span className="text-sm font-bold text-slate-700">{utils.formatCurrency(totalIncome)}</span>
                 </div>
             </div>

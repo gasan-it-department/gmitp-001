@@ -3,6 +3,7 @@
 namespace App\External\Api\Request\Cemetery;
 
 use App\Core\Cemetery\Enums\PlotStatus;
+use App\Core\Cemetery\Enums\RegistrationStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,6 +38,7 @@ class CreateIntermentRequest extends FormRequest
                 Rule::exists('cemetery_decedents', 'id')
                     ->where(fn ($q) => $q
                         ->where('municipal_id', $municipalId)
+                        ->where('registration_status', RegistrationStatus::VERIFIED->value)
                         ->whereNull('deleted_at')),
                 // BR-2 — reject if the decedent already has an ACTIVE interment.
                 // In the event-typed schema, "active" = "not soft-deleted"
@@ -76,7 +78,7 @@ class CreateIntermentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'decedent_id.exists' => 'The selected decedent does not belong to this municipality.',
+            'decedent_id.exists' => 'The selected decedent is not verified or does not belong to this municipality.',
             'decedent_id.unique' => 'This decedent already has an active interment record.',
             'plot_id.exists' => 'The selected plot is not an available, assignable slot in this municipality.',
             'interment_date.before_or_equal' => 'The interment date cannot be in the future.',

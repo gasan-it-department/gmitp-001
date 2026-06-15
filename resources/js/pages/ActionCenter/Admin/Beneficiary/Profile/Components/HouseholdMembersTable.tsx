@@ -16,8 +16,8 @@ export interface HouseholdMemberRow {
     occupation: string | null;
     monthly_income: number;
     religion_id: string | null;
-    /** True for the server-managed head row (mirrors the beneficiary). */
     beneficiary_id: string | null;
+    beneficiary_has_portal_account?: boolean;
     /** False = moved out (kept as history, dropped from active composition). */
     is_active: boolean;
     /** Trust gate for a non-head roster member. */

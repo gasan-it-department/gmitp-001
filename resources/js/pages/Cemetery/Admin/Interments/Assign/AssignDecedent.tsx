@@ -12,7 +12,8 @@ import { FormEvent, useMemo, useState } from 'react';
 interface DecedentSummary {
     id: string;
     display_name: string;
-    decedent_type: string | null;
+    record_type: string | null;
+    identity_status: string | null;
     date_of_death: string | null;
 }
 
@@ -102,7 +103,7 @@ export default function AssignDecedent({ decedent, available_plots }: Props) {
                         <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Decedent</p>
                         <p className="text-base font-semibold text-slate-900">{decedent.display_name}</p>
                         <p className="text-xs text-slate-500">
-                            {decedent.decedent_type?.toUpperCase()} · Died {decedent.date_of_death ?? '—'}
+                            {decedent.record_type?.replace('_', ' ').toUpperCase()} · {decedent.identity_status?.toUpperCase()} · Died {decedent.date_of_death ?? '—'}
                         </p>
                     </div>
                 </section>
