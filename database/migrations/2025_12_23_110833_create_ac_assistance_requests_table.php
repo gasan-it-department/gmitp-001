@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -35,7 +34,6 @@ return new class extends Migration
                 ->constrained('ac_assistance_types')
                 ->restrictOnDelete();
 
-            $table->json('metadata')->nullable();
             $table->foreignUlid('on_behalf_household_member_id')
                 ->nullable()
                 ->constrained('ac_household_members')
@@ -53,31 +51,28 @@ return new class extends Migration
 
             $table->foreignUlid('rejected_by_user_id')
                 ->nullable()
-                ->after('approved_by_user_id')
                 ->constrained('users')
                 ->nullOnDelete();
 
             $table->foreignUlid('cancelled_by_user_id')
                 ->nullable()
-                ->after('rejected_by_user_id')
                 ->constrained('users')
                 ->nullOnDelete();
 
             $table->foreignUlid('released_by_user_id')
                 ->nullable()
-                ->after('cancelled_by_user_id')
                 ->constrained('users')
                 ->nullOnDelete();
 
             $table->string('release_reference_number', 60)
-                ->nullable()
-                ->after('released_by_user_id');
+                ->nullable();
 
             $table->decimal('amount_approved', 10, 2)->nullable();
             $table->string('transaction_number')->unique();
             $table->string('status')->default('pending');
             $table->text('description')->nullable();
             $table->text('remarks')->nullable();
+            $table->json('metadata')->nullable();
 
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('released_at')->nullable();

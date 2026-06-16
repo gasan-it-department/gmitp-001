@@ -20,9 +20,11 @@ import {
     GitMerge,
     HandCoins,
     Home,
+    IdCard,
     Link2,
     Mail,
     MapPin,
+    OctagonX,
     Pencil,
     User,
     Users,
@@ -34,7 +36,7 @@ import AvatarUploader from './Components/AvatarUploader';
 import type { HouseholdHeadState } from './Components/ChangeHouseholdHeadDialog';
 import HouseholdMembersManager from './Components/HouseholdMembersManager';
 import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
-import IntakeReviewPanel, { type HouseholdMatch } from './Components/IntakeReviewPanel';
+import IntakeReviewPanel, { type HouseholdMatch, type IdentityDocuments } from './Components/IntakeReviewPanel';
 import LinkAccountDialog from './Components/LinkAccountDialog';
 import { type RelationshipOption } from './Components/MemberFormDialog';
 import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
@@ -48,6 +50,7 @@ interface BeneficiaryProfileData {
     id: string;
     beneficiary_number: string | null;
     avatar_url: string | null;
+    identity_documents: IdentityDocuments;
     full_name: string;
     first_name: string;
     middle_name: string | null;
@@ -72,6 +75,10 @@ interface BeneficiaryProfileData {
     identity_verified: boolean;
     identity_verified_at: string | null;
     identity_verified_by: string | null;
+    intake_status: 'pending' | 'verified' | 'rejected';
+    intake_rejected_at: string | null;
+    intake_rejected_by: string | null;
+    intake_rejection_reason: string | null;
     is_active: boolean;
     household_verified: boolean;
 }
@@ -254,9 +261,13 @@ export default function BeneficiaryProfile({
                                                 Walk-in
                                             </span>
                                         )}
-                                        {profile.identity_verified ? (
+                                        {profile.intake_status === 'verified' ? (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
                                                 <BadgeCheck className="h-3.5 w-3.5" /> Identity verified
+                                            </span>
+                                        ) : profile.intake_status === 'rejected' ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
+                                                <OctagonX className="h-3.5 w-3.5" /> Intake rejected
                                             </span>
                                         ) : (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
@@ -325,6 +336,12 @@ export default function BeneficiaryProfile({
                                 identityVerified={profile.identity_verified}
                                 verifiedAt={profile.identity_verified_at}
                                 verifiedBy={profile.identity_verified_by}
+                                intakeStatus={profile.intake_status}
+                                canRejectIntake={profile.has_account}
+                                rejectedAt={profile.intake_rejected_at}
+                                rejectedBy={profile.intake_rejected_by}
+                                rejectionReason={profile.intake_rejection_reason}
+                                identityDocuments={profile.identity_documents}
                                 members={members}
                                 householdMatches={householdMatches ?? []}
                             />
@@ -444,12 +461,12 @@ export default function BeneficiaryProfile({
                                 </CardContent>
                             </Card>
 
-                            {/* Intake sheet */}
+                            {/* Documents */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-base">Documents</CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-3">
                                     <a
                                         href={DownloadBeneficiaryIntakeSheetController.url({
                                             municipality: currentMunicipality.slug,
@@ -462,6 +479,30 @@ export default function BeneficiaryProfile({
                                         <Download className="h-4 w-4" />
                                         Download Intake Sheet (PDF)
                                     </a>
+
+                                    {profile.identity_documents?.front && (
+                                        <a
+                                            href={profile.identity_documents.front}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 hover:text-blue-800"
+                                        >
+                                            <IdCard className="h-4 w-4" />
+                                            View Uploaded ID (Front)
+                                        </a>
+                                    )}
+
+                                    {profile.identity_documents?.back && (
+                                        <a
+                                            href={profile.identity_documents.back}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 hover:text-blue-800"
+                                        >
+                                            <IdCard className="h-4 w-4" />
+                                            View Uploaded ID (Back)
+                                        </a>
+                                    )}
                                 </CardContent>
                             </Card>
 

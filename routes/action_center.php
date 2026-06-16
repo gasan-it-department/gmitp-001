@@ -13,6 +13,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeCon
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReassignBeneficiaryHouseholdController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\RejectBeneficiaryIntakeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReviewBeneficiaryIntakeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\SearchHouseholdMembershipController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
@@ -26,6 +27,7 @@ use App\External\Api\Controllers\ActionCenter\Household\UnlinkHouseholdMemberBen
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
+use App\External\Documents\ActionCenter\ShowBeneficiaryIdentityDocumentController;
 use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\EditBeneficiaryProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ListBeneficiaryController;
@@ -92,6 +94,10 @@ Route::prefix('{municipality}/action-center')
                 // and search cards. Upload is the API route below.
                 Route::get('beneficiary/{beneficiaryId}/avatar', ShowBeneficiaryAvatarController::class)
                     ->name('beneficiary.avatar');
+
+                Route::get('beneficiary/{beneficiaryId}/identity-document/{side}', ShowBeneficiaryIdentityDocumentController::class)
+                    ->whereIn('side', ['front', 'back'])
+                    ->name('beneficiary.identity-document');
 
                 // Walk-in intake form — display only. The admin encodes a person
                 // who has no portal account (user_id stays NULL). Reached from the
@@ -251,6 +257,11 @@ Route::prefix('/api/action-center')
                     '/beneficiary/{beneficiaryId}/review-intake',
                     ReviewBeneficiaryIntakeController::class,
                 )->name('beneficiary.review-intake');
+
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/reject-intake',
+                    RejectBeneficiaryIntakeController::class,
+                )->name('beneficiary.reject-intake');
 
                 Route::post(
                     '/beneficiary/{beneficiaryId}/reassign-household',

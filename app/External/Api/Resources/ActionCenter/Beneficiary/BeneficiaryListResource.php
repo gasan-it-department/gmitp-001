@@ -68,6 +68,7 @@ class BeneficiaryListResource extends JsonResource
                 : null,
             'identity_verified' => $this->identity_verified_at !== null,
             'identity_verified_at' => $this->identity_verified_at?->toIso8601String(),
+            'intake_status' => $this->intakeStatus(),
         ];
     }
 

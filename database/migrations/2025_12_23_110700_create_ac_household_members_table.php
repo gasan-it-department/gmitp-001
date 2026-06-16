@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -18,6 +17,16 @@ return new class extends Migration
                 ->constrained('ac_households')
                 ->cascadeOnDelete();
 
+            $table->foreignUlid('religion_id')
+                ->nullable()
+                ->constrained('ac_religions')
+                ->nullOnDelete();
+
+            $table->foreignUlid('beneficiary_id')
+                ->nullable()
+                ->constrained('ac_beneficiaries')
+                ->nullOnDelete();
+
             $table->string('first_name');
             $table->string('last_name');
             $table->string('middle_name')->nullable();
@@ -29,16 +38,6 @@ return new class extends Migration
             $table->string('civil_status')->nullable();
             $table->string('occupation')->nullable();
             $table->decimal('monthly_income', 10, 2)->default(0);
-
-            $table->foreignUlid('religion_id')
-                ->nullable()
-                ->constrained('ac_religions')
-                ->nullOnDelete();
-
-            $table->foreignUlid('beneficiary_id')
-                ->nullable()
-                ->constrained('ac_beneficiaries')
-                ->nullOnDelete();
 
             $table->boolean('is_active')->default(true);
             $table->boolean('is_verified_dependent')->default(false);

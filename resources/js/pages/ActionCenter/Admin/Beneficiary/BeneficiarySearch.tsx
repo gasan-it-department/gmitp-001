@@ -41,6 +41,7 @@ export interface BeneficiaryRow {
     last_request_at: string | null;
     identity_verified: boolean;
     identity_verified_at: string | null;
+    intake_status: 'pending' | 'verified' | 'rejected';
 }
 
 interface PaginatorLink {

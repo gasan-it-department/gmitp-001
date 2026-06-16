@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\Dto\Beneficiary;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 
 readonly class CreateBeneficiaryProfileDto
 {
@@ -54,10 +55,21 @@ readonly class CreateBeneficiaryProfileDto
         //
         // @var array<int, array<string, mixed>>
         public array $householdMembers = [],
+
+        // Citizen-uploaded ID evidence for admin intake review. These files are
+        // attached to the Beneficiary media collections after the DB transaction.
+        public ?UploadedFile $identityIdFront = null,
+        public ?UploadedFile $identityIdBack = null,
     ) {
     }
 
-    public static function fromArray(array $data, string $userId, string $municipalId): self
+    public static function fromArray(
+        array $data,
+        string $userId,
+        string $municipalId,
+        ?UploadedFile $identityIdFront = null,
+        ?UploadedFile $identityIdBack = null,
+    ): self
     {
         return new self(
             // IDs are left exactly as they are
@@ -104,6 +116,8 @@ readonly class CreateBeneficiaryProfileDto
             // Action will iterate and hand each one to StoreHouseholdMemberDto.
             // Missing key → empty array = citizen skipped the section.
             householdMembers: $data['household_members'] ?? [],
+            identityIdFront: $identityIdFront,
+            identityIdBack: $identityIdBack,
         );
     }
 }

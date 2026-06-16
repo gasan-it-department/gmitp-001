@@ -2,12 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Briefcase, Home, User, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, Briefcase, Home, IdCard, User, Users } from 'lucide-react';
 import { FormEvent } from 'react';
 import { CivilStatusEmploymentSection } from './Components/CivilStatusEmploymentSection';
 import { DataPrivacyConsent } from './Components/DataPrivacyConsent';
 import { HomeAddressSection } from './Components/HomeAddressSection';
 import { HouseholdMembersSection } from './Components/HouseholdMembersSection';
+import { IdentityDocumentUploadSection } from './Components/IdentityDocumentUploadSection';
 import { PersonalInformationSection } from './Components/PersonalInformationSection';
 import { SectionHeader } from './Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from './types';
@@ -45,6 +46,8 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
         birth_date: '',
         religion_id: '',
         educational_attainment: '',
+        identity_id_front: null,
+        identity_id_back: null,
         civil_status: '',
         occupation: '',
         monthly_income: '',
@@ -60,6 +63,7 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         post(submitUrl, {
+            forceFormData: true,
             headers: {
                 'X-Municipality-Slug': currentMunicipality.slug,
             },
@@ -75,9 +79,8 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
         data.last_name.trim().length > 0 &&
         data.sex.length > 0 &&
         data.birth_date.length > 0 &&
+        data.identity_id_front instanceof File &&
         data.civil_status.length > 0 &&
-        data.occupation.trim().length > 0 &&
-        data.monthly_income.length > 0 &&
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
         !processing;
@@ -124,6 +127,17 @@ export default function ProfileSetUpWizard({ religions, submitUrl, educationalAt
                                     religions={religions}
                                     educationalAttainment={educationalAttainment}
                                 />
+                            </div>
+                        </div>
+
+                        {/* ID evidence for admin intake review */}
+                        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                            <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Valid ID" />
+                            <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                                Upload a clear photo or PDF of your valid ID. MSWD staff will review this before your profile is verified.
+                            </p>
+                            <div className="mt-6">
+                                <IdentityDocumentUploadSection data={data} setData={setData} errors={errors} />
                             </div>
                         </div>
 

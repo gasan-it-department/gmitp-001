@@ -32,6 +32,10 @@ class ReviewBeneficiaryIntakeAction
                 throw new \DomainException('This beneficiary intake has already been verified.');
             }
 
+            if ($beneficiary->isIntakeRejected()) {
+                throw new \DomainException('This beneficiary intake has already been rejected.');
+            }
+
             $sourceHousehold = Household::query()
                 ->whereKey($beneficiary->household_id)
                 ->lockForUpdate()

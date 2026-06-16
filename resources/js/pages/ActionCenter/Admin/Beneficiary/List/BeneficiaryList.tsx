@@ -7,7 +7,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import actionCenter from '@/routes/actionCenter';
 import { Link, router, usePage } from '@inertiajs/react';
-import { ArrowRight, BadgeCheck, Clock3, Loader2, Plus, UserCircle2 } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Clock3, Loader2, OctagonX, Plus, UserCircle2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { BeneficiaryRow } from '../BeneficiarySearch';
 import BeneficiaryResultCard from '../Components/BeneficiaryResultCard';
@@ -221,9 +221,13 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col items-start gap-1.5">
-                                                        {row.identity_verified ? (
+                                                        {row.intake_status === 'verified' ? (
                                                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                                                                 <BadgeCheck className="h-3 w-3" /> Identity verified
+                                                            </span>
+                                                        ) : row.intake_status === 'rejected' ? (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+                                                                <OctagonX className="h-3 w-3" /> Intake rejected
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">

@@ -56,6 +56,12 @@ class ApplyAssistanceRequestController extends Controller
                 ->with('info', 'Please complete your profile before applying for assistance.');
         }
 
+        if ($beneficiary->isIntakeRejected()) {
+            return redirect()
+                ->route('actionCenter.portal', ['municipality' => $municipality])
+                ->with('error', 'Your beneficiary profile could not be verified by MSWD. Please visit the MSWD office.');
+        }
+
         if (!$beneficiary->isIdentityVerified()) {
             return redirect()
                 ->route('actionCenter.portal', ['municipality' => $municipality])

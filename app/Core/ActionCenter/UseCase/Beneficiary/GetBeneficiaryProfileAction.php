@@ -52,6 +52,7 @@ class GetBeneficiaryProfileAction
             'mergedInto',
             'mergedDuplicates',
             'identityVerifier',
+            'intakeRejector',
         ])->findOrFail($beneficiaryId);
 
         // Tenant scope — municipal_id lives on the household.

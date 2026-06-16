@@ -29,6 +29,7 @@ class BeneficiaryDetailsResource extends JsonResource
             'birth_date' => $this->birth_date?->toDateString(),
             'educational_attainment' => $this->educational_attainment,
             'identity_verified' => $this->identity_verified_at !== null,
+            'intake_status' => $this->intakeStatus(),
         ];
     }
 }

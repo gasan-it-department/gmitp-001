@@ -84,6 +84,10 @@ class CheckElegibilityAction
             return EligibilityResult::beneficiaryInactive();
         }
 
+        if ($beneficiary->isIntakeRejected()) {
+            return EligibilityResult::intakeRejected();
+        }
+
         if (! $beneficiary->isIdentityVerified()) {
             return EligibilityResult::identityUnverified();
         }
@@ -168,6 +172,12 @@ class CheckElegibilityAction
         if (! $beneficiary->is_active) {
             return $types->mapWithKeys(
                 fn (AssistanceType $type) => [$type->id => EligibilityResult::beneficiaryInactive()]
+            )->all();
+        }
+
+        if ($beneficiary->isIntakeRejected()) {
+            return $types->mapWithKeys(
+                fn (AssistanceType $type) => [$type->id => EligibilityResult::intakeRejected()]
             )->all();
         }
 

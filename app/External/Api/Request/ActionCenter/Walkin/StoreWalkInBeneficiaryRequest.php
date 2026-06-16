@@ -42,13 +42,13 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:100'],
             'middle_name' => ['nullable', 'string', 'max:100'],
             'suffix' => ['nullable', 'string', 'max:20'],
-            'sex' => ['required', Rule::in($this->sexValues())],
+            'sex' => ['required', Rule::enum(Sex::class)],
             'birth_date' => ['required', 'date', 'before:today'],
             'religion_id' => ['nullable', 'ulid', 'exists:ac_religions,id'],
-            'educational_attainment' => ['nullable', 'string', 'max:100'],
+            'educational_attainment' => ['nullable', Rule::enum(EducationalAttainment::class)],
 
             // ── Civil status / employment / income ───────────────────────────
-            'civil_status' => ['required', Rule::in($this->civilStatusValues())],
+            'civil_status' => ['required', Rule::enum(CivilStatus::class)],
             'occupation' => ['nullable', 'string', 'max:120'],
             'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
 
@@ -70,11 +70,11 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'household_members.*.last_name' => ['required_with:household_members.*', 'string', 'max:100'],
             'household_members.*.middle_name' => ['nullable', 'string', 'max:100'],
             'household_members.*.suffix' => ['nullable', 'string', 'max:20'],
-            'household_members.*.relationship' => ['required_with:household_members.*', Rule::in($this->relationshipValues())],
+            'household_members.*.relationship' => ['required_with:household_members.*', Rule::enum(Relationship::class)],
             'household_members.*.birth_date' => ['nullable', 'date', 'before_or_equal:today'],
-            'household_members.*.sex' => ['nullable', Rule::in($this->sexValues())],
-            'household_members.*.civil_status' => ['nullable', Rule::in($this->civilStatusValues())],
-            'household_members.*.educational_attainment' => ['nullable', Rule::in($this->educationalAttainmentValues())],
+            'household_members.*.sex' => ['nullable', Rule::enum(Sex::class)],
+            'household_members.*.civil_status' => ['nullable', Rule::enum(CivilStatus::class)],
+            'household_members.*.educational_attainment' => ['nullable', Rule::enum(EducationalAttainment::class)],
             'household_members.*.occupation' => ['nullable', 'string', 'max:120'],
             'household_members.*.monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'household_members.*.religion_id' => ['nullable', 'ulid', 'exists:ac_religions,id'],
@@ -102,27 +102,4 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
         ];
     }
 
-    /** @return array<int, string> */
-    private function civilStatusValues(): array
-    {
-        return array_map(fn (CivilStatus $case) => $case->value, CivilStatus::cases());
-    }
-
-    /** @return array<int, string> */
-    private function relationshipValues(): array
-    {
-        return array_map(fn (Relationship $case) => $case->value, Relationship::cases());
-    }
-
-    /** @return array<int, string> */
-    private function sexValues(): array
-    {
-        return array_map(fn (Sex $case) => $case->value, Sex::cases());
-    }
-
-    /** @return array<int, string> */
-    private function educationalAttainmentValues(): array
-    {
-        return array_map(fn (EducationalAttainment $case) => $case->value, EducationalAttainment::cases());
-    }
 }

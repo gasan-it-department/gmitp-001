@@ -142,7 +142,7 @@ readonly class StoreAssistanceRequestDto
             snapshotSuffix: $beneficiary->suffix,
             snapshotSex: $beneficiary->sex,
             snapshotBirthDate: $beneficiary->birth_date?->toDateString(),
-            snapshotEducationalAttainment: $beneficiary->educational_attainment,
+            snapshotEducationalAttainment: $beneficiary->educational_attainment?->value,
             snapshotReligion: $religionName,
 
             // Address snapshot from the household at submission time.
@@ -222,7 +222,7 @@ readonly class StoreAssistanceRequestDto
             snapshotSuffix: $beneficiary->suffix,
             snapshotSex: $beneficiary->sex,
             snapshotBirthDate: $beneficiary->birth_date?->toDateString(),
-            snapshotEducationalAttainment: $beneficiary->educational_attainment,
+            snapshotEducationalAttainment: $beneficiary->educational_attainment?->value,
             snapshotReligion: $religionName,
 
             // Address snapshot from the household at submission time.

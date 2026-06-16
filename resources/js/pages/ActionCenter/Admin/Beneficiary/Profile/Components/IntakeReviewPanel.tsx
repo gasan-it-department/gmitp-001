@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
-import { BadgeCheck, Clock3, Home, Info, Loader2, Search, ShieldCheck, UserRoundSearch } from 'lucide-react';
+import { BadgeCheck, Clock3, ExternalLink, FileText, Home, Info, Loader2, OctagonX, Search, ShieldCheck, UserRoundSearch } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 
@@ -27,8 +27,19 @@ interface Props {
     identityVerified: boolean;
     verifiedAt: string | null;
     verifiedBy: string | null;
+    intakeStatus: 'pending' | 'verified' | 'rejected';
+    canRejectIntake: boolean;
+    rejectedAt: string | null;
+    rejectedBy: string | null;
+    rejectionReason: string | null;
+    identityDocuments: IdentityDocuments;
     members: HouseholdMemberRow[];
     householdMatches: HouseholdMatch[];
+}
+
+export interface IdentityDocuments {
+    front: string | null;
+    back: string | null;
 }
 
 type ReviewForm = {
@@ -39,7 +50,24 @@ type ReviewForm = {
     rejected_member_ids: string[];
 };
 
-export default function IntakeReviewPanel({ beneficiaryId, identityVerified, verifiedAt, verifiedBy, members, householdMatches }: Props) {
+type RejectForm = {
+    reason: string;
+};
+
+export default function IntakeReviewPanel({
+    beneficiaryId,
+    identityVerified,
+    verifiedAt,
+    verifiedBy,
+    intakeStatus,
+    canRejectIntake,
+    rejectedAt,
+    rejectedBy,
+    rejectionReason,
+    identityDocuments,
+    members,
+    householdMatches,
+}: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const dependents = members.filter((member) => member.is_active && member.relationship !== 'head');
     const [searchOpen, setSearchOpen] = useState(false);
@@ -48,6 +76,7 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
     const [searchError, setSearchError] = useState('');
     const [searchResults, setSearchResults] = useState<HouseholdMatch[]>([]);
     const [manualSelection, setManualSelection] = useState<HouseholdMatch | null>(null);
+    const [rejectOpen, setRejectOpen] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm<ReviewForm>({
         household_resolution: 'keep_existing',
@@ -57,7 +86,18 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
         rejected_member_ids: [],
     });
 
-    if (identityVerified) {
+    const {
+        data: rejectData,
+        setData: setRejectData,
+        post: postReject,
+        processing: rejecting,
+        errors: rejectErrors,
+        reset: resetReject,
+    } = useForm<RejectForm>({
+        reason: '',
+    });
+
+    if (intakeStatus === 'verified' || identityVerified) {
         return (
             <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
@@ -67,6 +107,36 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                         {verifiedBy ? `Reviewed by ${verifiedBy}` : 'Reviewed by MSWD'}
                         {verifiedAt ? ` on ${new Date(verifiedAt).toLocaleDateString('en-PH')}` : ''}.
                     </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (intakeStatus === 'rejected') {
+        return (
+            <div className="space-y-4 rounded-lg border border-rose-200 bg-rose-50 p-5">
+                <div className="flex items-start gap-3">
+                    <OctagonX className="mt-0.5 h-5 w-5 shrink-0 text-rose-700" />
+                    <div>
+                        <h2 className="font-semibold text-rose-950">Beneficiary intake rejected</h2>
+                        <p className="mt-1 text-sm text-rose-800">
+                            {rejectedBy ? `Reviewed by ${rejectedBy}` : 'Reviewed by MSWD'}
+                            {rejectedAt ? ` on ${new Date(rejectedAt).toLocaleDateString('en-PH')}` : ''}.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="rounded-md border border-rose-200 bg-white px-3 py-2">
+                    <p className="text-xs font-bold tracking-wide text-rose-900 uppercase">Reason</p>
+                    <p className="mt-1 text-sm text-slate-800">{rejectionReason || 'No rejection reason recorded.'}</p>
+                </div>
+
+                <div className="space-y-2">
+                    <p className="text-xs font-bold tracking-wide text-rose-900 uppercase">Identity documents</p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <IdentityDocumentLink label="ID front" href={identityDocuments.front} required />
+                        <IdentityDocumentLink label="ID back" href={identityDocuments.back} />
+                    </div>
                 </div>
             </div>
         );
@@ -92,6 +162,17 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
         post(ReviewBeneficiaryIntakeController.url({ beneficiaryId }), {
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
             preserveScroll: true,
+        });
+    };
+
+    const rejectIntake = () => {
+        postReject(`/api/action-center/beneficiary/${beneficiaryId}/reject-intake`, {
+            headers: { 'X-Municipality-Slug': currentMunicipality.slug },
+            preserveScroll: true,
+            onSuccess: () => {
+                resetReject();
+                setRejectOpen(false);
+            },
         });
     };
 
@@ -163,6 +244,14 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                     <p className="mt-1 text-sm text-amber-800">
                         Check the claimant's ID, confirm where they actually live, and review every submitted dependent.
                     </p>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <p className="text-xs font-bold tracking-wide text-amber-900 uppercase">Identity documents</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <IdentityDocumentLink label="ID front" href={identityDocuments.front} required />
+                    <IdentityDocumentLink label="ID back" href={identityDocuments.back} />
                 </div>
             </div>
 
@@ -296,10 +385,24 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                 <p className="text-sm font-medium text-rose-700">{(errors as Record<string, string | undefined>).intake}</p>
             )}
 
-            <Button type="button" onClick={submit} disabled={processing} className="w-full bg-slate-900 text-white hover:bg-slate-800">
-                {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                Complete intake verification
-            </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+                <Button type="button" onClick={submit} disabled={processing || rejecting} className="w-full bg-slate-900 text-white hover:bg-slate-800">
+                    {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                    Complete intake verification
+                </Button>
+                {canRejectIntake && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        disabled={processing || rejecting}
+                        onClick={() => setRejectOpen(true)}
+                        className="border-rose-200 bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                    >
+                        <OctagonX className="mr-2 h-4 w-4" />
+                        Reject intake
+                    </Button>
+                )}
+            </div>
 
             <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
                 <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -360,6 +463,76 @@ export default function IntakeReviewPanel({ beneficiaryId, identityVerified, ver
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Reject beneficiary intake</DialogTitle>
+                        <DialogDescription>
+                            Reject only when the claimant profile itself cannot be verified. Use dependent Reject for family-member issues.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2">
+                        <label htmlFor="intake-rejection-reason" className="text-xs font-semibold text-slate-700">
+                            Rejection reason
+                        </label>
+                        <Textarea
+                            id="intake-rejection-reason"
+                            value={rejectData.reason}
+                            onChange={(event) => setRejectData('reason', event.target.value)}
+                            placeholder="Example: Uploaded ID does not match the claimant, claimant is not an actual resident, or submitted identity cannot be verified."
+                            rows={4}
+                        />
+                        {(rejectErrors.reason || (rejectErrors as Record<string, string | undefined>).intake_rejection) && (
+                            <p className="text-sm font-medium text-rose-700">
+                                {rejectErrors.reason || (rejectErrors as Record<string, string | undefined>).intake_rejection}
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setRejectOpen(false)} disabled={rejecting}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={rejectIntake}
+                            disabled={rejecting || rejectData.reason.trim().length < 10}
+                            className="bg-rose-700 text-white hover:bg-rose-800"
+                        >
+                            {rejecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Reject intake
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
+    );
+}
+
+function IdentityDocumentLink({ label, href, required = false }: { label: string; href: string | null; required?: boolean }) {
+    if (!href) {
+        return (
+            <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-white px-3 py-2 text-sm text-amber-800">
+                <FileText className="h-4 w-4 shrink-0" />
+                <span>{required ? `${label} missing` : `${label} not uploaded`}</span>
+            </div>
+        );
+    }
+
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 transition hover:border-amber-300 hover:bg-amber-100"
+        >
+            <span className="inline-flex items-center gap-2">
+                <FileText className="h-4 w-4 shrink-0 text-amber-700" />
+                View {label}
+            </span>
+            <ExternalLink className="h-4 w-4 shrink-0 text-slate-400" />
+        </a>
     );
 }

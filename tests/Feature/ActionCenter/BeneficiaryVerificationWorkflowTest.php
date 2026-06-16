@@ -11,6 +11,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\RejectBeneficiaryIntakeAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveBeneficiaryIdentityGroupAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ReviewBeneficiaryIntakeAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\SearchHouseholdMembershipAction;
@@ -59,6 +60,9 @@ beforeEach(function () {
         $table->ulid('merged_into_beneficiary_id')->nullable();
         $table->timestamp('identity_verified_at')->nullable();
         $table->ulid('identity_verified_by_user_id')->nullable();
+        $table->timestamp('intake_rejected_at')->nullable();
+        $table->ulid('intake_rejected_by_user_id')->nullable();
+        $table->string('intake_rejection_reason', 1000)->nullable();
         $table->string('beneficiary_number')->nullable();
         $table->string('first_name');
         $table->string('last_name');
@@ -180,6 +184,85 @@ it('reviews a provisional household and verifies accepted dependents', function 
         verifiedMemberIds: [$accepted->id],
         rejectedMemberIds: [],
     )))->toThrow(DomainException::class, 'already been verified');
+});
+
+it('rejects a portal beneficiary intake with a reason while preserving the household', function () {
+    [$beneficiary, $head] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        userId: $this->adminId,
+    );
+    $dependent = createDependent($beneficiary->household_id, 'PEDRO', 'CRUZ');
+    $reason = 'The uploaded identity document does not match the claimant presented during review.';
+
+    $rejected = app(RejectBeneficiaryIntakeAction::class)->execute(
+        $beneficiary->id,
+        $this->municipalId,
+        $this->adminId,
+        $reason,
+    );
+
+    expect($rejected->intakeStatus())->toBe('rejected')
+        ->and($rejected->intake_rejected_at)->not->toBeNull()
+        ->and($rejected->intake_rejected_by_user_id)->toBe($this->adminId)
+        ->and($rejected->intake_rejection_reason)->toBe($reason)
+        ->and($rejected->identity_verified_at)->toBeNull()
+        ->and($rejected->identity_verified_by_user_id)->toBeNull()
+        ->and($rejected->is_active)->toBeTrue()
+        ->and($rejected->household()->exists())->toBeTrue()
+        ->and($head->fresh()->trashed())->toBeFalse()
+        ->and($dependent->fresh()->trashed())->toBeFalse();
+});
+
+it('blocks rejected intakes from later verification and assistance eligibility', function () {
+    [$beneficiary] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        userId: $this->adminId,
+    );
+
+    app(RejectBeneficiaryIntakeAction::class)->execute(
+        $beneficiary->id,
+        $this->municipalId,
+        $this->adminId,
+        'The submitted identity cannot be verified after document and interview review.',
+    );
+
+    expect(fn () => app(ReviewBeneficiaryIntakeAction::class)->execute(new ReviewBeneficiaryIntakeDto(
+        beneficiaryId: $beneficiary->id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        householdResolution: 'keep_existing',
+        targetMemberId: null,
+        householdResolutionReason: null,
+        verifiedMemberIds: [],
+        rejectedMemberIds: [],
+    )))->toThrow(DomainException::class, 'already been rejected');
+
+    $type = new AssistanceType(['name' => 'Medical']);
+    $type->id = (string) Str::ulid();
+    $eligibility = new CheckElegibilityAction(new ResolveBeneficiaryIdentityGroupAction);
+
+    expect($eligibility->execute($beneficiary->fresh(), $type)->reason)->toBe('intake_rejected');
+});
+
+it('does not reject verified, walk-in, or merged beneficiary records through intake rejection', function () {
+    [$verified] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId, userId: $this->adminId);
+    [$walkIn] = createClaimant($this->municipalId, 'PEDRO', 'CRUZ');
+    [$canonical] = createClaimant($this->municipalId, 'ANA', 'CRUZ', verifiedBy: $this->adminId, userId: $this->adminId);
+    [$merged] = createClaimant($this->municipalId, 'ANA', 'CRUZ', userId: $this->adminId);
+    $merged->forceFill(['merged_into_beneficiary_id' => $canonical->id])->save();
+
+    $reject = app(RejectBeneficiaryIntakeAction::class);
+
+    expect(fn () => $reject->execute($verified->id, $this->municipalId, $this->adminId, 'Already verified person.'))
+        ->toThrow(DomainException::class, 'already been verified')
+        ->and(fn () => $reject->execute($walkIn->id, $this->municipalId, $this->adminId, 'Walk-in record.'))
+        ->toThrow(DomainException::class, 'portal-submitted')
+        ->and(fn () => $reject->execute($merged->id, $this->municipalId, $this->adminId, 'Merged record.'))
+        ->toThrow(DomainException::class, 'already merged');
 });
 
 it('joins a verified household through an exact member match and retires the provisional household', function () {
@@ -589,6 +672,7 @@ function createClaimant(
     string $lastName,
     string $birthDate = '1990-01-01',
     ?string $verifiedBy = null,
+    ?string $userId = null,
 ): array {
     $household = Household::create([
         'municipal_id' => $municipalId,
@@ -598,6 +682,7 @@ function createClaimant(
 
     $beneficiary = Beneficiary::create([
         'household_id' => $household->id,
+        'user_id' => $userId,
         'municipal_id' => $municipalId,
         'first_name' => $firstName,
         'last_name' => $lastName,

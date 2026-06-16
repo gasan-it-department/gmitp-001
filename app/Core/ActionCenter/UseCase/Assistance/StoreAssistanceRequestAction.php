@@ -50,6 +50,12 @@ class StoreAssistanceRequestAction
             );
         }
 
+        if ($beneficiary->isIntakeRejected()) {
+            throw new \DomainException(
+                'This beneficiary intake was rejected by MSWD. Reopen or correct the intake before filing assistance.',
+            );
+        }
+
         if (! $beneficiary->household->isVerified()) {
             throw new \DomainException(
                 'This household is on hold until an active, identity-verified head is assigned.',

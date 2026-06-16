@@ -38,6 +38,15 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
+            $table->timestamp('intake_rejected_at')->nullable();
+
+            $table->foreignUlid('intake_rejected_by_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->string('intake_rejection_reason', 1000)->nullable();
+
             $table->string('beneficiary_number')->nullable()->unique();
             $table->string('first_name');
             $table->string('last_name');
@@ -65,6 +74,10 @@ return new class extends Migration
             $table->index(
                 ['municipal_id', 'identity_verified_at'],
                 'ac_beneficiaries_municipal_identity_verified_idx',
+            );
+            $table->index(
+                ['municipal_id', 'intake_rejected_at'],
+                'ac_beneficiaries_municipal_intake_rejected_idx',
             );
             $table->unique(['user_id', 'municipal_id']);
         });

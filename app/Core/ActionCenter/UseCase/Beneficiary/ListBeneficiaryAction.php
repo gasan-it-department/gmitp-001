@@ -111,6 +111,8 @@ class ListBeneficiaryAction
             $query->pendingIdentityVerification();
         } elseif ($verification === 'verified') {
             $query->identityVerified();
+        } elseif ($verification === 'rejected') {
+            $query->intakeRejected();
         }
     }
 

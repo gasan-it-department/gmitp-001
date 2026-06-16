@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\BeneficiaryFlag;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -46,7 +47,7 @@ class CreateBeneficiaryProfileAction
 
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
-        return DB::transaction(function () use ($dto) {
+        $beneficiary = DB::transaction(function () use ($dto) {
 
             DB::table('users')
                 ->where('id', $dto->userId)
@@ -150,5 +151,35 @@ class CreateBeneficiaryProfileAction
 
             return $beneficiary;
         }, attempts: 3);
+
+        if ($beneficiary->wasRecentlyCreated) {
+            $this->storeIdentityDocuments($beneficiary, $dto);
+        }
+
+        return $beneficiary->fresh(['media']);
+    }
+
+    private function storeIdentityDocuments(Beneficiary $beneficiary, CreateBeneficiaryProfileDto $dto): void
+    {
+        if ($dto->identityIdFront instanceof UploadedFile) {
+            $beneficiary
+                ->addMedia($dto->identityIdFront)
+                ->usingFileName($this->identityDocumentFileName($beneficiary, 'front', $dto->identityIdFront))
+                ->toMediaCollection('identity_id_front');
+        }
+
+        if ($dto->identityIdBack instanceof UploadedFile) {
+            $beneficiary
+                ->addMedia($dto->identityIdBack)
+                ->usingFileName($this->identityDocumentFileName($beneficiary, 'back', $dto->identityIdBack))
+                ->toMediaCollection('identity_id_back');
+        }
+    }
+
+    private function identityDocumentFileName(Beneficiary $beneficiary, string $side, UploadedFile $file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
+
+        return 'identity-id-' . $side . '-' . $beneficiary->getKey() . '.' . $extension;
     }
 }

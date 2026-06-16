@@ -42,6 +42,8 @@ export type ProfileSetupFormData = {
     birth_date: string;
     religion_id: string;
     educational_attainment: string;
+    identity_id_front?: File | null;
+    identity_id_back?: File | null;
 
     // Civil status / employment / income — paper-form parity.
     civil_status: string;

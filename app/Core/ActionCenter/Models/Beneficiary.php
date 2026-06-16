@@ -55,6 +55,9 @@ class Beneficiary extends Model implements HasMedia
         'merged_into_beneficiary_id',
         'identity_verified_at',
         'identity_verified_by_user_id',
+        'intake_rejected_at',
+        'intake_rejected_by_user_id',
+        'intake_rejection_reason',
         'beneficiary_number',
         'first_name',
         'middle_name',
@@ -78,6 +81,7 @@ class Beneficiary extends Model implements HasMedia
         'monthly_income' => 'decimal:2',
         'is_active' => 'boolean',
         'identity_verified_at' => 'datetime',
+        'intake_rejected_at' => 'datetime',
         'civil_status' => CivilStatus::class,
         'educational_attainment' => EducationalAttainment::class,
     ];
@@ -107,6 +111,9 @@ class Beneficiary extends Model implements HasMedia
                 'merged_into_beneficiary_id',
                 'identity_verified_at',
                 'identity_verified_by_user_id',
+                'intake_rejected_at',
+                'intake_rejected_by_user_id',
+                'intake_rejection_reason',
             ])
             ->logOnlyDirty()        // skip no-op saves
             ->dontLogEmptyChanges() // skip if nothing actually changed
@@ -137,6 +144,11 @@ class Beneficiary extends Model implements HasMedia
         return $this->belongsTo(User::class, 'identity_verified_by_user_id');
     }
 
+    public function intakeRejector(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'intake_rejected_by_user_id');
+    }
+
     public function scopeIdentityVerified(Builder $query): Builder
     {
         return $query->whereNotNull('identity_verified_at');
@@ -144,12 +156,37 @@ class Beneficiary extends Model implements HasMedia
 
     public function scopePendingIdentityVerification(Builder $query): Builder
     {
-        return $query->whereNull('identity_verified_at');
+        return $query
+            ->whereNull('identity_verified_at')
+            ->whereNull('intake_rejected_at');
+    }
+
+    public function scopeIntakeRejected(Builder $query): Builder
+    {
+        return $query->whereNotNull('intake_rejected_at');
     }
 
     public function isIdentityVerified(): bool
     {
         return $this->identity_verified_at !== null;
+    }
+
+    public function isIntakeRejected(): bool
+    {
+        return $this->intake_rejected_at !== null;
+    }
+
+    public function intakeStatus(): string
+    {
+        if ($this->identity_verified_at !== null) {
+            return 'verified';
+        }
+
+        if ($this->intake_rejected_at !== null) {
+            return 'rejected';
+        }
+
+        return 'pending';
     }
 
     /**
@@ -219,6 +256,22 @@ class Beneficiary extends Model implements HasMedia
                 'image/jpeg',
                 'image/png',
                 'image/webp',
+            ]);
+
+        $this->addMediaCollection('identity_id_front')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'application/pdf',
+            ]);
+
+        $this->addMediaCollection('identity_id_back')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'application/pdf',
             ]);
     }
 }

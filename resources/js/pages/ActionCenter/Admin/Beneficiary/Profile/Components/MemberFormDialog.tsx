@@ -141,7 +141,10 @@ export default function MemberFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogContent 
+                className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <DialogHeader>
                     <DialogTitle className="text-xl text-slate-900">{mode === 'add' ? 'Add household member' : 'Edit household member'}</DialogTitle>
                     <DialogDescription className="text-slate-500">

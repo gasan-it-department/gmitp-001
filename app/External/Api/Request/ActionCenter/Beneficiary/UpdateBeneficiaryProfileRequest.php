@@ -4,6 +4,7 @@ namespace App\External\Api\Request\ActionCenter\Beneficiary;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Enums\Sex;
+use App\Core\ActionCenter\Enums\EducationalAttainment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -36,13 +37,13 @@ class UpdateBeneficiaryProfileRequest extends FormRequest
             'last_name'              => ['required', 'string', 'max:100'],
             'middle_name'            => ['nullable', 'string', 'max:100'],
             'suffix'                 => ['nullable', 'string', 'max:20'],
-            'sex'                    => ['required', Rule::in($this->sexValues())],
+            'sex'                    => ['required', Rule::enum(Sex::class)],
             'birth_date'             => ['required', 'date', 'before:today'],
             'religion_id'            => ['nullable', 'ulid', 'exists:ac_religions,id'],
-            'educational_attainment' => ['nullable', 'string', 'max:100'],
+            'educational_attainment' => ['nullable', Rule::enum(EducationalAttainment::class)],
 
             // ── Civil status / employment / income ───────────────────────────
-            'civil_status'   => ['required', Rule::in($this->civilStatusValues())],
+            'civil_status'   => ['required', Rule::enum(CivilStatus::class)],
             'occupation'     => ['nullable', 'string', 'max:120'],
             'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
         ];
@@ -62,15 +63,4 @@ class UpdateBeneficiaryProfileRequest extends FormRequest
         ];
     }
 
-    /** @return array<int, string> */
-    private function civilStatusValues(): array
-    {
-        return array_map(fn (CivilStatus $case) => $case->value, CivilStatus::cases());
-    }
-
-    /** @return array<int, string> */
-    private function sexValues(): array
-    {
-        return array_map(fn (Sex $case) => $case->value, Sex::cases());
-    }
 }

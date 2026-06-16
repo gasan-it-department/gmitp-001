@@ -27,6 +27,8 @@ final class EligibilityResult
 
     public const REASON_IDENTITY_UNVERIFIED = 'identity_unverified';
 
+    public const REASON_INTAKE_REJECTED = 'intake_rejected';
+
     public const REASON_DEPENDENT_UNVERIFIED = 'dependent_unverified';
 
     public const REASON_BENEFICIARY_INACTIVE = 'beneficiary_inactive';
@@ -78,6 +80,11 @@ final class EligibilityResult
         return new self(false, self::REASON_IDENTITY_UNVERIFIED);
     }
 
+    public static function intakeRejected(): self
+    {
+        return new self(false, self::REASON_INTAKE_REJECTED);
+    }
+
     public static function dependentUnverified(): self
     {
         return new self(false, self::REASON_DEPENDENT_UNVERIFIED);
@@ -120,6 +127,8 @@ final class EligibilityResult
                 .'We will notify you once it has been reviewed.',
             self::REASON_BLACKLISTED => 'There is a hold on your records that needs to be sorted out in person. '
                 .'Please visit the MSWD office and our staff will assist you.',
+            self::REASON_INTAKE_REJECTED => 'Your beneficiary profile could not be verified by MSWD. '
+                .'Please visit the MSWD office if you need to correct or reopen your intake.',
             self::REASON_IDENTITY_UNVERIFIED => 'Your beneficiary profile is awaiting identity verification by MSWD. '
                 .'You can apply after an administrator completes the review.',
             self::REASON_DEPENDENT_UNVERIFIED => 'This household member is still awaiting MSWD verification and cannot be selected yet.',

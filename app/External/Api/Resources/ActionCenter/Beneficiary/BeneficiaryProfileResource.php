@@ -26,6 +26,7 @@ class BeneficiaryProfileResource extends JsonResource
             'id' => $this->id,
             'beneficiary_number' => $this->beneficiary_number,
             'avatar_url' => $this->avatarUrl($request),
+            'identity_documents' => $this->identityDocuments($request),
             'full_name' => $this->full_name,
             'first_name' => $this->first_name,
             'middle_name' => $this->middle_name,
@@ -68,6 +69,9 @@ class BeneficiaryProfileResource extends JsonResource
             'registered_at' => $this->created_at?->toIso8601String(),
             'identity_verified_at' => $this->identity_verified_at?->toIso8601String(),
             'identity_verified' => $this->identity_verified_at !== null,
+            'intake_status' => $this->intakeStatus(),
+            'intake_rejected_at' => $this->intake_rejected_at?->toIso8601String(),
+            'intake_rejection_reason' => $this->intake_rejection_reason,
             'is_active' => (bool) $this->is_active,
             'household_verified' => $this->whenLoaded(
                 'household',
@@ -77,6 +81,12 @@ class BeneficiaryProfileResource extends JsonResource
                 'identityVerifier',
                 fn () => $this->identityVerifier
                     ? trim("{$this->identityVerifier->first_name} {$this->identityVerifier->last_name}")
+                    : null,
+            ),
+            'intake_rejected_by' => $this->whenLoaded(
+                'intakeRejector',
+                fn () => $this->intakeRejector
+                    ? trim("{$this->intakeRejector->first_name} {$this->intakeRejector->last_name}")
                     : null,
             ),
         ];
@@ -105,6 +115,36 @@ class BeneficiaryProfileResource extends JsonResource
         return route('actionCenter.admin.beneficiary.avatar', [
             'municipality' => $municipality,
             'beneficiaryId' => $this->id,
+            'v' => $media->updated_at?->timestamp,
+        ]);
+    }
+
+    private function identityDocuments(Request $request): array
+    {
+        return [
+            'front' => $this->identityDocumentUrl($request, 'front', 'identity_id_front'),
+            'back' => $this->identityDocumentUrl($request, 'back', 'identity_id_back'),
+        ];
+    }
+
+    private function identityDocumentUrl(Request $request, string $side, string $collection): ?string
+    {
+        $municipality = $request->route('municipality');
+
+        if (! $municipality) {
+            return null;
+        }
+
+        $media = $this->getFirstMedia($collection);
+
+        if ($media === null) {
+            return null;
+        }
+
+        return route('actionCenter.admin.beneficiary.identity-document', [
+            'municipality' => $municipality,
+            'beneficiaryId' => $this->id,
+            'side' => $side,
             'v' => $media->updated_at?->timestamp,
         ]);
     }

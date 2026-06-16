@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, Clock3, Home, Mail, UserCircle2, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, Clock3, Home, Mail, OctagonX, UserCircle2, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { BeneficiaryRow } from '../BeneficiarySearch';
 
@@ -52,9 +52,13 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
                                     <AlertTriangle className="h-3 w-3" /> Possible duplicate
                                 </span>
                             )}
-                            {row.identity_verified ? (
+                            {row.intake_status === 'verified' ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                     <BadgeCheck className="h-3 w-3" /> Identity verified
+                                </span>
+                            ) : row.intake_status === 'rejected' ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                                    <OctagonX className="h-3 w-3" /> Intake rejected
                                 </span>
                             ) : (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">

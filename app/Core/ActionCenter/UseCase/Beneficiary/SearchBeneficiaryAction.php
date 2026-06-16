@@ -169,9 +169,11 @@ class SearchBeneficiaryAction
     private function applyVerification(Builder $query, ?string $verification): void
     {
         if ($verification === 'pending') {
-            $query->whereNull('identity_verified_at');
+            $query->pendingIdentityVerification();
         } elseif ($verification === 'verified') {
-            $query->whereNotNull('identity_verified_at');
+            $query->identityVerified();
+        } elseif ($verification === 'rejected') {
+            $query->intakeRejected();
         }
     }
 

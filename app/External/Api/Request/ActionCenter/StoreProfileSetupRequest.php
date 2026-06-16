@@ -29,14 +29,16 @@ class StoreProfileSetupRequest extends FormRequest
             'birth_date' => ['required', 'date', 'before:today'],
             'religion_id' => ['nullable', 'ulid', 'exists:ac_religions,id'],
             'educational_attainment' => ['nullable', 'string', 'max:100'],
+            'identity_id_front' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'identity_id_back' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
 
             // ── Civil status / employment / income ───────────────────────────
             // Required because these are the cornerstone of indigency
             // assessment on the MSWD paper intake form. Sourced from enum
             // values so additions there flow through automatically.
             'civil_status'   => ['required', Rule::in($this->civilStatusValues())],
-            'occupation'     => ['required', 'string', 'max:120'],
-            'monthly_income' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            'occupation'     => ['nullable', 'string', 'max:120'],
+            'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
 
             // ── Home address ─────────────────────────────────────────────────
             'barangay' => ['required', 'string', 'max:100'],
@@ -77,6 +79,11 @@ class StoreProfileSetupRequest extends FormRequest
             'sex.in' => 'Please select a valid sex option.',
             'religion_id.ulid' => 'Invalid religion selection.',
             'religion_id.exists' => 'The selected religion is no longer available.',
+            'identity_id_front.required' => 'Please upload the front of your valid ID.',
+            'identity_id_front.mimes' => 'The ID front must be a JPG, PNG, or PDF file.',
+            'identity_id_front.max' => 'The ID front must be 5 MB or smaller.',
+            'identity_id_back.mimes' => 'The ID back must be a JPG, PNG, or PDF file.',
+            'identity_id_back.max' => 'The ID back must be 5 MB or smaller.',
             'civil_status.required' => 'Please select your civil status.',
             'occupation.required' => 'Please describe your current occupation (write "None" or "Unemployed" if applicable).',
             'monthly_income.required' => 'Please enter your monthly income (enter 0 if none).',

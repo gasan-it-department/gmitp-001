@@ -108,6 +108,7 @@ export default function SearchFilters({
                         <SelectItem value={ANY}>Any</SelectItem>
                         <SelectItem value="pending">Pending intake</SelectItem>
                         <SelectItem value="verified">Verified</SelectItem>
+                        <SelectItem value="rejected">Rejected intake</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
