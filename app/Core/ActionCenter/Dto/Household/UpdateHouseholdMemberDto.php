@@ -60,7 +60,7 @@ readonly class UpdateHouseholdMemberDto
             sex: $data['sex'] ?? null,
             civilStatus: $data['civil_status'] ?? null,
             educationalAttainment: ! empty($data['educational_attainment'])
-                ? mb_strtoupper($data['educational_attainment'])
+                ? $data['educational_attainment']
                 : null,
 
             occupation: ! empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,

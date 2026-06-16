@@ -79,7 +79,7 @@ readonly class CreateBeneficiaryProfileDto
             // Religion is a UUID/ULID, so we leave it alone
             religionId: $data['religion_id'] ?? null,
 
-            educationalAttainment: !empty($data['educational_attainment']) ? mb_strtoupper($data['educational_attainment']) : null,
+            educationalAttainment: !empty($data['educational_attainment']) ? $data['educational_attainment'] : null,
 
             // Civil status — stored as the enum's backing string value (lowercase).
             // The model casts it back to CivilStatus on read.

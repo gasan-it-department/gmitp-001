@@ -43,8 +43,8 @@ class UpdateBeneficiaryProfileRequest extends FormRequest
 
             // ── Civil status / employment / income ───────────────────────────
             'civil_status'   => ['required', Rule::in($this->civilStatusValues())],
-            'occupation'     => ['required', 'string', 'max:120'],
-            'monthly_income' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            'occupation'     => ['nullable', 'string', 'max:120'],
+            'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
         ];
     }
 

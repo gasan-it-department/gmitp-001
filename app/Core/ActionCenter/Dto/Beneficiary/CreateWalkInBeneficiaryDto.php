@@ -97,7 +97,7 @@ readonly class CreateWalkInBeneficiaryDto
             religionId: $data['religion_id'] ?? null,
 
             educationalAttainment: ! empty($data['educational_attainment'])
-                ? mb_strtoupper($data['educational_attainment'])
+                ? $data['educational_attainment']
                 : null,
 
             // Enum backing string (lowercase) — model casts it back on read.

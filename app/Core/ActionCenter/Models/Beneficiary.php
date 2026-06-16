@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\Models;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
+use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -78,7 +79,7 @@ class Beneficiary extends Model implements HasMedia
         'is_active' => 'boolean',
         'identity_verified_at' => 'datetime',
         'civil_status' => CivilStatus::class,
-
+        'educational_attainment' => EducationalAttainment::class,
     ];
 
     /**

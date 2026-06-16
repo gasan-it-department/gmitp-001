@@ -43,7 +43,8 @@ readonly class StoreHouseholdMemberDto
 
         // Optional religion FK
         public ?string $religionId,
-    ) {}
+    ) {
+    }
 
     /**
      * Build the self-referencing "head of household" row from a freshly
@@ -70,12 +71,12 @@ readonly class StoreHouseholdMemberDto
             birthDate: $beneficiary->birth_date?->toDateString(),
             sex: $beneficiary->sex,
             civilStatus: $beneficiary->civil_status?->value,
-            educationalAttainment: $beneficiary->educational_attainment,
+            educationalAttainment: $beneficiary->educational_attainment->value,
 
             occupation: $beneficiary->occupation,
             monthlyIncome: $beneficiary->monthly_income !== null
-                ? (float) $beneficiary->monthly_income
-                : null,
+            ? (float) $beneficiary->monthly_income
+            : null,
 
             religionId: $beneficiary->religion_id,
         );
@@ -96,19 +97,19 @@ readonly class StoreHouseholdMemberDto
 
             firstName: mb_strtoupper($data['first_name']),
             lastName: mb_strtoupper($data['last_name']),
-            middleName: ! empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
-            suffix: ! empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
+            middleName: !empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
+            suffix: !empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
 
             relationship: $data['relationship'],
 
             birthDate: $data['birth_date'] ?? null,
             sex: $data['sex'] ?? null,
             civilStatus: $data['civil_status'] ?? null,
-            educationalAttainment: ! empty($data['educational_attainment'])
-                ? mb_strtoupper($data['educational_attainment'])
-                : null,
+            educationalAttainment: !empty($data['educational_attainment'])
+            ? $data['educational_attainment']
+            : null,
 
-            occupation: ! empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
+            occupation: !empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
             monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : null,
 
             religionId: $data['religion_id'] ?? null,

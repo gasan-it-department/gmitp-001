@@ -4,25 +4,34 @@ namespace App\Core\ActionCenter\Enums;
 
 enum EducationalAttainment: string
 {
-    case ILLITERATE = 'Illiterate';
-    case ELEM_UNDERGRAD = 'Elem. Undergrad.';
-    case ELEM_GRADUATE = 'Elem. Graduate';
-    case HS_UNDERGRAD = 'H.S. Undergrad.';
-    case HS_GRADUATE = 'H.S. Graduate';
-    case SHS_UNDERGRAD = 'Senior H.S. Undergrad.';
-    case SHS_GRADUATE = 'Senior H.S. Graduate';
-    case COLLEGE_UNDERGRAD = 'College Undergrad.';
-    case COLLEGE_GRADUATE = 'College Graduate';
-    case VOCATIONAL = 'Vocational Training';
+    case NO_FORMAL_EDUCATION = 'no_formal_education';
+    case ELEM_UNDERGRAD = 'elem_undergrad';
+    case ELEM_GRADUATE = 'elem_grad';
+    case HS_UNDERGRAD = 'hs_undergrad';
+    case HS_GRADUATE = 'hs_grad';
+    case SHS_UNDERGRAD = 'shs_undergrad';
+    case SHS_GRADUATE = 'shs_grad';
+    case COLLEGE_UNDERGRAD = 'college_undergrad';
+    case COLLEGE_GRADUATE = 'college_grad';
+    case VOCATIONAL = 'vocational';
 
     /**
      * Returns the human-readable label.
      */
     public function label(): string
     {
-        // Since your backing values (the strings on the right) are already 
-        // human-readable, we can just return the value itself.
-        return $this->value;
+        return match ($this) {
+            self::NO_FORMAL_EDUCATION => 'No Formal Education',
+            self::ELEM_UNDERGRAD => 'Elem. Undergrad.',
+            self::ELEM_GRADUATE => 'Elem. Graduate',
+            self::HS_UNDERGRAD => 'H.S. Undergrad.',
+            self::HS_GRADUATE => 'H.S. Graduate',
+            self::SHS_UNDERGRAD => 'Senior H.S. Undergrad.',
+            self::SHS_GRADUATE => 'Senior H.S. Graduate',
+            self::COLLEGE_UNDERGRAD => 'College Undergrad.',
+            self::COLLEGE_GRADUATE => 'College Graduate',
+            self::VOCATIONAL => 'Vocational Training',
+        };
     }
 
     /**

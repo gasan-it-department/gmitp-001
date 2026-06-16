@@ -99,8 +99,6 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
         data.sex.length > 0 &&
         data.birth_date.length > 0 &&
         data.civil_status.length > 0 &&
-        data.occupation.trim().length > 0 &&
-        data.monthly_income.length > 0 &&
         !processing;
 
     return (

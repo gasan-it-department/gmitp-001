@@ -72,10 +72,16 @@
     {{-- ═══════════════════════════════════════════════════════════════ --}}
     {{-- HOUSEHOLD COMPOSITION                                             --}}
     {{-- ═══════════════════════════════════════════════════════════════ --}}
+    @php
+        $verifiedMembers = $data->householdMembers->filter(fn($m) => $m->relationship === 'head' || $m->is_verified_dependent);
+        $unverifiedMembers = $data->householdMembers->filter(fn($m) => $m->relationship !== 'head' && !$m->is_verified_dependent);
+        $verifiedIncome = (float) $verifiedMembers->sum(fn($m) => (float) $m->monthly_income);
+    @endphp
     <section class="mb-4">
         @include('documents.action_center.partials._section_header', [
             'title' => 'III. Household Composition',
-            'meta' => $data->householdMembers->count() . ' active member(s) · Total Monthly Income: ₱' . number_format($data->householdTotalMonthlyIncome, 2),
+            'meta' => ($data->beneficiary->household?->household_code ? $data->beneficiary->household->household_code . ' · ' : '')
+                     . $data->householdMembers->count() . ' active member(s) · Total Monthly Income: ₱' . number_format($data->householdTotalMonthlyIncome, 2),
         ])
 
         @if($data->householdMembers->isEmpty())
@@ -91,11 +97,16 @@
                         <th class="border border-slate-300 px-2 py-1.5">Civil Status</th>
                         <th class="border border-slate-300 px-2 py-1.5">Occupation</th>
                         <th class="border border-slate-300 px-2 py-1.5 text-right">Monthly Income</th>
+                        <th class="border border-slate-300 px-2 py-1.5 text-center">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($data->householdMembers as $member)
-                        <tr class="{{ $member->relationship === 'head' ? 'bg-amber-50 font-semibold' : '' }}">
+                        @php
+                            $isHead = $member->relationship === 'head';
+                            $isVerified = $isHead || $member->is_verified_dependent;
+                        @endphp
+                        <tr class="{{ $isHead ? 'bg-amber-50 font-semibold' : (!$isVerified ? 'bg-rose-50' : '') }}">
                             <td class="border border-slate-300 px-2 py-1.5">
                                 {{ trim($member->first_name . ' ' . ($member->middle_name ? $member->middle_name . ' ' : '') . $member->last_name . ' ' . ($member->suffix ?? '')) }}
                             </td>
@@ -105,14 +116,25 @@
                             <td class="border border-slate-300 px-2 py-1.5 capitalize">{{ $member->civil_status ?? '—' }}</td>
                             <td class="border border-slate-300 px-2 py-1.5">{{ $member->occupation ?? '—' }}</td>
                             <td class="border border-slate-300 px-2 py-1.5 text-right">₱{{ number_format((float) $member->monthly_income, 2) }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5 text-center text-[8pt] font-bold {{ $isVerified ? 'text-emerald-700' : 'text-rose-600' }}">
+                                {{ $isVerified ? '✓ Verified' : 'UNVERIFIED' }}
+                            </td>
                         </tr>
                     @endforeach
                     <tr class="bg-slate-50 font-bold">
                         <td class="border border-slate-300 px-2 py-1.5" colspan="6">Household Total</td>
                         <td class="border border-slate-300 px-2 py-1.5 text-right">₱{{ number_format($data->householdTotalMonthlyIncome, 2) }}</td>
+                        <td class="border border-slate-300 px-2 py-1.5"></td>
                     </tr>
                 </tbody>
             </table>
+
+            @if($unverifiedMembers->isNotEmpty())
+                <p class="mt-2 text-[8pt] italic text-rose-600">
+                    ⚠ {{ $unverifiedMembers->count() }} member(s) marked UNVERIFIED — listed by the applicant but not yet confirmed by MSWD staff.
+                    Verified household income (excluding unverified): ₱{{ number_format($verifiedIncome, 2) }}
+                </p>
+            @endif
         @endif
     </section>
 

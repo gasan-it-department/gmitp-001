@@ -82,7 +82,7 @@ readonly class UpdateBeneficiaryProfileDto
                 : null,
 
             educationalAttainment: $request->filled('educational_attainment')
-                ? mb_strtoupper($request->string('educational_attainment')->toString())
+                ? $request->string('educational_attainment')->toString()
                 : null,
 
             // Enum backing string (lowercase) — model casts it back on read.

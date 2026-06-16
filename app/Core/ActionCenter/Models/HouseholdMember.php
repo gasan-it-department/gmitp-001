@@ -55,6 +55,8 @@ class HouseholdMember extends Model
         'monthly_income' => 'decimal:2',
         'is_active' => 'boolean',
         'is_verified_dependent' => 'boolean',
+        'civil_status' => \App\Core\ActionCenter\Enums\CivilStatus::class,
+        'educational_attainment' => \App\Core\ActionCenter\Enums\EducationalAttainment::class,
     ];
 
     /**

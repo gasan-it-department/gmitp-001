@@ -61,11 +61,7 @@ export function HouseholdMemberForm({ relationships, civilStatus, educationalAtt
     const canSave =
         draft.first_name.trim().length > 0 &&
         draft.last_name.trim().length > 0 &&
-        draft.relationship.length > 0 &&
-        draft.birth_date.length > 0 &&
-        draft.educational_attainment.length > 0 &&
-        draft.occupation.trim().length > 0 &&
-        draft.monthly_income.length > 0;
+        draft.relationship.length > 0;
 
     return (
         <div className="rounded-2xl border-2 border-dashed border-[#005088]/30 bg-blue-50/30 p-6">
@@ -136,7 +132,7 @@ export function HouseholdMemberForm({ relationships, civilStatus, educationalAtt
                 {/* Date of birth / Civil status */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <DatePicker
-                        label="Date of Birth *"
+                        label="Date of Birth"
                         value={draft.birth_date}
                         onChange={(dateValue) => updateField('birth_date', dateValue)}
                     />
@@ -155,7 +151,6 @@ export function HouseholdMemberForm({ relationships, civilStatus, educationalAtt
                     <ShadcnSelectField
                         id="hm_educational_attainment"
                         label="Educational Attainment"
-                        required
                         placeholder="Select…"
                         value={draft.educational_attainment}
                         onValueChange={(value) => updateField('educational_attainment', value)}
@@ -176,7 +171,6 @@ export function HouseholdMemberForm({ relationships, civilStatus, educationalAtt
                     <FormInput
                         id="hm_occupation"
                         label="Occupation"
-                        required
                         value={draft.occupation}
                         onChange={(e) => updateField('occupation', e.target.value)}
                         placeholder='e.g. Farmer, "None"'
@@ -184,7 +178,6 @@ export function HouseholdMemberForm({ relationships, civilStatus, educationalAtt
                     <FormInput
                         id="hm_monthly_income"
                         label="Monthly Income (₱)"
-                        required
                         type="number"
                         min={0}
                         step={0.01}

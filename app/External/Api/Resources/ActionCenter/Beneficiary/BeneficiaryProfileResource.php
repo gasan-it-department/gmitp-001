@@ -38,7 +38,7 @@ class BeneficiaryProfileResource extends JsonResource
             'birth_date' => $this->birth_date?->toDateString(),
             'age' => $this->birth_date ? (int) $this->birth_date->age : null,
 
-            'educational_attainment' => $this->educational_attainment,
+            'educational_attainment' => $this->educational_attainment?->value,
             'religion' => $this->whenLoaded('religion', fn () => $this->religion?->name),
             // Raw FK so the admin edit form can pre-select the religion dropdown
             // (the human-readable name above is for read-only display).
