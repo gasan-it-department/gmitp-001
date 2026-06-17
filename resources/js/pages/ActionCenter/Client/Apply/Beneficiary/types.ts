@@ -66,6 +66,11 @@ export type ProfileSetupFormData = {
     household_members: HouseholdMemberDraft[];
 }
 
+export type ExistingIdentityDocuments = {
+    front: boolean;
+    back: boolean;
+}
+
 /**
  * Common props every section component receives. Extend this in each
  * section file to add section-specific options (dropdown lists, etc.).

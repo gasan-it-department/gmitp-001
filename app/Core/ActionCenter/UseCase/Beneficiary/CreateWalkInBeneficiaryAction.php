@@ -9,6 +9,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\Core\Users\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -44,7 +45,7 @@ class CreateWalkInBeneficiaryAction
 
     public function execute(CreateWalkInBeneficiaryDto $dto): Beneficiary
     {
-        return DB::transaction(function () use ($dto) {
+        $beneficiary = DB::transaction(function () use ($dto) {
 
             // ── Soft duplicate guard ────────────────────────────────────────
             // Stands in for the UNIQUE(user_id) constraint, which does nothing
@@ -136,6 +137,10 @@ class CreateWalkInBeneficiaryAction
 
             return $beneficiary;
         }, attempts: 3);
+
+        $this->storeIdentityDocuments($beneficiary, $dto);
+
+        return $beneficiary->fresh(['media']);
     }
 
     /**
@@ -156,5 +161,29 @@ class CreateWalkInBeneficiaryAction
             ->exists();
 
         return $belongsToTenant ? $beneficiaryId : null;
+    }
+
+    private function storeIdentityDocuments(Beneficiary $beneficiary, CreateWalkInBeneficiaryDto $dto): void
+    {
+        if ($dto->identityIdFront instanceof UploadedFile) {
+            $beneficiary
+                ->addMedia($dto->identityIdFront)
+                ->usingFileName($this->identityDocumentFileName($beneficiary, 'front', $dto->identityIdFront))
+                ->toMediaCollection('identity_id_front');
+        }
+
+        if ($dto->identityIdBack instanceof UploadedFile) {
+            $beneficiary
+                ->addMedia($dto->identityIdBack)
+                ->usingFileName($this->identityDocumentFileName($beneficiary, 'back', $dto->identityIdBack))
+                ->toMediaCollection('identity_id_back');
+        }
+    }
+
+    private function identityDocumentFileName(Beneficiary $beneficiary, string $side, UploadedFile $file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
+
+        return 'identity-id-' . $side . '-' . $beneficiary->getKey() . '.' . $extension;
     }
 }

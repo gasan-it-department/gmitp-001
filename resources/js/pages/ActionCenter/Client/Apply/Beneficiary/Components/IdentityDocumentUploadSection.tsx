@@ -5,14 +5,31 @@ import type { ProfileSetupFormData, SectionProps } from '../types';
 
 const ACCEPTED_ID_TYPES = '.jpg,.jpeg,.png,.pdf';
 
-export function IdentityDocumentUploadSection({ data, setData, errors }: SectionProps) {
+interface IdentityDocumentUploadSectionProps extends SectionProps {
+    frontRequired?: boolean;
+    frontEmptyHint?: string;
+    existingFrontUploaded?: boolean;
+    existingBackUploaded?: boolean;
+}
+
+export function IdentityDocumentUploadSection({
+    data,
+    setData,
+    errors,
+    frontRequired = true,
+    frontEmptyHint = 'Required for verification review',
+    existingFrontUploaded = false,
+    existingBackUploaded = false,
+}: IdentityDocumentUploadSectionProps) {
     return (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DocumentUploadCard
                 id="identity_id_front"
                 label="ID front"
-                required
+                required={frontRequired}
+                emptyHint={frontEmptyHint}
                 file={data.identity_id_front ?? null}
+                existingUploaded={existingFrontUploaded}
                 error={errors.identity_id_front}
                 onChange={(file) => setData('identity_id_front', file)}
             />
@@ -21,6 +38,7 @@ export function IdentityDocumentUploadSection({ data, setData, errors }: Section
                 id="identity_id_back"
                 label="ID back"
                 file={data.identity_id_back ?? null}
+                existingUploaded={existingBackUploaded}
                 error={errors.identity_id_back}
                 onChange={(file) => setData('identity_id_back', file)}
             />
@@ -32,14 +50,18 @@ function DocumentUploadCard({
     id,
     label,
     required = false,
+    emptyHint,
     file,
+    existingUploaded = false,
     error,
     onChange,
 }: {
     id: keyof Pick<ProfileSetupFormData, 'identity_id_front' | 'identity_id_back'>;
     label: string;
     required?: boolean;
+    emptyHint?: string;
     file: File | null;
+    existingUploaded?: boolean;
     error?: string;
     onChange: (file: File | null) => void;
 }) {
@@ -80,6 +102,11 @@ function DocumentUploadCard({
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
+            ) : existingUploaded ? (
+                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3">
+                    <p className="text-sm font-semibold text-emerald-800">{label} already uploaded</p>
+                    <p className="mt-1 text-xs text-emerald-700">Choose a new file only if MSWD asked you to replace it.</p>
+                </div>
             ) : (
                 <label
                     htmlFor={id}
@@ -87,16 +114,16 @@ function DocumentUploadCard({
                 >
                     <Upload className="h-6 w-6 text-[#005088]" />
                     <span className="mt-2 text-sm font-bold text-slate-800">Choose file</span>
-                    <span className="mt-1 text-xs text-slate-500">{required ? 'Required for verification review' : 'Optional'}</span>
+                    <span className="mt-1 text-xs text-slate-500">{emptyHint ?? (required ? 'Required for verification review' : 'Optional')}</span>
                 </label>
             )}
 
-            {file && (
+            {(file || existingUploaded) && (
                 <label
                     htmlFor={id}
                     className="mt-3 inline-flex cursor-pointer text-xs font-semibold text-[#005088] hover:text-[#003d66] hover:underline"
                 >
-                    Replace file
+                    {file ? 'Replace file' : 'Upload replacement'}
                 </label>
             )}
 

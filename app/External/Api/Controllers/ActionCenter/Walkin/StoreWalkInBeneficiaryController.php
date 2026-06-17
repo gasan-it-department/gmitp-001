@@ -43,6 +43,8 @@ class StoreWalkInBeneficiaryController extends Controller
                 $request->validated(),
                 $request->user()->id,
                 $municipality->id,
+                $request->file('identity_id_front'),
+                $request->file('identity_id_back'),
             );
 
             $beneficiary = $this->createWalkIn->execute($dto);

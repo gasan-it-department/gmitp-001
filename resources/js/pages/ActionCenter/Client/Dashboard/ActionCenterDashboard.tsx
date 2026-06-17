@@ -2,7 +2,7 @@ import { Pagination } from '@/components/Shared/Pagination';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
 import actionCenter from '@/routes/actionCenter';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
     ArrowRight,
@@ -12,17 +12,31 @@ import {
     CheckCircle2,
     ChevronLeft,
     Clock,
+    Clock4,
     FileText,
     HelpingHand,
+    ShieldAlert,
+    ShieldCheck,
     User,
+    UserPlus,
     XCircle,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import AssistanceDetailsDialog from './AssistanceRequestDialog';
+import AssistanceDetailsDialog from '../List/AssistanceRequestDialog';
 
 // ----------------------------------------------------------------------
-// TYPES (Based on AssistanceRequestListResource)
+// TYPES
 // ----------------------------------------------------------------------
+interface ProfileState {
+    id: string;
+    full_name: string;
+    is_verified: boolean;
+    is_rejected: boolean;
+    rejection_reason: string | null;
+    identity_verified_at: string | null;
+    intake_rejected_at: string | null;
+}
+
 interface AssistanceRequest {
     id: string;
     transaction_number: string;
@@ -49,13 +63,12 @@ interface AssistanceRequest {
     municipal_id: string;
     beneficiary_id: string;
     household_id: string;
-    documents_count?: number;
-    documents_uploaded?: string[];
     created_at: string;
     updated_at: string;
 }
 
 interface Props {
+    profile: ProfileState | null;
     requests: {
         data: AssistanceRequest[];
         meta?: any;
@@ -118,10 +131,11 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
     },
 };
 
-export default function AssistanceList({ requests }: Props) {
+export default function ActionCenterDashboard({ profile, requests }: Props) {
     const data = requests.data || [];
     const totalCount = requests?.meta?.total || data.length || 0;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+
     // --- State ---
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
@@ -177,13 +191,111 @@ export default function AssistanceList({ requests }: Props) {
         }).format(amount);
     };
 
+    // --- Profile Status Card Renderer ---
+    const renderProfileStatus = () => {
+        if (!profile) {
+            return (
+                <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+                    <div className="flex flex-col items-start gap-4 sm:flex-row">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                            <UserPlus className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-blue-900">Complete Your Profile</h3>
+                            <p className="mt-1 text-sm text-blue-700">
+                                You must set up your beneficiary profile and verify your identity before you can apply for assistance.
+                            </p>
+                            <div className="mt-4">
+                                <Link
+                                    href={route('actionCenter.profile.setup', { municipality: currentMunicipality.slug })}
+                                    className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                                >
+                                    Set up profile
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (profile.is_rejected) {
+            return (
+                <div className="mb-8 rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+                    <div className="flex flex-col items-start gap-4 sm:flex-row">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                            <ShieldAlert className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-red-900">Profile Needs Correction</h3>
+                            <p className="mt-1 text-sm text-red-700">
+                                MSWD could not verify your profile yet. Submit the correction below so it can return to review.
+                            </p>
+                            {profile.rejection_reason && (
+                                <div className="mt-3 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">
+                                    <span className="font-semibold">Reason:</span> {profile.rejection_reason}
+                                </div>
+                            )}
+                            <div className="mt-4">
+                                <Link
+                                    href={actionCenter.profile.correction.url({ municipality: currentMunicipality.slug })}
+                                    className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                                >
+                                    Submit Correction
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (!profile.is_verified) {
+            return (
+                <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+                    <div className="flex flex-col items-start gap-4 sm:flex-row">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                            <Clock4 className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-amber-900">Pending Review</h3>
+                            <p className="mt-1 text-sm text-amber-700">
+                                Your profile and ID are currently being reviewed by the MSWD office. You will be able to apply for assistance once
+                                verified.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+                <div className="flex flex-col items-start gap-4 sm:flex-row">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-lg font-bold text-emerald-900">Profile Verified</h3>
+                        <p className="mt-1 text-sm text-emerald-700">
+                            Your identity has been verified. You can now freely apply for MSWD assistance programs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <PublicLayout title="Action Center" description="Track your assistance requests">
-            <Head title="My Requests - Action Center" />
+        <PublicLayout title="Action Center" description="Action Center Dashboard">
+            <Head title="Dashboard - Action Center" />
 
             <div className="relative min-h-screen bg-muted/30 py-12">
                 <div className="mx-auto max-w-5xl sm:px-6 lg:px-8">
-                    {/* Main Card Container */}
+                    {/* Render Profile Status Card */}
+                    {renderProfileStatus()}
+
+                    {/* Main Card Container for Requests */}
                     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                         {/* THEMED CARD HEADER */}
                         <div className="sticky top-0 z-20 border-b border-border bg-card/50 p-5 backdrop-blur-sm">

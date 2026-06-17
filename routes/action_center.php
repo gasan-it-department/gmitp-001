@@ -14,6 +14,7 @@ use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccount
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReassignBeneficiaryHouseholdController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\RejectBeneficiaryIntakeController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\ResubmitBeneficiaryProfileCorrectionController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReviewBeneficiaryIntakeController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\SearchHouseholdMembershipController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupController;
@@ -43,8 +44,8 @@ use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController
 use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ShowAssistanceRequestProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Walkin\ShowCreateWalkInBeneficiaryController;
-use App\External\Web\Controllers\ActionCenter\Client\GetUserAssistanceRequestController;
-use App\External\Web\Controllers\ActionCenter\Client\HouseholdController;
+use App\External\Web\Controllers\ActionCenter\Client\ShowBeneficiaryProfileCorrectionController;
+use App\External\Web\Controllers\ActionCenter\Client\ShowClientActionCenterDashboardController;
 use App\External\Web\Controllers\ActionCenter\Client\ShowClientAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\ApplyAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Public\IndexAssistanceRequestController;
@@ -63,107 +64,107 @@ Route::prefix('{municipality}/action-center')
             ->name('admin.')
             ->group(function () {
 
-                Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
+            Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
 
-                // Full municipality beneficiary registry. Unlike the interview
-                // lookup below, this page intentionally lists records without
-                // requiring a search criterion.
-                Route::get('beneficiaries', ListBeneficiaryController::class)
-                    ->name('beneficiary.index');
+            // Full municipality beneficiary registry. Unlike the interview
+            // lookup below, this page intentionally lists records without
+            // requiring a search criterion.
+            Route::get('beneficiaries', ListBeneficiaryController::class)
+                ->name('beneficiary.index');
 
-                // Beneficiary lookup screen used during the interview. Search state
-                // lives in the query string (Inertia + URL params).
-                Route::get('beneficiary/search', ShowBeneficiarySearchController::class)
-                    ->name('beneficiary.search');
+            // Beneficiary lookup screen used during the interview. Search state
+            // lives in the query string (Inertia + URL params).
+            Route::get('beneficiary/search', ShowBeneficiarySearchController::class)
+                ->name('beneficiary.search');
 
-                // Full LIVE beneficiary review page — household composition + full
-                // cross-program assistance history. Drill-down target from the
-                // search results and the request-detail page.
-                Route::get('beneficiary/{beneficiaryId}/profile', ShowBeneficiaryProfileController::class)
-                    ->name('beneficiary.profile');
+            // Full LIVE beneficiary review page — household composition + full
+            // cross-program assistance history. Drill-down target from the
+            // search results and the request-detail page.
+            Route::get('beneficiary/{beneficiaryId}/profile', ShowBeneficiaryProfileController::class)
+                ->name('beneficiary.profile');
 
-                // Admin-only "correct this beneficiary's profile" form — display
-                // only. Identity is pre-filled from the LIVE record; the POST goes
-                // to the Api UpdateBeneficiaryProfileController, which syncs the
-                // household Head row in the same transaction.
-                Route::get('beneficiary/{beneficiaryId}/edit', EditBeneficiaryProfileController::class)
-                    ->name('beneficiary.edit');
+            // Admin-only "correct this beneficiary's profile" form — display
+            // only. Identity is pre-filled from the LIVE record; the POST goes
+            // to the Api UpdateBeneficiaryProfileController, which syncs the
+            // household Head row in the same transaction.
+            Route::get('beneficiary/{beneficiaryId}/edit', EditBeneficiaryProfileController::class)
+                ->name('beneficiary.edit');
 
-                // Stream a beneficiary's profile photo (private disk → authenticated
-                // inline stream). Source for the <img> on the profile, edit form,
-                // and search cards. Upload is the API route below.
-                Route::get('beneficiary/{beneficiaryId}/avatar', ShowBeneficiaryAvatarController::class)
-                    ->name('beneficiary.avatar');
+            // Stream a beneficiary's profile photo (private disk → authenticated
+            // inline stream). Source for the <img> on the profile, edit form,
+            // and search cards. Upload is the API route below.
+            Route::get('beneficiary/{beneficiaryId}/avatar', ShowBeneficiaryAvatarController::class)
+                ->name('beneficiary.avatar');
 
-                Route::get('beneficiary/{beneficiaryId}/identity-document/{side}', ShowBeneficiaryIdentityDocumentController::class)
-                    ->whereIn('side', ['front', 'back'])
-                    ->name('beneficiary.identity-document');
+            Route::get('beneficiary/{beneficiaryId}/identity-document/{side}', ShowBeneficiaryIdentityDocumentController::class)
+                ->whereIn('side', ['front', 'back'])
+                ->name('beneficiary.identity-document');
 
-                // Walk-in intake form — display only. The admin encodes a person
-                // who has no portal account (user_id stays NULL). Reached from the
-                // search page's "no results" state after confirming the applicant
-                // isn't already in the registry.
-                Route::get('walkin/create', ShowCreateWalkInBeneficiaryController::class)
-                    ->name('walkin.create');
+            // Walk-in intake form — display only. The admin encodes a person
+            // who has no portal account (user_id stays NULL). Reached from the
+            // search page's "no results" state after confirming the applicant
+            // isn't already in the registry.
+            Route::get('walkin/create', ShowCreateWalkInBeneficiaryController::class)
+                ->name('walkin.create');
 
-                // Personal worklist — only under_review cases assigned to the
-                // current admin. Pinned scope is set server-side; query-string
-                // overrides are ignored. Companion to list.assistance (All Cases).
-                Route::get('list/my-assistance-requests', ListMyAssistanceRequestController::class)
-                    ->name('list.my.assistance');
+            // Personal worklist — only under_review cases assigned to the
+            // current admin. Pinned scope is set server-side; query-string
+            // overrides are ignored. Companion to list.assistance (All Cases).
+            Route::get('list/my-assistance-requests', ListMyAssistanceRequestController::class)
+                ->name('list.my.assistance');
 
-                // File an assistance request on behalf of a specific beneficiary
-                // (walk-in counter, or for an online beneficiary who can't use the
-                // portal). Anchored to the verified beneficiary — identity is shown
-                // read-only, never re-typed. Display only; POST goes to the Api
-                // StoreAdminAssistanceRequestController.
-                Route::get('beneficiary/{beneficiaryId}/file-assistance', CreateAssistanceRequestController::class)
-                    ->name('assistance.create');
+            // File an assistance request on behalf of a specific beneficiary
+            // (walk-in counter, or for an online beneficiary who can't use the
+            // portal). Anchored to the verified beneficiary — identity is shown
+            // read-only, never re-typed. Display only; POST goes to the Api
+            // StoreAdminAssistanceRequestController.
+            Route::get('beneficiary/{beneficiaryId}/file-assistance', CreateAssistanceRequestController::class)
+                ->name('assistance.create');
 
-                Route::get('create/assistance-type', CreateAssistanceTypeController::class)->name('create.assistance.type');
+            Route::get('create/assistance-type', CreateAssistanceTypeController::class)->name('create.assistance.type');
 
-                Route::get('list/assistance-types', ListAssistanceTypeController::class)->name('list.assistance.types');
+            Route::get('list/assistance-types', ListAssistanceTypeController::class)->name('list.assistance.types');
 
-                Route::get('edit/assistance-type/{id}', EditAssistanceTypeController::class)->name('edit.assistance-type');
+            Route::get('edit/assistance-type/{id}', EditAssistanceTypeController::class)->name('edit.assistance-type');
 
-                // Admin request-detail page. `{assistanceRequest}` is route-model
-                // bound to App\Core\ActionCenter\Models\AssistanceRequest by ULID.
-                // The controller additionally guards that the bound request belongs
-                // to the current municipality.
-                Route::get('profile/assistance-request/{assistanceRequest}', ShowAssistanceRequestProfileController::class)
-                    ->name('show.assistance-request.profile');
+            // Admin request-detail page. `{assistanceRequest}` is route-model
+            // bound to App\Core\ActionCenter\Models\AssistanceRequest by ULID.
+            // The controller additionally guards that the bound request belongs
+            // to the current municipality.
+            Route::get('profile/assistance-request/{assistanceRequest}', ShowAssistanceRequestProfileController::class)
+                ->name('show.assistance-request.profile');
 
-                // Admin-only "correct an in-flight request" form — display only.
-                // The controller redirects back to the detail page if the request
-                // is no longer editable (approved/released/rejected/cancelled). The
-                // POST goes to the Api UpdateAssistanceRequestController.
-                Route::get('profile/assistance-request/{assistanceRequest}/edit', EditAssistanceRequestController::class)
-                    ->name('assistance.edit');
+            // Admin-only "correct an in-flight request" form — display only.
+            // The controller redirects back to the detail page if the request
+            // is no longer editable (approved/released/rejected/cancelled). The
+            // POST goes to the Api UpdateAssistanceRequestController.
+            Route::get('profile/assistance-request/{assistanceRequest}/edit', EditAssistanceRequestController::class)
+                ->name('assistance.edit');
 
-                // Download the printable PDF intake sheet for one beneficiary.
-                // Tenant + ownership-of-data are enforced inside the action;
-                // the admin middleware on the parent group is the coarse gate.
-                //
-                // URL is plain `/intake-sheet` (no .pdf suffix) — Laravel's router
-                // gets fussy about dots in literal path segments. The downloaded
-                // file is still named *.pdf because Spatie sets the filename via
-                // the Content-Disposition response header in the renderer.
-                Route::get(
-                    'beneficiary/{beneficiaryId}/intake-sheet',
-                    DownloadBeneficiaryIntakeSheetController::class,
-                )->name('beneficiary.intake-sheet');
-            });
+            // Download the printable PDF intake sheet for one beneficiary.
+            // Tenant + ownership-of-data are enforced inside the action;
+            // the admin middleware on the parent group is the coarse gate.
+            //
+            // URL is plain `/intake-sheet` (no .pdf suffix) — Laravel's router
+            // gets fussy about dots in literal path segments. The downloaded
+            // file is still named *.pdf because Spatie sets the filename via
+            // the Content-Disposition response header in the renderer.
+            Route::get(
+                'beneficiary/{beneficiaryId}/intake-sheet',
+                DownloadBeneficiaryIntakeSheetController::class,
+            )->name('beneficiary.intake-sheet');
+        });
 
         // for non admin pages
         Route::get('/profile/setup', ShowProfileSetupController::class)->name('profile.setup');
 
+        Route::get('/profile/correction', ShowBeneficiaryProfileCorrectionController::class)->name('profile.correction');
+
         Route::get('/portal', IndexAssistanceRequestController::class)->name('portal');
 
-        Route::get('/', GetUserAssistanceRequestController::class)->name('index');
+        Route::get('/', ShowClientActionCenterDashboardController::class)->name('index');
 
         Route::get('/requests/{assistanceRequestId}', ShowClientAssistanceRequestController::class)->name('show');
-
-        Route::get('/household', [HouseholdController::class, 'index'])->name('household.index');
 
         // need to change place to api
         Route::get('/apply/{assistanceType:slug}', ApplyAssistanceRequestController::class)
@@ -322,6 +323,9 @@ Route::prefix('/api/action-center')
             ->group(function () {
 
                 Route::post('/profile/setup', StoreProfileSetupController::class)->name('profile.setup.store');
+
+                Route::post('/profile/correction', ResubmitBeneficiaryProfileCorrectionController::class)
+                    ->name('profile.correction.store');
 
                 // Inline "Add a new family member" from the Apply form.
                 Route::post('/household/members', DeclareHouseholdMemberForAssistanceController::class)

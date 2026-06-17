@@ -2,13 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Briefcase, Home, Loader2, User, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Home, IdCard, Loader2, User, UserPlus, Users } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 // Reuse the online profile-setup sections verbatim — same fields, same
 // validators — so the two intake forms can never drift.
 import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Components/CivilStatusEmploymentSection';
 import { HomeAddressSection } from '../../Client/Apply/Beneficiary/Components/HomeAddressSection';
 import { HouseholdMembersSection } from '../../Client/Apply/Beneficiary/Components/HouseholdMembersSection';
+import { IdentityDocumentUploadSection } from '../../Client/Apply/Beneficiary/Components/IdentityDocumentUploadSection';
 import { PersonalInformationSection } from '../../Client/Apply/Beneficiary/Components/PersonalInformationSection';
 import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
@@ -58,6 +59,8 @@ export default function CreateWalkInBeneficiary({
         birth_date: '',
         religion_id: '',
         educational_attainment: '',
+        identity_id_front: null,
+        identity_id_back: null,
         civil_status: '',
         occupation: '',
         monthly_income: '',
@@ -77,6 +80,7 @@ export default function CreateWalkInBeneficiary({
         setLastVerifyChoice(verifyNow);
         transform((d) => ({ ...d, force, verify_now: verifyNow }));
         post(submitUrl, {
+            forceFormData: true,
             headers: {
                 'X-Municipality-Slug': currentMunicipality.slug,
             },
@@ -89,7 +93,7 @@ export default function CreateWalkInBeneficiary({
     };
 
     // Mirrors the server's required-field set (StoreWalkInBeneficiaryRequest).
-    const canSubmit =
+    const canSavePending =
         data.first_name.trim().length > 0 &&
         data.last_name.trim().length > 0 &&
         data.sex.length > 0 &&
@@ -98,6 +102,7 @@ export default function CreateWalkInBeneficiary({
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
         !processing;
+    const canSaveVerified = canSavePending && data.identity_id_front instanceof File;
 
     // const searchUrl = ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug });
 
@@ -152,6 +157,23 @@ export default function CreateWalkInBeneficiary({
                                     errors={errors}
                                     religions={religions}
                                     educationalAttainment={educationalAttainment}
+                                />
+                            </div>
+                        </div>
+
+                        {/* ── Section 2: Identity documents ── */}
+                        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                            <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Identity Documents" />
+                            <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                                Upload the applicant's ID evidence. The front ID is required when saving this walk-in as verified.
+                            </p>
+                            <div className="mt-6">
+                                <IdentityDocumentUploadSection
+                                    data={data}
+                                    setData={setData}
+                                    errors={errors}
+                                    frontRequired={false}
+                                    frontEmptyHint="Required for Save Verified"
                                 />
                             </div>
                         </div>
@@ -217,7 +239,7 @@ export default function CreateWalkInBeneficiary({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <Button
                                 type="submit"
-                                disabled={!canSubmit}
+                                disabled={!canSavePending}
                                 variant="outline"
                                 className="h-14 w-full rounded-2xl text-base font-bold tracking-wide uppercase disabled:opacity-50"
                             >
@@ -232,7 +254,7 @@ export default function CreateWalkInBeneficiary({
                             <Button
                                 type="button"
                                 onClick={() => submitWith(false, true)}
-                                disabled={!canSubmit}
+                                disabled={!canSaveVerified}
                                 className="h-14 w-full rounded-2xl bg-emerald-700 text-base font-bold tracking-wide text-white uppercase shadow-lg hover:bg-emerald-800 disabled:opacity-50"
                             >
                                 {processing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Save Verified'}

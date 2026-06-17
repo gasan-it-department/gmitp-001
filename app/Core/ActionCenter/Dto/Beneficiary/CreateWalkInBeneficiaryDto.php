@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\Dto\Beneficiary;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 
 /**
  * Pure-primitives DTO for an ADMIN-encoded walk-in beneficiary.
@@ -64,6 +65,11 @@ readonly class CreateWalkInBeneficiaryDto
         // Admin chooses whether this in-person intake is trusted immediately.
         public bool $verifyNow,
 
+        // Optional admin-captured identity evidence; required by validation when
+        // verifyNow is true. Stored on Beneficiary media after DB creation.
+        public ?UploadedFile $identityIdFront,
+        public ?UploadedFile $identityIdBack,
+
         // Household composition (optional). Same primitive-array shape the
         // online flow uses; each entry is hydrated into a StoreHouseholdMemberDto
         // inside the action's transaction.
@@ -77,7 +83,13 @@ readonly class CreateWalkInBeneficiaryDto
      *
      * @param  array<string, mixed>  $data
      */
-    public static function fromArray(array $data, string $encodedByUserId, string $municipalId): self
+    public static function fromArray(
+        array $data,
+        string $encodedByUserId,
+        string $municipalId,
+        ?UploadedFile $identityIdFront = null,
+        ?UploadedFile $identityIdBack = null,
+    ): self
     {
         return new self(
             encodedByUserId: $encodedByUserId,
@@ -116,6 +128,8 @@ readonly class CreateWalkInBeneficiaryDto
 
             force: (bool) ($data['force'] ?? false),
             verifyNow: (bool) ($data['verify_now'] ?? false),
+            identityIdFront: $identityIdFront,
+            identityIdBack: $identityIdBack,
 
             householdMembers: $data['household_members'] ?? [],
         );
