@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
+import actionCenter from '@/routes/actionCenter';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, BookOpen, Briefcase, Home, IdCard, User, Users } from 'lucide-react';
 import { FormEvent } from 'react';
@@ -105,12 +106,19 @@ export default function ProfileSetUpWizard({
     return (
         <PublicLayout
             title={isCorrection ? 'Correct Your Profile' : 'Complete Your Profile'}
-            description={isCorrection ? 'Submit corrected beneficiary information for MSWD review.' : 'Set up your MSWD profile before applying for assistance.'}
+            description={
+                isCorrection
+                    ? 'Submit corrected beneficiary information for MSWD review.'
+                    : 'Set up your MSWD profile before applying for assistance.'
+            }
         >
             {/* Back nav */}
             <div className="border-b border-slate-200 bg-white">
                 <div className="container mx-auto max-w-2xl px-4 py-4">
-                    <Link href="#" className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-[#005088]">
+                    <Link
+                        href={actionCenter.portal.url({ municipality: currentMunicipality.slug })}
+                        className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-[#005088]"
+                    >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Action Center
                     </Link>
@@ -126,7 +134,9 @@ export default function ProfileSetUpWizard({
                                 <User className="h-7 w-7 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-bold tracking-tight">{isCorrection ? 'Correct Your Profile' : 'Complete Your Profile'}</h1>
+                                <h1 className="text-xl font-bold tracking-tight">
+                                    {isCorrection ? 'Correct Your Profile' : 'Complete Your Profile'}
+                                </h1>
                                 <p className="mt-1 text-sm leading-relaxed text-blue-100 opacity-90">
                                     {isCorrection
                                         ? 'Update the details MSWD could not verify. Your correction will return to pending review.'
@@ -173,9 +183,7 @@ export default function ProfileSetUpWizard({
                                     errors={errors}
                                     frontRequired={!isCorrection || !existingIdentityDocuments.front}
                                     frontEmptyHint={
-                                        isCorrection && existingIdentityDocuments.front
-                                            ? 'Already submitted'
-                                            : 'Required for verification review'
+                                        isCorrection && existingIdentityDocuments.front ? 'Already submitted' : 'Required for verification review'
                                     }
                                     existingFrontUploaded={isCorrection && existingIdentityDocuments.front}
                                     existingBackUploaded={isCorrection && existingIdentityDocuments.back}
@@ -187,12 +195,7 @@ export default function ProfileSetUpWizard({
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<Briefcase className="h-4 w-4 text-[#005088]" />} title="Civil Status & Employment" />
                             <div className="mt-6">
-                                <CivilStatusEmploymentSection
-                                    data={data}
-                                    setData={setData}
-                                    errors={errors}
-                                    civilStatus={civilStatus}
-                                />
+                                <CivilStatusEmploymentSection data={data} setData={setData} errors={errors} civilStatus={civilStatus} />
                             </div>
                         </div>
 
@@ -241,12 +244,7 @@ export default function ProfileSetUpWizard({
                         </div>
 
                         {/* ── Data Privacy Act consent ── */}
-                        <DataPrivacyConsent
-                            data={data}
-                            setData={setData}
-                            errors={errors}
-                            municipalityName={currentMunicipality.name}
-                        />
+                        <DataPrivacyConsent data={data} setData={setData} errors={errors} municipalityName={currentMunicipality.name} />
 
                         {/* Submit */}
                         <Button

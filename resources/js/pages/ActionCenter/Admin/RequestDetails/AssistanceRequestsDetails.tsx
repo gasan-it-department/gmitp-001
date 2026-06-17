@@ -1,4 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
+import DownloadAcknowledgementReceiptController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAcknowledgementReceiptController';
+import DownloadAssistanceRequestIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAssistanceRequestIntakeSheetController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
@@ -71,6 +73,7 @@ interface DocumentBlock {
     file_name: string;
     mime_type: string | null;
     size: number;
+    url: string;
     uploaded_at: string | null;
     custom_properties: Record<string, unknown>;
 }
@@ -230,6 +233,11 @@ export default function AssistanceRequestsDetails({
     const documentKeyOf = (d: DocumentBlock) => (d.custom_properties?.document_key as string | undefined) ?? d.collection_name;
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
+    const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
+    const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
+        municipality: currentMunicipality.slug,
+        assistanceRequestId: detail.id,
+    });
 
     const handleAction = (label: string) => () => {
         if (label === 'Approve') {
@@ -317,6 +325,7 @@ export default function AssistanceRequestsDetails({
                                         onPickUp={handlePickUp}
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
+                                        acknowledgementReceiptUrl={acknowledgementReceiptUrl}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
@@ -528,20 +537,24 @@ export default function AssistanceRequestsDetails({
                                                 <FileText className="h-4 w-4 text-slate-600" /> Supporting Certificates & Verification Layouts
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            {requiredDocumentsData.map((req) => {
-                                                const uploaded = uploadedByKey.get(req.key);
-                                                return <DocumentRow key={req.key} required={req} file={uploaded} />;
-                                            })}
+                                        <CardContent>
+                                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                                                {requiredDocumentsData.map((req) => {
+                                                    const uploaded = uploadedByKey.get(req.key);
+                                                    return <DocumentRow key={req.key} required={req} file={uploaded} />;
+                                                })}
+                                            </div>
 
                                             {extraDocuments.length > 0 && (
                                                 <>
-                                                    <p className="mt-4 mb-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                                                    <p className="mt-6 mb-3 text-[10px] font-bold tracking-widest text-slate-500 uppercase border-t border-slate-100 pt-6">
                                                         Extra attachments
                                                     </p>
-                                                    {extraDocuments.map((doc) => (
-                                                        <DocumentRow key={doc.id} file={doc} />
-                                                    ))}
+                                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                                                        {extraDocuments.map((doc) => (
+                                                            <DocumentRow key={doc.id} file={doc} />
+                                                        ))}
+                                                    </div>
                                                 </>
                                             )}
 
@@ -659,6 +672,29 @@ export default function AssistanceRequestsDetails({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
+                                    {canPrintAcknowledgementReceipt && (
+                                        <a
+                                            href={acknowledgementReceiptUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 hover:text-blue-900"
+                                        >
+                                            <Printer className="h-4 w-4" />
+                                            Print Acknowledgement Receipt
+                                        </a>
+                                    )}
+                                    <a
+                                        href={DownloadAssistanceRequestIntakeSheetController.url({
+                                            municipality: currentMunicipality.slug,
+                                            assistanceRequestId: detail.id,
+                                        })}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Download Request Intake Sheet (PDF)
+                                    </a>
                                     <a
                                         href={DownloadBeneficiaryIntakeSheetController.url({
                                             municipality: currentMunicipality.slug,
@@ -669,10 +705,10 @@ export default function AssistanceRequestsDetails({
                                         className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                                     >
                                         <Download className="h-4 w-4" />
-                                        Download Intake Sheet (PDF)
+                                        Download Beneficiary Intake Sheet (PDF)
                                     </a>
                                     <p className="text-[11px] leading-snug text-slate-400">
-                                        Generates the official beneficiary intake sheet for the case folder. Opens in a new tab.
+                                        Receipt proves release. Request sheet records this transaction. Beneficiary sheet records the claimant identity file.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -853,13 +889,14 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
 
     if (isMissing && !isOptional) {
         return (
-            <div className="flex items-center justify-between rounded-lg border border-rose-100 bg-rose-50/50 px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <XCircle className="h-5 w-5 shrink-0 text-rose-500" />
-                    <div>
-                        <p className="text-sm font-semibold text-rose-900 capitalize">{label}</p>
-                        <p className="text-xs text-rose-700">Required Document — Missing</p>
-                    </div>
+            <div className="flex flex-col overflow-hidden rounded-xl border border-rose-200 bg-rose-50/50 transition hover:shadow-sm">
+                <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-rose-100 bg-white p-4 text-center">
+                    <XCircle className="h-8 w-8 text-rose-300" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-rose-600">Missing Required</p>
+                </div>
+                <div className="p-3">
+                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>{label}</p>
+                    <p className="mt-0.5 text-xs text-rose-500">Action required</p>
                 </div>
             </div>
         );
@@ -867,13 +904,14 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
 
     if (isMissing && isOptional) {
         return (
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/30 px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <Circle className="h-5 w-5 shrink-0 text-slate-300" />
-                    <div>
-                        <p className="text-sm font-medium text-slate-500 capitalize">{label}</p>
-                        <p className="text-xs text-slate-400">Optional Document — Not Provided</p>
-                    </div>
+            <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:shadow-sm">
+                <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-slate-100 bg-white p-4 text-center opacity-60">
+                    <Circle className="h-8 w-8 text-slate-300" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Optional</p>
+                </div>
+                <div className="p-3 opacity-60">
+                    <p className="truncate text-sm font-medium text-slate-500 capitalize" title={label}>{label}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">Not provided</p>
                 </div>
             </div>
         );
@@ -881,27 +919,41 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
 
     if (!file) return null;
 
+    const isImage = file.mime_type?.startsWith('image/');
+
     return (
-        <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/40 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-                <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900 capitalize">{label}</p>
-                    <p className="truncate text-xs text-slate-500">
-                        {file.file_name} · {formatBytes(file.size)}
-                        {file.uploaded_at && <> · Uploaded {utils.formatToReadableDateNoTime(file.uploaded_at)}</>}
-                    </p>
+        <a
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-[#005088] hover:shadow-md"
+        >
+            <div className="relative flex h-32 w-full items-center justify-center overflow-hidden border-b border-slate-100 bg-slate-50">
+                {isImage ? (
+                    <img src={file.url} alt={file.file_name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                ) : (
+                    <FileText className="h-10 w-10 text-slate-300 transition-colors group-hover:text-[#005088]" />
+                )}
+                
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+                    <span className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm">
+                        <CheckCircle2 className="h-4 w-4 text-[#005088]" /> View Document
+                    </span>
                 </div>
             </div>
-            <Button
-                size="sm"
-                variant="ghost"
-                className="ml-3 shrink-0 text-slate-700 hover:bg-emerald-100"
-                onClick={() => alert(`Download trigger for ${file.file_name}`)}
-            >
-                <Download className="mr-1.5 h-3.5 w-3.5" /> Download
-            </Button>
-        </div>
+            
+            <div className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>{label}</p>
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                </div>
+                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                    {formatBytes(file.size)}
+                    {file.uploaded_at && <> • {utils.formatToReadableDateNoTime(file.uploaded_at)}</>}
+                </p>
+            </div>
+        </a>
     );
 }
 
@@ -911,12 +963,14 @@ function ActionButtons({
     onPickUp,
     isMine,
     reviewerName,
+    acknowledgementReceiptUrl,
 }: {
     status: string;
     onAction: (label: string) => () => void;
     onPickUp: () => void;
     isMine: boolean;
     reviewerName: string | null;
+    acknowledgementReceiptUrl: string;
 }) {
     switch (status) {
         case 'pending':
@@ -953,15 +1007,19 @@ function ActionButtons({
                     <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
                     </Button>
-                    <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Print Voucher')}>
-                        <Printer className="mr-2 h-4 w-4" /> Print Voucher
+                    <Button variant="outline" className="w-full sm:w-auto" asChild>
+                        <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
+                            <Printer className="mr-2 h-4 w-4" /> Print Acknowledgement Receipt
+                        </a>
                     </Button>
                 </>
             );
         case 'released':
             return (
-                <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Print Receipt')}>
-                    <Printer className="mr-2 h-4 w-4" /> Print Receipt
+                <Button variant="outline" className="w-full sm:w-auto" asChild>
+                    <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
+                        <Printer className="mr-2 h-4 w-4" /> Print Acknowledgement Receipt
+                    </a>
                 </Button>
             );
         case 'rejected':

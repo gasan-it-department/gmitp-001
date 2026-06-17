@@ -29,6 +29,7 @@ use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberCon
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryIdentityDocumentController;
+use App\External\Documents\ActionCenter\ReplaceBeneficiaryIdentityDocumentController;
 use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\EditBeneficiaryProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ListBeneficiaryController;
@@ -36,6 +37,9 @@ use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryP
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAcknowledgementReceiptController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAssistanceRequestIntakeSheetController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIdentityDocumentSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
@@ -134,6 +138,16 @@ Route::prefix('{municipality}/action-center')
             Route::get('profile/assistance-request/{assistanceRequest}', ShowAssistanceRequestProfileController::class)
                 ->name('show.assistance-request.profile');
 
+            Route::get(
+                'profile/assistance-request/{assistanceRequestId}/intake-sheet',
+                DownloadAssistanceRequestIntakeSheetController::class,
+            )->name('assistance-request.intake-sheet');
+
+            Route::get(
+                'profile/assistance-request/{assistanceRequestId}/acknowledgement-receipt',
+                DownloadAcknowledgementReceiptController::class,
+            )->name('assistance-request.acknowledgement-receipt');
+
             // Admin-only "correct an in-flight request" form — display only.
             // The controller redirects back to the detail page if the request
             // is no longer editable (approved/released/rejected/cancelled). The
@@ -153,6 +167,11 @@ Route::prefix('{municipality}/action-center')
                 'beneficiary/{beneficiaryId}/intake-sheet',
                 DownloadBeneficiaryIntakeSheetController::class,
             )->name('beneficiary.intake-sheet');
+
+            Route::get(
+                'beneficiary/{beneficiaryId}/identity-document-sheet',
+                DownloadBeneficiaryIdentityDocumentSheetController::class,
+            )->name('beneficiary.identity-document-sheet');
         });
 
         // for non admin pages
@@ -280,6 +299,12 @@ Route::prefix('/api/action-center')
                     '/beneficiary/{beneficiaryId}/avatar',
                     UploadBeneficiaryAvatarController::class,
                 )->name('beneficiary.avatar.upload');
+
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/identity-document/{side}',
+                    ReplaceBeneficiaryIdentityDocumentController::class,
+                )->whereIn('side', ['front', 'back'])
+                    ->name('beneficiary.identity-document.replace');
 
                 // ── Admin household-roster management ─────────────────────────
                 // Edit a non-head member, toggle moved-out (is_active, never

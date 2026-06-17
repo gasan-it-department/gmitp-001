@@ -84,7 +84,7 @@
         "puppeteer": "^25.1.0",
         "react": "^19.0.0",
         "react-day-picker": "^9.11.0",
-        "react-easy-crop": "^5.5.3",
+        "react-easy-crop": "^5.5.7",
         "react-helmet": "^6.1.0",
         "react-hook-form": "^7.62.0",
         "react-hot-toast": "^2.6.0",

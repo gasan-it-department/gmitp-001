@@ -2,6 +2,7 @@ import EditBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
+import DownloadBeneficiaryIdentityDocumentSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIdentityDocumentSheetController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,10 @@ import {
     Pencil,
     User,
     Users,
+    Eye,
+    Plus,
+    Printer,
+    FileUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
@@ -41,6 +46,7 @@ import LinkAccountDialog from './Components/LinkAccountDialog';
 import { type RelationshipOption } from './Components/MemberFormDialog';
 import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
 import ReassignHouseholdDialog from './Components/ReassignHouseholdDialog';
+import ReplaceIdentityDocumentDialog from './Components/ReplaceIdentityDocumentDialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror BeneficiaryProfileResource + the controller props
@@ -61,6 +67,7 @@ interface BeneficiaryProfileData {
     birth_date: string | null;
     age: number | null;
     educational_attainment: string | null;
+    educational_attainment_label: string | null;
     religion: string | null;
     civil_status: string | null;
     civil_status_label: string | null;
@@ -142,7 +149,7 @@ export default function BeneficiaryProfile({
     householdHead,
     headDispositions,
 }: Props) {
-    console.log(householdHead);
+    console.log(beneficiary);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const utils = Utility();
 
@@ -363,7 +370,7 @@ export default function BeneficiaryProfile({
                                             sub={profile.age !== null ? `Age ${profile.age}` : undefined}
                                         />
                                         <Field label="Civil status" value={profile.civil_status_label ?? '—'} />
-                                        <Field label="Educational attainment" value={profile.educational_attainment ?? '—'} capitalize />
+                                        <Field label="Educational attainment" value={profile.educational_attainment_label ?? '—'} capitalize />
                                         <Field label="Religion" value={profile.religion ?? '—'} capitalize />
                                         <Field label="Occupation" value={profile.occupation ?? '—'} capitalize />
                                         <Field
@@ -466,43 +473,167 @@ export default function BeneficiaryProfile({
                                 <CardHeader>
                                     <CardTitle className="text-base">Documents</CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <a
-                                        href={DownloadBeneficiaryIntakeSheetController.url({
-                                            municipality: currentMunicipality.slug,
-                                            beneficiaryId: profile.id,
-                                        })}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        Download Intake Sheet (PDF)
-                                    </a>
+                                <CardContent className="space-y-6">
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">System Generated</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <a
+                                                href={DownloadBeneficiaryIntakeSheetController.url({
+                                                    municipality: currentMunicipality.slug,
+                                                    beneficiaryId: profile.id,
+                                                })}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 transition hover:border-[#005088] hover:bg-white hover:text-[#005088] hover:shadow-sm"
+                                            >
+                                                <Download className="h-5 w-5" />
+                                                <span className="text-center text-xs">Intake Sheet</span>
+                                            </a>
+                                            <a
+                                                href={DownloadBeneficiaryIdentityDocumentSheetController.url({
+                                                    municipality: currentMunicipality.slug,
+                                                    beneficiaryId: profile.id,
+                                                })}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 transition hover:border-[#005088] hover:bg-white hover:text-[#005088] hover:shadow-sm"
+                                            >
+                                                <Printer className="h-5 w-5" />
+                                                <span className="text-center text-xs">ID Sheet</span>
+                                            </a>
+                                        </div>
+                                    </div>
 
-                                    {profile.identity_documents?.front && (
-                                        <a
-                                            href={profile.identity_documents.front}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 hover:text-blue-800"
-                                        >
-                                            <IdCard className="h-4 w-4" />
-                                            View Uploaded ID (Front)
-                                        </a>
-                                    )}
+                                    <div className="space-y-3 border-t border-slate-100 pt-6">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Uploaded Identity</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* Front ID Card */}
+                                            <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                {profile.identity_documents?.front ? (
+                                                    <>
+                                                        <img
+                                                            src={profile.identity_documents.front}
+                                                            alt="Front ID"
+                                                            className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
+                                                        />
+                                                        <div className="absolute inset-0 bg-slate-900/10" />
+                                                        <div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
+                                                            FRONT
+                                                        </div>
 
-                                    {profile.identity_documents?.back && (
-                                        <a
-                                            href={profile.identity_documents.back}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 hover:text-blue-800"
-                                        >
-                                            <IdCard className="h-4 w-4" />
-                                            View Uploaded ID (Back)
-                                        </a>
-                                    )}
+                                                        {/* Hover Actions */}
+                                                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-slate-900/60 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+                                                            <a
+                                                                href={profile.identity_documents.front}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                title="View Full Size"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </a>
+                                                            <ReplaceIdentityDocumentDialog
+                                                                beneficiaryId={profile.id}
+                                                                side="front"
+                                                                isVerified={profile.identity_verified}
+                                                                hasDocument={true}
+                                                                trigger={
+                                                                    <button
+                                                                        type="button"
+                                                                        className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                        title="Replace Photo"
+                                                                    >
+                                                                        <FileUp className="h-4 w-4" />
+                                                                    </button>
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center gap-2">
+                                                        <p className="text-[10px] font-bold tracking-widest text-slate-400">FRONT ID</p>
+                                                        <ReplaceIdentityDocumentDialog
+                                                            beneficiaryId={profile.id}
+                                                            side="front"
+                                                            isVerified={profile.identity_verified}
+                                                            hasDocument={false}
+                                                            trigger={
+                                                                <button
+                                                                    type="button"
+                                                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-[#005088] hover:ring-[#005088]"
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </button>
+                                                            }
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Back ID Card */}
+                                            <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                {profile.identity_documents?.back ? (
+                                                    <>
+                                                        <img
+                                                            src={profile.identity_documents.back}
+                                                            alt="Back ID"
+                                                            className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
+                                                        />
+                                                        <div className="absolute inset-0 bg-slate-900/10" />
+                                                        <div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
+                                                            BACK
+                                                        </div>
+
+                                                        {/* Hover Actions */}
+                                                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-slate-900/60 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+                                                            <a
+                                                                href={profile.identity_documents.back}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                title="View Full Size"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </a>
+                                                            <ReplaceIdentityDocumentDialog
+                                                                beneficiaryId={profile.id}
+                                                                side="back"
+                                                                isVerified={profile.identity_verified}
+                                                                hasDocument={true}
+                                                                trigger={
+                                                                    <button
+                                                                        type="button"
+                                                                        className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                        title="Replace Photo"
+                                                                    >
+                                                                        <FileUp className="h-4 w-4" />
+                                                                    </button>
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center gap-2">
+                                                        <p className="text-[10px] font-bold tracking-widest text-slate-400">BACK ID</p>
+                                                        <ReplaceIdentityDocumentDialog
+                                                            beneficiaryId={profile.id}
+                                                            side="back"
+                                                            isVerified={profile.identity_verified}
+                                                            hasDocument={false}
+                                                            trigger={
+                                                                <button
+                                                                    type="button"
+                                                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-[#005088] hover:ring-[#005088]"
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </button>
+                                                            }
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
 
