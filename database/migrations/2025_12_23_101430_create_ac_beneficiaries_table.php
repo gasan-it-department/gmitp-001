@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -46,6 +45,8 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('intake_rejection_reason', 1000)->nullable();
+
+            $table->string('contact_phone', 20)->nullable();
 
             $table->string('beneficiary_number')->nullable()->unique();
             $table->string('first_name');
