@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
 use App\External\Api\Request\ActionCenter\StoreProfileSetupRequest;
 use App\Http\Controllers\Controller;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -22,6 +23,7 @@ class StoreProfileSetupController extends Controller
 {
     public function __construct(
         private readonly CreateBeneficiaryProfileAction $createProfile,
+        private readonly PhoneFormatterService $phoneFormatter,
     ) {
     }
 
@@ -36,6 +38,7 @@ class StoreProfileSetupController extends Controller
             $municipality->id,
             $request->file('identity_id_front'),
             $request->file('identity_id_back'),
+            $this->phoneFormatter,
         );
 
         $this->createProfile->execute($dto);

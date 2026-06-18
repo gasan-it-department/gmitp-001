@@ -6,12 +6,14 @@ use App\Core\ActionCenter\Dto\Beneficiary\ResubmitBeneficiaryProfileCorrectionDt
 use App\Core\ActionCenter\UseCase\Beneficiary\ResubmitBeneficiaryProfileCorrectionAction;
 use App\External\Api\Request\ActionCenter\ResubmitBeneficiaryProfileCorrectionRequest;
 use App\Http\Controllers\Controller;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\RedirectResponse;
 
 class ResubmitBeneficiaryProfileCorrectionController extends Controller
 {
     public function __construct(
         private readonly ResubmitBeneficiaryProfileCorrectionAction $resubmitCorrection,
+        private readonly PhoneFormatterService $phoneFormatter,
     ) {}
 
     public function __invoke(ResubmitBeneficiaryProfileCorrectionRequest $request): RedirectResponse
@@ -25,6 +27,7 @@ class ResubmitBeneficiaryProfileCorrectionController extends Controller
                 $municipality->id,
                 $request->file('identity_id_front'),
                 $request->file('identity_id_back'),
+                $this->phoneFormatter,
             );
 
             $this->resubmitCorrection->execute($dto);

@@ -195,74 +195,62 @@ export default function ActionCenterDashboard({ profile, requests }: Props) {
     const renderProfileStatus = () => {
         if (!profile) {
             return (
-                <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
-                    <div className="flex flex-col items-start gap-4 sm:flex-row">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                            <UserPlus className="h-6 w-6" />
+                <div className="mb-6 rounded-[24px] bg-gradient-to-br from-blue-500 to-blue-700 p-6 shadow-lg shadow-blue-500/20 text-white">
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+                            <UserPlus className="h-6 w-6 text-white" />
                         </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-blue-900">Complete Your Profile</h3>
-                            <p className="mt-1 text-sm text-blue-700">
-                                You must set up your beneficiary profile and verify your identity before you can apply for assistance.
+                        <div className="flex-1 pt-1">
+                            <h3 className="text-lg font-bold tracking-tight text-white">Complete Profile</h3>
+                            <p className="mt-1 text-sm text-blue-100 leading-snug">
+                                Required before applying for assistance.
                             </p>
-                            <div className="mt-4">
-                                <Link
-                                    href={route('actionCenter.profile.setup', { municipality: currentMunicipality.slug })}
-                                    className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                                >
-                                    Set up profile
-                                </Link>
-                            </div>
                         </div>
                     </div>
+                    <Link
+                        href={route('actionCenter.profile.setup', { municipality: currentMunicipality.slug })}
+                        className="mt-6 flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-blue-600 transition-transform active:scale-95"
+                    >
+                        Set up profile
+                    </Link>
                 </div>
             );
         }
 
         if (profile.is_rejected) {
             return (
-                <div className="mb-8 rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
-                    <div className="flex flex-col items-start gap-4 sm:flex-row">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-                            <ShieldAlert className="h-6 w-6" />
+                <div className="mb-6 rounded-[24px] bg-gradient-to-br from-red-500 to-rose-600 p-6 shadow-lg shadow-red-500/20 text-white">
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+                            <ShieldAlert className="h-6 w-6 text-white" />
                         </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-red-900">Profile Needs Correction</h3>
-                            <p className="mt-1 text-sm text-red-700">
-                                MSWD could not verify your profile yet. Submit the correction below so it can return to review.
+                        <div className="flex-1 pt-1">
+                            <h3 className="text-lg font-bold tracking-tight text-white">Action Required</h3>
+                            <p className="mt-1 text-sm text-red-100 leading-snug">
+                                {profile.rejection_reason || 'Profile needs correction.'}
                             </p>
-                            {profile.rejection_reason && (
-                                <div className="mt-3 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">
-                                    <span className="font-semibold">Reason:</span> {profile.rejection_reason}
-                                </div>
-                            )}
-                            <div className="mt-4">
-                                <Link
-                                    href={actionCenter.profile.correction.url({ municipality: currentMunicipality.slug })}
-                                    className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-                                >
-                                    Submit Correction
-                                </Link>
-                            </div>
                         </div>
                     </div>
+                    <Link
+                        href={actionCenter.profile.correction.url({ municipality: currentMunicipality.slug })}
+                        className="mt-6 flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-red-600 transition-transform active:scale-95"
+                    >
+                        Submit Correction
+                    </Link>
                 </div>
             );
         }
 
         if (!profile.is_verified) {
             return (
-                <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-                    <div className="flex flex-col items-start gap-4 sm:flex-row">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                            <Clock4 className="h-6 w-6" />
+                <div className="mb-6 rounded-[24px] border-2 border-amber-100 bg-amber-50 p-6 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-200/50">
+                            <Clock4 className="h-6 w-6 text-amber-700" />
                         </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-amber-900">Pending Review</h3>
-                            <p className="mt-1 text-sm text-amber-700">
-                                Your profile and ID are currently being reviewed by the MSWD office. You will be able to apply for assistance once
-                                verified.
-                            </p>
+                        <div>
+                            <h3 className="text-base font-bold tracking-tight text-amber-900">Pending Review</h3>
+                            <p className="text-sm text-amber-700">Waiting for MSWD verification.</p>
                         </div>
                     </div>
                 </div>
@@ -270,16 +258,14 @@ export default function ActionCenterDashboard({ profile, requests }: Props) {
         }
 
         return (
-            <div className="mb-8 rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
-                <div className="flex flex-col items-start gap-4 sm:flex-row">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                        <ShieldCheck className="h-6 w-6" />
+            <div className="mb-6 rounded-[24px] border-2 border-emerald-100 bg-emerald-50 p-6 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-200/50">
+                        <ShieldCheck className="h-6 w-6 text-emerald-700" />
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-lg font-bold text-emerald-900">Profile Verified</h3>
-                        <p className="mt-1 text-sm text-emerald-700">
-                            Your identity has been verified. You can now freely apply for MSWD assistance programs.
-                        </p>
+                    <div>
+                        <h3 className="text-base font-bold tracking-tight text-emerald-900">Verified</h3>
+                        <p className="text-sm text-emerald-700">You can now apply for assistance.</p>
                     </div>
                 </div>
             </div>
@@ -288,155 +274,85 @@ export default function ActionCenterDashboard({ profile, requests }: Props) {
 
     return (
         <PublicLayout title="Action Center" description="Action Center Dashboard">
-            <Head title="Dashboard - Action Center" />
+            <Head title="Dashboard" />
 
-            <div className="relative min-h-screen bg-muted/30 py-12">
-                <div className="mx-auto max-w-5xl sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-slate-50">
+                <div className="mx-auto max-w-md px-4 py-6 sm:px-6">
+                    {/* Header */}
+                    <div className="mb-8 mt-2 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Action Center</p>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+                        </div>
+                    </div>
+
                     {/* Render Profile Status Card */}
                     {renderProfileStatus()}
 
-                    {/* Main Card Container for Requests */}
-                    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                        {/* THEMED CARD HEADER */}
-                        <div className="sticky top-0 z-20 border-b border-border bg-card/50 p-5 backdrop-blur-sm">
-                            <div className="flex items-center gap-4">
+                    {/* Section Title */}
+                    <div className="mb-4 mt-8 flex items-end justify-between px-1">
+                        <h2 className="text-xl font-bold tracking-tight text-slate-900">Recent Requests</h2>
+                        {totalCount > 0 && (
+                            <span className="text-sm font-semibold text-slate-500">
+                                {totalCount} total
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Feed Content */}
+                    <div className="space-y-3">
+                        {data.map((req) => {
+                            const style = getStyle(req.status);
+                            
+                            return (
                                 <button
-                                    onClick={() => window.history.back()}
-                                    className="group flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background transition-all hover:border-primary hover:text-primary active:scale-95"
-                                    title="Go Back"
+                                    key={req.id}
+                                    onClick={() => handleViewDetails(req)}
+                                    className="flex w-full items-center gap-4 rounded-3xl bg-white p-4 shadow-sm transition-all active:scale-95 active:bg-slate-50 text-left border border-slate-100"
                                 >
-                                    <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+                                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${style.bg}`}>
+                                        <style.icon className={`h-6 w-6 ${style.text}`} />
+                                    </div>
+                                    
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="truncate text-base font-bold text-slate-900">
+                                            {req.assistance_type?.name || 'Assistance'}
+                                        </h3>
+                                        <p className="truncate text-sm text-slate-500 font-medium">
+                                            {formatDate(req.submitted_at)} • {req.subject_full_name}
+                                        </p>
+                                    </div>
+
+                                    {req.amount_approved !== null && (
+                                        <div className="shrink-0 text-right">
+                                            <p className="text-sm font-black text-green-600">
+                                                {formatCurrency(req.amount_approved)}
+                                            </p>
+                                        </div>
+                                    )}
                                 </button>
+                            );
+                        })}
 
-                                <div className="h-8 w-px bg-border" />
-
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
-                                    <HelpingHand className="h-5 w-5" />
+                        {data.length === 0 && (
+                            <div className="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-slate-200 py-16 px-6 text-center">
+                                <div className="mb-4 rounded-full bg-slate-100 p-5">
+                                    <HelpingHand className="h-10 w-10 text-slate-400" />
                                 </div>
-
-                                <div className="flex flex-col">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="hidden text-xl font-black tracking-widest text-foreground uppercase sm:block">My Requests</h3>
-                                        <h3 className="text-xl font-black tracking-widest text-foreground uppercase sm:hidden">Requests</h3>
-
-                                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary">
-                                            {totalCount}
-                                        </span>
-                                    </div>
-                                    <p className="hidden text-[10px] font-bold tracking-wider text-muted-foreground uppercase sm:block sm:text-xs">
-                                        History of your submitted applications
-                                    </p>
-                                </div>
+                                <h3 className="text-lg font-bold text-slate-900">No requests</h3>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    You haven't applied for any assistance yet.
+                                </p>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Card Content */}
-                        <div className="space-y-4 p-4 sm:p-6">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                {data.map((req) => {
-                                    const style = getStyle(req.status);
-                                    const StatusIcon = style.icon;
-
-                                    return (
-                                        <div
-                                            key={req.id}
-                                            onClick={() => handleViewDetails(req)}
-                                            className={`group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg`}
-                                        >
-                                            <div className="flex h-full flex-col">
-                                                <div className="mb-4 flex items-start justify-between">
-                                                    <div className="flex items-center gap-2 rounded-md bg-muted px-2 py-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                                                        <FileText className="h-3 w-3 text-primary" />
-                                                        <span className="font-mono">{req.transaction_number}</span>
-                                                    </div>
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-black tracking-wide uppercase shadow-sm ${style.bg} ${style.text} ${style.border}`}
-                                                    >
-                                                        <StatusIcon className="h-3 w-3" />
-                                                        {style.label}
-                                                    </span>
-                                                </div>
-
-                                                <div className="mb-4">
-                                                    <h3 className="text-lg font-black tracking-tight text-foreground uppercase transition-colors group-hover:text-primary">
-                                                        {req.assistance_type?.name || 'Assistance'}
-                                                    </h3>
-
-                                                    <div className="mt-3 space-y-2">
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            <User className="h-4 w-4 text-primary" />
-                                                            <span className="font-bold text-foreground">{req.subject_full_name}</span>
-                                                            {req.snapshot_barangay && (
-                                                                <span className="text-xs text-muted-foreground uppercase">
-                                                                    ({req.snapshot_barangay})
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            <Banknote className="h-4 w-4 text-primary" />
-                                                            <span
-                                                                className={`${req.amount_approved ? 'font-bold text-green-600' : 'text-muted-foreground italic'}`}
-                                                            >
-                                                                {formatCurrency(req.amount_approved)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
-                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted-foreground/80 uppercase">
-                                                        <Calendar className="h-3.5 w-3.5" />
-                                                        {formatDate(req.submitted_at)}
-                                                    </div>
-
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleViewDetails(req);
-                                                        }}
-                                                        className="group flex items-center gap-1 text-xs font-black tracking-wide text-primary uppercase decoration-2 underline-offset-4 transition-all hover:underline"
-                                                    >
-                                                        View Details
-                                                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                        {requests.links && data.length > 0 && (
+                            <div className="pt-6">
+                                <Pagination links={requests.links} />
                             </div>
-
-                            {data.length === 0 && (
-                                <div className="rounded-xl border border-dashed border-border bg-muted/30 py-20 text-center">
-                                    <div className="mb-2 flex justify-center">
-                                        <div className="rounded-full bg-muted p-4">
-                                            <HelpingHand className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                    </div>
-                                    <h3 className="mt-4 text-lg font-black tracking-wide text-foreground uppercase">No requests found</h3>
-                                    <p className="mt-2 text-sm font-medium text-muted-foreground">
-                                        You haven't submitted any assistance requests yet.
-                                    </p>
-                                </div>
-                            )}
-
-                            {requests.links && (
-                                <div className="mt-8">
-                                    <Pagination links={requests.links} />
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
-
-                <button
-                    onClick={scrollToTop}
-                    className={`fixed right-8 bottom-8 z-40 rounded-full bg-primary p-3 text-primary-foreground shadow-lg shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-primary/50 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none ${showScrollTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-10 opacity-0'} `}
-                    aria-label="Scroll to top"
-                >
-                    <ArrowUp className="h-5 w-5" />
-                </button>
             </div>
 
             <AssistanceDetailsDialog isOpen={isDialogOpen} onClose={handleCloseDialog} request={selectedRequest} />

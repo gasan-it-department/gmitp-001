@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Dto\Beneficiary;
 
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\UploadedFile;
 
 readonly class ResubmitBeneficiaryProfileCorrectionDto
@@ -22,6 +23,7 @@ readonly class ResubmitBeneficiaryProfileCorrectionDto
         public string $civilStatus,
         public ?string $occupation,
         public float $monthlyIncome,
+        public ?string $contactPhone,
 
         public string $barangay,
         public ?string $barangayCode,
@@ -41,7 +43,14 @@ readonly class ResubmitBeneficiaryProfileCorrectionDto
         string $municipalId,
         ?UploadedFile $identityIdFront = null,
         ?UploadedFile $identityIdBack = null,
+        ?PhoneFormatterService $phoneFormatter = null,
     ): self {
+        $phoneFormatter ??= app(PhoneFormatterService::class);
+
+        $contactPhone = ! empty($data['contact_phone']) && $phoneFormatter !== null
+            ? $phoneFormatter->normalize((string) $data['contact_phone'])
+            : null;
+
         return new self(
             userId: $userId,
             municipalId: $municipalId,
@@ -56,6 +65,7 @@ readonly class ResubmitBeneficiaryProfileCorrectionDto
             civilStatus: $data['civil_status'],
             occupation: !empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
             monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : 0.0,
+            contactPhone: $contactPhone,
             barangay: mb_strtoupper($data['barangay']),
             barangayCode: $data['barangay_code'] ?? null,
             street: !empty($data['street']) ? mb_strtoupper($data['street']) : null,

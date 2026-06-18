@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Enums\Sex;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,6 +40,7 @@ class ResubmitBeneficiaryProfileCorrectionRequest extends FormRequest
             'civil_status' => ['required', Rule::in($this->civilStatusValues())],
             'occupation' => ['nullable', 'string', 'max:120'],
             'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'contact_phone' => ['required', 'string', 'max:30', $this->validPhoneNumber()],
             'barangay' => ['required', 'string', 'max:100'],
             'barangay_code' => ['nullable', 'string', 'max:20'],
             'street' => ['nullable', 'string', 'max:255'],
@@ -68,6 +70,7 @@ class ResubmitBeneficiaryProfileCorrectionRequest extends FormRequest
             'identity_id_front.max' => 'The ID front must be 5 MB or smaller.',
             'identity_id_back.mimes' => 'The ID back must be a JPG, PNG, or PDF file.',
             'identity_id_back.max' => 'The ID back must be 5 MB or smaller.',
+            'contact_phone.required' => 'Please provide a phone number where MSWD can contact you.',
             'terms_consent.accepted' => 'You must agree to the Data Privacy notice before resubmitting your correction.',
         ];
     }
@@ -105,5 +108,18 @@ class ResubmitBeneficiaryProfileCorrectionRequest extends FormRequest
     private function relationshipValues(): array
     {
         return array_map(fn (Relationship $case) => $case->value, Relationship::cases());
+    }
+
+    private function validPhoneNumber(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            if (app(PhoneFormatterService::class)->normalize((string) $value) === null) {
+                $fail('Please enter a valid Philippine mobile number.');
+            }
+        };
     }
 }

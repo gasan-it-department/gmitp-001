@@ -26,6 +26,7 @@ import {
     Link2,
     Mail,
     MapPin,
+    Phone,
     OctagonX,
     Pencil,
     User,
@@ -74,6 +75,7 @@ interface BeneficiaryProfileData {
     civil_status_label: string | null;
     occupation: string | null;
     monthly_income: number | null;
+    contact_phone: string | null;
     household: { id: string; household_code: string | null; barangay: string | null; street: string | null } | null;
     has_account: boolean;
     account_email: string | null;
@@ -452,6 +454,15 @@ export default function BeneficiaryProfile({
                                             {profile.household?.household_code && (
                                                 <p className="mt-0.5 text-[11px] text-slate-400">HH #{profile.household.household_code}</p>
                                             )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <Phone className="mt-0.5 h-4 w-4 text-slate-400" />
+                                        <div>
+                                            <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Communication</p>
+                                            <p className="text-sm text-slate-800">
+                                                {profile.contact_phone || 'No contact phone encoded'}
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">

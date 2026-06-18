@@ -94,6 +94,7 @@ class CreateBeneficiaryProfileAction
                 'civil_status' => $dto->civilStatus,
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome,
+                'contact_phone' => $dto->contactPhone,
                 'terms_consented_at' => $dto->termsConsentedAt,
                 'terms_version' => $dto->termsVersion,
             ]);

@@ -51,6 +51,7 @@ class BeneficiaryProfileResource extends JsonResource
             'civil_status_label' => $this->civil_status?->label(),
             'occupation' => $this->occupation,
             'monthly_income' => $this->monthly_income !== null ? (float) $this->monthly_income : null,
+            'contact_phone' => $this->contact_phone,
 
             // ── Household address ────────────────────────────────────────────
             'household' => $this->whenLoaded('household', fn () => [

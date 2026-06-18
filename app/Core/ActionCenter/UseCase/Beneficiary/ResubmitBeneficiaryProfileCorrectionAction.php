@@ -60,6 +60,7 @@ class ResubmitBeneficiaryProfileCorrectionAction
                 'civil_status' => $dto->civilStatus,
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome,
+                'contact_phone' => $dto->contactPhone,
                 'identity_verified_at' => null,
                 'identity_verified_by_user_id' => null,
                 'intake_rejected_at' => null,

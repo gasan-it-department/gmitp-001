@@ -4,6 +4,7 @@ use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
+use App\External\Api\Request\ActionCenter\StoreProfileSetupRequest;
 use App\External\Api\Request\ActionCenter\Walkin\StoreWalkInBeneficiaryRequest;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Database\Schema\Blueprint;
@@ -74,6 +75,7 @@ beforeEach(function () {
         $table->string('civil_status')->nullable();
         $table->string('occupation')->nullable();
         $table->decimal('monthly_income', 10, 2)->default(0);
+        $table->string('contact_phone', 20)->nullable();
         $table->timestamp('terms_consented_at')->nullable();
         $table->string('terms_version')->nullable();
         $table->timestamps();
@@ -176,6 +178,26 @@ it('requires ID front only when saving a walk-in as verified', function () {
         ->and(Validator::make($verifiedWithId->all(), $verifiedWithId->rules())->passes())->toBeTrue();
 });
 
+it('requires a valid contact phone for portal profile setup', function () {
+    $missingPhone = portalProfileRequest(['contact_phone' => '']);
+    $validPhone = portalProfileRequest(['contact_phone' => '0917 123 4567']);
+
+    expect(Validator::make($missingPhone->all(), $missingPhone->rules())->errors()->has('contact_phone'))->toBeTrue()
+        ->and(Validator::make($validPhone->all(), $validPhone->rules())->passes())->toBeTrue();
+});
+
+it('stores normalized walk-in contact phone when provided', function () {
+    $beneficiary = app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+        overrides: [
+            'contact_phone' => '0917 123 4567',
+        ],
+    ));
+
+    expect($beneficiary->contact_phone)->toBe('639171234567');
+});
+
 it('stores walk-in identity documents on the beneficiary media collections', function () {
     $beneficiary = app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
         municipalId: $this->municipalId,
@@ -237,6 +259,33 @@ function walkInRequest(array $overrides = []): StoreWalkInBeneficiaryRequest
     return $request;
 }
 
+function portalProfileRequest(array $overrides = []): StoreProfileSetupRequest
+{
+    $files = array_filter([
+        'identity_id_front' => $overrides['identity_id_front'] ?? UploadedFile::fake()->image('front.jpg'),
+        'identity_id_back' => $overrides['identity_id_back'] ?? null,
+    ]);
+
+    unset($overrides['identity_id_front'], $overrides['identity_id_back']);
+
+    $request = StoreProfileSetupRequest::create('/action-center/profile/setup', 'POST', array_merge([
+        'first_name' => 'Juan',
+        'last_name' => 'Cruz',
+        'sex' => 'male',
+        'birth_date' => '1990-01-01',
+        'civil_status' => 'single',
+        'occupation' => 'none',
+        'monthly_income' => '0',
+        'contact_phone' => '09171234567',
+        'barangay' => 'Poblacion',
+        'terms_consent' => '1',
+    ], $overrides), [], $files);
+
+    $request->setContainer(app());
+
+    return $request;
+}
+
 function walkInDto(
     string $municipalId,
     string $adminId,
@@ -244,8 +293,9 @@ function walkInDto(
     bool $force = false,
     ?UploadedFile $identityIdFront = null,
     ?UploadedFile $identityIdBack = null,
+    array $overrides = [],
 ): CreateWalkInBeneficiaryDto {
-    return CreateWalkInBeneficiaryDto::fromArray([
+    return CreateWalkInBeneficiaryDto::fromArray(array_merge([
         'first_name' => 'Juan',
         'last_name' => 'Cruz',
         'sex' => 'male',
@@ -260,5 +310,5 @@ function walkInDto(
         'verify_now' => $verifyNow,
         'force' => $force,
         'household_members' => [],
-    ], $adminId, $municipalId, $identityIdFront, $identityIdBack);
+    ], $overrides), $adminId, $municipalId, $identityIdFront, $identityIdBack);
 }

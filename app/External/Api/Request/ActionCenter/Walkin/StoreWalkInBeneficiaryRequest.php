@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Enums\Sex;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -67,6 +68,7 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             // ── Identity evidence. Required only when immediately verifying.
             'identity_id_front' => [Rule::requiredIf(fn () => $this->boolean('verify_now')), 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'identity_id_back' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'contact_phone' => ['nullable', 'string', 'max:30', $this->validPhoneNumber()],
 
             // ── Household composition (optional) ─────────────────────────────
             'household_members' => ['nullable', 'array', 'max:'.StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
@@ -109,6 +111,19 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'identity_id_back.mimes' => 'The ID back must be a JPG, PNG, or PDF file.',
             'identity_id_back.max' => 'The ID back must be 5 MB or smaller.',
         ];
+    }
+
+    private function validPhoneNumber(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            if (app(PhoneFormatterService::class)->normalize((string) $value) === null) {
+                $fail('Please enter a valid Philippine mobile number.');
+            }
+        };
     }
 
 }

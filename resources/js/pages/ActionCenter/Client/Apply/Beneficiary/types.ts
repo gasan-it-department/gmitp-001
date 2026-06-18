@@ -49,6 +49,7 @@ export type ProfileSetupFormData = {
     civil_status: string;
     occupation: string;
     monthly_income: string;
+    contact_phone: string;
 
     // Address. `barangay` is the human-readable name; `barangay_code` is the
     // stable PSGC code stored alongside on ac_households for queries.

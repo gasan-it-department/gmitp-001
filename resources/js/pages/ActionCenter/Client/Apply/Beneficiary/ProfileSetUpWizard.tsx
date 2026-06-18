@@ -3,9 +3,10 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import actionCenter from '@/routes/actionCenter';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Briefcase, Home, IdCard, User, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, Briefcase, Home, IdCard, Phone, User, Users } from 'lucide-react';
 import { FormEvent } from 'react';
 import { CivilStatusEmploymentSection } from './Components/CivilStatusEmploymentSection';
+import { CommunicationSection } from './Components/CommunicationSection';
 import { DataPrivacyConsent } from './Components/DataPrivacyConsent';
 import { HomeAddressSection } from './Components/HomeAddressSection';
 import { HouseholdMembersSection } from './Components/HouseholdMembersSection';
@@ -26,6 +27,9 @@ interface Props {
     initialData?: ProfileSetupFormData;
     existingIdentityDocuments?: ExistingIdentityDocuments;
     rejectionReason?: string | null;
+    accountContact?: {
+        phone: string | null;
+    };
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -53,6 +57,7 @@ const emptyProfileSetupData: ProfileSetupFormData = {
     civil_status: '',
     occupation: '',
     monthly_income: '',
+    contact_phone: '',
     barangay: '',
     barangay_code: '',
     street: '',
@@ -70,11 +75,21 @@ export default function ProfileSetUpWizard({
     initialData,
     existingIdentityDocuments = { front: false, back: false },
     rejectionReason = null,
+    accountContact = { phone: null },
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const isCorrection = mode === 'correction';
+    const initialFormData: ProfileSetupFormData = initialData
+        ? {
+              ...emptyProfileSetupData,
+              ...initialData,
+          }
+        : {
+              ...emptyProfileSetupData,
+              contact_phone: accountContact.phone ?? '',
+          };
 
-    const { data, setData, post, processing, errors } = useForm<ProfileSetupFormData>(initialData ?? emptyProfileSetupData);
+    const { data, setData, post, processing, errors } = useForm<ProfileSetupFormData>(initialFormData);
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -99,6 +114,7 @@ export default function ProfileSetUpWizard({
         data.birth_date.length > 0 &&
         frontIdSatisfied &&
         data.civil_status.length > 0 &&
+        data.contact_phone.trim().length > 0 &&
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
         !processing;
@@ -165,6 +181,14 @@ export default function ProfileSetUpWizard({
                                     religions={religions}
                                     educationalAttainment={educationalAttainment}
                                 />
+                            </div>
+                        </div>
+
+                        {/* Communication details */}
+                        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Communication" />
+                            <div className="mt-6">
+                                <CommunicationSection data={data} setData={setData} errors={errors} phoneRequired />
                             </div>
                         </div>
 

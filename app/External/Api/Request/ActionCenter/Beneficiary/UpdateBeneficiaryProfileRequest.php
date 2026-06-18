@@ -5,6 +5,7 @@ namespace App\External\Api\Request\ActionCenter\Beneficiary;
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Enums\Sex;
 use App\Core\ActionCenter\Enums\EducationalAttainment;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -46,6 +47,7 @@ class UpdateBeneficiaryProfileRequest extends FormRequest
             'civil_status'   => ['required', Rule::enum(CivilStatus::class)],
             'occupation'     => ['nullable', 'string', 'max:120'],
             'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'contact_phone' => ['nullable', 'string', 'max:30', $this->validPhoneNumber()],
         ];
     }
 
@@ -61,6 +63,19 @@ class UpdateBeneficiaryProfileRequest extends FormRequest
             'monthly_income.required' => 'Please enter the beneficiary\'s monthly income (enter 0 if none).',
             'monthly_income.min'      => 'Monthly income cannot be negative.',
         ];
+    }
+
+    private function validPhoneNumber(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            if (app(PhoneFormatterService::class)->normalize((string) $value) === null) {
+                $fail('Please enter a valid Philippine mobile number.');
+            }
+        };
     }
 
 }

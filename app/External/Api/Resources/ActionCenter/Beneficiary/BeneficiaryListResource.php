@@ -47,6 +47,7 @@ class BeneficiaryListResource extends JsonResource
             'monthly_income' => $this->monthly_income !== null
                 ? (float) $this->monthly_income
                 : null,
+            'contact_phone' => $this->contact_phone,
 
             // ── Address (household) ──────────────────────────────────────────
             'barangay' => $this->whenLoaded('household', fn () => $this->household?->barangay),

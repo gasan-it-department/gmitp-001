@@ -70,6 +70,7 @@ class Beneficiary extends Model implements HasMedia
         'civil_status',
         'occupation',
         'monthly_income',
+        'contact_phone',
         // Data Privacy Act (RA 10173) consent record — captured at profile setup.
         'terms_consented_at',
         'terms_version',
@@ -106,6 +107,7 @@ class Beneficiary extends Model implements HasMedia
                 'civil_status',
                 'occupation',
                 'monthly_income',
+                'contact_phone',
                 'is_active',
                 // The merge link is an admin identity decision — audit it.
                 'merged_into_beneficiary_id',

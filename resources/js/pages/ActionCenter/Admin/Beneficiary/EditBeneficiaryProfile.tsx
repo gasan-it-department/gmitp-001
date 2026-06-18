@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Briefcase, Loader2, ShieldAlert, User } from 'lucide-react';
+import { ArrowLeft, Briefcase, Loader2, Phone, ShieldAlert, User } from 'lucide-react';
 import { FormEvent } from 'react';
 // Reuse the SAME identity + civil-status sections the intake forms use, so the
 // edit form can never drift from the create path or the validators.
 import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Components/CivilStatusEmploymentSection';
+import { CommunicationSection } from '../../Client/Apply/Beneficiary/Components/CommunicationSection';
 import { PersonalInformationSection } from '../../Client/Apply/Beneficiary/Components/PersonalInformationSection';
 import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
@@ -31,6 +32,7 @@ interface BeneficiaryEditData {
     civil_status: string | null;
     occupation: string | null;
     monthly_income: number | null;
+    contact_phone: string | null;
 }
 
 interface Props {
@@ -68,6 +70,7 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
         civil_status: b.civil_status ?? '',
         occupation: b.occupation ?? '',
         monthly_income: b.monthly_income !== null ? String(b.monthly_income) : '',
+        contact_phone: b.contact_phone ?? '',
         // Unused by this endpoint — kept only to satisfy the shared form shape.
         barangay: '',
         barangay_code: '',
@@ -167,6 +170,13 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
                         </div>
 
                         {/* ── Section 2: Civil Status & Employment ── */}
+                        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Communication" />
+                            <div className="mt-6">
+                                <CommunicationSection data={data} setData={setData} errors={errors} />
+                            </div>
+                        </div>
+
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<Briefcase className="h-4 w-4 text-[#005088]" />} title="Civil Status & Employment" />
                             <div className="mt-6">

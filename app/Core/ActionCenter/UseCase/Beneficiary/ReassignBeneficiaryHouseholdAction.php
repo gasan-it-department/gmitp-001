@@ -123,6 +123,7 @@ class ReassignBeneficiaryHouseholdAction
             $destinationHousehold = $this->createHousehold->execute(
                 $dto->municipalId,
                 $dto->newHouseholdBarangay,
+                null,
                 $dto->newHouseholdStreet,
             );
         }

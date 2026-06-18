@@ -67,6 +67,7 @@ class CreateWalkInBeneficiaryAction
             $household = $this->createHousehold->execute(
                 $dto->municipalId,
                 $dto->barangay,
+                $dto->barangayCode,
                 $dto->street,
             );
 
@@ -91,6 +92,7 @@ class CreateWalkInBeneficiaryAction
                 'civil_status' => $dto->civilStatus,
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome,
+                'contact_phone' => $dto->contactPhone,
                 'terms_consented_at' => $dto->termsConsentedAt,
                 'terms_version' => $dto->termsVersion,
                 'identity_verified_at' => $dto->verifyNow ? now() : null,

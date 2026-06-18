@@ -62,6 +62,7 @@ class ShowBeneficiaryProfileCorrectionController extends Controller
                 'civil_status' => $beneficiary->civil_status?->value ?? '',
                 'occupation' => $beneficiary->occupation ?? '',
                 'monthly_income' => $beneficiary->monthly_income !== null ? (string) (float) $beneficiary->monthly_income : '',
+                'contact_phone' => $beneficiary->contact_phone ?? $request->user()?->phone ?? '',
                 'barangay' => $beneficiary->household?->barangay ?? '',
                 'barangay_code' => $beneficiary->household?->barangay_psgc_code ?? '',
                 'street' => $beneficiary->household?->street ?? '',

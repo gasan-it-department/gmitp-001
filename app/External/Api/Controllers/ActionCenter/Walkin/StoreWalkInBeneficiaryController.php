@@ -8,6 +8,7 @@ use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
 use App\External\Api\Request\ActionCenter\Walkin\StoreWalkInBeneficiaryRequest;
 use App\External\Api\Resources\ActionCenter\Walkin\WalkInBeneficiaryResource;
 use App\Http\Controllers\Controller;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -31,6 +32,7 @@ class StoreWalkInBeneficiaryController extends Controller
 {
     public function __construct(
         private readonly CreateWalkInBeneficiaryAction $createWalkIn,
+        private readonly PhoneFormatterService $phoneFormatter,
     ) {
     }
 
@@ -45,6 +47,7 @@ class StoreWalkInBeneficiaryController extends Controller
                 $municipality->id,
                 $request->file('identity_id_front'),
                 $request->file('identity_id_back'),
+                $this->phoneFormatter,
             );
 
             $beneficiary = $this->createWalkIn->execute($dto);

@@ -2,11 +2,12 @@ import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Briefcase, Home, IdCard, Loader2, User, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Home, IdCard, Loader2, Phone, User, UserPlus, Users } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 // Reuse the online profile-setup sections verbatim — same fields, same
 // validators — so the two intake forms can never drift.
 import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Components/CivilStatusEmploymentSection';
+import { CommunicationSection } from '../../Client/Apply/Beneficiary/Components/CommunicationSection';
 import { HomeAddressSection } from '../../Client/Apply/Beneficiary/Components/HomeAddressSection';
 import { HouseholdMembersSection } from '../../Client/Apply/Beneficiary/Components/HouseholdMembersSection';
 import { IdentityDocumentUploadSection } from '../../Client/Apply/Beneficiary/Components/IdentityDocumentUploadSection';
@@ -64,6 +65,7 @@ export default function CreateWalkInBeneficiary({
         civil_status: '',
         occupation: '',
         monthly_income: '',
+        contact_phone: '',
         barangay: '',
         barangay_code: '',
         street: '',
@@ -162,6 +164,13 @@ export default function CreateWalkInBeneficiary({
                         </div>
 
                         {/* ── Section 2: Identity documents ── */}
+                        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Communication" />
+                            <div className="mt-6">
+                                <CommunicationSection data={data} setData={setData} errors={errors} />
+                            </div>
+                        </div>
+
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Identity Documents" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">

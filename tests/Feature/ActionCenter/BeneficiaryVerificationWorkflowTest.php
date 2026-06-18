@@ -75,6 +75,7 @@ beforeEach(function () {
         $table->string('civil_status')->nullable();
         $table->string('occupation')->nullable();
         $table->decimal('monthly_income', 10, 2)->default(0);
+        $table->string('contact_phone', 20)->nullable();
         $table->timestamp('terms_consented_at')->nullable();
         $table->string('terms_version')->nullable();
         $table->softDeletes();
@@ -390,6 +391,7 @@ it('resets claimant and dependent verification after material identity edits', f
         civilStatus: 'single',
         occupation: 'FARMER',
         monthlyIncome: 5000,
+        contactPhone: null,
     ));
 
     $beneficiary->refresh();

@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Dto\Beneficiary;
 
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 
@@ -34,6 +35,7 @@ readonly class CreateBeneficiaryProfileDto
         public string $civilStatus,
         public string $occupation,
         public float $monthlyIncome,
+        public ?string $contactPhone,
 
         // Home address — written to ac_households
         public string $barangay,
@@ -69,8 +71,15 @@ readonly class CreateBeneficiaryProfileDto
         string $municipalId,
         ?UploadedFile $identityIdFront = null,
         ?UploadedFile $identityIdBack = null,
+        ?PhoneFormatterService $phoneFormatter = null,
     ): self
     {
+        $phoneFormatter ??= app(PhoneFormatterService::class);
+
+        $contactPhone = ! empty($data['contact_phone']) && $phoneFormatter !== null
+            ? $phoneFormatter->normalize((string) $data['contact_phone'])
+            : null;
+
         return new self(
             // IDs are left exactly as they are
             userId: $userId,
@@ -102,6 +111,7 @@ readonly class CreateBeneficiaryProfileDto
             // Cast to float because the DB column is decimal(10,2). The
             // FormRequest already validated numeric + min:0.
             monthlyIncome: (float) $data['monthly_income'],
+            contactPhone: $contactPhone,
 
             // Address details uppercase
             barangay: mb_strtoupper($data['barangay']),

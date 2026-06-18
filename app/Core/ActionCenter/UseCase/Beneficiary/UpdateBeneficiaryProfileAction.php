@@ -45,6 +45,7 @@ class UpdateBeneficiaryProfileAction
                 'civil_status' => $dto->civilStatus,
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome,
+                'contact_phone' => $dto->contactPhone,
                 'identity_verified_at' => $identityChanged
                     ? null
                     : $beneficiary->identity_verified_at,

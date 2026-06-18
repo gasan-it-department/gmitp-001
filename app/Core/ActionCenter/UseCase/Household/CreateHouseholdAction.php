@@ -39,7 +39,7 @@ class CreateHouseholdAction
                     'municipal_id' => $municipalId,
                     'household_code' => $householdCode,
                     'barangay' => $barangay,
-                    'barangay_code' => $barangayCode,
+                    'barangay_psgc_code' => $barangayCode,
                     'street' => $street,
                 ]);
             }

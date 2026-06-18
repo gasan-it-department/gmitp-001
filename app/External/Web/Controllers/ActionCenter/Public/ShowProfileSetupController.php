@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Religion;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,7 +25,7 @@ use Inertia\Response;
  */
 class ShowProfileSetupController extends Controller
 {
-    public function __invoke(string $municipality): Response
+    public function __invoke(string $municipality, Request $request): Response
     {
         return Inertia::render('ActionCenter/Client/Apply/Beneficiary/ProfileSetUpWizard', [
             'religions' => Religion::active()->get(['id', 'name']),
@@ -34,6 +35,9 @@ class ShowProfileSetupController extends Controller
             // Same enum the apply form's "on behalf of" picker uses.
             'relationships' => Relationship::toOptions(),
             'submitUrl' => route('actionCenter.profile.setup.store'),
+            'accountContact' => [
+                'phone' => $request->user()?->phone,
+            ],
         ]);
     }
 }
