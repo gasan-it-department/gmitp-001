@@ -15,7 +15,7 @@ class AssistanceRequestIntakeSheetPdf
             ->view('documents.action_center.assistance_request_intake_sheet', [
                 'data' => $data,
             ])
-            ->format(Format::A4)
+            ->format(Format::Legal)
             ->margins(top: 12, right: 12, bottom: 16, left: 12, unit: 'mm')
             ->name($this->filename($data));
     }

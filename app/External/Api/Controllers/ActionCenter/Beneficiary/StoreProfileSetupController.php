@@ -22,7 +22,8 @@ class StoreProfileSetupController extends Controller
 {
     public function __construct(
         private readonly CreateBeneficiaryProfileAction $createProfile,
-    ) {}
+    ) {
+    }
 
     public function __invoke(
         StoreProfileSetupRequest $request,

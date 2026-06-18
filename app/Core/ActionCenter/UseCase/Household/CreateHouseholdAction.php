@@ -11,7 +11,7 @@ use RuntimeException;
 
 class CreateHouseholdAction
 {
-    public function execute(string $municipalId, string $barangay, ?string $street): Household
+    public function execute(string $municipalId, string $barangay, ?string $barangayCode, ?string $street): Household
     {
         $municipality = DB::table('municipalities')
             ->where('id', $municipalId)
@@ -34,11 +34,12 @@ class CreateHouseholdAction
 
             // Ensure the code is strictly unique across all soft-deleted records as well
             $exists = Household::withTrashed()->where('household_code', $householdCode)->exists();
-            if (! $exists) {
+            if (!$exists) {
                 return Household::create([
                     'municipal_id' => $municipalId,
                     'household_code' => $householdCode,
                     'barangay' => $barangay,
+                    'barangay_code' => $barangayCode,
                     'street' => $street,
                 ]);
             }

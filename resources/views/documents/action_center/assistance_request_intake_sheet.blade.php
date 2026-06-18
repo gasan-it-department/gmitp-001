@@ -16,14 +16,6 @@
         $request = $data->request;
         $snapshot = $request->snapshot;
         $assistanceType = $request->assistanceType;
-        $requiredDocuments = $assistanceType?->documents?->sortBy(fn($document) => $document->pivot->sort_order ?? 0) ?? collect();
-        $media = $request->media ?? collect();
-        $mediaByKey = $media->keyBy(fn($item) => $item->getCustomProperty('document_key') ?? $item->collection_name);
-        $requiredKeys = $requiredDocuments->pluck('key')->filter()->values();
-        $extraDocuments = $media->filter(fn($item) => ! $requiredKeys->contains($item->getCustomProperty('document_key') ?? $item->collection_name));
-        $userName = fn($user) => $user
-            ? (trim(implode(' ', array_filter([$user->first_name, $user->last_name]))) ?: ($user->user_name ?? $user->email ?? 'Unknown user'))
-            : null;
         $fullSnapshotName = trim(implode(' ', array_filter([
             $snapshot?->first_name,
             $snapshot?->middle_name,
@@ -44,6 +36,9 @@
             $onBehalfMember->suffix,
         ]))) : null;
         $formatMoney = fn($value) => $value === null ? '---' : 'PHP ' . number_format((float) $value, 2);
+        $verifiedHouseholdIncome = (float) $data->householdMembers
+            ->filter(fn($member) => $member->relationship === 'head' || $member->is_verified_dependent)
+            ->sum(fn($member) => (float) $member->monthly_income);
     @endphp
 
     <header class="mb-4 border-b-2 border-slate-800 pb-3">
@@ -140,57 +135,53 @@
     </section>
 
     <section class="mb-4">
-        @include('documents.action_center.partials._section_header', ['title' => 'V. Submitted Documents'])
+        @include('documents.action_center.partials._section_header', [
+            'title' => 'V. Current Household Composition',
+            'meta' => $data->householdMembers->count() . ' active member(s) - Verified Income: PHP ' . number_format($verifiedHouseholdIncome, 2),
+        ])
 
-        @if($requiredDocuments->isEmpty() && $media->isEmpty())
-            <p class="text-[9pt] italic text-slate-400">No document requirements or uploads on record.</p>
+        @if($data->householdMembers->isEmpty())
+            <p class="text-[9pt] italic text-slate-400">No active household members on record.</p>
         @else
             <table class="w-full border-collapse text-[9pt]">
                 <thead>
                     <tr class="bg-slate-100 text-left text-[8pt] font-bold tracking-wider text-slate-700 uppercase">
-                        <th class="border border-slate-300 px-2 py-1.5">Document</th>
-                        <th class="border border-slate-300 px-2 py-1.5">Required</th>
-                        <th class="border border-slate-300 px-2 py-1.5">Uploaded File</th>
-                        <th class="border border-slate-300 px-2 py-1.5">Uploaded At</th>
+                        <th class="border border-slate-300 px-2 py-1.5">Name</th>
+                        <th class="border border-slate-300 px-2 py-1.5">Relationship</th>
+                        <th class="border border-slate-300 px-2 py-1.5">Age</th>
+                        <th class="border border-slate-300 px-2 py-1.5">Sex</th>
+                        <th class="border border-slate-300 px-2 py-1.5">Occupation</th>
+                        <th class="border border-slate-300 px-2 py-1.5 text-right">Monthly Income</th>
+                        <th class="border border-slate-300 px-2 py-1.5 text-center">Verification</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($requiredDocuments as $document)
-                        @php $upload = $mediaByKey->get($document->key); @endphp
-                        <tr class="{{ $document->pivot?->is_required && ! $upload ? 'bg-rose-50' : '' }}">
-                            <td class="border border-slate-300 px-2 py-1.5">{{ $document->label ?? $document->name ?? $document->key }}</td>
-                            <td class="border border-slate-300 px-2 py-1.5">{{ $document->pivot?->is_required ? 'Yes' : 'No' }}</td>
-                            <td class="border border-slate-300 px-2 py-1.5">{{ $upload?->file_name ?? 'Not provided' }}</td>
-                            <td class="border border-slate-300 px-2 py-1.5">{{ $upload?->created_at?->format('M j, Y - g:i A') ?? '---' }}</td>
-                        </tr>
-                    @endforeach
-
-                    @foreach($extraDocuments as $document)
-                        <tr>
-                            <td class="border border-slate-300 px-2 py-1.5">{{ str_replace('_', ' ', $document->getCustomProperty('document_key') ?? $document->collection_name) }}</td>
-                            <td class="border border-slate-300 px-2 py-1.5">Extra</td>
-                            <td class="border border-slate-300 px-2 py-1.5">{{ $document->file_name }}</td>
-                            <td class="border border-slate-300 px-2 py-1.5">{{ $document->created_at?->format('M j, Y - g:i A') ?? '---' }}</td>
+                    @foreach($data->householdMembers as $member)
+                        @php
+                            $isHead = $member->relationship === 'head';
+                            $isVerified = $isHead || $member->is_verified_dependent;
+                            $memberName = trim(implode(' ', array_filter([
+                                $member->first_name,
+                                $member->middle_name,
+                                $member->last_name,
+                                $member->suffix,
+                            ])));
+                        @endphp
+                        <tr class="{{ $isHead ? 'bg-amber-50 font-semibold' : (! $isVerified ? 'bg-rose-50' : '') }}">
+                            <td class="border border-slate-300 px-2 py-1.5">{{ $memberName ?: '---' }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5 capitalize">{{ str_replace('_', ' ', (string) $member->relationship) }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5">{{ $member->birth_date?->age ?? '---' }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5 capitalize">{{ $member->sex ?? '---' }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5">{{ $member->occupation ?? '---' }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5 text-right">PHP {{ number_format((float) $member->monthly_income, 2) }}</td>
+                            <td class="border border-slate-300 px-2 py-1.5 text-center text-[8pt] font-bold {{ $isVerified ? 'text-emerald-700' : 'text-rose-600' }}">
+                                {{ $isHead ? 'HEAD' : ($isVerified ? 'VERIFIED' : 'PENDING') }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         @endif
-    </section>
-
-    <section class="mb-4">
-        @include('documents.action_center.partials._section_header', ['title' => 'VI. Review and Release Trail'])
-
-        <div class="grid grid-cols-2 gap-3">
-            @include('documents.action_center.partials._field', ['label' => 'Encoded By', 'value' => $userName($request->encodedBy)])
-            @include('documents.action_center.partials._field', ['label' => 'Reviewed By', 'value' => $userName($request->reviewedBy)])
-            @include('documents.action_center.partials._field', ['label' => 'Approved By', 'value' => $userName($request->approvedBy)])
-            @include('documents.action_center.partials._field', ['label' => 'Approved At', 'value' => $request->approved_at?->format('F j, Y - g:i A')])
-            @include('documents.action_center.partials._field', ['label' => 'Released By', 'value' => $userName($request->releasedBy)])
-            @include('documents.action_center.partials._field', ['label' => 'Released At', 'value' => $request->released_at?->format('F j, Y - g:i A')])
-            @include('documents.action_center.partials._field', ['label' => 'Release Reference', 'value' => $request->release_reference_number])
-            @include('documents.action_center.partials._field', ['label' => 'Rejected / Cancelled By', 'value' => $userName($request->rejectedBy) ?? $userName($request->cancelledBy)])
-        </div>
     </section>
 
     <footer class="mt-6 border-t border-slate-300 pt-3">

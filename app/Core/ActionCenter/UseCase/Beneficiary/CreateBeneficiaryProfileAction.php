@@ -43,7 +43,8 @@ class CreateBeneficiaryProfileAction
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
         private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
-    ) {}
+    ) {
+    }
 
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
@@ -69,6 +70,7 @@ class CreateBeneficiaryProfileAction
             $household = $this->createHousehold->execute(
                 $dto->municipalId,
                 $dto->barangay,
+                $dto->barangayCode,
                 $dto->street,
             );
 
@@ -143,9 +145,9 @@ class CreateBeneficiaryProfileAction
                     'user_id' => null, // system-raised, not an admin action
                     'reason' => 'potential_duplicate',
                     'severity' => BeneficiaryFlag::SEVERITY_WARNING,
-                    'notes' => 'Possible duplicate of: '.$possibleDuplicates
-                        ->map(fn (Beneficiary $b) => $b->beneficiary_number ?? $b->id)
-                        ->implode(', ').'. Verify against government ID before assisting.',
+                    'notes' => 'Possible duplicate of: ' . $possibleDuplicates
+                        ->map(fn(Beneficiary $b) => $b->beneficiary_number ?? $b->id)
+                        ->implode(', ') . '. Verify against government ID before assisting.',
                 ]);
             }
 

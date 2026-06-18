@@ -30,7 +30,8 @@ class StoreAdminAssistanceRequestController extends Controller
     public function __construct(
         private readonly StoreAssistanceRequestAction $storeAssistanceRequest,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {}
+    ) {
+    }
 
     public function __invoke(StoreAdminAssistanceRequest $request): RedirectResponse
     {
@@ -42,7 +43,7 @@ class StoreAdminAssistanceRequestController extends Controller
         $beneficiary = Beneficiary::query()
             ->with(['household', 'religion'])
             ->whereKey($request->validated('beneficiary_id'))
-            ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
+            ->whereHas('household', fn($q) => $q->where('municipal_id', $municipalId))
             ->first();
 
         if ($beneficiary === null) {
@@ -83,14 +84,14 @@ class StoreAdminAssistanceRequestController extends Controller
             );
 
             $created = $this->storeAssistanceRequest->execute($dto);
-        } catch (AuthorizationException|\DomainException $e) {
+        } catch (AuthorizationException | \DomainException $e) {
             return back()
                 ->withInput()
                 ->withErrors(['request' => $e->getMessage()]);
         }
 
         // The officer filed despite a standing eligibility or verification gate.
-        if (! $eligibility->eligible) {
+        if (!$eligibility->eligible) {
             activity('assistance_request')
                 ->performedOn($created)
                 ->causedBy(Auth::user())
