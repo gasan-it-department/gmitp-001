@@ -148,7 +148,10 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor={`identity-document-${side}-reason`} className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+                            <Label
+                                htmlFor={`identity-document-${side}-reason`}
+                                className="text-xs font-bold tracking-widest text-slate-500 uppercase"
+                            >
                                 Reason {isVerified ? <span className="text-red-500">*</span> : <span className="text-slate-400">(optional)</span>}
                             </Label>
                             <Textarea
@@ -170,7 +173,11 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                             <Button type="button" variant="ghost" onClick={handleClose} disabled={processing}>
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={processing || data.document === null} className="bg-slate-900 text-white hover:bg-slate-800">
+                            <Button
+                                type="submit"
+                                disabled={processing || data.document === null}
+                                className="bg-slate-900 text-white hover:bg-slate-800"
+                            >
                                 {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
                                 Save document
                             </Button>

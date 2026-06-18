@@ -1,5 +1,5 @@
-import { MunicipalityType } from "../Municipality/MunicipalityTypes";
-import { UserSocialAccount } from "./user";
+import { MunicipalityType } from '../Municipality/MunicipalityTypes';
+import { UserSocialAccount } from './user';
 
 export interface User {
     id: string;
@@ -18,7 +18,17 @@ export interface User {
 }
 
 export interface Permission {
-    id: string;
     value: string;
     label: string;
+    is_access: boolean;
+}
+
+export interface PermissionModule {
+    value: string;
+    label: string;
+    permissions: Permission[];
+}
+
+export interface PermissionCatalog {
+    modules: PermissionModule[];
 }

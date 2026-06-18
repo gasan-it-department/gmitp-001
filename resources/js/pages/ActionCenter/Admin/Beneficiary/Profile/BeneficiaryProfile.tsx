@@ -6,6 +6,7 @@ import DownloadBeneficiaryIdentityDocumentSheetController from '@/actions/App/Ex
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
@@ -159,7 +160,7 @@ export default function BeneficiaryProfile({
     const crossMatches = crossMunicipalityMatches?.data ?? [];
 
     const [linkOpen, setLinkOpen] = useState(false);
-    const [avatarUploadOpen, setAvatarUploadOpen] = useState(false);
+    const [avatarViewOpen, setAvatarViewOpen] = useState(false);
     const [reassignOpen, setReassignOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
 
@@ -244,12 +245,19 @@ export default function BeneficiaryProfile({
                     <div className="container mx-auto max-w-7xl px-6 py-6">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-start gap-4">
-                                <AvatarUploader
-                                    beneficiaryId={profile.id}
-                                    avatarUrl={profile.avatar_url}
-                                    fullName={profile.full_name}
-                                    sizeClass="h-16 w-16"
-                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => profile.avatar_url && setAvatarViewOpen(true)}
+                                    className={profile.avatar_url ? "cursor-pointer transition hover:opacity-90 hover:ring-4 hover:ring-blue-100 rounded-full" : "cursor-default"}
+                                >
+                                    <AvatarUploader
+                                        beneficiaryId={profile.id}
+                                        avatarUrl={profile.avatar_url}
+                                        fullName={profile.full_name}
+                                        sizeClass="h-16 w-16"
+                                        editable={false}
+                                    />
+                                </button>
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h1 className="text-2xl font-bold tracking-tight text-slate-900 capitalize">{profile.full_name}</h1>
@@ -696,6 +704,18 @@ export default function BeneficiaryProfile({
                 isOpen={mergeOpen}
                 onClose={() => setMergeOpen(false)}
             />
+
+            <Dialog open={avatarViewOpen} onOpenChange={setAvatarViewOpen}>
+                <DialogContent className="max-w-md border-none bg-transparent p-0 shadow-none">
+                    {profile.avatar_url && (
+                        <img 
+                            src={profile.avatar_url} 
+                            alt={profile.full_name} 
+                            className="h-auto w-full rounded-2xl object-contain shadow-2xl" 
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </AdminLayout>
     );
 }
