@@ -104,7 +104,10 @@ interface OnBehalfBlock {
     last_name: string | null;
     suffix: string | null;
     full_name: string;
+    birth_date: string | null;
     date_of_death: string | null;
+    recipient_id_exception: string | null;
+    recipient_id_exception_reason: string | null;
 }
 
 interface HouseholdMemberBlock {
@@ -210,17 +213,18 @@ export default function AssistanceRequestsDetails({
     householdMembers,
     crossMunicipalityMatches,
 }: Props) {
-    console.log(request);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
     const utils = Utility();
-    const requiredDocumentsData = requiredDocuments.data;
+    const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
+    const recipientIdIsRequired = detail.on_behalf !== null && detail.assistance_type?.slug !== 'burial' && !detail.on_behalf.recipient_id_exception;
+    const requiredDocumentsData = requiredDocuments.data
+        .filter((document) => !document.key.startsWith('recipient_valid_id_') || detail.on_behalf !== null)
+        .map((document) => (document.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...document, is_required: true } : document));
     const recentHistoryData = recentHistory.data;
     const activityLogData = activityLog.data;
     const householdMembersData = householdMembers.data;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
-    const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
-
     const isMine = detail.reviewed_by?.id === auth.user?.id;
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
@@ -403,15 +407,26 @@ export default function AssistanceRequestsDetails({
                                             {detail.filed_for_self ? (
                                                 <InfoLine icon={<UserCheck className="h-4 w-4" />}>Filed by the beneficiary for themselves.</InfoLine>
                                             ) : (
-                                                <InfoLine icon={<Info className="h-4 w-4 text-blue-600" />} variant="info">
-                                                    Filed on behalf of <strong>{detail.on_behalf?.full_name}</strong> by their{' '}
-                                                    <strong>{detail.relationship?.label.toLowerCase()}</strong>.
-                                                    {detail.on_behalf?.date_of_death && (
-                                                        <span className="ml-1">
-                                                            Date of death: {utils.formatToReadableDateNoTime(detail.on_behalf.date_of_death)}.
-                                                        </span>
+                                                <div className="space-y-2">
+                                                    <InfoLine icon={<Info className="h-4 w-4 text-blue-600" />} variant="info">
+                                                        Filed on behalf of <strong>{detail.on_behalf?.full_name}</strong> by their{' '}
+                                                        <strong>{detail.relationship?.label.toLowerCase()}</strong>.
+                                                        {detail.on_behalf?.date_of_death && (
+                                                            <span className="ml-1">
+                                                                Date of death: {utils.formatToReadableDateNoTime(detail.on_behalf.date_of_death)}.
+                                                            </span>
+                                                        )}
+                                                    </InfoLine>
+                                                    {detail.on_behalf?.recipient_id_exception && (
+                                                        <InfoLine icon={<Info className="h-4 w-4" />}>
+                                                            Assisted-person ID exception:{' '}
+                                                            <strong>{detail.on_behalf.recipient_id_exception.replace(/_/g, ' ')}</strong>
+                                                            {detail.on_behalf.recipient_id_exception_reason
+                                                                ? ` — ${detail.on_behalf.recipient_id_exception_reason}`
+                                                                : '.'}
+                                                        </InfoLine>
                                                     )}
-                                                </InfoLine>
+                                                </div>
                                             )}
 
                                             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
@@ -547,7 +562,7 @@ export default function AssistanceRequestsDetails({
 
                                             {extraDocuments.length > 0 && (
                                                 <>
-                                                    <p className="mt-6 mb-3 text-[10px] font-bold tracking-widest text-slate-500 uppercase border-t border-slate-100 pt-6">
+                                                    <p className="mt-6 mb-3 border-t border-slate-100 pt-6 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
                                                         Extra attachments
                                                     </p>
                                                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
@@ -708,7 +723,8 @@ export default function AssistanceRequestsDetails({
                                         Download Beneficiary Intake Sheet (PDF)
                                     </a>
                                     <p className="text-[11px] leading-snug text-slate-400">
-                                        Receipt proves release. Request sheet records this transaction. Beneficiary sheet records the claimant identity file.
+                                        Receipt proves release. Request sheet records this transaction. Beneficiary sheet records the claimant
+                                        identity file.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -892,10 +908,12 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
             <div className="flex flex-col overflow-hidden rounded-xl border border-rose-200 bg-rose-50/50 transition hover:shadow-sm">
                 <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-rose-100 bg-white p-4 text-center">
                     <XCircle className="h-8 w-8 text-rose-300" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-rose-600">Missing Required</p>
+                    <p className="text-[10px] font-bold tracking-widest text-rose-600 uppercase">Missing Required</p>
                 </div>
                 <div className="p-3">
-                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>{label}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>
+                        {label}
+                    </p>
                     <p className="mt-0.5 text-xs text-rose-500">Action required</p>
                 </div>
             </div>
@@ -907,10 +925,12 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
             <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition hover:shadow-sm">
                 <div className="flex h-32 flex-col items-center justify-center gap-2 border-b border-slate-100 bg-white p-4 text-center opacity-60">
                     <Circle className="h-8 w-8 text-slate-300" />
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Optional</p>
+                    <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Optional</p>
                 </div>
                 <div className="p-3 opacity-60">
-                    <p className="truncate text-sm font-medium text-slate-500 capitalize" title={label}>{label}</p>
+                    <p className="truncate text-sm font-medium text-slate-500 capitalize" title={label}>
+                        {label}
+                    </p>
                     <p className="mt-0.5 text-xs text-slate-400">Not provided</p>
                 </div>
             </div>
@@ -930,11 +950,15 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
         >
             <div className="relative flex h-32 w-full items-center justify-center overflow-hidden border-b border-slate-100 bg-slate-50">
                 {isImage ? (
-                    <img src={file.url} alt={file.file_name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <img
+                        src={file.url}
+                        alt={file.file_name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
                 ) : (
                     <FileText className="h-10 w-10 text-slate-300 transition-colors group-hover:text-[#005088]" />
                 )}
-                
+
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
                     <span className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm">
@@ -942,10 +966,12 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
                     </span>
                 </div>
             </div>
-            
+
             <div className="p-3">
                 <div className="flex items-start justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>{label}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>
+                        {label}
+                    </p>
                     <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
                 </div>
                 <p className="mt-0.5 truncate text-[11px] text-slate-500">

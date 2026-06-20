@@ -27,6 +27,7 @@ interface RequestData {
     assistance_type: { name: string } | null;
     identity_snapshot: { full_name: string } | null;
     beneficiary_number: string | null;
+    on_behalf: { recipient_id_exception?: string | null } | null;
     documents: UploadedDoc[];
 }
 
@@ -68,7 +69,10 @@ function formatBytes(bytes: number): string {
 export default function EditAssistanceRequest({ request, requiredDocuments, submitUrl }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const r: RequestData = 'data' in request ? request.data : request;
-    const slots = requiredDocuments.data;
+    const recipientIdIsRequired = r.on_behalf !== null && !r.on_behalf.recipient_id_exception;
+    const slots = requiredDocuments.data
+        .filter((slot) => !slot.key.startsWith('recipient_valid_id_') || r.on_behalf !== null)
+        .map((slot) => (slot.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...slot, is_required: true } : slot));
 
     const { data, setData, post, processing, errors } = useForm<EditFormData>({
         description: r.description ?? '',
@@ -78,8 +82,7 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
     const fieldErrors = errors as Record<string, string | undefined>;
     const requestError = fieldErrors.request;
 
-    const currentDocFor = (key: string): UploadedDoc | undefined =>
-        r.documents.find((d) => d.custom_properties?.document_key === key);
+    const currentDocFor = (key: string): UploadedDoc | undefined => r.documents.find((d) => d.custom_properties?.document_key === key);
 
     const handleFileChange = (key: string, file: File | null) => {
         setData('documents', { ...data.documents, [key]: file });
@@ -133,15 +136,12 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                             </div>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
                                 Correcting{' '}
-                                <span className="font-semibold text-slate-700 capitalize">
-                                    {r.assistance_type?.name ?? 'this request'}
-                                </span>{' '}
-                                for{' '}
+                                <span className="font-semibold text-slate-700 capitalize">{r.assistance_type?.name ?? 'this request'}</span> for{' '}
                                 <span className="font-semibold text-slate-700 capitalize">
                                     {r.identity_snapshot?.full_name?.toLowerCase() ?? 'the beneficiary'}
                                 </span>
-                                {r.beneficiary_number ? ` (${r.beneficiary_number})` : ''}. Only the reason and document scans can
-                                be changed — the identity and amount on file stay frozen.
+                                {r.beneficiary_number ? ` (${r.beneficiary_number})` : ''}. Only the reason and document scans can be changed — the
+                                identity and amount on file stay frozen.
                             </p>
                         </div>
                     </div>
@@ -207,9 +207,7 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                                                     onChange={(e) => handleFileChange(slot.key, e.target.files?.[0] ?? null)}
                                                 />
                                                 {data.documents[slot.key] && (
-                                                    <p className="text-[11px] text-blue-600">
-                                                        Will replace with: {data.documents[slot.key]?.name}
-                                                    </p>
+                                                    <p className="text-[11px] text-blue-600">Will replace with: {data.documents[slot.key]?.name}</p>
                                                 )}
                                                 {fieldErrors[`documents.${slot.key}`] && (
                                                     <p className="text-xs text-red-500">{fieldErrors[`documents.${slot.key}`]}</p>

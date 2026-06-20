@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -37,10 +38,17 @@ class StoreAssistanceRequestAction
         // stayed pure (just IDs / primitives), the model fetch happens
         // in the action layer per our layered-architecture contract.
         $beneficiary = Beneficiary::with(['household', 'religion'])->findOrFail($dto->beneficiaryId);
+        $assistanceType = AssistanceType::with('documents')->findOrFail($dto->assistanceTypeId);
 
         if ($beneficiary->household->municipal_id !== $dto->municipalId) {
             throw new AuthorizationException(
                 'You may only request assistance from the municipality where you reside.'
+            );
+        }
+
+        if ($assistanceType->municipal_id !== $dto->municipalId) {
+            throw new AuthorizationException(
+                'The selected assistance type does not belong to this municipality.'
             );
         }
 
@@ -64,6 +72,17 @@ class StoreAssistanceRequestAction
 
         $this->ensureVerificationGate($beneficiary, $dto);
 
+        // Resolve once so the document gate and frozen request metadata use
+        // the same trusted household-member row.
+        $member = $this->resolveOnBehalfMember($dto, $beneficiary);
+        $recipientIdException = $this->recipientIdException($dto, $assistanceType, $member);
+        $this->ensureRecipientIdentityDocuments(
+            $dto,
+            $assistanceType,
+            $member,
+            $recipientIdException,
+        );
+
         // ── Compute derived economic snapshot BEFORE opening the transaction.
         //    These are read-only SELECTs that do not need to be inside the
         //    lock window — pulling them out keeps the transaction tight.
@@ -75,27 +94,33 @@ class StoreAssistanceRequestAction
         //    write. `attempts: 3` auto-retries on the rare sequence-table
         //    serialization conflict (two citizens hitting submit within
         //    the same millisecond).
-        $request = DB::transaction(function () use ($dto, $beneficiary, $householdTotalIncome) {
+        $request = DB::transaction(function () use (
+            $dto,
+            $beneficiary,
+            $householdTotalIncome,
+            $member,
+            $recipientIdException,
+        ) {
             $requestId = $this->idGenerator->generate();
-
-            // When filing for a household member, resolve the snapshot fields
-            // from the FK'd row so the citizen cannot forge a name by editing
-            // the submitted payload. The FK must also belong to the filer's
-            // own household — otherwise it's a cross-household tamper attempt.
-            $member = $this->resolveOnBehalfMember($dto, $beneficiary);
 
             $onBehalfFirstName = $member?->first_name ?? $dto->onBehalfFirstName;
             $onBehalfMiddleName = $member?->middle_name ?? $dto->onBehalfMiddleName;
             $onBehalfLastName = $member?->last_name ?? $dto->onBehalfLastName;
             $onBehalfSuffix = $member?->suffix ?? $dto->onBehalfSuffix;
+            $relationshipToBeneficiary = $member?->relationship ?? $dto->relationshipToBeneficiary;
 
             $metadata = array_filter([
-                'relationship_to_beneficiary' => $dto->relationshipToBeneficiary,
+                'relationship_to_beneficiary' => $relationshipToBeneficiary,
                 'on_behalf_first_name' => $onBehalfFirstName,
                 'on_behalf_middle_name' => $onBehalfMiddleName,
                 'on_behalf_last_name' => $onBehalfLastName,
                 'on_behalf_suffix' => $onBehalfSuffix,
+                'on_behalf_birth_date' => $member?->birth_date?->toDateString(),
                 'on_behalf_date_of_death' => $dto->onBehalfDateOfDeath,
+                'recipient_id_exception' => $recipientIdException,
+                'recipient_id_exception_reason' => $recipientIdException === 'no_government_id'
+                    ? $dto->recipientIdUnavailableReason
+                    : null,
                 'on_behalf_verification_pending' => $member !== null
                     && $member->relationship !== 'head'
                     && ! $member->is_verified_dependent
@@ -238,6 +263,74 @@ class StoreAssistanceRequestAction
         }
     }
 
+    private function recipientIdException(
+        StoreAssistanceRequestDto $dto,
+        AssistanceType $assistanceType,
+        ?HouseholdMember $member,
+    ): ?string {
+        $isOnBehalf = $member !== null || filled($dto->onBehalfFirstName);
+
+        if (! $isOnBehalf) {
+            return null;
+        }
+
+        if ($assistanceType->slug === 'burial' || filled($dto->onBehalfDateOfDeath)) {
+            return 'deceased';
+        }
+
+        if ($member?->birth_date !== null && $member->birth_date->age < 18) {
+            return 'minor';
+        }
+
+        if ($dto->recipientIdUnavailable) {
+            if (blank($dto->recipientIdUnavailableReason)
+                || mb_strlen(trim($dto->recipientIdUnavailableReason)) < 10) {
+                throw new \DomainException(
+                    'Explain why the assisted adult cannot provide a government ID.',
+                );
+            }
+
+            return 'no_government_id';
+        }
+
+        return null;
+    }
+
+    private function ensureRecipientIdentityDocuments(
+        StoreAssistanceRequestDto $dto,
+        AssistanceType $assistanceType,
+        ?HouseholdMember $member,
+        ?string $recipientIdException,
+    ): void {
+        $isOnBehalf = $member !== null || filled($dto->onBehalfFirstName);
+
+        if (! $isOnBehalf || $recipientIdException !== null) {
+            return;
+        }
+
+        $requiresFilerId = $assistanceType->documents->contains(
+            fn ($document) => in_array($document->key, ['valid_id_front', 'valid_id_back'], true)
+                && (bool) $document->pivot->is_required,
+        );
+
+        // Admins may encode first and attach scans through the existing edit
+        // flow. Approval remains blocked until the applicable evidence exists.
+        if (! $requiresFilerId || $dto->encodedByUserId !== null) {
+            return;
+        }
+
+        $missing = collect([
+            'recipient_valid_id_front',
+            'recipient_valid_id_back',
+        ])->reject(fn (string $key) => isset($dto->documents[$key]));
+
+        if ($missing->isNotEmpty()) {
+            throw new \DomainException(
+                'Upload both sides of the assisted adult\'s government ID, or explain why no ID is available.',
+            );
+        }
+    }
+
     /**
      * Attach each uploaded document to the request's Spatie "documents"
      * media collection. The `document_key` custom property preserves the
@@ -311,9 +404,11 @@ class StoreAssistanceRequestAction
                 $member,
                 $dto,
             )) {
-            throw new AuthorizationException(
-                'The selected household member is awaiting MSWD verification.',
-            );
+            if ($dto->encodedByUserId === null || blank($dto->verificationOverrideReason)) {
+                throw new AuthorizationException(
+                    'The selected household member is awaiting MSWD verification.',
+                );
+            }
         }
 
         return $member;

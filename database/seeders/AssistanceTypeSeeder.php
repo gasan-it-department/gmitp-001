@@ -69,6 +69,16 @@ class AssistanceTypeSeeder extends Seeder
                 ])
             );
 
+            // Retire the old one-file ID requirement for this seeded program.
+            // Existing request media remains untouched and readable.
+            $legacyValidId = $docTypes->get('valid_id');
+            if ($legacyValidId) {
+                DB::table('ac_assistance_type_documents')
+                    ->where('assistance_type_id', $type->id)
+                    ->where('document_type_id', $legacyValidId->id)
+                    ->delete();
+            }
+
             // --- Upsert the pivot (ac_assistance_type_documents) ---
             // The pivot has its own ULID primary key, so we cannot use attach() /
             // sync() directly. We use DB::upsert() instead:
@@ -157,7 +167,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 10000.00,
                 'sort_order' => 10,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'med_abstract', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'hospital_bill', 'is_required' => true, 'sort_order' => 40],
@@ -188,7 +201,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 10000.00,
                 'sort_order' => 20,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'death_cert', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'funeral_contract', 'is_required' => true, 'sort_order' => 40],
@@ -211,7 +227,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 1000.00,
                 'sort_order' => 30,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'cert_enrollment', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 40],
@@ -235,7 +254,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 2000.00,
                 'sort_order' => 40,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'cert_enrollment', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 40],
@@ -260,7 +282,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 5000.00,
                 'sort_order' => 50,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'cert_enrollment', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 40],
@@ -284,7 +309,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 3000.00,
                 'sort_order' => 60,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 30],
                 ],
@@ -306,7 +334,10 @@ class AssistanceTypeSeeder extends Seeder
                 'max_amount' => 5000.00,
                 'sort_order' => 70,
                 'documents' => [
-                    ['key' => 'valid_id', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_front', 'is_required' => true, 'sort_order' => 10],
+                    ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
+                    ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
+                    ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 30],
                 ],

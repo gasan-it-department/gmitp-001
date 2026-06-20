@@ -4,10 +4,13 @@ use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceTypeDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceTypeDto;
 use App\Core\ActionCenter\Exceptions\AssistanceTypeException;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceTypeAction;
+use App\Core\ActionCenter\UseCase\Assistance\NormalizeAssistanceTypeDocumentSlotsAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceTypeAction;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     Schema::create('ac_assistance_types', function (Blueprint $table) {
@@ -29,6 +32,15 @@ beforeEach(function () {
         $table->unique(['municipal_id', 'slug']);
     });
 
+    Schema::create('ac_document_types', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->string('key')->unique();
+        $table->string('label');
+        $table->boolean('is_active')->default(true);
+        $table->unsignedInteger('sort_order')->default(0);
+        $table->timestamps();
+    });
+
     Schema::create('ac_assistance_type_documents', function (Blueprint $table) {
         $table->ulid('id')->primary();
         $table->ulid('assistance_type_id');
@@ -45,12 +57,14 @@ beforeEach(function () {
         }
     };
 
-    $this->storeAction = new StoreAssistanceTypeAction($idGenerator);
-    $this->updateAction = new UpdateAssistanceTypeAction($idGenerator);
+    $normalizeDocumentSlots = new NormalizeAssistanceTypeDocumentSlotsAction();
+    $this->storeAction = new StoreAssistanceTypeAction($idGenerator, $normalizeDocumentSlots);
+    $this->updateAction = new UpdateAssistanceTypeAction($idGenerator, $normalizeDocumentSlots);
 });
 
 afterEach(function () {
     Schema::dropIfExists('ac_assistance_type_documents');
+    Schema::dropIfExists('ac_document_types');
     Schema::dropIfExists('ac_assistance_types');
 });
 
@@ -99,6 +113,53 @@ it('keeps the slug stable when the assistance type name changes', function () {
     ), $assistanceType->id);
 
     expect($assistanceType->fresh()->slug)->toBe('medical-assistance');
+});
+
+it('automatically attaches conditional recipient id slots when filer id is configured', function () {
+    $now = now();
+    $documents = collect([
+        'valid_id_front',
+        'valid_id_back',
+        'recipient_valid_id_front',
+        'recipient_valid_id_back',
+    ])->mapWithKeys(function (string $key) use ($now) {
+        $id = (string) Str::ulid();
+        DB::table('ac_document_types')->insert([
+            'id' => $id,
+            'key' => $key,
+            'label' => str($key)->replace('_', ' ')->title(),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return [$key => $id];
+    });
+
+    $dto = storeDto('Medical Assistance');
+    $dto = new StoreAssistanceTypeDto(
+        name: $dto->name,
+        description: $dto->description,
+        minAmount: $dto->minAmount,
+        maxAmount: $dto->maxAmount,
+        cooldownMonths: $dto->cooldownMonths,
+        isActive: $dto->isActive,
+        documents: [
+            ['id' => $documents['valid_id_front'], 'is_required' => true],
+            ['id' => $documents['valid_id_back'], 'is_required' => true],
+        ],
+    );
+
+    $assistanceType = $this->storeAction->execute($dto, 'municipality-a');
+    $pivots = DB::table('ac_assistance_type_documents')
+        ->where('assistance_type_id', $assistanceType->id)
+        ->get()
+        ->keyBy('document_type_id');
+
+    expect($pivots)->toHaveCount(4)
+        ->and((bool) $pivots[$documents['valid_id_front']]->is_required)->toBeTrue()
+        ->and((bool) $pivots[$documents['valid_id_back']]->is_required)->toBeTrue()
+        ->and((bool) $pivots[$documents['recipient_valid_id_front']]->is_required)->toBeFalse()
+        ->and((bool) $pivots[$documents['recipient_valid_id_back']]->is_required)->toBeFalse();
 });
 
 function storeDto(string $name, ?float $minAmount = null, ?float $maxAmount = null): StoreAssistanceTypeDto

@@ -21,6 +21,7 @@ interface SharedFormProps {
 export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceTypeId, initialData, documentTypes, onCancel }: SharedFormProps) {
     // 1. Initialize form with whatever data the wrapper passed in
     const { data, setData, post, put, processing, errors } = useForm<AssistanceTypeFormData>(initialData);
+    const configurableDocuments = data.documents.filter((document) => !document.key?.startsWith('recipient_valid_id_'));
 
     const amountValue = (value: number | null | undefined) => (value === null || value === undefined ? '' : value);
 
@@ -106,7 +107,10 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                             {/* Business Rules Grid (Amount Bounds & Cooldown) */}
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div className="flex flex-col">
-                                    <Label htmlFor="min_amount" className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end">
+                                    <Label
+                                        htmlFor="min_amount"
+                                        className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end"
+                                    >
                                         Minimum Amount Floor (₱)
                                     </Label>
                                     <div className="relative mb-2">
@@ -127,7 +131,10 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <Label htmlFor="max_amount" className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end">
+                                    <Label
+                                        htmlFor="max_amount"
+                                        className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end"
+                                    >
                                         Max Amount Cap (₱)
                                     </Label>
                                     <div className="relative mb-2">
@@ -148,7 +155,10 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <Label htmlFor="cooldown_months" className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end">
+                                    <Label
+                                        htmlFor="cooldown_months"
+                                        className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end"
+                                    >
                                         Cooldown Period
                                     </Label>
                                     <div className="relative mb-2">
@@ -217,14 +227,14 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
 
                         {/* Dynamic Array List */}
                         <div className="space-y-3">
-                            {data.documents.length === 0 ? (
+                            {configurableDocuments.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12 transition-colors hover:border-gray-300 hover:bg-gray-100">
                                     <FileText className="mb-3 h-10 w-10 text-gray-400" />
                                     <p className="font-medium text-gray-600">No documents added yet</p>
                                     <p className="mt-1 text-sm text-gray-500">Select a document from the dropdown above.</p>
                                 </div>
                             ) : (
-                                data.documents.map((doc) => (
+                                configurableDocuments.map((doc) => (
                                     <div
                                         key={doc.id}
                                         className="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-orange-300 hover:shadow-md"

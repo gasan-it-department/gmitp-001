@@ -82,7 +82,10 @@ class AssistanceRequestDetailsResource extends JsonResource
                     'last_name' => $this->on_behalf_last_name,
                     'suffix' => $this->on_behalf_suffix,
                     'full_name' => $this->resolveOnBehalfFullName(),
+                    'birth_date' => $this->on_behalf_birth_date?->toDateString(),
                     'date_of_death' => $this->on_behalf_date_of_death?->toDateString(),
+                    'recipient_id_exception' => $this->recipient_id_exception,
+                    'recipient_id_exception_reason' => $this->recipient_id_exception_reason,
                 ]
                 : null,
 
@@ -96,7 +99,9 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'sex' => $snapshot?->sex,
                 'birth_date' => $snapshot?->birth_date?->toDateString(),
                 'age_at_submission' => $this->calculateAgeAtSubmission(),
-                'educational_attainment' => $snapshot?->educational_attainment,
+                'educational_attainment' => $snapshot?->educational_attainment 
+                    ? \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom($snapshot->educational_attainment)?->label() 
+                    : null,
                 'religion' => $snapshot?->religion,
             ],
 

@@ -6,9 +6,11 @@ use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Household\StoreAdminHouseholdMemberAction;
 use App\External\Api\Request\ActionCenter\Household\AdminHouseholdMemberRequest;
+use App\External\Api\Resources\ActionCenter\Household\HouseholdMemberOptionResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -26,7 +28,7 @@ class StoreAdminHouseholdMemberController extends Controller
         private readonly StoreAdminHouseholdMemberAction $storeMember,
     ) {}
 
-    public function __invoke(string $beneficiaryId, AdminHouseholdMemberRequest $request): RedirectResponse
+    public function __invoke(string $beneficiaryId, AdminHouseholdMemberRequest $request): RedirectResponse|JsonResponse
     {
         try {
             $beneficiary = Beneficiary::query()
@@ -39,18 +41,38 @@ class StoreAdminHouseholdMemberController extends Controller
                 $beneficiary->household_id,
             );
 
-            $this->storeMember->execute(
+            $member = $this->storeMember->execute(
                 beneficiary: $beneficiary,
                 dto: $dto,
                 municipalId: app('municipal_id'),
                 isVerifiedDependent: $request->boolean('is_verified_dependent'),
             );
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'data' => new HouseholdMemberOptionResource($member),
+                ], 201);
+            }
+
             return back()->with('success', 'Household member added.');
         } catch (ModelNotFoundException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Beneficiary not found in your municipality.',
+                    'errors' => ['member' => ['Beneficiary not found in your municipality.']],
+                ], 404);
+            }
+
             return back()->withErrors(['member' => 'Beneficiary not found in your municipality.']);
         } catch (AuthorizationException|\DomainException $e) {
             // Active-member cap hit, etc.
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => ['member' => [$e->getMessage()]],
+                ], 422);
+            }
+
             return back()->withInput()->withErrors(['member' => $e->getMessage()]);
         }
     }

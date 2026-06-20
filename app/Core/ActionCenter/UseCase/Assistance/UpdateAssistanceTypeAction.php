@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
 class UpdateAssistanceTypeAction
 {
     public function __construct(
-        private IdGeneratorInterface $idGenerator
+        private IdGeneratorInterface $idGenerator,
+        private NormalizeAssistanceTypeDocumentSlotsAction $normalizeDocumentSlots,
     ) {
     }
     public function execute(UpdateAssistanceTypeDto $dto, string $typeId)
@@ -28,7 +29,7 @@ class UpdateAssistanceTypeAction
             ]);
 
             $syncData = [];
-            foreach ($dto->documents as $doc) {
+            foreach ($this->normalizeDocumentSlots->execute($dto->documents) as $doc) {
                 $syncData[$doc['id']] = ['id' => $this->idGenerator->generate(), 'is_required' => $doc['is_required']];
             }
 

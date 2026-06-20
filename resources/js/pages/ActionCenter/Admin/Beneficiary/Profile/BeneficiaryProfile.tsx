@@ -1,6 +1,5 @@
 import EditBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/EditBeneficiaryProfileController';
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
-import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
 import DownloadBeneficiaryIdentityDocumentSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIdentityDocumentSheetController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
@@ -10,6 +9,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
+import actionCenter from '@/routes/actionCenter';
 import { Link, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
@@ -19,22 +19,21 @@ import {
     Clock3,
     Copy,
     Download,
+    Eye,
+    FileUp,
     GitMerge,
     HandCoins,
     Home,
-    IdCard,
     Link2,
     Mail,
     MapPin,
-    Phone,
     OctagonX,
     Pencil,
-    User,
-    Users,
-    Eye,
+    Phone,
     Plus,
     Printer,
-    FileUp,
+    User,
+    Users,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
@@ -175,7 +174,7 @@ export default function BeneficiaryProfile({
                 <div className="border-b border-slate-200 bg-white">
                     <div className="container mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-4">
                         <Link
-                            href={ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug })}
+                            href={actionCenter.admin.beneficiary.index.url({ municipality: currentMunicipality.slug })}
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -247,10 +246,14 @@ export default function BeneficiaryProfile({
                     <div className="container mx-auto max-w-7xl px-6 py-6">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div className="flex items-start gap-4">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     onClick={() => profile.avatar_url && setAvatarViewOpen(true)}
-                                    className={profile.avatar_url ? "cursor-pointer transition hover:opacity-90 hover:ring-4 hover:ring-blue-100 rounded-full" : "cursor-default"}
+                                    className={
+                                        profile.avatar_url
+                                            ? 'cursor-pointer rounded-full transition hover:opacity-90 hover:ring-4 hover:ring-blue-100'
+                                            : 'cursor-default'
+                                    }
                                 >
                                     <AvatarUploader
                                         beneficiaryId={profile.id}
@@ -460,9 +463,7 @@ export default function BeneficiaryProfile({
                                         <Phone className="mt-0.5 h-4 w-4 text-slate-400" />
                                         <div>
                                             <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Communication</p>
-                                            <p className="text-sm text-slate-800">
-                                                {profile.contact_phone || 'No contact phone encoded'}
-                                            </p>
+                                            <p className="text-sm text-slate-800">{profile.contact_phone || 'No contact phone encoded'}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
@@ -494,7 +495,7 @@ export default function BeneficiaryProfile({
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div className="space-y-3">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">System Generated</p>
+                                        <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">System Generated</p>
                                         <div className="grid grid-cols-2 gap-3">
                                             <a
                                                 href={DownloadBeneficiaryIntakeSheetController.url({
@@ -524,7 +525,7 @@ export default function BeneficiaryProfile({
                                     </div>
 
                                     <div className="space-y-3 border-t border-slate-100 pt-6">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Uploaded Identity</p>
+                                        <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Uploaded Identity</p>
                                         <div className="grid grid-cols-2 gap-3">
                                             {/* Front ID Card */}
                                             <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
@@ -719,11 +720,7 @@ export default function BeneficiaryProfile({
             <Dialog open={avatarViewOpen} onOpenChange={setAvatarViewOpen}>
                 <DialogContent className="max-w-md border-none bg-transparent p-0 shadow-none">
                     {profile.avatar_url && (
-                        <img 
-                            src={profile.avatar_url} 
-                            alt={profile.full_name} 
-                            className="h-auto w-full rounded-2xl object-contain shadow-2xl" 
-                        />
+                        <img src={profile.avatar_url} alt={profile.full_name} className="h-auto w-full rounded-2xl object-contain shadow-2xl" />
                     )}
                 </DialogContent>
             </Dialog>

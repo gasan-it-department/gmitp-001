@@ -217,6 +217,23 @@ class AssistanceRequest extends Model implements HasMedia
         return $value ? CarbonImmutable::parse($value) : null;
     }
 
+    public function getOnBehalfBirthDateAttribute(): ?CarbonImmutable
+    {
+        $value = data_get($this->metadata, 'on_behalf_birth_date');
+
+        return $value ? CarbonImmutable::parse($value) : null;
+    }
+
+    public function getRecipientIdExceptionAttribute(): ?string
+    {
+        return data_get($this->metadata, 'recipient_id_exception');
+    }
+
+    public function getRecipientIdExceptionReasonAttribute(): ?string
+    {
+        return data_get($this->metadata, 'recipient_id_exception_reason');
+    }
+
     public function getSnapshotFirstNameAttribute(): ?string
     {
         return $this->snapshot?->first_name;

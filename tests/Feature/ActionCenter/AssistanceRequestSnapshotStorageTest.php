@@ -60,6 +60,7 @@ beforeEach(function () {
         $table->string('middle_name')->nullable();
         $table->string('suffix')->nullable();
         $table->string('relationship')->nullable();
+        $table->date('birth_date')->nullable();
         $table->decimal('monthly_income', 10, 2)->default(0);
         $table->boolean('is_active')->default(true);
         $table->boolean('is_verified_dependent')->default(false);
@@ -80,6 +81,25 @@ beforeEach(function () {
         $table->string('cooldown_scope')->default('per_beneficiary');
         $table->timestamps();
         $table->softDeletes();
+    });
+
+    Schema::create('ac_document_types', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->string('key')->unique();
+        $table->string('label');
+        $table->boolean('is_active')->default(true);
+        $table->unsignedInteger('sort_order')->default(0);
+        $table->timestamps();
+    });
+
+    Schema::create('ac_assistance_type_documents', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('assistance_type_id');
+        $table->ulid('document_type_id');
+        $table->boolean('is_required')->default(true);
+        $table->unsignedInteger('sort_order')->default(0);
+        $table->timestamps();
+        $table->unique(['assistance_type_id', 'document_type_id']);
     });
 
     Schema::create('ac_assistance_requests', function (Blueprint $table) {
@@ -148,6 +168,8 @@ afterEach(function () {
         'ac_request_sequences',
         'ac_assistance_request_snapshots',
         'ac_assistance_requests',
+        'ac_assistance_type_documents',
+        'ac_document_types',
         'ac_assistance_types',
         'ac_household_members',
         'ac_beneficiaries',
@@ -259,6 +281,8 @@ it('stores snapshots and permits one newly declared pending member', function ()
             onBehalfLastName: 'Name',
             onBehalfSuffix: null,
             onBehalfDateOfDeath: '2026-06-01',
+            recipientIdUnavailable: false,
+            recipientIdUnavailableReason: null,
             snapshotFirstName: 'Juan',
             snapshotLastName: 'Dela Cruz',
             snapshotMiddleName: null,
@@ -283,6 +307,7 @@ it('stores snapshots and permits one newly declared pending member', function ()
             'on_behalf_first_name' => 'Pedro',
             'on_behalf_last_name' => 'Dela Cruz',
             'on_behalf_date_of_death' => '2026-06-01',
+            'recipient_id_exception' => 'deceased',
             'on_behalf_verification_pending' => true,
         ])
         ->and($created->snapshot->first_name)->toBe('Juan')
@@ -293,3 +318,210 @@ it('stores snapshots and permits one newly declared pending member', function ()
         ->and(Schema::hasColumn('ac_assistance_requests', 'snapshot_first_name'))->toBeFalse()
         ->and(Schema::hasColumn('ac_assistance_requests', 'on_behalf_first_name'))->toBeFalse();
 });
+
+it('requires both recipient id sides for an adult portal on-behalf request', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+
+    $action = new StoreAssistanceRequestAction(snapshotTestIdGenerator());
+
+    expect(fn () => $action->execute(adultOnBehalfDto($context)))
+        ->toThrow(\DomainException::class, 'Upload both sides of the assisted adult');
+
+    expect(DB::table('ac_assistance_requests')->count())->toBe(0);
+});
+
+it('stores a documented no-id exception for an adult assisted person', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+
+    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator()))->execute(
+        adultOnBehalfDto(
+            $context,
+            recipientIdUnavailable: true,
+            recipientIdUnavailableReason: 'The assisted adult has not been issued a government ID.',
+        ),
+    );
+
+    expect($created->metadata)->toMatchArray([
+        'on_behalf_birth_date' => '1980-02-03',
+        'recipient_id_exception' => 'no_government_id',
+        'recipient_id_exception_reason' => 'The assisted adult has not been issued a government ID.',
+    ]);
+});
+
+it('allows an admin to file for a pending household member with an override and trusts the roster relationship', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+
+    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator()))->execute(
+        adultOnBehalfDto(
+            $context,
+            encodedByUserId: $context['submitter_user_id'],
+            verificationOverrideReason: 'The member was interviewed at the MSWD desk during an urgent request.',
+            relationshipToBeneficiary: 'sibling',
+        ),
+    );
+
+    expect($created->encoded_by_user_id)->toBe($context['submitter_user_id'])
+        ->and($created->on_behalf_household_member_id)->toBe($context['member_id'])
+        ->and($created->metadata)->toMatchArray([
+            'relationship_to_beneficiary' => 'parent',
+            'on_behalf_first_name' => 'Pedro',
+            'on_behalf_verification_pending' => true,
+        ]);
+});
+
+function seedAdultOnBehalfIdentityContext(): array
+{
+    $context = [
+        'municipal_id' => (string) Str::ulid(),
+        'household_id' => (string) Str::ulid(),
+        'beneficiary_id' => (string) Str::ulid(),
+        'assistance_type_id' => (string) Str::ulid(),
+        'member_id' => (string) Str::ulid(),
+        'head_member_id' => (string) Str::ulid(),
+        'submitter_user_id' => (string) Str::ulid(),
+    ];
+    $now = now();
+
+    DB::table('ac_households')->insert([
+        'id' => $context['household_id'],
+        'municipal_id' => $context['municipal_id'],
+        'barangay' => 'Barangay Uno',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ac_beneficiaries')->insert([
+        'id' => $context['beneficiary_id'],
+        'user_id' => $context['submitter_user_id'],
+        'household_id' => $context['household_id'],
+        'municipal_id' => $context['municipal_id'],
+        'is_active' => true,
+        'first_name' => 'Maria',
+        'last_name' => 'Santos',
+        'birth_date' => '1990-01-01',
+        'monthly_income' => 0,
+        'identity_verified_at' => $now,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ac_assistance_types')->insert([
+        'id' => $context['assistance_type_id'],
+        'municipal_id' => $context['municipal_id'],
+        'name' => 'Medical Assistance',
+        'slug' => 'medical',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ac_household_members')->insert([
+        [
+            'id' => $context['head_member_id'],
+            'household_id' => $context['household_id'],
+            'beneficiary_id' => $context['beneficiary_id'],
+            'first_name' => 'Maria',
+            'last_name' => 'Santos',
+            'birth_date' => '1990-01-01',
+            'relationship' => 'head',
+            'is_active' => true,
+            'is_verified_dependent' => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'id' => $context['member_id'],
+            'household_id' => $context['household_id'],
+            'beneficiary_id' => null,
+            'first_name' => 'Pedro',
+            'last_name' => 'Santos',
+            'birth_date' => '1980-02-03',
+            'relationship' => 'parent',
+            'is_active' => true,
+            'is_verified_dependent' => false,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+    ]);
+
+    foreach ([
+        ['key' => 'valid_id_front', 'label' => 'Filer Valid Government ID - Front', 'required' => true],
+        ['key' => 'valid_id_back', 'label' => 'Filer Valid Government ID - Back', 'required' => true],
+        ['key' => 'recipient_valid_id_front', 'label' => 'Assisted Person Valid Government ID - Front', 'required' => false],
+        ['key' => 'recipient_valid_id_back', 'label' => 'Assisted Person Valid Government ID - Back', 'required' => false],
+    ] as $index => $document) {
+        $documentId = (string) Str::ulid();
+        DB::table('ac_document_types')->insert([
+            'id' => $documentId,
+            'key' => $document['key'],
+            'label' => $document['label'],
+            'sort_order' => $index + 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('ac_assistance_type_documents')->insert([
+            'id' => (string) Str::ulid(),
+            'assistance_type_id' => $context['assistance_type_id'],
+            'document_type_id' => $documentId,
+            'is_required' => $document['required'],
+            'sort_order' => $index + 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+    }
+
+    return $context;
+}
+
+function adultOnBehalfDto(
+    array $context,
+    bool $recipientIdUnavailable = false,
+    ?string $recipientIdUnavailableReason = null,
+    ?string $encodedByUserId = null,
+    ?string $verificationOverrideReason = null,
+    string $relationshipToBeneficiary = 'parent',
+): StoreAssistanceRequestDto {
+    return new StoreAssistanceRequestDto(
+        municipalId: $context['municipal_id'],
+        beneficiaryId: $context['beneficiary_id'],
+        householdId: $context['household_id'],
+        assistanceTypeId: $context['assistance_type_id'],
+        submitterUserId: $context['submitter_user_id'],
+        encodedByUserId: $encodedByUserId,
+        description: 'Medical assistance requested for an adult household member.',
+        verificationOverrideReason: $verificationOverrideReason,
+        privacyConsentedAt: CarbonImmutable::now(),
+        privacyNoticeVersion: 'v1.0',
+        relationshipToBeneficiary: $relationshipToBeneficiary,
+        onBehalfHouseholdMemberId: $context['member_id'],
+        onBehalfFirstName: 'Pedro',
+        onBehalfMiddleName: null,
+        onBehalfLastName: 'Santos',
+        onBehalfSuffix: null,
+        onBehalfDateOfDeath: null,
+        recipientIdUnavailable: $recipientIdUnavailable,
+        recipientIdUnavailableReason: $recipientIdUnavailableReason,
+        snapshotFirstName: 'Maria',
+        snapshotLastName: 'Santos',
+        snapshotMiddleName: null,
+        snapshotSuffix: null,
+        snapshotSex: 'female',
+        snapshotBirthDate: '1990-01-01',
+        snapshotEducationalAttainment: null,
+        snapshotReligion: null,
+        snapshotBarangay: 'Barangay Uno',
+        snapshotBarangayPsgcCode: null,
+        snapshotStreet: null,
+        documents: [],
+    );
+}
+
+function snapshotTestIdGenerator(): IdGeneratorInterface
+{
+    return new class implements IdGeneratorInterface
+    {
+        public function generate(): string
+        {
+            return (string) Str::ulid();
+        }
+    };
+}

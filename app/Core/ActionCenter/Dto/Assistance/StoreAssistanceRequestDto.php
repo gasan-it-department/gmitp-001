@@ -56,6 +56,8 @@ readonly class StoreAssistanceRequestDto
         public ?string $onBehalfLastName,
         public ?string $onBehalfSuffix,
         public ?string $onBehalfDateOfDeath,   // burial only
+        public bool $recipientIdUnavailable,
+        public ?string $recipientIdUnavailableReason,
 
         // ── Identity snapshot ────────────────────────────────────────────────
         // Frozen copy of ac_beneficiaries at submission time. Pulled from the
@@ -134,6 +136,8 @@ readonly class StoreAssistanceRequestDto
             onBehalfLastName: $request->input('on_behalf_last_name') ?: null,
             onBehalfSuffix: $request->input('on_behalf_suffix') ?: null,
             onBehalfDateOfDeath: $request->input('on_behalf_date_of_death') ?: null,
+            recipientIdUnavailable: $request->boolean('recipient_id_unavailable'),
+            recipientIdUnavailableReason: $request->input('recipient_id_unavailable_reason') ?: null,
 
             // Identity snapshot from the beneficiary at submission time.
             snapshotFirstName: $beneficiary->first_name,
@@ -214,6 +218,8 @@ readonly class StoreAssistanceRequestDto
             onBehalfLastName: $request->input('on_behalf_last_name') ?: null,
             onBehalfSuffix: $request->input('on_behalf_suffix') ?: null,
             onBehalfDateOfDeath: $request->input('on_behalf_date_of_death') ?: null,
+            recipientIdUnavailable: $request->boolean('recipient_id_unavailable'),
+            recipientIdUnavailableReason: $request->input('recipient_id_unavailable_reason') ?: null,
 
             // Identity snapshot from the beneficiary at submission time.
             snapshotFirstName: $beneficiary->first_name,

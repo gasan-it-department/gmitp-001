@@ -2,11 +2,14 @@
 
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeDetailsResource;
 use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryProfileResource;
+use App\External\Api\Resources\ActionCenter\Household\HouseholdMemberOptionResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -73,11 +76,24 @@ class CreateAssistanceRequestController extends Controller
             ->map(fn ($result) => $result->toArray())
             ->all();
 
+        $householdMembers = HouseholdMember::query()
+            ->where('household_id', $beneficiary->household_id)
+            ->where('is_active', true)
+            ->where('relationship', '!=', Relationship::Head->value)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+
         return Inertia::render('ActionCenter/Admin/Assistance/Create/CreateAssistanceRequest', [
             'beneficiary' => new BeneficiaryProfileResource($beneficiary),
             'assistanceTypes' => AssistanceTypeDetailsResource::collection($assistanceTypes),
             'eligibilityByType' => $eligibilityByType,
+            'relationships' => Relationship::toOptions(),
+            'householdMembers' => HouseholdMemberOptionResource::collection($householdMembers),
             'submitUrl' => route('actionCenter.assistance.admin-store'),
+            'storeHouseholdMemberUrl' => route('actionCenter.household.members.admin-store', [
+                'beneficiaryId' => $beneficiary->id,
+            ]),
         ]);
     }
 }

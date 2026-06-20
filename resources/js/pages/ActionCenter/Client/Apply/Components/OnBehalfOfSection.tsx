@@ -49,6 +49,7 @@ interface Props {
     /** Notified after a new member is persisted so the parent can append it
      *  to the roster and auto-select it. */
     onMemberCreated: (member: HouseholdMemberOption) => void;
+    audience?: 'citizen' | 'admin';
     errors?: Record<string, string | undefined>;
 }
 
@@ -88,6 +89,7 @@ export function OnBehalfOfSection({
     storeHouseholdMemberUrl,
     municipalitySlug,
     onMemberCreated,
+    audience = 'citizen',
     errors = {},
 }: Props) {
     const age = calculateAge(applicantBirthDate);
@@ -100,7 +102,9 @@ export function OnBehalfOfSection({
     const heading = isBurial ? "Deceased Person's Information" : 'Person Being Assisted';
     const subheading = isBurial
         ? 'Burial assistance is filed by an authorized family representative, not the deceased.'
-        : 'You are filing this request on behalf of a family member who needs assistance.';
+        : audience === 'admin'
+          ? 'Record the household member receiving assistance and keep the selected beneficiary as the filer.'
+          : 'You are filing this request on behalf of a family member who needs assistance.';
 
     const selectedMember = useMemo(
         () => householdMembers.find((m) => m.id === data.household_member_id) ?? null,
@@ -158,8 +162,17 @@ export function OnBehalfOfSection({
                 <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
                     <p className="text-xs leading-relaxed text-slate-700">
-                        As an <strong>authorized representative</strong>, you may file on behalf of a spouse, parent, child (18+), or sibling (18+).
-                        Your own verified identity will be recorded as the filing party.
+                        {audience === 'admin' ? (
+                            <>
+                                The selected beneficiary remains the <strong>filing representative</strong>. The household member selected below is
+                                recorded as the person receiving assistance.
+                            </>
+                        ) : (
+                            <>
+                                As an <strong>authorized representative</strong>, you may file on behalf of a spouse, parent, child (18+), or sibling
+                                (18+). Your own verified identity will be recorded as the filing party.
+                            </>
+                        )}
                     </p>
                 </div>
             )}

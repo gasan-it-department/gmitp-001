@@ -13,7 +13,8 @@ use Illuminate\Support\Str;
 class StoreAssistanceTypeAction
 {
     public function __construct(
-        protected IdGeneratorInterface $idGeneratorInterface
+        protected IdGeneratorInterface $idGeneratorInterface,
+        private NormalizeAssistanceTypeDocumentSlotsAction $normalizeDocumentSlots,
     ) {
     }
     public function execute(StoreAssistanceTypeDto $dto, string $municipalId)
@@ -53,10 +54,12 @@ class StoreAssistanceTypeAction
                 throw $exception;
             }
 
-            if (!empty($dto->documents)) {
+            $documents = $this->normalizeDocumentSlots->execute($dto->documents);
+
+            if (!empty($documents)) {
                 $syncData = [];
 
-                foreach ($dto->documents as $doc) {
+                foreach ($documents as $doc) {
                     $syncData[$doc['id']] = ['id' => $this->idGeneratorInterface->generate(), 'is_required' => $doc['is_required']];
                 }
                 $assistanceType->documents()->sync($syncData);

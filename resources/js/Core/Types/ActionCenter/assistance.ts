@@ -122,7 +122,7 @@ export interface AssistanceTypeFormData {
     cooldown_months: number;
     cooldown_type?: CooldownType;
     cooldown_scope?: CooldownScope;
-    documents: { id: string; is_required: boolean; name: string }[];
+    documents: { id: string; key?: string; is_required: boolean; name: string }[];
 }
 
 /** Legacy alias still used by admin edit screens. */

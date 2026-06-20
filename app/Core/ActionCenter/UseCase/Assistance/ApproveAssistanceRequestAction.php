@@ -9,6 +9,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -172,6 +173,48 @@ class ApproveAssistanceRequestAction
         $missing = $requiredDocs
             ->reject(fn ($doc) => $uploadedKeys->contains($doc->key))
             ->pluck('label');
+
+        if ($missing->isNotEmpty()) {
+            throw AssistanceApprovalException::missingRequiredDocuments($missing);
+        }
+
+        $this->ensureRecipientIdentityDocumentsReady($request, $requiredDocs, $uploadedKeys);
+    }
+
+    private function ensureRecipientIdentityDocumentsReady(
+        AssistanceRequest $request,
+        Collection $requiredDocs,
+        Collection $uploadedKeys,
+    ): void {
+        if ($request->on_behalf_household_member_id === null) {
+            return;
+        }
+
+        $requiresFilerId = $requiredDocs->contains(
+            fn ($document) => in_array($document->key, ['valid_id_front', 'valid_id_back'], true),
+        );
+
+        if (! $requiresFilerId) {
+            return;
+        }
+
+        $exception = $request->recipient_id_exception;
+        $hasValidUnavailableReason = $exception === 'no_government_id'
+            && filled($request->recipient_id_exception_reason)
+            && mb_strlen(trim($request->recipient_id_exception_reason)) >= 10;
+
+        if ($request->assistanceType->slug === 'burial'
+            || in_array($exception, ['minor', 'deceased'], true)
+            || $hasValidUnavailableReason) {
+            return;
+        }
+
+        $missing = collect([
+            'recipient_valid_id_front' => 'Assisted Person Valid Government ID - Front',
+            'recipient_valid_id_back' => 'Assisted Person Valid Government ID - Back',
+        ])
+            ->reject(fn ($label, $key) => $uploadedKeys->contains($key))
+            ->values();
 
         if ($missing->isNotEmpty()) {
             throw AssistanceApprovalException::missingRequiredDocuments($missing);

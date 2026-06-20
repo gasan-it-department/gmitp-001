@@ -1,4 +1,7 @@
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
     AssistanceTypeDetails,
     BeneficiarySummary,
@@ -9,10 +12,10 @@ import {
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, UserCheck, Users } from 'lucide-react';
+import { ArrowLeft, Info, UserCheck, Users } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
 import { BeneficiaryInfoBlock } from './Components/BeneficiaryInfoBlock';
-import { DocumentUploadsGrid } from './Components/DocumentUploadsGrid';
+import { DocumentUploadsGrid, IdentityDocumentPair } from './Components/DocumentUploadsGrid';
 import { OnBehalfOfData, OnBehalfOfSection, RelationshipType } from './Components/OnBehalfOfSection';
 import { PrivacyConsent } from './Components/PrivacyConsent';
 import { ProgramInfoSidebar } from './Components/ProgramInfoSidebar';
@@ -40,7 +43,7 @@ interface Props {
 // Form data shape
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface FormData {
+type FormData = {
     description: string;
     privacy_consent: boolean;
     documents: Record<string, File | null>;
@@ -52,7 +55,10 @@ interface FormData {
     on_behalf_last_name: string;
     on_behalf_suffix: string;
     on_behalf_date_of_death: string; // burial only
-}
+    recipient_id_unavailable: boolean;
+    recipient_id_unavailable_reason: string;
+    [key: string]: unknown;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -100,6 +106,13 @@ export default function ApplyAssistance({
             setData('on_behalf_last_name', '');
             setData('on_behalf_suffix', '');
             setData('on_behalf_date_of_death', '');
+            setData('recipient_id_unavailable', false);
+            setData('recipient_id_unavailable_reason', '');
+            setData('documents', {
+                ...data.documents,
+                recipient_valid_id_front: null,
+                recipient_valid_id_back: null,
+            });
         }
     };
 
@@ -115,6 +128,8 @@ export default function ApplyAssistance({
         on_behalf_last_name: '',
         on_behalf_suffix: '',
         on_behalf_date_of_death: '',
+        recipient_id_unavailable: false,
+        recipient_id_unavailable_reason: '',
     });
 
     transform((form) => {
@@ -134,6 +149,8 @@ export default function ApplyAssistance({
                 on_behalf_last_name: null,
                 on_behalf_suffix: null,
                 on_behalf_date_of_death: null,
+                recipient_id_unavailable: false,
+                recipient_id_unavailable_reason: null,
             };
         }
         return { ...form, documents: flatDocs };
@@ -160,7 +177,22 @@ export default function ApplyAssistance({
             date_of_death: 'on_behalf_date_of_death',
             relationship: 'relationship_to_beneficiary',
         };
-        setData(keyMap[field], value as string);
+        if (field === 'household_member_id' && value !== data.on_behalf_household_member_id) {
+            setData((current) => ({
+                ...current,
+                [keyMap[field]]: value as string,
+                recipient_id_unavailable: false,
+                recipient_id_unavailable_reason: '',
+                documents: {
+                    ...current.documents,
+                    recipient_valid_id_front: null,
+                    recipient_valid_id_back: null,
+                },
+            }));
+            return;
+        }
+
+        setData((current) => ({ ...current, [keyMap[field]]: value as string }));
     };
 
     // ── Inline "Add a new family member" ──────────────────────────────────────
@@ -176,6 +208,13 @@ export default function ApplyAssistance({
             on_behalf_last_name: member.last_name,
             on_behalf_suffix: member.suffix ?? '',
             relationship_to_beneficiary: member.relationship ?? '',
+            recipient_id_unavailable: false,
+            recipient_id_unavailable_reason: '',
+            documents: {
+                ...current.documents,
+                recipient_valid_id_front: null,
+                recipient_valid_id_back: null,
+            },
         }));
         setPendingMemberMessage(
             `${member.first_name} ${member.last_name} was added to this request and is awaiting MSWD verification. The request may be submitted, but it cannot be approved until the member is verified.`,
@@ -187,6 +226,22 @@ export default function ApplyAssistance({
         () => program.documents.filter((d) => d.is_required).every((d) => !!data.documents[d.key]),
         [program.documents, data.documents],
     );
+
+    const recipientIdDocuments = useMemo(
+        () => program.documents.filter((document) => ['recipient_valid_id_front', 'recipient_valid_id_back'].includes(document.key)),
+        [program.documents],
+    );
+    const selectedRecipient = householdRoster.find((member) => member.id === data.on_behalf_household_member_id) ?? null;
+    const recipientAge = selectedRecipient?.birth_date
+        ? Math.floor((Date.now() - new Date(selectedRecipient.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : null;
+    const filerIdRequired = program.documents.some((document) => ['valid_id_front', 'valid_id_back'].includes(document.key) && document.is_required);
+    const recipientIdAutomaticallyExempt = isBurial || (recipientAge !== null && recipientAge < 18);
+    const recipientIdRequired = effectiveFilingFor === 'family_member' && filerIdRequired && !recipientIdAutomaticallyExempt;
+    const recipientIdFilesComplete =
+        recipientIdDocuments.length === 2 && recipientIdDocuments.every((document) => Boolean(data.documents[document.key]));
+    const recipientIdExceptionComplete = data.recipient_id_unavailable && data.recipient_id_unavailable_reason.trim().length >= 10;
+    const recipientIdentityReady = !recipientIdRequired || recipientIdFilesComplete || recipientIdExceptionComplete;
 
     // Representative info is only required when not filing for self
     const representativeInfoComplete =
@@ -211,6 +266,7 @@ export default function ApplyAssistance({
         data.description.trim().length >= 10 &&
         data.privacy_consent &&
         allRequiredUploaded &&
+        recipientIdentityReady &&
         representativeInfoComplete &&
         !isUnderAge &&
         !processing;
@@ -294,6 +350,82 @@ export default function ApplyAssistance({
                                     errors={errors as Record<string, string | undefined>}
                                 />
 
+                                {effectiveFilingFor === 'family_member' && filerIdRequired && (
+                                    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                                        {recipientIdAutomaticallyExempt ? (
+                                            <div className="flex items-start gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
+                                                <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                                                <p className="text-sm leading-relaxed text-blue-800">
+                                                    {isBurial
+                                                        ? "The deceased person's ID is not required. Upload the adult filer's ID and the required burial documents."
+                                                        : "The assisted person is under 18, so their government ID is not required. Upload the adult filer's ID and the required program documents."}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-5">
+                                                {!data.recipient_id_unavailable && (
+                                                    <IdentityDocumentPair
+                                                        title="Assisted person's valid government ID"
+                                                        description="Upload both sides for the adult household member receiving the assistance."
+                                                        documents={recipientIdDocuments}
+                                                        files={data.documents}
+                                                        onFileChange={(key, file) => setData('documents', { ...data.documents, [key]: file })}
+                                                        errors={errors as Record<string, string | undefined>}
+                                                        required
+                                                    />
+                                                )}
+
+                                                <div className="border-t border-slate-200 pt-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <Checkbox
+                                                            id="recipient_id_unavailable"
+                                                            checked={data.recipient_id_unavailable}
+                                                            onCheckedChange={(checked) => {
+                                                                const unavailable = checked === true;
+                                                                setData((current) => ({
+                                                                    ...current,
+                                                                    recipient_id_unavailable: unavailable,
+                                                                    recipient_id_unavailable_reason: unavailable
+                                                                        ? current.recipient_id_unavailable_reason
+                                                                        : '',
+                                                                    documents: unavailable
+                                                                        ? {
+                                                                              ...current.documents,
+                                                                              recipient_valid_id_front: null,
+                                                                              recipient_valid_id_back: null,
+                                                                          }
+                                                                        : current.documents,
+                                                                }));
+                                                            }}
+                                                        />
+                                                        <Label htmlFor="recipient_id_unavailable" className="text-sm leading-relaxed text-slate-700">
+                                                            The assisted adult does not have an available government ID
+                                                        </Label>
+                                                    </div>
+
+                                                    {data.recipient_id_unavailable && (
+                                                        <div className="mt-4 space-y-2">
+                                                            <Label htmlFor="recipient_id_unavailable_reason">Reason</Label>
+                                                            <Textarea
+                                                                id="recipient_id_unavailable_reason"
+                                                                value={data.recipient_id_unavailable_reason}
+                                                                onChange={(event) => setData('recipient_id_unavailable_reason', event.target.value)}
+                                                                placeholder="Explain why the assisted adult cannot provide a government ID."
+                                                                rows={3}
+                                                            />
+                                                            {errors.recipient_id_unavailable_reason && (
+                                                                <p className="text-xs font-medium text-red-500">
+                                                                    {errors.recipient_id_unavailable_reason}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </section>
+                                )}
+
                                 {/* ── 6. Data privacy consent ── */}
                                 <PrivacyConsent
                                     checked={data.privacy_consent}
@@ -313,6 +445,11 @@ export default function ApplyAssistance({
                                 {/* Inline hints */}
                                 {!allRequiredUploaded && program.documents.some((d) => d.is_required) && (
                                     <p className="text-center text-xs text-slate-500">Please upload all required documents to enable submission.</p>
+                                )}
+                                {!recipientIdentityReady && (
+                                    <p className="text-center text-xs text-slate-500">
+                                        Upload both sides of the assisted adult's ID, or provide the no-ID reason.
+                                    </p>
                                 )}
                                 {effectiveFilingFor === 'family_member' && !representativeInfoComplete && (
                                     <p className="text-center text-xs text-slate-500">
