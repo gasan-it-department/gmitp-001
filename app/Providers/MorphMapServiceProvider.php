@@ -9,7 +9,6 @@ use App\Core\Announcement\Models\Announcement;
 use App\Core\Cemetery\Models\Block as CemeteryBlock;
 use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\DecedentDocument;
-use App\Core\Cemetery\Models\FetalDeathDetail;
 use App\Core\Cemetery\Models\Interment;
 use App\Core\Cemetery\Models\IntermentReadinessOverride;
 use App\Core\Cemetery\Models\Plot as CemeteryPlot;
@@ -69,7 +68,6 @@ class MorphMapServiceProvider extends ServiceProvider
             'decedent' => Decedent::class,
             'cemetery_decedent_document' => DecedentDocument::class,
             'cemetery_unidentified_detail' => UnidentifiedDetail::class,
-            'cemetery_fetal_death_detail' => FetalDeathDetail::class,
             'cemetery_readiness_override' => IntermentReadinessOverride::class,
             'cemetery_interment' => Interment::class,
             'cemetery_plot' => CemeteryPlot::class,

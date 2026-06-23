@@ -15,7 +15,6 @@ class GetDecedentProfileAction
             'currentInterment.plot.parent',
             'documents.media',
             'unidentifiedDetail',
-            'fetalDeathDetail',
             'readinessOverrides',
             'verifier',
             'submitter',
@@ -30,8 +29,7 @@ class GetDecedentProfileAction
         $subjectIds = collect([$decedent->id])
             ->merge($documentIds)
             ->merge($decedent->readinessOverrides->pluck('id'))
-            ->when($decedent->unidentifiedDetail, fn ($ids) => $ids->push($decedent->unidentifiedDetail->id))
-            ->when($decedent->fetalDeathDetail, fn ($ids) => $ids->push($decedent->fetalDeathDetail->id));
+            ->when($decedent->unidentifiedDetail, fn ($ids) => $ids->push($decedent->unidentifiedDetail->id));
 
         $activities = Activity::query()
             ->with('causer')

@@ -39,3 +39,30 @@ it('creates the simplified document and governance schema from a fresh database'
         Schema::dropIfExists('municipalities');
     }
 });
+
+it('creates final unidentified details without a fetal subtype table', function () {
+    Schema::create('municipalities', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
+    Schema::create('cemetery_decedents', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
+
+    $migration = require database_path('migrations/2026_06_14_000006_create_cemetery_unidentified_details_table.php');
+
+    try {
+        $migration->up();
+
+        expect(Schema::hasTable('cemetery_unidentified_details'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_unidentified_details', 'municipal_id'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_unidentified_details', 'case_reference'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_unidentified_details', 'reference_code'))->toBeFalse()
+            ->and(Schema::hasColumn('cemetery_unidentified_details', 'requires_medico_legal'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_unidentified_details', 'deleted_at'))->toBeTrue()
+            ->and(Schema::hasTable('cemetery_fetal_death_details'))->toBeFalse();
+    } finally {
+        $migration->down();
+        Schema::dropIfExists('cemetery_decedents');
+        Schema::dropIfExists('municipalities');
+    }
+});

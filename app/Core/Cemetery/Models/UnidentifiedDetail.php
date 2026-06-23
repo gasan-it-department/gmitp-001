@@ -20,7 +20,7 @@ class UnidentifiedDetail extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'municipal_id', 'decedent_id', 'reference_code', 'case_reference',
+        'id', 'municipal_id', 'decedent_id', 'case_reference',
         'found_location', 'date_found', 'reported_by', 'reporting_agency',
         'estimated_age', 'estimated_sex', 'distinguishing_features',
         'physical_description', 'requires_medico_legal',

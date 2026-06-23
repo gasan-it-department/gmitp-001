@@ -101,11 +101,6 @@ class Decedent extends Model implements HasMedia
         return $this->hasOne(UnidentifiedDetail::class);
     }
 
-    public function fetalDeathDetail(): HasOne
-    {
-        return $this->hasOne(FetalDeathDetail::class);
-    }
-
     public function readinessOverrides(): HasMany
     {
         return $this->hasMany(IntermentReadinessOverride::class);

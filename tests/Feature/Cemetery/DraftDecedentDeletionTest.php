@@ -31,17 +31,8 @@ beforeEach(function () {
         $table->ulid('id')->primary();
         $table->ulid('municipal_id');
         $table->ulid('decedent_id')->unique();
-        $table->string('reference_code');
         $table->string('case_reference');
         $table->boolean('requires_medico_legal')->default(true);
-        $table->timestamps();
-        $table->softDeletes();
-    });
-
-    Schema::create('cemetery_fetal_death_details', function (Blueprint $table) {
-        $table->ulid('id')->primary();
-        $table->ulid('municipal_id');
-        $table->ulid('decedent_id')->unique();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -111,7 +102,6 @@ afterEach(function () {
     Schema::dropIfExists('cemetery_interment_readiness_overrides');
     Schema::dropIfExists('cemetery_interments');
     Schema::dropIfExists('cemetery_decedent_documents');
-    Schema::dropIfExists('cemetery_fetal_death_details');
     Schema::dropIfExists('cemetery_unidentified_details');
     Schema::dropIfExists('cemetery_decedents');
 });
@@ -122,7 +112,6 @@ it('soft deletes a draft and its related records while retaining media and an au
         'id' => (string) Str::ulid(),
         'municipal_id' => $decedent->municipal_id,
         'decedent_id' => $decedent->id,
-        'reference_code' => 'UNID-DRAFT-1',
         'case_reference' => 'UNID-DRAFT-1',
     ]);
     $document = DecedentDocument::query()->create([

@@ -13,7 +13,7 @@ class DeleteDraftDecedentAction
     {
         DB::transaction(function () use ($decedentId, $municipalId, $reason) {
             $decedent = Decedent::query()
-                ->with(['documents', 'unidentifiedDetail', 'fetalDeathDetail'])
+                ->with(['documents', 'unidentifiedDetail'])
                 ->where('municipal_id', $municipalId)
                 ->lockForUpdate()
                 ->findOrFail($decedentId);
@@ -41,13 +41,11 @@ class DeleteDraftDecedentAction
                     'version' => $decedent->version,
                     'document_ids' => $documentIds,
                     'unidentified_detail_id' => $decedent->unidentifiedDetail?->id,
-                    'fetal_death_detail_id' => $decedent->fetalDeathDetail?->id,
                 ])
                 ->log('Draft Decedent record deleted');
 
             $decedent->documents->each->delete();
             $decedent->unidentifiedDetail?->delete();
-            $decedent->fetalDeathDetail?->delete();
             $decedent->delete();
         });
     }

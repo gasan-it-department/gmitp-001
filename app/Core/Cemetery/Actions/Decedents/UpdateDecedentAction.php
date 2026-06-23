@@ -7,7 +7,6 @@ use App\Core\Cemetery\Enums\IdentityStatus;
 use App\Core\Cemetery\Enums\RegistrationStatus;
 use App\Core\Cemetery\Enums\VitalRecordType;
 use App\Core\Cemetery\Models\Decedent;
-use App\Core\Cemetery\Models\FetalDeathDetail;
 use App\Core\Cemetery\Models\UnidentifiedDetail;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Http\UploadedFile;
@@ -16,9 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class UpdateDecedentAction
 {
-    public function __construct(private IdGeneratorInterface $idGenerator)
-    {
-    }
+    public function __construct(private IdGeneratorInterface $idGenerator) {}
 
     public function execute(DecedentDto $dto, string $decedentId): Decedent
     {
@@ -90,7 +87,7 @@ class UpdateDecedentAction
                     ->toMediaCollection('avatar', 'local');
             }
 
-            return $decedent->fresh(['documents.media', 'unidentifiedDetail', 'fetalDeathDetail', 'media']);
+            return $decedent->fresh(['documents.media', 'unidentifiedDetail', 'media']);
         });
     }
 
@@ -100,7 +97,7 @@ class UpdateDecedentAction
             $existing = $decedent->unidentifiedDetail;
             $caseReference = $existing?->case_reference
                 ?? $dto->unidentifiedDetails['case_reference']
-                ?? 'UNID-' . now()->format('Y') . '-' . substr($this->idGenerator->generate(), -8);
+                ?? 'UNID-'.now()->format('Y').'-'.substr($this->idGenerator->generate(), -8);
 
             UnidentifiedDetail::updateOrCreate(
                 ['decedent_id' => $decedent->id],
@@ -108,20 +105,7 @@ class UpdateDecedentAction
                     'id' => $existing?->id ?? $this->idGenerator->generate(),
                     'municipal_id' => $dto->municipalId,
                     ...$dto->unidentifiedDetails,
-                    'reference_code' => $caseReference,
                     'case_reference' => $caseReference,
-                ]
-            );
-        }
-
-        if ($dto->vitalRecordType === VitalRecordType::FETAL_DEATH->value) {
-            $existing = $decedent->fetalDeathDetail;
-            FetalDeathDetail::updateOrCreate(
-                ['decedent_id' => $decedent->id],
-                [
-                    'id' => $existing?->id ?? $this->idGenerator->generate(),
-                    'municipal_id' => $dto->municipalId,
-                    ...$dto->fetalDetails,
                 ]
             );
         }

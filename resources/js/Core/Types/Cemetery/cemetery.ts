@@ -123,11 +123,6 @@ export interface DecedentProfile {
         physical_description: string | null;
         requires_medico_legal: boolean;
     } | null;
-    fetal_details: {
-        gestational_age_weeks: number | null;
-        fetal_weight_grams: number | null;
-        mother_name: string | null;
-    } | null;
     audit_timeline: {
         id: number;
         event: string | null;
@@ -206,11 +201,6 @@ export type RegisterDecedentForm = {
         distinguishing_features: string;
         physical_description: string;
         requires_medico_legal: boolean;
-    };
-    fetal_details: {
-        gestational_age_weeks: number | '';
-        fetal_weight_grams: number | '';
-        mother_name: string;
     };
 };
 

@@ -70,11 +70,6 @@ class DecedentDetailsResource extends JsonResource
                 'physical_description' => $this->unidentifiedDetail->physical_description,
                 'requires_medico_legal' => $this->unidentifiedDetail->requires_medico_legal,
             ] : null),
-            'fetal_details' => $this->whenLoaded('fetalDeathDetail', fn () => $this->fetalDeathDetail ? [
-                'gestational_age_weeks' => $this->fetalDeathDetail->gestational_age_weeks,
-                'fetal_weight_grams' => $this->fetalDeathDetail->fetal_weight_grams,
-                'mother_name' => $this->fetalDeathDetail->mother_name,
-            ] : null),
             'audit_timeline' => $this->relationLoaded('auditActivities')
                 ? $this->auditActivities->map(fn ($activity) => [
                     'id' => $activity->id,

@@ -67,7 +67,7 @@ class CorrectDecedentAction
             $evidence,
         ) {
             $decedent = Decedent::query()
-                ->with(['unidentifiedDetail', 'fetalDeathDetail'])
+                ->with('unidentifiedDetail')
                 ->where('municipal_id', $municipalId)
                 ->lockForUpdate()
                 ->findOrFail($decedentId);
@@ -147,7 +147,6 @@ class CorrectDecedentAction
 
             return $decedent->fresh([
                 'unidentifiedDetail',
-                'fetalDeathDetail',
                 'media',
             ]);
         });

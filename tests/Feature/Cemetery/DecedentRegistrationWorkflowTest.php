@@ -14,6 +14,7 @@ use App\Core\Cemetery\Models\DecedentDocument;
 use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentDocumentController;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +63,6 @@ beforeEach(function () {
         $table->ulid('id')->primary();
         $table->ulid('municipal_id');
         $table->ulid('decedent_id')->unique();
-        $table->string('reference_code');
         $table->string('case_reference');
         $table->string('found_location')->nullable();
         $table->date('date_found')->nullable();
@@ -75,17 +75,8 @@ beforeEach(function () {
         $table->boolean('requires_medico_legal')->default(true);
         $table->timestamps();
         $table->softDeletes();
-    });
 
-    Schema::create('cemetery_fetal_death_details', function (Blueprint $table) {
-        $table->ulid('id')->primary();
-        $table->ulid('municipal_id');
-        $table->ulid('decedent_id')->unique();
-        $table->unsignedSmallInteger('gestational_age_weeks')->nullable();
-        $table->unsignedInteger('fetal_weight_grams')->nullable();
-        $table->string('mother_name')->nullable();
-        $table->timestamps();
-        $table->softDeletes();
+        $table->unique(['municipal_id', 'case_reference']);
     });
 
     Schema::create('cemetery_decedent_documents', function (Blueprint $table) {
@@ -164,46 +155,38 @@ afterEach(function () {
     Schema::dropIfExists('media');
     Schema::dropIfExists('cemetery_interment_readiness_overrides');
     Schema::dropIfExists('cemetery_decedent_documents');
-    Schema::dropIfExists('cemetery_fetal_death_details');
     Schema::dropIfExists('cemetery_unidentified_details');
     Schema::dropIfExists('cemetery_decedents');
 });
 
-it('validates identified unnamed fetal and unidentified review paths', function () {
+it('validates identified, unnamed fetal, and unidentified review paths', function () {
     $identified = testDecedent(['first_name' => null, 'registry_number' => 'REG-1']);
     expect($this->reviewErrors->execute($identified))->toHaveKey('name');
 
     $unnamed = testDecedent(['has_legal_name' => false, 'first_name' => null, 'last_name' => null, 'memorial_name' => null, 'registry_number' => 'REG-2']);
     expect($this->reviewErrors->execute($unnamed))->toHaveKey('memorial_name');
 
-    $fetal = testDecedent(['vital_record_type' => 'fetal_death', 'registry_number' => 'FETAL-1']);
-    expect($this->reviewErrors->execute($fetal))->toHaveKey('fetal_details');
+    $fetal = testDecedent([
+        'vital_record_type' => 'fetal_death',
+        'has_legal_name' => false,
+        'first_name' => null,
+        'last_name' => null,
+        'memorial_name' => 'BABY OF MARIA SANTOS',
+        'registry_number' => 'FETAL-1',
+    ]);
+    expect($this->reviewErrors->execute($fetal))->toBeEmpty();
 
     $unidentified = testDecedent(['identity_status' => 'unidentified', 'has_legal_name' => false, 'first_name' => null, 'last_name' => null, 'registry_number' => null, 'date_of_death' => null]);
     expect($this->reviewErrors->execute($unidentified))->toHaveKey('unidentified_details')
         ->not->toHaveKey('date_of_death');
 });
 
-it('requires complete fetal and unidentified details before review', function () {
-    $fetal = testDecedent(['vital_record_type' => 'fetal_death', 'registry_number' => 'FETAL-2']);
-    DB::table('cemetery_fetal_death_details')->insert([
-        'id' => (string) Str::ulid(),
-        'municipal_id' => $fetal->municipal_id,
-        'decedent_id' => $fetal->id,
-        'gestational_age_weeks' => 36,
-        'fetal_weight_grams' => 2200,
-        'mother_name' => 'MOTHER NAME',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-    expect($this->reviewErrors->execute($fetal->fresh()))->not->toHaveKey('fetal_details');
-
+it('requires complete unidentified details before review', function () {
     $unknown = testDecedent(['identity_status' => 'unidentified', 'has_legal_name' => false, 'first_name' => null, 'last_name' => null, 'registry_number' => null]);
     DB::table('cemetery_unidentified_details')->insert([
         'id' => (string) Str::ulid(),
         'municipal_id' => $unknown->municipal_id,
         'decedent_id' => $unknown->id,
-        'reference_code' => 'UNID-1',
         'case_reference' => 'UNID-1',
         'found_location' => 'BARANGAY UNO',
         'date_found' => '2026-01-01',
@@ -214,6 +197,26 @@ it('requires complete fetal and unidentified details before review', function ()
         'updated_at' => now(),
     ]);
     expect($this->reviewErrors->execute($unknown->fresh()))->not->toHaveKey('unidentified_details');
+});
+
+it('keeps unidentified case references unique within each municipality', function () {
+    $first = testDecedent(['municipal_id' => 'municipality-a']);
+    $otherMunicipality = testDecedent(['municipal_id' => 'municipality-b']);
+    $duplicate = testDecedent(['municipal_id' => 'municipality-a']);
+
+    $insertDetail = static fn (Decedent $decedent) => DB::table('cemetery_unidentified_details')->insert([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $decedent->municipal_id,
+        'decedent_id' => $decedent->id,
+        'case_reference' => 'UNID-SHARED',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $insertDetail($first);
+    $insertDetail($otherMunicipality);
+
+    expect(fn () => $insertDetail($duplicate))->toThrow(QueryException::class);
 });
 
 it('blocks duplicate registry numbers only within the same municipality and vital record type', function () {
@@ -276,16 +279,64 @@ it('allows an incomplete fetal draft and keeps it out of review', function () {
         psgcBarangayCode: null,
         streetName: null,
         unidentifiedDetails: [],
-        fetalDetails: [],
-        documents: [],
         avatar: null,
     );
 
     $record = (new StoreDecedentAction($this->idGenerator))->execute($dto);
 
     expect($record->registration_status->value)->toBe('draft')
-        ->and($record->fetalDeathDetail)->not->toBeNull()
-        ->and($record->fetalDeathDetail->mother_name)->toBeNull();
+        ->and($record->vital_record_type->value)->toBe('fetal_death')
+        ->and(Schema::hasTable('cemetery_fetal_death_details'))->toBeFalse();
+});
+
+it('submits verifies and readies a fetal record without subtype details', function () {
+    $dto = new DecedentDto(
+        municipalId: 'municipality-a',
+        vitalRecordType: 'fetal_death',
+        identityStatus: 'identified',
+        hasLegalName: false,
+        submissionIntent: 'submit',
+        version: null,
+        firstName: null,
+        lastName: null,
+        middleName: null,
+        suffix: null,
+        memorialName: 'BABY OF MARIA SANTOS',
+        gender: 'INDETERMINATE',
+        dateOfBirth: null,
+        dateOfDeath: '2026-01-01',
+        dateOfRegistration: '2026-01-02',
+        registryNumber: 'FETAL-100',
+        causeOfDeath: null,
+        placeOfDeath: null,
+        notes: null,
+        psgcMunicipalityId: null,
+        psgcBarangayCode: null,
+        streetName: null,
+        unidentifiedDetails: [],
+        avatar: null,
+    );
+
+    $record = (new StoreDecedentAction($this->idGenerator))->execute($dto);
+    $verified = (new VerifyDecedentAction($this->reviewErrors))->execute($record->id, $record->municipal_id);
+    $storeDocument = new StoreDecedentDocumentAction($this->idGenerator);
+    $readiness = new GetIntermentReadinessAction;
+
+    $initial = $readiness->execute($verified);
+    expect($verified->registration_status->value)->toBe('verified')
+        ->and($initial['missing'])->toContain('fetal_death_certificate', 'burial_permit')
+        ->not->toContain('death_certificate');
+
+    $storeDocument->execute($record->id, $record->municipal_id, [
+        'type' => 'fetal_death_certificate',
+        'document_number' => 'FETAL-100',
+    ], fakePdf('fetal-death-certificate.pdf'));
+    $storeDocument->execute($record->id, $record->municipal_id, [
+        'type' => 'burial_permit',
+        'document_number' => 'PERMIT-100',
+    ], fakePdf('burial-permit.pdf'));
+
+    expect($readiness->execute($record->fresh())['ready'])->toBeTrue();
 });
 
 it('counts uploaded documents toward interment readiness immediately', function () {
@@ -388,7 +439,6 @@ it('resolves an unidentified record in place and preserves its original case det
         'id' => (string) Str::ulid(),
         'municipal_id' => $record->municipal_id,
         'decedent_id' => $record->id,
-        'reference_code' => 'UNID-PERMANENT',
         'case_reference' => 'UNID-PERMANENT',
         'found_location' => 'PUBLIC MARKET',
         'date_found' => '2026-01-01',
@@ -551,8 +601,6 @@ function testDto(string $municipalId, int $version): DecedentDto
         psgcBarangayCode: null,
         streetName: null,
         unidentifiedDetails: [],
-        fetalDetails: [],
-        documents: [],
         avatar: null,
     );
 }

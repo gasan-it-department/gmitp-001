@@ -7,7 +7,7 @@ import { DecedentProfile, IdentityStatusValue, RegisterDecedentForm, SelectOptio
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import cemetery from '@/routes/cemetery';
 import { Link, useForm } from '@inertiajs/react';
-import { Baby, FileText, Folder, HelpCircle, Image, Info, MapPin, Save, Send, User } from 'lucide-react';
+import { FileText, Folder, HelpCircle, Image, Info, MapPin, Save, Send, User, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -53,11 +53,6 @@ export default function DecedentForm({ municipality, mode, record, vitalRecordOp
             distinguishing_features: record?.unidentified_details?.distinguishing_features ?? '',
             physical_description: record?.unidentified_details?.physical_description ?? '',
             requires_medico_legal: record?.unidentified_details?.requires_medico_legal ?? true,
-        },
-        fetal_details: {
-            gestational_age_weeks: record?.fetal_details?.gestational_age_weeks ?? '',
-            fetal_weight_grams: record?.fetal_details?.fetal_weight_grams ?? '',
-            mother_name: record?.fetal_details?.mother_name ?? '',
         },
     });
 
@@ -233,41 +228,6 @@ export default function DecedentForm({ municipality, mode, record, vitalRecordOp
                             <Input label="Cause of Death" value={form.data.cause_of_death} onChange={(value) => setNested('cause_of_death', value)} />
                         </div>
                     </Card>
-
-                    {form.data.vital_record_type === 'fetal_death' && (
-                        <Card
-                            icon={Baby}
-                            iconBg="bg-blue-600"
-                            title="Fetal Death Details"
-                            description="Certificate of Fetal Death (Municipal Form 103A) information."
-                        >
-                            <div className="grid gap-4 md:grid-cols-3">
-                                <Input
-                                    label="Mother's Recorded Name"
-                                    value={form.data.fetal_details.mother_name}
-                                    onChange={(value) => setNested('fetal_details', { ...form.data.fetal_details, mother_name: value })}
-                                    error={errors['fetal_details.mother_name']}
-                                />
-                                <Input
-                                    type="number"
-                                    label="Gestational Age (weeks)"
-                                    value={String(form.data.fetal_details.gestational_age_weeks)}
-                                    onChange={(value) =>
-                                        setNested('fetal_details', { ...form.data.fetal_details, gestational_age_weeks: value ? Number(value) : '' })
-                                    }
-                                    error={errors['fetal_details.gestational_age_weeks']}
-                                />
-                                <Input
-                                    type="number"
-                                    label="Fetal Weight (grams)"
-                                    value={String(form.data.fetal_details.fetal_weight_grams)}
-                                    onChange={(value) =>
-                                        setNested('fetal_details', { ...form.data.fetal_details, fetal_weight_grams: value ? Number(value) : '' })
-                                    }
-                                />
-                            </div>
-                        </Card>
-                    )}
 
                     {form.data.identity_status === 'unidentified' && (
                         <Card
@@ -449,7 +409,7 @@ function Card({
     description,
     children,
 }: {
-    icon: any;
+    icon: LucideIcon;
     iconBg?: string;
     title: string;
     description?: string;

@@ -2,7 +2,6 @@
 
 namespace App\External\Api\Request\Cemetery\Decedents\Concerns;
 
-use App\Core\Cemetery\Enums\DecedentDocumentType;
 use App\Core\Cemetery\Enums\IdentityStatus;
 use App\Core\Cemetery\Enums\VitalRecordType;
 use Illuminate\Validation\Rule;
@@ -16,7 +15,6 @@ trait HasDecedentRules
         $submitting = $this->input('submission_intent') === 'submit';
         $identified = $this->input('identity_status') === IdentityStatus::IDENTIFIED->value;
         $unidentified = $this->input('identity_status') === IdentityStatus::UNIDENTIFIED->value;
-        $fetal = $this->input('vital_record_type') === VitalRecordType::FETAL_DEATH->value;
         $legalName = filter_var($this->input('has_legal_name'), FILTER_VALIDATE_BOOLEAN);
 
         $registryRule = Rule::unique('cemetery_decedents', 'registry_number')
@@ -75,11 +73,6 @@ trait HasDecedentRules
             'unidentified_details.distinguishing_features' => ['nullable', 'string', 'max:2000'],
             'unidentified_details.physical_description' => [Rule::requiredIf($submitting && $unidentified), 'nullable', 'string', 'max:4000'],
             'unidentified_details.requires_medico_legal' => ['nullable', 'boolean'],
-
-            'fetal_details' => [Rule::requiredIf($submitting && $fetal), 'nullable', 'array'],
-            'fetal_details.gestational_age_weeks' => [Rule::requiredIf($submitting && $fetal), 'nullable', 'integer', 'min:1', 'max:45'],
-            'fetal_details.fetal_weight_grams' => ['nullable', 'integer', 'min:1', 'max:10000'],
-            'fetal_details.mother_name' => [Rule::requiredIf($submitting && $fetal), 'nullable', 'string', 'max:255'],
         ];
     }
 }

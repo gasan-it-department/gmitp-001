@@ -7,7 +7,6 @@ use App\Core\Cemetery\Enums\IdentityStatus;
 use App\Core\Cemetery\Enums\RegistrationStatus;
 use App\Core\Cemetery\Enums\VitalRecordType;
 use App\Core\Cemetery\Models\Decedent;
-use App\Core\Cemetery\Models\FetalDeathDetail;
 use App\Core\Cemetery\Models\UnidentifiedDetail;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Http\UploadedFile;
@@ -15,9 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class StoreDecedentAction
 {
-    public function __construct(private IdGeneratorInterface $idGenerator)
-    {
-    }
+    public function __construct(private IdGeneratorInterface $idGenerator) {}
 
     public function execute(DecedentDto $dto): Decedent
     {
@@ -67,7 +64,7 @@ class StoreDecedentAction
                     ->toMediaCollection('avatar', 'local');
             }
 
-            return $decedent->fresh(['unidentifiedDetail', 'fetalDeathDetail', 'media']);
+            return $decedent->fresh(['unidentifiedDetail', 'media']);
         });
     }
 
@@ -75,24 +72,14 @@ class StoreDecedentAction
     {
         if ($dto->identityStatus === IdentityStatus::UNIDENTIFIED->value) {
             $caseReference = $dto->unidentifiedDetails['case_reference']
-                ?? 'UNID-' . now()->format('Y') . '-' . substr($this->idGenerator->generate(), -8);
+                ?? 'UNID-'.now()->format('Y').'-'.substr($this->idGenerator->generate(), -8);
 
             UnidentifiedDetail::create([
                 'id' => $this->idGenerator->generate(),
                 'municipal_id' => $dto->municipalId,
                 'decedent_id' => $decedent->id,
                 ...$dto->unidentifiedDetails,
-                'reference_code' => $caseReference,
                 'case_reference' => $caseReference,
-            ]);
-        }
-
-        if ($dto->vitalRecordType === VitalRecordType::FETAL_DEATH->value) {
-            FetalDeathDetail::create([
-                'id' => $this->idGenerator->generate(),
-                'municipal_id' => $dto->municipalId,
-                'decedent_id' => $decedent->id,
-                ...$dto->fetalDetails,
             ]);
         }
     }

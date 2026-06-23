@@ -30,7 +30,6 @@ final readonly class DecedentDto
         public ?string $psgcBarangayCode,
         public ?string $streetName,
         public array $unidentifiedDetails,
-        public array $fetalDetails,
         public ?UploadedFile $avatar,
     ) {}
 
@@ -62,7 +61,6 @@ final readonly class DecedentDto
             psgcBarangayCode: self::clean($data['psgc_barangay_code'] ?? null),
             streetName: self::upper($data['street_name'] ?? null),
             unidentifiedDetails: self::normalizeArray($data['unidentified_details'] ?? []),
-            fetalDetails: self::normalizeArray($data['fetal_details'] ?? []),
             avatar: $data['avatar'] ?? null,
         );
     }

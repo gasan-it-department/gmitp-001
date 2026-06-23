@@ -3,14 +3,13 @@
 namespace App\Core\Cemetery\Actions\Decedents;
 
 use App\Core\Cemetery\Enums\IdentityStatus;
-use App\Core\Cemetery\Enums\VitalRecordType;
 use App\Core\Cemetery\Models\Decedent;
 
 class GetDecedentReviewErrorsAction
 {
     public function execute(Decedent $decedent): array
     {
-        $decedent->loadMissing(['unidentifiedDetail', 'fetalDeathDetail']);
+        $decedent->loadMissing('unidentifiedDetail');
         $errors = [];
 
         if ($decedent->identity_status !== IdentityStatus::UNIDENTIFIED && ! $decedent->date_of_death) {
@@ -45,13 +44,6 @@ class GetDecedentReviewErrorsAction
                 || blank($detail->date_found) || blank($detail->reporting_agency)
                 || blank($detail->physical_description)) {
                 $errors['unidentified_details'] = 'Complete the unidentified-person case details.';
-            }
-        }
-
-        if ($decedent->vital_record_type === VitalRecordType::FETAL_DEATH) {
-            $detail = $decedent->fetalDeathDetail;
-            if (! $detail || blank($detail->mother_name) || blank($detail->gestational_age_weeks)) {
-                $errors['fetal_details'] = 'Mother name and gestational age are required for fetal death records.';
             }
         }
 

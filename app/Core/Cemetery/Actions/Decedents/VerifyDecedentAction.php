@@ -15,7 +15,7 @@ class VerifyDecedentAction
     {
         return DB::transaction(function () use ($decedentId, $municipalId) {
             $decedent = Decedent::query()
-                ->with(['unidentifiedDetail', 'fetalDeathDetail'])
+                ->with('unidentifiedDetail')
                 ->where('municipal_id', $municipalId)
                 ->lockForUpdate()
                 ->findOrFail($decedentId);

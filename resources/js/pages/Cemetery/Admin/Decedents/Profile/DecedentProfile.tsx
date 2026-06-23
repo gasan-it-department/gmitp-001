@@ -117,7 +117,6 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                     <div className="space-y-6 lg:col-span-2">
                         <DetailsCard record={record} />
                         {record.unidentified_details && <UnidentifiedCard record={record} />}
-                        {record.fetal_details && <FetalCard record={record} />}
                         <DocumentsCard record={record} options={document_type_options} abilities={abilities} municipality={currentMunicipality} />
                     </div>
                     <AuditCard record={record} abilities={abilities} />
@@ -311,24 +310,6 @@ function UnidentifiedCard({ record }: { record: DecedentProfileType }) {
             </div>
             <Detail label="Physical Description" value={details?.physical_description} />
             <Detail label="Distinguishing Features" value={details?.distinguishing_features} />
-        </Card>
-    );
-}
-
-function FetalCard({ record }: { record: DecedentProfileType }) {
-    return (
-        <Card title="Fetal Death Details">
-            <div className="grid gap-4 sm:grid-cols-3">
-                <Detail label="Mother's Recorded Name" value={record.fetal_details?.mother_name} />
-                <Detail
-                    label="Gestational Age"
-                    value={record.fetal_details?.gestational_age_weeks ? `${record.fetal_details.gestational_age_weeks} weeks` : null}
-                />
-                <Detail
-                    label="Fetal Weight"
-                    value={record.fetal_details?.fetal_weight_grams ? `${record.fetal_details.fetal_weight_grams} g` : null}
-                />
-            </div>
         </Card>
     );
 }
