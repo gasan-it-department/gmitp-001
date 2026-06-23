@@ -3,7 +3,6 @@
 namespace App\Core\Cemetery\Actions\Decedents;
 
 use App\Core\Cemetery\Enums\DecedentDocumentType;
-use App\Core\Cemetery\Enums\DocumentVerificationStatus;
 use App\Core\Cemetery\Enums\IdentityStatus;
 use App\Core\Cemetery\Enums\RegistrationStatus;
 use App\Core\Cemetery\Enums\VitalRecordType;
@@ -29,8 +28,7 @@ class GetIntermentReadinessAction
             }
         }
 
-        $verifiedTypes = $decedent->documents
-            ->filter(fn ($document) => $document->verification_status === DocumentVerificationStatus::VERIFIED)
+        $attachedTypes = $decedent->documents
             ->pluck('type')
             ->map(fn ($type) => $type instanceof DecedentDocumentType ? $type->value : $type)
             ->all();
@@ -38,7 +36,7 @@ class GetIntermentReadinessAction
         $requirements = collect($required)->map(fn (DecedentDocumentType $type) => [
             'type' => $type->value,
             'label' => $type->label(),
-            'satisfied' => in_array($type->value, $verifiedTypes, true),
+            'satisfied' => in_array($type->value, $attachedTypes, true),
         ])->values()->all();
 
         $missing = collect($requirements)->where('satisfied', false)->pluck('type')->values()->all();

@@ -1,16 +1,14 @@
 <?php
 
+use App\External\Api\Controllers\Cemetery\Decedents\CorrectDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\CreateReadinessOverrideController;
 use App\External\Api\Controllers\Cemetery\Decedents\DeleteDecedentDocumentController;
 use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentCorrectionEvidenceController;
 use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentDocumentController;
-use App\External\Api\Controllers\Cemetery\Decedents\RequestDecedentCorrectionController;
-use App\External\Api\Controllers\Cemetery\Decedents\ReviewDecedentCorrectionController;
 use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentDocumentController;
 use App\External\Api\Controllers\Cemetery\Decedents\UpdateDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentController;
-use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentDocumentController;
 use App\External\Api\Controllers\Cemetery\Decedents\ViewDecedentAvatarController;
 use App\External\Api\Controllers\Cemetery\Interments\StoreIntermentController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotController;
@@ -57,8 +55,8 @@ Route::prefix('/{municipality}/cemetery')
                             ->middleware('permission:cemetery.decedents.documents.view')->name('avatar');
                         Route::get('{decedent_id}/documents/{document_id}', DownloadDecedentDocumentController::class)
                             ->middleware('permission:cemetery.decedents.documents.view')->name('documents.download');
-                        Route::get('{decedent_id}/corrections/{correction_id}/evidence', DownloadDecedentCorrectionEvidenceController::class)
-                            ->middleware('permission:cemetery.decedents.documents.view')->name('corrections.evidence');
+                        Route::get('{decedent_id}/correction-evidence/{media_id}', DownloadDecedentCorrectionEvidenceController::class)
+                            ->middleware('permission:cemetery.decedents.documents.view')->name('correction-evidence.download');
                     });
 
                 // Plots
@@ -94,14 +92,10 @@ Route::prefix('api/decedents')
         Route::put('{decedent_id}', UpdateDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('update');
         Route::post('{decedent_id}/verify', VerifyDecedentController::class)->middleware('permission:cemetery.decedents.verify')->name('verify');
         Route::post('{decedent_id}/documents', StoreDecedentDocumentController::class)->middleware('permission:cemetery.decedents.manage')->name('documents.store');
-        Route::post('{decedent_id}/documents/{document_id}/verify', VerifyDecedentDocumentController::class)
-            ->middleware('permission:cemetery.decedents.verify')->name('documents.verify');
         Route::delete('{decedent_id}/documents/{document_id}', DeleteDecedentDocumentController::class)
             ->middleware('permission:cemetery.decedents.manage')->name('documents.delete');
-        Route::post('{decedent_id}/corrections', RequestDecedentCorrectionController::class)
-            ->middleware('permission:cemetery.decedents.correct')->name('corrections.store');
-        Route::post('{decedent_id}/corrections/{correction_id}/review', ReviewDecedentCorrectionController::class)
-            ->middleware('permission:cemetery.decedents.verify')->name('corrections.review');
+        Route::post('{decedent_id}/correct', CorrectDecedentController::class)
+            ->middleware('permission:cemetery.decedents.correct')->name('correct');
         Route::post('{decedent_id}/readiness-overrides', CreateReadinessOverrideController::class)
             ->middleware('permission:cemetery.decedents.override')->name('readiness-overrides.store');
     });

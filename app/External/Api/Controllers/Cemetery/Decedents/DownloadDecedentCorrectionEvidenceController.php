@@ -2,20 +2,21 @@
 
 namespace App\External\Api\Controllers\Cemetery\Decedents;
 
-use App\Core\Cemetery\Models\DecedentCorrection;
+use App\Core\Cemetery\Models\Decedent;
 use App\Http\Controllers\Controller;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DownloadDecedentCorrectionEvidenceController extends Controller
 {
-    public function __invoke(string $municipality, string $decedentId, string $correctionId): BinaryFileResponse
+    public function __invoke(string $municipality, string $decedentId, string $mediaId): BinaryFileResponse
     {
-        $correction = DecedentCorrection::query()
+        $decedent = Decedent::query()
             ->where('municipal_id', app('municipal_id'))
-            ->where('decedent_id', $decedentId)
-            ->findOrFail($correctionId);
-        $media = $correction->getFirstMedia('evidence');
-        abort_unless($media, 404);
+            ->findOrFail($decedentId);
+        $media = $decedent->media()
+            ->whereKey($mediaId)
+            ->where('collection_name', 'correction_evidence')
+            ->firstOrFail();
 
         return response()->download($media->getPath(), $media->file_name, [
             'Content-Type' => $media->mime_type,

@@ -46,16 +46,12 @@ class DecedentDetailsResource extends JsonResource
                 : null,
             'documents' => $this->whenLoaded('documents', fn () => $this->documents->map(fn ($document) => [
                 'id' => $document->id,
-                'supersedes_id' => $document->supersedes_id,
                 'type' => $document->type->value,
                 'type_label' => $document->type->label(),
                 'restricted' => $document->type->isRestricted(),
                 'document_number' => $document->document_number,
                 'issued_at' => $document->issued_at?->format('Y-m-d'),
                 'notes' => $document->notes,
-                'verification_status' => $document->verification_status->value,
-                'verified_at' => $document->verified_at?->toIso8601String(),
-                'verified_by' => $document->verifier?->full_name,
                 'file_name' => $document->getFirstMedia('file')?->file_name,
                 'mime_type' => $document->getFirstMedia('file')?->mime_type,
                 'download_url' => route('cemetery.admin.decedents.documents.download', [
@@ -79,22 +75,6 @@ class DecedentDetailsResource extends JsonResource
                 'fetal_weight_grams' => $this->fetalDeathDetail->fetal_weight_grams,
                 'mother_name' => $this->fetalDeathDetail->mother_name,
             ] : null),
-            'corrections' => $this->whenLoaded('corrections', fn () => $this->corrections->sortByDesc('created_at')->map(fn ($correction) => [
-                'id' => $correction->id,
-                'base_version' => $correction->base_version,
-                'status' => $correction->status->value,
-                'reason' => $correction->reason,
-                'original_values' => $correction->original_values,
-                'proposed_changes' => $correction->proposed_changes,
-                'requested_by' => $correction->requester?->full_name,
-                'reviewed_by' => $correction->reviewer?->full_name,
-                'review_notes' => $correction->review_notes,
-                'evidence_url' => $correction->getFirstMedia('evidence') ? route(
-                    'cemetery.admin.decedents.corrections.evidence',
-                    [$municipality->slug, $this->id, $correction->id]
-                ) : null,
-                'created_at' => $correction->created_at?->toIso8601String(),
-            ])->values()),
             'audit_timeline' => $this->relationLoaded('auditActivities')
                 ? $this->auditActivities->map(fn ($activity) => [
                     'id' => $activity->id,
@@ -103,12 +83,24 @@ class DecedentDetailsResource extends JsonResource
                     'causer' => $activity->causer?->full_name,
                     'changes' => $activity->changes,
                     'properties' => $activity->properties,
+                    'evidence_url' => $this->correctionEvidenceUrl($activity, $municipality->slug),
                     'created_at' => $activity->created_at?->toIso8601String(),
                 ])->values()
                 : [],
             'interment_readiness' => $this->relationLoaded('intermentReadiness') ? $this->intermentReadiness : null,
             'interment' => $this->intermentPayload(),
         ];
+    }
+
+    private function correctionEvidenceUrl($activity, string $municipalitySlug): ?string
+    {
+        $mediaId = $activity->getProperty('evidence_media_id');
+
+        return $mediaId ? route('cemetery.admin.decedents.correction-evidence.download', [
+            $municipalitySlug,
+            $this->id,
+            $mediaId,
+        ]) : null;
     }
 
     private function intermentPayload(): ?array

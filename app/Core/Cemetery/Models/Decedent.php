@@ -106,11 +106,6 @@ class Decedent extends Model implements HasMedia
         return $this->hasOne(FetalDeathDetail::class);
     }
 
-    public function corrections(): HasMany
-    {
-        return $this->hasMany(DecedentCorrection::class);
-    }
-
     public function readinessOverrides(): HasMany
     {
         return $this->hasMany(IntermentReadinessOverride::class);
@@ -172,7 +167,7 @@ class Decedent extends Model implements HasMedia
             ->useLogName('cemetery_decedent');
     }
 
-    /** Private profile photo. Supporting evidence belongs to DecedentDocument. */
+    /** Private profile photo and evidence retained for each authorized correction. */
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('avatar')
@@ -184,6 +179,14 @@ class Decedent extends Model implements HasMedia
                 'image/webp',
             ]);
 
+        $this->addMediaCollection('correction_evidence')
+            ->useDisk('local')
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+                'application/pdf',
+            ]);
     }
 
     /**

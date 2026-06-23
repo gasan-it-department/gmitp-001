@@ -1,6 +1,11 @@
+import { Button } from '@/components/ui/button';
 import { DecedentListItem } from '@/Core/Types/Cemetery/cemetery';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
+import cemetery from '@/routes/cemetery';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { DecedentsTable } from './Components/DecedentsTable';
 
 interface Props {
@@ -10,27 +15,41 @@ interface Props {
 
 export default function ListDecedents({ decedents }: Props) {
     const rows = decedents.data;
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     return (
         <AppLayout>
-            <section className="">
-                <div className="m-5 mt-0 flex bg-white">
-                    <div className="w-full p-5">
-                        {/* Stat strip */}
-                        <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <StatCard label="Total Records" value={decedents.meta.total ?? rows.length} tone="indigo" />
-                            <StatCard
-                                label="Awaiting Plot Assignment"
-                                value={rows.filter((r) => r.interment_status === 'unassigned' || r.interment_status === 'pending').length}
-                                tone="amber"
-                            />
-                            <StatCard label="Interred" value={rows.filter((r) => r.interment_status === 'interred').length} tone="emerald" />
-                        </section>
+            <Head title="Decedents Registry" />
 
-                        <DecedentsTable decedents={decedents} />
+            <div className="m-6 space-y-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Decedents Registry</h1>
+                        <p className="text-sm text-muted-foreground">Manage and track decedent records and interments.</p>
                     </div>
+
+                    <Link href={cemetery.admin.decedents.create.page.url({ municipality: currentMunicipality.slug })}>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" /> New Decedent
+                        </Button>
+                    </Link>
                 </div>
-            </section>
+
+                {/* Stat strip */}
+                <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <StatCard label="Total Records" value={decedents.meta.total ?? rows.length} tone="indigo" />
+                    <StatCard
+                        label="Awaiting Plot Assignment"
+                        value={rows.filter((r) => r.interment_status === 'unassigned' || r.interment_status === 'pending').length}
+                        tone="amber"
+                    />
+                    <StatCard label="Interred" value={rows.filter((r) => r.interment_status === 'interred').length} tone="emerald" />
+                </section>
+
+                <div className="rounded-lg border bg-white">
+                    <DecedentsTable decedents={decedents} />
+                </div>
+            </div>
         </AppLayout>
     );
 }

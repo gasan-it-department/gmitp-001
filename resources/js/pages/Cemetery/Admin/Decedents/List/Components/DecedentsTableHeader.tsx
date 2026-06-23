@@ -5,13 +5,12 @@ import { List, PlusIcon, UploadIcon } from 'lucide-react';
 
 interface Props {
     className?: string;
-    onAddNewButtonClicked: () => void;
     onExportButtonClicked?: () => void;
     onFilterButtonClicked?: () => void;
     onSearch?: (search: string) => void;
 }
 
-export default function DecedentsTableHeader({ className, onFilterButtonClicked, onSearch, onExportButtonClicked, onAddNewButtonClicked }: Props) {
+export default function DecedentsTableHeader({ className, onFilterButtonClicked, onSearch, onExportButtonClicked }: Props) {
     return (
         <div className={cn('flex flex-row items-center gap-2', className)}>
             <SearchBar
@@ -40,15 +39,6 @@ export default function DecedentsTableHeader({ className, onFilterButtonClicked,
             >
                 <List className="h-4 w-4" />
                 Sort
-            </Button>
-
-            <Button
-                onClick={onAddNewButtonClicked}
-                variant="outline"
-                className="flex items-center gap-2 rounded-lg border-gray-300 text-gray-700 shadow-sm hover:bg-gray-100"
-            >
-                <PlusIcon className="h-4 w-4" />
-                Register
             </Button>
         </div>
     );

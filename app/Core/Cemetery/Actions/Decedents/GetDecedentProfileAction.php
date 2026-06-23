@@ -14,12 +14,8 @@ class GetDecedentProfileAction
             'currentInterment.plot.block.section',
             'currentInterment.plot.parent',
             'documents.media',
-            'documents.verifier',
             'unidentifiedDetail',
             'fetalDeathDetail',
-            'corrections.requester',
-            'corrections.reviewer',
-            'corrections.media',
             'readinessOverrides',
             'verifier',
             'submitter',
@@ -33,7 +29,6 @@ class GetDecedentProfileAction
 
         $subjectIds = collect([$decedent->id])
             ->merge($documentIds)
-            ->merge($decedent->corrections->pluck('id'))
             ->merge($decedent->readinessOverrides->pluck('id'))
             ->when($decedent->unidentifiedDetail, fn ($ids) => $ids->push($decedent->unidentifiedDetail->id))
             ->when($decedent->fetalDeathDetail, fn ($ids) => $ids->push($decedent->fetalDeathDetail->id));

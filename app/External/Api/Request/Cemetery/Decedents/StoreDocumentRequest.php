@@ -17,7 +17,6 @@ class StoreDocumentRequest extends FormRequest
     {
         return [
             'type' => ['required', new Enum(DecedentDocumentType::class)],
-            'supersedes_document_id' => ['nullable', 'ulid'],
             'document_number' => ['nullable', 'string', 'max:255'],
             'issued_at' => ['nullable', 'date', 'before_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:1000'],

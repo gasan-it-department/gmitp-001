@@ -15,6 +15,7 @@ import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import { useForm } from '@inertiajs/react';
 import { Plus, Save, Send, Trash2 } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 type DocumentOption = SelectOption<DecedentDocumentTypeValue> & { restricted: boolean };
 
@@ -86,7 +87,11 @@ export default function DecedentForm({
     };
 
     const submit = (intent: 'draft' | 'submit') => {
-        form.transform((data) => ({ ...data, submission_intent: intent }));
+        form.transform((data) => ({
+            ...data,
+            submission_intent: intent,
+            ...(mode === 'edit' ? { _method: 'put' } : {}),
+        }));
         const options = {
             forceFormData: true,
             headers: { 'X-Municipality-Slug': municipality.slug },
@@ -95,7 +100,7 @@ export default function DecedentForm({
         if (mode === 'create') {
             form.post('/api/decedents/store', options);
         } else if (record) {
-            form.put(`/api/decedents/${record.id}`, options);
+            form.post(`/api/decedents/${record.id}`, options);
         }
     };
 
@@ -104,6 +109,25 @@ export default function DecedentForm({
             'documents',
             form.data.documents.map((document, current) => (current === index ? { ...document, ...patch } : document)),
         );
+    };
+
+    const changeIdentityStatus = (value: IdentityStatusValue) => {
+        form.setData((data) => ({
+            ...data,
+            identity_status: value,
+            ...(value === 'unidentified'
+                ? {
+                      has_legal_name: false,
+                      first_name: '',
+                      middle_name: '',
+                      last_name: '',
+                      suffix: '',
+                      memorial_name: '',
+                      date_of_birth: '',
+                      gender: '' as const,
+                  }
+                : {}),
+        }));
     };
 
     return (
@@ -123,11 +147,13 @@ export default function DecedentForm({
                 <Card title="Record Classification" description="A child born alive uses Death; Fetal Death is a separate PSA vital record.">
                     <div className="grid gap-4 md:grid-cols-3">
                         <SelectField label="Vital Record Type" value={form.data.vital_record_type} options={vitalRecordOptions} onChange={(value) => setNested('vital_record_type', value as VitalRecordTypeValue)} />
-                        <SelectField label="Identity Status" value={form.data.identity_status} options={identityStatusOptions} onChange={(value) => setNested('identity_status', value as IdentityStatusValue)} />
-                        <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                            <input type="checkbox" checked={form.data.has_legal_name} onChange={(event) => setNested('has_legal_name', event.target.checked)} />
-                            Has a legal registered name
-                        </label>
+                        <SelectField label="Identity Status" value={form.data.identity_status} options={identityStatusOptions} onChange={(value) => changeIdentityStatus(value as IdentityStatusValue)} />
+                        {form.data.identity_status === 'identified' && (
+                            <label className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+                                <input type="checkbox" checked={form.data.has_legal_name} onChange={(event) => setNested('has_legal_name', event.target.checked)} />
+                                Has a legal registered name
+                            </label>
+                        )}
                     </div>
                 </Card>
 
@@ -146,13 +172,13 @@ export default function DecedentForm({
                     )}
 
                     <div className="mt-4 grid gap-4 md:grid-cols-4">
-                        <Input type="date" label="Date of Birth" value={form.data.date_of_birth} onChange={(value) => setNested('date_of_birth', value)} />
-                        <Input type="date" label="Date of Death" value={form.data.date_of_death} onChange={(value) => setNested('date_of_death', value)} error={errors.date_of_death} />
+                        {form.data.identity_status === 'identified' && <Input type="date" label="Date of Birth" value={form.data.date_of_birth} onChange={(value) => setNested('date_of_birth', value)} />}
+                        <Input type="date" label={form.data.identity_status === 'unidentified' ? 'Date of Death (if established)' : 'Date of Death'} value={form.data.date_of_death} onChange={(value) => setNested('date_of_death', value)} error={errors.date_of_death} />
                         <Input type="date" label="Registration Date" value={form.data.date_of_registration} onChange={(value) => setNested('date_of_registration', value)} error={errors.date_of_registration} />
-                        <SelectField label="Sex" value={form.data.gender} options={[{ value: 'MALE', label: 'Male' }, { value: 'FEMALE', label: 'Female' }, { value: 'INDETERMINATE', label: 'Indeterminate' }]} onChange={(value) => setNested('gender', value as RegisterDecedentForm['gender'])} />
+                        {form.data.identity_status === 'identified' && <SelectField label="Sex" value={form.data.gender} options={[{ value: 'MALE', label: 'Male' }, { value: 'FEMALE', label: 'Female' }, { value: 'INDETERMINATE', label: 'Indeterminate' }]} onChange={(value) => setNested('gender', value as RegisterDecedentForm['gender'])} />}
                     </div>
                     <div className="mt-4 grid gap-4 md:grid-cols-3">
-                        <Input label="Civil Registry Number" value={form.data.registry_number} onChange={(value) => setNested('registry_number', value)} error={errors.registry_number} />
+                        <Input label={form.data.identity_status === 'unidentified' ? 'LCR Registry Number (if issued)' : 'Civil Registry Number'} value={form.data.registry_number} onChange={(value) => setNested('registry_number', value)} error={errors.registry_number} />
                         <Input label="Place of Death" value={form.data.place_of_death} onChange={(value) => setNested('place_of_death', value)} />
                         <Input label="Cause of Death" value={form.data.cause_of_death} onChange={(value) => setNested('cause_of_death', value)} />
                     </div>
@@ -177,6 +203,7 @@ export default function DecedentForm({
                             <Input label="Reporting Agency" value={form.data.unidentified_details.reporting_agency} onChange={(value) => setNested('unidentified_details', { ...form.data.unidentified_details, reporting_agency: value })} error={errors['unidentified_details.reporting_agency']} />
                             <Input label="Reported By" value={form.data.unidentified_details.reported_by} onChange={(value) => setNested('unidentified_details', { ...form.data.unidentified_details, reported_by: value })} />
                             <Input label="Estimated Age" value={form.data.unidentified_details.estimated_age} onChange={(value) => setNested('unidentified_details', { ...form.data.unidentified_details, estimated_age: value })} />
+                            <SelectField label="Estimated Sex" value={form.data.unidentified_details.estimated_sex} options={[{ value: 'MALE', label: 'Male' }, { value: 'FEMALE', label: 'Female' }, { value: 'INDETERMINATE', label: 'Indeterminate' }]} onChange={(value) => setNested('unidentified_details', { ...form.data.unidentified_details, estimated_sex: value as RegisterDecedentForm['unidentified_details']['estimated_sex'] })} />
                         </div>
                         <div className="mt-4 grid gap-4 md:grid-cols-2">
                             <TextField label="Physical Description" value={form.data.unidentified_details.physical_description} onChange={(value) => setNested('unidentified_details', { ...form.data.unidentified_details, physical_description: value })} error={errors['unidentified_details.physical_description']} />
@@ -225,7 +252,7 @@ export default function DecedentForm({
     );
 }
 
-function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Card({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
     return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><div className="mb-5"><h2 className="font-semibold text-slate-900">{title}</h2>{description && <p className="mt-1 text-xs text-slate-500">{description}</p>}</div>{children}</section>;
 }
 

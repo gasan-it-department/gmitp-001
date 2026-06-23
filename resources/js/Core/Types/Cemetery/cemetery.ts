@@ -5,7 +5,6 @@ export type PlotTypeValue = 'lawn_lot' | 'apartment_niche' | 'bone_ossuary' | 'm
 export type VitalRecordTypeValue = 'death' | 'fetal_death';
 export type IdentityStatusValue = 'identified' | 'unidentified';
 export type RegistrationStatusValue = 'draft' | 'pending_review' | 'verified' | 'archived';
-export type DocumentVerificationStatusValue = 'pending' | 'verified' | 'rejected' | 'superseded';
 export type DecedentDocumentTypeValue =
     | 'death_certificate'
     | 'fetal_death_certificate'
@@ -102,16 +101,12 @@ export interface DecedentProfile {
     avatar_url: string | null;
     documents: {
         id: string;
-        supersedes_id: string | null;
         type: DecedentDocumentTypeValue;
         type_label: string;
         restricted: boolean;
         document_number: string | null;
         issued_at: string | null;
         notes: string | null;
-        verification_status: DocumentVerificationStatusValue;
-        verified_at: string | null;
-        verified_by: string | null;
         file_name: string | null;
         mime_type: string | null;
         download_url: string;
@@ -133,19 +128,6 @@ export interface DecedentProfile {
         fetal_weight_grams: number | null;
         mother_name: string | null;
     } | null;
-    corrections: {
-        id: string;
-        base_version: number;
-        status: 'pending' | 'approved' | 'rejected';
-        reason: string;
-        original_values: Record<string, unknown>;
-        proposed_changes: Record<string, unknown>;
-        requested_by: string | null;
-        reviewed_by: string | null;
-        review_notes: string | null;
-        evidence_url: string | null;
-        created_at: string;
-    }[];
     audit_timeline: {
         id: number;
         event: string | null;
@@ -153,6 +135,7 @@ export interface DecedentProfile {
         causer: string | null;
         changes: Record<string, unknown>;
         properties: Record<string, unknown>;
+        evidence_url: string | null;
         created_at: string;
     }[];
     interment_readiness: {

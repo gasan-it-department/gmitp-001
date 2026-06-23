@@ -1,7 +1,6 @@
 <?php
 
 use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
-use App\Core\Cemetery\Enums\DocumentVerificationStatus;
 use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\DecedentDocument;
 use App\Core\Cemetery\Models\IntermentReadinessOverride;
@@ -17,9 +16,9 @@ it('derives fetal infant child and adult life stages', function () {
         ->and(decedentForStage('death', '2000-01-01', '2025-01-01')->life_stage)->toBe('adult');
 });
 
-it('requires a verified death certificate and burial permit for an identified death', function () {
+it('requires an attached death certificate and burial permit for an identified death', function () {
     $decedent = readyDecedent('death', 'identified', [
-        verifiedDocument('death_certificate'),
+        attachedDocument('death_certificate'),
     ]);
 
     $readiness = (new GetIntermentReadinessAction)->execute($decedent);
@@ -30,8 +29,8 @@ it('requires a verified death certificate and burial permit for an identified de
 
 it('uses the fetal death certificate requirement for fetal records', function () {
     $decedent = readyDecedent('fetal_death', 'identified', [
-        verifiedDocument('fetal_death_certificate'),
-        verifiedDocument('burial_permit'),
+        attachedDocument('fetal_death_certificate'),
+        attachedDocument('burial_permit'),
     ]);
 
     $readiness = (new GetIntermentReadinessAction)->execute($decedent);
@@ -42,9 +41,9 @@ it('uses the fetal death certificate requirement for fetal records', function ()
 
 it('adds police and applicable medico legal evidence for unidentified cases', function () {
     $decedent = readyDecedent('death', 'unidentified', [
-        verifiedDocument('death_certificate'),
-        verifiedDocument('burial_permit'),
-        verifiedDocument('police_report'),
+        attachedDocument('death_certificate'),
+        attachedDocument('burial_permit'),
+        attachedDocument('police_report'),
     ]);
     $decedent->setRelation('unidentifiedDetail', new UnidentifiedDetail(['requires_medico_legal' => true]));
 
@@ -119,10 +118,9 @@ function readyDecedent(string $vitalType, string $identityStatus, array $documen
     return $decedent;
 }
 
-function verifiedDocument(string $type): DecedentDocument
+function attachedDocument(string $type): DecedentDocument
 {
     return new DecedentDocument([
         'type' => $type,
-        'verification_status' => DocumentVerificationStatus::VERIFIED->value,
     ]);
 }

@@ -100,25 +100,23 @@ export function DecedentsTable({ decedents }: Props) {
 
     return (
         <div>
-            {/* HEADER */}
-            <div className="my-5 flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Decedents Registry</h1>
-                <DecedentsTableHeader
-                    onAddNewButtonClicked={() => {
-                        router.visit(cemetery.admin.decedents.create.page.url(currentMunicipality.slug));
-                    }}
-                    onSearch={() => {}}
-                    onFilterButtonClicked={() => {
-                        setIsFilterOpened(true);
-                    }}
-                    onExportButtonClicked={() => {}}
-                />
+            {/* TOOLBAR */}
+            <div className="border-b border-gray-200 bg-white p-4">
+                <div className="flex justify-end">
+                    <DecedentsTableHeader
+                        onSearch={() => {}}
+                        onFilterButtonClicked={() => {
+                            setIsFilterOpened(true);
+                        }}
+                        onExportButtonClicked={() => {}}
+                    />
+                </div>
             </div>
 
             {/* TABLE */}
-            <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-gray-200">
-                <Table className="min-w-full table-fixed">
-                    <TableHeader className="sticky top-0 z-10 bg-gray-50">
+            <div className="overflow-x-auto">
+                <Table className="min-w-full">
+                    <TableHeader className="bg-gray-50/50">
                         <TableRow>
                             <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
                             <TableHead className="text-[12px] font-bold">Full Name</TableHead>

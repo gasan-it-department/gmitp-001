@@ -8,7 +8,6 @@ use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
 use App\Core\Cemetery\Models\Block as CemeteryBlock;
 use App\Core\Cemetery\Models\Decedent;
-use App\Core\Cemetery\Models\DecedentCorrection;
 use App\Core\Cemetery\Models\DecedentDocument;
 use App\Core\Cemetery\Models\FetalDeathDetail;
 use App\Core\Cemetery\Models\Interment;
@@ -69,7 +68,6 @@ class MorphMapServiceProvider extends ServiceProvider
             'term' => Term::class,
             'decedent' => Decedent::class,
             'cemetery_decedent_document' => DecedentDocument::class,
-            'cemetery_decedent_correction' => DecedentCorrection::class,
             'cemetery_unidentified_detail' => UnidentifiedDetail::class,
             'cemetery_fetal_death_detail' => FetalDeathDetail::class,
             'cemetery_readiness_override' => IntermentReadinessOverride::class,

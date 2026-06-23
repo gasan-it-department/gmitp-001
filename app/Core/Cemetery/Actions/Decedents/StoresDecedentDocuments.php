@@ -2,7 +2,6 @@
 
 namespace App\Core\Cemetery\Actions\Decedents;
 
-use App\Core\Cemetery\Enums\DocumentVerificationStatus;
 use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\DecedentDocument;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -26,7 +25,6 @@ trait StoresDecedentDocuments
                 'document_number' => $this->upperOrNull($payload['document_number'] ?? null),
                 'issued_at' => $payload['issued_at'] ?? null,
                 'notes' => $this->cleanOrNull($payload['notes'] ?? null),
-                'verification_status' => DocumentVerificationStatus::PENDING->value,
             ]);
 
             $document->addMedia($file)

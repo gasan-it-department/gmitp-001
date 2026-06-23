@@ -16,6 +16,6 @@ class StoreDecedentDocumentController extends Controller
         $data = $request->validated();
         $this->storeDocument->execute($decedentId, app('municipal_id'), $data, $request->file('file'));
 
-        return back()->with('success', 'Document uploaded for verification.');
+        return back()->with('success', 'Document uploaded.');
     }
 }

@@ -1,18 +1,17 @@
 <?php
 
+use App\Core\Cemetery\Actions\Decedents\CorrectDecedentAction;
 use App\Core\Cemetery\Actions\Decedents\DeleteDecedentDocumentAction;
 use App\Core\Cemetery\Actions\Decedents\GetDecedentReviewErrorsAction;
-use App\Core\Cemetery\Actions\Decedents\ReviewDecedentCorrectionAction;
+use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
 use App\Core\Cemetery\Actions\Decedents\StoreDecedentAction;
 use App\Core\Cemetery\Actions\Decedents\StoreDecedentDocumentAction;
 use App\Core\Cemetery\Actions\Decedents\UpdateDecedentAction;
 use App\Core\Cemetery\Actions\Decedents\VerifyDecedentAction;
-use App\Core\Cemetery\Actions\Decedents\VerifyDecedentDocumentAction;
 use App\Core\Cemetery\Dto\Decedents\DecedentDto;
-use App\Core\Cemetery\Enums\DocumentVerificationStatus;
 use App\Core\Cemetery\Models\Decedent;
-use App\Core\Cemetery\Models\DecedentCorrection;
 use App\Core\Cemetery\Models\DecedentDocument;
+use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentDocumentController;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
@@ -22,6 +21,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function () {
     Schema::create('cemetery_decedents', function (Blueprint $table) {
@@ -92,33 +92,25 @@ beforeEach(function () {
         $table->ulid('id')->primary();
         $table->ulid('municipal_id');
         $table->ulid('decedent_id');
-        $table->ulid('supersedes_id')->nullable();
         $table->string('type');
         $table->string('document_number')->nullable();
         $table->date('issued_at')->nullable();
         $table->text('notes')->nullable();
-        $table->string('verification_status')->default('pending');
-        $table->timestamp('verified_at')->nullable();
-        $table->ulid('verified_by')->nullable();
-        $table->text('verification_notes')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
 
-    Schema::create('cemetery_decedent_corrections', function (Blueprint $table) {
+    Schema::create('cemetery_interment_readiness_overrides', function (Blueprint $table) {
         $table->ulid('id')->primary();
         $table->ulid('municipal_id');
         $table->ulid('decedent_id');
-        $table->unsignedInteger('base_version');
-        $table->json('original_values');
-        $table->json('proposed_changes');
+        $table->json('missing_requirements');
         $table->text('reason');
-        $table->string('status')->default('pending');
-        $table->ulid('requested_by')->nullable();
-        $table->ulid('reviewed_by')->nullable();
-        $table->timestamp('reviewed_at')->nullable();
-        $table->text('review_notes')->nullable();
-        $table->timestamp('applied_at')->nullable();
+        $table->string('evidence_reference');
+        $table->timestamp('expires_at');
+        $table->timestamp('consumed_at')->nullable();
+        $table->ulid('created_by')->nullable();
+        $table->ulid('consumed_by')->nullable();
         $table->timestamps();
     });
 
@@ -142,6 +134,18 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('activity_log', function (Blueprint $table) {
+        $table->id();
+        $table->string('log_name')->nullable()->index();
+        $table->text('description');
+        $table->nullableUlidMorphs('subject', 'subject');
+        $table->string('event')->nullable();
+        $table->nullableUlidMorphs('causer', 'causer');
+        $table->json('attribute_changes')->nullable();
+        $table->json('properties')->nullable();
+        $table->timestamps();
+    });
+
     $this->reviewErrors = new GetDecedentReviewErrorsAction;
     $this->idGenerator = new class implements IdGeneratorInterface
     {
@@ -156,8 +160,9 @@ beforeEach(function () {
 
 afterEach(function () {
     activity()->enableLogging();
+    Schema::dropIfExists('activity_log');
     Schema::dropIfExists('media');
-    Schema::dropIfExists('cemetery_decedent_corrections');
+    Schema::dropIfExists('cemetery_interment_readiness_overrides');
     Schema::dropIfExists('cemetery_decedent_documents');
     Schema::dropIfExists('cemetery_fetal_death_details');
     Schema::dropIfExists('cemetery_unidentified_details');
@@ -283,52 +288,91 @@ it('allows an incomplete fetal draft and keeps it out of review', function () {
         ->and($record->fetalDeathDetail->mother_name)->toBeNull();
 });
 
-it('keeps a verified document active until its replacement is verified', function () {
+it('counts uploaded documents toward interment readiness immediately', function () {
     $record = testDecedent(['registration_status' => 'verified']);
     $store = new StoreDecedentDocumentAction($this->idGenerator);
-    $verify = new VerifyDecedentDocumentAction;
+    $readiness = new GetIntermentReadinessAction;
 
-    $original = $store->execute($record->id, $record->municipal_id, [
+    $certificate = $store->execute($record->id, $record->municipal_id, [
         'type' => 'death_certificate',
         'document_number' => 'CERT-1',
     ], fakePdf('death-certificate.pdf'));
-    $verify->execute($original->id, $record->id, $record->municipal_id, true, null);
 
-    $replacement = $store->execute($record->id, $record->municipal_id, [
-        'type' => 'death_certificate',
-        'document_number' => 'CERT-1-CORRECTED',
-        'supersedes_document_id' => $original->id,
-    ], fakePdf('corrected.pdf'));
+    $blocked = $readiness->execute($record->fresh());
+    expect($certificate->getFirstMedia('file')?->mime_type)->toBe('application/pdf')
+        ->and($blocked['ready'])->toBeFalse()
+        ->and($blocked['missing'])->toContain('burial_permit')
+        ->not->toContain('death_certificate');
 
-    expect($original->fresh()->verification_status)->toBe(DocumentVerificationStatus::VERIFIED)
-        ->and($replacement->verification_status)->toBe(DocumentVerificationStatus::PENDING)
-        ->and($replacement->getFirstMedia('file')?->mime_type)->toBe('application/pdf');
+    $store->execute($record->id, $record->municipal_id, [
+        'type' => 'burial_permit',
+        'document_number' => 'PERMIT-1',
+    ], fakePdf('burial-permit.pdf'));
 
-    $verify->execute($replacement->id, $record->id, $record->municipal_id, true, 'Replacement checked');
-
-    expect($original->fresh()->verification_status)->toBe(DocumentVerificationStatus::SUPERSEDED)
-        ->and($replacement->fresh()->verification_status)->toBe(DocumentVerificationStatus::VERIFIED);
+    expect($readiness->execute($record->fresh())['ready'])->toBeTrue();
 });
 
-it('soft deletes pending documents but protects verified evidence', function () {
+it('soft deletes documents while retaining their private media and audit event', function () {
     $record = testDecedent(['registration_status' => 'verified']);
     $store = new StoreDecedentDocumentAction($this->idGenerator);
     $delete = new DeleteDecedentDocumentAction;
-    $verify = new VerifyDecedentDocumentAction;
+    $readiness = new GetIntermentReadinessAction;
 
-    $pending = $store->execute($record->id, $record->municipal_id, [
+    $document = $store->execute($record->id, $record->municipal_id, [
         'type' => 'burial_permit',
     ], fakePdf('permit.pdf'));
-    $delete->execute($pending->id, $record->id, $record->municipal_id);
-    expect(DecedentDocument::withTrashed()->findOrFail($pending->id)->trashed())->toBeTrue();
+    $media = $document->getFirstMedia('file');
+    activity()->enableLogging();
+    $delete->execute($document->id, $record->id, $record->municipal_id);
+    activity()->disableLogging();
 
-    $verified = $store->execute($record->id, $record->municipal_id, [
+    $deleted = DecedentDocument::withTrashed()->findOrFail($document->id);
+    $readinessResult = $readiness->execute($record->fresh());
+
+    expect($deleted->trashed())->toBeTrue()
+        ->and(DecedentDocument::query()->find($document->id))->toBeNull()
+        ->and($media?->fresh())->not->toBeNull()
+        ->and(Storage::disk('local')->exists($media?->getPathRelativeToRoot() ?? ''))->toBeTrue()
+        ->and($readinessResult['missing'])->toContain('burial_permit')
+        ->and(Activity::query()->where('event', 'deleted')->where('subject_id', $document->id)->exists())->toBeTrue();
+});
+
+it('fails closed when document operations use another municipality tenant', function () {
+    $record = testDecedent(['municipal_id' => 'municipality-a']);
+    $store = new StoreDecedentDocumentAction($this->idGenerator);
+    $document = $store->execute($record->id, $record->municipal_id, [
+        'type' => 'burial_permit',
+    ], fakePdf('permit.pdf'));
+
+    expect(fn () => $store->execute($record->id, 'municipality-b', [
         'type' => 'death_certificate',
-    ], fakePdf('certificate.pdf'));
-    $verify->execute($verified->id, $record->id, $record->municipal_id, true, null);
+    ], fakePdf('certificate.pdf')))->toThrow(ModelNotFoundException::class)
+        ->and(fn () => (new DeleteDecedentDocumentAction)->execute(
+            $document->id,
+            $record->id,
+            'municipality-b',
+        ))->toThrow(ModelNotFoundException::class);
+});
 
-    expect(fn () => $delete->execute($verified->id, $record->id, $record->municipal_id))
-        ->toThrow(ValidationException::class, 'must be replaced');
+it('blocks cross-tenant and soft-deleted document downloads', function () {
+    $record = testDecedent(['municipal_id' => 'municipality-a']);
+    $document = (new StoreDecedentDocumentAction($this->idGenerator))->execute(
+        $record->id,
+        $record->municipal_id,
+        ['type' => 'burial_permit'],
+        fakePdf('permit.pdf'),
+    );
+    $download = new DownloadDecedentDocumentController;
+
+    app()->instance('municipal_id', 'municipality-b');
+    expect(fn () => $download('municipality-b', $record->id, $document->id))
+        ->toThrow(ModelNotFoundException::class);
+
+    app()->instance('municipal_id', 'municipality-a');
+    (new DeleteDecedentDocumentAction)->execute($document->id, $record->id, $record->municipal_id);
+
+    expect(fn () => $download('municipality-a', $record->id, $document->id))
+        ->toThrow(ModelNotFoundException::class);
 });
 
 it('resolves an unidentified record in place and preserves its original case details', function () {
@@ -354,20 +398,19 @@ it('resolves an unidentified record in place and preserves its original case det
         'created_at' => now(),
         'updated_at' => now(),
     ]);
-    $correction = correctionFor($record, [
-        'identity_status' => 'identified',
-        'has_legal_name' => true,
-        'first_name' => 'GOKU',
-        'last_name' => 'SON',
-        'registry_number' => 'REG-GOKU',
-    ]);
-
-    (new ReviewDecedentCorrectionAction($this->reviewErrors))->execute(
-        $correction->id,
+    (new CorrectDecedentAction($this->reviewErrors, $this->idGenerator))->execute(
         $record->id,
         $record->municipal_id,
-        true,
-        'Evidence confirmed',
+        $record->version,
+        [
+            'identity_status' => 'identified',
+            'has_legal_name' => true,
+            'first_name' => 'Goku',
+            'last_name' => 'Son',
+            'registry_number' => 'REG-GOKU',
+        ],
+        'Identity evidence confirmed',
+        fakePdf('identity-evidence.pdf'),
     );
 
     $updated = $record->fresh('unidentifiedDetail');
@@ -377,17 +420,84 @@ it('resolves an unidentified record in place and preserves its original case det
         ->and($updated->version)->toBe(2);
 });
 
-it('rejects approval of a correction proposed against a stale version', function () {
+it('rejects a correction proposed against a stale version', function () {
     $record = testDecedent(['registration_status' => 'verified', 'version' => 2]);
-    $correction = correctionFor($record, ['first_name' => 'CHANGED'], 1);
 
-    expect(fn () => (new ReviewDecedentCorrectionAction($this->reviewErrors))->execute(
-        $correction->id,
+    expect(fn () => (new CorrectDecedentAction($this->reviewErrors, $this->idGenerator))->execute(
         $record->id,
         $record->municipal_id,
-        true,
-        null,
-    ))->toThrow(ValidationException::class, 'changed after this correction');
+        1,
+        ['first_name' => 'CHANGED'],
+        'Correct the name',
+        fakePdf('evidence.pdf'),
+    ))->toThrow(ValidationException::class, 'changed by another user');
+});
+
+it('rejects direct correction of a record that is not verified', function () {
+    $record = testDecedent(['registration_status' => 'pending_review']);
+
+    expect(fn () => (new CorrectDecedentAction($this->reviewErrors, $this->idGenerator))->execute(
+        $record->id,
+        $record->municipal_id,
+        $record->version,
+        ['first_name' => 'CHANGED'],
+        'Correct the name',
+        fakePdf('evidence.pdf'),
+    ))->toThrow(ValidationException::class, 'Only verified records');
+});
+
+it('rejects a correction that does not change the record', function () {
+    $record = testDecedent(['registration_status' => 'verified']);
+
+    expect(fn () => (new CorrectDecedentAction($this->reviewErrors, $this->idGenerator))->execute(
+        $record->id,
+        $record->municipal_id,
+        $record->version,
+        ['first_name' => 'Juan'],
+        'No actual change',
+        fakePdf('evidence.pdf'),
+    ))->toThrow(ValidationException::class, 'at least one changed value');
+});
+
+it('applies an authorized correction immediately with evidence and an audit event', function () {
+    $record = testDecedent(['registration_status' => 'verified']);
+    activity()->enableLogging();
+
+    $updated = (new CorrectDecedentAction($this->reviewErrors, $this->idGenerator))->execute(
+        $record->id,
+        $record->municipal_id,
+        $record->version,
+        ['first_name' => 'Pedro', 'cause_of_death' => 'Natural causes'],
+        'Matched the corrected civil record',
+        fakePdf('civil-record.pdf'),
+    );
+    activity()->disableLogging();
+
+    $media = $updated->getFirstMedia('correction_evidence');
+    $audit = Activity::query()->where('event', 'corrected')->firstOrFail();
+
+    expect($updated->first_name)->toBe('PEDRO')
+        ->and($updated->cause_of_death)->toBe('NATURAL CAUSES')
+        ->and($updated->version)->toBe(2)
+        ->and($media)->not->toBeNull()
+        ->and($media?->getCustomProperty('reason'))->toBe('Matched the corrected civil record')
+        ->and($audit->subject_id)->toBe($record->id)
+        ->and($audit->properties->get('evidence_media_id'))->toBe($media?->id)
+        ->and($audit->attribute_changes->get('old')['first_name'])->toBe('JUAN')
+        ->and($audit->attribute_changes->get('attributes')['first_name'])->toBe('PEDRO');
+});
+
+it('fails closed when a correction uses another municipality tenant', function () {
+    $record = testDecedent(['municipal_id' => 'municipality-a', 'registration_status' => 'verified']);
+
+    expect(fn () => (new CorrectDecedentAction($this->reviewErrors, $this->idGenerator))->execute(
+        $record->id,
+        'municipality-b',
+        $record->version,
+        ['first_name' => 'CHANGED'],
+        'Correct the name',
+        fakePdf('evidence.pdf'),
+    ))->toThrow(ModelNotFoundException::class);
 });
 
 function testDecedent(array $overrides = []): Decedent
@@ -445,24 +555,6 @@ function testDto(string $municipalId, int $version): DecedentDto
         documents: [],
         avatar: null,
     );
-}
-
-function correctionFor(Decedent $decedent, array $changes, ?int $baseVersion = null): DecedentCorrection
-{
-    DB::table('cemetery_decedent_corrections')->insert([
-        'id' => $id = (string) Str::ulid(),
-        'municipal_id' => $decedent->municipal_id,
-        'decedent_id' => $decedent->id,
-        'base_version' => $baseVersion ?? $decedent->version,
-        'original_values' => json_encode([]),
-        'proposed_changes' => json_encode($changes),
-        'reason' => 'Correct the civil record',
-        'status' => 'pending',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    return DecedentCorrection::query()->findOrFail($id);
 }
 
 function fakePdf(string $name): UploadedFile
