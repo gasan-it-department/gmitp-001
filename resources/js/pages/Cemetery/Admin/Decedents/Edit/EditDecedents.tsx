@@ -11,5 +11,13 @@ interface Props {
 }
 
 export default function EditDecedents(props: Props) {
-    return <DecedentForm municipality={props.municipality} mode="edit" record={props.decedent.data} vitalRecordOptions={props.vital_record_options} identityStatusOptions={props.identity_status_options} documentTypeOptions={props.document_type_options} />;
+    return (
+        <DecedentForm
+            municipality={props.municipality}
+            mode="edit"
+            record={props.decedent.data}
+            vitalRecordOptions={props.vital_record_options}
+            identityStatusOptions={props.identity_status_options}
+        />
+    );
 }

@@ -80,13 +80,6 @@ trait HasDecedentRules
             'fetal_details.gestational_age_weeks' => [Rule::requiredIf($submitting && $fetal), 'nullable', 'integer', 'min:1', 'max:45'],
             'fetal_details.fetal_weight_grams' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'fetal_details.mother_name' => [Rule::requiredIf($submitting && $fetal), 'nullable', 'string', 'max:255'],
-
-            'documents' => ['nullable', 'array', 'max:10'],
-            'documents.*.type' => ['nullable', 'required_with:documents.*.file', new Enum(DecedentDocumentType::class)],
-            'documents.*.document_number' => ['nullable', 'string', 'max:255'],
-            'documents.*.issued_at' => ['nullable', 'date', 'before_or_equal:today'],
-            'documents.*.notes' => ['nullable', 'string', 'max:1000'],
-            'documents.*.file' => ['nullable', 'required_with:documents.*.type', 'file', 'mimes:jpeg,jpg,png,webp,pdf', 'max:10240'],
         ];
     }
 }

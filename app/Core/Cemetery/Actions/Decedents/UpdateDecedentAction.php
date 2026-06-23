@@ -16,22 +16,25 @@ use Illuminate\Validation\ValidationException;
 
 class UpdateDecedentAction
 {
-    use StoresDecedentDocuments;
-
-    public function __construct(private IdGeneratorInterface $idGenerator) {}
+    public function __construct(private IdGeneratorInterface $idGenerator)
+    {
+    }
 
     public function execute(DecedentDto $dto, string $decedentId): Decedent
     {
+
         return DB::transaction(function () use ($dto, $decedentId) {
             $decedent = Decedent::query()
                 ->where('municipal_id', $dto->municipalId)
                 ->lockForUpdate()
                 ->findOrFail($decedentId);
 
-            if (in_array($decedent->registration_status, [
-                RegistrationStatus::VERIFIED,
-                RegistrationStatus::ARCHIVED,
-            ], true)) {
+            if (
+                in_array($decedent->registration_status, [
+                    RegistrationStatus::VERIFIED,
+                    RegistrationStatus::ARCHIVED,
+                ], true)
+            ) {
                 throw ValidationException::withMessages([
                     'record' => 'Verified or archived records cannot be edited directly.',
                 ]);
@@ -80,7 +83,6 @@ class UpdateDecedentAction
             $decedent->save();
 
             $this->syncDetails($decedent, $dto);
-            $this->storeDocuments($decedent, $dto->documents, $this->idGenerator);
 
             if ($dto->avatar instanceof UploadedFile) {
                 $decedent->addMedia($dto->avatar)
@@ -98,7 +100,7 @@ class UpdateDecedentAction
             $existing = $decedent->unidentifiedDetail;
             $caseReference = $existing?->case_reference
                 ?? $dto->unidentifiedDetails['case_reference']
-                ?? 'UNID-'.now()->format('Y').'-'.substr($this->idGenerator->generate(), -8);
+                ?? 'UNID-' . now()->format('Y') . '-' . substr($this->idGenerator->generate(), -8);
 
             UnidentifiedDetail::updateOrCreate(
                 ['decedent_id' => $decedent->id],

@@ -31,7 +31,6 @@ final readonly class DecedentDto
         public ?string $streetName,
         public array $unidentifiedDetails,
         public array $fetalDetails,
-        public array $documents,
         public ?UploadedFile $avatar,
     ) {}
 
@@ -64,7 +63,6 @@ final readonly class DecedentDto
             streetName: self::upper($data['street_name'] ?? null),
             unidentifiedDetails: self::normalizeArray($data['unidentified_details'] ?? []),
             fetalDetails: self::normalizeArray($data['fetal_details'] ?? []),
-            documents: $data['documents'] ?? [],
             avatar: $data['avatar'] ?? null,
         );
     }

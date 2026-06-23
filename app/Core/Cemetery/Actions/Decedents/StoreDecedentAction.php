@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\DB;
 
 class StoreDecedentAction
 {
-    use StoresDecedentDocuments;
-
-    public function __construct(private IdGeneratorInterface $idGenerator) {}
+    public function __construct(private IdGeneratorInterface $idGenerator)
+    {
+    }
 
     public function execute(DecedentDto $dto): Decedent
     {
@@ -60,7 +60,6 @@ class StoreDecedentAction
             ]);
 
             $this->syncDetails($decedent, $dto);
-            $this->storeDocuments($decedent, $dto->documents, $this->idGenerator);
 
             if ($dto->avatar instanceof UploadedFile) {
                 $decedent->addMedia($dto->avatar)
@@ -68,7 +67,7 @@ class StoreDecedentAction
                     ->toMediaCollection('avatar', 'local');
             }
 
-            return $decedent->fresh(['documents.media', 'unidentifiedDetail', 'fetalDeathDetail', 'media']);
+            return $decedent->fresh(['unidentifiedDetail', 'fetalDeathDetail', 'media']);
         });
     }
 
@@ -76,7 +75,7 @@ class StoreDecedentAction
     {
         if ($dto->identityStatus === IdentityStatus::UNIDENTIFIED->value) {
             $caseReference = $dto->unidentifiedDetails['case_reference']
-                ?? 'UNID-'.now()->format('Y').'-'.substr($this->idGenerator->generate(), -8);
+                ?? 'UNID-' . now()->format('Y') . '-' . substr($this->idGenerator->generate(), -8);
 
             UnidentifiedDetail::create([
                 'id' => $this->idGenerator->generate(),

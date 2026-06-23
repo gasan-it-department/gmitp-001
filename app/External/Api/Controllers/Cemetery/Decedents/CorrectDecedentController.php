@@ -23,6 +23,9 @@ class CorrectDecedentController extends Controller
             $request->file('evidence'),
         );
 
-        return back()->with('success', 'Decedent record corrected.');
+        return redirect()->route('cemetery.admin.decedents.profile.page', [
+            'municipality' => app('current_municipality')->slug,
+            'decedent_id' => $decedentId,
+        ])->with('success', 'Decedent record corrected.');
     }
 }

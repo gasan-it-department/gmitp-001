@@ -212,13 +212,6 @@ export type RegisterDecedentForm = {
         fetal_weight_grams: number | '';
         mother_name: string;
     };
-    documents: {
-        type: DecedentDocumentTypeValue | '';
-        document_number: string;
-        issued_at: string;
-        notes: string;
-        file: File | null;
-    }[];
 };
 
 // ─── Plots ───────────────────────────────────────────────────────────────

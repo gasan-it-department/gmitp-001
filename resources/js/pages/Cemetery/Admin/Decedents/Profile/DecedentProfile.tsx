@@ -1,17 +1,14 @@
 import { Button } from '@/components/ui/button';
-import {
-    DecedentDocumentTypeValue,
-    DecedentProfile as DecedentProfileType,
-    IdentityStatusValue,
-    SelectOption,
-    VitalRecordTypeValue,
-} from '@/Core/Types/Cemetery/cemetery';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { DecedentDocumentTypeValue, DecedentProfile as DecedentProfileType, SelectOption } from '@/Core/Types/Cemetery/cemetery';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, FileText, History, MapPin, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
-import { FormEvent, ReactNode } from 'react';
+import { AlertTriangle, ArrowLeft, Check, FileText, History, Loader2, MapPin, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
+import { FormEvent, ReactNode, useState } from 'react';
 
 interface Props {
     decedent: { data: DecedentProfileType };
@@ -50,15 +47,18 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                         Back to registry
                     </Link>
                     <div className="flex gap-2">
+                        {abilities.manage && record.registration_status === 'draft' && (
+                            <DeleteDraftDialog record={record} municipality={currentMunicipality} displayName={displayName} />
+                        )}
                         {abilities.manage && ['draft', 'pending_review'].includes(record.registration_status) && (
                             <Link href={cemetery.admin.decedents.edit.page.url([currentMunicipality.slug, record.id])}>
-                                <Button variant="outline">Edit Draft</Button>
+                                <Button variant="outline">{record.registration_status === 'draft' ? 'Edit Draft' : 'Edit Submitted Record'}</Button>
                             </Link>
                         )}
                         {abilities.correct && record.registration_status === 'verified' && (
-                            <a href="#correction">
+                            <Link href={cemetery.admin.decedents.correct.page.url([currentMunicipality.slug, record.id])}>
                                 <Button variant="outline">Correct Record</Button>
-                            </a>
+                            </Link>
                         )}
                         {abilities.verify && record.registration_status === 'pending_review' && (
                             <Button onClick={verify}>
@@ -119,16 +119,86 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                         {record.unidentified_details && <UnidentifiedCard record={record} />}
                         {record.fetal_details && <FetalCard record={record} />}
                         <DocumentsCard record={record} options={document_type_options} abilities={abilities} municipality={currentMunicipality} />
-                        {abilities.correct && record.registration_status === 'verified' && (
-                            <div key={record.version}>
-                                <CorrectionCard record={record} municipality={currentMunicipality} />
-                            </div>
-                        )}
                     </div>
                     <AuditCard record={record} abilities={abilities} />
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function DeleteDraftDialog({ record, municipality, displayName }: { record: DecedentProfileType; municipality: Municipality; displayName: string }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const form = useForm<{ reason: string }>({ reason: '' });
+
+    const close = () => {
+        if (form.processing) return;
+
+        setIsOpen(false);
+        form.reset();
+        form.clearErrors();
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+
+        form.delete(`/api/decedents/${record.id}`, {
+            headers: { 'X-Municipality-Slug': municipality.slug },
+            preserveScroll: true,
+        });
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => (open ? setIsOpen(true) : close())}>
+            <Button type="button" variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setIsOpen(true)}>
+                <Trash2 size={16} className="mr-2" />
+                Delete Draft
+            </Button>
+
+            <DialogContent className="border-red-100 sm:max-w-lg" showCloseButton={!form.processing}>
+                <form onSubmit={submit}>
+                    <DialogHeader className="mb-4 flex flex-row items-start gap-4 space-y-0">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                            <AlertTriangle className="h-5 w-5" />
+                        </div>
+                        <div className="space-y-2 text-left">
+                            <DialogTitle>Delete draft Decedent?</DialogTitle>
+                            <DialogDescription>
+                                {displayName} will be removed from the active registry. Its audit history and uploaded files will be retained.
+                            </DialogDescription>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="space-y-2 py-2">
+                        <Label htmlFor="delete-draft-reason">
+                            Reason for deletion <span className="text-red-500">*</span>
+                        </Label>
+                        <Textarea
+                            id="delete-draft-reason"
+                            value={form.data.reason}
+                            onChange={(event) => form.setData('reason', event.target.value)}
+                            placeholder="Explain why this draft should be removed."
+                            className="min-h-24 resize-none"
+                            maxLength={1000}
+                            aria-invalid={Boolean(form.errors.reason)}
+                            disabled={form.processing}
+                            required
+                        />
+                        {form.errors.reason && <p className="text-sm text-red-600">{form.errors.reason}</p>}
+                    </div>
+
+                    <DialogFooter className="mt-6">
+                        <Button type="button" variant="outline" onClick={close} disabled={form.processing}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" variant="destructive" disabled={form.processing || !form.data.reason.trim()}>
+                            {form.processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            {form.processing ? 'Deleting...' : 'Delete Draft'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -222,7 +292,7 @@ function DetailsCard({ record }: { record: DecedentProfileType }) {
                 <Detail label="Age at Death" value={record.age_at_death?.toString()} />
                 <Detail label="Sex" value={record.gender} />
             </div>
-            {record.notes && <p className="mt-5 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm text-slate-700">{record.notes}</p>}
+            {record.notes && <p className="mt-5 rounded-lg bg-slate-50 p-3 text-sm whitespace-pre-wrap text-slate-700">{record.notes}</p>}
         </Card>
     );
 }
@@ -361,220 +431,6 @@ function DocumentsCard({
     );
 }
 
-interface CorrectionChanges {
-    vital_record_type: VitalRecordTypeValue;
-    identity_status: IdentityStatusValue;
-    has_legal_name: boolean;
-    first_name: string;
-    last_name: string;
-    middle_name: string;
-    suffix: string;
-    memorial_name: string;
-    gender: string;
-    date_of_birth: string;
-    date_of_death: string;
-    registry_number: string;
-    cause_of_death: string;
-    place_of_death: string;
-    notes: string;
-}
-
-function CorrectionCard({ record, municipality }: { record: DecedentProfileType; municipality: Municipality }) {
-    const form = useForm<{ version: number; changes: CorrectionChanges; reason: string; evidence: File | null }>({
-        version: record.version,
-        changes: {
-            vital_record_type: record.vital_record_type,
-            identity_status: record.identity_status,
-            has_legal_name: record.has_legal_name,
-            first_name: record.first_name ?? '',
-            last_name: record.last_name ?? '',
-            middle_name: record.middle_name ?? '',
-            suffix: record.suffix ?? '',
-            memorial_name: record.memorial_name ?? '',
-            gender: record.gender ?? '',
-            date_of_birth: record.date_of_birth ?? '',
-            date_of_death: record.date_of_death ?? '',
-            registry_number: record.registry_number ?? '',
-            cause_of_death: record.cause_of_death ?? '',
-            place_of_death: record.place_of_death ?? '',
-            notes: record.notes ?? '',
-        },
-        reason: '',
-        evidence: null,
-    });
-
-    const setChange = <K extends keyof CorrectionChanges>(field: K, value: CorrectionChanges[K]) => {
-        form.setData('changes', { ...form.data.changes, [field]: value });
-    };
-
-    const changeIdentityStatus = (identityStatus: IdentityStatusValue) => {
-        form.setData('changes', {
-            ...form.data.changes,
-            identity_status: identityStatus,
-            ...(identityStatus === 'unidentified'
-                ? {
-                      has_legal_name: false,
-                      first_name: '',
-                      last_name: '',
-                      middle_name: '',
-                      suffix: '',
-                      memorial_name: '',
-                      gender: '',
-                      date_of_birth: '',
-                  }
-                : {}),
-        });
-    };
-
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-        form.post(`/api/decedents/${record.id}/correct`, {
-            forceFormData: true,
-            headers: { 'X-Municipality-Slug': municipality.slug },
-            preserveScroll: true,
-            onSuccess: () => form.reset('reason', 'evidence'),
-        });
-    };
-
-    return (
-        <div id="correction">
-            <Card title="Correct Verified Record">
-                <form onSubmit={submit} className="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2">
-                    <select
-                        value={form.data.changes.vital_record_type}
-                        onChange={(event) => setChange('vital_record_type', event.target.value as VitalRecordTypeValue)}
-                        className="rounded border px-3 py-2 text-sm"
-                    >
-                        <option value="death">Death</option>
-                        <option value="fetal_death">Fetal Death</option>
-                    </select>
-                    <select
-                        value={form.data.changes.identity_status}
-                        onChange={(event) => changeIdentityStatus(event.target.value as IdentityStatusValue)}
-                        className="rounded border px-3 py-2 text-sm"
-                    >
-                        <option value="identified">Identified</option>
-                        <option value="unidentified">Unidentified</option>
-                    </select>
-                    {form.data.changes.identity_status === 'identified' && (
-                        <label className="flex items-center gap-2 rounded border bg-white px-3 py-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={form.data.changes.has_legal_name}
-                                onChange={(event) => setChange('has_legal_name', event.target.checked)}
-                            />
-                            Has legal name
-                        </label>
-                    )}
-                    {form.data.changes.identity_status === 'identified' && form.data.changes.has_legal_name && (
-                        <>
-                            <input
-                                value={form.data.changes.first_name}
-                                onChange={(event) => setChange('first_name', event.target.value)}
-                                placeholder="First name"
-                                className="rounded border px-3 py-2 text-sm"
-                            />
-                            <input
-                                value={form.data.changes.last_name}
-                                onChange={(event) => setChange('last_name', event.target.value)}
-                                placeholder="Last name"
-                                className="rounded border px-3 py-2 text-sm"
-                            />
-                            <input
-                                value={form.data.changes.middle_name}
-                                onChange={(event) => setChange('middle_name', event.target.value)}
-                                placeholder="Middle name"
-                                className="rounded border px-3 py-2 text-sm"
-                            />
-                            <input
-                                value={form.data.changes.suffix}
-                                onChange={(event) => setChange('suffix', event.target.value)}
-                                placeholder="Suffix"
-                                className="rounded border px-3 py-2 text-sm"
-                            />
-                        </>
-                    )}
-                    {form.data.changes.identity_status === 'identified' && !form.data.changes.has_legal_name && (
-                        <input
-                            value={form.data.changes.memorial_name}
-                            onChange={(event) => setChange('memorial_name', event.target.value)}
-                            placeholder="Memorial display name"
-                            className="rounded border px-3 py-2 text-sm"
-                        />
-                    )}
-                    {form.data.changes.identity_status === 'identified' && (
-                        <>
-                            <select
-                                value={form.data.changes.gender}
-                                onChange={(event) => setChange('gender', event.target.value)}
-                                className="rounded border px-3 py-2 text-sm"
-                            >
-                                <option value="">Sex</option>
-                                <option value="MALE">Male</option>
-                                <option value="FEMALE">Female</option>
-                                <option value="INDETERMINATE">Indeterminate</option>
-                            </select>
-                            <input
-                                type="date"
-                                value={form.data.changes.date_of_birth}
-                                onChange={(event) => setChange('date_of_birth', event.target.value)}
-                                className="rounded border px-3 py-2 text-sm"
-                            />
-                        </>
-                    )}
-                    <input
-                        type="date"
-                        value={form.data.changes.date_of_death}
-                        onChange={(event) => setChange('date_of_death', event.target.value)}
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <input
-                        value={form.data.changes.registry_number}
-                        onChange={(event) => setChange('registry_number', event.target.value)}
-                        placeholder="Civil registry number"
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <input
-                        value={form.data.changes.place_of_death}
-                        onChange={(event) => setChange('place_of_death', event.target.value)}
-                        placeholder="Place of death"
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <input
-                        value={form.data.changes.cause_of_death}
-                        onChange={(event) => setChange('cause_of_death', event.target.value)}
-                        placeholder="Cause of death"
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <textarea
-                        value={form.data.changes.notes}
-                        onChange={(event) => setChange('notes', event.target.value)}
-                        placeholder="Notes"
-                        className="rounded border px-3 py-2 text-sm sm:col-span-2"
-                    />
-                    <textarea
-                        required
-                        value={form.data.reason}
-                        onChange={(event) => form.setData('reason', event.target.value)}
-                        placeholder="Correction reason"
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <input
-                        required
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(event) => form.setData('evidence', event.target.files?.[0] ?? null)}
-                    />
-                    {Object.keys(form.errors).length > 0 && <p className="text-sm text-rose-600 sm:col-span-2">{Object.values(form.errors)[0]}</p>}
-                    <Button type="submit" disabled={form.processing}>
-                        Apply Correction
-                    </Button>
-                </form>
-            </Card>
-        </div>
-    );
-}
-
 function AuditCard({ record, abilities }: { record: DecedentProfileType; abilities: Props['abilities'] }) {
     return (
         <Card title="Audit Timeline">
@@ -615,7 +471,7 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
 function Detail({ label, value }: { label: string; value?: string | null }) {
     return (
         <div className="mb-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">{label}</p>
             <p className="mt-1 text-sm text-slate-700">{value || '-'}</p>
         </div>
     );
@@ -624,12 +480,12 @@ function Detail({ label, value }: { label: string; value?: string | null }) {
 function Stat({ label, value }: { label: string; value?: string | null }) {
     return (
         <div className="bg-white p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">{label}</p>
             <p className="mt-1 text-sm font-semibold text-slate-800">{value || '-'}</p>
         </div>
     );
 }
 
 function Badge({ text }: { text: string }) {
-    return <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold capitalize text-white">{text.replace('_', ' ')}</span>;
+    return <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white capitalize">{text.replace('_', ' ')}</span>;
 }

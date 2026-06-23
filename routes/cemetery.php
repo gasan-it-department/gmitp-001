@@ -3,6 +3,7 @@
 use App\External\Api\Controllers\Cemetery\Decedents\CorrectDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\CreateReadinessOverrideController;
 use App\External\Api\Controllers\Cemetery\Decedents\DeleteDecedentDocumentController;
+use App\External\Api\Controllers\Cemetery\Decedents\DeleteDraftDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentCorrectionEvidenceController;
 use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentDocumentController;
 use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentController;
@@ -16,6 +17,7 @@ use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotC
 use App\External\Web\Controllers\Cemetery\Admin\Plots\CreatePlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\ListPlotsController;
 use App\External\Web\Controllers\Cemetery\CemeteryController;
+use App\External\Web\Controllers\Cemetery\Decedents\CorrectDecedentPageController;
 use App\External\Web\Controllers\Cemetery\Decedents\CreateDecedentController;
 use App\External\Web\Controllers\Cemetery\Decedents\EditDecedentController;
 use App\External\Web\Controllers\Cemetery\Decedents\IndexDecedentController;
@@ -51,6 +53,8 @@ Route::prefix('/{municipality}/cemetery')
                         Route::get('register', CreateDecedentController::class)->name('create.page');
                         Route::get('profile/{decedent_id}', ShowDecedentController::class)->name('profile.page');
                         Route::get('edit/{decedent_id}', EditDecedentController::class)->name('edit.page');
+                        Route::get('{decedent_id}/correct', CorrectDecedentPageController::class)
+                            ->middleware('permission:cemetery.decedents.correct')->name('correct.page');
                         Route::get('{decedent_id}/avatar', ViewDecedentAvatarController::class)
                             ->middleware('permission:cemetery.decedents.documents.view')->name('avatar');
                         Route::get('{decedent_id}/documents/{document_id}', DownloadDecedentDocumentController::class)
@@ -90,6 +94,7 @@ Route::prefix('api/decedents')
     ->group(function () {
         Route::post('store', StoreDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('store');
         Route::put('{decedent_id}', UpdateDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('update');
+        Route::delete('{decedent_id}', DeleteDraftDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('destroy');
         Route::post('{decedent_id}/verify', VerifyDecedentController::class)->middleware('permission:cemetery.decedents.verify')->name('verify');
         Route::post('{decedent_id}/documents', StoreDecedentDocumentController::class)->middleware('permission:cemetery.decedents.manage')->name('documents.store');
         Route::delete('{decedent_id}/documents/{document_id}', DeleteDecedentDocumentController::class)
