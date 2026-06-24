@@ -14,14 +14,20 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 class ListPlotsAction
 {
-    public function execute(string $municipalId, ?string $statusFilter = null, int $perPage = 15): LengthAwarePaginator
-    {
+    public function execute(
+        string $municipalId,
+        string $cemeterySiteId,
+        ?string $statusFilter = null,
+        int $perPage = 15,
+    ): LengthAwarePaginator {
         return Plot::with(['block.section'])
             ->where('municipal_id', $municipalId)
+            ->where('cemetery_site_id', $cemeterySiteId)
             // Hide auto-generated child slots from the registry view.
             ->whereNull('parent_plot_id')
             ->when($statusFilter, fn ($query) => $query->where('status', $statusFilter))
             ->orderBy('name')
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 }

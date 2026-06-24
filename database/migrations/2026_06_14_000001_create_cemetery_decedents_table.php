@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -19,10 +20,12 @@ return new class extends Migration {
                 ->constrained('municipalities')
                 ->restrictOnDelete();
 
-            $table->foreignUlid('address_id')
+            $table->foreignId('psgc_municipality_id')
                 ->nullable()
-                ->constrained('addresses')
+                ->constrained('psgc_municipalities')
                 ->restrictOnDelete();
+            $table->string('psgc_barangay_code', 20)->nullable()->index();
+            $table->string('street_name', 150)->nullable();
 
             // 2. Classification
             $table->string('decedent_type')->default('standard');

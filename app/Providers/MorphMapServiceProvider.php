@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
 use App\Core\Cemetery\Models\Block as CemeteryBlock;
+use App\Core\Cemetery\Models\CemeterySite;
 use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\DecedentDocument;
 use App\Core\Cemetery\Models\Interment;
@@ -73,6 +74,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'cemetery_plot' => CemeteryPlot::class,
             'cemetery_block' => CemeteryBlock::class,
             'cemetery_section' => CemeterySection::class,
+            'cemetery_site' => CemeterySite::class,
             'municipality_hotline' => MunicipalityHotline::class,
             'support_ticket' => SupportTicket::class,
         ]);

@@ -2,6 +2,7 @@
 
 export type PlotStatusValue = 'available' | 'occupied' | 'reserved' | 'maintenance';
 export type PlotTypeValue = 'lawn_lot' | 'apartment_niche' | 'bone_ossuary' | 'mausoleum';
+export type CemeterySiteStatusValue = 'active' | 'inactive' | 'closed';
 export type VitalRecordTypeValue = 'death' | 'fetal_death';
 export type IdentityStatusValue = 'identified' | 'unidentified';
 export type RegistrationStatusValue = 'draft' | 'pending_review' | 'verified' | 'archived';
@@ -35,6 +36,25 @@ export interface SelectOption<T extends string = string> {
 export interface PlotStatusOption extends SelectOption<PlotStatusValue> {
     tone: string;
 }
+
+export interface CemeterySiteListItem {
+    id: string;
+    name: string;
+    psgc_barangay_code: string | null;
+    barangay_name: string | null;
+    street_name: string | null;
+    status: CemeterySiteStatusValue;
+    status_label: string;
+    notes: string | null;
+    sections_count: number;
+}
+
+export type CreateCemeterySiteForm = {
+    name: string;
+    psgc_barangay_code: string;
+    street_name: string;
+    notes: string;
+};
 
 // ─── Spatial hierarchy lookups (passed as Inertia page props) ────────────
 
@@ -208,6 +228,7 @@ export type RegisterDecedentForm = {
 
 export interface PlotListItem {
     id: string;
+    cemetery_site_id: string;
     name: string | null;
     slot_label: string; // canonical UI identifier (e.g. "A-12", "A-12-L3", "A-12-L3-LEFT")
     parent_plot_id: string | null; // NULL = container or single-capacity

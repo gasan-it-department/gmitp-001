@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,44 +25,15 @@ return new class extends Migration
                 'cemetery_decedents_registry_unique'
             );
         });
-
-        DB::table('cemetery_decedents')
-            ->whereIn('decedent_type', ['standard', 'child'])
-            ->update([
-                'vital_record_type' => 'death',
-                'identity_status' => 'identified',
-                'registration_status' => 'pending_review',
-                'has_legal_name' => true,
-            ]);
-
-        DB::table('cemetery_decedents')
-            ->where('decedent_type', 'fetal')
-            ->update([
-                'vital_record_type' => 'fetal_death',
-                'identity_status' => 'identified',
-                'registration_status' => 'pending_review',
-                'has_legal_name' => false,
-            ]);
-
-        DB::table('cemetery_decedents')
-            ->where('decedent_type', 'unknown')
-            ->update([
-                'vital_record_type' => 'death',
-                'identity_status' => 'unidentified',
-                'registration_status' => 'pending_review',
-                'has_legal_name' => false,
-            ]);
-
-        DB::table('cemetery_decedents')
-            ->whereNotNull('death_certificate_no')
-            ->whereNull('registry_number')
-            ->update(['registry_number' => DB::raw('death_certificate_no')]);
     }
 
     public function down(): void
     {
         Schema::table('cemetery_decedents', function (Blueprint $table) {
             $table->dropUnique('cemetery_decedents_registry_unique');
+            $table->dropIndex(['vital_record_type']);
+            $table->dropIndex(['identity_status']);
+            $table->dropIndex(['registration_status']);
             $table->dropConstrainedForeignId('verified_by');
             $table->dropConstrainedForeignId('submitted_by');
             $table->dropColumn([

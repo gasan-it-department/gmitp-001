@@ -20,17 +20,17 @@ namespace App\Core\Cemetery\Dto;
 final readonly class PlotDto
 {
     public function __construct(
-        public string  $municipalId,
-        public string  $blockId,
-        public string  $name,
-        public string  $type,
-        public int     $capacity,
+        public string $municipalId,
+        public string $blockId,
+        public string $name,
+        public string $type,
+        public int $capacity,
         public ?string $row,
         public ?string $position,
-    ) {
-    }
+        public string $cemeterySiteId,
+    ) {}
 
-    public static function fromRequest(array $validated): self
+    public static function fromRequest(array $validated, string $cemeterySiteId): self
     {
         return new self(
             municipalId: app('municipal_id'),
@@ -40,6 +40,7 @@ final readonly class PlotDto
             capacity: (int) $validated['capacity'],
             row: self::upper($validated['row'] ?? null),
             position: self::upper($validated['position'] ?? null),
+            cemeterySiteId: $cemeterySiteId,
         );
     }
 

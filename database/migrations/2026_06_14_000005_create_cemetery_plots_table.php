@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('cemetery_plots', function (Blueprint $table) {
@@ -14,6 +15,7 @@ return new class extends Migration {
             $table->foreignUlid('municipal_id')
                 ->constrained('municipalities')
                 ->restrictOnDelete();
+            $table->ulid('cemetery_site_id');
 
             // New hierarchy: plot belongs to a block (not directly to a section).
             $table->foreignUlid('block_id')
@@ -51,12 +53,24 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes(); // REQ-4.3 / SR-4
 
+            $table->foreign(
+                ['cemetery_site_id', 'municipal_id'],
+                'cemetery_plots_site_tenant_foreign'
+            )
+                ->references(['id', 'municipal_id'])
+                ->on('cemetery_sites')
+                ->restrictOnDelete();
+
             // Spatial collision guard — composite uniqueness per the task spec.
             // Note: in MySQL, NULLs are distinct, so two parent rows (all
             // spatial cols NULL) with different names coexist — intended.
             $table->unique(
                 ['municipal_id', 'block_id', 'row', 'name', 'level', 'position'],
                 'cemetery_plots_spatial_unique'
+            );
+            $table->index(
+                ['cemetery_site_id', 'municipal_id', 'status'],
+                'cemetery_plots_site_tenant_status_index'
             );
         });
 

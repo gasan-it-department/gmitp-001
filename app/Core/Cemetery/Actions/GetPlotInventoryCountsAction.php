@@ -21,10 +21,11 @@ class GetPlotInventoryCountsAction
     /**
      * @return array{total:int, available:int, occupied:int, reserved:int, maintenance:int}
      */
-    public function execute(string $municipalId): array
+    public function execute(string $municipalId, string $cemeterySiteId): array
     {
         $rows = Plot::query()
             ->where('municipal_id', $municipalId)
+            ->where('cemetery_site_id', $cemeterySiteId)
             // Leaf-only filter — children OR single-capacity plots.
             ->where(function ($query) {
                 $query->whereNotNull('parent_plot_id')
@@ -35,9 +36,9 @@ class GetPlotInventoryCountsAction
             ->pluck('total', 'status');
 
         $counts = [
-            'available'   => (int) ($rows['available'] ?? 0),
-            'occupied'    => (int) ($rows['occupied'] ?? 0),
-            'reserved'    => (int) ($rows['reserved'] ?? 0),
+            'available' => (int) ($rows['available'] ?? 0),
+            'occupied' => (int) ($rows['occupied'] ?? 0),
+            'reserved' => (int) ($rows['reserved'] ?? 0),
             'maintenance' => (int) ($rows['maintenance'] ?? 0),
         ];
 

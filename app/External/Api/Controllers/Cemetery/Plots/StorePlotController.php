@@ -21,19 +21,19 @@ class StorePlotController extends Controller
 {
     public function __construct(
         private BulkGenerateMultiCapacityPlotsAction $bulkGeneratePlots,
-    ) {
-    }
+    ) {}
 
-    public function __invoke(CreatePlotRequest $request): RedirectResponse
+    public function __invoke(CreatePlotRequest $request, string $cemetery_site_id): RedirectResponse
     {
         $municipality = app('current_municipality');
 
-        $this->bulkGeneratePlots->execute(
-            PlotDto::fromRequest($request->validated())
+        $plot = $this->bulkGeneratePlots->execute(
+            PlotDto::fromRequest($request->validated(), $cemetery_site_id)
         );
 
-        return redirect()->route('cemetery.admin.plots.list.page', [
+        return redirect()->route('cemetery.admin.sites.workspace.page', [
             'municipality' => $municipality->slug,
+            'cemetery_site_id' => $plot->cemetery_site_id,
         ])->with('success', 'Plot registered successfully.');
     }
 }

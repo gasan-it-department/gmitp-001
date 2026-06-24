@@ -24,6 +24,7 @@ class PlotListResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'cemetery_site_id' => $this->cemetery_site_id,
             'name' => $this->name,
             'slot_label' => $this->slotLabel, // canonical UI identifier (SR-7)
             'parent_plot_id' => $this->parent_plot_id,

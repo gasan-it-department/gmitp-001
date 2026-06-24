@@ -8,6 +8,7 @@
 /storage/pail
 /vendor
 /docs
+/.agents
 .claudeignore
 .env
 .env.backup

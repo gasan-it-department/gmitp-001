@@ -2,21 +2,21 @@
 
 namespace App\Core\Cemetery\Models;
 
+use App\Core\Cemetery\Enums\CemeterySiteStatus;
 use App\Core\Cemetery\Traits\BelongsToMunicipality;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-class Section extends Model
+class CemeterySite extends Model
 {
     use BelongsToMunicipality, LogsActivity, SoftDeletes;
 
-    protected $table = 'cemetery_sections';
+    protected $table = 'cemetery_sites';
 
     public $incrementing = false;
 
@@ -25,30 +25,25 @@ class Section extends Model
     protected $fillable = [
         'id',
         'municipal_id',
-        'cemetery_site_id',
         'name',
-        'description',
+        'psgc_barangay_code',
+        'street_name',
         'status',
+        'notes',
     ];
 
-    public function blocks(): HasMany
+    protected $casts = [
+        'status' => CemeterySiteStatus::class,
+    ];
+
+    public function sections(): HasMany
     {
-        return $this->hasMany(Block::class, 'section_id');
+        return $this->hasMany(Section::class, 'cemetery_site_id');
     }
 
-    /**
-     * Reach plots without joining through block in queries.
-     */
-    public function plots(): HasManyThrough
+    public function plots(): HasMany
     {
-        return $this->hasManyThrough(
-            Plot::class,
-            Block::class,
-            'section_id',  // FK on cemetery_blocks
-            'block_id',    // FK on cemetery_plots
-            'id',          // PK on cemetery_sections
-            'id',          // PK on cemetery_blocks
-        );
+        return $this->hasMany(Plot::class, 'cemetery_site_id');
     }
 
     public function activities(): MorphMany
@@ -59,9 +54,15 @@ class Section extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['cemetery_site_id', 'name', 'description', 'status'])
+            ->logOnly([
+                'name',
+                'psgc_barangay_code',
+                'street_name',
+                'status',
+                'notes',
+            ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
-            ->useLogName('cemetery_section');
+            ->useLogName('cemetery_site');
     }
 }

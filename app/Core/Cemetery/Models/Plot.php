@@ -23,11 +23,13 @@ class Plot extends Model
     protected $table = 'cemetery_plots';
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
         'id',
         'municipal_id',
+        'cemetery_site_id',
         'block_id',
         'parent_plot_id',
         'name',
@@ -105,11 +107,11 @@ class Plot extends Model
                 $label = (string) $this->name;
 
                 if ($this->level !== null) {
-                    $label .= '-L' . $this->level;
+                    $label .= '-L'.$this->level;
                 }
 
                 if (filled($this->position)) {
-                    $label .= '-' . $this->position;
+                    $label .= '-'.$this->position;
                 }
 
                 return $label;
@@ -121,6 +123,7 @@ class Plot extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
+                'cemetery_site_id',
                 'block_id',
                 'parent_plot_id',
                 'name',

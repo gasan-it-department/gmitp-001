@@ -13,9 +13,12 @@ use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\ViewDecedentAvatarController;
 use App\External\Api\Controllers\Cemetery\Interments\StoreIntermentController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotController;
+use App\External\Api\Controllers\Cemetery\Sites\StoreCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\CreatePlotController;
-use App\External\Web\Controllers\Cemetery\Admin\Plots\ListPlotsController;
+use App\External\Web\Controllers\Cemetery\Admin\Sites\CreateCemeterySiteController;
+use App\External\Web\Controllers\Cemetery\Admin\Sites\ListCemeterySiteController;
+use App\External\Web\Controllers\Cemetery\Admin\Sites\ShowCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\CemeteryController;
 use App\External\Web\Controllers\Cemetery\Decedents\CorrectDecedentPageController;
 use App\External\Web\Controllers\Cemetery\Decedents\CreateDecedentController;
@@ -45,6 +48,18 @@ Route::prefix('/{municipality}/cemetery')
 
                 Route::get('/dashboard', [CemeteryController::class, 'index'])->name('dashboard');
 
+                // Cemetery Sites
+                Route::prefix('/sites')
+                    ->name('sites.')
+                    ->group(function () {
+                        Route::get('/', ListCemeterySiteController::class)->name('list.page');
+                        Route::get('/create', CreateCemeterySiteController::class)->name('create.page');
+                        Route::get('/{cemetery_site_id}/plots/create', CreatePlotController::class)
+                            ->name('plots.create.page');
+                        Route::get('/{cemetery_site_id}', ShowCemeterySiteController::class)
+                            ->name('workspace.page');
+                    });
+
                 // Decedents
                 Route::prefix('decedents')
                     ->name('decedents.')
@@ -61,14 +76,6 @@ Route::prefix('/{municipality}/cemetery')
                             ->middleware('permission:cemetery.decedents.documents.view')->name('documents.download');
                         Route::get('{decedent_id}/correction-evidence/{media_id}', DownloadDecedentCorrectionEvidenceController::class)
                             ->middleware('permission:cemetery.decedents.documents.view')->name('correction-evidence.download');
-                    });
-
-                // Plots
-                Route::prefix('/plots')
-                    ->name('plots.')
-                    ->group(function () {
-                        Route::get('/', ListPlotsController::class)->name('list.page');
-                        Route::get('/create', CreatePlotController::class)->name('create.page');
                     });
 
                 // Interments
@@ -105,11 +112,12 @@ Route::prefix('api/decedents')
             ->middleware('permission:cemetery.decedents.override')->name('readiness-overrides.store');
     });
 
-Route::prefix('api/plots')
-    ->name('plots.')
+Route::prefix('api/cemetery-sites')
+    ->name('cemetery-sites.')
     ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
-        Route::post('store', StorePlotController::class)->name('store');
+        Route::post('store', StoreCemeterySiteController::class)->name('store');
+        Route::post('{cemetery_site_id}/plots', StorePlotController::class)->name('plots.store');
     });
 
 Route::prefix('api/interments')

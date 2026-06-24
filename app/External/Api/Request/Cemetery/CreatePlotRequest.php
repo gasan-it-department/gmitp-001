@@ -4,6 +4,7 @@ namespace App\External\Api\Request\Cemetery;
 
 use App\Core\Cemetery\Enums\PlotTypes;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
@@ -31,6 +32,7 @@ class CreatePlotRequest extends FormRequest
     public function rules(): array
     {
         $municipalId = app('municipal_id');
+        $cemeterySiteId = $this->route('cemetery_site_id');
         $blockId = $this->input('block_id');
 
         return [
@@ -42,6 +44,15 @@ class CreatePlotRequest extends FormRequest
                 Rule::exists('cemetery_blocks', 'id')
                     ->where(fn ($query) => $query
                         ->where('municipal_id', $municipalId)
+                        ->whereIn(
+                            'section_id',
+                            DB::table('cemetery_sections')
+                                ->select('id')
+                                ->where('municipal_id', $municipalId)
+                                ->where('cemetery_site_id', $cemeterySiteId)
+                                ->where('status', 'active')
+                                ->whereNull('deleted_at')
+                        )
                         ->whereNull('deleted_at')),
             ],
 
@@ -79,7 +90,7 @@ class CreatePlotRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'block_id.exists' => 'The selected block is not part of this municipality.',
+            'block_id.exists' => 'The selected block is not part of this active cemetery site.',
             'name.unique' => 'A plot with this name already exists in the selected block.',
             'capacity.min' => 'Capacity must be at least 1.',
             'capacity.max' => 'Capacity may not exceed 50 — anything larger is almost certainly a data-entry error.',
