@@ -37,7 +37,7 @@ class SupabaseLoginController extends Controller
 
         $email = Arr::get($supabaseUser, 'email');
 
-        if (! is_string($email) || $email === '') {
+        if (!is_string($email) || $email === '') {
             throw ValidationException::withMessages([
                 'access_token' => ['The Supabase account does not contain an email address.'],
             ]);
@@ -89,7 +89,7 @@ class SupabaseLoginController extends Controller
         $supabaseUrl = config('services.supabase.url');
         $supabaseAnonKey = config('services.supabase.anon_key');
 
-        if (! $supabaseUrl || ! $supabaseAnonKey) {
+        if (!$supabaseUrl || !$supabaseAnonKey) {
             abort(500, 'Supabase authentication is not configured.');
         }
 
@@ -108,7 +108,7 @@ class SupabaseLoginController extends Controller
             abort(401, 'Invalid Supabase access token.');
         }
 
-        if (! $response->successful()) {
+        if (!$response->successful()) {
             abort(502, 'Supabase authentication service rejected the request.');
         }
 
@@ -120,7 +120,7 @@ class SupabaseLoginController extends Controller
      */
     private function splitName(?string $fullName): array
     {
-        if (! $fullName) {
+        if (!$fullName) {
             return [null, null];
         }
 
