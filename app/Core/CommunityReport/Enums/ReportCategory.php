@@ -9,6 +9,8 @@ enum ReportCategory: string
     case WATER_LEAK = 'water_leak';
     case GARBAGE = 'garbage';
     case DRAINAGE = 'drainage';
+    case STRAY_ANIMAL = 'stray_animal';
+    case NOISE = 'noise';
     case OTHER = 'other';
 
     public function label(): string
@@ -19,13 +21,15 @@ enum ReportCategory: string
             self::WATER_LEAK => 'Water Leak',
             self::GARBAGE => 'Garbage / Waste',
             self::DRAINAGE => 'Drainage Issue',
+            self::STRAY_ANIMAL => 'Stray Animals',
+            self::NOISE => 'Noise',
             self::OTHER => 'Other',
         };
     }
 
     public static function toOptions(): array
     {
-        return array_map(fn (self $case) => [
+        return array_map(fn(self $case) => [
             'value' => $case->value,
             'label' => $case->label(),
         ], self::cases());
