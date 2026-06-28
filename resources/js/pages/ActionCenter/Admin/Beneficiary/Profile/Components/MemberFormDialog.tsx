@@ -196,9 +196,9 @@ export default function MemberFormDialog({
                             label="Suffix"
                             placeholder="None"
                             value={data.suffix}
-                            onValueChange={(value) => setData('suffix', value)}
+                            onValueChange={(value) => setData('suffix', value === 'none' ? '' : value)}
                             error={errors.suffix}
-                            options={SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))}
+                            options={[{ value: 'none', label: 'None' }, ...SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))]}
                         />
                         <ShadcnSelectField
                             id="m_relationship"

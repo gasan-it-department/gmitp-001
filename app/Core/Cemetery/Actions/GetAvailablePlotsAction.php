@@ -23,10 +23,11 @@ use Illuminate\Support\Collection;
  */
 class GetAvailablePlotsAction
 {
-    public function execute(string $municipalId): Collection
+    public function execute(string $municipalId, ?string $cemeterySiteId = null): Collection
     {
         return Plot::with(['block.section', 'parent'])
             ->where('municipal_id', $municipalId)
+            ->when($cemeterySiteId, fn ($query) => $query->where('cemetery_site_id', $cemeterySiteId))
             ->where('status', PlotStatus::AVAILABLE->value)
             // Leaf-only filter — children OR single-capacity plots.
             ->where(function ($query) {

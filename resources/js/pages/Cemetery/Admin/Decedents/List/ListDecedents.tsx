@@ -1,5 +1,13 @@
 import { Button } from '@/components/ui/button';
-import { DecedentListItem } from '@/Core/Types/Cemetery/cemetery';
+import {
+    DecedentIntermentStatusFilterValue,
+    DecedentListFilters,
+    DecedentListItem,
+    IdentityStatusValue,
+    RegistrationStatusValue,
+    SelectOption,
+    VitalRecordTypeValue,
+} from '@/Core/Types/Cemetery/cemetery';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
@@ -10,10 +18,21 @@ import { DecedentsTable } from './Components/DecedentsTable';
 
 interface Props {
     decedents: PaginatedResponse<DecedentListItem>;
-    filters?: Record<string, string>;
+    filters: DecedentListFilters;
+    registration_status_options: SelectOption<RegistrationStatusValue>[];
+    identity_status_options: SelectOption<IdentityStatusValue>[];
+    vital_record_type_options: SelectOption<VitalRecordTypeValue>[];
+    interment_status_options: SelectOption<DecedentIntermentStatusFilterValue>[];
 }
 
-export default function ListDecedents({ decedents }: Props) {
+export default function ListDecedents({
+    decedents,
+    filters,
+    registration_status_options,
+    identity_status_options,
+    vital_record_type_options,
+    interment_status_options,
+}: Props) {
     const rows = decedents.data;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
@@ -47,7 +66,14 @@ export default function ListDecedents({ decedents }: Props) {
                 </section>
 
                 <div className="rounded-lg border bg-white">
-                    <DecedentsTable decedents={decedents} />
+                    <DecedentsTable
+                        decedents={decedents}
+                        filters={filters}
+                        registrationStatusOptions={registration_status_options}
+                        identityStatusOptions={identity_status_options}
+                        vitalRecordTypeOptions={vital_record_type_options}
+                        intermentStatusOptions={interment_status_options}
+                    />
                 </div>
             </div>
         </AppLayout>

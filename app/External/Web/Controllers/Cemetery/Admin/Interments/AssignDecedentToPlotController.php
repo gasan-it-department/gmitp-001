@@ -4,8 +4,8 @@ namespace App\External\Web\Controllers\Cemetery\Admin\Interments;
 
 use App\Core\Cemetery\Actions\Decedents\GetDecedentProfileAction;
 use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
-use App\Core\Cemetery\Actions\GetAvailablePlotsAction;
-use App\External\Api\Resources\Cemetery\PlotListResource;
+use App\Core\Cemetery\Actions\Sites\ListCemeterySitesAction;
+use App\External\Api\Resources\Cemetery\Sites\CemeterySiteResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 
@@ -19,7 +19,7 @@ class AssignDecedentToPlotController extends Controller
     public function __construct(
         private GetDecedentProfileAction $getDecedentProfile,
         private GetIntermentReadinessAction $getIntermentReadiness,
-        private GetAvailablePlotsAction $getAvailablePlots,
+        private ListCemeterySitesAction $listCemeterySites,
     ) {}
 
     public function __invoke(string $municipality, string $decedentId)
@@ -32,7 +32,9 @@ class AssignDecedentToPlotController extends Controller
             409,
             'This decedent is not ready for interment.',
         );
-        $plots = $this->getAvailablePlots->execute($municipalId);
+        $sites = $this->listCemeterySites->execute($municipalId)
+            ->where('status', 'active')
+            ->values();
 
         return Inertia::render('Cemetery/Admin/Interments/Assign/AssignDecedent', [
             'decedent' => [
@@ -42,7 +44,7 @@ class AssignDecedentToPlotController extends Controller
                 'identity_status' => $decedent->identity_status?->value,
                 'date_of_death' => $decedent->date_of_death?->format('M d, Y'),
             ],
-            'available_plots' => PlotListResource::collection($plots),
+            'sites' => CemeterySiteResource::collection($sites)->resolve(),
         ]);
     }
 

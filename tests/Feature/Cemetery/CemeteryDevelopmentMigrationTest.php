@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 it('creates decedents with flattened address fields only', function () {
     Schema::create('municipalities', function (Blueprint $table) {
@@ -86,6 +88,129 @@ it('creates final unidentified details without a fetal subtype table', function 
             ->and(Schema::hasTable('cemetery_fetal_death_details'))->toBeFalse();
     } finally {
         $migration->down();
+        Schema::dropIfExists('cemetery_decedents');
+        Schema::dropIfExists('municipalities');
+    }
+});
+
+it('creates operational plot leases instead of plot deeds', function () {
+    Schema::create('municipalities', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
+    Schema::create('cemetery_decedents', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
+
+    $migrations = [
+        require database_path('migrations/2026_06_14_000002_create_cemetery_sites_table.php'),
+        require database_path('migrations/2026_06_14_000003_create_cemetery_sections_table.php'),
+        require database_path('migrations/2026_06_14_000004_create_cemetery_blocks_table.php'),
+        require database_path('migrations/2026_06_14_000005_create_cemetery_plots_table.php'),
+        require database_path('migrations/2026_06_14_000008_create_cemetery_plot_deeds_table.php'),
+        require database_path('migrations/2026_06_14_000009_create_cemetery_interments_table.php'),
+    ];
+
+    try {
+        foreach ($migrations as $migration) {
+            $migration->up();
+        }
+
+        $municipalId = (string) Str::ulid();
+        $siteId = (string) Str::ulid();
+        $sectionId = (string) Str::ulid();
+        $blockId = (string) Str::ulid();
+        $plotId = (string) Str::ulid();
+        $decedentId = (string) Str::ulid();
+        $intermentId = (string) Str::ulid();
+        $leaseId = (string) Str::ulid();
+
+        DB::table('municipalities')->insert(['id' => $municipalId]);
+        DB::table('cemetery_decedents')->insert(['id' => $decedentId]);
+        DB::table('cemetery_sites')->insert([
+            'id' => $siteId,
+            'municipal_id' => $municipalId,
+            'name' => 'GASAN CENTRAL',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('cemetery_sections')->insert([
+            'id' => $sectionId,
+            'municipal_id' => $municipalId,
+            'cemetery_site_id' => $siteId,
+            'name' => 'SECTION A',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('cemetery_blocks')->insert([
+            'id' => $blockId,
+            'municipal_id' => $municipalId,
+            'section_id' => $sectionId,
+            'name' => 'BLOCK 1',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('cemetery_plots')->insert([
+            'id' => $plotId,
+            'municipal_id' => $municipalId,
+            'cemetery_site_id' => $siteId,
+            'block_id' => $blockId,
+            'name' => 'LOT 1',
+            'type' => 'lawn_lot',
+            'status' => 'occupied',
+            'capacity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('cemetery_interments')->insert([
+            'id' => $intermentId,
+            'municipal_id' => $municipalId,
+            'decedent_id' => $decedentId,
+            'plot_id' => $plotId,
+            'type' => 'initial',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('cemetery_plot_leases')->insert([
+            'id' => $leaseId,
+            'municipal_id' => $municipalId,
+            'interment_id' => $intermentId,
+            'plot_id' => $plotId,
+            'leaseholder_name' => 'JUAN DELA CRUZ',
+            'lease_start' => '2026-01-01',
+            'lease_end' => '2031-01-01',
+            'or_number' => 'OR-1001',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $interment = \App\Core\Cemetery\Models\Interment::query()
+            ->with('lease')
+            ->findOrFail($intermentId);
+        $lease = \App\Core\Cemetery\Models\PlotLease::query()
+            ->with(['interment', 'plot'])
+            ->findOrFail($leaseId);
+
+        expect(Schema::hasTable('cemetery_plot_deeds'))->toBeFalse()
+            ->and(Schema::hasTable('cemetery_plot_leases'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_plot_leases', 'municipal_id'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_plot_leases', 'interment_id'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_plot_leases', 'plot_id'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_plot_leases', 'leaseholder_name'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_plot_leases', 'owner_name'))->toBeFalse()
+            ->and(Schema::hasColumn('cemetery_plot_leases', 'deleted_at'))->toBeTrue()
+            ->and(DB::table('cemetery_interments')->where('id', $intermentId)->value('id'))->toBe($intermentId)
+            ->and(DB::table('cemetery_plot_leases')->where('id', $leaseId)->value('plot_id'))->toBe($plotId)
+            ->and($interment->lease?->id)->toBe($leaseId)
+            ->and($lease->interment?->id)->toBe($intermentId)
+            ->and($lease->plot?->id)->toBe($plotId);
+    } finally {
+        foreach (array_reverse($migrations) as $migration) {
+            $migration->down();
+        }
+
         Schema::dropIfExists('cemetery_decedents');
         Schema::dropIfExists('municipalities');
     }

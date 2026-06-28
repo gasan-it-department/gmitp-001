@@ -2,32 +2,68 @@
 
 namespace App\Core\Cemetery\Actions;
 
+use App\Core\Cemetery\Dto\Plots\PlotListFiltersDto;
 use App\Core\Cemetery\Models\Plot;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
-/**
- * Paginated, tenant-scoped plot list for the admin index. Returns ONLY the
- * top-level rows (containers + single-capacity); child slots are reached by
- * drilling into the parent-detail page (MD §7 Workflow B).
- *
- * Direct Eloquent — no repository. Section is reached via block (new hierarchy).
- */
 class ListPlotsAction
 {
     public function execute(
         string $municipalId,
         string $cemeterySiteId,
-        ?string $statusFilter = null,
-        int $perPage = 15,
+        ?PlotListFiltersDto $filters = null,
     ): LengthAwarePaginator {
+        $filters ??= new PlotListFiltersDto(
+            search: null,
+            status: null,
+            type: null,
+            sectionId: null,
+            blockId: null,
+            row: null,
+        );
+
         return Plot::with(['block.section'])
             ->where('municipal_id', $municipalId)
             ->where('cemetery_site_id', $cemeterySiteId)
-            // Hide auto-generated child slots from the registry view.
-            ->whereNull('parent_plot_id')
-            ->when($statusFilter, fn ($query) => $query->where('status', $statusFilter))
+            ->when($filters->scope === PlotListFiltersDto::SCOPE_TOP_LEVEL, fn (Builder $query) => $query
+                ->whereNull('parent_plot_id'))
+            ->when($filters->scope === PlotListFiltersDto::SCOPE_ASSIGNABLE, fn (Builder $query) => $query
+                ->whereNotNull('status')
+                ->whereDoesntHave('slots'))
+            ->when($filters->status, fn (Builder $query, string $status) => $query
+                ->where('status', $status))
+            ->when($filters->type, fn (Builder $query, string $type) => $query
+                ->where('type', $type))
+            ->when($filters->blockId, fn (Builder $query, string $blockId) => $query
+                ->where('block_id', $blockId))
+            ->when($filters->sectionId, fn (Builder $query, string $sectionId) => $query
+                ->whereHas('block', fn (Builder $blockQuery) => $blockQuery
+                    ->where('section_id', $sectionId)))
+            ->when($filters->row, fn (Builder $query, string $row) => $query
+                ->whereRaw('LOWER(row) = ?', [mb_strtolower($row)]))
+            ->when($filters->search, fn (Builder $query, string $search) => $this->applySearch($query, $search))
             ->orderBy('name')
-            ->paginate($perPage)
+            ->orderBy('level')
+            ->orderBy('row')
+            ->orderBy('position')
+            ->paginate($filters->perPage)
             ->withQueryString();
+    }
+
+    private function applySearch(Builder $query, string $search): void
+    {
+        $term = '%'.mb_strtolower(trim($search)).'%';
+
+        $query->where(function (Builder $query) use ($term): void {
+            $query
+                ->whereRaw('LOWER(name) LIKE ?', [$term])
+                ->orWhereRaw('LOWER(row) LIKE ?', [$term])
+                ->orWhereRaw('LOWER(position) LIKE ?', [$term])
+                ->orWhereHas('block', fn (Builder $blockQuery) => $blockQuery
+                    ->whereRaw('LOWER(name) LIKE ?', [$term])
+                    ->orWhereHas('section', fn (Builder $sectionQuery) => $sectionQuery
+                        ->whereRaw('LOWER(name) LIKE ?', [$term])));
+        });
     }
 }

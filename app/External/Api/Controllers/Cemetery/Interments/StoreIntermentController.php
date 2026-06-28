@@ -19,8 +19,7 @@ class StoreIntermentController extends Controller
 {
     public function __construct(
         private RecordIntermentAction $recordInterment,
-    ) {
-    }
+    ) {}
 
     public function __invoke(CreateIntermentRequest $request): RedirectResponse
     {
@@ -29,6 +28,14 @@ class StoreIntermentController extends Controller
         $interment = $this->recordInterment->execute(
             IntermentDto::fromRequest($request->validated())
         );
+
+        if ($request->validated('cemetery_site_id')) {
+            return redirect()->route('cemetery.admin.sites.workspace.page', [
+                'municipality' => $municipality->slug,
+                'cemetery_site_id' => $request->validated('cemetery_site_id'),
+                'tab' => 'interments',
+            ])->with('success', 'Interment recorded successfully.');
+        }
 
         return redirect()->route('cemetery.admin.decedents.profile.page', [
             'municipality' => $municipality->slug,

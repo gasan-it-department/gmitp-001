@@ -77,6 +77,11 @@ class Plot extends Model
         return $this->hasMany(Interment::class, 'plot_id');
     }
 
+    public function leases(): HasMany
+    {
+        return $this->hasMany(PlotLease::class, 'plot_id');
+    }
+
     /**
      * Current interment on this leaf/slot. Exhumation soft-deletes the row,
      * so the SoftDeletes scope surfaces only the active occupant.
@@ -105,6 +110,20 @@ class Plot extends Model
         return Attribute::make(
             get: function (): string {
                 $label = (string) $this->name;
+
+                if ($this->type === PlotTypes::APARTMENT_NICHE && $this->level !== null) {
+                    $parts = ['F'.$this->level];
+
+                    if (filled($this->row)) {
+                        $parts[] = (string) $this->row;
+                    }
+
+                    if (filled($this->position)) {
+                        $parts[] = (string) $this->position;
+                    }
+
+                    return $label.'-'.implode('-', $parts);
+                }
 
                 if ($this->level !== null) {
                     $label .= '-L'.$this->level;

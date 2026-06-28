@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('cemetery_interments', function (Blueprint $table) {
@@ -45,10 +46,25 @@ return new class extends Migration {
             $table->index(['municipal_id', 'plot_id']);
             $table->index(['municipal_id', 'decedent_id']);
         });
+
+        if (Schema::getConnection()->getDriverName() !== 'sqlite' && Schema::hasTable('cemetery_plot_leases')) {
+            Schema::table('cemetery_plot_leases', function (Blueprint $table) {
+                $table->foreign('interment_id', 'cemetery_plot_leases_interment_foreign')
+                    ->references('id')
+                    ->on('cemetery_interments')
+                    ->restrictOnDelete();
+            });
+        }
     }
 
     public function down(): void
     {
+        if (Schema::getConnection()->getDriverName() !== 'sqlite' && Schema::hasTable('cemetery_plot_leases')) {
+            Schema::table('cemetery_plot_leases', function (Blueprint $table) {
+                $table->dropForeign('cemetery_plot_leases_interment_foreign');
+            });
+        }
+
         Schema::dropIfExists('cemetery_interments');
     }
 };

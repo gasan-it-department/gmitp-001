@@ -1,5 +1,6 @@
 <?php
 
+use App\External\Api\Controllers\Cemetery\Blocks\StoreCemeteryBlockController;
 use App\External\Api\Controllers\Cemetery\Decedents\CorrectDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\CreateReadinessOverrideController;
 use App\External\Api\Controllers\Cemetery\Decedents\DeleteDecedentDocumentController;
@@ -12,9 +13,13 @@ use App\External\Api\Controllers\Cemetery\Decedents\UpdateDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\ViewDecedentAvatarController;
 use App\External\Api\Controllers\Cemetery\Interments\StoreIntermentController;
+use App\External\Api\Controllers\Cemetery\Plots\BulkGeneratePlotsController;
+use App\External\Api\Controllers\Cemetery\Plots\GenerateApartmentNichesController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotController;
+use App\External\Api\Controllers\Cemetery\Sections\StoreCemeterySectionController;
 use App\External\Api\Controllers\Cemetery\Sites\StoreCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotController;
+use App\External\Web\Controllers\Cemetery\Admin\Interments\CreateSiteIntermentController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\CreatePlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Sites\CreateCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Sites\ListCemeterySiteController;
@@ -56,6 +61,9 @@ Route::prefix('/{municipality}/cemetery')
                         Route::get('/create', CreateCemeterySiteController::class)->name('create.page');
                         Route::get('/{cemetery_site_id}/plots/create', CreatePlotController::class)
                             ->name('plots.create.page');
+                        Route::get('/{cemetery_site_id}/interments/create', CreateSiteIntermentController::class)
+                            ->middleware('permission:cemetery.decedents.manage')
+                            ->name('interments.create.page');
                         Route::get('/{cemetery_site_id}', ShowCemeterySiteController::class)
                             ->name('workspace.page');
                     });
@@ -117,7 +125,12 @@ Route::prefix('api/cemetery-sites')
     ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
         Route::post('store', StoreCemeterySiteController::class)->name('store');
+        Route::post('{cemetery_site_id}/sections', StoreCemeterySectionController::class)->name('sections.store');
+        Route::post('{cemetery_site_id}/sections/{section_id}/blocks', StoreCemeteryBlockController::class)->name('sections.blocks.store');
         Route::post('{cemetery_site_id}/plots', StorePlotController::class)->name('plots.store');
+        Route::post('{cemetery_site_id}/blocks/{block_id}/plots/bulk', BulkGeneratePlotsController::class)->name('blocks.plots.bulk');
+        Route::post('{cemetery_site_id}/blocks/{block_id}/plots/apartment', GenerateApartmentNichesController::class)
+            ->name('blocks.plots.apartment');
     });
 
 Route::prefix('api/interments')

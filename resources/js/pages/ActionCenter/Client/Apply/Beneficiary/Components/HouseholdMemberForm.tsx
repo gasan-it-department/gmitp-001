@@ -107,8 +107,8 @@ export function HouseholdMemberForm({ relationships, civilStatus, educationalAtt
                         label="Suffix"
                         placeholder="None"
                         value={draft.suffix}
-                        onValueChange={(value) => updateField('suffix', value)}
-                        options={SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))}
+                        onValueChange={(value) => updateField('suffix', value === 'none' ? '' : value)}
+                        options={[{ value: 'none', label: 'None' }, ...SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))]}
                     />
                     <ShadcnSelectField
                         id="hm_relationship"

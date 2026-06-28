@@ -13,6 +13,7 @@ use App\Core\Cemetery\Models\DecedentDocument;
 use App\Core\Cemetery\Models\Interment;
 use App\Core\Cemetery\Models\IntermentReadinessOverride;
 use App\Core\Cemetery\Models\Plot as CemeteryPlot;
+use App\Core\Cemetery\Models\PlotLease;
 use App\Core\Cemetery\Models\Section as CemeterySection;
 use App\Core\Cemetery\Models\UnidentifiedDetail;
 use App\Core\CommunityReport\Models\ReportSubmission;
@@ -71,6 +72,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'cemetery_unidentified_detail' => UnidentifiedDetail::class,
             'cemetery_readiness_override' => IntermentReadinessOverride::class,
             'cemetery_interment' => Interment::class,
+            'cemetery_plot_lease' => PlotLease::class,
             'cemetery_plot' => CemeteryPlot::class,
             'cemetery_block' => CemeteryBlock::class,
             'cemetery_section' => CemeterySection::class,

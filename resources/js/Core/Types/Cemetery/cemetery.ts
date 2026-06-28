@@ -6,6 +6,7 @@ export type CemeterySiteStatusValue = 'active' | 'inactive' | 'closed';
 export type VitalRecordTypeValue = 'death' | 'fetal_death';
 export type IdentityStatusValue = 'identified' | 'unidentified';
 export type RegistrationStatusValue = 'draft' | 'pending_review' | 'verified' | 'archived';
+export type DecedentIntermentStatusFilterValue = 'interred' | 'unassigned';
 export type DecedentDocumentTypeValue =
     | 'death_certificate'
     | 'fetal_death_certificate'
@@ -56,6 +57,51 @@ export type CreateCemeterySiteForm = {
     notes: string;
 };
 
+export interface CemeteryBlockListItem {
+    id: string;
+    name: string;
+    status: 'active' | 'inactive' | 'maintenance';
+    counts: PlotInventoryCounts;
+}
+
+export interface CemeterySectionListItem {
+    id: string;
+    name: string;
+    description: string | null;
+    status: 'active' | 'inactive' | 'maintenance';
+    blocks: CemeteryBlockListItem[];
+}
+
+export type CreateCemeterySectionForm = {
+    name: string;
+    description: string;
+};
+
+export type CreateCemeteryBlockForm = {
+    name: string;
+};
+
+export type BulkGeneratePlotsForm = {
+    label_prefix: string;
+    start_number: number | '';
+    quantity: number | '';
+    padding: number | '';
+    type: PlotTypeValue | '';
+    capacity: number | '';
+    row: string;
+    position: string;
+};
+
+export type GenerateApartmentNichesForm = {
+    apartment_name: string;
+    floors: number | '';
+    rows_per_floor: number | '';
+    niches_per_row: number | '';
+    row_prefix: string;
+    niche_prefix: string;
+    niche_padding: number | '';
+};
+
 // ─── Spatial hierarchy lookups (passed as Inertia page props) ────────────
 
 export interface SectionLookup {
@@ -86,6 +132,16 @@ export interface DecedentListItem {
     date_of_registration: string | null;
     interment_status: IntermentStatusValue;
     plot_label: string | null;
+}
+
+export interface DecedentListFilters {
+    search: string | null;
+    registration_status: RegistrationStatusValue | null;
+    identity_status: IdentityStatusValue | null;
+    vital_record_type: VitalRecordTypeValue | null;
+    interment_status: DecedentIntermentStatusFilterValue | null;
+    death_year: number | null;
+    per_page: number;
 }
 
 export interface DecedentProfile {
@@ -248,6 +304,19 @@ export interface PlotListItem {
     } | null;
 }
 
+export type PlotInventoryScopeValue = 'top_level' | 'assignable' | 'all';
+
+export interface PlotListFilters {
+    search: string | null;
+    status: PlotStatusValue | null;
+    type: PlotTypeValue | null;
+    section_id: string | null;
+    block_id: string | null;
+    row: string | null;
+    scope: PlotInventoryScopeValue;
+    per_page: number;
+}
+
 /** Leaf-level inventory counts (REQ-2.2) — server-computed, container-excluded. */
 export interface PlotInventoryCounts {
     total: number;
@@ -274,4 +343,44 @@ export type CreateIntermentForm = {
     interment_date: string;
     type: IntermentTypeValue;
     notes: string;
+    leaseholder_name: string;
+    leaseholder_contact: string;
+    leaseholder_address: string;
+    leaseholder_relationship: string;
+    lease_start: string;
+    lease_end: string;
+    amount_paid: number | '';
+    or_number: string;
+    lease_notes: string;
 };
+
+export type CreateSiteIntermentForm = CreateIntermentForm & {
+    cemetery_site_id: string;
+};
+
+export interface ReadyDecedentOption {
+    id: string;
+    display_name: string;
+    vital_record_type: VitalRecordTypeValue;
+    vital_record_label: string;
+    identity_status: IdentityStatusValue;
+    registry_number: string | null;
+    date_of_death: string | null;
+    date_of_death_label: string | null;
+}
+
+export interface IntermentListItem {
+    id: string;
+    decedent_id: string;
+    decedent_name: string;
+    plot_id: string;
+    plot_label: string | null;
+    plot_type_label: string | null;
+    section_name: string | null;
+    block_name: string | null;
+    interment_date: string | null;
+    interment_date_label: string | null;
+    type: IntermentTypeValue;
+    type_label: string;
+    notes: string | null;
+}

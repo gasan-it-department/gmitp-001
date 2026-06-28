@@ -28,4 +28,12 @@ enum RegistrationStatus: string
             self::ARCHIVED => 'rose',
         };
     }
+
+    public static function toOptions(): array
+    {
+        return array_map(fn (self $status) => [
+            'value' => $status->value,
+            'label' => $status->label(),
+        ], self::cases());
+    }
 }
