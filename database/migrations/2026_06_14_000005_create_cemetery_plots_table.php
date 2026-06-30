@@ -22,11 +22,8 @@ return new class extends Migration
                 ->constrained('cemetery_blocks')
                 ->restrictOnDelete();
 
-            // Self-referencing parent/child discriminator.
-            //   NULL → this row is a container (parent) OR a single-capacity plot.
-            //   SET  → this row is a slot inside the referenced parent (leaf).
-            //   Interments may ONLY attach to leaves — guard at the Action layer
-            //   (BR-4); DB cannot enforce "leaf-only" without triggers.
+            // Parent grouping is used only for generated apartment niches.
+            // Standard plots keep parent_plot_id NULL even when capacity > 1.
             $table->ulid('parent_plot_id')->nullable()->index();
 
             // Identifier (e.g. "APARTMENT A-12"). UPPERCASE at the DTO layer.
@@ -38,8 +35,12 @@ return new class extends Migration
             $table->string('type');
 
             // available | occupied | reserved | maintenance — NULLABLE because
-            // the parent/container row has no meaningful status (not bookable).
+            // slotted apartment parent rows have no meaningful status.
             $table->string('status')->nullable();
+
+            // single = one decedent; shared = multiple decedents up to capacity;
+            // slotted = parent/container row, never directly interred into.
+            $table->string('occupancy_mode')->default('single');
 
             // Spatial locators — REQ-2.1 (Row + Level explicit; position is an
             // optional grid hint, e.g. LEFT/RIGHT/TOP/BOTTOM).
@@ -47,7 +48,8 @@ return new class extends Migration
             $table->unsignedSmallInteger('level')->nullable();
             $table->string('position')->nullable();
 
-            // Parent capacity = admin-set (1..N). Slot capacity = 1.
+            // Assignable row capacity = maximum decedents/remains. Slotted
+            // parent capacity summarizes generated child niche count.
             $table->unsignedInteger('capacity');
 
             $table->timestamps();

@@ -19,8 +19,6 @@ class BulkGeneratePlotsRequest extends FormRequest
     {
         $this->merge([
             'label_prefix' => mb_strtoupper(trim((string) $this->input('label_prefix'))),
-            'row' => $this->filled('row') ? mb_strtoupper(trim((string) $this->input('row'))) : null,
-            'position' => $this->filled('position') ? mb_strtoupper(trim((string) $this->input('position'))) : null,
         ]);
     }
 
@@ -52,10 +50,8 @@ class BulkGeneratePlotsRequest extends FormRequest
             'start_number' => ['required', 'integer', 'min:0'],
             'quantity' => ['required', 'integer', 'min:1', 'max:500'],
             'padding' => ['required', 'integer', 'min:0', 'max:6'],
-            'type' => ['required', new Enum(PlotTypes::class)],
+            'type' => ['required', new Enum(PlotTypes::class), Rule::notIn([PlotTypes::APARTMENT_NICHE->value])],
             'capacity' => ['required', 'integer', 'min:1', 'max:50'],
-            'row' => ['nullable', 'string', 'max:50'],
-            'position' => ['nullable', 'string', 'max:50'],
         ];
     }
 
@@ -72,6 +68,7 @@ class BulkGeneratePlotsRequest extends FormRequest
             'block.exists' => 'The selected block is not part of this active cemetery site.',
             'quantity.max' => 'You can generate up to 500 plots at a time.',
             'capacity.max' => 'Capacity may not exceed 50.',
+            'type.not_in' => 'Apartment niches must be generated through the apartment niche generator.',
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Request\Cemetery;
 
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\RegistrationStatus;
 use Illuminate\Foundation\Http\FormRequest;
@@ -73,19 +74,33 @@ class CreateIntermentRequest extends FormRequest
             'plot_id' => [
                 'required',
                 'ulid',
-                // BR-1 (AVAILABLE) + BR-4 (leaf-only) folded into one exists
-                // check. A leaf is either a child slot (parent_plot_id IS NOT
-                // NULL) OR a single-capacity plot (capacity = 1). Parent
-                // containers fail closed here even if the UI sends one.
                 Rule::exists('cemetery_plots', 'id')
                     ->where(fn ($q) => $q
                         ->where('municipal_id', $municipalId)
                         ->when($cemeterySiteId, fn ($query) => $query->where('cemetery_site_id', $cemeterySiteId))
-                        ->where('status', PlotStatus::AVAILABLE->value)
                         ->whereNull('deleted_at')
-                        ->where(function ($leaf) {
-                            $leaf->whereNotNull('parent_plot_id')
-                                ->orWhere('capacity', 1);
+                        ->where(function ($assignable) {
+                            $assignable->where(function ($single) {
+                                $single
+                                    ->where('occupancy_mode', PlotOccupancyMode::SINGLE->value)
+                                    ->where('status', PlotStatus::AVAILABLE->value)
+                                    ->whereRaw('(
+                                        select count(*)
+                                        from cemetery_interments
+                                        where cemetery_interments.plot_id = cemetery_plots.id
+                                        and cemetery_interments.deleted_at is null
+                                    ) = 0');
+                            })->orWhere(function ($shared) {
+                                $shared
+                                    ->where('occupancy_mode', PlotOccupancyMode::SHARED->value)
+                                    ->whereIn('status', [PlotStatus::AVAILABLE->value, PlotStatus::OCCUPIED->value])
+                                    ->whereRaw('(
+                                        select count(*)
+                                        from cemetery_interments
+                                        where cemetery_interments.plot_id = cemetery_plots.id
+                                        and cemetery_interments.deleted_at is null
+                                    ) < cemetery_plots.capacity');
+                            });
                         })),
             ],
 
@@ -145,7 +160,7 @@ class CreateIntermentRequest extends FormRequest
             'cemetery_site_id.exists' => 'The selected cemetery site is not active or does not belong to this municipality.',
             'decedent_id.exists' => 'The selected decedent is not verified or does not belong to this municipality.',
             'decedent_id.unique' => 'This decedent already has an active interment record.',
-            'plot_id.exists' => 'The selected plot is not an available, assignable slot in this municipality.',
+            'plot_id.exists' => 'The selected plot is not assignable or has already reached capacity.',
             'interment_date.before_or_equal' => 'The interment date cannot be in the future.',
             'type.in' => 'Interment type must be either "initial" or "transfer".',
             'leaseholder_name.required' => 'Please enter the responsible leaseholder or contact person.',

@@ -180,6 +180,61 @@ it('stores a Site-scoped interment and flips the Plot to occupied', function () 
         ->and($lease->notes)->toBe('Paid at municipal treasury.');
 });
 
+it('allows shared plots to receive interments until capacity is reached', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $firstDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'ANA');
+    $secondDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'BEN');
+    $thirdDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'CARLO');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 800', 'available', 'shared', 2);
+
+    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $plot, [
+        'or_number' => 'OR-SHARED-1',
+    ]))->assertRedirect();
+
+    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $plot, [
+        'or_number' => 'OR-SHARED-2',
+    ]))->assertRedirect();
+
+    $this->post(route('interments.store'), intermentPayload($site, $thirdDecedent, $plot, [
+        'or_number' => 'OR-SHARED-3',
+    ]))->assertSessionHasErrors('plot_id');
+
+    expect(DB::table('cemetery_interments')->where('plot_id', $plot)->count())->toBe(2)
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied');
+});
+
+it('rejects a second active interment for single plots', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $firstDecedent = intermentReadyDecedent($this->gasan->id, 'REYES', 'ANA');
+    $secondDecedent = intermentReadyDecedent($this->gasan->id, 'REYES', 'BEN');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 801', 'available');
+
+    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $plot, [
+        'or_number' => 'OR-SINGLE-1',
+    ]))->assertRedirect();
+
+    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $plot, [
+        'or_number' => 'OR-SINGLE-2',
+    ]))->assertSessionHasErrors('plot_id');
+
+    expect(DB::table('cemetery_interments')->where('plot_id', $plot)->count())->toBe(1);
+});
+
+it('rejects direct interment into slotted apartment parent rows', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'APARTMENT AREA'), 'BUILDING A');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'CRUZ', 'MARIA');
+    $parentPlot = intermentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, 'slotted', 10, 'apartment_niche');
+
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $parentPlot, [
+        'or_number' => 'OR-SLOTTED-1',
+    ]))->assertSessionHasErrors('plot_id');
+
+    expect(DB::table('cemetery_interments')->where('plot_id', $parentPlot)->count())->toBe(0);
+});
+
 it('requires leaseholder and keeps interment atomic when lease validation fails', function () {
     $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
     $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
@@ -315,17 +370,26 @@ function intermentBlock(string $municipalId, string $sectionId, string $name): s
     return $id;
 }
 
-function intermentPlot(string $municipalId, string $siteId, string $blockId, string $name, string $status): string
-{
+function intermentPlot(
+    string $municipalId,
+    string $siteId,
+    string $blockId,
+    string $name,
+    ?string $status,
+    string $occupancyMode = 'single',
+    int $capacity = 1,
+    string $type = 'lawn_lot',
+): string {
     DB::table('cemetery_plots')->insert([
         'id' => $id = (string) Str::ulid(),
         'municipal_id' => $municipalId,
         'cemetery_site_id' => $siteId,
         'block_id' => $blockId,
         'name' => $name,
-        'type' => 'lawn_lot',
+        'type' => $type,
         'status' => $status,
-        'capacity' => 1,
+        'occupancy_mode' => $occupancyMode,
+        'capacity' => $capacity,
         'created_at' => now(),
         'updated_at' => now(),
     ]);

@@ -24,6 +24,7 @@ class ListPlotsAction
         );
 
         return Plot::with(['block.section'])
+            ->withCount('interments')
             ->where('municipal_id', $municipalId)
             ->where('cemetery_site_id', $cemeterySiteId)
             ->when($filters->scope === PlotListFiltersDto::SCOPE_TOP_LEVEL, fn (Builder $query) => $query

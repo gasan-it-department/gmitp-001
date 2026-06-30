@@ -2,17 +2,12 @@
 
 namespace App\External\Api\Resources\Cemetery;
 
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/**
- * Shape for plot list rows in both contexts: the admin plots registry (parents
- * + single-capacity) and the assign-decedent picker (leaves). The same
- * resource works for both because every row exposes its own status/capacity
- * and reaches block + section via the new hierarchy.
- */
 class PlotListResource extends JsonResource
 {
     public function toArray(Request $request): array
@@ -21,6 +16,10 @@ class PlotListResource extends JsonResource
         $status = $this->status;
         /** @var PlotTypes|null $type */
         $type = $this->type;
+        /** @var PlotOccupancyMode|null $occupancyMode */
+        $occupancyMode = $this->occupancy_mode;
+        $intermentsCount = (int) ($this->interments_count ?? 0);
+        $availableCapacity = max(0, (int) $this->capacity - $intermentsCount);
 
         return [
             'id' => $this->id,
@@ -32,6 +31,11 @@ class PlotListResource extends JsonResource
             'level' => $this->level,
             'position' => $this->position,
             'capacity' => $this->capacity,
+            'occupancy_mode' => $occupancyMode?->value,
+            'occupancy_mode_label' => $occupancyMode?->label(),
+            'active_interments_count' => $intermentsCount,
+            'available_capacity' => $availableCapacity,
+            'occupancy_label' => $intermentsCount.' / '.$this->capacity,
             'type' => $type?->value,
             'type_label' => $type?->label(),
             'status' => $status?->value,

@@ -16,7 +16,7 @@ import {
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import { cn } from '@/lib/utils';
 import cemetery from '@/routes/cemetery';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { Boxes, Layers3, Search, X } from 'lucide-react';
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -220,7 +220,7 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                                 <TableHead>Block</TableHead>
                                 <TableHead>Location</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead className="text-center">Capacity</TableHead>
+                                <TableHead className="text-center">Occupancy</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -241,13 +241,25 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                                             <TableCell className="min-w-[220px]">
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="font-mono font-medium text-slate-900">{plot.slot_label || '-'}</span>
+                                                        <Link
+                                                            href={cemetery.admin.sites.plots.profile.page.url({
+                                                                municipality: municipalitySlug,
+                                                                cemetery_site_id: siteId,
+                                                                plot_id: plot.id,
+                                                            })}
+                                                            className="font-mono font-medium text-emerald-700 hover:underline"
+                                                        >
+                                                            {plot.slot_label || '-'}
+                                                        </Link>
                                                         {container && (
                                                             <RowBadge
                                                                 icon={<Boxes size={10} />}
                                                                 label="Container"
                                                                 className="bg-indigo-50 text-indigo-700 ring-indigo-200"
                                                             />
+                                                        )}
+                                                        {plot.occupancy_mode === 'shared' && (
+                                                            <RowBadge label="Shared" className="bg-emerald-50 text-emerald-700 ring-emerald-200" />
                                                         )}
                                                         {childSlot && <RowBadge label="Slot" className="bg-sky-50 text-sky-700 ring-sky-200" />}
                                                     </div>
@@ -267,7 +279,9 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                                                 </div>
                                             </TableCell>
                                             <TableCell>{plot.type_label ?? '-'}</TableCell>
-                                            <TableCell className="text-center tabular-nums">{plot.capacity}</TableCell>
+                                            <TableCell className="text-center tabular-nums">
+                                                {container ? plot.capacity : plot.occupancy_label}
+                                            </TableCell>
                                             <TableCell>
                                                 {container ? (
                                                     <span className="text-slate-400">-</span>
@@ -346,7 +360,7 @@ function RowBadge({ icon, label, className }: { icon?: ReactNode; label: string;
 }
 
 function isContainer(plot: PlotListItem): boolean {
-    return plot.parent_plot_id === null && plot.capacity > 1;
+    return plot.occupancy_mode === 'slotted';
 }
 
 function cleanQuery(query: Record<string, string | number | null | undefined>) {

@@ -27,13 +27,13 @@ interface Props {
     preselected_decedent_id: string | null;
 }
 
-const isAssignableLeaf = (plot: PlotListItem): boolean => plot.parent_plot_id !== null || plot.capacity === 1;
+const isAssignablePlot = (plot: PlotListItem): boolean => plot.occupancy_mode !== 'slotted' && plot.available_capacity > 0;
 
 export default function CreateSiteInterment({ municipality, site, decedents, available_plots, type_options, preselected_decedent_id }: Props) {
     const [decedentSearch, setDecedentSearch] = useState('');
     const [plotType, setPlotType] = useState<string>('all');
 
-    const plots = useMemo(() => available_plots.filter(isAssignableLeaf), [available_plots]);
+    const plots = useMemo(() => available_plots.filter(isAssignablePlot), [available_plots]);
     const { data, setData, post, processing, errors } = useForm<CreateSiteIntermentForm>({
         cemetery_site_id: site.id,
         decedent_id: preselected_decedent_id ?? '',
@@ -167,7 +167,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                             <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <h2 className="font-semibold text-slate-900">Available Plots</h2>
-                                    <p className="text-sm text-slate-500">Only assignable single plots or child slots in this Site.</p>
+                                    <p className="text-sm text-slate-500">Single plots and shared plots with remaining capacity in this Site.</p>
                                 </div>
                                 <Select value={plotType} onValueChange={setPlotType}>
                                     <SelectTrigger className="w-full sm:w-52">
@@ -216,6 +216,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                                                     {plot.level !== null && <span className="ml-1">/ Level {plot.level}</span>}
                                                 </p>
                                                 <p className="mt-1 text-xs text-slate-400">{plot.type_label}</p>
+                                                <p className="mt-1 text-xs text-slate-400">Occupancy: {plot.occupancy_label}</p>
                                             </button>
                                         );
                                     })

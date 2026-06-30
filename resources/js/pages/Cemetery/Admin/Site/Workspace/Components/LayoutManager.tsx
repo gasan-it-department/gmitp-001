@@ -276,6 +276,7 @@ function BulkGeneratePlotsDialog({
     typeOptions: SelectOption<PlotTypeValue>[];
 }) {
     const [open, setOpen] = useState(false);
+    const standardPlotTypeOptions = useMemo(() => typeOptions.filter((option) => option.value !== 'apartment_niche'), [typeOptions]);
     const { data, setData, post, processing, errors, reset } = useForm<BulkGeneratePlotsForm>({
         label_prefix: 'LOT',
         start_number: '',
@@ -283,13 +284,15 @@ function BulkGeneratePlotsDialog({
         padding: 0,
         type: 'lawn_lot',
         capacity: 1,
-        row: '',
-        position: '',
     });
 
     const preview = useMemo(() => {
-        const quantity = typeof data.quantity === 'number' ? data.quantity : 0;
-        const start = typeof data.start_number === 'number' ? data.start_number : 0;
+        if (!data.label_prefix.trim() || typeof data.quantity !== 'number' || typeof data.start_number !== 'number' || data.quantity < 1) {
+            return [];
+        }
+
+        const quantity = data.quantity;
+        const start = data.start_number;
         const padding = typeof data.padding === 'number' ? data.padding : 0;
         const visible = Math.min(quantity, 5);
 
@@ -328,7 +331,7 @@ function BulkGeneratePlotsDialog({
                 <DialogHeader>
                     <DialogTitle>Bulk Generate Plots</DialogTitle>
                     <DialogDescription>
-                        Creating lots in {section.name} / {block.name}. Generated names follow the preview below.
+                        Creating standard plots in {section.name} / {block.name}. Use Generate Apartment Niches for apartment-style inventory.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="space-y-5">
@@ -364,7 +367,7 @@ function BulkGeneratePlotsDialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        {typeOptions.map((option) => (
+                                        {standardPlotTypeOptions.map((option) => (
                                             <SelectItem key={option.value} value={option.value}>
                                                 {option.label}
                                             </SelectItem>
@@ -372,6 +375,7 @@ function BulkGeneratePlotsDialog({
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
+                            <span className="block text-xs text-slate-500">Apartment niches have their own generator.</span>
                         </Field>
                         <Field label="Capacity Per Plot" error={errors.capacity}>
                             <Input
@@ -379,12 +383,7 @@ function BulkGeneratePlotsDialog({
                                 value={data.capacity}
                                 onChange={(event) => setData('capacity', event.target.value === '' ? '' : Number(event.target.value))}
                             />
-                        </Field>
-                        <Field label="Row" error={errors.row}>
-                            <Input value={data.row} onChange={(event) => setData('row', event.target.value)} placeholder="Optional" />
-                        </Field>
-                        <Field label="Position" error={errors.position}>
-                            <Input value={data.position} onChange={(event) => setData('position', event.target.value)} placeholder="Optional" />
+                            <span className="block text-xs text-slate-500">Maximum decedents/remains this physical plot can hold.</span>
                         </Field>
                     </div>
 
@@ -392,7 +391,9 @@ function BulkGeneratePlotsDialog({
                         <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Preview</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                             {preview.length === 0 ? (
-                                <span className="text-sm text-slate-500">Enter a start number and quantity to preview generated plot names.</span>
+                                <span className="text-sm text-slate-500">
+                                    Enter a label prefix, start number, and quantity to preview generated plot names.
+                                </span>
                             ) : (
                                 preview.map((name) => (
                                     <span
@@ -448,6 +449,7 @@ function GenerateApartmentNichesDialog({
         row_prefix: 'R',
         niche_prefix: 'N',
         niche_padding: 2,
+        capacity_per_niche: 1,
     });
 
     const totalSlots =
@@ -568,6 +570,15 @@ function GenerateApartmentNichesDialog({
                                 value={data.niche_padding}
                                 onChange={(event) => setData('niche_padding', event.target.value === '' ? '' : Number(event.target.value))}
                             />
+                        </Field>
+                        <Field label="Capacity Per Niche" error={errors.capacity_per_niche}>
+                            <Input
+                                type="number"
+                                min={1}
+                                value={data.capacity_per_niche}
+                                onChange={(event) => setData('capacity_per_niche', event.target.value === '' ? '' : Number(event.target.value))}
+                            />
+                            <span className="block text-xs text-slate-500">Maximum decedents/remains each generated niche can hold.</span>
                         </Field>
                         <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-800">
                             <p className="font-semibold">Total Slots</p>

@@ -17,13 +17,12 @@ interface Props {
 }
 
 export default function CreatePlot({ municipality, site, blocks, type_options }: Props) {
+    const standardPlotTypeOptions = type_options.filter((option) => option.value !== 'apartment_niche');
     const { data, setData, post, processing, errors } = useForm<CreatePlotForm>({
         block_id: '',
         name: '',
         type: '',
         capacity: 1,
-        row: '',
-        position: '',
     });
 
     const submit = (e: FormEvent) => {
@@ -34,11 +33,6 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
             },
         });
     };
-
-    // Multi-level structures auto-generate slots when capacity > 1; single
-    // lawn lots are typically single-capacity but family lots can exceed 1.
-    const capacityNumber = typeof data.capacity === 'number' ? data.capacity : 0;
-    const generatesSlots = capacityNumber > 1;
 
     return (
         <AppLayout>
@@ -61,8 +55,7 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                     <div>
                         <h1 className="text-xl font-semibold text-slate-900">Register New Plot</h1>
                         <p className="text-sm text-slate-500">
-                            Add a physical burial location to {site.name}. Capacity &gt; 1 will automatically create individual levels (slots) inside
-                            this plot.
+                            Add a standard burial location to {site.name}. Use the apartment niche generator for apartment-style slots.
                         </p>
                     </div>
                 </header>
@@ -99,31 +92,11 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                             <FormInput
                                 id="name"
                                 label="PLOT NAME *"
-                                placeholder="e.g. APARTMENT A-12"
+                                placeholder="e.g. LOT 737"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 isUppercase
                                 error={errors.name}
-                            />
-
-                            <FormInput
-                                id="row"
-                                label="ROW"
-                                placeholder="e.g. R-7"
-                                value={data.row}
-                                onChange={(e) => setData('row', e.target.value)}
-                                isUppercase
-                                error={errors.row}
-                            />
-
-                            <FormInput
-                                id="position"
-                                label="POSITION (optional)"
-                                placeholder="e.g. LEFT / RIGHT"
-                                value={data.position}
-                                onChange={(e) => setData('position', e.target.value)}
-                                isUppercase
-                                error={errors.position}
                             />
                         </div>
                     </section>
@@ -142,7 +115,7 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            {type_options.map((opt) => (
+                                            {standardPlotTypeOptions.map((opt) => (
                                                 <SelectItem key={opt.value} value={opt.value}>
                                                     {opt.label}
                                                 </SelectItem>
@@ -150,6 +123,7 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                <p className="mt-1 text-xs text-slate-500">Apartment niches are created through the dedicated generator.</p>
                                 {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
                             </div>
 
@@ -163,13 +137,8 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                                     error={errors.capacity}
                                 />
                                 <p className="mt-1 text-xs text-slate-500">
-                                    Capacity &gt; 1 will automatically create individual levels (slots) inside this plot.
+                                    Capacity means the maximum decedents/remains this physical plot can hold. It will not create child slots.
                                 </p>
-                                {generatesSlots && (
-                                    <p className="mt-1 text-xs font-medium text-emerald-700">
-                                        This will create 1 container row + {capacityNumber} child slots (levels 1–{capacityNumber}).
-                                    </p>
-                                )}
                             </div>
                         </div>
                     </section>
@@ -194,7 +163,7 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                             disabled={processing}
                             className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
                         >
-                            {processing ? 'Saving…' : 'Register Plot'}
+                            {processing ? 'Saving...' : 'Register Plot'}
                         </button>
                     </div>
                 </form>

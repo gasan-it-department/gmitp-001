@@ -2,6 +2,7 @@
 
 namespace App\Core\Cemetery\Models;
 
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
 use App\Core\Cemetery\Traits\BelongsToMunicipality;
@@ -35,6 +36,7 @@ class Plot extends Model
         'name',
         'type',
         'status',
+        'occupancy_mode',
         'row',
         'level',
         'position',
@@ -44,6 +46,7 @@ class Plot extends Model
     protected $casts = [
         'type' => PlotTypes::class,
         'status' => PlotStatus::class,
+        'occupancy_mode' => PlotOccupancyMode::class,
         'level' => 'integer',
         'capacity' => 'integer',
     ];
@@ -54,8 +57,8 @@ class Plot extends Model
     }
 
     /**
-     * Container / slot discriminator. NULL parent means this row is itself a
-     * container (or a single-capacity plot with no children).
+     * Apartment parent/child grouping. Standard plots stay parentless even
+     * when they allow shared occupancy.
      */
     public function parent(): BelongsTo
     {
@@ -63,8 +66,7 @@ class Plot extends Model
     }
 
     /**
-     * Child slots of a multi-capacity parent. Ordered by level for the
-     * detail page rendering.
+     * Child niches of an apartment parent. Ordered by level for detail views.
      */
     public function slots(): HasMany
     {
@@ -99,7 +101,7 @@ class Plot extends Model
 
     /**
      * Canonical slot identifier for UI display (SR-7).
-     *   {name}                          when no level (single-capacity / parent)
+     *   {name}                          when no level
      *   {name}-L{level}                 when stacked
      *   {name}-L{level}-{position}      when a grid position is also set
      *
@@ -148,6 +150,7 @@ class Plot extends Model
                 'name',
                 'type',
                 'status',
+                'occupancy_mode',
                 'row',
                 'level',
                 'position',

@@ -65,16 +65,14 @@ export default function ListDecedents({
                     <StatCard label="Interred" value={rows.filter((r) => r.interment_status === 'interred').length} tone="emerald" />
                 </section>
 
-                <div className="rounded-lg border bg-white">
-                    <DecedentsTable
-                        decedents={decedents}
-                        filters={filters}
-                        registrationStatusOptions={registration_status_options}
-                        identityStatusOptions={identity_status_options}
-                        vitalRecordTypeOptions={vital_record_type_options}
-                        intermentStatusOptions={interment_status_options}
-                    />
-                </div>
+                <DecedentsTable
+                    decedents={decedents}
+                    filters={filters}
+                    registrationStatusOptions={registration_status_options}
+                    identityStatusOptions={identity_status_options}
+                    vitalRecordTypeOptions={vital_record_type_options}
+                    intermentStatusOptions={interment_status_options}
+                />
             </div>
         </AppLayout>
     );

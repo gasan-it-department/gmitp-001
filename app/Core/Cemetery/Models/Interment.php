@@ -41,10 +41,6 @@ class Interment extends Model
         return $this->belongsTo(Decedent::class, 'decedent_id');
     }
 
-    /**
-     * Always a LEAF/CHILD plot row (BR-4). Reach the container via
-     * `$this->plot->parent` when the UI needs to display the parent name.
-     */
     public function plot(): BelongsTo
     {
         return $this->belongsTo(Plot::class, 'plot_id');

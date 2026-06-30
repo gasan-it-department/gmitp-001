@@ -10,9 +10,8 @@ use Illuminate\Http\RedirectResponse;
 
 /**
  * Mutation endpoint for "register plot". Thin HTTP boundary: validate the API
- * CreatePlotRequest, build the DTO, run the Action (which handles both single-
- * and multi-capacity in one transaction), redirect to the plots list with a
- * flash success.
+ * CreatePlotRequest, build the DTO, run the Action, redirect to the plots list
+ * with a flash success.
  *
  * Lives in the API layer per the module's command/query split (mirrors the
  * Announcement gold standard). No model access here.

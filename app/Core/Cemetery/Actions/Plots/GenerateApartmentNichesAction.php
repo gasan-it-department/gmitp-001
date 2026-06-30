@@ -3,6 +3,7 @@
 namespace App\Core\Cemetery\Actions\Plots;
 
 use App\Core\Cemetery\Dto\Plots\GenerateApartmentNichesDto;
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
 use App\Core\Cemetery\Models\Block;
@@ -52,6 +53,7 @@ class GenerateApartmentNichesAction
                 'name' => $dto->apartmentName,
                 'type' => PlotTypes::APARTMENT_NICHE->value,
                 'status' => null,
+                'occupancy_mode' => PlotOccupancyMode::SLOTTED->value,
                 'row' => null,
                 'level' => null,
                 'position' => null,
@@ -68,10 +70,11 @@ class GenerateApartmentNichesAction
                     'name' => $dto->apartmentName,
                     'type' => PlotTypes::APARTMENT_NICHE->value,
                     'status' => PlotStatus::AVAILABLE->value,
+                    'occupancy_mode' => PlotOccupancyMode::SHARED->value,
                     'row' => $slot['row'],
                     'level' => $slot['level'],
                     'position' => $slot['position'],
-                    'capacity' => 1,
+                    'capacity' => $dto->capacityPerNiche,
                 ]);
             }
 

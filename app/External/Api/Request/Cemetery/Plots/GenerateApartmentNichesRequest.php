@@ -20,6 +20,7 @@ class GenerateApartmentNichesRequest extends FormRequest
             'apartment_name' => mb_strtoupper(trim((string) $this->input('apartment_name'))),
             'row_prefix' => mb_strtoupper(trim((string) $this->input('row_prefix', 'R'))),
             'niche_prefix' => mb_strtoupper(trim((string) $this->input('niche_prefix', 'N'))),
+            'capacity_per_niche' => $this->input('capacity_per_niche', 1),
         ]);
     }
 
@@ -62,6 +63,7 @@ class GenerateApartmentNichesRequest extends FormRequest
             'row_prefix' => ['required', 'string', 'max:10'],
             'niche_prefix' => ['required', 'string', 'max:10'],
             'niche_padding' => ['required', 'integer', 'min:0', 'max:6'],
+            'capacity_per_niche' => ['required', 'integer', 'min:1', 'max:50'],
         ];
     }
 

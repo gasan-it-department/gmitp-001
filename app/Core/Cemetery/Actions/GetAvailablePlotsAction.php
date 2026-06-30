@@ -2,37 +2,37 @@
 
 namespace App\Core\Cemetery\Actions;
 
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Models\Plot;
 use Illuminate\Support\Collection;
 
-/**
- * Returns AVAILABLE LEAVES (assignable slots) to populate the assign-decedent
- * picker on the interment screen (REQ-3.1 + FR-6).
- *
- * A leaf is either:
- *   • a child slot   (parent_plot_id IS NOT NULL), OR
- *   • a single-capacity plot (capacity = 1, no children, parent_plot_id NULL).
- *
- * Parent CONTAINERS (capacity > 1, no parent) are excluded — BR-4 forbids
- * interring directly into a container. The picker shows individual slots
- * (e.g. "A-12-L1", "A-12-L2", …) so there is no ambiguity for the admin.
- *
- * Block + section are eager-loaded so the picker can group/label slots by
- * their spatial home without an N+1.
- */
 class GetAvailablePlotsAction
 {
     public function execute(string $municipalId, ?string $cemeterySiteId = null): Collection
     {
         return Plot::with(['block.section', 'parent'])
+            ->withCount('interments')
             ->where('municipal_id', $municipalId)
             ->when($cemeterySiteId, fn ($query) => $query->where('cemetery_site_id', $cemeterySiteId))
-            ->where('status', PlotStatus::AVAILABLE->value)
-            // Leaf-only filter — children OR single-capacity plots.
+            ->whereNull('deleted_at')
             ->where(function ($query) {
-                $query->whereNotNull('parent_plot_id')
-                    ->orWhere('capacity', 1);
+                $query->where(function ($single) {
+                    $single
+                        ->where('occupancy_mode', PlotOccupancyMode::SINGLE->value)
+                        ->where('status', PlotStatus::AVAILABLE->value)
+                        ->whereDoesntHave('interments');
+                })->orWhere(function ($shared) {
+                    $shared
+                        ->where('occupancy_mode', PlotOccupancyMode::SHARED->value)
+                        ->whereIn('status', [PlotStatus::AVAILABLE->value, PlotStatus::OCCUPIED->value])
+                        ->whereRaw('(
+                            select count(*)
+                            from cemetery_interments
+                            where cemetery_interments.plot_id = cemetery_plots.id
+                            and cemetery_interments.deleted_at is null
+                        ) < cemetery_plots.capacity');
+                });
             })
             ->orderBy('name')
             ->orderBy('level')

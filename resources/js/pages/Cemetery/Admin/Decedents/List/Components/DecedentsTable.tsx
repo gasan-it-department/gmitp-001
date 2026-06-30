@@ -126,26 +126,23 @@ export function DecedentsTable({
     };
 
     return (
-        <div>
+        <div className="space-y-4">
             {/* TOOLBAR */}
-            <div className="border-b border-gray-200 bg-white p-4">
-                <div>
-                    <DecedentsTableHeader
-                        filters={filters}
-                        registrationStatusOptions={registrationStatusOptions}
-                        identityStatusOptions={identityStatusOptions}
-                        vitalRecordTypeOptions={vitalRecordTypeOptions}
-                        intermentStatusOptions={intermentStatusOptions}
-                        onApply={(nextFilters) => visitList(nextFilters, 1)}
-                        onClear={clearFilters}
-                    />
-                </div>
-            </div>
+            <DecedentsTableHeader
+                filters={filters}
+                registrationStatusOptions={registrationStatusOptions}
+                identityStatusOptions={identityStatusOptions}
+                vitalRecordTypeOptions={vitalRecordTypeOptions}
+                intermentStatusOptions={intermentStatusOptions}
+                onApply={(nextFilters) => visitList(nextFilters, 1)}
+                onClear={clearFilters}
+            />
 
             {/* TABLE */}
-            <div className="overflow-x-auto">
-                <Table className="min-w-full">
-                    <TableHeader className="bg-gray-50/50">
+            <div className="rounded-lg border bg-white">
+                <div className="overflow-x-auto">
+                    <Table className="min-w-full">
+                        <TableHeader className="bg-slate-50/70">
                         <TableRow>
                             <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
                             <TableHead className="text-[12px] font-bold">Full Name</TableHead>
@@ -232,9 +229,10 @@ export function DecedentsTable({
                         )}
                     </TableBody>
                 </Table>
+                </div>
             </div>
             {/* PAGINATION */}
-            <div className="border-t bg-white py-4">
+            <div className="py-2">
                 {lastPage > 1 && (
                     <PaginationView
                         currentPage={currentPage}

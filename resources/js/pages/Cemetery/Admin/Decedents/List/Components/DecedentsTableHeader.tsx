@@ -65,7 +65,7 @@ export default function DecedentsTableHeader({
     };
 
     return (
-        <div className={cn('space-y-3', className)}>
+        <div className={cn('space-y-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-4', className)}>
             <form onSubmit={submitSearch} className="grid gap-2 lg:grid-cols-[minmax(240px,1fr)_140px_auto]">
                 <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, registry no., or case ref..." />
                 <Input

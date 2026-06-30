@@ -15,6 +15,7 @@ final readonly class GenerateApartmentNichesDto
         public string $rowPrefix,
         public string $nichePrefix,
         public int $nichePadding,
+        public int $capacityPerNiche,
     ) {}
 
     public static function fromRequest(array $data, string $cemeterySiteId, string $blockId): self
@@ -30,6 +31,7 @@ final readonly class GenerateApartmentNichesDto
             rowPrefix: self::upper($data['row_prefix']),
             nichePrefix: self::upper($data['niche_prefix']),
             nichePadding: (int) $data['niche_padding'],
+            capacityPerNiche: (int) ($data['capacity_per_niche'] ?? 1),
         );
     }
 

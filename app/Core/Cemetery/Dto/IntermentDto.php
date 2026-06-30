@@ -5,15 +5,8 @@ namespace App\Core\Cemetery\Dto;
 use Carbon\Carbon;
 
 /**
- * Immutable transport for "record interment" — one interment EVENT (initial OR
- * transfer). The plot_id MUST reference a LEAF/SLOT row (BR-4); the
- * RecordIntermentAction enforces this defensively and the assignment picker
- * pre-filters parent containers out (BR-1).
- *
- * Tenancy (SR-1): `municipalId` is sourced from `app('municipal_id')` —
- * bound by SetMunicipalityContext — and never from the payload. `notes` are
- * free-form prose, so they are trimmed but NOT uppercased (SR-3 applies only
- * to identifier fields).
+ * Immutable transport for recording one interment event. Plot assignability is
+ * enforced by RecordIntermentAction using the plot occupancy mode and capacity.
  */
 final readonly class IntermentDto
 {
@@ -21,8 +14,8 @@ final readonly class IntermentDto
         public string $municipalId,
         public string $decedentId,
         public string $plotId,
-        public string $intermentDate, // normalized 'Y-m-d'
-        public string $type,          // 'initial' | 'transfer'
+        public string $intermentDate,
+        public string $type,
         public ?string $notes,
         public string $leaseholderName,
         public ?string $leaseholderContact,
@@ -59,11 +52,6 @@ final readonly class IntermentDto
         );
     }
 
-    /**
-     * Coerce any accepted input shape (Y-m-d, m/d/Y, ISO 8601) to the
-     * canonical Y-m-d string so the column behaves identically across DB
-     * drivers and downstream reads are predictable.
-     */
     private static function normalizeDate(string $value): string
     {
         return Carbon::parse($value)->format('Y-m-d');

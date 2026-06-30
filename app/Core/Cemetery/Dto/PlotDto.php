@@ -3,19 +3,8 @@
 namespace App\Core\Cemetery\Dto;
 
 /**
- * Immutable transport for "register plot" — single OR multi-capacity.
- *
- * Tenancy (SR-1): `municipalId` is sourced from `app('municipal_id')` at the
- * factory call site, never from the request payload. Identifiers (name, row,
- * position) are persisted UPPERCASE (SR-3).
- *
- * Capacity semantics:
- *   capacity == 1  → BulkGenerateMultiCapacityPlotsAction creates ONE plot row,
- *                    no children. Interments attach directly (FR-1).
- *   capacity >  1  → it creates a PARENT container + N CHILD slot rows in a
- *                    single transaction (FR-2). Children inherit name/type/row;
- *                    `position` is NULL on children (admin edits post-create
- *                    per BR-5). Bounds 1..50 (BR-9) enforced by the Request.
+ * Immutable transport for plot registration. Capacity is the maximum number of
+ * decedents/remains the same physical plot can hold.
  */
 final readonly class PlotDto
 {
@@ -52,6 +41,6 @@ final readonly class PlotDto
 
         $trimmed = trim($value);
 
-        return $trimmed === '' ? null : strtoupper($trimmed);
+        return $trimmed === '' ? null : mb_strtoupper($trimmed);
     }
 }

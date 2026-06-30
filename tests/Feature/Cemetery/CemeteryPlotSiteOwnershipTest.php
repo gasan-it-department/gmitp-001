@@ -73,18 +73,16 @@ it('derives plot site ownership from the selected block section', function () {
         municipalId: $municipalId,
         blockId: $blockId,
         name: 'A-12',
-        type: 'apartment_niche',
+        type: 'lawn_lot',
         capacity: 2,
         row: 'A',
         position: null,
         cemeterySiteId: $siteId,
     );
 
-    $parent = Plot::withoutEvents(fn () => $action->execute($dto));
+    $plot = Plot::withoutEvents(fn () => $action->execute($dto));
     $siteIds = DB::table('cemetery_plots')
-        ->where(fn ($query) => $query
-            ->where('id', $parent->id)
-            ->orWhere('parent_plot_id', $parent->id))
+        ->where('id', $plot->id)
         ->pluck('cemetery_site_id')
         ->unique()
         ->values()
@@ -92,7 +90,8 @@ it('derives plot site ownership from the selected block section', function () {
 
     expect(Schema::hasColumn('cemetery_sections', 'cemetery_site_id'))->toBeTrue()
         ->and(Schema::hasColumn('cemetery_plots', 'cemetery_site_id'))->toBeTrue()
-        ->and(DB::table('cemetery_plots')->count())->toBe(3)
+        ->and(DB::table('cemetery_plots')->count())->toBe(1)
+        ->and(DB::table('cemetery_plots')->where('id', $plot->id)->value('occupancy_mode'))->toBe('shared')
         ->and($siteIds)->toBe([$siteId]);
 });
 

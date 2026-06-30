@@ -2,6 +2,7 @@
 
 namespace App\Core\Cemetery\Actions\Sites;
 
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Models\Section;
 use Illuminate\Support\Collection;
 
@@ -28,9 +29,6 @@ class GetCemeterySiteLayoutAction
 
     private function leafPlots($query)
     {
-        return $query->where(function ($query) {
-            $query->whereNotNull('parent_plot_id')
-                ->orWhere('capacity', 1);
-        });
+        return $query->where('occupancy_mode', '!=', PlotOccupancyMode::SLOTTED->value);
     }
 }

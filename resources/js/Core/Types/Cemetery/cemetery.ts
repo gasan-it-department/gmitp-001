@@ -2,6 +2,7 @@
 
 export type PlotStatusValue = 'available' | 'occupied' | 'reserved' | 'maintenance';
 export type PlotTypeValue = 'lawn_lot' | 'apartment_niche' | 'bone_ossuary' | 'mausoleum';
+export type PlotOccupancyModeValue = 'single' | 'shared' | 'slotted';
 export type CemeterySiteStatusValue = 'active' | 'inactive' | 'closed';
 export type VitalRecordTypeValue = 'death' | 'fetal_death';
 export type IdentityStatusValue = 'identified' | 'unidentified';
@@ -88,8 +89,6 @@ export type BulkGeneratePlotsForm = {
     padding: number | '';
     type: PlotTypeValue | '';
     capacity: number | '';
-    row: string;
-    position: string;
 };
 
 export type GenerateApartmentNichesForm = {
@@ -100,6 +99,7 @@ export type GenerateApartmentNichesForm = {
     row_prefix: string;
     niche_prefix: string;
     niche_padding: number | '';
+    capacity_per_niche: number | '';
 };
 
 // ─── Spatial hierarchy lookups (passed as Inertia page props) ────────────
@@ -287,14 +287,19 @@ export interface PlotListItem {
     cemetery_site_id: string;
     name: string | null;
     slot_label: string; // canonical UI identifier (e.g. "A-12", "A-12-L3", "A-12-L3-LEFT")
-    parent_plot_id: string | null; // NULL = container or single-capacity
+    parent_plot_id: string | null;
     row: string | null;
     level: number | null;
     position: string | null;
     capacity: number;
+    occupancy_mode: PlotOccupancyModeValue | null;
+    occupancy_mode_label: string | null;
+    active_interments_count: number;
+    available_capacity: number;
+    occupancy_label: string;
     type: PlotTypeValue | null;
     type_label: string | null;
-    status: PlotStatusValue | null; // NULL for parent containers — they are not bookable
+    status: PlotStatusValue | null;
     status_label: string | null;
     status_tone: string | null;
     block: {
@@ -302,6 +307,83 @@ export interface PlotListItem {
         name: string;
         section: SectionLookup | null;
     } | null;
+}
+
+export interface PlotProfileInterment {
+    id: string;
+    decedent_id: string;
+    decedent_name: string;
+    decedent_profile_url: string;
+    interment_date: string | null;
+    type: IntermentTypeValue | string;
+    type_label: string;
+    notes: string | null;
+    lease: {
+        id: string;
+        leaseholder_name: string;
+        leaseholder_contact: string | null;
+        leaseholder_relationship: string | null;
+        lease_start: string | null;
+        lease_end: string | null;
+        or_number: string | null;
+    } | null;
+}
+
+export interface PlotProfileChildNiche {
+    id: string;
+    slot_label: string;
+    status: PlotStatusValue | null;
+    status_label: string | null;
+    status_tone: string | null;
+    capacity: number;
+    active_interments_count: number;
+    occupancy_label: string;
+    profile_url: string;
+}
+
+export interface PlotActivityTimelineItem {
+    id: number;
+    event: string | null;
+    description: string;
+    causer: string | null;
+    changes: Record<string, unknown>;
+    properties: Record<string, unknown>;
+    created_at: string | null;
+}
+
+export interface PlotProfile {
+    id: string;
+    cemetery_site_id: string;
+    name: string | null;
+    slot_label: string;
+    parent_plot_id: string | null;
+    type: PlotTypeValue | null;
+    type_label: string | null;
+    status: PlotStatusValue | null;
+    status_label: string | null;
+    status_tone: string | null;
+    occupancy_mode: PlotOccupancyModeValue | null;
+    occupancy_mode_label: string | null;
+    capacity: number;
+    active_interments_count: number;
+    available_capacity: number;
+    occupancy_label: string;
+    can_accept_more: boolean;
+    row: string | null;
+    level: number | null;
+    position: string | null;
+    block: {
+        id: string;
+        name: string;
+        section: SectionLookup | null;
+    } | null;
+    parent: {
+        id: string;
+        slot_label: string;
+    } | null;
+    current_interments: PlotProfileInterment[];
+    child_niches: PlotProfileChildNiche[];
+    audit_timeline: PlotActivityTimelineItem[];
 }
 
 export type PlotInventoryScopeValue = 'top_level' | 'assignable' | 'all';
@@ -331,8 +413,22 @@ export type CreatePlotForm = {
     name: string;
     type: PlotTypeValue | '';
     capacity: number | '';
-    row: string;
-    position: string;
+};
+
+export type UpdatePlotDetailsForm = {
+    name: string;
+    type: PlotTypeValue | '';
+};
+
+export type ChangePlotOccupancyForm = {
+    occupancy_mode: 'single' | 'shared';
+    capacity: number | '';
+    reason: string;
+};
+
+export type ChangePlotStatusForm = {
+    status: 'available' | 'maintenance' | '';
+    reason: string;
 };
 
 // ─── Interments ──────────────────────────────────────────────────────────

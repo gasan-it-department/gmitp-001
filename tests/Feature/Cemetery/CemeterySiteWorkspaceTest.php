@@ -28,6 +28,18 @@ beforeEach(function () {
     });
     Schema::create('cemetery_decedents', function (Blueprint $table) {
         $table->ulid('id')->primary();
+        $table->softDeletes();
+    });
+    Schema::create('activity_log', function (Blueprint $table) {
+        $table->id();
+        $table->string('log_name')->nullable()->index();
+        $table->text('description');
+        $table->nullableUlidMorphs('subject', 'subject');
+        $table->string('event')->nullable();
+        $table->nullableUlidMorphs('causer', 'causer');
+        $table->json('attribute_changes')->nullable();
+        $table->json('properties')->nullable();
+        $table->timestamps();
     });
 
     $this->migrations = [
@@ -35,6 +47,8 @@ beforeEach(function () {
         require database_path('migrations/2026_06_14_000003_create_cemetery_sections_table.php'),
         require database_path('migrations/2026_06_14_000004_create_cemetery_blocks_table.php'),
         require database_path('migrations/2026_06_14_000005_create_cemetery_plots_table.php'),
+        require database_path('migrations/2026_06_14_000007_create_cemetery_unidentified_details_table.php'),
+        require database_path('migrations/2026_06_14_000008_create_cemetery_plot_deeds_table.php'),
         require database_path('migrations/2026_06_14_000009_create_cemetery_interments_table.php'),
     ];
     foreach ($this->migrations as $migration) {
@@ -62,6 +76,7 @@ afterEach(function () {
     }
 
     Schema::dropIfExists('psgc_barangays');
+    Schema::dropIfExists('activity_log');
     Schema::dropIfExists('cemetery_decedents');
     Schema::dropIfExists('municipalities');
 });
@@ -144,6 +159,7 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
             'name' => 'APARTMENT A',
             'type' => 'apartment_niche',
             'status' => null,
+            'occupancy_mode' => 'slotted',
             'row' => null,
             'level' => null,
             'position' => null,
@@ -160,6 +176,7 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
             'name' => 'APARTMENT A',
             'type' => 'apartment_niche',
             'status' => 'available',
+            'occupancy_mode' => 'shared',
             'row' => 'R1',
             'level' => 1,
             'position' => 'N01',
@@ -176,6 +193,7 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
             'name' => 'APARTMENT A',
             'type' => 'apartment_niche',
             'status' => 'occupied',
+            'occupancy_mode' => 'shared',
             'row' => 'R2',
             'level' => 2,
             'position' => 'N03',
@@ -246,6 +264,208 @@ it('fails closed when opening another municipality Site', function () {
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $boacSite,
     ]))->assertNotFound();
+});
+
+it('opens a tenant and Site scoped Plot profile with current interments and leaseholders', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock(
+        $this->gasan->id,
+        workspaceSection($this->gasan->id, $site, 'SECTION A'),
+        'GENERAL'
+    );
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 777', 'occupied');
+    DB::table('cemetery_plots')->where('id', $plot)->update([
+        'occupancy_mode' => 'shared',
+        'capacity' => 3,
+    ]);
+
+    $firstDecedent = workspaceDecedent();
+    $secondDecedent = workspaceDecedent();
+    $firstInterment = workspaceInterment($this->gasan->id, $firstDecedent, $plot, '2026-06-20');
+    workspaceInterment($this->gasan->id, $secondDecedent, $plot, '2026-06-21');
+    workspaceLease($this->gasan->id, $firstInterment, $plot, 'GRACE SANTOS');
+
+    $this->get(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Cemetery/Admin/Plots/Profile/PlotProfile')
+            ->where('site.id', $site)
+            ->where('plot.id', $plot)
+            ->where('plot.slot_label', 'LOT 777')
+            ->where('plot.occupancy_mode', 'shared')
+            ->where('plot.active_interments_count', 2)
+            ->where('plot.occupancy_label', '2 / 3')
+            ->has('plot.current_interments', 2)
+            ->where('plot.current_interments.1.lease.leaseholder_name', 'GRACE SANTOS'));
+});
+
+it('shows child niches for slotted apartment parent Plot profiles', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock(
+        $this->gasan->id,
+        workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'),
+        'BUILDING A'
+    );
+    $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 2);
+    $slot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N01', 'shared', 'available', 2);
+
+    $this->get(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $parent,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('plot.id', $parent)
+            ->where('plot.occupancy_mode', 'slotted')
+            ->has('plot.child_niches', 1)
+            ->where('plot.child_niches.0.id', $slot)
+            ->where('plot.child_niches.0.slot_label', 'APARTMENT A-F1-R1-N01'));
+});
+
+it('fails closed when opening a sibling Site Plot through the selected Site route', function () {
+    $selectedSite = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $siblingSite = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
+    $siblingPlot = workspacePlot(
+        $this->gasan->id,
+        $siblingSite,
+        workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $siblingSite, 'SECTION B'), 'GENERAL'),
+        'LOT 999',
+        'available'
+    );
+
+    $this->get(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $selectedSite,
+        'plot_id' => $siblingPlot,
+    ]))->assertNotFound();
+});
+
+it('updates standard Plot details and blocks duplicate names in the same Block', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 701', 'available');
+    workspacePlot($this->gasan->id, $site, $block, 'LOT 702', 'available');
+
+    $this->patch(route('cemetery-sites.plots.details.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'name' => 'lot 703',
+        'type' => 'bone_ossuary',
+    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]));
+
+    expect(DB::table('cemetery_plots')->where('id', $plot)->value('name'))->toBe('LOT 703')
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('type'))->toBe('bone_ossuary');
+
+    $this->patch(route('cemetery-sites.plots.details.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'name' => 'LOT 702',
+        'type' => 'lawn_lot',
+    ])->assertSessionHasErrors('name');
+});
+
+it('blocks manual apartment niche label edits in V1', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'), 'BUILDING A');
+    $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 1);
+
+    $this->patch(route('cemetery-sites.plots.details.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $parent,
+    ]), [
+        'name' => 'APARTMENT B',
+        'type' => 'lawn_lot',
+    ])->assertSessionHasErrors('name');
+});
+
+it('changes Plot occupancy with guards and activity history', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 750', 'available');
+
+    $this->patch(route('cemetery-sites.plots.occupancy.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'occupancy_mode' => 'shared',
+        'capacity' => 3,
+        'reason' => 'Family lot confirmed by caretaker.',
+    ])->assertRedirect();
+
+    expect(DB::table('cemetery_plots')->where('id', $plot)->value('occupancy_mode'))->toBe('shared')
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('capacity'))->toBe(3)
+        ->and(DB::table('activity_log')->where('event', 'occupancy_changed')->exists())->toBeTrue();
+
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $plot, '2026-06-20');
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $plot, '2026-06-21');
+
+    $this->patch(route('cemetery-sites.plots.occupancy.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'occupancy_mode' => 'single',
+        'capacity' => 1,
+        'reason' => 'Attempt to make single.',
+    ])->assertSessionHasErrors('occupancy_mode');
+
+    $this->patch(route('cemetery-sites.plots.occupancy.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'occupancy_mode' => 'shared',
+        'capacity' => 1,
+        'reason' => 'Attempt to lower capacity below occupants.',
+    ])->assertSessionHasErrors('capacity');
+});
+
+it('changes status only for empty assignable Plots and logs the reason', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 760', 'available');
+
+    $this->patch(route('cemetery-sites.plots.status.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'status' => 'maintenance',
+        'reason' => 'Needs physical inspection.',
+    ])->assertRedirect();
+
+    expect(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('maintenance')
+        ->and(DB::table('activity_log')->where('event', 'status_changed')->exists())->toBeTrue();
+
+    $this->patch(route('cemetery-sites.plots.status.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'status' => 'occupied',
+        'reason' => 'Manual occupied should fail.',
+    ])->assertSessionHasErrors('status');
+
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $plot, '2026-06-20');
+
+    $this->patch(route('cemetery-sites.plots.status.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'status' => 'available',
+        'reason' => 'Attempt while occupied.',
+    ])->assertSessionHasErrors('status');
 });
 
 it('shows only active Blocks from the selected Site on Plot creation', function () {
@@ -327,6 +547,24 @@ it('creates a Plot inside the selected active Site and returns to its workspace'
 
     expect($plot->cemetery_site_id)->toBe($site)
         ->and($plot->block_id)->toBe($block);
+});
+
+it('rejects apartment niche creation through the manual Plot form', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock(
+        $this->gasan->id,
+        workspaceSection($this->gasan->id, $site, 'OLD CEM SOUTH APARTMENT'),
+        'GENERAL'
+    );
+
+    $this->post(route('cemetery-sites.plots.store', [
+        'cemetery_site_id' => $site,
+    ]), workspacePlotPayload($block, [
+        'name' => 'APARTMENT A',
+        'type' => 'apartment_niche',
+    ]))->assertSessionHasErrors('type');
+
+    expect(DB::table('cemetery_plots')->where('block_id', $block)->count())->toBe(0);
 });
 
 it('creates tenant-scoped Sections from the Site workspace', function () {
@@ -436,12 +674,39 @@ it('bulk-generates Plots by lot-number pattern without partial inserts', functio
     expect(DB::table('cemetery_plots')->where('block_id', $block)->count())->toBe(3);
 });
 
-it('bulk generation supports multi-capacity containers', function () {
+it('bulk generation supports shared multi-capacity physical plots', function () {
     $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
     $block = workspaceBlock(
         $this->gasan->id,
-        workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'),
+        workspaceSection($this->gasan->id, $site, 'MAUSOLEUM AREA'),
         'BLOCK 1'
+    );
+
+    $this->post(route('cemetery-sites.blocks.plots.bulk', [
+        'cemetery_site_id' => $site,
+        'block_id' => $block,
+    ]), [
+        'label_prefix' => 'MAUSOLEUM',
+        'start_number' => 1,
+        'quantity' => 2,
+        'padding' => 2,
+        'type' => 'mausoleum',
+        'capacity' => 2,
+    ])->assertSessionDoesntHaveErrors();
+
+    expect(DB::table('cemetery_plots')->where('block_id', $block)->whereNull('parent_plot_id')->orderBy('name')->pluck('name')->all())
+        ->toBe(['MAUSOLEUM 01', 'MAUSOLEUM 02'])
+        ->and(DB::table('cemetery_plots')->where('block_id', $block)->count())->toBe(2)
+        ->and(DB::table('cemetery_plots')->where('block_id', $block)->pluck('occupancy_mode')->unique()->values()->all())->toBe(['shared'])
+        ->and(DB::table('cemetery_plots')->where('block_id', $block)->pluck('capacity')->unique()->values()->all())->toBe([2]);
+});
+
+it('rejects apartment niches through the standard bulk plot generator', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock(
+        $this->gasan->id,
+        workspaceSection($this->gasan->id, $site, 'OLD CEM SOUTH APARTMENT'),
+        'GENERAL'
     );
 
     $this->post(route('cemetery-sites.blocks.plots.bulk', [
@@ -451,16 +716,14 @@ it('bulk generation supports multi-capacity containers', function () {
         'label_prefix' => 'APT',
         'start_number' => 1,
         'quantity' => 2,
-        'padding' => 2,
+        'padding' => 0,
         'type' => 'apartment_niche',
-        'capacity' => 2,
-        'row' => 'A',
+        'capacity' => 1,
+        'row' => null,
         'position' => null,
-    ])->assertSessionDoesntHaveErrors();
+    ])->assertSessionHasErrors('type');
 
-    expect(DB::table('cemetery_plots')->where('block_id', $block)->whereNull('parent_plot_id')->orderBy('name')->pluck('name')->all())
-        ->toBe(['APT 01', 'APT 02'])
-        ->and(DB::table('cemetery_plots')->where('block_id', $block)->count())->toBe(6);
+    expect(DB::table('cemetery_plots')->where('block_id', $block)->count())->toBe(0);
 });
 
 it('generates apartment niche containers and floor row niche slots', function () {
@@ -482,6 +745,7 @@ it('generates apartment niche containers and floor row niche slots', function ()
         'row_prefix' => 'r',
         'niche_prefix' => 'n',
         'niche_padding' => 2,
+        'capacity_per_niche' => 3,
     ])->assertSessionDoesntHaveErrors()
         ->assertRedirect(route('cemetery.admin.sites.workspace.page', [
             'municipality' => $this->gasan->slug,
@@ -499,11 +763,13 @@ it('generates apartment niche containers and floor row niche slots', function ()
     expect($parent->name)->toBe('APARTMENT A')
         ->and($parent->type->value)->toBe('apartment_niche')
         ->and($parent->status)->toBeNull()
+        ->and($parent->occupancy_mode->value)->toBe('slotted')
         ->and($parent->capacity)->toBe(12)
         ->and(DB::table('cemetery_plots')->where('parent_plot_id', $parent->id)->count())->toBe(12)
         ->and($lastSlot->slot_label)->toBe('APARTMENT A-F2-R2-N03')
         ->and($lastSlot->status->value)->toBe('available')
-        ->and($lastSlot->capacity)->toBe(1);
+        ->and($lastSlot->occupancy_mode->value)->toBe('shared')
+        ->and($lastSlot->capacity)->toBe(3);
 });
 
 it('rejects duplicate apartment generation without partial inserts', function () {
@@ -521,6 +787,7 @@ it('rejects duplicate apartment generation without partial inserts', function ()
         'row_prefix' => 'R',
         'niche_prefix' => 'N',
         'niche_padding' => 2,
+        'capacity_per_niche' => 1,
     ];
 
     $this->post(route('cemetery-sites.blocks.plots.apartment', [
@@ -558,6 +825,7 @@ it('rejects apartment generation for inactive Sites and sibling Site Blocks', fu
         'row_prefix' => 'R',
         'niche_prefix' => 'N',
         'niche_padding' => 2,
+        'capacity_per_niche' => 1,
     ];
 
     $this->post(route('cemetery-sites.blocks.plots.apartment', [
@@ -665,6 +933,7 @@ function workspacePlot(
         'name' => $name,
         'type' => $type,
         'status' => $status,
+        'occupancy_mode' => 'single',
         'row' => $row,
         'capacity' => 1,
         'created_at' => now(),
@@ -674,14 +943,89 @@ function workspacePlot(
     return $id;
 }
 
-function workspacePlotPayload(string $blockId): array
+function workspacePlotPayload(string $blockId, array $overrides = []): array
 {
-    return [
+    return array_merge([
         'block_id' => $blockId,
         'name' => 'PLOT A-1',
         'type' => 'lawn_lot',
         'capacity' => 1,
         'row' => 'A',
         'position' => null,
-    ];
+    ], $overrides);
+}
+
+function workspaceDecedent(): string
+{
+    DB::table('cemetery_decedents')->insert([
+        'id' => $id = (string) Str::ulid(),
+    ]);
+
+    return $id;
+}
+
+function workspaceInterment(string $municipalId, string $decedentId, string $plotId, string $intermentDate): string
+{
+    DB::table('cemetery_interments')->insert([
+        'id' => $id = (string) Str::ulid(),
+        'municipal_id' => $municipalId,
+        'decedent_id' => $decedentId,
+        'plot_id' => $plotId,
+        'interment_date' => $intermentDate,
+        'type' => 'initial',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $id;
+}
+
+function workspaceLease(string $municipalId, string $intermentId, string $plotId, string $leaseholderName): string
+{
+    DB::table('cemetery_plot_leases')->insert([
+        'id' => $id = (string) Str::ulid(),
+        'municipal_id' => $municipalId,
+        'interment_id' => $intermentId,
+        'plot_id' => $plotId,
+        'leaseholder_name' => $leaseholderName,
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $id;
+}
+
+function workspaceApartmentPlot(
+    string $municipalId,
+    string $siteId,
+    string $blockId,
+    string $name,
+    ?string $parentPlotId,
+    ?int $level,
+    ?string $row,
+    ?string $position,
+    string $occupancyMode,
+    ?string $status,
+    int $capacity,
+): string {
+    DB::table('cemetery_plots')->insert([
+        'id' => $id = (string) Str::ulid(),
+        'municipal_id' => $municipalId,
+        'cemetery_site_id' => $siteId,
+        'block_id' => $blockId,
+        'parent_plot_id' => $parentPlotId,
+        'name' => $name,
+        'type' => 'apartment_niche',
+        'status' => $status,
+        'occupancy_mode' => $occupancyMode,
+        'row' => $row,
+        'level' => $level,
+        'position' => $position,
+        'capacity' => $capacity,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $id;
 }
