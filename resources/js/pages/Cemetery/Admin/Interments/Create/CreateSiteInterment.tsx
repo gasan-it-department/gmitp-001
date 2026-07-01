@@ -16,7 +16,7 @@ import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, MapPin, Search, UserCheck } from 'lucide-react';
-import { FormEvent, ReactNode, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 
 interface Props {
     municipality: MunicipalityType;
@@ -41,15 +41,6 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
         interment_date: '',
         type: 'initial',
         notes: '',
-        leaseholder_name: '',
-        leaseholder_contact: '',
-        leaseholder_address: '',
-        leaseholder_relationship: '',
-        lease_start: '',
-        lease_end: '',
-        amount_paid: '',
-        or_number: '',
-        lease_notes: '',
     });
 
     const filteredDecedents = useMemo(() => {
@@ -71,8 +62,6 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
         setData({
             ...data,
             interment_date: value,
-            lease_start: data.lease_start || value,
-            lease_end: data.lease_end || addYears(value, 5),
         });
     };
 
@@ -280,96 +269,6 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                         )}
                     </section>
 
-                    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="mb-4 border-b border-slate-100 pb-3">
-                            <h2 className="font-semibold text-slate-900">Lease / Responsible Person</h2>
-                            <p className="mt-1 text-sm text-slate-500">
-                                Record the living contact responsible for the occupied plot. Payment details are manual for V1.
-                            </p>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <Field label="Leaseholder Name *" error={errors.leaseholder_name}>
-                                <Input
-                                    value={data.leaseholder_name}
-                                    onChange={(event) => setData('leaseholder_name', event.target.value)}
-                                    placeholder="e.g. JUAN DELA CRUZ"
-                                />
-                            </Field>
-
-                            <Field label="Relationship to Decedent" error={errors.leaseholder_relationship}>
-                                <Input
-                                    value={data.leaseholder_relationship}
-                                    onChange={(event) => setData('leaseholder_relationship', event.target.value)}
-                                    placeholder="e.g. SPOUSE, CHILD, SIBLING"
-                                />
-                            </Field>
-
-                            <Field label="Contact Number" error={errors.leaseholder_contact}>
-                                <Input
-                                    value={data.leaseholder_contact}
-                                    onChange={(event) => setData('leaseholder_contact', event.target.value)}
-                                    placeholder="Optional"
-                                />
-                            </Field>
-
-                            <Field label="Address" error={errors.leaseholder_address}>
-                                <Input
-                                    value={data.leaseholder_address}
-                                    onChange={(event) => setData('leaseholder_address', event.target.value)}
-                                    placeholder="Optional"
-                                />
-                            </Field>
-
-                            <DatePicker
-                                label="Lease Start"
-                                value={data.lease_start}
-                                onChange={(value) =>
-                                    setData({
-                                        ...data,
-                                        lease_start: value,
-                                        lease_end: data.lease_end || addYears(value, 5),
-                                    })
-                                }
-                                error={errors.lease_start}
-                            />
-
-                            <DatePicker
-                                label="Lease End"
-                                value={data.lease_end}
-                                onChange={(value) => setData('lease_end', value)}
-                                error={errors.lease_end}
-                            />
-
-                            <Field label="Amount Paid" error={errors.amount_paid}>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={data.amount_paid}
-                                    onChange={(event) => setData('amount_paid', event.target.value === '' ? '' : Number(event.target.value))}
-                                    placeholder="Optional"
-                                />
-                            </Field>
-
-                            <Field label="OR Number" error={errors.or_number}>
-                                <Input value={data.or_number} onChange={(event) => setData('or_number', event.target.value)} placeholder="Optional" />
-                            </Field>
-
-                            <div className="md:col-span-2">
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Lease Notes</label>
-                                <textarea
-                                    rows={3}
-                                    value={data.lease_notes}
-                                    onChange={(event) => setData('lease_notes', event.target.value)}
-                                    placeholder="Optional lease or payment notes."
-                                    className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                                />
-                                {errors.lease_notes && <p className="mt-1 text-xs text-red-600">{errors.lease_notes}</p>}
-                            </div>
-                        </div>
-                    </section>
-
                     <div className="flex justify-end gap-3">
                         <Button type="button" variant="outline" asChild>
                             <Link
@@ -394,25 +293,4 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
 
 function EmptyState({ text }: { text: string }) {
     return <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">{text}</div>;
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-    return (
-        <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
-            {children}
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        </div>
-    );
-}
-
-function addYears(value: string, years: number): string {
-    if (!value) {
-        return '';
-    }
-
-    const date = new Date(`${value}T00:00:00`);
-    date.setFullYear(date.getFullYear() + years);
-
-    return date.toISOString().slice(0, 10);
 }

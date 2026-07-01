@@ -22,7 +22,6 @@ class CemeterySectionLayoutResource extends JsonResource
                     'total' => (int) $block->total_plots_count,
                     'available' => (int) $block->available_plots_count,
                     'occupied' => (int) $block->occupied_plots_count,
-                    'reserved' => (int) $block->reserved_plots_count,
                     'maintenance' => (int) $block->maintenance_plots_count,
                 ],
             ])->values()),

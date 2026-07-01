@@ -1,6 +1,6 @@
 // ─── Shared ──────────────────────────────────────────────────────────────
 
-export type PlotStatusValue = 'available' | 'occupied' | 'reserved' | 'maintenance';
+export type PlotStatusValue = 'available' | 'occupied' | 'maintenance';
 export type PlotTypeValue = 'lawn_lot' | 'apartment_niche' | 'bone_ossuary' | 'mausoleum';
 export type PlotOccupancyModeValue = 'single' | 'shared' | 'slotted';
 export type CemeterySiteStatusValue = 'active' | 'inactive' | 'closed';
@@ -302,11 +302,27 @@ export interface PlotListItem {
     status: PlotStatusValue | null;
     status_label: string | null;
     status_tone: string | null;
+    active_lease: PlotLeaseSummary | null;
     block: {
         id: string;
         name: string;
         section: SectionLookup | null;
     } | null;
+}
+
+export interface PlotLeaseSummary {
+    id: string;
+    created_from_interment_id?: string | null;
+    leaseholder_name: string;
+    leaseholder_contact: string | null;
+    leaseholder_address?: string | null;
+    leaseholder_relationship: string | null;
+    lease_start: string | null;
+    lease_end: string | null;
+    amount_paid?: string | number | null;
+    or_number: string | null;
+    status?: string | null;
+    notes?: string | null;
 }
 
 export interface PlotProfileInterment {
@@ -318,15 +334,6 @@ export interface PlotProfileInterment {
     type: IntermentTypeValue | string;
     type_label: string;
     notes: string | null;
-    lease: {
-        id: string;
-        leaseholder_name: string;
-        leaseholder_contact: string | null;
-        leaseholder_relationship: string | null;
-        lease_start: string | null;
-        lease_end: string | null;
-        or_number: string | null;
-    } | null;
 }
 
 export interface PlotProfileChildNiche {
@@ -381,6 +388,7 @@ export interface PlotProfile {
         id: string;
         slot_label: string;
     } | null;
+    active_lease: PlotLeaseSummary | null;
     current_interments: PlotProfileInterment[];
     child_niches: PlotProfileChildNiche[];
     audit_timeline: PlotActivityTimelineItem[];
@@ -404,7 +412,6 @@ export interface PlotInventoryCounts {
     total: number;
     available: number;
     occupied: number;
-    reserved: number;
     maintenance: number;
 }
 
@@ -431,14 +438,7 @@ export type ChangePlotStatusForm = {
     reason: string;
 };
 
-// ─── Interments ──────────────────────────────────────────────────────────
-
-export type CreateIntermentForm = {
-    decedent_id: string;
-    plot_id: string;
-    interment_date: string;
-    type: IntermentTypeValue;
-    notes: string;
+export type UpdatePlotLeaseForm = {
     leaseholder_name: string;
     leaseholder_contact: string;
     leaseholder_address: string;
@@ -447,7 +447,17 @@ export type CreateIntermentForm = {
     lease_end: string;
     amount_paid: number | '';
     or_number: string;
-    lease_notes: string;
+    notes: string;
+};
+
+// ─── Interments ──────────────────────────────────────────────────────────
+
+export type CreateIntermentForm = {
+    decedent_id: string;
+    plot_id: string;
+    interment_date: string;
+    type: IntermentTypeValue;
+    notes: string;
 };
 
 export type CreateSiteIntermentForm = CreateIntermentForm & {

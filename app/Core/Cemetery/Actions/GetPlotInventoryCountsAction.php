@@ -8,7 +8,7 @@ use App\Core\Cemetery\Models\Plot;
 class GetPlotInventoryCountsAction
 {
     /**
-     * @return array{total:int, available:int, occupied:int, reserved:int, maintenance:int}
+     * @return array{total:int, available:int, occupied:int, maintenance:int}
      */
     public function execute(string $municipalId, string $cemeterySiteId): array
     {
@@ -23,7 +23,6 @@ class GetPlotInventoryCountsAction
         $counts = [
             'available' => (int) ($rows['available'] ?? 0),
             'occupied' => (int) ($rows['occupied'] ?? 0),
-            'reserved' => (int) ($rows['reserved'] ?? 0),
             'maintenance' => (int) ($rows['maintenance'] ?? 0),
         ];
 

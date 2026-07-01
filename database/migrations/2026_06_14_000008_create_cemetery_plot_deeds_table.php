@@ -17,7 +17,7 @@ return new class extends Migration
 
             // FK is attached in the interments migration because this file
             // intentionally runs before cemetery_interments in the dev sequence.
-            $table->ulid('interment_id');
+            $table->ulid('created_from_interment_id')->nullable();
 
             $table->foreignUlid('plot_id')
                 ->constrained('cemetery_plots')
@@ -36,8 +36,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['municipal_id', 'plot_id'], 'cemetery_plot_leases_plot_index');
-            $table->unique(['municipal_id', 'interment_id'], 'cemetery_plot_leases_interment_unique');
+            $table->index(['municipal_id', 'plot_id', 'status'], 'cemetery_plot_leases_plot_status_index');
+            $table->index(['municipal_id', 'created_from_interment_id'], 'cemetery_plot_leases_origin_index');
             $table->index(['municipal_id', 'lease_end'], 'cemetery_plot_leases_lease_end_index');
             $table->unique(['municipal_id', 'or_number'], 'cemetery_plot_leases_or_unique');
         });

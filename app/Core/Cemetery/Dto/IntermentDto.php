@@ -17,21 +17,11 @@ final readonly class IntermentDto
         public string $intermentDate,
         public string $type,
         public ?string $notes,
-        public string $leaseholderName,
-        public ?string $leaseholderContact,
-        public ?string $leaseholderAddress,
-        public ?string $leaseholderRelationship,
-        public string $leaseStart,
-        public string $leaseEnd,
-        public ?float $amountPaid,
-        public ?string $orNumber,
-        public ?string $leaseNotes,
     ) {}
 
     public static function fromRequest(array $validated): self
     {
         $intermentDate = self::normalizeDate($validated['interment_date']);
-        $leaseStart = self::normalizeDate($validated['lease_start'] ?? $intermentDate);
 
         return new self(
             municipalId: app('municipal_id'),
@@ -40,15 +30,6 @@ final readonly class IntermentDto
             intermentDate: $intermentDate,
             type: $validated['type'] ?? 'initial',
             notes: self::cleanText($validated['notes'] ?? null),
-            leaseholderName: self::upper($validated['leaseholder_name']),
-            leaseholderContact: self::cleanText($validated['leaseholder_contact'] ?? null),
-            leaseholderAddress: self::cleanText($validated['leaseholder_address'] ?? null),
-            leaseholderRelationship: self::upperOrNull($validated['leaseholder_relationship'] ?? null),
-            leaseStart: $leaseStart,
-            leaseEnd: self::normalizeDate($validated['lease_end'] ?? Carbon::parse($leaseStart)->addYears(5)->format('Y-m-d')),
-            amountPaid: filled($validated['amount_paid'] ?? null) ? (float) $validated['amount_paid'] : null,
-            orNumber: self::upperOrNull($validated['or_number'] ?? null),
-            leaseNotes: self::cleanText($validated['lease_notes'] ?? null),
         );
     }
 
@@ -66,17 +47,5 @@ final readonly class IntermentDto
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
-    }
-
-    private static function upper(string $value): string
-    {
-        return mb_strtoupper(trim($value));
-    }
-
-    private static function upperOrNull(?string $value): ?string
-    {
-        $cleaned = self::cleanText($value);
-
-        return $cleaned === null ? null : mb_strtoupper($cleaned);
     }
 }

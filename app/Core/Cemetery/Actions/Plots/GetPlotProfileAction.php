@@ -12,13 +12,17 @@ class GetPlotProfileAction
             ->with([
                 'block.section',
                 'parent',
+                'activeLease.activities' => fn ($query) => $query
+                    ->with('causer')
+                    ->latest()
+                    ->limit(50),
                 'slots' => fn ($query) => $query
                     ->withCount('interments')
                     ->orderBy('level')
                     ->orderBy('row')
                     ->orderBy('position'),
                 'interments' => fn ($query) => $query
-                    ->with(['decedent.unidentifiedDetail', 'lease'])
+                    ->with(['decedent.unidentifiedDetail'])
                     ->latest('interment_date')
                     ->latest(),
                 'activities' => fn ($query) => $query

@@ -2,6 +2,7 @@
 
 namespace App\Core\Cemetery\Models;
 
+use App\Core\Cemetery\Enums\PlotLeaseStatus;
 use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
@@ -82,6 +83,13 @@ class Plot extends Model
     public function leases(): HasMany
     {
         return $this->hasMany(PlotLease::class, 'plot_id');
+    }
+
+    public function activeLease(): HasOne
+    {
+        return $this->hasOne(PlotLease::class, 'plot_id')
+            ->where('status', PlotLeaseStatus::ACTIVE->value)
+            ->latestOfMany();
     }
 
     /**

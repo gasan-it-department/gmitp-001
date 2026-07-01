@@ -11,9 +11,9 @@ use Illuminate\Http\RedirectResponse;
 /**
  * Mutation endpoint for "assign decedent to a slot" (REQ-3.1, FR-6). Thin HTTP
  * boundary: validate the API CreateIntermentRequest, build the DTO, run
- * RecordIntermentAction (which atomically creates the interment row and flips
- * the slot to OCCUPIED under a pessimistic lock), redirect to the decedent's
- * profile with a flash success.
+ * RecordIntermentAction (which atomically creates the interment row and updates
+ * plot occupancy under a pessimistic lock), then redirect to the correct
+ * operational surface.
  */
 class StoreIntermentController extends Controller
 {
@@ -30,11 +30,11 @@ class StoreIntermentController extends Controller
         );
 
         if ($request->validated('cemetery_site_id')) {
-            return redirect()->route('cemetery.admin.sites.workspace.page', [
+            return redirect()->route('cemetery.admin.sites.plots.profile.page', [
                 'municipality' => $municipality->slug,
                 'cemetery_site_id' => $request->validated('cemetery_site_id'),
-                'tab' => 'interments',
-            ])->with('success', 'Interment recorded successfully.');
+                'plot_id' => $interment->plot_id,
+            ])->with('success', 'Interment recorded successfully. Add a leaseholder from this Plot Profile when ready.');
         }
 
         return redirect()->route('cemetery.admin.decedents.profile.page', [

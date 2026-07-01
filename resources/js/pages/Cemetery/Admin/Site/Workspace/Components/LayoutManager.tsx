@@ -129,7 +129,6 @@ function BlockRow({
                     <CountPill label="Total" value={block.counts.total} />
                     <CountPill label="Available" value={block.counts.available} tone="emerald" />
                     <CountPill label="Occupied" value={block.counts.occupied} tone="rose" />
-                    <CountPill label="Reserved" value={block.counts.reserved} tone="indigo" />
                     <CountPill label="Maintenance" value={block.counts.maintenance} tone="amber" />
                 </div>
             </div>
@@ -637,12 +636,11 @@ function Field({ label, error, children }: { label: string; error?: string; chil
     );
 }
 
-function CountPill({ label, value, tone = 'slate' }: { label: string; value: number; tone?: 'slate' | 'emerald' | 'rose' | 'indigo' | 'amber' }) {
+function CountPill({ label, value, tone = 'slate' }: { label: string; value: number; tone?: 'slate' | 'emerald' | 'rose' | 'amber' }) {
     const classes = {
         slate: 'bg-slate-100 text-slate-700',
         emerald: 'bg-emerald-50 text-emerald-700',
         rose: 'bg-rose-50 text-rose-700',
-        indigo: 'bg-indigo-50 text-indigo-700',
         amber: 'bg-amber-50 text-amber-700',
     };
 

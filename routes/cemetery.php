@@ -18,7 +18,9 @@ use App\External\Api\Controllers\Cemetery\Plots\ChangePlotOccupancyController;
 use App\External\Api\Controllers\Cemetery\Plots\ChangePlotStatusController;
 use App\External\Api\Controllers\Cemetery\Plots\GenerateApartmentNichesController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotController;
+use App\External\Api\Controllers\Cemetery\Plots\StorePlotLeaseController;
 use App\External\Api\Controllers\Cemetery\Plots\UpdatePlotDetailsController;
+use App\External\Api\Controllers\Cemetery\Plots\UpdatePlotLeaseController;
 use App\External\Api\Controllers\Cemetery\Sections\StoreCemeterySectionController;
 use App\External\Api\Controllers\Cemetery\Sites\StoreCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotController;
@@ -135,6 +137,8 @@ Route::prefix('api/cemetery-sites')
         Route::post('{cemetery_site_id}/sections/{section_id}/blocks', StoreCemeteryBlockController::class)->name('sections.blocks.store');
         Route::post('{cemetery_site_id}/plots', StorePlotController::class)->name('plots.store');
         Route::patch('{cemetery_site_id}/plots/{plot_id}/details', UpdatePlotDetailsController::class)->name('plots.details.update');
+        Route::post('{cemetery_site_id}/plots/{plot_id}/lease', StorePlotLeaseController::class)->name('plots.lease.store');
+        Route::patch('{cemetery_site_id}/plots/{plot_id}/lease', UpdatePlotLeaseController::class)->name('plots.lease.update');
         Route::patch('{cemetery_site_id}/plots/{plot_id}/occupancy', ChangePlotOccupancyController::class)->name('plots.occupancy.update');
         Route::patch('{cemetery_site_id}/plots/{plot_id}/status', ChangePlotStatusController::class)->name('plots.status.update');
         Route::post('{cemetery_site_id}/blocks/{block_id}/plots/bulk', BulkGeneratePlotsController::class)->name('blocks.plots.bulk');

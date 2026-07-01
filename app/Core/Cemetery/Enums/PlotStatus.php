@@ -10,7 +10,6 @@ enum PlotStatus: string
 {
     case AVAILABLE = 'available';
     case OCCUPIED = 'occupied';
-    case RESERVED = 'reserved';
     case MAINTENANCE = 'maintenance';
 
     public function label(): string
@@ -18,7 +17,6 @@ enum PlotStatus: string
         return match ($this) {
             self::AVAILABLE => 'Available',
             self::OCCUPIED => 'Occupied',
-            self::RESERVED => 'Reserved',
             self::MAINTENANCE => 'Under Maintenance',
         };
     }
@@ -31,7 +29,6 @@ enum PlotStatus: string
         return match ($this) {
             self::AVAILABLE => 'emerald',
             self::OCCUPIED => 'rose',
-            self::RESERVED => 'amber',
             self::MAINTENANCE => 'slate',
         };
     }

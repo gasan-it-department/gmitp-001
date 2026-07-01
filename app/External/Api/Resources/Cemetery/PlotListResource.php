@@ -41,6 +41,15 @@ class PlotListResource extends JsonResource
             'status' => $status?->value,
             'status_label' => $status?->label(),
             'status_tone' => $status?->tone(),
+            'active_lease' => $this->whenLoaded('activeLease', fn () => $this->activeLease ? [
+                'id' => $this->activeLease->id,
+                'leaseholder_name' => $this->activeLease->leaseholder_name,
+                'leaseholder_contact' => $this->activeLease->leaseholder_contact,
+                'leaseholder_relationship' => $this->activeLease->leaseholder_relationship,
+                'lease_start' => $this->activeLease->lease_start?->format('Y-m-d'),
+                'lease_end' => $this->activeLease->lease_end?->format('Y-m-d'),
+                'or_number' => $this->activeLease->or_number,
+            ] : null),
 
             // Spatial home: block (always present) + section (via block).
             'block' => $this->whenLoaded('block', fn () => $this->block ? [

@@ -134,7 +134,7 @@ it('loads ready unassigned Decedents and available assignable Site Plots on crea
     expect($unready)->not->toBe($ready);
 });
 
-it('stores a Site-scoped interment and flips the Plot to occupied', function () {
+it('stores a Site-scoped interment without creating a Plot lease', function () {
     $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
     $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
     $decedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'JUAN');
@@ -147,37 +147,15 @@ it('stores a Site-scoped interment and flips the Plot to occupied', function () 
         'interment_date' => '2026-06-20',
         'type' => 'initial',
         'notes' => 'Burial clearance recorded.',
-        'leaseholder_name' => 'juan dela cruz',
-        'leaseholder_relationship' => 'son',
-        'leaseholder_contact' => '09171234567',
-        'leaseholder_address' => 'Cabugao, Gasan',
-        'amount_paid' => '1096.50',
-        'or_number' => 'or-001',
-        'lease_notes' => 'Paid at municipal treasury.',
-    ])->assertRedirect(route('cemetery.admin.sites.workspace.page', [
+    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $site,
-        'tab' => 'interments',
+        'plot_id' => $plot,
     ]));
-
-    $intermentId = DB::table('cemetery_interments')->where('decedent_id', $decedent)->value('id');
-    $lease = DB::table('cemetery_plot_leases')->where('interment_id', $intermentId)->first();
 
     expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(1)
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied')
-        ->and($lease)->not->toBeNull()
-        ->and($lease->municipal_id)->toBe($this->gasan->id)
-        ->and($lease->plot_id)->toBe($plot)
-        ->and($lease->leaseholder_name)->toBe('JUAN DELA CRUZ')
-        ->and($lease->leaseholder_relationship)->toBe('SON')
-        ->and($lease->leaseholder_contact)->toBe('09171234567')
-        ->and($lease->leaseholder_address)->toBe('Cabugao, Gasan')
-        ->and(substr((string) $lease->lease_start, 0, 10))->toBe('2026-06-20')
-        ->and(substr((string) $lease->lease_end, 0, 10))->toBe('2031-06-20')
-        ->and((float) $lease->amount_paid)->toBe(1096.50)
-        ->and($lease->or_number)->toBe('OR-001')
-        ->and($lease->status)->toBe('active')
-        ->and($lease->notes)->toBe('Paid at municipal treasury.');
+        ->and(DB::table('cemetery_plot_leases')->where('plot_id', $plot)->count())->toBe(0);
 });
 
 it('allows shared plots to receive interments until capacity is reached', function () {
@@ -188,19 +166,14 @@ it('allows shared plots to receive interments until capacity is reached', functi
     $thirdDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'CARLO');
     $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 800', 'available', 'shared', 2);
 
-    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $plot, [
-        'or_number' => 'OR-SHARED-1',
-    ]))->assertRedirect();
+    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $plot))->assertRedirect();
 
-    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $plot, [
-        'or_number' => 'OR-SHARED-2',
-    ]))->assertRedirect();
+    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $plot))->assertRedirect();
 
-    $this->post(route('interments.store'), intermentPayload($site, $thirdDecedent, $plot, [
-        'or_number' => 'OR-SHARED-3',
-    ]))->assertSessionHasErrors('plot_id');
+    $this->post(route('interments.store'), intermentPayload($site, $thirdDecedent, $plot))->assertSessionHasErrors('plot_id');
 
     expect(DB::table('cemetery_interments')->where('plot_id', $plot)->count())->toBe(2)
+        ->and(DB::table('cemetery_plot_leases')->where('plot_id', $plot)->count())->toBe(0)
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied');
 });
 
@@ -211,13 +184,9 @@ it('rejects a second active interment for single plots', function () {
     $secondDecedent = intermentReadyDecedent($this->gasan->id, 'REYES', 'BEN');
     $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 801', 'available');
 
-    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $plot, [
-        'or_number' => 'OR-SINGLE-1',
-    ]))->assertRedirect();
+    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $plot))->assertRedirect();
 
-    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $plot, [
-        'or_number' => 'OR-SINGLE-2',
-    ]))->assertSessionHasErrors('plot_id');
+    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $plot))->assertSessionHasErrors('plot_id');
 
     expect(DB::table('cemetery_interments')->where('plot_id', $plot)->count())->toBe(1);
 });
@@ -228,14 +197,12 @@ it('rejects direct interment into slotted apartment parent rows', function () {
     $decedent = intermentReadyDecedent($this->gasan->id, 'CRUZ', 'MARIA');
     $parentPlot = intermentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, 'slotted', 10, 'apartment_niche');
 
-    $this->post(route('interments.store'), intermentPayload($site, $decedent, $parentPlot, [
-        'or_number' => 'OR-SLOTTED-1',
-    ]))->assertSessionHasErrors('plot_id');
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $parentPlot))->assertSessionHasErrors('plot_id');
 
     expect(DB::table('cemetery_interments')->where('plot_id', $parentPlot)->count())->toBe(0);
 });
 
-it('requires leaseholder and keeps interment atomic when lease validation fails', function () {
+it('rejects leaseholder fields on interment creation', function () {
     $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
     $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
     $decedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'PEDRO');
@@ -247,49 +214,13 @@ it('requires leaseholder and keeps interment atomic when lease validation fails'
         'plot_id' => $plot,
         'interment_date' => '2026-06-20',
         'type' => 'initial',
+        'leaseholder_name' => 'Juan Dela Cruz',
         'amount_paid' => '500.00',
-    ])->assertSessionHasErrors(['leaseholder_name', 'or_number']);
+    ])->assertSessionHasErrors(['leaseholder_name', 'amount_paid']);
 
     expect(DB::table('cemetery_interments')->count())->toBe(0)
         ->and(DB::table('cemetery_plot_leases')->count())->toBe(0)
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('available');
-});
-
-it('blocks duplicate OR numbers within one municipality but allows them across municipalities', function () {
-    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
-    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
-    $firstDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'ANA');
-    $secondDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'LUIS');
-    $firstPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 740', 'available');
-    $secondPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 741', 'available');
-
-    $this->post(route('interments.store'), intermentPayload($site, $firstDecedent, $firstPlot, [
-        'or_number' => 'OR-777',
-    ]))->assertRedirect();
-
-    $this->post(route('interments.store'), intermentPayload($site, $secondDecedent, $secondPlot, [
-        'or_number' => 'or-777',
-    ]))->assertSessionHasErrors('or_number');
-
-    $boacSite = intermentSite($this->boac->id, 'BOAC CENTRAL');
-    $boacBlock = intermentBlock($this->boac->id, intermentSection($this->boac->id, $boacSite, 'MAIN'), 'GENERAL');
-    $boacDecedent = intermentReadyDecedent($this->boac->id, 'REYES', 'MARIO');
-    $boacPlot = intermentPlot($this->boac->id, $boacSite, $boacBlock, 'LOT 1', 'available');
-
-    app()->instance('municipal_id', $this->boac->id);
-    app()->instance('current_municipality', $this->boac);
-
-    $this->post(route('interments.store'), intermentPayload($boacSite, $boacDecedent, $boacPlot, [
-        'or_number' => 'OR-777',
-    ]))->assertRedirect(route('cemetery.admin.sites.workspace.page', [
-        'municipality' => $this->boac->slug,
-        'cemetery_site_id' => $boacSite,
-        'tab' => 'interments',
-    ]));
-
-    expect(DB::table('cemetery_plot_leases')->where('or_number', 'OR-777')->count())->toBe(2)
-        ->and(DB::table('cemetery_interments')->where('decedent_id', $secondDecedent)->count())->toBe(0)
-        ->and(DB::table('cemetery_plots')->where('id', $secondPlot)->value('status'))->toBe('available');
 });
 
 it('rejects a forged sibling Site Plot during Site-scoped interment creation', function () {
@@ -306,7 +237,6 @@ it('rejects a forged sibling Site Plot during Site-scoped interment creation', f
         'interment_date' => '2026-06-20',
         'type' => 'initial',
         'notes' => null,
-        'leaseholder_name' => 'Maria Santos',
     ])->assertSessionHasErrors('plot_id');
 
     expect(DB::table('cemetery_interments')->count())->toBe(0)
@@ -460,8 +390,5 @@ function intermentPayload(string $siteId, string $decedentId, string $plotId, ar
         'plot_id' => $plotId,
         'interment_date' => '2026-06-20',
         'type' => 'initial',
-        'leaseholder_name' => 'Juan Dela Cruz',
-        'amount_paid' => '500.00',
-        'or_number' => 'OR-001',
     ], $overrides);
 }

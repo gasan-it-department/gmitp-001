@@ -7,9 +7,20 @@ import "leaflet-gesture-handling/dist/leaflet-gesture-handling.css";
 
 L.Map.addInitHook("addHandler", "gestureHandling", (L as any).GestureHandling);
 
-export default function TouristMap({ destinationList }: any) {
+type Destination = {
+    id: string | number;
+    name: string;
+    description: string;
+    position: [number, number];
+    image?: string | null;
+};
+
+type Props = {
+    destinationList: Destination[];
+};
+
+export default function TouristMap({ destinationList }: Props) {
     const [mapType, setMapType] = useState<"satellite" | "street">("street");
-    const [selectedFind, setSelectedFind] = useState("");
     const mapRef = useRef<L.Map | null>(null);
 
     const mapTypes = {
@@ -24,15 +35,29 @@ export default function TouristMap({ destinationList }: any) {
         }
     }, []);
 
-    function createTouristIcon(image: string, name: string) {
+    function escapeHtml(value: string) {
+        return value
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function createTouristIcon(image: string | null | undefined, name: string) {
+        const safeName = escapeHtml(name);
+        const imageMarkup = image
+            ? `<img src="${escapeHtml(image)}" alt="${safeName}" class="popup-image" />`
+            : `<div class="popup-image" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a,#075985);color:#cffafe;font-weight:800;letter-spacing:.18em;text-transform:uppercase;">Tourism</div>`;
+
         return L.divIcon({
             className: "custom-tourist-popup-icon",
             html: `
           <div class="popup-marker">
               <div class="popup-card">
-                  <img src="${image}" alt="${name}" class="popup-image" />
+                  ${imageMarkup}
                   <div class="popup-info">
-                      <h4 class="popup-title">${name}</h4>
+                      <h4 class="popup-title">${safeName}</h4>
                   </div>
               </div>
               <div class="popup-pointer"></div>
@@ -46,30 +71,16 @@ export default function TouristMap({ destinationList }: any) {
 
     return (
         <div className="flex flex-col p-4 sm:p-8 w-full">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4">
-                <a className="pb-3 pt-3 sm:pb-5 sm:pt-5 text-[24px] sm:text-[30px] text-black font-bold text-center sm:text-left">
+                <div>
+                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-sky-700">Interactive guide</span>
+                    <h2 className="pb-3 pt-1 sm:pb-5 text-[24px] sm:text-[30px] text-slate-950 font-bold text-center sm:text-left">
                     Map Explorer
-                </a>
+                    </h2>
+                </div>
 
                 <div className="flex flex-col sm:flex-row sm:space-x-3 justify-end items-center w-full sm:w-auto">
-                    {/* <div className="bg-white/90 backdrop-blur-md rounded-md shadow-md p-2 w-full sm:w-fit mb-2 sm:mb-0">
-                        <label className="text-sm font-medium text-gray-700 mr-2">
-                            Find:
-                        </label>
-                        <select
-                            value={selectedFind}
-                            onChange={(e) => setSelectedFind(e.target.value)}
-                            className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value="resorts">Resorts</option>
-                            <option value="gasoline_station">Gasoline Stations</option>
-                            <option value="hotels">Hotels</option>
-                            <option value="restaurant">Restaurant</option>
-                        </select>
-                    </div> */}
-
-                    <div className="bg-white/90 backdrop-blur-md rounded-md shadow-md p-2 w-full sm:w-fit">
+                    <div className="bg-white/95 border border-sky-100 backdrop-blur-md rounded-md shadow-md p-2 w-full sm:w-fit">
                         <label className="text-sm font-medium text-gray-700 mr-2">
                             View Mode:
                         </label>
@@ -85,14 +96,13 @@ export default function TouristMap({ destinationList }: any) {
                 </div>
             </div>
 
-            {/* Map */}
             <div className="relative w-full h-[400px] sm:h-[550px] md:h-[650px] z-10">
                 <MapContainer
                     ref={mapRef as any}
                     center={[13.254117982609364, 121.86766968796603]}
                     zoom={13}
                     scrollWheelZoom={false}
-                    className="w-full h-full rounded-[10px] shadow-lg"
+                    className="w-full h-full rounded-[18px] shadow-2xl shadow-slate-300 ring-1 ring-sky-100"
                     maxZoom={18}
                     minZoom={11}
                     maxBounds={[
@@ -112,7 +122,7 @@ export default function TouristMap({ destinationList }: any) {
                         url={mapTypes[mapType]}
                     />
 
-                    {destinationList.map((dest: any) => (
+                    {destinationList.map((dest) => (
                         <Marker
                             key={dest.id}
                             position={dest.position}
@@ -121,11 +131,17 @@ export default function TouristMap({ destinationList }: any) {
                             <Popup>
                                 <div className="text-center w-[220px]">
                                     <h3 className="font-semibold text-sm mb-1">{dest.name}</h3>
-                                    <img
-                                        src={dest.image}
-                                        alt={dest.name}
-                                        className="w-full h-[120px] object-cover rounded-md shadow-md mb-1"
-                                    />
+                                    {dest.image ? (
+                                        <img
+                                            src={dest.image}
+                                            alt={dest.name}
+                                            className="w-full h-[120px] object-cover rounded-md shadow-md mb-1"
+                                        />
+                                    ) : (
+                                        <div className="mb-1 flex h-[120px] w-full items-center justify-center rounded-md bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-800 text-xs font-bold uppercase tracking-[0.2em] text-cyan-100 shadow-md">
+                                            Tourism
+                                        </div>
+                                    )}
                                     <p className="text-xs text-gray-700">{dest.description}</p>
                                 </div>
                             </Popup>

@@ -34,7 +34,7 @@ return new class extends Migration
             // lawn_lot | apartment_niche | bone_ossuary | mausoleum
             $table->string('type');
 
-            // available | occupied | reserved | maintenance — NULLABLE because
+            // available | occupied | maintenance — NULLABLE because
             // slotted apartment parent rows have no meaningful status.
             $table->string('status')->nullable();
 

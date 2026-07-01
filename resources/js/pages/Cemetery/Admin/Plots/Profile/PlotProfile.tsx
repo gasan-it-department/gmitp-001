@@ -15,6 +15,7 @@ import {
     PlotTypeValue,
     SelectOption,
     UpdatePlotDetailsForm,
+    UpdatePlotLeaseForm,
 } from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
@@ -44,6 +45,7 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
     const canEditDetails = plot.type !== 'apartment_niche' && plot.parent_plot_id === null && plot.occupancy_mode !== 'slotted';
     const canEditOccupancy = plot.occupancy_mode === 'single' || plot.occupancy_mode === 'shared';
     const canEditStatus = canEditOccupancy && plot.active_interments_count === 0;
+    const canManageLease = plot.occupancy_mode !== 'slotted';
 
     return (
         <AppLayout>
@@ -104,6 +106,7 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
                             {canEditStatus && (
                                 <ChangeStatusDialog municipality={municipality} site={site} plot={plot} statusOptions={status_options} />
                             )}
+                            {canManageLease && <PlotLeaseDialog municipality={municipality} site={site} plot={plot} />}
                         </div>
                     </div>
 
@@ -117,6 +120,7 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
+                        <ActiveLeaseCard plot={plot} />
                         <DetailsCard plot={plot} />
                         {plot.occupancy_mode === 'slotted' ? <ChildNichesCard plot={plot} /> : <CurrentIntermentsCard plot={plot} />}
                     </div>
@@ -124,6 +128,183 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function PlotLeaseDialog({ municipality, site, plot }: { municipality: MunicipalityType; site: CemeterySiteListItem; plot: PlotProfileType }) {
+    const [open, setOpen] = useState(false);
+    const lease = plot.active_lease;
+    const mode = lease ? 'edit' : 'create';
+    const form = useForm<UpdatePlotLeaseForm>({
+        leaseholder_name: lease?.leaseholder_name ?? '',
+        leaseholder_contact: lease?.leaseholder_contact ?? '',
+        leaseholder_address: lease?.leaseholder_address ?? '',
+        leaseholder_relationship: lease?.leaseholder_relationship ?? '',
+        lease_start: lease?.lease_start ?? '',
+        lease_end: lease?.lease_end ?? '',
+        amount_paid: toNumberOrBlank(lease?.amount_paid),
+        or_number: lease?.or_number ?? '',
+        notes: lease?.notes ?? '',
+    });
+
+    const close = () => {
+        if (form.processing) return;
+        setOpen(false);
+        form.clearErrors();
+        form.setData({
+            leaseholder_name: lease?.leaseholder_name ?? '',
+            leaseholder_contact: lease?.leaseholder_contact ?? '',
+            leaseholder_address: lease?.leaseholder_address ?? '',
+            leaseholder_relationship: lease?.leaseholder_relationship ?? '',
+            lease_start: lease?.lease_start ?? '',
+            lease_end: lease?.lease_end ?? '',
+            amount_paid: toNumberOrBlank(lease?.amount_paid),
+            or_number: lease?.or_number ?? '',
+            notes: lease?.notes ?? '',
+        });
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        const options = {
+            headers: { 'X-Municipality-Slug': municipality.slug },
+            preserveScroll: true,
+            onSuccess: () => setOpen(false),
+        };
+
+        if (mode === 'create') {
+            form.post(`/api/cemetery-sites/${site.id}/plots/${plot.id}/lease`, options);
+
+            return;
+        }
+
+        form.patch(`/api/cemetery-sites/${site.id}/plots/${plot.id}/lease`, options);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : close())}>
+            <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+                <Edit3 size={16} className="mr-2" />
+                {mode === 'create' ? 'Add Lease' : 'Edit Lease'}
+            </Button>
+            <DialogContent>
+                <form onSubmit={submit}>
+                    <DialogHeader>
+                        <DialogTitle>{mode === 'create' ? 'Add Active Lease' : 'Edit Active Lease'}</DialogTitle>
+                        <DialogDescription>
+                            {mode === 'create'
+                                ? 'Record the responsible person and manual payment details for this physical plot.'
+                                : 'Update the responsible person and manual payment details for this physical plot.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="leaseholder-name">Leaseholder name</Label>
+                            <Input
+                                id="leaseholder-name"
+                                value={form.data.leaseholder_name}
+                                onChange={(event) => form.setData('leaseholder_name', event.target.value)}
+                                placeholder="e.g. JUAN DELA CRUZ"
+                            />
+                            {form.errors.leaseholder_name && <p className="text-sm text-red-600">{form.errors.leaseholder_name}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="leaseholder-relationship">Relationship</Label>
+                            <Input
+                                id="leaseholder-relationship"
+                                value={form.data.leaseholder_relationship}
+                                onChange={(event) => form.setData('leaseholder_relationship', event.target.value)}
+                                placeholder="e.g. SPOUSE, CHILD"
+                            />
+                            {form.errors.leaseholder_relationship && <p className="text-sm text-red-600">{form.errors.leaseholder_relationship}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="leaseholder-contact">Contact</Label>
+                            <Input
+                                id="leaseholder-contact"
+                                value={form.data.leaseholder_contact}
+                                onChange={(event) => form.setData('leaseholder_contact', event.target.value)}
+                                placeholder="Optional"
+                            />
+                            {form.errors.leaseholder_contact && <p className="text-sm text-red-600">{form.errors.leaseholder_contact}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="leaseholder-address">Address</Label>
+                            <Input
+                                id="leaseholder-address"
+                                value={form.data.leaseholder_address}
+                                onChange={(event) => form.setData('leaseholder_address', event.target.value)}
+                                placeholder="Optional"
+                            />
+                            {form.errors.leaseholder_address && <p className="text-sm text-red-600">{form.errors.leaseholder_address}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="lease-start">Lease start</Label>
+                            <Input
+                                id="lease-start"
+                                type="date"
+                                value={form.data.lease_start}
+                                onChange={(event) => form.setData('lease_start', event.target.value)}
+                            />
+                            {form.errors.lease_start && <p className="text-sm text-red-600">{form.errors.lease_start}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="lease-end">Lease end</Label>
+                            <Input
+                                id="lease-end"
+                                type="date"
+                                value={form.data.lease_end}
+                                onChange={(event) => form.setData('lease_end', event.target.value)}
+                            />
+                            {form.errors.lease_end && <p className="text-sm text-red-600">{form.errors.lease_end}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="amount-paid">Amount paid</Label>
+                            <Input
+                                id="amount-paid"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.data.amount_paid}
+                                onChange={(event) => form.setData('amount_paid', event.target.value === '' ? '' : Number(event.target.value))}
+                                placeholder="Optional"
+                            />
+                            {form.errors.amount_paid && <p className="text-sm text-red-600">{form.errors.amount_paid}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="or-number">OR number</Label>
+                            <Input
+                                id="or-number"
+                                value={form.data.or_number}
+                                onChange={(event) => form.setData('or_number', event.target.value)}
+                                placeholder="Optional"
+                            />
+                            {form.errors.or_number && <p className="text-sm text-red-600">{form.errors.or_number}</p>}
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="lease-notes">Notes</Label>
+                            <Textarea
+                                id="lease-notes"
+                                value={form.data.notes}
+                                onChange={(event) => form.setData('notes', event.target.value)}
+                                placeholder="Optional lease or payment notes."
+                                className="min-h-24"
+                            />
+                            {form.errors.notes && <p className="text-sm text-red-600">{form.errors.notes}</p>}
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-6">
+                        <Button type="button" variant="outline" onClick={close} disabled={form.processing}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={form.processing}>
+                            {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {mode === 'create' ? 'Add Lease' : 'Save Lease'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -439,6 +620,35 @@ function DetailsCard({ plot }: { plot: PlotProfileType }) {
     );
 }
 
+function ActiveLeaseCard({ plot }: { plot: PlotProfileType }) {
+    return (
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Active Lease / Responsible Person</h2>
+                <p className="text-sm text-slate-500">Plot-level leaseholder and manual payment information for this physical place.</p>
+            </div>
+
+            {!plot.active_lease ? (
+                <EmptyState icon={<Users size={20} />} text="No active lease is recorded for this plot yet." />
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <Detail label="Leaseholder" value={plot.active_lease.leaseholder_name} />
+                    <Detail label="Relationship" value={plot.active_lease.leaseholder_relationship} />
+                    <Detail label="Contact" value={plot.active_lease.leaseholder_contact} />
+                    <Detail label="Address" value={plot.active_lease.leaseholder_address} />
+                    <Detail label="Lease Start" value={formatDate(plot.active_lease.lease_start)} />
+                    <Detail label="Lease End" value={formatDate(plot.active_lease.lease_end)} />
+                    <Detail label="Amount Paid" value={formatCurrency(plot.active_lease.amount_paid)} />
+                    <Detail label="OR Number" value={plot.active_lease.or_number} />
+                    <div className="sm:col-span-2">
+                        <Detail label="Notes" value={plot.active_lease.notes} />
+                    </div>
+                </div>
+            )}
+        </section>
+    );
+}
+
 function CurrentIntermentsCard({ plot }: { plot: PlotProfileType }) {
     return (
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -464,7 +674,7 @@ function CurrentIntermentsCard({ plot }: { plot: PlotProfileType }) {
                                 <TableHead>Decedent</TableHead>
                                 <TableHead>Interment Date</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead>Responsible Person</TableHead>
+                                <TableHead>Notes</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -477,18 +687,7 @@ function CurrentIntermentsCard({ plot }: { plot: PlotProfileType }) {
                                     </TableCell>
                                     <TableCell>{formatDate(interment.interment_date)}</TableCell>
                                     <TableCell>{interment.type_label}</TableCell>
-                                    <TableCell>
-                                        {interment.lease ? (
-                                            <div>
-                                                <div className="font-medium text-slate-900">{interment.lease.leaseholder_name}</div>
-                                                <div className="text-xs text-slate-500">
-                                                    {interment.lease.leaseholder_relationship ?? 'Relationship not recorded'}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-slate-400">No lease recorded</span>
-                                        )}
-                                    </TableCell>
+                                    <TableCell>{interment.notes ?? '-'}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -601,6 +800,25 @@ function formatDate(value: string | null) {
         month: 'short',
         day: 'numeric',
     }).format(new Date(value));
+}
+
+function formatCurrency(value: string | number | null | undefined): string | null {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency: 'PHP',
+    }).format(Number(value));
+}
+
+function toNumberOrBlank(value: string | number | null | undefined): number | '' {
+    if (value === null || value === undefined || value === '') {
+        return '';
+    }
+
+    return Number(value);
 }
 
 function formatDateTime(value: string | null) {

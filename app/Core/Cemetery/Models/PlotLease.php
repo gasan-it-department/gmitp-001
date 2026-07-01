@@ -25,7 +25,7 @@ class PlotLease extends Model
     protected $fillable = [
         'id',
         'municipal_id',
-        'interment_id',
+        'created_from_interment_id',
         'plot_id',
         'leaseholder_name',
         'leaseholder_contact',
@@ -46,9 +46,9 @@ class PlotLease extends Model
         'status' => PlotLeaseStatus::class,
     ];
 
-    public function interment(): BelongsTo
+    public function createdFromInterment(): BelongsTo
     {
-        return $this->belongsTo(Interment::class, 'interment_id');
+        return $this->belongsTo(Interment::class, 'created_from_interment_id');
     }
 
     public function plot(): BelongsTo
@@ -65,7 +65,7 @@ class PlotLease extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
-                'interment_id',
+                'created_from_interment_id',
                 'plot_id',
                 'leaseholder_name',
                 'leaseholder_contact',

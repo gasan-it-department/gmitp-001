@@ -11,7 +11,7 @@ class GetAvailablePlotsAction
 {
     public function execute(string $municipalId, ?string $cemeterySiteId = null): Collection
     {
-        return Plot::with(['block.section', 'parent'])
+        return Plot::with(['block.section', 'parent', 'activeLease'])
             ->withCount('interments')
             ->where('municipal_id', $municipalId)
             ->when($cemeterySiteId, fn ($query) => $query->where('cemetery_site_id', $cemeterySiteId))

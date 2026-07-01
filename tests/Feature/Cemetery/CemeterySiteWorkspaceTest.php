@@ -257,6 +257,16 @@ it('filters Site Plot inventory by Section Block status and row', function () {
             ->where('plots.data.0.name', 'LOT 702'));
 });
 
+it('rejects reserved as a Plot inventory status filter', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+
+    $this->get(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'status' => 'reserved',
+    ]))->assertSessionHasErrors('status');
+});
+
 it('fails closed when opening another municipality Site', function () {
     $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL');
 
@@ -266,7 +276,7 @@ it('fails closed when opening another municipality Site', function () {
     ]))->assertNotFound();
 });
 
-it('opens a tenant and Site scoped Plot profile with current interments and leaseholders', function () {
+it('opens a tenant and Site scoped Plot profile with current interments and active plot lease', function () {
     $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
     $block = workspaceBlock(
         $this->gasan->id,
@@ -299,8 +309,173 @@ it('opens a tenant and Site scoped Plot profile with current interments and leas
             ->where('plot.occupancy_mode', 'shared')
             ->where('plot.active_interments_count', 2)
             ->where('plot.occupancy_label', '2 / 3')
+            ->where('plot.active_lease.leaseholder_name', 'GRACE SANTOS')
             ->has('plot.current_interments', 2)
-            ->where('plot.current_interments.1.lease.leaseholder_name', 'GRACE SANTOS'));
+            ->missing('plot.current_interments.0.lease'));
+});
+
+it('updates the active Plot lease from the Plot profile route', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 778', 'occupied');
+    $interment = workspaceInterment($this->gasan->id, workspaceDecedent(), $plot, '2026-06-20');
+    $lease = workspaceLease($this->gasan->id, $interment, $plot, 'OLD HOLDER');
+
+    $this->patch(route('cemetery-sites.plots.lease.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'leaseholder_name' => 'new holder',
+        'leaseholder_contact' => '09170000000',
+        'leaseholder_address' => 'Cabugao, Gasan',
+        'leaseholder_relationship' => 'child',
+        'lease_start' => '2026-06-20',
+        'lease_end' => '2031-06-20',
+        'amount_paid' => '1096.50',
+        'or_number' => 'OR-LEASE-1',
+        'notes' => 'Corrected responsible person.',
+    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]));
+
+    $updated = DB::table('cemetery_plot_leases')->where('id', $lease)->first();
+
+    expect($updated->leaseholder_name)->toBe('NEW HOLDER')
+        ->and($updated->leaseholder_relationship)->toBe('CHILD')
+        ->and($updated->leaseholder_contact)->toBe('09170000000')
+        ->and($updated->leaseholder_address)->toBe('Cabugao, Gasan')
+        ->and((float) $updated->amount_paid)->toBe(1096.50)
+        ->and($updated->or_number)->toBe('OR-LEASE-1')
+        ->and(DB::table('activity_log')->where('subject_id', $lease)->where('log_name', 'cemetery_plot_lease')->exists())->toBeTrue();
+});
+
+it('creates the first active Plot lease from the Plot profile route', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 779', 'occupied');
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $plot, '2026-06-20');
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'leaseholder_name' => 'grace santos',
+        'leaseholder_contact' => '09170000000',
+        'leaseholder_address' => 'Cabugao, Gasan',
+        'leaseholder_relationship' => 'child',
+        'lease_start' => '2026-06-20',
+        'lease_end' => '2031-06-20',
+        'amount_paid' => '1096.50',
+        'or_number' => 'OR-NEW-1',
+        'notes' => 'Recorded after interment.',
+    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]));
+
+    $lease = DB::table('cemetery_plot_leases')->where('plot_id', $plot)->first();
+
+    expect($lease)->not->toBeNull()
+        ->and($lease->created_from_interment_id)->toBeNull()
+        ->and($lease->leaseholder_name)->toBe('GRACE SANTOS')
+        ->and($lease->status)->toBe('active')
+        ->and($lease->or_number)->toBe('OR-NEW-1')
+        ->and(DB::table('activity_log')->where('subject_id', $lease->id)->where('log_name', 'cemetery_plot_lease')->exists())->toBeTrue();
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'leaseholder_name' => 'another holder',
+    ])->assertSessionHasErrors('leaseholder_name');
+});
+
+it('blocks duplicate lease OR numbers within one municipality but allows them across municipalities', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $firstPlot = workspacePlot($this->gasan->id, $site, $block, 'LOT 780', 'occupied');
+    $secondPlot = workspacePlot($this->gasan->id, $site, $block, 'LOT 781', 'occupied');
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $firstPlot,
+    ]), [
+        'leaseholder_name' => 'First Holder',
+        'amount_paid' => '500.00',
+        'or_number' => 'OR-777',
+    ])->assertRedirect();
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $secondPlot,
+    ]), [
+        'leaseholder_name' => 'Second Holder',
+        'amount_paid' => '500.00',
+        'or_number' => 'or-777',
+    ])->assertSessionHasErrors('or_number');
+
+    $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL');
+    $boacBlock = workspaceBlock($this->boac->id, workspaceSection($this->boac->id, $boacSite, 'SECTION A'), 'GENERAL');
+    $boacPlot = workspacePlot($this->boac->id, $boacSite, $boacBlock, 'LOT 1', 'occupied');
+
+    workspaceContext($this->boac);
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $boacSite,
+        'plot_id' => $boacPlot,
+    ]), [
+        'leaseholder_name' => 'Boac Holder',
+        'amount_paid' => '500.00',
+        'or_number' => 'OR-777',
+    ])->assertRedirect();
+
+    expect(DB::table('cemetery_plot_leases')->where('or_number', 'OR-777')->count())->toBe(2)
+        ->and(DB::table('cemetery_plot_leases')->where('plot_id', $secondPlot)->count())->toBe(0);
+});
+
+it('fails closed when Plot lease create and update target another tenant or sibling Site', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $siblingSite = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
+    $siblingBlock = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $siblingSite, 'SECTION B'), 'GENERAL');
+    $siblingPlot = workspacePlot($this->gasan->id, $siblingSite, $siblingBlock, 'LOT 900', 'occupied');
+    $siblingInterment = workspaceInterment($this->gasan->id, workspaceDecedent(), $siblingPlot, '2026-06-20');
+    $siblingLease = workspaceLease($this->gasan->id, $siblingInterment, $siblingPlot, 'SIBLING HOLDER');
+
+    $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL');
+    $boacBlock = workspaceBlock($this->boac->id, workspaceSection($this->boac->id, $boacSite, 'SECTION A'), 'GENERAL');
+    $boacPlot = workspacePlot($this->boac->id, $boacSite, $boacBlock, 'LOT 1', 'occupied');
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $siblingPlot,
+    ]), [
+        'leaseholder_name' => 'Forged Sibling Holder',
+    ])->assertNotFound();
+
+    $this->post(route('cemetery-sites.plots.lease.store', [
+        'cemetery_site_id' => $boacSite,
+        'plot_id' => $boacPlot,
+    ]), [
+        'leaseholder_name' => 'Forged Boac Holder',
+    ])->assertNotFound();
+
+    $this->patch(route('cemetery-sites.plots.lease.update', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $siblingPlot,
+    ]), [
+        'leaseholder_name' => 'Changed Holder',
+    ])->assertNotFound();
+
+    expect(DB::table('cemetery_plot_leases')->where('plot_id', $boacPlot)->count())->toBe(0)
+        ->and(DB::table('cemetery_plot_leases')->where('id', $siblingLease)->value('leaseholder_name'))->toBe('SIBLING HOLDER')
+        ->and(DB::table('cemetery_plot_leases')->where('leaseholder_name', 'FORGED SIBLING HOLDER')->exists())->toBeFalse();
 });
 
 it('shows child niches for slotted apartment parent Plot profiles', function () {
@@ -985,7 +1160,7 @@ function workspaceLease(string $municipalId, string $intermentId, string $plotId
     DB::table('cemetery_plot_leases')->insert([
         'id' => $id = (string) Str::ulid(),
         'municipal_id' => $municipalId,
-        'interment_id' => $intermentId,
+        'created_from_interment_id' => $intermentId,
         'plot_id' => $plotId,
         'leaseholder_name' => $leaseholderName,
         'status' => 'active',

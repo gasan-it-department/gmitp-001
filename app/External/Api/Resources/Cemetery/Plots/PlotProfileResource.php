@@ -12,6 +12,10 @@ class PlotProfileResource extends JsonResource
     {
         $intermentsCount = (int) ($this->interments_count ?? $this->interments->count());
         $capacity = (int) $this->capacity;
+        $timeline = $this->activities
+            ->concat($this->activeLease?->activities ?? collect())
+            ->sortByDesc('created_at')
+            ->take(50);
 
         return [
             'id' => $this->id,
@@ -46,6 +50,20 @@ class PlotProfileResource extends JsonResource
                 'id' => $this->parent->id,
                 'slot_label' => $this->parent->slotLabel,
             ] : null,
+            'active_lease' => $this->activeLease ? [
+                'id' => $this->activeLease->id,
+                'created_from_interment_id' => $this->activeLease->created_from_interment_id,
+                'leaseholder_name' => $this->activeLease->leaseholder_name,
+                'leaseholder_contact' => $this->activeLease->leaseholder_contact,
+                'leaseholder_address' => $this->activeLease->leaseholder_address,
+                'leaseholder_relationship' => $this->activeLease->leaseholder_relationship,
+                'lease_start' => $this->activeLease->lease_start?->format('Y-m-d'),
+                'lease_end' => $this->activeLease->lease_end?->format('Y-m-d'),
+                'amount_paid' => $this->activeLease->amount_paid,
+                'or_number' => $this->activeLease->or_number,
+                'status' => $this->activeLease->status?->value,
+                'notes' => $this->activeLease->notes,
+            ] : null,
             'current_interments' => $this->interments->map(fn ($interment) => [
                 'id' => $interment->id,
                 'decedent_id' => $interment->decedent_id,
@@ -58,15 +76,6 @@ class PlotProfileResource extends JsonResource
                 'type' => $interment->type,
                 'type_label' => ucfirst((string) $interment->type),
                 'notes' => $interment->notes,
-                'lease' => $interment->lease ? [
-                    'id' => $interment->lease->id,
-                    'leaseholder_name' => $interment->lease->leaseholder_name,
-                    'leaseholder_contact' => $interment->lease->leaseholder_contact,
-                    'leaseholder_relationship' => $interment->lease->leaseholder_relationship,
-                    'lease_start' => $interment->lease->lease_start?->format('Y-m-d'),
-                    'lease_end' => $interment->lease->lease_end?->format('Y-m-d'),
-                    'or_number' => $interment->lease->or_number,
-                ] : null,
             ])->values(),
             'child_niches' => $this->slots->map(fn ($slot) => [
                 'id' => $slot->id,
@@ -83,7 +92,7 @@ class PlotProfileResource extends JsonResource
                     $slot->id,
                 ]),
             ])->values(),
-            'audit_timeline' => $this->activities->map(fn ($activity) => [
+            'audit_timeline' => $timeline->map(fn ($activity) => [
                 'id' => $activity->id,
                 'event' => $activity->event,
                 'description' => $activity->description,

@@ -49,10 +49,10 @@ return new class extends Migration
 
         if (Schema::getConnection()->getDriverName() !== 'sqlite' && Schema::hasTable('cemetery_plot_leases')) {
             Schema::table('cemetery_plot_leases', function (Blueprint $table) {
-                $table->foreign('interment_id', 'cemetery_plot_leases_interment_foreign')
+                $table->foreign('created_from_interment_id', 'cemetery_plot_leases_origin_foreign')
                     ->references('id')
                     ->on('cemetery_interments')
-                    ->restrictOnDelete();
+                    ->nullOnDelete();
             });
         }
     }
@@ -61,7 +61,7 @@ return new class extends Migration
     {
         if (Schema::getConnection()->getDriverName() !== 'sqlite' && Schema::hasTable('cemetery_plot_leases')) {
             Schema::table('cemetery_plot_leases', function (Blueprint $table) {
-                $table->dropForeign('cemetery_plot_leases_interment_foreign');
+                $table->dropForeign('cemetery_plot_leases_origin_foreign');
             });
         }
 

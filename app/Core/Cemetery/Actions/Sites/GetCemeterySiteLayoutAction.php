@@ -21,7 +21,6 @@ class GetCemeterySiteLayoutAction
                     'plots as total_plots_count' => fn ($query) => $this->leafPlots($query),
                     'plots as available_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'available'),
                     'plots as occupied_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'occupied'),
-                    'plots as reserved_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'reserved'),
                     'plots as maintenance_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'maintenance'),
                 ])])
             ->get();
