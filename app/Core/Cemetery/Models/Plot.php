@@ -57,6 +57,11 @@ class Plot extends Model
         return $this->belongsTo(Block::class, 'block_id');
     }
 
+    public function cemeterySite(): BelongsTo
+    {
+        return $this->belongsTo(CemeterySite::class, 'cemetery_site_id');
+    }
+
     /**
      * Apartment parent/child grouping. Standard plots stay parentless even
      * when they allow shared occupancy.
@@ -80,6 +85,11 @@ class Plot extends Model
         return $this->hasMany(Interment::class, 'plot_id');
     }
 
+    public function intermentHistory(): HasMany
+    {
+        return $this->hasMany(Interment::class, 'plot_id');
+    }
+
     public function leases(): HasMany
     {
         return $this->hasMany(PlotLease::class, 'plot_id');
@@ -99,7 +109,7 @@ class Plot extends Model
      */
     public function activeInterment(): HasOne
     {
-        return $this->hasOne(Interment::class, 'plot_id')->latestOfMany();
+        return $this->hasOne(Interment::class, 'plot_id')->active()->latestOfMany();
     }
 
     public function activities(): MorphMany

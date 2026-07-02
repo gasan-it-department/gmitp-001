@@ -63,6 +63,11 @@ export interface CemeteryBlockListItem {
     name: string;
     status: 'active' | 'inactive' | 'maintenance';
     counts: PlotInventoryCounts;
+    apartments: {
+        id: string;
+        name: string;
+        slots_count: number;
+    }[];
 }
 
 export interface CemeterySectionListItem {
@@ -93,8 +98,24 @@ export type BulkGeneratePlotsForm = {
 
 export type GenerateApartmentNichesForm = {
     apartment_name: string;
+    start_floor: number | '';
     floors: number | '';
+    start_row: number | '';
     rows_per_floor: number | '';
+    start_niche: number | '';
+    niches_per_row: number | '';
+    row_prefix: string;
+    niche_prefix: string;
+    niche_padding: number | '';
+    capacity_per_niche: number | '';
+};
+
+export type AddApartmentNichesForm = {
+    start_floor: number | '';
+    floors: number | '';
+    start_row: number | '';
+    rows_per_floor: number | '';
+    start_niche: number | '';
     niches_per_row: number | '';
     row_prefix: string;
     niche_prefix: string;
@@ -224,6 +245,9 @@ export interface DecedentProfile {
         type: IntermentTypeValue;
         notes: string | null;
         interment_date: string | null;
+        move_url: string;
+        can_reverse_move: boolean;
+        reverse_move_url: string;
         plot: {
             id: string;
             name: string | null;
@@ -232,9 +256,11 @@ export interface DecedentProfile {
             status: PlotStatusValue | null;
             level: number | null;
             position: string | null;
+            profile_url: string;
             parent: { id: string; name: string } | null;
             block: { id: string; name: string } | null;
             section: { id: string; name: string } | null;
+            cemetery_site: { id: string; name: string } | null;
         } | null;
     } | null;
 }
@@ -334,6 +360,27 @@ export interface PlotProfileInterment {
     type: IntermentTypeValue | string;
     type_label: string;
     notes: string | null;
+    move_url: string;
+    can_reverse_move: boolean;
+    reverse_move_url: string;
+}
+
+export interface PlotProfileIntermentHistoryItem {
+    id: string;
+    decedent_id: string;
+    decedent_name: string;
+    decedent_profile_url: string;
+    interment_date: string | null;
+    type: IntermentTypeValue | string;
+    type_label: string;
+    status_label: string;
+    ended_at: string | null;
+    end_reason: string | null;
+    end_notes: string | null;
+    voided_at: string | null;
+    void_reason: string | null;
+    destination_plot_label: string | null;
+    destination_plot_profile_url: string | null;
 }
 
 export interface PlotProfileChildNiche {
@@ -376,6 +423,8 @@ export interface PlotProfile {
     available_capacity: number;
     occupancy_label: string;
     can_accept_more: boolean;
+    can_delete: boolean;
+    delete_blocked_reason: string | null;
     row: string | null;
     level: number | null;
     position: string | null;
@@ -390,6 +439,7 @@ export interface PlotProfile {
     } | null;
     active_lease: PlotLeaseSummary | null;
     current_interments: PlotProfileInterment[];
+    interment_history: PlotProfileIntermentHistoryItem[];
     child_niches: PlotProfileChildNiche[];
     audit_timeline: PlotActivityTimelineItem[];
 }
@@ -435,6 +485,10 @@ export type ChangePlotOccupancyForm = {
 
 export type ChangePlotStatusForm = {
     status: 'available' | 'maintenance' | '';
+    reason: string;
+};
+
+export type DeletePlotForm = {
     reason: string;
 };
 
@@ -489,4 +543,39 @@ export interface IntermentListItem {
     type: IntermentTypeValue;
     type_label: string;
     notes: string | null;
+    move_url: string;
+    can_reverse_move: boolean;
+    reverse_move_url: string;
 }
+
+export interface IntermentMoveContext {
+    id: string;
+    decedent_id: string;
+    decedent_name: string;
+    interment_date: string | null;
+    type: IntermentTypeValue;
+    type_label: string;
+    notes: string | null;
+    plot: {
+        id: string;
+        cemetery_site_id: string;
+        slot_label: string;
+        type_label: string | null;
+        status_label: string | null;
+        cemetery_site: { id: string; name: string } | null;
+        section: SectionLookup | null;
+        block: { id: string; name: string } | null;
+    } | null;
+}
+
+export type MoveIntermentForm = {
+    destination_cemetery_site_id: string;
+    destination_plot_id: string;
+    movement_date: string;
+    reason: string;
+    notes: string;
+};
+
+export type ReverseMovedIntermentForm = {
+    reason: string;
+};

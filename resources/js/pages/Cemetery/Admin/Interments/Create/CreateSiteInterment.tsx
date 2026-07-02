@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import {
     CemeterySiteListItem,
     CreateSiteIntermentForm,
-    IntermentTypeValue,
     PlotListItem,
     PlotTypeValue,
     ReadyDecedentOption,
@@ -226,20 +225,10 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                                 error={errors.interment_date}
                             />
 
-                            <div>
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Interment Type *</label>
-                                <Select value={data.type} onValueChange={(value) => setData('type', value as IntermentTypeValue)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem value="initial">Initial Interment</SelectItem>
-                                            <SelectItem value="transfer">Transfer From Another Cemetery/Slot</SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                                {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                <p className="text-sm font-medium text-slate-700">Interment Type</p>
+                                <p className="mt-1 text-sm text-slate-900">Initial Interment</p>
+                                <p className="mt-1 text-xs text-slate-500">Use the Move Interment flow for transfers between plots.</p>
                             </div>
 
                             <div className="md:col-span-2">

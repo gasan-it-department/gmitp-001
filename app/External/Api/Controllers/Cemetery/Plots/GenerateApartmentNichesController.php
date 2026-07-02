@@ -17,13 +17,13 @@ class GenerateApartmentNichesController extends Controller
     public function __invoke(GenerateApartmentNichesRequest $request, string $cemetery_site_id, string $block_id): RedirectResponse
     {
         $municipality = app('current_municipality');
-        $apartment = $this->generateApartmentNiches->execute(
-            GenerateApartmentNichesDto::fromRequest($request->validated(), $cemetery_site_id, $block_id)
-        );
+        $dto = GenerateApartmentNichesDto::fromRequest($request->validated(), $cemetery_site_id, $block_id);
+
+        $this->generateApartmentNiches->execute($dto);
 
         return redirect()->route('cemetery.admin.sites.workspace.page', [
             'municipality' => $municipality->slug,
             'cemetery_site_id' => $cemetery_site_id,
-        ])->with('success', $apartment->capacity.' apartment niche slots generated successfully.');
+        ])->with('success', $dto->totalSlots().' apartment niche slots generated successfully.');
     }
 }

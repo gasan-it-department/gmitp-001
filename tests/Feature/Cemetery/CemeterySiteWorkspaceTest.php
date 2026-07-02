@@ -3,6 +3,7 @@
 use App\Core\Cemetery\Models\Plot;
 use App\Core\Municipality\Models\Municipality;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -168,7 +169,7 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
             'updated_at' => now(),
         ],
         [
-            'id' => (string) Str::ulid(),
+            'id' => $availableSlot = (string) Str::ulid(),
             'municipal_id' => $this->gasan->id,
             'cemetery_site_id' => $site,
             'block_id' => $block,
@@ -185,7 +186,7 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
             'updated_at' => now(),
         ],
         [
-            'id' => (string) Str::ulid(),
+            'id' => $occupiedSlot = (string) Str::ulid(),
             'municipal_id' => $this->gasan->id,
             'cemetery_site_id' => $site,
             'block_id' => $block,
@@ -203,6 +204,8 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
         ],
     ]);
 
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $occupiedSlot, '2026-06-20');
+
     $this->get(route('cemetery.admin.sites.workspace.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $site,
@@ -211,7 +214,8 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
         ->assertInertia(fn (Assert $page) => $page
             ->has('plots.data', 1)
             ->where('plots.data.0.name', 'APARTMENT A')
-            ->where('plots.data.0.status', null));
+            ->where('plots.data.0.status', null)
+            ->where('plots.data.0.occupancy_label', '1 / 2'));
 
     $this->get(route('cemetery.admin.sites.workspace.page', [
         'municipality' => $this->gasan->slug,
@@ -228,6 +232,8 @@ it('filters Site Plot inventory by assignable apartment slots and search', funct
             ->has('plots.data', 1)
             ->where('plots.data.0.slot_label', 'APARTMENT A-F2-R2-N03')
             ->where('plots.data.0.status', 'occupied'));
+
+    expect($availableSlot)->not->toBe($occupiedSlot);
 });
 
 it('filters Site Plot inventory by Section Block status and row', function () {
@@ -488,6 +494,8 @@ it('shows child niches for slotted apartment parent Plot profiles', function () 
     $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 2);
     $slot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N01', 'shared', 'available', 2);
 
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $slot, '2026-06-20');
+
     $this->get(route('cemetery.admin.sites.plots.profile.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $site,
@@ -497,9 +505,11 @@ it('shows child niches for slotted apartment parent Plot profiles', function () 
         ->assertInertia(fn (Assert $page) => $page
             ->where('plot.id', $parent)
             ->where('plot.occupancy_mode', 'slotted')
+            ->where('plot.occupancy_label', '1 / 2')
             ->has('plot.child_niches', 1)
             ->where('plot.child_niches.0.id', $slot)
-            ->where('plot.child_niches.0.slot_label', 'APARTMENT A-F1-R1-N01'));
+            ->where('plot.child_niches.0.slot_label', 'APARTMENT A-F1-R1-N01')
+            ->where('plot.child_niches.0.occupancy_label', '1 / 2'));
 });
 
 it('fails closed when opening a sibling Site Plot through the selected Site route', function () {
@@ -641,6 +651,232 @@ it('changes status only for empty assignable Plots and logs the reason', functio
         'status' => 'available',
         'reason' => 'Attempt while occupied.',
     ])->assertSessionHasErrors('status');
+});
+
+it('hard deletes an empty standard Plot and hides it from Site inventory', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $plot = workspacePlot($this->gasan->id, $site, $block, 'LOT 800', 'available');
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]), [
+        'reason' => 'Wrong plot setup.',
+    ])->assertRedirect(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+    ]));
+
+    $activity = DB::table('activity_log')
+        ->where('subject_id', $plot)
+        ->where('event', 'plot_deleted')
+        ->first();
+
+    expect(DB::table('cemetery_plots')->where('id', $plot)->exists())->toBeFalse()
+        ->and($activity)->not->toBeNull()
+        ->and((string) $activity->properties)->toContain('Wrong plot setup.')
+        ->and((string) $activity->properties)->toContain('LOT 800')
+        ->and((string) $activity->properties)->toContain($block)
+        ->and((string) $activity->properties)->toContain($site);
+
+    $this->get(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('plots.data', 0)
+            ->where('inventory_counts.total', 0));
+});
+
+it('blocks deleting Plots with active or soft-deleted cemetery history', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'SECTION A'), 'GENERAL');
+    $intermentPlot = workspacePlot($this->gasan->id, $site, $block, 'LOT 801', 'available');
+    $leasePlot = workspacePlot($this->gasan->id, $site, $block, 'LOT 802', 'available');
+    $interment = workspaceInterment($this->gasan->id, workspaceDecedent(), $intermentPlot, '2026-06-20');
+    $lease = workspaceDetachedLease($this->gasan->id, $leasePlot, 'LEASE HOLDER');
+
+    DB::table('cemetery_interments')->where('id', $interment)->update(['deleted_at' => now()]);
+    DB::table('cemetery_plot_leases')->where('id', $lease)->update(['deleted_at' => now()]);
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $intermentPlot,
+    ]), [
+        'reason' => 'Should stay because interment history exists.',
+    ])->assertSessionHasErrors('plot');
+
+    session()->flush();
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $leasePlot,
+    ]), [
+        'reason' => 'Should stay because lease history exists.',
+    ])->assertSessionHasErrors('plot');
+
+    expect(DB::table('cemetery_plots')->whereIn('id', [$intermentPlot, $leasePlot])->whereNotNull('deleted_at')->exists())->toBeFalse();
+});
+
+it('hard deletes an unused apartment parent and all child niches atomically', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'), 'GENERAL');
+    $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 2);
+    $firstSlot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N01', 'shared', 'available', 5);
+    $secondSlot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N02', 'shared', 'available', 5);
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $parent,
+    ]), [
+        'reason' => 'Wrong apartment generated.',
+    ])->assertRedirect(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+    ]));
+
+    $activity = DB::table('activity_log')
+        ->where('subject_id', $parent)
+        ->where('event', 'apartment_deleted')
+        ->first();
+
+    expect(DB::table('cemetery_plots')->whereIn('id', [$parent, $firstSlot, $secondSlot])->exists())->toBeFalse()
+        ->and($activity)->not->toBeNull()
+        ->and((string) $activity->properties)->toContain('APARTMENT A')
+        ->and((string) $activity->properties)->toContain($block)
+        ->and((string) $activity->properties)->toContain($site)
+        ->and((string) $activity->properties)->toContain($firstSlot)
+        ->and((string) $activity->properties)->toContain($secondSlot);
+
+    $this->post(route('cemetery-sites.blocks.plots.apartment', [
+        'cemetery_site_id' => $site,
+        'block_id' => $block,
+    ]), [
+        'apartment_name' => 'APARTMENT A',
+        'floors' => 1,
+        'rows_per_floor' => 1,
+        'niches_per_row' => 1,
+        'row_prefix' => 'R',
+        'niche_prefix' => 'N',
+        'niche_padding' => 2,
+        'capacity_per_niche' => 5,
+    ])->assertSessionDoesntHaveErrors();
+
+    $replacementParent = Plot::query()
+        ->whereNull('deleted_at')
+        ->whereNull('parent_plot_id')
+        ->where('name', 'APARTMENT A')
+        ->sole();
+
+    expect($replacementParent->slots()->where('level', 1)->where('row', 'R1')->where('position', 'N01')->exists())->toBeTrue();
+});
+
+it('hard deletes an unused apartment child slot and updates the parent capacity', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'), 'GENERAL');
+    $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 2);
+    $firstSlot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N01', 'shared', 'available', 5);
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $firstSlot,
+    ]), [
+        'reason' => 'Extra niche slot was generated by mistake.',
+    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $parent,
+    ]));
+
+    $activity = DB::table('activity_log')
+        ->where('subject_id', $firstSlot)
+        ->where('event', 'niche_slot_deleted')
+        ->first();
+
+    expect(DB::table('cemetery_plots')->where('id', $firstSlot)->exists())->toBeFalse()
+        ->and(DB::table('cemetery_plots')->where('id', $parent)->value('capacity'))->toBe(0)
+        ->and($activity)->not->toBeNull()
+        ->and((string) $activity->properties)->toContain('Extra niche slot was generated by mistake.')
+        ->and((string) $activity->properties)->toContain($parent);
+});
+
+it('blocks apartment child slot deletion and parent apartment deletion when a child has history', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'), 'GENERAL');
+    $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 2);
+    $secondSlot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N02', 'shared', 'available', 5);
+
+    workspaceInterment($this->gasan->id, workspaceDecedent(), $secondSlot, '2026-06-20');
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $secondSlot,
+    ]), [
+        'reason' => 'Try deleting used niche.',
+    ])->assertSessionHasErrors('plot');
+
+    session()->flush();
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $parent,
+    ]), [
+        'reason' => 'Try deleting used apartment.',
+    ])->assertSessionHasErrors('plot');
+
+    expect(DB::table('cemetery_plots')->whereIn('id', [$parent, $secondSlot])->whereNotNull('deleted_at')->exists())->toBeFalse();
+});
+
+it('purges existing soft-deleted unused Plot setup rows through the cleanup command', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'), 'GENERAL');
+    $parent = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', null, null, null, null, 'slotted', null, 2);
+    $firstSlot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N01', 'shared', 'available', 5);
+    $secondSlot = workspaceApartmentPlot($this->gasan->id, $site, $block, 'APARTMENT A', $parent, 1, 'R1', 'N02', 'shared', 'available', 5);
+
+    DB::table('cemetery_plots')
+        ->whereIn('id', [$parent, $firstSlot, $secondSlot])
+        ->update(['deleted_at' => now()]);
+
+    Artisan::call('cemetery:purge-unused-deleted-plots', [
+        '--municipal_id' => $this->gasan->id,
+    ]);
+
+    expect(DB::table('cemetery_plots')->whereIn('id', [$parent, $firstSlot, $secondSlot])->exists())->toBeFalse();
+});
+
+it('fails closed for cross Site and cross tenant Plot deletion attempts', function () {
+    $selectedSite = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $siblingSite = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
+    $siblingBlock = workspaceBlock($this->gasan->id, workspaceSection($this->gasan->id, $siblingSite, 'SECTION B'), 'GENERAL');
+    $siblingPlot = workspacePlot($this->gasan->id, $siblingSite, $siblingBlock, 'LOT 900', 'available');
+    $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL');
+    $boacBlock = workspaceBlock($this->boac->id, workspaceSection($this->boac->id, $boacSite, 'SECTION A'), 'GENERAL');
+    $boacPlot = workspacePlot($this->boac->id, $boacSite, $boacBlock, 'LOT 1', 'available');
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $selectedSite,
+        'plot_id' => $siblingPlot,
+    ]), [
+        'reason' => 'Forged sibling Site delete.',
+    ])->assertNotFound();
+
+    $this->delete(route('cemetery-sites.plots.delete', [
+        'cemetery_site_id' => $boacSite,
+        'plot_id' => $boacPlot,
+    ]), [
+        'reason' => 'Forged cross tenant delete.',
+    ])->assertNotFound();
+
+    expect(DB::table('cemetery_plots')->whereIn('id', [$siblingPlot, $boacPlot])->whereNotNull('deleted_at')->exists())->toBeFalse();
 });
 
 it('shows only active Blocks from the selected Site on Plot creation', function () {
@@ -947,6 +1183,94 @@ it('generates apartment niche containers and floor row niche slots', function ()
         ->and($lastSlot->capacity)->toBe(3);
 });
 
+it('appends niche slots to an existing apartment parent', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock(
+        $this->gasan->id,
+        workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'),
+        'BUILDING A'
+    );
+
+    $this->post(route('cemetery-sites.blocks.plots.apartment', [
+        'cemetery_site_id' => $site,
+        'block_id' => $block,
+    ]), [
+        'apartment_name' => 'APARTMENT A',
+        'floors' => 1,
+        'rows_per_floor' => 1,
+        'niches_per_row' => 2,
+        'row_prefix' => 'R',
+        'niche_prefix' => 'N',
+        'niche_padding' => 2,
+        'capacity_per_niche' => 5,
+    ])->assertSessionDoesntHaveErrors();
+
+    $parent = Plot::query()->whereNull('parent_plot_id')->sole();
+
+    $this->post(route('cemetery-sites.plots.niches.store', [
+        'cemetery_site_id' => $site,
+        'plot_id' => $parent->id,
+    ]), [
+        'start_floor' => 1,
+        'floors' => 1,
+        'start_row' => 1,
+        'rows_per_floor' => 1,
+        'start_niche' => 3,
+        'niches_per_row' => 1,
+        'row_prefix' => 'R',
+        'niche_prefix' => 'N',
+        'niche_padding' => 2,
+        'capacity_per_niche' => 5,
+    ])->assertSessionDoesntHaveErrors();
+
+    $parent->refresh();
+
+    expect(Plot::query()->whereNull('parent_plot_id')->count())->toBe(1)
+        ->and($parent->capacity)->toBe(3)
+        ->and(Plot::query()->where('parent_plot_id', $parent->id)->where('position', 'N03')->sole()->slot_label)
+        ->toBe('APARTMENT A-F1-R1-N03');
+});
+
+it('rejects appending apartment slots through the new apartment generator', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = workspaceBlock(
+        $this->gasan->id,
+        workspaceSection($this->gasan->id, $site, 'APARTMENT AREA'),
+        'BUILDING A'
+    );
+
+    $this->post(route('cemetery-sites.blocks.plots.apartment', [
+        'cemetery_site_id' => $site,
+        'block_id' => $block,
+    ]), [
+        'apartment_name' => 'APARTMENT A',
+        'floors' => 1,
+        'rows_per_floor' => 1,
+        'niches_per_row' => 1,
+        'row_prefix' => 'R',
+        'niche_prefix' => 'N',
+        'niche_padding' => 2,
+        'capacity_per_niche' => 1,
+    ])->assertSessionDoesntHaveErrors();
+
+    $parent = Plot::query()->whereNull('parent_plot_id')->sole();
+
+    $this->post(route('cemetery-sites.blocks.plots.apartment', [
+        'cemetery_site_id' => $site,
+        'block_id' => $block,
+    ]), [
+        'apartment_parent_id' => $parent->id,
+        'apartment_name' => 'APARTMENT A',
+        'floors' => 1,
+        'rows_per_floor' => 1,
+        'niches_per_row' => 1,
+        'row_prefix' => 'R',
+        'niche_prefix' => 'N',
+        'niche_padding' => 2,
+        'capacity_per_niche' => 1,
+    ])->assertSessionHasErrors('apartment_parent_id');
+});
+
 it('rejects duplicate apartment generation without partial inserts', function () {
     $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
     $block = workspaceBlock(
@@ -1161,6 +1485,22 @@ function workspaceLease(string $municipalId, string $intermentId, string $plotId
         'id' => $id = (string) Str::ulid(),
         'municipal_id' => $municipalId,
         'created_from_interment_id' => $intermentId,
+        'plot_id' => $plotId,
+        'leaseholder_name' => $leaseholderName,
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $id;
+}
+
+function workspaceDetachedLease(string $municipalId, string $plotId, string $leaseholderName): string
+{
+    DB::table('cemetery_plot_leases')->insert([
+        'id' => $id = (string) Str::ulid(),
+        'municipal_id' => $municipalId,
+        'created_from_interment_id' => null,
         'plot_id' => $plotId,
         'leaseholder_name' => $leaseholderName,
         'status' => 'active',

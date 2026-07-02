@@ -20,6 +20,9 @@ class GenerateApartmentNichesRequest extends FormRequest
             'apartment_name' => mb_strtoupper(trim((string) $this->input('apartment_name'))),
             'row_prefix' => mb_strtoupper(trim((string) $this->input('row_prefix', 'R'))),
             'niche_prefix' => mb_strtoupper(trim((string) $this->input('niche_prefix', 'N'))),
+            'start_floor' => $this->input('start_floor', 1),
+            'start_row' => $this->input('start_row', 1),
+            'start_niche' => $this->input('start_niche', 1),
             'capacity_per_niche' => $this->input('capacity_per_niche', 1),
         ]);
     }
@@ -56,9 +59,13 @@ class GenerateApartmentNichesRequest extends FormRequest
                         )
                         ->whereNull('deleted_at')),
             ],
+            'apartment_parent_id' => ['prohibited'],
             'apartment_name' => ['required', 'string', 'max:80'],
+            'start_floor' => ['required', 'integer', 'min:1', 'max:500'],
             'floors' => ['required', 'integer', 'min:1', 'max:20'],
+            'start_row' => ['required', 'integer', 'min:1', 'max:500'],
             'rows_per_floor' => ['required', 'integer', 'min:1', 'max:50'],
+            'start_niche' => ['required', 'integer', 'min:1', 'max:10000'],
             'niches_per_row' => ['required', 'integer', 'min:1', 'max:100'],
             'row_prefix' => ['required', 'string', 'max:10'],
             'niche_prefix' => ['required', 'string', 'max:10'],

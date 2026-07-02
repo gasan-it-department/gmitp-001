@@ -11,6 +11,7 @@ class GetDecedentProfileAction
     public function execute(string $decedentId, string $municipalId): Decedent
     {
         $decedent = Decedent::with([
+            'currentInterment.plot.cemeterySite',
             'currentInterment.plot.block.section',
             'currentInterment.plot.parent',
             'documents.media',

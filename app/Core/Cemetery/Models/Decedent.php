@@ -83,7 +83,7 @@ class Decedent extends Model implements HasMedia
      */
     public function currentInterment(): HasOne
     {
-        return $this->hasOne(Interment::class, 'decedent_id')->latestOfMany();
+        return $this->hasOne(Interment::class, 'decedent_id')->active()->latestOfMany();
     }
 
     public function interments(): HasMany

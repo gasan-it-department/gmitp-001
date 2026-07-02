@@ -9,8 +9,11 @@ final readonly class GenerateApartmentNichesDto
         public string $cemeterySiteId,
         public string $blockId,
         public string $apartmentName,
+        public int $startFloor,
         public int $floors,
+        public int $startRow,
         public int $rowsPerFloor,
+        public int $startNiche,
         public int $nichesPerRow,
         public string $rowPrefix,
         public string $nichePrefix,
@@ -25,8 +28,11 @@ final readonly class GenerateApartmentNichesDto
             cemeterySiteId: $cemeterySiteId,
             blockId: $blockId,
             apartmentName: self::upper($data['apartment_name']),
+            startFloor: (int) ($data['start_floor'] ?? 1),
             floors: (int) $data['floors'],
+            startRow: (int) ($data['start_row'] ?? 1),
             rowsPerFloor: (int) $data['rows_per_floor'],
+            startNiche: (int) ($data['start_niche'] ?? 1),
             nichesPerRow: (int) $data['niches_per_row'],
             rowPrefix: self::upper($data['row_prefix']),
             nichePrefix: self::upper($data['niche_prefix']),
@@ -63,9 +69,9 @@ final readonly class GenerateApartmentNichesDto
     {
         $slots = [];
 
-        for ($floor = 1; $floor <= $this->floors; $floor++) {
-            for ($row = 1; $row <= $this->rowsPerFloor; $row++) {
-                for ($niche = 1; $niche <= $this->nichesPerRow; $niche++) {
+        for ($floor = $this->startFloor; $floor < $this->startFloor + $this->floors; $floor++) {
+            for ($row = $this->startRow; $row < $this->startRow + $this->rowsPerFloor; $row++) {
+                for ($niche = $this->startNiche; $niche < $this->startNiche + $this->nichesPerRow; $niche++) {
                     $slots[] = [
                         'level' => $floor,
                         'row' => $this->rowLabel($row),

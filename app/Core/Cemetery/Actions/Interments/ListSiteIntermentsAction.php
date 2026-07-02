@@ -19,6 +19,7 @@ class ListSiteIntermentsAction
                 'plot.block.section',
             ])
             ->where('municipal_id', $municipalId)
+            ->active()
             ->whereHas('plot', fn ($query) => $query
                 ->where('municipal_id', $municipalId)
                 ->where('cemetery_site_id', $cemeterySiteId))

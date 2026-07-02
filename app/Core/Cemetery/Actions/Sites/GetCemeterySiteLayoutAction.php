@@ -22,7 +22,14 @@ class GetCemeterySiteLayoutAction
                     'plots as available_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'available'),
                     'plots as occupied_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'occupied'),
                     'plots as maintenance_plots_count' => fn ($query) => $this->leafPlots($query)->where('status', 'maintenance'),
-                ])])
+                ])
+                ->with(['plots' => fn ($query) => $query
+                    ->where('municipal_id', $municipalId)
+                    ->where('cemetery_site_id', $cemeterySiteId)
+                    ->whereNull('parent_plot_id')
+                    ->where('occupancy_mode', PlotOccupancyMode::SLOTTED->value)
+                    ->orderBy('name')
+                    ->withCount('slots')])])
             ->get();
     }
 

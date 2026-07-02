@@ -2,6 +2,7 @@
 
 namespace App\Core\Cemetery\Actions\Sites;
 
+use App\Core\Cemetery\Enums\CemeterySiteStatus;
 use App\Core\Cemetery\Models\CemeterySite;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -10,7 +11,7 @@ class ListCemeterySitesAction
     /**
      * @return Collection<int, CemeterySite>
      */
-    public function execute(string $municipalId): Collection
+    public function execute(string $municipalId, bool $activeOnly = false): Collection
     {
         return CemeterySite::query()
             ->leftJoin(
@@ -25,6 +26,8 @@ class ListCemeterySitesAction
             ])
             ->withCount('sections')
             ->forMunicipality($municipalId)
+            ->when($activeOnly, fn ($query) => $query
+                ->where('cemetery_sites.status', CemeterySiteStatus::ACTIVE->value))
             ->orderBy('cemetery_sites.name')
             ->get();
     }

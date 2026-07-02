@@ -56,7 +56,10 @@ class CreateIntermentRequest extends FormRequest
                 // In the event-typed schema, "active" = "not soft-deleted"
                 // (exhumation / transfer soft-deletes the prior row).
                 Rule::unique('cemetery_interments', 'decedent_id')
-                    ->where(fn ($q) => $q->whereNull('deleted_at')),
+                    ->where(fn ($q) => $q
+                        ->whereNull('ended_at')
+                        ->whereNull('voided_at')
+                        ->whereNull('deleted_at')),
             ],
 
             'plot_id' => [
@@ -76,6 +79,8 @@ class CreateIntermentRequest extends FormRequest
                                         select count(*)
                                         from cemetery_interments
                                         where cemetery_interments.plot_id = cemetery_plots.id
+                                        and cemetery_interments.ended_at is null
+                                        and cemetery_interments.voided_at is null
                                         and cemetery_interments.deleted_at is null
                                     ) = 0');
                             })->orWhere(function ($shared) {
@@ -86,6 +91,8 @@ class CreateIntermentRequest extends FormRequest
                                         select count(*)
                                         from cemetery_interments
                                         where cemetery_interments.plot_id = cemetery_plots.id
+                                        and cemetery_interments.ended_at is null
+                                        and cemetery_interments.voided_at is null
                                         and cemetery_interments.deleted_at is null
                                     ) < cemetery_plots.capacity');
                             });
@@ -96,7 +103,7 @@ class CreateIntermentRequest extends FormRequest
 
             // Event type — defaults to 'initial' at the DTO if omitted.
             // 'transfer' is set by the (future) TransferIntermentAction wrapper.
-            'type' => ['sometimes', 'in:initial,transfer'],
+            'type' => ['sometimes', 'in:initial'],
 
             'notes' => ['nullable', 'string', 'max:1000'],
 
@@ -120,7 +127,7 @@ class CreateIntermentRequest extends FormRequest
             'decedent_id.unique' => 'This decedent already has an active interment record.',
             'plot_id.exists' => 'The selected plot is not assignable or has already reached capacity.',
             'interment_date.before_or_equal' => 'The interment date cannot be in the future.',
-            'type.in' => 'Interment type must be either "initial" or "transfer".',
+            'type.in' => 'Use the Move Interment flow to create transfer records.',
             'leaseholder_name.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',
             'leaseholder_contact.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',
             'leaseholder_address.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',

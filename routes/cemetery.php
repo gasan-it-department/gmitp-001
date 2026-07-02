@@ -12,10 +12,14 @@ use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentDocumentControl
 use App\External\Api\Controllers\Cemetery\Decedents\UpdateDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\ViewDecedentAvatarController;
+use App\External\Api\Controllers\Cemetery\Interments\MoveIntermentController as ApiMoveIntermentController;
+use App\External\Api\Controllers\Cemetery\Interments\ReverseMovedIntermentController;
 use App\External\Api\Controllers\Cemetery\Interments\StoreIntermentController;
+use App\External\Api\Controllers\Cemetery\Plots\AddApartmentNichesController;
 use App\External\Api\Controllers\Cemetery\Plots\BulkGeneratePlotsController;
 use App\External\Api\Controllers\Cemetery\Plots\ChangePlotOccupancyController;
 use App\External\Api\Controllers\Cemetery\Plots\ChangePlotStatusController;
+use App\External\Api\Controllers\Cemetery\Plots\DeletePlotController;
 use App\External\Api\Controllers\Cemetery\Plots\GenerateApartmentNichesController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotController;
 use App\External\Api\Controllers\Cemetery\Plots\StorePlotLeaseController;
@@ -25,6 +29,7 @@ use App\External\Api\Controllers\Cemetery\Sections\StoreCemeterySectionControlle
 use App\External\Api\Controllers\Cemetery\Sites\StoreCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\CreateSiteIntermentController;
+use App\External\Web\Controllers\Cemetery\Admin\Interments\MoveIntermentController as WebMoveIntermentController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\CreatePlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\ShowPlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Sites\CreateCemeterySiteController;
@@ -100,6 +105,8 @@ Route::prefix('/{municipality}/cemetery')
                     ->group(function () {
                         Route::get('/create', CreateIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('index');
                         Route::get('/assign/{decedent_id}', AssignDecedentToPlotController::class)->middleware('permission:cemetery.decedents.manage')->name('assign.page');
+                        Route::get('/{interment_id}/move', WebMoveIntermentController::class)
+                            ->middleware('permission:cemetery.decedents.manage')->name('move.page');
                     });
             });
     });
@@ -136,6 +143,8 @@ Route::prefix('api/cemetery-sites')
         Route::post('{cemetery_site_id}/sections', StoreCemeterySectionController::class)->name('sections.store');
         Route::post('{cemetery_site_id}/sections/{section_id}/blocks', StoreCemeteryBlockController::class)->name('sections.blocks.store');
         Route::post('{cemetery_site_id}/plots', StorePlotController::class)->name('plots.store');
+        Route::delete('{cemetery_site_id}/plots/{plot_id}', DeletePlotController::class)->name('plots.delete');
+        Route::post('{cemetery_site_id}/plots/{plot_id}/niches', AddApartmentNichesController::class)->name('plots.niches.store');
         Route::patch('{cemetery_site_id}/plots/{plot_id}/details', UpdatePlotDetailsController::class)->name('plots.details.update');
         Route::post('{cemetery_site_id}/plots/{plot_id}/lease', StorePlotLeaseController::class)->name('plots.lease.store');
         Route::patch('{cemetery_site_id}/plots/{plot_id}/lease', UpdatePlotLeaseController::class)->name('plots.lease.update');
@@ -151,4 +160,7 @@ Route::prefix('api/interments')
     ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
         Route::post('store', StoreIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('store');
+        Route::post('{interment_id}/move', ApiMoveIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('move');
+        Route::patch('{interment_id}/reverse-move', ReverseMovedIntermentController::class)
+            ->middleware('permission:cemetery.decedents.manage')->name('reverse-move');
     });

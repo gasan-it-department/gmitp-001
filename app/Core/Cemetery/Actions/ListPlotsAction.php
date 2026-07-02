@@ -24,7 +24,11 @@ class ListPlotsAction
         );
 
         return Plot::with(['block.section'])
-            ->withCount('interments')
+            ->withCount([
+                'interments' => fn (Builder $query) => $query->active(),
+                'slots as occupied_slots_count' => fn (Builder $query) => $query
+                    ->whereHas('interments', fn (Builder $intermentQuery) => $intermentQuery->active()),
+            ])
             ->where('municipal_id', $municipalId)
             ->where('cemetery_site_id', $cemeterySiteId)
             ->when($filters->scope === PlotListFiltersDto::SCOPE_TOP_LEVEL, fn (Builder $query) => $query

@@ -20,7 +20,7 @@ class ChangePlotStatusAction
                 ->lockForUpdate()
                 ->findOrFail($dto->plotId);
 
-            $activeCount = $plot->interments()->count();
+            $activeCount = $plot->interments()->active()->count();
             $this->assertAllowed($plot, $dto, $activeCount);
 
             $oldStatus = $plot->status?->value;

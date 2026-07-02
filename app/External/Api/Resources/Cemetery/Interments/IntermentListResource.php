@@ -12,6 +12,7 @@ class IntermentListResource extends JsonResource
         $plot = $this->plot;
         $block = $plot?->block;
         $decedent = $this->decedent;
+        $municipality = app('current_municipality');
 
         return [
             'id' => $this->id,
@@ -27,6 +28,14 @@ class IntermentListResource extends JsonResource
             'type' => $this->type,
             'type_label' => $this->type === 'transfer' ? 'Transfer' : 'Initial Interment',
             'notes' => $this->notes,
+            'move_url' => route('cemetery.admin.interments.move.page', [
+                $municipality->slug,
+                $this->id,
+            ]),
+            'can_reverse_move' => $this->type === 'transfer' && $this->previous_interment_id !== null,
+            'reverse_move_url' => route('interments.reverse-move', [
+                'interment_id' => $this->id,
+            ]),
         ];
     }
 

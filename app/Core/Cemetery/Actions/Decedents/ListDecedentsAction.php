@@ -33,12 +33,12 @@ class ListDecedentsAction
                 ->whereYear('date_of_death', $year))
             ->when($filters->intermentStatus, function (Builder $query, string $status): void {
                 if ($status === 'interred') {
-                    $query->whereHas('interments');
+                    $query->whereHas('interments', fn (Builder $intermentQuery) => $intermentQuery->active());
 
                     return;
                 }
 
-                $query->whereDoesntHave('interments');
+                $query->whereDoesntHave('interments', fn (Builder $intermentQuery) => $intermentQuery->active());
             })
             ->when($filters->search, fn (Builder $query, string $search) => $this->applySearch($query, $search))
             ->orderByDesc('date_of_registration')

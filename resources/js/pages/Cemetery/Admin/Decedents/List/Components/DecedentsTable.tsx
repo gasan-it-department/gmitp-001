@@ -17,7 +17,7 @@ import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import cemetery from '@/routes/cemetery';
 import { router } from '@inertiajs/react';
-import { EyeIcon, MapPin, Pencil } from 'lucide-react';
+import { EyeIcon, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DecedentsTableHeader from './DecedentsTableHeader';
 
@@ -143,92 +143,84 @@ export function DecedentsTable({
                 <div className="overflow-x-auto">
                     <Table className="min-w-full">
                         <TableHeader className="bg-slate-50/70">
-                        <TableRow>
-                            <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
-                            <TableHead className="text-[12px] font-bold">Full Name</TableHead>
-                            <TableHead className="text-[12px] font-bold">Record / Identity</TableHead>
-                            <TableHead className="text-[12px] font-bold">Registry No.</TableHead>
-                            <TableHead className="text-[12px] font-bold">Date of Death</TableHead>
-                            <TableHead className="text-[12px] font-bold">Plot</TableHead>
-                            <TableHead className="text-[12px] font-bold">Status</TableHead>
-                            <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[5%] text-center text-[12px] font-bold">No.</TableHead>
+                                <TableHead className="text-[12px] font-bold">Full Name</TableHead>
+                                <TableHead className="text-[12px] font-bold">Record / Identity</TableHead>
+                                <TableHead className="text-[12px] font-bold">Registry No.</TableHead>
+                                <TableHead className="text-[12px] font-bold">Date of Death</TableHead>
+                                <TableHead className="text-[12px] font-bold">Plot</TableHead>
+                                <TableHead className="text-[12px] font-bold">Status</TableHead>
+                                <TableHead className="text-center text-[12px] font-bold">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
 
-                    <TableBody>
-                        {decedentList.length === 0 ? (
-                            <AdminEmptyListItem colSpan={8} title="No Decedents yet." message="Decedent records will appear here." />
-                        ) : (
-                            decedentList.map((item, index) => (
-                                <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
-                                    <TableCell className="text-center text-[13px] font-medium whitespace-nowrap">
-                                        {index + 1 + (currentPage - 1) * perPage}
-                                    </TableCell>
-                                    <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">{item.full_name}</TableCell>
-                                    <TableCell className="text-[12px] whitespace-nowrap">
-                                        <span className="block">{item.vital_record_label}</span>
-                                        <span className="text-[10px] text-slate-400 uppercase">
-                                            {item.identity_status} · {item.life_stage ?? 'age unknown'}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="font-mono text-[12px] whitespace-nowrap">{item.registry_number}</TableCell>
-                                    <TableCell className="text-[12px] whitespace-nowrap">{item.date_of_death}</TableCell>
-                                    <TableCell className="text-[12px] whitespace-nowrap">{item.plot_label ?? '—'}</TableCell>
-                                    <TableCell className="text-[12px]">
-                                        <div className="space-y-1">
-                                            <span
-                                                className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${item.registration_status_tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : item.registration_status_tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'}`}
-                                            >
-                                                {item.registration_status_label}
+                        <TableBody>
+                            {decedentList.length === 0 ? (
+                                <AdminEmptyListItem colSpan={8} title="No Decedents yet." message="Decedent records will appear here." />
+                            ) : (
+                                decedentList.map((item, index) => (
+                                    <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
+                                        <TableCell className="text-center text-[13px] font-medium whitespace-nowrap">
+                                            {index + 1 + (currentPage - 1) * perPage}
+                                        </TableCell>
+                                        <TableCell className="truncate text-[13px] font-medium whitespace-nowrap">{item.full_name}</TableCell>
+                                        <TableCell className="text-[12px] whitespace-nowrap">
+                                            <span className="block">{item.vital_record_label}</span>
+                                            <span className="text-[10px] text-slate-400 uppercase">
+                                                {item.identity_status} · {item.life_stage ?? 'age unknown'}
                                             </span>
-                                            <span
-                                                className={`block w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${STATUS_PILL[item.interment_status]}`}
-                                            >
-                                                {STATUS_LABEL[item.interment_status]}
-                                            </span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="">
-                                        <div className="flex justify-center gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    router.visit(cemetery.admin.decedents.profile.page.url([currentMunicipality.slug, item.id]));
-                                                }}
-                                                className="border-green-200 text-green-600 hover:bg-green-50"
-                                            >
-                                                <EyeIcon size={14} />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    router.visit(cemetery.admin.decedents.edit.page.url([currentMunicipality.slug, item.id]));
-                                                }}
-                                                className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                                            >
-                                                <Pencil size={14} />
-                                            </Button>
-                                            {item.interment_status === 'unassigned' && (
+                                        </TableCell>
+                                        <TableCell className="font-mono text-[12px] whitespace-nowrap">{item.registry_number}</TableCell>
+                                        <TableCell className="text-[12px] whitespace-nowrap">{item.date_of_death}</TableCell>
+                                        <TableCell className="text-[12px] whitespace-nowrap">{item.plot_label ?? '—'}</TableCell>
+                                        <TableCell className="text-[12px]">
+                                            <div className="space-y-1">
+                                                <span
+                                                    className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${item.registration_status_tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : item.registration_status_tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700'}`}
+                                                >
+                                                    {item.registration_status_label}
+                                                </span>
+                                                <span
+                                                    className={`block w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${STATUS_PILL[item.interment_status]}`}
+                                                >
+                                                    {STATUS_LABEL[item.interment_status]}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="">
+                                            <div className="flex justify-center gap-2">
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => {
-                                                        router.visit(cemetery.admin.interments.assign.page.url([currentMunicipality.slug, item.id]));
+                                                        router.visit(cemetery.admin.decedents.profile.page.url([currentMunicipality.slug, item.id]));
                                                     }}
-                                                    className="border-amber-200 text-amber-600 hover:bg-amber-50"
+                                                    className="border-green-200 text-green-600 hover:bg-green-50"
                                                 >
-                                                    <MapPin size={14} />
+                                                    <EyeIcon size={14} />
                                                 </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                                                {item.interment_status === 'unassigned' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            router.visit(
+                                                                cemetery.admin.interments.assign.page.url([currentMunicipality.slug, item.id]),
+                                                            );
+                                                        }}
+                                                        className="border-amber-200 text-amber-600 hover:bg-amber-50"
+                                                    >
+                                                        <MapPin size={14} />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
                 </div>
             </div>
             {/* PAGINATION */}

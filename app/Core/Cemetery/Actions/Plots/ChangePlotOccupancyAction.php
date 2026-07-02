@@ -19,7 +19,7 @@ class ChangePlotOccupancyAction
                 ->lockForUpdate()
                 ->findOrFail($dto->plotId);
 
-            $activeCount = $plot->interments()->count();
+            $activeCount = $plot->interments()->active()->count();
             $oldValues = [
                 'occupancy_mode' => $plot->occupancy_mode?->value,
                 'capacity' => $plot->capacity,

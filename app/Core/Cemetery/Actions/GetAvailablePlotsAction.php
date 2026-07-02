@@ -12,7 +12,7 @@ class GetAvailablePlotsAction
     public function execute(string $municipalId, ?string $cemeterySiteId = null): Collection
     {
         return Plot::with(['block.section', 'parent', 'activeLease'])
-            ->withCount('interments')
+            ->withCount(['interments' => fn ($query) => $query->active()])
             ->where('municipal_id', $municipalId)
             ->when($cemeterySiteId, fn ($query) => $query->where('cemetery_site_id', $cemeterySiteId))
             ->whereNull('deleted_at')
@@ -21,7 +21,7 @@ class GetAvailablePlotsAction
                     $single
                         ->where('occupancy_mode', PlotOccupancyMode::SINGLE->value)
                         ->where('status', PlotStatus::AVAILABLE->value)
-                        ->whereDoesntHave('interments');
+                        ->whereDoesntHave('interments', fn ($query) => $query->active());
                 })->orWhere(function ($shared) {
                     $shared
                         ->where('occupancy_mode', PlotOccupancyMode::SHARED->value)
@@ -30,6 +30,8 @@ class GetAvailablePlotsAction
                             select count(*)
                             from cemetery_interments
                             where cemetery_interments.plot_id = cemetery_plots.id
+                            and cemetery_interments.ended_at is null
+                            and cemetery_interments.voided_at is null
                             and cemetery_interments.deleted_at is null
                         ) < cemetery_plots.capacity');
                 });

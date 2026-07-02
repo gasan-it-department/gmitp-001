@@ -7,8 +7,9 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, Check, FileText, History, Loader2, MapPin, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRightLeft, Check, FileText, History, Loader2, MapPin, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
 import { FormEvent, ReactNode, useState } from 'react';
+import { ReverseMoveDialog } from '../../Interments/Components/ReverseMoveDialog';
 
 interface Props {
     decedent: { data: DecedentProfileType };
@@ -112,6 +113,7 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                 </section>
 
                 <ReadinessCard record={record} abilities={abilities} municipality={currentMunicipality} />
+                <BurialLocationCard record={record} abilities={abilities} municipality={currentMunicipality} />
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
@@ -123,6 +125,74 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function BurialLocationCard({
+    record,
+    abilities,
+    municipality,
+}: {
+    record: DecedentProfileType;
+    abilities: Props['abilities'];
+    municipality: Municipality;
+}) {
+    const interment = record.interment;
+    const plot = interment?.plot;
+
+    if (!interment || !plot) {
+        return null;
+    }
+
+    const hierarchy = [plot.cemetery_site?.name, plot.section?.name, plot.block?.name].filter(Boolean).join(' / ');
+    const intermentType = interment.type.replace('_', ' ').toUpperCase();
+
+    return (
+        <Card title="Burial Location" icon={<MapPin size={17} />}>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <p className="text-xs font-bold tracking-wider text-slate-400 uppercase">Full Location</p>
+                    <p className="mt-1 text-base font-semibold text-slate-900">{hierarchy || 'Location hierarchy not recorded'}</p>
+                    <Link
+                        href={plot.profile_url}
+                        className="mt-2 inline-flex items-center font-mono text-sm font-semibold text-emerald-700 hover:underline"
+                    >
+                        {plot.slot_label}
+                    </Link>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <Link href={plot.profile_url}>
+                        <Button variant="outline" className="w-full lg:w-auto">
+                            View Plot Profile
+                        </Button>
+                    </Link>
+                    {abilities.manage && (
+                        <Link href={interment.move_url}>
+                            <Button variant="outline" className="w-full lg:w-auto">
+                                <ArrowRightLeft size={16} className="mr-2" />
+                                Move Plot
+                            </Button>
+                        </Link>
+                    )}
+                    {abilities.manage && interment.can_reverse_move && (
+                        <ReverseMoveDialog reverseUrl={interment.reverse_move_url} municipalitySlug={municipality.slug} />
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Detail label="Cemetery Site" value={plot.cemetery_site?.name} />
+                <Detail label="Section" value={plot.section?.name} />
+                <Detail label="Block" value={plot.block?.name} />
+                <Detail label="Plot" value={plot.slot_label} />
+                <Detail label="Interment Date" value={interment.interment_date} />
+                <Detail label="Interment Type" value={intermentType} />
+                <Detail label="Plot Type" value={plot.type?.replace('_', ' ').toUpperCase()} />
+                <Detail label="Plot Status" value={plot.status?.replace('_', ' ').toUpperCase()} />
+            </div>
+
+            {interment.notes && <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm whitespace-pre-wrap text-slate-700">{interment.notes}</p>}
+        </Card>
     );
 }
 
@@ -437,11 +507,11 @@ function AuditCard({ record, abilities }: { record: DecedentProfileType; abiliti
     );
 }
 
-function Card({ title, children }: { title: string; children: ReactNode }) {
+function Card({ title, children, icon = <History size={17} /> }: { title: string; children: ReactNode; icon?: ReactNode }) {
     return (
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
-                <History size={17} />
+                {icon}
                 {title}
             </h2>
             {children}

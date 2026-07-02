@@ -22,7 +22,7 @@ class ListReadyUnassignedDecedentsAction
             ->with(['documents', 'readinessOverrides', 'unidentifiedDetail'])
             ->where('municipal_id', $municipalId)
             ->where('registration_status', RegistrationStatus::VERIFIED->value)
-            ->whereDoesntHave('interments')
+            ->whereDoesntHave('interments', fn ($query) => $query->active())
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()

@@ -279,9 +279,7 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                                                 </div>
                                             </TableCell>
                                             <TableCell>{plot.type_label ?? '-'}</TableCell>
-                                            <TableCell className="text-center tabular-nums">
-                                                {container ? plot.capacity : plot.occupancy_label}
-                                            </TableCell>
+                                            <TableCell className="text-center tabular-nums">{plot.occupancy_label}</TableCell>
                                             <TableCell>
                                                 {container ? (
                                                     <span className="text-slate-400">-</span>

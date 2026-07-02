@@ -24,6 +24,13 @@ class CemeterySectionLayoutResource extends JsonResource
                     'occupied' => (int) $block->occupied_plots_count,
                     'maintenance' => (int) $block->maintenance_plots_count,
                 ],
+                'apartments' => $block->relationLoaded('plots')
+                    ? $block->plots->map(fn ($plot) => [
+                        'id' => $plot->id,
+                        'name' => $plot->name,
+                        'slots_count' => (int) $plot->slots_count,
+                    ])->values()
+                    : [],
             ])->values()),
         ];
     }

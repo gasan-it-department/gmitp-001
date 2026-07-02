@@ -41,24 +41,10 @@ class GenerateApartmentNichesAction
 
             $cemeterySiteId = $block->section->cemetery_site_id;
 
-            $this->assertNoDuplicateParent($dto);
-            $this->assertNoDuplicateSlots($dto);
+            $parent = $this->createParent($dto, $cemeterySiteId);
+            $apartmentName = (string) $parent->name;
 
-            $parent = Plot::create([
-                'id' => $this->idGenerator->generate(),
-                'municipal_id' => $dto->municipalId,
-                'cemetery_site_id' => $cemeterySiteId,
-                'block_id' => $dto->blockId,
-                'parent_plot_id' => null,
-                'name' => $dto->apartmentName,
-                'type' => PlotTypes::APARTMENT_NICHE->value,
-                'status' => null,
-                'occupancy_mode' => PlotOccupancyMode::SLOTTED->value,
-                'row' => null,
-                'level' => null,
-                'position' => null,
-                'capacity' => $dto->totalSlots(),
-            ]);
+            $this->assertNoDuplicateSlots($dto, $apartmentName);
 
             foreach ($dto->generatedSlots() as $slot) {
                 Plot::create([
@@ -67,7 +53,7 @@ class GenerateApartmentNichesAction
                     'cemetery_site_id' => $cemeterySiteId,
                     'block_id' => $dto->blockId,
                     'parent_plot_id' => $parent->id,
-                    'name' => $dto->apartmentName,
+                    'name' => $apartmentName,
                     'type' => PlotTypes::APARTMENT_NICHE->value,
                     'status' => PlotStatus::AVAILABLE->value,
                     'occupancy_mode' => PlotOccupancyMode::SHARED->value,
@@ -78,13 +64,38 @@ class GenerateApartmentNichesAction
                 ]);
             }
 
+            $parent->update([
+                'capacity' => $parent->slots()->count(),
+            ]);
+
             return $parent->fresh('slots');
         });
     }
 
+    private function createParent(GenerateApartmentNichesDto $dto, string $cemeterySiteId): Plot
+    {
+        $this->assertNoDuplicateParent($dto);
+
+        return Plot::create([
+            'id' => $this->idGenerator->generate(),
+            'municipal_id' => $dto->municipalId,
+            'cemetery_site_id' => $cemeterySiteId,
+            'block_id' => $dto->blockId,
+            'parent_plot_id' => null,
+            'name' => $dto->apartmentName,
+            'type' => PlotTypes::APARTMENT_NICHE->value,
+            'status' => null,
+            'occupancy_mode' => PlotOccupancyMode::SLOTTED->value,
+            'row' => null,
+            'level' => null,
+            'position' => null,
+            'capacity' => 0,
+        ]);
+    }
+
     private function assertNoDuplicateParent(GenerateApartmentNichesDto $dto): void
     {
-        $exists = Plot::query()
+        $exists = Plot::withTrashed()
             ->where('municipal_id', $dto->municipalId)
             ->where('block_id', $dto->blockId)
             ->whereNull('parent_plot_id')
@@ -98,15 +109,15 @@ class GenerateApartmentNichesAction
         }
     }
 
-    private function assertNoDuplicateSlots(GenerateApartmentNichesDto $dto): void
+    private function assertNoDuplicateSlots(GenerateApartmentNichesDto $dto, string $apartmentName): void
     {
         $duplicates = [];
 
         foreach ($dto->generatedSlots() as $slot) {
-            $exists = Plot::query()
+            $exists = Plot::withTrashed()
                 ->where('municipal_id', $dto->municipalId)
                 ->where('block_id', $dto->blockId)
-                ->where('name', $dto->apartmentName)
+                ->where('name', $apartmentName)
                 ->where('level', $slot['level'])
                 ->where('row', $slot['row'])
                 ->where('position', $slot['position'])
@@ -119,7 +130,7 @@ class GenerateApartmentNichesAction
 
         if ($duplicates !== []) {
             throw ValidationException::withMessages([
-                'apartment_name' => 'Some apartment niche slots already exist: '.implode(', ', array_slice($duplicates, 0, 5)).'.',
+                'start_niche' => 'Some apartment niche slots already exist: '.implode(', ', array_slice($duplicates, 0, 5)).'. Adjust the start floor, row, or niche number.',
             ]);
         }
     }

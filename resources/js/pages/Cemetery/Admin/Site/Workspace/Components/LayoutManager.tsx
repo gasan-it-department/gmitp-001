@@ -442,8 +442,11 @@ function GenerateApartmentNichesDialog({
     const [open, setOpen] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm<GenerateApartmentNichesForm>({
         apartment_name: 'APARTMENT A',
+        start_floor: 1,
         floors: 4,
+        start_row: 1,
         rows_per_floor: 3,
+        start_niche: 1,
         niches_per_row: 10,
         row_prefix: 'R',
         niche_prefix: 'N',

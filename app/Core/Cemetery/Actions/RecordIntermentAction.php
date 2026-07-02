@@ -93,7 +93,7 @@ class RecordIntermentAction
             );
         }
 
-        $activeCount = $plot->interments()->count();
+        $activeCount = $plot->interments()->active()->count();
         $capacity = max(1, (int) $plot->capacity);
 
         if ($plot->occupancy_mode === PlotOccupancyMode::SINGLE) {
@@ -128,6 +128,7 @@ class RecordIntermentAction
         $hasActive = Interment::query()
             ->where('municipal_id', $dto->municipalId)
             ->where('decedent_id', $dto->decedentId)
+            ->active()
             ->exists();
 
         if ($hasActive) {

@@ -106,12 +106,23 @@ class DecedentDetailsResource extends JsonResource
 
         $plot = $this->currentInterment->plot;
         $block = $plot?->block;
+        $section = $block?->section;
+        $site = $plot?->cemeterySite;
+        $municipality = app('current_municipality');
 
         return [
             'id' => $this->currentInterment->id,
             'type' => $this->currentInterment->type,
             'notes' => $this->currentInterment->notes,
             'interment_date' => $this->currentInterment->interment_date?->format('Y-m-d'),
+            'move_url' => route('cemetery.admin.interments.move.page', [
+                $municipality->slug,
+                $this->currentInterment->id,
+            ]),
+            'can_reverse_move' => $this->currentInterment->type === 'transfer' && $this->currentInterment->previous_interment_id !== null,
+            'reverse_move_url' => route('interments.reverse-move', [
+                'interment_id' => $this->currentInterment->id,
+            ]),
             'plot' => $plot ? [
                 'id' => $plot->id,
                 'name' => $plot->name,
@@ -120,9 +131,15 @@ class DecedentDetailsResource extends JsonResource
                 'status' => $plot->status?->value,
                 'level' => $plot->level,
                 'position' => $plot->position,
+                'profile_url' => route('cemetery.admin.sites.plots.profile.page', [
+                    $municipality->slug,
+                    $plot->cemetery_site_id,
+                    $plot->id,
+                ]),
                 'parent' => $plot->parent ? ['id' => $plot->parent->id, 'name' => $plot->parent->name] : null,
                 'block' => $block ? ['id' => $block->id, 'name' => $block->name] : null,
-                'section' => $block?->section ? ['id' => $block->section->id, 'name' => $block->section->name] : null,
+                'section' => $section ? ['id' => $section->id, 'name' => $section->name] : null,
+                'cemetery_site' => $site ? ['id' => $site->id, 'name' => $site->name] : null,
             ] : null,
         ];
     }

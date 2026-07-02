@@ -19,6 +19,8 @@ class PlotListResource extends JsonResource
         /** @var PlotOccupancyMode|null $occupancyMode */
         $occupancyMode = $this->occupancy_mode;
         $intermentsCount = (int) ($this->interments_count ?? 0);
+        $occupiedSlotsCount = (int) ($this->occupied_slots_count ?? 0);
+        $occupancyCount = $occupancyMode === PlotOccupancyMode::SLOTTED ? $occupiedSlotsCount : $intermentsCount;
         $availableCapacity = max(0, (int) $this->capacity - $intermentsCount);
 
         return [
@@ -35,7 +37,7 @@ class PlotListResource extends JsonResource
             'occupancy_mode_label' => $occupancyMode?->label(),
             'active_interments_count' => $intermentsCount,
             'available_capacity' => $availableCapacity,
-            'occupancy_label' => $intermentsCount.' / '.$this->capacity,
+            'occupancy_label' => $occupancyCount.' / '.$this->capacity,
             'type' => $type?->value,
             'type_label' => $type?->label(),
             'status' => $status?->value,
