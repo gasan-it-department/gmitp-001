@@ -14,6 +14,17 @@ class GetDecedentProfileAction
             'currentInterment.plot.cemeterySite',
             'currentInterment.plot.block.section',
             'currentInterment.plot.parent',
+            'interments' => fn ($query) => $query
+                ->with([
+                    'plot.cemeterySite',
+                    'plot.block.section',
+                    'plot.parent',
+                    'previousInterment.plot',
+                    'nextInterments.plot',
+                ])
+                ->orderByRaw('case when ended_at is null and voided_at is null then 0 else 1 end')
+                ->latest('interment_date')
+                ->latest('created_at'),
             'documents.media',
             'unidentifiedDetail',
             'readinessOverrides',

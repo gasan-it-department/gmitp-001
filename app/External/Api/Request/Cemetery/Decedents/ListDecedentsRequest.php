@@ -22,7 +22,7 @@ class ListDecedentsRequest extends FormRequest
             'registration_status' => ['nullable', Rule::enum(RegistrationStatus::class)],
             'identity_status' => ['nullable', Rule::enum(IdentityStatus::class)],
             'vital_record_type' => ['nullable', Rule::enum(VitalRecordType::class)],
-            'interment_status' => ['nullable', Rule::in(['interred', 'unassigned'])],
+            'interment_status' => ['nullable', Rule::in(['interred', 'unassigned', 'exhumed', 'transferred_out'])],
             'death_year' => ['nullable', 'integer', 'digits:4', 'between:1900,'.((int) date('Y') + 1)],
             'per_page' => ['nullable', 'integer', Rule::in([10, 25, 50, 100])],
             'page' => ['nullable', 'integer', 'min:1'],

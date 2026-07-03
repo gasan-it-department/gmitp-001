@@ -33,6 +33,7 @@ class PlotListResource extends JsonResource
             'level' => $this->level,
             'position' => $this->position,
             'capacity' => $this->capacity,
+            'area_sqm' => $this->area_sqm,
             'occupancy_mode' => $occupancyMode?->value,
             'occupancy_mode_label' => $occupancyMode?->label(),
             'active_interments_count' => $intermentsCount,

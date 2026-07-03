@@ -30,8 +30,17 @@ export function DetailsCard({
                 <Detail label="Floor / Level" value={plot.level ? `F${plot.level}` : null} />
                 <Detail label="Row" value={plot.row} />
                 <Detail label="Position" value={plot.position} />
+                <Detail label="Area" value={formatArea(plot.area_sqm)} />
                 <Detail label="Available Capacity" value={plot.occupancy_mode === 'shared' ? String(plot.available_capacity) : null} />
             </div>
         </section>
     );
+}
+
+function formatArea(value: string | number | null): string | null {
+    if (value === null || value === '') {
+        return null;
+    }
+
+    return `${Number(value).toFixed(2)} sqm`;
 }

@@ -187,6 +187,62 @@ it('filters interred and unassigned records and keeps query strings in paginatio
                 && str_contains((string) $url, 'death_year=2024')));
 });
 
+it('shows final cemetery outcomes separately from unassigned records', function () {
+    $site = registryFilterSite($this->gasan->id);
+    $block = registryFilterBlock($this->gasan->id, registryFilterSection($this->gasan->id, $site));
+    $plot = registryFilterPlot($this->gasan->id, $site, $block);
+
+    $transferredOut = registryFilterDecedent($this->gasan->id, [
+        'first_name' => 'VEGETA',
+        'last_name' => 'PRINCE',
+        'date_of_death' => '2024-04-01',
+    ]);
+    registryFilterInterment($this->gasan->id, $transferredOut, $plot, [
+        'ended_at' => now(),
+        'ended_by' => null,
+        'end_type' => 'transferred_out',
+        'end_reason' => 'TRANSFERRED TO BOAC CEMETERY',
+        'transfer_destination' => 'BOAC CEMETERY',
+    ]);
+
+    $unassigned = registryFilterDecedent($this->gasan->id, [
+        'first_name' => 'KRILLIN',
+        'last_name' => 'MONK',
+        'date_of_death' => '2024-04-02',
+    ]);
+
+    $this->get(route('cemetery.admin.decedents.list.page', [
+        'municipality' => $this->gasan->slug,
+        'search' => 'vegeta',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('decedents.data', 1)
+            ->where('decedents.data.0.id', $transferredOut)
+            ->where('decedents.data.0.interment_status', 'transferred_out')
+            ->where('decedents.data.0.plot_label', 'LOT 1'));
+
+    $this->get(route('cemetery.admin.decedents.list.page', [
+        'municipality' => $this->gasan->slug,
+        'interment_status' => 'transferred_out',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.interment_status', 'transferred_out')
+            ->has('decedents.data', 1)
+            ->where('decedents.data.0.id', $transferredOut));
+
+    $this->get(route('cemetery.admin.decedents.list.page', [
+        'municipality' => $this->gasan->slug,
+        'interment_status' => 'unassigned',
+    ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.interment_status', 'unassigned')
+            ->has('decedents.data', 1)
+            ->where('decedents.data.0.id', $unassigned));
+});
+
 function registryFilterMunicipality(string $psgcMunicipalityId, string $name, string $slug, string $code): Municipality
 {
     return Municipality::query()->create([
@@ -301,9 +357,9 @@ function registryFilterPlot(string $municipalId, string $siteId, string $blockId
     return $id;
 }
 
-function registryFilterInterment(string $municipalId, string $decedentId, string $plotId): void
+function registryFilterInterment(string $municipalId, string $decedentId, string $plotId, array $overrides = []): void
 {
-    DB::table('cemetery_interments')->insert([
+    DB::table('cemetery_interments')->insert(array_merge([
         'id' => (string) Str::ulid(),
         'municipal_id' => $municipalId,
         'decedent_id' => $decedentId,
@@ -312,5 +368,5 @@ function registryFilterInterment(string $municipalId, string $decedentId, string
         'type' => 'initial',
         'created_at' => now(),
         'updated_at' => now(),
-    ]);
+    ], $overrides));
 }

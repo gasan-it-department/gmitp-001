@@ -42,6 +42,7 @@ class Plot extends Model
         'level',
         'position',
         'capacity',
+        'area_sqm',
     ];
 
     protected $casts = [
@@ -50,6 +51,7 @@ class Plot extends Model
         'occupancy_mode' => PlotOccupancyMode::class,
         'level' => 'integer',
         'capacity' => 'integer',
+        'area_sqm' => 'decimal:2',
     ];
 
     public function block(): BelongsTo
@@ -173,6 +175,7 @@ class Plot extends Model
                 'level',
                 'position',
                 'capacity',
+                'area_sqm',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()

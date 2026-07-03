@@ -42,8 +42,11 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamp('ended_at')->nullable();
             $table->ulid('ended_by')->nullable();
+            $table->enum('end_type', ['moved', 'exhumed', 'transferred_out'])->nullable()->index();
             $table->string('end_reason')->nullable();
             $table->text('end_notes')->nullable();
+            $table->string('transfer_destination')->nullable();
+            $table->string('permit_reference')->nullable();
             $table->timestamp('voided_at')->nullable();
             $table->ulid('voided_by')->nullable();
             $table->text('void_reason')->nullable();

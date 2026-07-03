@@ -46,6 +46,8 @@ export function IntermentHistoryCard({ plot }: { plot: PlotProfileType }) {
                                             >
                                                 {interment.destination_plot_label}
                                             </Link>
+                                        ) : interment.transfer_destination ? (
+                                            interment.transfer_destination
                                         ) : (
                                             '-'
                                         )}
@@ -53,6 +55,9 @@ export function IntermentHistoryCard({ plot }: { plot: PlotProfileType }) {
                                     <TableCell>
                                         <div className="space-y-1">
                                             <div>{interment.void_reason ?? interment.end_reason ?? '-'}</div>
+                                            {interment.permit_reference && (
+                                                <div className="text-xs text-slate-500">Permit: {interment.permit_reference}</div>
+                                            )}
                                             {interment.end_notes && <div className="text-xs text-slate-500">{interment.end_notes}</div>}
                                         </div>
                                     </TableCell>

@@ -17,7 +17,7 @@ import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import PaginationView from '@/pages/Utility/PaginationView';
 import cemetery from '@/routes/cemetery';
 import { router } from '@inertiajs/react';
-import { EyeIcon, MapPin } from 'lucide-react';
+import { EyeIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import DecedentsTableHeader from './DecedentsTableHeader';
 
@@ -34,7 +34,7 @@ const STATUS_PILL: Record<IntermentStatusValue, string> = {
     interred: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
     pending: 'bg-amber-50 text-amber-700 ring-amber-200',
     exhumed: 'bg-slate-100 text-slate-700 ring-slate-200',
-    transferred: 'bg-sky-50 text-sky-700 ring-sky-200',
+    transferred_out: 'bg-sky-50 text-sky-700 ring-sky-200',
     unassigned: 'bg-rose-50 text-rose-700 ring-rose-200',
 };
 
@@ -42,7 +42,7 @@ const STATUS_LABEL: Record<IntermentStatusValue, string> = {
     interred: 'Interred',
     pending: 'Pending',
     exhumed: 'Exhumed',
-    transferred: 'Transferred',
+    transferred_out: 'Transferred Out',
     unassigned: 'Unassigned',
 };
 
@@ -200,20 +200,6 @@ export function DecedentsTable({
                                                 >
                                                     <EyeIcon size={14} />
                                                 </Button>
-                                                {item.interment_status === 'unassigned' && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            router.visit(
-                                                                cemetery.admin.interments.assign.page.url([currentMunicipality.slug, item.id]),
-                                                            );
-                                                        }}
-                                                        className="border-amber-200 text-amber-600 hover:bg-amber-50"
-                                                    >
-                                                        <MapPin size={14} />
-                                                    </Button>
-                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>

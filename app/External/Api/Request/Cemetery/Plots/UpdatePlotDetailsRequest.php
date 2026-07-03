@@ -26,6 +26,7 @@ class UpdatePlotDetailsRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:150'],
             'type' => ['required', new Enum(PlotTypes::class), Rule::notIn([PlotTypes::APARTMENT_NICHE->value])],
+            'area_sqm' => ['nullable', 'numeric', 'min:0.01', 'max:99999.99'],
         ];
     }
 
@@ -33,6 +34,8 @@ class UpdatePlotDetailsRequest extends FormRequest
     {
         return [
             'type.not_in' => 'Apartment niches cannot be manually changed through plot details editing.',
+            'area_sqm.min' => 'Area must be at least 0.01 sqm when provided.',
+            'area_sqm.max' => 'Area may not exceed 99,999.99 sqm.',
         ];
     }
 }

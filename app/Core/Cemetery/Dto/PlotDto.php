@@ -17,6 +17,7 @@ final readonly class PlotDto
         public ?string $row,
         public ?string $position,
         public string $cemeterySiteId,
+        public ?string $areaSqm,
     ) {}
 
     public static function fromRequest(array $validated, string $cemeterySiteId): self
@@ -30,6 +31,7 @@ final readonly class PlotDto
             row: self::upper($validated['row'] ?? null),
             position: self::upper($validated['position'] ?? null),
             cemeterySiteId: $cemeterySiteId,
+            areaSqm: self::decimalString($validated['area_sqm'] ?? null),
         );
     }
 
@@ -42,5 +44,14 @@ final readonly class PlotDto
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : mb_strtoupper($trimmed);
+    }
+
+    private static function decimalString(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return number_format((float) $value, 2, '.', '');
     }
 }

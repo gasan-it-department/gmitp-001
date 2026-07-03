@@ -5,6 +5,7 @@ namespace App\Core\Cemetery\Actions\Interments;
 use App\Core\Cemetery\Actions\Plots\RecalculatePlotStatusAction;
 use App\Core\Cemetery\Dto\Interments\MoveIntermentDto;
 use App\Core\Cemetery\Enums\CemeterySiteStatus;
+use App\Core\Cemetery\Enums\IntermentEndType;
 use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Models\CemeterySite;
@@ -51,8 +52,11 @@ class MoveIntermentAction
             $interment->forceFill([
                 'ended_at' => $movementAt,
                 'ended_by' => auth()->id(),
+                'end_type' => IntermentEndType::MOVED->value,
                 'end_reason' => $dto->reason,
                 'end_notes' => $dto->notes,
+                'permit_reference' => null,
+                'transfer_destination' => null,
             ])->save();
 
             $transfer = Interment::query()->create([

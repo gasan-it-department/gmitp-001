@@ -218,6 +218,7 @@ it('moves an active interment to another plot in the same Site and preserves the
     $transfer = DB::table('cemetery_interments')->where('previous_interment_id', $sourceInterment)->first();
 
     expect($source->ended_at)->not->toBeNull()
+        ->and($source->end_type)->toBe('moved')
         ->and($source->end_reason)->toBe('Family requested relocation.')
         ->and($transfer)->not->toBeNull()
         ->and($transfer->plot_id)->toBe($destinationPlot)
@@ -357,6 +358,7 @@ it('reverses a mistaken moved interment and restores the previous plot', functio
 
     expect(DB::table('cemetery_interments')->where('id', $transfer->id)->value('voided_at'))->not->toBeNull()
         ->and(DB::table('cemetery_interments')->where('id', $sourceInterment)->value('ended_at'))->toBeNull()
+        ->and(DB::table('cemetery_interments')->where('id', $sourceInterment)->value('end_type'))->toBeNull()
         ->and(DB::table('cemetery_plots')->where('id', $sourcePlot)->value('status'))->toBe('occupied')
         ->and(DB::table('cemetery_plots')->where('id', $destinationPlot)->value('status'))->toBe('available')
         ->and(DB::table('activity_log')->where('event', 'interment_move_reversed')->exists())->toBeTrue();
@@ -389,6 +391,177 @@ it('rejects move reversal when the previous plot can no longer accept the restor
         ->and(DB::table('cemetery_interments')->where('id', $sourceInterment)->value('ended_at'))->not->toBeNull();
 });
 
+it('exhumes an active interment and frees a single plot while preserving history', function () {
+    activity()->enableLogging();
+
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'DELACRUZ', 'PEDRO');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 40', 'occupied');
+    $interment = intermentRecord($this->gasan->id, $decedent, $plot, '2026-06-20');
+
+    $this->from(route('cemetery.admin.decedents.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'decedent_id' => $decedent,
+    ]))->patch(route('interments.close', ['interment_id' => $interment]), [
+        'end_type' => 'exhumed',
+        'ended_date' => '2026-06-30',
+        'reason' => 'Court-authorized exhumation.',
+        'permit_reference' => 'EXH-2026-001',
+        'notes' => 'Witnessed by cemetery caretaker.',
+    ])->assertRedirect(route('cemetery.admin.decedents.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'decedent_id' => $decedent,
+    ]));
+
+    $closed = DB::table('cemetery_interments')->where('id', $interment)->first();
+
+    expect($closed->ended_at)->not->toBeNull()
+        ->and($closed->end_type)->toBe('exhumed')
+        ->and($closed->end_reason)->toBe('Court-authorized exhumation.')
+        ->and($closed->permit_reference)->toBe('EXH-2026-001')
+        ->and(DB::table('cemetery_interments')->where('decedent_id', $decedent)->whereNull('ended_at')->whereNull('voided_at')->exists())->toBeFalse()
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('available')
+        ->and(DB::table('activity_log')->where('event', 'interment_closed')->exists())->toBeTrue();
+
+    $profile = (new DecedentDetailsResource((new GetDecedentProfileAction)->execute($decedent, $this->gasan->id)))->resolve();
+
+    expect($profile['interment'])->toBeNull()
+        ->and($profile['interment_history'][0]['lifecycle_status'])->toBe('exhumed')
+        ->and($profile['interment_history'][0]['permit_reference'])->toBe('EXH-2026-001');
+});
+
+it('transfers an interment out and keeps a shared plot occupied when others remain', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'FAMILY LOTS'), 'GENERAL');
+    $firstDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'ANA');
+    $secondDecedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'BEN');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'FAMILY LOT 1', 'occupied', 'shared', 2);
+    $firstInterment = intermentRecord($this->gasan->id, $firstDecedent, $plot, '2026-06-20');
+    intermentRecord($this->gasan->id, $secondDecedent, $plot, '2026-06-21');
+
+    $this->patch(route('interments.close', ['interment_id' => $firstInterment]), [
+        'end_type' => 'transferred_out',
+        'ended_date' => '2026-06-30',
+        'reason' => 'Family transfer outside municipality.',
+        'transfer_destination' => 'BOAC MUNICIPAL CEMETERY',
+        'permit_reference' => 'TO-2026-001',
+    ])->assertRedirect();
+
+    $closed = DB::table('cemetery_interments')->where('id', $firstInterment)->first();
+
+    expect($closed->end_type)->toBe('transferred_out')
+        ->and($closed->transfer_destination)->toBe('BOAC MUNICIPAL CEMETERY')
+        ->and($closed->permit_reference)->toBe('TO-2026-001')
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied')
+        ->and(DB::table('cemetery_interments')->where('plot_id', $plot)->whereNull('ended_at')->whereNull('voided_at')->count())->toBe(1);
+});
+
+it('rejects invalid interment close requests', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'BRIEFS', 'VEGETA');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 90', 'occupied');
+    $interment = intermentRecord($this->gasan->id, $decedent, $plot, '2026-06-20');
+
+    $this->patch(route('interments.close', ['interment_id' => $interment]), [
+        'end_type' => 'transferred_out',
+        'ended_date' => '2026-06-30',
+        'reason' => 'Missing destination.',
+    ])->assertSessionHasErrors('transfer_destination');
+
+    session()->flush();
+
+    $this->patch(route('interments.close', ['interment_id' => $interment]), [
+        'end_type' => 'moved',
+        'ended_date' => '2026-06-30',
+        'reason' => 'Wrong flow.',
+    ])->assertSessionHasErrors('end_type');
+
+    DB::table('cemetery_interments')->where('id', $interment)->update([
+        'ended_at' => now(),
+        'end_type' => 'exhumed',
+    ]);
+    session()->flush();
+
+    $this->patch(route('interments.close', ['interment_id' => $interment]), [
+        'end_type' => 'exhumed',
+        'ended_date' => '2026-06-30',
+        'reason' => 'Try again.',
+    ])->assertSessionHasErrors('interment');
+});
+
+it('voids a wrong active interment and frees the plot for normal reassignment', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $wrongDecedent = intermentReadyDecedent($this->gasan->id, 'SON', 'GOTEN');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 800', 'occupied');
+    $interment = intermentRecord($this->gasan->id, $wrongDecedent, $plot, '2026-06-20');
+
+    $this->from(route('cemetery.admin.decedents.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'decedent_id' => $wrongDecedent,
+    ]))->patch(route('interments.void', ['interment_id' => $interment]), [
+        'reason' => 'Wrong Decedent was selected during encoding.',
+    ])->assertRedirect(route('cemetery.admin.decedents.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'decedent_id' => $wrongDecedent,
+    ]));
+
+    $voided = DB::table('cemetery_interments')->where('id', $interment)->first();
+
+    expect($voided->voided_at)->not->toBeNull()
+        ->and($voided->void_reason)->toBe('Wrong Decedent was selected during encoding.')
+        ->and(DB::table('cemetery_interments')->where('decedent_id', $wrongDecedent)->whereNull('ended_at')->whereNull('voided_at')->exists())->toBeFalse()
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('available');
+
+    $profile = (new DecedentDetailsResource((new GetDecedentProfileAction)->execute($wrongDecedent, $this->gasan->id)))->resolve();
+
+    expect($profile['interment'])->toBeNull()
+        ->and($profile['interment_history'][0]['lifecycle_status'])->toBe('voided')
+        ->and($profile['interment_history'][0]['void_reason'])->toBe('Wrong Decedent was selected during encoding.');
+});
+
+it('rejects voiding ended voided or cross tenant interments', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $endedDecedent = intermentReadyDecedent($this->gasan->id, 'ENDED', 'ONE');
+    $voidedDecedent = intermentReadyDecedent($this->gasan->id, 'VOIDED', 'ONE');
+    $endedPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 801', 'available');
+    $voidedPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 802', 'available');
+    $endedInterment = intermentRecord($this->gasan->id, $endedDecedent, $endedPlot, '2026-06-20', [
+        'ended_at' => now(),
+        'end_type' => 'exhumed',
+        'end_reason' => 'Already ended.',
+    ]);
+    $voidedInterment = intermentRecord($this->gasan->id, $voidedDecedent, $voidedPlot, '2026-06-21', [
+        'voided_at' => now(),
+        'void_reason' => 'Already voided.',
+    ]);
+
+    $boacSite = intermentSite($this->boac->id, 'BOAC CEMETERY');
+    $boacBlock = intermentBlock($this->boac->id, intermentSection($this->boac->id, $boacSite, 'SECTION A'), 'GENERAL');
+    $boacDecedent = intermentReadyDecedent($this->boac->id, 'BOAC', 'PEDRO');
+    $boacPlot = intermentPlot($this->boac->id, $boacSite, $boacBlock, 'BOAC LOT 1', 'occupied');
+    $crossTenantInterment = intermentRecord($this->boac->id, $boacDecedent, $boacPlot, '2026-06-22');
+
+    $this->patch(route('interments.void', ['interment_id' => $endedInterment]), [
+        'reason' => 'Attempt to void ended row.',
+    ])->assertSessionHasErrors('interment');
+
+    session()->flush();
+
+    $this->patch(route('interments.void', ['interment_id' => $voidedInterment]), [
+        'reason' => 'Attempt to void already voided row.',
+    ])->assertSessionHasErrors('interment');
+
+    session()->flush();
+
+    $this->patch(route('interments.void', ['interment_id' => $crossTenantInterment]), [
+        'reason' => 'Cross tenant attempt.',
+    ])->assertNotFound();
+});
+
 it('includes the full plot hierarchy and profile link in the Decedent profile payload', function () {
     $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
     $section = intermentSection($this->gasan->id, $site, 'NEW ANNEX');
@@ -413,6 +586,64 @@ it('includes the full plot hierarchy and profile link in the Decedent profile pa
             'cemetery_site_id' => $site,
             'plot_id' => $plot,
         ]));
+});
+
+it('returns a Decedent cemetery history timeline with active ended and voided rows', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $section = intermentSection($this->gasan->id, $site, 'NEW ANNEX');
+    $block = intermentBlock($this->gasan->id, $section, 'GENERAL');
+    $decedentId = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'JUAN');
+    $originalPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 737', 'available');
+    $currentPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 738', 'available');
+    $mistakenPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 739', 'available');
+
+    $originalInterment = intermentRecord($this->gasan->id, $decedentId, $originalPlot, '2026-06-01');
+    DB::table('cemetery_interments')->where('id', $originalInterment)->update([
+        'ended_at' => now(),
+        'end_reason' => 'Family requested relocation.',
+        'end_notes' => 'Moved after caretaker confirmation.',
+    ]);
+
+    DB::table('cemetery_interments')->insert([
+        'id' => $currentInterment = (string) Str::ulid(),
+        'municipal_id' => $this->gasan->id,
+        'decedent_id' => $decedentId,
+        'plot_id' => $currentPlot,
+        'previous_interment_id' => $originalInterment,
+        'interment_date' => '2026-06-15',
+        'type' => 'transfer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('cemetery_interments')->insert([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $this->gasan->id,
+        'decedent_id' => $decedentId,
+        'plot_id' => $mistakenPlot,
+        'previous_interment_id' => $currentInterment,
+        'interment_date' => '2026-06-20',
+        'type' => 'transfer',
+        'voided_at' => now(),
+        'void_reason' => 'Wrong destination plot selected.',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $decedent = (new GetDecedentProfileAction)->execute($decedentId, $this->gasan->id);
+    $payload = (new DecedentDetailsResource($decedent))->resolve();
+
+    expect($payload['interment_history'])->toHaveCount(3)
+        ->and($payload['interment_history'][0]['lifecycle_status'])->toBe('active')
+        ->and($payload['interment_history'][0]['plot']['slot_label'])->toBe('LOT 738')
+        ->and($payload['interment_history'][0]['plot']['section']['name'])->toBe('NEW ANNEX')
+        ->and($payload['interment_history'][1]['lifecycle_status'])->toBe('voided')
+        ->and($payload['interment_history'][1]['plot']['slot_label'])->toBe('LOT 739')
+        ->and($payload['interment_history'][1]['void_reason'])->toBe('Wrong destination plot selected.')
+        ->and($payload['interment_history'][2]['lifecycle_status'])->toBe('ended')
+        ->and($payload['interment_history'][2]['plot']['slot_label'])->toBe('LOT 737')
+        ->and($payload['interment_history'][2]['destination_plot_label'])->toBe('LOT 738')
+        ->and($payload['interment_history'][2]['end_reason'])->toBe('Family requested relocation.');
 });
 
 it('allows shared plots to receive interments until capacity is reached', function () {
@@ -623,9 +854,9 @@ function intermentReadyDecedent(string $municipalId, string $lastName, string $f
     return $id;
 }
 
-function intermentRecord(string $municipalId, string $decedentId, string $plotId, string $date): string
+function intermentRecord(string $municipalId, string $decedentId, string $plotId, string $date, array $overrides = []): string
 {
-    DB::table('cemetery_interments')->insert([
+    DB::table('cemetery_interments')->insert(array_merge([
         'id' => $id = (string) Str::ulid(),
         'municipal_id' => $municipalId,
         'decedent_id' => $decedentId,
@@ -634,7 +865,7 @@ function intermentRecord(string $municipalId, string $decedentId, string $plotId
         'type' => 'initial',
         'created_at' => now(),
         'updated_at' => now(),
-    ]);
+    ], $overrides));
 
     return $id;
 }

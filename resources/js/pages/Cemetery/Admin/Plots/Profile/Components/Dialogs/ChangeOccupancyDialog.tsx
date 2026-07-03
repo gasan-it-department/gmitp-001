@@ -15,13 +15,19 @@ export function ChangeOccupancyDialog({
     site,
     plot,
     occupancyModeOptions,
+    open: externalOpen,
+    onOpenChange: setExternalOpen,
 }: {
     municipality: MunicipalityType;
     site: CemeterySiteListItem;
     plot: PlotProfileType;
     occupancyModeOptions: SelectOption<Extract<PlotOccupancyModeValue, 'single' | 'shared'>>[];
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setOpen = setExternalOpen ?? setInternalOpen;
     const form = useForm<ChangePlotOccupancyForm>({
         occupancy_mode: plot.occupancy_mode === 'shared' ? 'shared' : 'single',
         capacity: plot.capacity,
@@ -50,10 +56,12 @@ export function ChangeOccupancyDialog({
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : close())}>
-            <Button type="button" variant="outline" onClick={() => setOpen(true)} className="w-full justify-start text-left font-normal">
-                <Users size={16} className="mr-2" />
-                Change Occupancy
-            </Button>
+            {externalOpen === undefined && (
+                <Button type="button" variant="outline" onClick={() => setOpen(true)} className="w-full justify-start text-left font-normal">
+                    <Users size={16} className="mr-2" />
+                    Change Occupancy
+                </Button>
+            )}
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>

@@ -53,8 +53,11 @@ class ReverseMovedIntermentAction
             $previous->forceFill([
                 'ended_at' => null,
                 'ended_by' => null,
+                'end_type' => null,
                 'end_reason' => null,
                 'end_notes' => null,
+                'permit_reference' => null,
+                'transfer_destination' => null,
             ])->save();
 
             $this->recalculatePlotStatus->execute($destinationPlot);

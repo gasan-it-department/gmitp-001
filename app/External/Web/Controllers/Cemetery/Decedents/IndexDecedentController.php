@@ -30,6 +30,8 @@ class IndexDecedentController extends Controller
             'interment_status_options' => [
                 ['value' => 'interred', 'label' => 'Interred'],
                 ['value' => 'unassigned', 'label' => 'Unassigned'],
+                ['value' => 'exhumed', 'label' => 'Exhumed'],
+                ['value' => 'transferred_out', 'label' => 'Transferred Out'],
             ],
         ]);
     }

@@ -3,7 +3,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CemeterySiteListItem, PlotProfile as PlotProfileType, PlotTypeValue, SelectOption, UpdatePlotDetailsForm } from '@/Core/Types/Cemetery/cemetery';
+import {
+    CemeterySiteListItem,
+    PlotProfile as PlotProfileType,
+    PlotTypeValue,
+    SelectOption,
+    UpdatePlotDetailsForm,
+} from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm } from '@inertiajs/react';
 import { Edit3, Loader2 } from 'lucide-react';
@@ -24,13 +30,18 @@ export function EditPlotDetailsDialog({
     const form = useForm<UpdatePlotDetailsForm>({
         name: plot.name ?? '',
         type: plot.type ?? '',
+        area_sqm: plot.area_sqm === null || plot.area_sqm === '' ? '' : Number(plot.area_sqm),
     });
 
     const close = () => {
         if (form.processing) return;
         setOpen(false);
         form.clearErrors();
-        form.setData({ name: plot.name ?? '', type: plot.type ?? '' });
+        form.setData({
+            name: plot.name ?? '',
+            type: plot.type ?? '',
+            area_sqm: plot.area_sqm === null || plot.area_sqm === '' ? '' : Number(plot.area_sqm),
+        });
     };
 
     const submit = (event: FormEvent) => {
@@ -80,6 +91,19 @@ export function EditPlotDetailsDialog({
                                 </SelectContent>
                             </Select>
                             {form.errors.type && <p className="text-sm text-red-600">{form.errors.type}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="plot-area">Area (sqm)</Label>
+                            <Input
+                                id="plot-area"
+                                type="number"
+                                step="0.01"
+                                placeholder="e.g. 6.00"
+                                value={form.data.area_sqm}
+                                onChange={(event) => form.setData('area_sqm', event.target.value === '' ? '' : Number(event.target.value))}
+                            />
+                            <p className="text-xs text-slate-500">Optional lot size for standard physical plots.</p>
+                            {form.errors.area_sqm && <p className="text-sm text-red-600">{form.errors.area_sqm}</p>}
                         </div>
                     </div>
                     <DialogFooter className="mt-6">

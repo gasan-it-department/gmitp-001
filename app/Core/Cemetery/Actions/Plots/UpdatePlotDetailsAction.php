@@ -25,6 +25,7 @@ class UpdatePlotDetailsAction
             $plot->forceFill([
                 'name' => $dto->name,
                 'type' => $dto->type,
+                'area_sqm' => $dto->areaSqm,
             ])->save();
 
             return $plot;

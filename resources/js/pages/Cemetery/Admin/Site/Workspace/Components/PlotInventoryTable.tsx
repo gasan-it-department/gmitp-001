@@ -220,6 +220,7 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                                 <TableHead>Block</TableHead>
                                 <TableHead>Location</TableHead>
                                 <TableHead>Type</TableHead>
+                                <TableHead>Area</TableHead>
                                 <TableHead className="text-center">Occupancy</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>
@@ -227,7 +228,7 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                         <TableBody>
                             {plots.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-32 text-center text-sm text-slate-500">
+                                    <TableCell colSpan={8} className="h-32 text-center text-sm text-slate-500">
                                         No matching Plots are registered for this Site.
                                     </TableCell>
                                 </TableRow>
@@ -279,6 +280,7 @@ export function PlotInventoryTable({ plots, filters, statusOptions, typeOptions,
                                                 </div>
                                             </TableCell>
                                             <TableCell>{plot.type_label ?? '-'}</TableCell>
+                                            <TableCell>{formatArea(plot.area_sqm)}</TableCell>
                                             <TableCell className="text-center tabular-nums">{plot.occupancy_label}</TableCell>
                                             <TableCell>
                                                 {container ? (
@@ -344,6 +346,14 @@ function LocationPill({ label, value }: { label: string; value: string | null })
             {label}: {value}
         </span>
     );
+}
+
+function formatArea(value: string | number | null): string {
+    if (value === null || value === '') {
+        return '-';
+    }
+
+    return `${Number(value).toFixed(2)} sqm`;
 }
 
 function RowBadge({ icon, label, className }: { icon?: ReactNode; label: string; className: string }) {

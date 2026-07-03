@@ -9,7 +9,9 @@ import cemetery from '@/routes/cemetery';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowLeft, ArrowRightLeft, Check, FileText, History, Loader2, MapPin, ShieldCheck, Trash2, Upload, X } from 'lucide-react';
 import { FormEvent, ReactNode, useState } from 'react';
+import { CloseIntermentDialog } from '../../Interments/Components/CloseIntermentDialog';
 import { ReverseMoveDialog } from '../../Interments/Components/ReverseMoveDialog';
+import { VoidIntermentDialog } from '../../Interments/Components/VoidIntermentDialog';
 
 interface Props {
     decedent: { data: DecedentProfileType };
@@ -114,6 +116,7 @@ export default function DecedentProfile({ decedent, document_type_options, abili
 
                 <ReadinessCard record={record} abilities={abilities} municipality={currentMunicipality} />
                 <BurialLocationCard record={record} abilities={abilities} municipality={currentMunicipality} />
+                <CemeteryHistoryCard record={record} />
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
@@ -125,6 +128,178 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function CemeteryHistoryCard({ record }: { record: DecedentProfileType }) {
+    const statusClasses: Record<DecedentProfileType['interment_history'][number]['lifecycle_status'], string> = {
+        active: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+        ended: 'bg-amber-50 text-amber-700 ring-amber-200',
+        moved: 'bg-amber-50 text-amber-700 ring-amber-200',
+        exhumed: 'bg-orange-50 text-orange-700 ring-orange-200',
+        transferred_out: 'bg-blue-50 text-blue-700 ring-blue-200',
+        voided: 'bg-rose-50 text-rose-700 ring-rose-200',
+    };
+
+    const statusIcons: Record<DecedentProfileType['interment_history'][number]['lifecycle_status'], ReactNode> = {
+        active: <MapPin size={18} />,
+        ended: <ArrowRightLeft size={16} />,
+        moved: <ArrowRightLeft size={16} />,
+        exhumed: <AlertTriangle size={16} />,
+        transferred_out: <ArrowRightLeft size={16} />,
+        voided: <X size={18} />,
+    };
+
+    const iconBg: Record<DecedentProfileType['interment_history'][number]['lifecycle_status'], string> = {
+        active: 'bg-emerald-100 text-emerald-600',
+        ended: 'bg-amber-100 text-amber-600',
+        moved: 'bg-amber-100 text-amber-600',
+        exhumed: 'bg-orange-100 text-orange-600',
+        transferred_out: 'bg-blue-100 text-blue-600',
+        voided: 'bg-rose-100 text-rose-600',
+    };
+
+    return (
+        <Card title="Cemetery History" icon={<History size={17} />}>
+            {record.interment_history.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                    No cemetery interment history yet.
+                </div>
+            ) : (
+                <div className="relative space-y-8 before:absolute before:top-2 before:bottom-2 before:left-[19px] before:w-[2px] before:bg-slate-100 sm:ml-2">
+                    {record.interment_history.map((interment) => {
+                        const plot = interment.plot;
+                        const hierarchy = [plot?.cemetery_site?.name, plot?.section?.name, plot?.block?.name].filter(Boolean).join(' / ');
+                        const endedOrVoidedAt = interment.voided_at ?? interment.ended_at;
+                        const reason = interment.void_reason ?? interment.end_reason;
+
+                        return (
+                            <div key={interment.id} className="relative pl-14">
+                                <div
+                                    className={`absolute top-1.5 left-0 flex h-10 w-10 items-center justify-center rounded-full ring-8 ring-white ${iconBg[interment.lifecycle_status]}`}
+                                >
+                                    {statusIcons[interment.lifecycle_status]}
+                                </div>
+                                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:border-slate-200 hover:shadow-md">
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                            <div className="mb-4 flex flex-wrap items-center gap-2">
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-[11px] font-bold tracking-wide uppercase ring-1 ring-inset ${statusClasses[interment.lifecycle_status]}`}
+                                                >
+                                                    {interment.lifecycle_label}
+                                                </span>
+                                                <span className="rounded-full bg-slate-50 px-3 py-1 text-[11px] font-bold tracking-wide text-slate-600 uppercase ring-1 ring-slate-200 ring-inset">
+                                                    {interment.type_label}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className="text-sm font-semibold text-slate-900">
+                                                    {hierarchy || 'Location hierarchy not recorded'}
+                                                </span>
+                                                {plot ? (
+                                                    <Link
+                                                        href={plot.profile_url}
+                                                        className="inline-flex items-center text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                                                    >
+                                                        <MapPin size={14} className="mr-1.5 opacity-70" />
+                                                        {plot.slot_label}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-sm text-slate-500">Plot record not available</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 text-left sm:min-w-[140px] sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5 sm:text-right">
+                                            <div>
+                                                <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Interment Date</p>
+                                                <p className="text-sm font-medium text-slate-800">
+                                                    {formatProfileDate(interment.interment_date) || '-'}
+                                                </p>
+                                            </div>
+                                            {endedOrVoidedAt && (
+                                                <div>
+                                                    <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                        {interment.lifecycle_status === 'voided' ? 'Voided At' : 'Ended At'}
+                                                    </p>
+                                                    <p className="text-sm font-medium text-slate-800">{formatProfileDate(endedOrVoidedAt)}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {(reason ||
+                                        interment.end_notes ||
+                                        interment.notes ||
+                                        interment.destination_plot_profile_url ||
+                                        interment.transfer_destination ||
+                                        interment.permit_reference) && (
+                                        <div className="mt-5 rounded-xl bg-slate-50 p-4">
+                                            {interment.destination_plot_profile_url && (
+                                                <div className="mb-4 flex items-center gap-2">
+                                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                                        <ArrowRightLeft size={12} />
+                                                    </div>
+                                                    <span className="text-sm text-slate-600">Moved to</span>
+                                                    <Link
+                                                        href={interment.destination_plot_profile_url}
+                                                        className="text-sm font-bold text-emerald-700 hover:underline"
+                                                    >
+                                                        {interment.destination_plot_label}
+                                                    </Link>
+                                                </div>
+                                            )}
+                                            <div className="grid gap-4 sm:grid-cols-2">
+                                                {interment.transfer_destination && (
+                                                    <div>
+                                                        <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                            Transfer Destination
+                                                        </p>
+                                                        <p className="text-sm font-medium text-slate-700">{interment.transfer_destination}</p>
+                                                    </div>
+                                                )}
+                                                {interment.permit_reference && (
+                                                    <div>
+                                                        <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                            Permit / Reference
+                                                        </p>
+                                                        <p className="text-sm font-medium text-slate-700">{interment.permit_reference}</p>
+                                                    </div>
+                                                )}
+                                                {reason && (
+                                                    <div>
+                                                        <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">Reason</p>
+                                                        <p className="text-sm font-medium text-slate-700">{reason}</p>
+                                                    </div>
+                                                )}
+                                                {interment.end_notes && (
+                                                    <div>
+                                                        <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                            End Notes
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">{interment.end_notes}</p>
+                                                    </div>
+                                                )}
+                                                {interment.notes && (
+                                                    <div>
+                                                        <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                                            Interment Notes
+                                                        </p>
+                                                        <p className="text-sm text-slate-700">{interment.notes}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </Card>
     );
 }
 
@@ -173,6 +348,23 @@ function BurialLocationCard({
                                 Move Plot
                             </Button>
                         </Link>
+                    )}
+                    {abilities.manage && (
+                        <CloseIntermentDialog
+                            closeUrl={interment.close_url}
+                            municipalitySlug={municipality.slug}
+                            size="default"
+                            className="w-full lg:w-auto"
+                        />
+                    )}
+                    {abilities.manage && (
+                        <VoidIntermentDialog
+                            voidUrl={interment.void_url}
+                            municipalitySlug={municipality.slug}
+                            label="Void Wrong Interment"
+                            size="default"
+                            className="w-full border-red-200 text-red-700 hover:bg-red-50 lg:w-auto"
+                        />
                     )}
                     {abilities.manage && interment.can_reverse_move && (
                         <ReverseMoveDialog reverseUrl={interment.reverse_move_url} municipalitySlug={municipality.slug} />
@@ -535,6 +727,18 @@ function Stat({ label, value }: { label: string; value?: string | null }) {
             <p className="mt-1 text-sm font-semibold text-slate-800">{value || '-'}</p>
         </div>
     );
+}
+
+function formatProfileDate(value?: string | null) {
+    if (!value) {
+        return null;
+    }
+
+    return new Intl.DateTimeFormat('en-PH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    }).format(new Date(value));
 }
 
 function Badge({ text }: { text: string }) {

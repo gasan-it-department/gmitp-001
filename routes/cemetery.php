@@ -12,9 +12,11 @@ use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentDocumentControl
 use App\External\Api\Controllers\Cemetery\Decedents\UpdateDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\ViewDecedentAvatarController;
+use App\External\Api\Controllers\Cemetery\Interments\CloseIntermentController;
 use App\External\Api\Controllers\Cemetery\Interments\MoveIntermentController as ApiMoveIntermentController;
 use App\External\Api\Controllers\Cemetery\Interments\ReverseMovedIntermentController;
 use App\External\Api\Controllers\Cemetery\Interments\StoreIntermentController;
+use App\External\Api\Controllers\Cemetery\Interments\VoidIntermentController;
 use App\External\Api\Controllers\Cemetery\Plots\AddApartmentNichesController;
 use App\External\Api\Controllers\Cemetery\Plots\BulkGeneratePlotsController;
 use App\External\Api\Controllers\Cemetery\Plots\ChangePlotOccupancyController;
@@ -161,6 +163,8 @@ Route::prefix('api/interments')
     ->group(function () {
         Route::post('store', StoreIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('store');
         Route::post('{interment_id}/move', ApiMoveIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('move');
+        Route::patch('{interment_id}/close', CloseIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('close');
+        Route::patch('{interment_id}/void', VoidIntermentController::class)->middleware('permission:cemetery.decedents.manage')->name('void');
         Route::patch('{interment_id}/reverse-move', ReverseMovedIntermentController::class)
             ->middleware('permission:cemetery.decedents.manage')->name('reverse-move');
     });

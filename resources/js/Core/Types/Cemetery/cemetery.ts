@@ -7,7 +7,7 @@ export type CemeterySiteStatusValue = 'active' | 'inactive' | 'closed';
 export type VitalRecordTypeValue = 'death' | 'fetal_death';
 export type IdentityStatusValue = 'identified' | 'unidentified';
 export type RegistrationStatusValue = 'draft' | 'pending_review' | 'verified' | 'archived';
-export type DecedentIntermentStatusFilterValue = 'interred' | 'unassigned';
+export type DecedentIntermentStatusFilterValue = 'interred' | 'unassigned' | 'exhumed' | 'transferred_out';
 export type DecedentDocumentTypeValue =
     | 'death_certificate'
     | 'fetal_death_certificate'
@@ -22,13 +22,14 @@ export type DecedentDocumentTypeValue =
 /**
  * Surfaced to the UI as the per-decedent assignment state. With the event-typed
  * interment schema there is no DB `status` column — `interred` means an active
- * (non-soft-deleted) interment row exists; `unassigned` means none. The
- * `exhumed`/`transferred` legacy values are kept as types so older UI cells
- * keep compiling, but the API no longer emits them.
+ * (non-soft-deleted) interment row exists; `unassigned` means no current or
+ * final cemetery placement; final ended rows surface as `exhumed` or
+ * `transferred_out`.
  */
-export type IntermentStatusValue = 'interred' | 'unassigned' | 'exhumed' | 'transferred' | 'pending';
+export type IntermentStatusValue = 'interred' | 'unassigned' | 'exhumed' | 'transferred_out' | 'pending';
 
 export type IntermentTypeValue = 'initial' | 'transfer';
+export type IntermentEndTypeValue = 'moved' | 'exhumed' | 'transferred_out';
 
 export interface SelectOption<T extends string = string> {
     value: T;
@@ -94,6 +95,7 @@ export type BulkGeneratePlotsForm = {
     padding: number | '';
     type: PlotTypeValue | '';
     capacity: number | '';
+    area_sqm: number | '';
 };
 
 export type GenerateApartmentNichesForm = {
@@ -248,6 +250,8 @@ export interface DecedentProfile {
         move_url: string;
         can_reverse_move: boolean;
         reverse_move_url: string;
+        close_url: string;
+        void_url: string;
         plot: {
             id: string;
             name: string | null;
@@ -263,6 +267,36 @@ export interface DecedentProfile {
             cemetery_site: { id: string; name: string } | null;
         } | null;
     } | null;
+    interment_history: {
+        id: string;
+        type: IntermentTypeValue | string;
+        type_label: string;
+        lifecycle_status: 'active' | 'ended' | 'voided' | IntermentEndTypeValue;
+        lifecycle_label: string;
+        interment_date: string | null;
+        notes: string | null;
+        ended_at: string | null;
+        end_type: IntermentEndTypeValue | null;
+        end_reason: string | null;
+        end_notes: string | null;
+        transfer_destination: string | null;
+        permit_reference: string | null;
+        voided_at: string | null;
+        void_reason: string | null;
+        previous_interment_id: string | null;
+        destination_plot_label: string | null;
+        destination_plot_profile_url: string | null;
+        plot: {
+            id: string;
+            name: string | null;
+            slot_label: string;
+            profile_url: string;
+            parent: { id: string; name: string } | null;
+            block: { id: string; name: string } | null;
+            section: { id: string; name: string } | null;
+            cemetery_site: { id: string; name: string } | null;
+        } | null;
+    }[];
 }
 
 export type RegisterDecedentForm = {
@@ -318,6 +352,7 @@ export interface PlotListItem {
     level: number | null;
     position: string | null;
     capacity: number;
+    area_sqm: string | number | null;
     occupancy_mode: PlotOccupancyModeValue | null;
     occupancy_mode_label: string | null;
     active_interments_count: number;
@@ -363,6 +398,8 @@ export interface PlotProfileInterment {
     move_url: string;
     can_reverse_move: boolean;
     reverse_move_url: string;
+    close_url: string;
+    void_url: string;
 }
 
 export interface PlotProfileIntermentHistoryItem {
@@ -375,8 +412,11 @@ export interface PlotProfileIntermentHistoryItem {
     type_label: string;
     status_label: string;
     ended_at: string | null;
+    end_type: IntermentEndTypeValue | null;
     end_reason: string | null;
     end_notes: string | null;
+    transfer_destination: string | null;
+    permit_reference: string | null;
     voided_at: string | null;
     void_reason: string | null;
     destination_plot_label: string | null;
@@ -390,6 +430,7 @@ export interface PlotProfileChildNiche {
     status_label: string | null;
     status_tone: string | null;
     capacity: number;
+    area_sqm: string | number | null;
     active_interments_count: number;
     occupancy_label: string;
     profile_url: string;
@@ -470,11 +511,13 @@ export type CreatePlotForm = {
     name: string;
     type: PlotTypeValue | '';
     capacity: number | '';
+    area_sqm: number | '';
 };
 
 export type UpdatePlotDetailsForm = {
     name: string;
     type: PlotTypeValue | '';
+    area_sqm: number | '';
 };
 
 export type ChangePlotOccupancyForm = {
@@ -578,4 +621,17 @@ export type MoveIntermentForm = {
 
 export type ReverseMovedIntermentForm = {
     reason: string;
+};
+
+export type VoidIntermentForm = {
+    reason: string;
+};
+
+export type CloseIntermentForm = {
+    end_type: Exclude<IntermentEndTypeValue, 'moved'>;
+    ended_date: string;
+    reason: string;
+    notes: string;
+    permit_reference: string;
+    transfer_destination: string;
 };

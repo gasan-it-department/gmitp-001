@@ -283,6 +283,7 @@ function BulkGeneratePlotsDialog({
         padding: 0,
         type: 'lawn_lot',
         capacity: 1,
+        area_sqm: '',
     });
 
     const preview = useMemo(() => {
@@ -383,6 +384,16 @@ function BulkGeneratePlotsDialog({
                                 onChange={(event) => setData('capacity', event.target.value === '' ? '' : Number(event.target.value))}
                             />
                             <span className="block text-xs text-slate-500">Maximum decedents/remains this physical plot can hold.</span>
+                        </Field>
+                        <Field label="Area Per Plot (sqm)" error={errors.area_sqm}>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="e.g. 6.00"
+                                value={data.area_sqm}
+                                onChange={(event) => setData('area_sqm', event.target.value === '' ? '' : Number(event.target.value))}
+                            />
+                            <span className="block text-xs text-slate-500">Applied to each generated plot. Leave blank if unknown.</span>
                         </Field>
                     </div>
 

@@ -10,6 +10,7 @@ final readonly class UpdatePlotDetailsDto
         public string $plotId,
         public string $name,
         public string $type,
+        public ?string $areaSqm,
     ) {}
 
     public static function fromRequest(array $validated, string $cemeterySiteId, string $plotId): self
@@ -20,6 +21,16 @@ final readonly class UpdatePlotDetailsDto
             plotId: $plotId,
             name: mb_strtoupper(trim($validated['name'])),
             type: $validated['type'],
+            areaSqm: self::decimalString($validated['area_sqm'] ?? null),
         );
+    }
+
+    private static function decimalString(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return number_format((float) $value, 2, '.', '');
     }
 }

@@ -36,6 +36,7 @@ class PlotProfileResource extends JsonResource
             'occupancy_mode' => $this->occupancy_mode?->value,
             'occupancy_mode_label' => $this->occupancy_mode?->label(),
             'capacity' => $capacity,
+            'area_sqm' => $this->area_sqm,
             'active_interments_count' => $intermentsCount,
             'available_capacity' => max(0, $capacity - $intermentsCount),
             'occupancy_label' => ($occupiedChildNichesCount ?? $intermentsCount).' / '.$capacity,
@@ -91,6 +92,12 @@ class PlotProfileResource extends JsonResource
                 'reverse_move_url' => route('interments.reverse-move', [
                     'interment_id' => $interment->id,
                 ]),
+                'close_url' => route('interments.close', [
+                    'interment_id' => $interment->id,
+                ]),
+                'void_url' => route('interments.void', [
+                    'interment_id' => $interment->id,
+                ]),
             ])->values(),
             'interment_history' => $this->intermentHistory->map(function ($interment) use ($municipality) {
                 $nextInterment = $interment->nextInterments
@@ -111,8 +118,11 @@ class PlotProfileResource extends JsonResource
                     'type_label' => ucfirst((string) $interment->type),
                     'status_label' => $this->historyStatusLabel($interment),
                     'ended_at' => $interment->ended_at?->toIso8601String(),
+                    'end_type' => $interment->end_type,
                     'end_reason' => $interment->end_reason,
                     'end_notes' => $interment->end_notes,
+                    'transfer_destination' => $interment->transfer_destination,
+                    'permit_reference' => $interment->permit_reference,
                     'voided_at' => $interment->voided_at?->toIso8601String(),
                     'void_reason' => $interment->void_reason,
                     'destination_plot_label' => $nextPlot?->slotLabel,
@@ -176,7 +186,11 @@ class PlotProfileResource extends JsonResource
         }
 
         if ($interment->ended_at !== null) {
-            return 'Moved out';
+            return match ($interment->end_type) {
+                'exhumed' => 'Exhumed',
+                'transferred_out' => 'Transferred Out',
+                default => 'Moved out',
+            };
         }
 
         return 'Inactive';

@@ -16,6 +16,7 @@ final readonly class BulkGeneratePlotsDto
         public int $capacity,
         public ?string $row,
         public ?string $position,
+        public ?string $areaSqm,
     ) {}
 
     public static function fromRequest(array $data, string $cemeterySiteId, string $blockId): self
@@ -32,6 +33,7 @@ final readonly class BulkGeneratePlotsDto
             capacity: (int) $data['capacity'],
             row: self::upper($data['row'] ?? null),
             position: self::upper($data['position'] ?? null),
+            areaSqm: self::decimalString($data['area_sqm'] ?? null),
         );
     }
 
@@ -64,5 +66,14 @@ final readonly class BulkGeneratePlotsDto
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : mb_strtoupper($trimmed);
+    }
+
+    private static function decimalString(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return number_format((float) $value, 2, '.', '');
     }
 }

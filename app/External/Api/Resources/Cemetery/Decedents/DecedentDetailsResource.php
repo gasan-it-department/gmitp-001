@@ -84,6 +84,7 @@ class DecedentDetailsResource extends JsonResource
                 : [],
             'interment_readiness' => $this->relationLoaded('intermentReadiness') ? $this->intermentReadiness : null,
             'interment' => $this->intermentPayload(),
+            'interment_history' => $this->intermentHistoryPayload(),
         ];
     }
 
@@ -123,6 +124,12 @@ class DecedentDetailsResource extends JsonResource
             'reverse_move_url' => route('interments.reverse-move', [
                 'interment_id' => $this->currentInterment->id,
             ]),
+            'close_url' => route('interments.close', [
+                'interment_id' => $this->currentInterment->id,
+            ]),
+            'void_url' => route('interments.void', [
+                'interment_id' => $this->currentInterment->id,
+            ]),
             'plot' => $plot ? [
                 'id' => $plot->id,
                 'name' => $plot->name,
@@ -142,5 +149,96 @@ class DecedentDetailsResource extends JsonResource
                 'cemetery_site' => $site ? ['id' => $site->id, 'name' => $site->name] : null,
             ] : null,
         ];
+    }
+
+    private function intermentHistoryPayload()
+    {
+        if (! $this->relationLoaded('interments')) {
+            return [];
+        }
+
+        return $this->interments->map(fn ($interment) => $this->historyIntermentPayload($interment))->values();
+    }
+
+    private function historyIntermentPayload($interment): array
+    {
+        $plot = $interment->plot;
+        $block = $plot?->block;
+        $section = $block?->section;
+        $site = $plot?->cemeterySite;
+        $municipality = app('current_municipality');
+        $nextInterment = $interment->nextInterments
+            ->sortByDesc(fn ($next) => $next->interment_date?->timestamp ?? 0)
+            ->first();
+        $nextPlot = $nextInterment?->plot;
+
+        return [
+            'id' => $interment->id,
+            'type' => $interment->type,
+            'type_label' => $interment->type === 'transfer' ? 'Transfer' : 'Initial Interment',
+            'lifecycle_status' => $this->historyLifecycleStatus($interment),
+            'lifecycle_label' => $this->historyLifecycleLabel($interment),
+            'interment_date' => $interment->interment_date?->format('Y-m-d'),
+            'notes' => $interment->notes,
+            'ended_at' => $interment->ended_at?->toIso8601String(),
+            'end_type' => $interment->end_type,
+            'end_reason' => $interment->end_reason,
+            'end_notes' => $interment->end_notes,
+            'transfer_destination' => $interment->transfer_destination,
+            'permit_reference' => $interment->permit_reference,
+            'voided_at' => $interment->voided_at?->toIso8601String(),
+            'void_reason' => $interment->void_reason,
+            'previous_interment_id' => $interment->previous_interment_id,
+            'destination_plot_label' => $nextPlot?->slotLabel,
+            'destination_plot_profile_url' => $nextPlot ? route('cemetery.admin.sites.plots.profile.page', [
+                $municipality->slug,
+                $nextPlot->cemetery_site_id,
+                $nextPlot->id,
+            ]) : null,
+            'plot' => $plot ? [
+                'id' => $plot->id,
+                'name' => $plot->name,
+                'slot_label' => $plot->slotLabel,
+                'profile_url' => route('cemetery.admin.sites.plots.profile.page', [
+                    $municipality->slug,
+                    $plot->cemetery_site_id,
+                    $plot->id,
+                ]),
+                'parent' => $plot->parent ? ['id' => $plot->parent->id, 'name' => $plot->parent->name] : null,
+                'block' => $block ? ['id' => $block->id, 'name' => $block->name] : null,
+                'section' => $section ? ['id' => $section->id, 'name' => $section->name] : null,
+                'cemetery_site' => $site ? ['id' => $site->id, 'name' => $site->name] : null,
+            ] : null,
+        ];
+    }
+
+    private function historyLifecycleStatus($interment): string
+    {
+        if ($interment->voided_at !== null) {
+            return 'voided';
+        }
+
+        if ($interment->ended_at !== null) {
+            return $interment->end_type ?: 'ended';
+        }
+
+        return 'active';
+    }
+
+    private function historyLifecycleLabel($interment): string
+    {
+        if ($interment->voided_at !== null) {
+            return 'Voided';
+        }
+
+        if ($interment->ended_at !== null) {
+            return match ($interment->end_type) {
+                'exhumed' => 'Exhumed',
+                'transferred_out' => 'Transferred Out',
+                default => 'Moved Out',
+            };
+        }
+
+        return 'Current';
     }
 }

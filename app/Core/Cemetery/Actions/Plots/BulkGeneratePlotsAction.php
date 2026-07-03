@@ -67,6 +67,7 @@ class BulkGeneratePlotsAction
                     row: $dto->row,
                     position: $dto->position,
                     cemeterySiteId: $dto->cemeterySiteId,
+                    areaSqm: $dto->areaSqm,
                 ));
             }
 

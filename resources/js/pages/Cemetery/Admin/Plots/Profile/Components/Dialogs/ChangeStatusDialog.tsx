@@ -14,13 +14,19 @@ export function ChangeStatusDialog({
     site,
     plot,
     statusOptions,
+    open: externalOpen,
+    onOpenChange: setExternalOpen,
 }: {
     municipality: MunicipalityType;
     site: CemeterySiteListItem;
     plot: PlotProfileType;
     statusOptions: PlotStatusOption[];
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setOpen = setExternalOpen ?? setInternalOpen;
     const form = useForm<ChangePlotStatusForm>({
         status: plot.status === 'maintenance' ? 'maintenance' : 'available',
         reason: '',
@@ -47,10 +53,12 @@ export function ChangeStatusDialog({
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : close())}>
-            <Button type="button" variant="outline" onClick={() => setOpen(true)} className="w-full justify-start text-left font-normal">
-                <Settings2 size={16} className="mr-2" />
-                Change Status
-            </Button>
+            {externalOpen === undefined && (
+                <Button type="button" variant="outline" onClick={() => setOpen(true)} className="w-full justify-start text-left font-normal">
+                    <Settings2 size={16} className="mr-2" />
+                    Change Status
+                </Button>
+            )}
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>

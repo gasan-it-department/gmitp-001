@@ -9,6 +9,8 @@ class DecedentListResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $intermentStatus = $this->intermentStatus();
+
         return [
             'id' => $this->id,
             'full_name' => $this->displayName(),
@@ -22,9 +24,35 @@ class DecedentListResource extends JsonResource
             'registry_number' => $this->registry_number ?: 'N/A',
             'date_of_death' => $this->date_of_death?->format('M d, Y') ?? 'N/A',
             'date_of_registration' => $this->date_of_registration?->format('M d, Y'),
-            'interment_status' => $this->currentInterment ? 'interred' : 'unassigned',
-            'plot_label' => $this->currentInterment?->plot?->slotLabel,
+            'interment_status' => $intermentStatus,
+            'plot_label' => $this->plotLabel($intermentStatus),
         ];
+    }
+
+    private function intermentStatus(): string
+    {
+        if ($this->currentInterment) {
+            return 'interred';
+        }
+
+        return match ($this->latestInterment?->end_type) {
+            'exhumed' => 'exhumed',
+            'transferred_out' => 'transferred_out',
+            default => 'unassigned',
+        };
+    }
+
+    private function plotLabel(string $intermentStatus): ?string
+    {
+        if ($this->currentInterment) {
+            return $this->currentInterment->plot?->slotLabel;
+        }
+
+        if (in_array($intermentStatus, ['exhumed', 'transferred_out'], true)) {
+            return $this->latestInterment?->plot?->slotLabel;
+        }
+
+        return null;
     }
 
     private function displayName(): string

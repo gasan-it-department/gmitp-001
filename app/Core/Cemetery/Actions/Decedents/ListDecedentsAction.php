@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListDecedentsAction
 {
+    private const FINAL_INTERMENT_STATUSES = ['exhumed', 'transferred_out'];
+
     public function execute(string $municipalId, ?DecedentListFiltersDto $filters = null): LengthAwarePaginator
     {
         $filters ??= new DecedentListFiltersDto(
@@ -21,7 +23,7 @@ class ListDecedentsAction
         );
 
         return Decedent::query()
-            ->with(['currentInterment.plot', 'unidentifiedDetail'])
+            ->with(['currentInterment.plot', 'latestInterment.plot', 'unidentifiedDetail'])
             ->where('municipal_id', $municipalId)
             ->when($filters->registrationStatus, fn (Builder $query, string $status) => $query
                 ->where('registration_status', $status))
@@ -39,6 +41,20 @@ class ListDecedentsAction
                 }
 
                 $query->whereDoesntHave('interments', fn (Builder $intermentQuery) => $intermentQuery->active());
+
+                if (in_array($status, self::FINAL_INTERMENT_STATUSES, true)) {
+                    $query->whereHas('interments', fn (Builder $intermentQuery) => $intermentQuery
+                        ->where('end_type', $status)
+                        ->whereNotNull('ended_at')
+                        ->whereNull('voided_at'));
+
+                    return;
+                }
+
+                $query->whereDoesntHave('interments', fn (Builder $intermentQuery) => $intermentQuery
+                    ->whereIn('end_type', self::FINAL_INTERMENT_STATUSES)
+                    ->whereNotNull('ended_at')
+                    ->whereNull('voided_at'));
             })
             ->when($filters->search, fn (Builder $query, string $search) => $this->applySearch($query, $search))
             ->orderByDesc('date_of_registration')

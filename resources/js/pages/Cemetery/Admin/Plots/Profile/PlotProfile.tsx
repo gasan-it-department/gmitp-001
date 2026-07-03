@@ -1,12 +1,20 @@
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CemeterySiteListItem, PlotOccupancyModeValue, PlotProfile as PlotProfileType, PlotStatusOption, PlotTypeValue, SelectOption } from '@/Core/Types/Cemetery/cemetery';
+import {
+    CemeterySiteListItem,
+    PlotOccupancyModeValue,
+    PlotProfile as PlotProfileType,
+    PlotStatusOption,
+    PlotTypeValue,
+    SelectOption,
+} from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import { cn } from '@/lib/utils';
 import cemetery from '@/routes/cemetery';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, MapPin, Settings2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Settings2, Trash2, Users } from 'lucide-react';
+import { useState } from 'react';
 import { ActiveLeaseCard } from './Components/Cards/ActiveLeaseCard';
 import { ActivityCard } from './Components/Cards/ActivityCard';
 import { ChildNichesCard } from './Components/Cards/ChildNichesCard';
@@ -33,6 +41,7 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
     const canEditStatus = canEditOccupancy && plot.active_interments_count === 0;
     const canManageLease = plot.occupancy_mode !== 'slotted';
     const canDelete = plot.can_delete;
+    const [action, setAction] = useState<'occupancy' | 'status' | 'delete' | null>(null);
 
     const showManageDropdown = canEditOccupancy || canEditStatus || canDelete;
 
@@ -40,7 +49,7 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
         <AppLayout>
             <Head title={plot.slot_label} />
 
-            <div className="mx-auto max-w-7xl space-y-6 p-6">
+            <div className="mx-auto w-full max-w-[1800px] space-y-6 p-6 xl:p-8">
                 <Link
                     href={`${cemetery.admin.sites.workspace.page.url({
                         municipality: municipality.slug,
@@ -84,41 +93,74 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
                             <div className="flex flex-wrap gap-2">
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" className="bg-slate-800 text-slate-100 border-slate-700 hover:bg-slate-700 hover:text-white">
+                                        <Button
+                                            variant="outline"
+                                            className="border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:text-white"
+                                        >
                                             <Settings2 size={16} className="mr-2" />
                                             Manage Plot
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent align="end" className="w-56 p-2 space-y-1">
+                                    <PopoverContent align="end" className="w-56 space-y-1 p-2">
                                         <p className="px-2 py-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">Actions</p>
                                         {canEditOccupancy && (
-                                            <ChangeOccupancyDialog
-                                                municipality={municipality}
-                                                site={site}
-                                                plot={plot}
-                                                occupancyModeOptions={occupancy_mode_options}
-                                            />
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal" onClick={() => setAction('occupancy')}>
+                                                <Users size={16} className="mr-2" />
+                                                Change Occupancy
+                                            </Button>
                                         )}
                                         {canEditStatus && (
-                                            <ChangeStatusDialog municipality={municipality} site={site} plot={plot} statusOptions={status_options} />
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal" onClick={() => setAction('status')}>
+                                                <Settings2 size={16} className="mr-2" />
+                                                Change Status
+                                            </Button>
                                         )}
-                                        {canDelete && <DeletePlotDialog municipality={municipality} site={site} plot={plot} />}
+                                        {canDelete && (
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setAction('delete')}>
+                                                <Trash2 size={16} className="mr-2" />
+                                                Delete Plot
+                                            </Button>
+                                        )}
                                     </PopoverContent>
                                 </Popover>
                             </div>
                         )}
                     </div>
 
+                    <ChangeOccupancyDialog
+                        municipality={municipality}
+                        site={site}
+                        plot={plot}
+                        occupancyModeOptions={occupancy_mode_options}
+                        open={action === 'occupancy'}
+                        onOpenChange={(open) => { if (!open) setAction(null); }}
+                    />
+                    <ChangeStatusDialog
+                        municipality={municipality}
+                        site={site}
+                        plot={plot}
+                        statusOptions={status_options}
+                        open={action === 'status'}
+                        onOpenChange={(open) => { if (!open) setAction(null); }}
+                    />
+                    <DeletePlotDialog
+                        municipality={municipality}
+                        site={site}
+                        plot={plot}
+                        open={action === 'delete'}
+                        onOpenChange={(open) => { if (!open) setAction(null); }}
+                    />
+
                     <div className="grid gap-px bg-slate-100 sm:grid-cols-4">
                         <Stat label="Occupancy" value={plot.occupancy_label} />
                         <Stat label="Capacity" value={String(plot.capacity)} />
+                        <Stat label="Area" value={formatArea(plot.area_sqm)} />
                         <Stat label="Can Still Accept" value={plot.occupancy_mode === 'shared' ? String(plot.available_capacity) : '-'} />
-                        <Stat label="Profile Type" value={plot.occupancy_mode === 'slotted' ? 'Apartment container' : 'Assignable plot'} />
                     </div>
                 </section>
 
-                <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="space-y-6 lg:col-span-2">
+                <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="space-y-6 lg:col-span-2 xl:col-span-3">
                         <ActiveLeaseCard plot={plot} municipality={municipality} site={site} canManageLease={canManageLease} />
                         <DetailsCard plot={plot} municipality={municipality} site={site} typeOptions={type_options} canEditDetails={canEditDetails} />
                         {plot.occupancy_mode === 'slotted' ? (
@@ -135,4 +177,12 @@ export default function PlotProfile({ municipality, site, plot, type_options, st
             </div>
         </AppLayout>
     );
+}
+
+function formatArea(value: string | number | null): string | null {
+    if (value === null || value === '') {
+        return null;
+    }
+
+    return `${Number(value).toFixed(2)} sqm`;
 }

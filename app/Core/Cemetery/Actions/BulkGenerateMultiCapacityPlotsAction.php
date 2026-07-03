@@ -56,6 +56,7 @@ class BulkGenerateMultiCapacityPlotsAction
                 'level' => null,
                 'position' => $dto->position,
                 'capacity' => $dto->capacity,
+                'area_sqm' => $dto->areaSqm,
             ]);
         });
     }

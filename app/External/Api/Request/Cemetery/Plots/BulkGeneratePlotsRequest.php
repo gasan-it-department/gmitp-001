@@ -52,6 +52,7 @@ class BulkGeneratePlotsRequest extends FormRequest
             'padding' => ['required', 'integer', 'min:0', 'max:6'],
             'type' => ['required', new Enum(PlotTypes::class), Rule::notIn([PlotTypes::APARTMENT_NICHE->value])],
             'capacity' => ['required', 'integer', 'min:1', 'max:50'],
+            'area_sqm' => ['nullable', 'numeric', 'min:0.01', 'max:99999.99'],
         ];
     }
 
@@ -69,6 +70,8 @@ class BulkGeneratePlotsRequest extends FormRequest
             'quantity.max' => 'You can generate up to 500 plots at a time.',
             'capacity.max' => 'Capacity may not exceed 50.',
             'type.not_in' => 'Apartment niches must be generated through the apartment niche generator.',
+            'area_sqm.min' => 'Area must be at least 0.01 sqm when provided.',
+            'area_sqm.max' => 'Area may not exceed 99,999.99 sqm.',
         ];
     }
 }

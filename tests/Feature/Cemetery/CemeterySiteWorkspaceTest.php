@@ -293,6 +293,7 @@ it('opens a tenant and Site scoped Plot profile with current interments and acti
     DB::table('cemetery_plots')->where('id', $plot)->update([
         'occupancy_mode' => 'shared',
         'capacity' => 3,
+        'area_sqm' => '6.50',
     ]);
 
     $firstDecedent = workspaceDecedent();
@@ -313,6 +314,7 @@ it('opens a tenant and Site scoped Plot profile with current interments and acti
             ->where('plot.id', $plot)
             ->where('plot.slot_label', 'LOT 777')
             ->where('plot.occupancy_mode', 'shared')
+            ->where('plot.area_sqm', '6.50')
             ->where('plot.active_interments_count', 2)
             ->where('plot.occupancy_label', '2 / 3')
             ->where('plot.active_lease.leaseholder_name', 'GRACE SANTOS')
@@ -542,6 +544,7 @@ it('updates standard Plot details and blocks duplicate names in the same Block',
     ]), [
         'name' => 'lot 703',
         'type' => 'bone_ossuary',
+        'area_sqm' => '8.25',
     ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $site,
@@ -549,7 +552,8 @@ it('updates standard Plot details and blocks duplicate names in the same Block',
     ]));
 
     expect(DB::table('cemetery_plots')->where('id', $plot)->value('name'))->toBe('LOT 703')
-        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('type'))->toBe('bone_ossuary');
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('type'))->toBe('bone_ossuary')
+        ->and((float) DB::table('cemetery_plots')->where('id', $plot)->value('area_sqm'))->toBe(8.25);
 
     $this->patch(route('cemetery-sites.plots.details.update', [
         'cemetery_site_id' => $site,
@@ -947,7 +951,9 @@ it('creates a Plot inside the selected active Site and returns to its workspace'
 
     $response = $this->post(route('cemetery-sites.plots.store', [
         'cemetery_site_id' => $site,
-    ]), workspacePlotPayload($block));
+    ]), workspacePlotPayload($block, [
+        'area_sqm' => '6.50',
+    ]));
 
     $plot = Plot::query()->sole();
 
@@ -957,7 +963,8 @@ it('creates a Plot inside the selected active Site and returns to its workspace'
     ]));
 
     expect($plot->cemetery_site_id)->toBe($site)
-        ->and($plot->block_id)->toBe($block);
+        ->and($plot->block_id)->toBe($block)
+        ->and($plot->area_sqm)->toBe('6.50');
 });
 
 it('rejects apartment niche creation through the manual Plot form', function () {
@@ -1060,6 +1067,7 @@ it('bulk-generates Plots by lot-number pattern without partial inserts', functio
         'padding' => 0,
         'type' => 'lawn_lot',
         'capacity' => 1,
+        'area_sqm' => '6.00',
         'row' => null,
         'position' => null,
     ];
@@ -1074,7 +1082,8 @@ it('bulk-generates Plots by lot-number pattern without partial inserts', functio
         ]));
 
     expect(DB::table('cemetery_plots')->where('block_id', $block)->orderBy('name')->pluck('name')->all())
-        ->toBe(['LOT 701', 'LOT 702', 'LOT 703']);
+        ->toBe(['LOT 701', 'LOT 702', 'LOT 703'])
+        ->and(DB::table('cemetery_plots')->where('block_id', $block)->pluck('area_sqm')->map(fn ($value) => (float) $value)->unique()->values()->all())->toBe([6.0]);
 
     $this->post(route('cemetery-sites.blocks.plots.bulk', [
         'cemetery_site_id' => $site,
@@ -1130,6 +1139,7 @@ it('rejects apartment niches through the standard bulk plot generator', function
         'padding' => 0,
         'type' => 'apartment_niche',
         'capacity' => 1,
+        'area_sqm' => '6.00',
         'row' => null,
         'position' => null,
     ])->assertSessionHasErrors('type');
@@ -1176,11 +1186,13 @@ it('generates apartment niche containers and floor row niche slots', function ()
         ->and($parent->status)->toBeNull()
         ->and($parent->occupancy_mode->value)->toBe('slotted')
         ->and($parent->capacity)->toBe(12)
+        ->and($parent->area_sqm)->toBeNull()
         ->and(DB::table('cemetery_plots')->where('parent_plot_id', $parent->id)->count())->toBe(12)
         ->and($lastSlot->slot_label)->toBe('APARTMENT A-F2-R2-N03')
         ->and($lastSlot->status->value)->toBe('available')
         ->and($lastSlot->occupancy_mode->value)->toBe('shared')
-        ->and($lastSlot->capacity)->toBe(3);
+        ->and($lastSlot->capacity)->toBe(3)
+        ->and($lastSlot->area_sqm)->toBeNull();
 });
 
 it('appends niche slots to an existing apartment parent', function () {

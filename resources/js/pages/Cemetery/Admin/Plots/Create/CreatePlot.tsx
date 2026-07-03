@@ -23,6 +23,7 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
         name: '',
         type: '',
         capacity: 1,
+        area_sqm: '',
     });
 
     const submit = (e: FormEvent) => {
@@ -139,6 +140,19 @@ export default function CreatePlot({ municipality, site, blocks, type_options }:
                                 <p className="mt-1 text-xs text-slate-500">
                                     Capacity means the maximum decedents/remains this physical plot can hold. It will not create child slots.
                                 </p>
+                            </div>
+                            <div>
+                                <FormInput
+                                    id="area_sqm"
+                                    label="AREA (SQM)"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="e.g. 6.00"
+                                    value={String(data.area_sqm)}
+                                    onChange={(e) => setData('area_sqm', e.target.value === '' ? '' : Number(e.target.value))}
+                                    error={errors.area_sqm}
+                                />
+                                <p className="mt-1 text-xs text-slate-500">Optional lot size. Apartment niches do not use area.</p>
                             </div>
                         </div>
                     </section>

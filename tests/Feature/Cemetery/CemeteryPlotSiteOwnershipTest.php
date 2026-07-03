@@ -78,6 +78,7 @@ it('derives plot site ownership from the selected block section', function () {
         row: 'A',
         position: null,
         cemeterySiteId: $siteId,
+        areaSqm: null,
     );
 
     $plot = Plot::withoutEvents(fn () => $action->execute($dto));

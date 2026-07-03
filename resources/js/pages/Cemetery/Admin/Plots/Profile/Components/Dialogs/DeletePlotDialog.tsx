@@ -8,8 +8,22 @@ import { useForm } from '@inertiajs/react';
 import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
-export function DeletePlotDialog({ municipality, site, plot }: { municipality: MunicipalityType; site: CemeterySiteListItem; plot: PlotProfileType }) {
-    const [open, setOpen] = useState(false);
+export function DeletePlotDialog({
+    municipality,
+    site,
+    plot,
+    open: externalOpen,
+    onOpenChange: setExternalOpen,
+}: {
+    municipality: MunicipalityType;
+    site: CemeterySiteListItem;
+    plot: PlotProfileType;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    const open = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setOpen = setExternalOpen ?? setInternalOpen;
     const isApartment = plot.occupancy_mode === 'slotted';
     const isChildSlot = plot.parent_plot_id !== null;
     const form = useForm<DeletePlotForm>({
@@ -34,10 +48,12 @@ export function DeletePlotDialog({ municipality, site, plot }: { municipality: M
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : close())}>
-            <Button type="button" variant="outline" onClick={() => setOpen(true)} className="w-full justify-start text-left font-normal text-red-600 hover:text-red-700 hover:bg-red-50">
-                <Trash2 size={16} className="mr-2" />
-                {isApartment ? 'Delete Apartment' : isChildSlot ? 'Delete Slot' : 'Delete Plot'}
-            </Button>
+            {externalOpen === undefined && (
+                <Button type="button" variant="outline" onClick={() => setOpen(true)} className="w-full justify-start text-left font-normal text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Trash2 size={16} className="mr-2" />
+                    {isApartment ? 'Delete Apartment' : isChildSlot ? 'Delete Slot' : 'Delete Plot'}
+                </Button>
+            )}
             <DialogContent>
                 <form onSubmit={submit}>
                     <DialogHeader>

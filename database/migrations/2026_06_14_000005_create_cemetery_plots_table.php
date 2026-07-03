@@ -52,6 +52,10 @@ return new class extends Migration
             // parent capacity summarizes generated child niche count.
             $table->unsignedInteger('capacity');
 
+            // External lot area for standard physical plots. Apartment niches
+            // use floor/row/niche locators instead of square-meter tracking.
+            $table->decimal('area_sqm', 8, 2)->nullable();
+
             $table->timestamps();
             $table->softDeletes(); // REQ-4.3 / SR-4
 

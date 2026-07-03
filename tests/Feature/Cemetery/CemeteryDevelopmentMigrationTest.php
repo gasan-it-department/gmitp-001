@@ -204,9 +204,12 @@ it('creates operational plot leases instead of plot deeds', function () {
             ->and(Schema::hasColumn('cemetery_plot_leases', 'deleted_at'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'previous_interment_id'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'ended_at'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_interments', 'end_type'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'ended_by'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'end_reason'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'end_notes'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_interments', 'transfer_destination'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_interments', 'permit_reference'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'voided_at'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'voided_by'))->toBeTrue()
             ->and(Schema::hasColumn('cemetery_interments', 'void_reason'))->toBeTrue()
@@ -225,7 +228,7 @@ it('creates operational plot leases instead of plot deeds', function () {
     }
 });
 
-it('creates cemetery plots with explicit occupancy mode', function () {
+it('creates cemetery plots with explicit occupancy mode and optional area', function () {
     Schema::create('municipalities', function (Blueprint $table) {
         $table->ulid('id')->primary();
     });
@@ -242,7 +245,8 @@ it('creates cemetery plots with explicit occupancy mode', function () {
             $migration->up();
         }
 
-        expect(Schema::hasColumn('cemetery_plots', 'occupancy_mode'))->toBeTrue();
+        expect(Schema::hasColumn('cemetery_plots', 'occupancy_mode'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_plots', 'area_sqm'))->toBeTrue();
     } finally {
         foreach (array_reverse($migrations) as $migration) {
             $migration->down();
