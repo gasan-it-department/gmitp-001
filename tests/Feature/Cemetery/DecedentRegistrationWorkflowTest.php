@@ -7,6 +7,7 @@ use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
 use App\Core\Cemetery\Actions\Decedents\StoreDecedentAction;
 use App\Core\Cemetery\Actions\Decedents\StoreDecedentDocumentAction;
 use App\Core\Cemetery\Actions\Decedents\UpdateDecedentAction;
+use App\Core\Cemetery\Actions\Decedents\UploadDecedentAvatarAction;
 use App\Core\Cemetery\Actions\Decedents\VerifyDecedentAction;
 use App\Core\Cemetery\Dto\Decedents\DecedentDto;
 use App\Core\Cemetery\Models\Decedent;
@@ -98,10 +99,10 @@ beforeEach(function () {
         $table->json('missing_requirements');
         $table->text('reason');
         $table->string('evidence_reference');
-        $table->timestamp('expires_at');
         $table->timestamp('consumed_at')->nullable();
         $table->ulid('created_by')->nullable();
         $table->ulid('consumed_by')->nullable();
+        $table->ulid('consumed_by_interment_id')->nullable();
         $table->timestamps();
     });
 
@@ -361,6 +362,55 @@ it('counts uploaded documents toward interment readiness immediately', function 
     ], fakePdf('burial-permit.pdf'));
 
     expect($readiness->execute($record->fresh())['ready'])->toBeTrue();
+});
+
+it('stores cemetery document files in tenant readable media paths', function () {
+    $record = testDecedent(['municipal_id' => 'municipality-a', 'registration_status' => 'verified']);
+
+    $document = (new StoreDecedentDocumentAction($this->idGenerator))->execute($record->id, $record->municipal_id, [
+        'type' => 'burial_permit',
+        'document_number' => 'PERMIT-1',
+    ], fakePdf('burial-permit.pdf'));
+
+    $media = $document->getFirstMedia('file');
+
+    expect($media)->not->toBeNull()
+        ->and($media->getPathRelativeToRoot())->toStartWith(
+            "municipality-a/cemetery/decedents/{$record->id}/documents/burial_permit/{$document->id}/file/{$media->id}/"
+        )
+        ->and(Storage::disk('local')->exists($media->getPathRelativeToRoot()))->toBeTrue();
+});
+
+it('uploads and replaces decedent avatars from the profile flow', function () {
+    $record = testDecedent(['municipal_id' => 'municipality-a', 'registration_status' => 'verified']);
+    $action = new UploadDecedentAvatarAction;
+
+    activity()->enableLogging();
+    $action->execute($record->id, $record->municipal_id, UploadedFile::fake()->image('first-avatar.jpg'));
+    $firstMedia = $record->fresh()->getFirstMedia('avatar');
+
+    $action->execute($record->id, $record->municipal_id, UploadedFile::fake()->image('second-avatar.png'));
+    activity()->disableLogging();
+
+    $updated = $record->fresh('media');
+    $currentMedia = $updated->getFirstMedia('avatar');
+
+    expect($firstMedia)->not->toBeNull()
+        ->and($firstMedia->fresh())->toBeNull()
+        ->and($currentMedia?->file_name)->toBe("avatar-{$record->id}.png")
+        ->and($currentMedia?->getPathRelativeToRoot())->toStartWith("municipality-a/cemetery/decedents/{$record->id}/avatar/{$currentMedia->id}/")
+        ->and(Storage::disk('local')->exists($currentMedia?->getPathRelativeToRoot() ?? ''))->toBeTrue()
+        ->and(Activity::query()->where('event', 'avatar_updated')->where('subject_id', $record->id)->count())->toBe(2);
+});
+
+it('fails closed when avatar upload uses another municipality tenant', function () {
+    $record = testDecedent(['municipal_id' => 'municipality-a']);
+
+    expect(fn () => (new UploadDecedentAvatarAction)->execute(
+        $record->id,
+        'municipality-b',
+        UploadedFile::fake()->image('avatar.jpg'),
+    ))->toThrow(ModelNotFoundException::class);
 });
 
 it('soft deletes documents while retaining their private media and audit event', function () {

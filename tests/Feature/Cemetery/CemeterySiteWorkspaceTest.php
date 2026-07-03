@@ -142,6 +142,68 @@ it('opens a tenant-scoped Site workspace with only that Site Plot inventory', fu
             ->where('inventory_counts.occupied', 0));
 });
 
+it('updates Cemetery Site details without changing operational status', function () {
+    activity()->enableLogging();
+
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL', 'active', '174003001');
+    $duplicate = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
+    $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL', 'active', '174001001');
+
+    $this->patch(route('cemetery-sites.update', [
+        'cemetery_site_id' => $site,
+    ]), [
+        'name' => 'gasan municipal cemetery',
+        'psgc_barangay_code' => '174003001',
+        'street_name' => 'purok 2',
+        'notes' => 'Updated after site walkthrough.',
+    ])->assertRedirect(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+    ]));
+
+    $updated = DB::table('cemetery_sites')->where('id', $site)->first();
+
+    expect($updated->name)->toBe('GASAN MUNICIPAL CEMETERY')
+        ->and($updated->psgc_barangay_code)->toBe('174003001')
+        ->and($updated->street_name)->toBe('PUROK 2')
+        ->and($updated->notes)->toBe('Updated after site walkthrough.')
+        ->and($updated->status)->toBe('active')
+        ->and(DB::table('activity_log')->where('event', 'updated')->where('subject_id', $site)->exists())->toBeTrue();
+
+    $this->patch(route('cemetery-sites.update', [
+        'cemetery_site_id' => $site,
+    ]), [
+        'name' => 'TIGUION CEMETERY',
+    ])->assertSessionHasErrors('name');
+
+    session()->flush();
+
+    $this->patch(route('cemetery-sites.update', [
+        'cemetery_site_id' => $site,
+    ]), [
+        'name' => 'VALID NAME',
+        'psgc_barangay_code' => '174001001',
+    ])->assertSessionHasErrors('psgc_barangay_code');
+
+    session()->flush();
+
+    $this->patch(route('cemetery-sites.update', [
+        'cemetery_site_id' => $site,
+    ]), [
+        'name' => 'VALID NAME',
+        'status' => 'closed',
+    ])->assertSessionHasErrors('status');
+
+    $this->patch(route('cemetery-sites.update', [
+        'cemetery_site_id' => $boacSite,
+    ]), [
+        'name' => 'FORGED TENANT',
+    ])->assertNotFound();
+
+    expect(DB::table('cemetery_sites')->where('id', $duplicate)->value('name'))->toBe('TIGUION CEMETERY')
+        ->and(DB::table('cemetery_sites')->where('id', $boacSite)->value('name'))->toBe('BOAC CENTRAL');
+});
+
 it('filters Site Plot inventory by assignable apartment slots and search', function () {
     $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
     $block = workspaceBlock(
@@ -1020,6 +1082,59 @@ it('creates tenant-scoped Sections from the Site workspace', function () {
         ->assertNotFound();
 });
 
+it('updates tenant-scoped Sections from the Site workspace', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $siblingSite = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
+    $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL');
+    $section = workspaceSection($this->gasan->id, $site, 'NEW ANNEX');
+    $duplicate = workspaceSection($this->gasan->id, $site, 'OLD AREA');
+    $siblingSection = workspaceSection($this->gasan->id, $siblingSite, 'SIBLING AREA');
+    $boacSection = workspaceSection($this->boac->id, $boacSite, 'BOAC AREA');
+
+    $this->patch(route('cemetery-sites.sections.update', [
+        'cemetery_site_id' => $site,
+        'section_id' => $section,
+    ]), [
+        'name' => 'new cemetery annex',
+        'description' => 'Renamed after caretaker confirmation.',
+    ])->assertRedirect(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+    ]));
+
+    $updated = DB::table('cemetery_sections')->where('id', $section)->first();
+
+    expect($updated->name)->toBe('NEW CEMETERY ANNEX')
+        ->and($updated->description)->toBe('Renamed after caretaker confirmation.');
+
+    $this->patch(route('cemetery-sites.sections.update', [
+        'cemetery_site_id' => $site,
+        'section_id' => $section,
+    ]), [
+        'name' => 'OLD AREA',
+    ])->assertSessionHasErrors('name');
+
+    session()->flush();
+
+    $this->patch(route('cemetery-sites.sections.update', [
+        'cemetery_site_id' => $site,
+        'section_id' => $siblingSection,
+    ]), [
+        'name' => 'FORGED SIBLING',
+    ])->assertNotFound();
+
+    $this->patch(route('cemetery-sites.sections.update', [
+        'cemetery_site_id' => $boacSite,
+        'section_id' => $boacSection,
+    ]), [
+        'name' => 'FORGED TENANT',
+    ])->assertNotFound();
+
+    expect(DB::table('cemetery_sections')->where('id', $duplicate)->value('name'))->toBe('OLD AREA')
+        ->and(DB::table('cemetery_sections')->where('id', $siblingSection)->value('name'))->toBe('SIBLING AREA')
+        ->and(DB::table('cemetery_sections')->where('id', $boacSection)->value('name'))->toBe('BOAC AREA');
+});
+
 it('creates Blocks only inside Sections owned by the selected Site', function () {
     $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
     $siblingSite = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
@@ -1050,6 +1165,62 @@ it('creates Blocks only inside Sections owned by the selected Site', function ()
         'section_id' => $siblingSection,
     ]), ['name' => 'FORGED'])
         ->assertSessionHasErrors('section');
+});
+
+it('updates Blocks only inside Sections owned by the selected Site', function () {
+    $site = workspaceSite($this->gasan->id, 'GASAN CENTRAL');
+    $siblingSite = workspaceSite($this->gasan->id, 'TIGUION CEMETERY');
+    $boacSite = workspaceSite($this->boac->id, 'BOAC CENTRAL');
+    $section = workspaceSection($this->gasan->id, $site, 'NEW ANNEX');
+    $siblingSection = workspaceSection($this->gasan->id, $siblingSite, 'OLD AREA');
+    $boacSection = workspaceSection($this->boac->id, $boacSite, 'BOAC AREA');
+    $block = workspaceBlock($this->gasan->id, $section, 'GENERAL');
+    $duplicate = workspaceBlock($this->gasan->id, $section, 'NORTH');
+    $siblingBlock = workspaceBlock($this->gasan->id, $siblingSection, 'SIBLING BLOCK');
+    $boacBlock = workspaceBlock($this->boac->id, $boacSection, 'BOAC BLOCK');
+
+    $this->patch(route('cemetery-sites.sections.blocks.update', [
+        'cemetery_site_id' => $site,
+        'section_id' => $section,
+        'block_id' => $block,
+    ]), [
+        'name' => 'south',
+    ])->assertRedirect(route('cemetery.admin.sites.workspace.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+    ]));
+
+    expect(DB::table('cemetery_blocks')->where('id', $block)->value('name'))->toBe('SOUTH');
+
+    $this->patch(route('cemetery-sites.sections.blocks.update', [
+        'cemetery_site_id' => $site,
+        'section_id' => $section,
+        'block_id' => $block,
+    ]), [
+        'name' => 'NORTH',
+    ])->assertSessionHasErrors('name');
+
+    session()->flush();
+
+    $this->patch(route('cemetery-sites.sections.blocks.update', [
+        'cemetery_site_id' => $site,
+        'section_id' => $section,
+        'block_id' => $siblingBlock,
+    ]), [
+        'name' => 'FORGED SIBLING',
+    ])->assertSessionHasErrors('block');
+
+    $this->patch(route('cemetery-sites.sections.blocks.update', [
+        'cemetery_site_id' => $boacSite,
+        'section_id' => $boacSection,
+        'block_id' => $boacBlock,
+    ]), [
+        'name' => 'FORGED TENANT',
+    ])->assertSessionHasErrors('section');
+
+    expect(DB::table('cemetery_blocks')->where('id', $duplicate)->value('name'))->toBe('NORTH')
+        ->and(DB::table('cemetery_blocks')->where('id', $siblingBlock)->value('name'))->toBe('SIBLING BLOCK')
+        ->and(DB::table('cemetery_blocks')->where('id', $boacBlock)->value('name'))->toBe('BOAC BLOCK');
 });
 
 it('bulk-generates Plots by lot-number pattern without partial inserts', function () {

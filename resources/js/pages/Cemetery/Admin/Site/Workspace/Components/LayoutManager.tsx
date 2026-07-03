@@ -13,9 +13,11 @@ import {
     GenerateApartmentNichesForm,
     PlotTypeValue,
     SelectOption,
+    UpdateCemeteryBlockForm,
+    UpdateCemeterySectionForm,
 } from '@/Core/Types/Cemetery/cemetery';
 import { useForm } from '@inertiajs/react';
-import { Boxes, Eye, Layers3, Plus, Rows3 } from 'lucide-react';
+import { Boxes, Eye, Layers3, Pencil, Plus, Rows3 } from 'lucide-react';
 import { FormEvent, ReactNode, useMemo, useState } from 'react';
 
 interface Props {
@@ -66,8 +68,13 @@ export function LayoutManager({ site, layout, municipalitySlug, typeOptions, onV
                                         </div>
                                         {section.description && <p className="mt-1 text-sm text-slate-500">{section.description}</p>}
                                     </div>
-                                    {active && section.status === 'active' && (
-                                        <CreateBlockDialog siteId={site.id} section={section} municipalitySlug={municipalitySlug} />
+                                    {active && (
+                                        <div className="flex flex-wrap gap-2">
+                                            <EditSectionDialog siteId={site.id} section={section} municipalitySlug={municipalitySlug} />
+                                            {section.status === 'active' && (
+                                                <CreateBlockDialog siteId={site.id} section={section} municipalitySlug={municipalitySlug} />
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -140,6 +147,7 @@ function BlockRow({
                 </Button>
                 {active && (
                     <>
+                        <EditBlockDialog siteId={site.id} section={section} block={block} municipalitySlug={municipalitySlug} />
                         <BulkGeneratePlotsDialog
                             siteId={site.id}
                             section={section}
@@ -152,6 +160,149 @@ function BlockRow({
                 )}
             </div>
         </div>
+    );
+}
+
+function EditBlockDialog({
+    siteId,
+    section,
+    block,
+    municipalitySlug,
+}: {
+    siteId: string;
+    section: CemeterySectionListItem;
+    block: CemeteryBlockListItem;
+    municipalitySlug: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const { data, setData, patch, processing, errors, reset, clearErrors } = useForm<UpdateCemeteryBlockForm>({
+        name: block.name,
+    });
+
+    const openDialog = () => {
+        setData({ name: block.name });
+        clearErrors();
+        setOpen(true);
+    };
+
+    const close = () => {
+        if (processing) return;
+
+        reset();
+        clearErrors();
+        setOpen(false);
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        patch(`/api/cemetery-sites/${siteId}/sections/${section.id}/blocks/${block.id}`, {
+            headers: { 'X-Municipality-Slug': municipalitySlug },
+            preserveScroll: true,
+            onSuccess: close,
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : close())}>
+            <DialogTrigger asChild>
+                <Button type="button" variant="outline" onClick={openDialog}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Block
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Block / Row</DialogTitle>
+                    <DialogDescription>Rename the block under {section.name}. Existing plots stay inside this block.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                    <Field label="Block Name" error={errors.name}>
+                        <Input value={data.name} onChange={(event) => setData('name', event.target.value)} placeholder="e.g. GENERAL" />
+                    </Field>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={close} disabled={processing}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={processing} className="bg-emerald-700 hover:bg-emerald-800">
+                            {processing ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function EditSectionDialog({ siteId, section, municipalitySlug }: { siteId: string; section: CemeterySectionListItem; municipalitySlug: string }) {
+    const [open, setOpen] = useState(false);
+    const { data, setData, patch, processing, errors, reset, clearErrors } = useForm<UpdateCemeterySectionForm>({
+        name: section.name,
+        description: section.description ?? '',
+    });
+
+    const openDialog = () => {
+        setData({
+            name: section.name,
+            description: section.description ?? '',
+        });
+        clearErrors();
+        setOpen(true);
+    };
+
+    const close = () => {
+        if (processing) return;
+
+        reset();
+        clearErrors();
+        setOpen(false);
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        patch(`/api/cemetery-sites/${siteId}/sections/${section.id}`, {
+            headers: { 'X-Municipality-Slug': municipalitySlug },
+            preserveScroll: true,
+            onSuccess: close,
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? setOpen(true) : close())}>
+            <DialogTrigger asChild>
+                <Button type="button" variant="outline" onClick={openDialog}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Section
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Section / Area</DialogTitle>
+                    <DialogDescription>
+                        Rename the section or update staff notes. Existing blocks and plots stay under this section.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                    <Field label="Section Name" error={errors.name}>
+                        <Input value={data.name} onChange={(event) => setData('name', event.target.value)} placeholder="e.g. NEW ANNEX" />
+                    </Field>
+                    <Field label="Description" error={errors.description}>
+                        <Textarea
+                            value={data.description}
+                            onChange={(event) => setData('description', event.target.value)}
+                            placeholder="Optional notes for staff"
+                        />
+                    </Field>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={close} disabled={processing}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={processing} className="bg-emerald-700 hover:bg-emerald-800">
+                            {processing ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 

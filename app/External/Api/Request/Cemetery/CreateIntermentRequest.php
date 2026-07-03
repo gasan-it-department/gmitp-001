@@ -107,6 +107,10 @@ class CreateIntermentRequest extends FormRequest
 
             'notes' => ['nullable', 'string', 'max:1000'],
 
+            'pending_document_reason' => ['nullable', 'string', 'max:1000'],
+            'pending_document_reference' => ['nullable', 'string', 'max:255'],
+            'pending_document_confirmed' => ['nullable', 'boolean'],
+
             'leaseholder_name' => ['prohibited'],
             'leaseholder_contact' => ['prohibited'],
             'leaseholder_address' => ['prohibited'],
@@ -128,6 +132,8 @@ class CreateIntermentRequest extends FormRequest
             'plot_id.exists' => 'The selected plot is not assignable or has already reached capacity.',
             'interment_date.before_or_equal' => 'The interment date cannot be in the future.',
             'type.in' => 'Use the Move Interment flow to create transfer records.',
+            'pending_document_reason.max' => 'The pending-document reason must not exceed 1000 characters.',
+            'pending_document_reference.max' => 'The follow-up reference must not exceed 255 characters.',
             'leaseholder_name.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',
             'leaseholder_contact.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',
             'leaseholder_address.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',

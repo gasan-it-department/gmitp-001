@@ -21,12 +21,12 @@ class IntermentReadinessOverride extends Model
 
     protected $fillable = [
         'id', 'municipal_id', 'decedent_id', 'missing_requirements', 'reason',
-        'evidence_reference', 'expires_at', 'consumed_at', 'created_by', 'consumed_by',
+        'evidence_reference', 'consumed_at', 'created_by', 'consumed_by',
+        'consumed_by_interment_id',
     ];
 
     protected $casts = [
         'missing_requirements' => 'array',
-        'expires_at' => 'datetime',
         'consumed_at' => 'datetime',
     ];
 
@@ -40,9 +40,9 @@ class IntermentReadinessOverride extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function isUsable(): bool
+    public function consumedByInterment(): BelongsTo
     {
-        return $this->consumed_at === null && $this->expires_at->isFuture();
+        return $this->belongsTo(Interment::class, 'consumed_by_interment_id');
     }
 
     public function getActivitylogOptions(): LogOptions

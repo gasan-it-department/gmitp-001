@@ -106,8 +106,8 @@ afterEach(function () {
     Schema::dropIfExists('cemetery_decedents');
 });
 
-it('soft deletes a draft and its related records while retaining media and an audit reason', function () {
-    $decedent = deletionTestDecedent();
+it('soft deletes an unverified Decedent and its related records while retaining media and an audit reason', function (string $status) {
+    $decedent = deletionTestDecedent($status);
     $detail = UnidentifiedDetail::query()->create([
         'id' => (string) Str::ulid(),
         'municipal_id' => $decedent->municipal_id,
@@ -134,7 +134,7 @@ it('soft deletes a draft and its related records while retaining media and an au
     );
     activity()->disableLogging();
 
-    $audit = Activity::query()->where('event', 'draft_deleted')->firstOrFail();
+    $audit = Activity::query()->where('event', 'unverified_deleted')->firstOrFail();
 
     expect(Decedent::withTrashed()->findOrFail($decedent->id)->trashed())->toBeTrue()
         ->and(UnidentifiedDetail::withTrashed()->findOrFail($detail->id)->trashed())->toBeTrue()
@@ -142,20 +142,21 @@ it('soft deletes a draft and its related records while retaining media and an au
         ->and($media?->fresh())->not->toBeNull()
         ->and(Storage::disk('local')->exists($media?->getPathRelativeToRoot() ?? ''))->toBeTrue()
         ->and($audit->properties->get('reason'))->toBe('Duplicate draft entered by mistake')
+        ->and($audit->properties->get('registration_status'))->toBe($status)
         ->and($audit->properties->get('document_ids'))->toBe([$document->id]);
-});
+})->with(['draft', 'pending_review']);
 
-it('rejects deletion of submitted or verified Decedent records', function (string $status) {
+it('rejects deletion of official Decedent records', function (string $status) {
     $decedent = deletionTestDecedent($status);
 
     expect(fn () => (new DeleteDraftDecedentAction)->execute(
         $decedent->id,
         $decedent->municipal_id,
         'Should not be deleted',
-    ))->toThrow(ValidationException::class, 'Only draft Decedent records');
-})->with(['pending_review', 'verified']);
+    ))->toThrow(ValidationException::class, 'Only draft or pending-review Decedent records');
+})->with(['verified', 'archived']);
 
-it('fails closed for another municipality and for drafts with operational records', function () {
+it('fails closed for another municipality and for unverified records with operational records', function () {
     $decedent = deletionTestDecedent();
 
     expect(fn () => (new DeleteDraftDecedentAction)->execute(

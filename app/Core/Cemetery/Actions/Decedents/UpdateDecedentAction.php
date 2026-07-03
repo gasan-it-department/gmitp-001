@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class UpdateDecedentAction
 {
+    use StoresDecedentAvatar;
+
     public function __construct(private IdGeneratorInterface $idGenerator) {}
 
     public function execute(DecedentDto $dto, string $decedentId): Decedent
@@ -82,9 +84,7 @@ class UpdateDecedentAction
             $this->syncDetails($decedent, $dto);
 
             if ($dto->avatar instanceof UploadedFile) {
-                $decedent->addMedia($dto->avatar)
-                    ->usingFileName($dto->avatar->getClientOriginalName())
-                    ->toMediaCollection('avatar', 'local');
+                $this->storeAvatar($decedent, $dto->avatar);
             }
 
             return $decedent->fresh(['documents.media', 'unidentifiedDetail', 'media']);

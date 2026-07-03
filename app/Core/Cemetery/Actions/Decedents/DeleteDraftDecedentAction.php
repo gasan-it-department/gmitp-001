@@ -18,15 +18,20 @@ class DeleteDraftDecedentAction
                 ->lockForUpdate()
                 ->findOrFail($decedentId);
 
-            if ($decedent->registration_status !== RegistrationStatus::DRAFT) {
+            $deletableStatuses = [
+                RegistrationStatus::DRAFT,
+                RegistrationStatus::PENDING_REVIEW,
+            ];
+
+            if (! in_array($decedent->registration_status, $deletableStatuses, true)) {
                 throw ValidationException::withMessages([
-                    'record' => 'Only draft Decedent records can be deleted.',
+                    'record' => 'Only draft or pending-review Decedent records can be deleted.',
                 ]);
             }
 
             if ($decedent->interments()->exists() || $decedent->readinessOverrides()->exists()) {
                 throw ValidationException::withMessages([
-                    'record' => 'This draft has operational records and cannot be deleted.',
+                    'record' => 'This unverified record has operational records and cannot be deleted.',
                 ]);
             }
 
@@ -35,14 +40,15 @@ class DeleteDraftDecedentAction
             activity('cemetery_decedent')
                 ->performedOn($decedent)
                 ->causedBy(auth()->user())
-                ->event('draft_deleted')
+                ->event('unverified_deleted')
                 ->withProperties([
                     'reason' => trim($reason),
+                    'registration_status' => $decedent->registration_status->value,
                     'version' => $decedent->version,
                     'document_ids' => $documentIds,
                     'unidentified_detail_id' => $decedent->unidentifiedDetail?->id,
                 ])
-                ->log('Draft Decedent record deleted');
+                ->log('Unverified Decedent record deleted');
 
             $decedent->documents->each->delete();
             $decedent->unidentifiedDetail?->delete();

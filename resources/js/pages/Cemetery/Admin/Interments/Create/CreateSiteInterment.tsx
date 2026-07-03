@@ -40,6 +40,9 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
         interment_date: '',
         type: 'initial',
         notes: '',
+        pending_document_reason: '',
+        pending_document_reference: '',
+        pending_document_confirmed: false,
     });
 
     const filteredDecedents = useMemo(() => {
@@ -56,11 +59,25 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
     const filteredPlots = useMemo(() => (plotType === 'all' ? plots : plots.filter((plot) => plot.type === plotType)), [plotType, plots]);
     const selectedDecedent = decedents.find((decedent) => decedent.id === data.decedent_id) ?? null;
     const selectedPlot = plots.find((plot) => plot.id === data.plot_id) ?? null;
+    const needsPendingDocumentAuthorization = selectedDecedent?.pending_documents ?? false;
+    const pendingDocumentAuthorizationComplete =
+        !needsPendingDocumentAuthorization ||
+        (data.pending_document_reason.trim() !== '' && data.pending_document_reference.trim() !== '' && data.pending_document_confirmed);
 
     const updateIntermentDate = (value: string) => {
         setData({
             ...data,
             interment_date: value,
+        });
+    };
+
+    const selectDecedent = (decedent: ReadyDecedentOption) => {
+        setData({
+            ...data,
+            decedent_id: decedent.id,
+            pending_document_reason: '',
+            pending_document_reference: '',
+            pending_document_confirmed: false,
         });
     };
 
@@ -91,9 +108,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                         </span>
                         <div>
                             <h1 className="text-2xl font-semibold text-slate-900">Create Interment</h1>
-                            <p className="mt-1 text-sm text-slate-500">
-                                Assign a verified, ready, unassigned Decedent to an available plot in {site.name}.
-                            </p>
+                            <p className="mt-1 text-sm text-slate-500">Assign a verified, unassigned Decedent to an available plot in {site.name}.</p>
                         </div>
                     </div>
                 </header>
@@ -104,7 +119,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                             <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
                                 <div>
                                     <h2 className="font-semibold text-slate-900">Ready Decedents</h2>
-                                    <p className="text-sm text-slate-500">Verified records with complete readiness or usable override.</p>
+                                    <p className="text-sm text-slate-500">Verified records. Missing documents are handled during confirmation.</p>
                                 </div>
                                 <UserCheck className="h-5 w-5 text-slate-400" />
                             </div>
@@ -121,7 +136,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
 
                             <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
                                 {filteredDecedents.length === 0 ? (
-                                    <EmptyState text="No ready, unassigned Decedents match this search." />
+                                    <EmptyState text="No verified, unassigned Decedents match this search." />
                                 ) : (
                                     filteredDecedents.map((decedent) => {
                                         const selected = data.decedent_id === decedent.id;
@@ -130,19 +145,35 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                                             <button
                                                 key={decedent.id}
                                                 type="button"
-                                                onClick={() => setData('decedent_id', decedent.id)}
+                                                onClick={() => selectDecedent(decedent)}
                                                 className={`w-full rounded-lg border p-4 text-left transition ${
                                                     selected
                                                         ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-100'
                                                         : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
                                                 }`}
                                             >
-                                                <p className="font-medium text-slate-900">{decedent.display_name}</p>
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <p className="font-medium text-slate-900">{decedent.display_name}</p>
+                                                    <span
+                                                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                                            decedent.document_complete
+                                                                ? 'bg-emerald-50 text-emerald-700'
+                                                                : 'bg-amber-50 text-amber-700'
+                                                        }`}
+                                                    >
+                                                        {decedent.readiness_status_label}
+                                                    </span>
+                                                </div>
                                                 <p className="mt-1 text-xs text-slate-500">
                                                     {decedent.vital_record_label} / {decedent.identity_status.toUpperCase()} / Died{' '}
                                                     {decedent.date_of_death_label ?? '-'}
                                                 </p>
                                                 <p className="mt-1 text-xs text-slate-400">Registry: {decedent.registry_number ?? 'Not recorded'}</p>
+                                                {decedent.pending_documents && decedent.missing_documents.length > 0 && (
+                                                    <p className="mt-2 text-xs text-amber-700">
+                                                        Missing: {decedent.missing_documents.map((document) => document.label).join(', ')}
+                                                    </p>
+                                                )}
                                             </button>
                                         );
                                     })
@@ -244,6 +275,69 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                             </div>
                         </div>
 
+                        {needsPendingDocumentAuthorization && selectedDecedent && (
+                            <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-amber-950">Pending Documents Authorization</h3>
+                                        <p className="text-sm text-amber-800">
+                                            This verified decedent can be interred, but the authorization reason and follow-up reference will be
+                                            recorded.
+                                        </p>
+                                    </div>
+                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                                        Pending Documents
+                                    </span>
+                                </div>
+                                <p className="mt-3 text-xs text-amber-800">
+                                    Missing: {selectedDecedent.missing_documents.map((document) => document.label).join(', ')}
+                                </p>
+                                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium text-slate-700">Reason *</label>
+                                        <Input
+                                            value={data.pending_document_reason}
+                                            onChange={(event) => setData('pending_document_reason', event.target.value)}
+                                            placeholder="OLD MANUAL CEMETERY RECORD ENCODING"
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-slate-500">Example: BURIAL ALLOWED BY ADMIN; DOCUMENTS TO FOLLOW</p>
+                                        {errors.pending_document_reason && (
+                                            <p className="mt-1 text-xs text-red-600">{errors.pending_document_reason}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium text-slate-700">Follow-up Reference *</label>
+                                        <Input
+                                            value={data.pending_document_reference}
+                                            onChange={(event) => setData('pending_document_reference', event.target.value)}
+                                            placeholder="APPROVED BY ADMIN HEAD"
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-slate-500">Example: LOGBOOK PAGE 12 or MHO/LCR FOLLOW-UP</p>
+                                        {errors.pending_document_reference && (
+                                            <p className="mt-1 text-xs text-red-600">{errors.pending_document_reference}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <label className="mt-4 flex items-start gap-2 rounded border border-amber-200 bg-white px-3 py-2 text-xs text-slate-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.pending_document_confirmed}
+                                        onChange={(event) => setData('pending_document_confirmed', event.target.checked)}
+                                        required
+                                        className="mt-0.5"
+                                    />
+                                    <span>
+                                        I confirm that authorized staff allowed this interment while the listed documents are pending follow-up.
+                                    </span>
+                                </label>
+                                {errors.pending_document_confirmed && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.pending_document_confirmed}</p>
+                                )}
+                            </div>
+                        )}
+
                         {(selectedDecedent || selectedPlot) && (
                             <div className="mt-5 grid gap-3 rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-950 md:grid-cols-2">
                                 <div>
@@ -268,7 +362,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                         </Button>
                         <Button
                             type="submit"
-                            disabled={processing || !data.decedent_id || !data.plot_id}
+                            disabled={processing || !data.decedent_id || !data.plot_id || !pendingDocumentAuthorizationComplete}
                             className="bg-indigo-700 hover:bg-indigo-800"
                         >
                             {processing ? 'Saving...' : 'Confirm Interment'}

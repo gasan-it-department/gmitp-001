@@ -21,6 +21,6 @@ class DeleteDraftDecedentController extends Controller
 
         return redirect()->route('cemetery.admin.decedents.list.page', [
             'municipality' => app('current_municipality')->slug,
-        ])->with('success', 'Draft Decedent record deleted.');
+        ])->with('success', 'Unverified Decedent record deleted.');
     }
 }

@@ -59,6 +59,8 @@ export type CreateCemeterySiteForm = {
     notes: string;
 };
 
+export type UpdateCemeterySiteForm = CreateCemeterySiteForm;
+
 export interface CemeteryBlockListItem {
     id: string;
     name: string;
@@ -84,9 +86,13 @@ export type CreateCemeterySectionForm = {
     description: string;
 };
 
+export type UpdateCemeterySectionForm = CreateCemeterySectionForm;
+
 export type CreateCemeteryBlockForm = {
     name: string;
 };
+
+export type UpdateCemeteryBlockForm = CreateCemeteryBlockForm;
 
 export type BulkGeneratePlotsForm = {
     label_prefix: string;
@@ -234,11 +240,12 @@ export interface DecedentProfile {
     }[];
     interment_readiness: {
         ready: boolean;
+        interment_eligible: boolean;
         registration_verified: boolean;
+        document_complete: boolean;
+        pending_documents: boolean;
         requirements: { type: DecedentDocumentTypeValue; label: string; satisfied: boolean }[];
         missing: DecedentDocumentTypeValue[];
-        via_override: boolean;
-        override: { id: string; evidence_reference: string; expires_at: string } | null;
     };
     // Schema pivot: interment is now an event row (type = initial | transfer).
     // No row-level status; existence of the row is the "interred" signal.
@@ -555,6 +562,9 @@ export type CreateIntermentForm = {
     interment_date: string;
     type: IntermentTypeValue;
     notes: string;
+    pending_document_reason: string;
+    pending_document_reference: string;
+    pending_document_confirmed: boolean;
 };
 
 export type CreateSiteIntermentForm = CreateIntermentForm & {
@@ -570,6 +580,11 @@ export interface ReadyDecedentOption {
     registry_number: string | null;
     date_of_death: string | null;
     date_of_death_label: string | null;
+    readiness_status: 'ready' | 'pending_documents';
+    readiness_status_label: string;
+    document_complete: boolean;
+    pending_documents: boolean;
+    missing_documents: { type: DecedentDocumentTypeValue; label: string }[];
 }
 
 export interface IntermentListItem {

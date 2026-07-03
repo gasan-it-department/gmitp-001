@@ -12,7 +12,7 @@ class GetIntermentReadinessAction
 {
     public function execute(Decedent $decedent): array
     {
-        $decedent->loadMissing(['documents', 'unidentifiedDetail', 'readinessOverrides']);
+        $decedent->loadMissing(['documents', 'unidentifiedDetail']);
 
         $required = [
             $decedent->vital_record_type === VitalRecordType::FETAL_DEATH
@@ -40,23 +40,17 @@ class GetIntermentReadinessAction
         ])->values()->all();
 
         $missing = collect($requirements)->where('satisfied', false)->pluck('type')->values()->all();
-        $override = $decedent->readinessOverrides
-            ->filter(fn ($item) => $item->isUsable())
-            ->sortByDesc('created_at')
-            ->first();
+        $registrationVerified = $decedent->registration_status === RegistrationStatus::VERIFIED;
+        $documentComplete = $missing === [];
 
         return [
-            'ready' => $decedent->registration_status === RegistrationStatus::VERIFIED
-                && ($missing === [] || $override !== null),
-            'registration_verified' => $decedent->registration_status === RegistrationStatus::VERIFIED,
+            'ready' => $registrationVerified && $documentComplete,
+            'interment_eligible' => $registrationVerified,
+            'registration_verified' => $registrationVerified,
+            'document_complete' => $documentComplete,
+            'pending_documents' => $registrationVerified && ! $documentComplete,
             'requirements' => $requirements,
             'missing' => $missing,
-            'via_override' => $missing !== [] && $override !== null,
-            'override' => $override ? [
-                'id' => $override->id,
-                'evidence_reference' => $override->evidence_reference,
-                'expires_at' => $override->expires_at->toIso8601String(),
-            ] : null,
         ];
     }
 }

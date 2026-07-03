@@ -17,6 +17,9 @@ final readonly class IntermentDto
         public string $intermentDate,
         public string $type,
         public ?string $notes,
+        public ?string $pendingDocumentReason,
+        public ?string $pendingDocumentReference,
+        public bool $pendingDocumentConfirmed,
     ) {}
 
     public static function fromRequest(array $validated): self
@@ -30,6 +33,9 @@ final readonly class IntermentDto
             intermentDate: $intermentDate,
             type: $validated['type'] ?? 'initial',
             notes: self::cleanText($validated['notes'] ?? null),
+            pendingDocumentReason: self::cleanText($validated['pending_document_reason'] ?? null),
+            pendingDocumentReference: self::cleanText($validated['pending_document_reference'] ?? null),
+            pendingDocumentConfirmed: (bool) ($validated['pending_document_confirmed'] ?? false),
         );
     }
 

@@ -39,6 +39,9 @@ it('creates the simplified document and readiness override schema from a fresh d
     Schema::create('cemetery_decedents', function (Blueprint $table) {
         $table->ulid('id')->primary();
     });
+    Schema::create('cemetery_interments', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
 
     $documentsMigration = require database_path('migrations/2026_06_15_000002_create_cemetery_decedent_documents_table.php');
     $readinessMigration = require database_path('migrations/2026_06_15_000003_create_cemetery_interment_readiness_overrides_table.php');
@@ -56,10 +59,13 @@ it('creates the simplified document and readiness override schema from a fresh d
             ->and(Schema::hasColumn('cemetery_decedent_documents', 'verified_by'))->toBeFalse()
             ->and(Schema::hasColumn('cemetery_decedent_documents', 'verification_notes'))->toBeFalse()
             ->and(Schema::hasTable('cemetery_decedent_corrections'))->toBeFalse()
-            ->and(Schema::hasTable('cemetery_interment_readiness_overrides'))->toBeTrue();
+            ->and(Schema::hasTable('cemetery_interment_readiness_overrides'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_interment_readiness_overrides', 'expires_at'))->toBeFalse()
+            ->and(Schema::hasColumn('cemetery_interment_readiness_overrides', 'consumed_by_interment_id'))->toBeTrue();
     } finally {
         $readinessMigration->down();
         $documentsMigration->down();
+        Schema::dropIfExists('cemetery_interments');
         Schema::dropIfExists('cemetery_decedents');
         Schema::dropIfExists('users');
         Schema::dropIfExists('municipalities');

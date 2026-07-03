@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class StoreDecedentAction
 {
+    use StoresDecedentAvatar;
+
     public function __construct(private IdGeneratorInterface $idGenerator) {}
 
     public function execute(DecedentDto $dto): Decedent
@@ -59,9 +61,7 @@ class StoreDecedentAction
             $this->syncDetails($decedent, $dto);
 
             if ($dto->avatar instanceof UploadedFile) {
-                $decedent->addMedia($dto->avatar)
-                    ->usingFileName($dto->avatar->getClientOriginalName())
-                    ->toMediaCollection('avatar', 'local');
+                $this->storeAvatar($decedent, $dto->avatar);
             }
 
             return $decedent->fresh(['unidentifiedDetail', 'media']);

@@ -62,7 +62,7 @@ export default function CemeterySiteWorkspace({
                     Back to cemetery sites
                 </Link>
 
-                <SiteHeader site={site} municipalitySlug={municipality.slug} />
+                <SiteHeader site={site} municipality={municipality} />
 
                 <Tabs value={tab} onValueChange={setTab} className="space-y-4">
                     <TabsList className="grid w-full grid-cols-4 sm:w-fit">

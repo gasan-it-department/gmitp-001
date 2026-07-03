@@ -2,6 +2,7 @@
 
 use App\Core\Cemetery\Actions\Decedents\GetDecedentProfileAction;
 use App\Core\Municipality\Models\Municipality;
+use App\Core\Users\Models\User;
 use App\External\Api\Resources\Cemetery\Decedents\DecedentDetailsResource;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -136,19 +137,31 @@ it('lists active interments only for the selected Site workspace', function () {
             ->where('interments.0.block_name', 'GENERAL'));
 });
 
-it('loads ready unassigned Decedents and available assignable Site Plots on create page', function () {
+it('loads verified unassigned Decedents and available assignable Site Plots on create page', function () {
     $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
     $siblingSite = intermentSite($this->gasan->id, 'TIGUION CEMETERY');
     $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
     $siblingBlock = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $siblingSite, 'OLD AREA'), 'GENERAL');
     $ready = intermentReadyDecedent($this->gasan->id, 'BRIEFS', 'BULMA');
-    $unready = intermentVerifiedDecedent($this->gasan->id, 'BRIEFS', 'TRUNKS');
+    $pendingDocuments = intermentVerifiedDecedent($this->gasan->id, 'BRIEFS', 'TRUNKS');
     $alreadyInterred = intermentReadyDecedent($this->gasan->id, 'SON', 'GOTEN');
+    $transferredOut = intermentReadyDecedent($this->gasan->id, 'SON', 'GOKU');
+    $exhumed = intermentReadyDecedent($this->gasan->id, 'SON', 'GOHAN');
     $availablePlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 701', 'available');
     intermentPlot($this->gasan->id, $site, $block, 'LOT 702', 'occupied');
     intermentPlot($this->gasan->id, $siblingSite, $siblingBlock, 'LOT 999', 'available');
     $usedPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 703', 'occupied');
     intermentRecord($this->gasan->id, $alreadyInterred, $usedPlot, '2026-06-20');
+    intermentRecord($this->gasan->id, $transferredOut, $usedPlot, '2026-06-20', [
+        'ended_at' => now(),
+        'end_type' => 'transferred_out',
+        'end_reason' => 'Transferred to another cemetery.',
+    ]);
+    intermentRecord($this->gasan->id, $exhumed, $usedPlot, '2026-06-20', [
+        'ended_at' => now(),
+        'end_type' => 'exhumed',
+        'end_reason' => 'Exhumed by family request.',
+    ]);
 
     $this->get(route('cemetery.admin.sites.interments.create.page', [
         'municipality' => $this->gasan->slug,
@@ -160,12 +173,18 @@ it('loads ready unassigned Decedents and available assignable Site Plots on crea
             ->component('Cemetery/Admin/Interments/Create/CreateSiteInterment')
             ->where('site.id', $site)
             ->where('preselected_decedent_id', $ready)
-            ->has('decedents', 1)
+            ->has('decedents', 2)
             ->where('decedents.0.id', $ready)
+            ->where('decedents.0.readiness_status', 'ready')
+            ->where('decedents.0.document_complete', true)
+            ->where('decedents.1.id', $pendingDocuments)
+            ->where('decedents.1.readiness_status', 'pending_documents')
+            ->where('decedents.1.document_complete', false)
+            ->has('decedents.1.missing_documents', 2)
             ->has('available_plots', 1)
             ->where('available_plots.0.id', $availablePlot));
 
-    expect($unready)->not->toBe($ready);
+    expect($pendingDocuments)->not->toBe($ready);
 });
 
 it('stores a Site-scoped interment without creating a Plot lease', function () {
@@ -190,6 +209,76 @@ it('stores a Site-scoped interment without creating a Plot lease', function () {
     expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(1)
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied')
         ->and(DB::table('cemetery_plot_leases')->where('plot_id', $plot)->count())->toBe(0);
+});
+
+it('requires pending-document authorization when a verified decedent has missing documents', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentVerifiedDecedent($this->gasan->id, 'SANTOS', 'MARIO');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 740', 'available');
+
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $plot))
+        ->assertSessionHasErrors([
+            'pending_document_reason',
+            'pending_document_reference',
+            'pending_document_confirmed',
+        ]);
+
+    expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(0)
+        ->and(DB::table('cemetery_interment_readiness_overrides')->where('decedent_id', $decedent)->count())->toBe(0)
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('available');
+});
+
+it('records and immediately consumes pending-document authorization during interment', function () {
+    $user = intermentStaffUser();
+    $this->actingAs($user);
+
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentVerifiedDecedent($this->gasan->id, 'SANTOS', 'LUIGI');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 741', 'available');
+
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $plot, [
+        'pending_document_reason' => 'Burial allowed by admin; documents to follow',
+        'pending_document_reference' => 'Approved by admin head',
+        'pending_document_confirmed' => true,
+    ]))->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+        'municipality' => $this->gasan->slug,
+        'cemetery_site_id' => $site,
+        'plot_id' => $plot,
+    ]));
+
+    $interment = DB::table('cemetery_interments')->where('decedent_id', $decedent)->first();
+    $authorization = DB::table('cemetery_interment_readiness_overrides')->where('decedent_id', $decedent)->first();
+
+    expect($interment)->not->toBeNull()
+        ->and($authorization)->not->toBeNull()
+        ->and($authorization->reason)->toBe('Burial allowed by admin; documents to follow')
+        ->and($authorization->evidence_reference)->toBe('APPROVED BY ADMIN HEAD')
+        ->and($authorization->consumed_at)->not->toBeNull()
+        ->and($authorization->created_by)->toBe($user->id)
+        ->and($authorization->consumed_by)->toBe($user->id)
+        ->and($authorization->consumed_by_interment_id)->toBe($interment->id);
+});
+
+it('rejects normal interment creation for Decedents with final cemetery outcomes', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'OUT');
+    $oldPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 742', 'available');
+    $newPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 743', 'available');
+
+    intermentRecord($this->gasan->id, $decedent, $oldPlot, '2026-06-20', [
+        'ended_at' => now(),
+        'end_type' => 'transferred_out',
+        'end_reason' => 'Transferred to another cemetery.',
+    ]);
+
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $newPlot))
+        ->assertSessionHasErrors('decedent_id');
+
+    expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(1)
+        ->and(DB::table('cemetery_plots')->where('id', $newPlot)->value('status'))->toBe('available');
 });
 
 it('moves an active interment to another plot in the same Site and preserves the ended source history', function () {
@@ -879,4 +968,18 @@ function intermentPayload(string $siteId, string $decedentId, string $plotId, ar
         'interment_date' => '2026-06-20',
         'type' => 'initial',
     ], $overrides);
+}
+
+function intermentStaffUser(): User
+{
+    $id = (string) Str::ulid();
+
+    DB::table('users')->insert([
+        'id' => $id,
+        'full_name' => 'Cemetery Admin',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return User::query()->findOrFail($id);
 }

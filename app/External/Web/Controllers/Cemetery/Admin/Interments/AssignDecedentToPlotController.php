@@ -27,10 +27,11 @@ class AssignDecedentToPlotController extends Controller
         $municipalId = app('municipal_id');
 
         $decedent = $this->getDecedentProfile->execute($decedentId, $municipalId);
+        $readiness = $this->getIntermentReadiness->execute($decedent);
         abort_unless(
-            $this->getIntermentReadiness->execute($decedent)['ready'],
+            $readiness['registration_verified'],
             409,
-            'This decedent is not ready for interment.',
+            'This decedent must be verified before interment.',
         );
         $sites = $this->listCemeterySites->execute($municipalId)
             ->where('status', 'active')

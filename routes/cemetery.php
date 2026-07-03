@@ -1,8 +1,8 @@
 <?php
 
 use App\External\Api\Controllers\Cemetery\Blocks\StoreCemeteryBlockController;
+use App\External\Api\Controllers\Cemetery\Blocks\UpdateCemeteryBlockController;
 use App\External\Api\Controllers\Cemetery\Decedents\CorrectDecedentController;
-use App\External\Api\Controllers\Cemetery\Decedents\CreateReadinessOverrideController;
 use App\External\Api\Controllers\Cemetery\Decedents\DeleteDecedentDocumentController;
 use App\External\Api\Controllers\Cemetery\Decedents\DeleteDraftDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentCorrectionEvidenceController;
@@ -10,6 +10,7 @@ use App\External\Api\Controllers\Cemetery\Decedents\DownloadDecedentDocumentCont
 use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\StoreDecedentDocumentController;
 use App\External\Api\Controllers\Cemetery\Decedents\UpdateDecedentController;
+use App\External\Api\Controllers\Cemetery\Decedents\UploadDecedentAvatarController;
 use App\External\Api\Controllers\Cemetery\Decedents\VerifyDecedentController;
 use App\External\Api\Controllers\Cemetery\Decedents\ViewDecedentAvatarController;
 use App\External\Api\Controllers\Cemetery\Interments\CloseIntermentController;
@@ -28,7 +29,9 @@ use App\External\Api\Controllers\Cemetery\Plots\StorePlotLeaseController;
 use App\External\Api\Controllers\Cemetery\Plots\UpdatePlotDetailsController;
 use App\External\Api\Controllers\Cemetery\Plots\UpdatePlotLeaseController;
 use App\External\Api\Controllers\Cemetery\Sections\StoreCemeterySectionController;
+use App\External\Api\Controllers\Cemetery\Sections\UpdateCemeterySectionController;
 use App\External\Api\Controllers\Cemetery\Sites\StoreCemeterySiteController;
+use App\External\Api\Controllers\Cemetery\Sites\UpdateCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\AssignDecedentToPlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\CreateSiteIntermentController;
 use App\External\Web\Controllers\Cemetery\Admin\Interments\MoveIntermentController as WebMoveIntermentController;
@@ -126,6 +129,7 @@ Route::prefix('api/decedents')
     ->group(function () {
         Route::post('store', StoreDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('store');
         Route::put('{decedent_id}', UpdateDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('update');
+        Route::post('{decedent_id}/avatar', UploadDecedentAvatarController::class)->middleware('permission:cemetery.decedents.manage')->name('avatar.store');
         Route::delete('{decedent_id}', DeleteDraftDecedentController::class)->middleware('permission:cemetery.decedents.manage')->name('destroy');
         Route::post('{decedent_id}/verify', VerifyDecedentController::class)->middleware('permission:cemetery.decedents.verify')->name('verify');
         Route::post('{decedent_id}/documents', StoreDecedentDocumentController::class)->middleware('permission:cemetery.decedents.manage')->name('documents.store');
@@ -133,8 +137,6 @@ Route::prefix('api/decedents')
             ->middleware('permission:cemetery.decedents.manage')->name('documents.delete');
         Route::post('{decedent_id}/correct', CorrectDecedentController::class)
             ->middleware('permission:cemetery.decedents.correct')->name('correct');
-        Route::post('{decedent_id}/readiness-overrides', CreateReadinessOverrideController::class)
-            ->middleware('permission:cemetery.decedents.override')->name('readiness-overrides.store');
     });
 
 Route::prefix('api/cemetery-sites')
@@ -142,8 +144,11 @@ Route::prefix('api/cemetery-sites')
     ->middleware(['municipalityContext', 'admin', 'auth', 'permission:cemetery.access'])
     ->group(function () {
         Route::post('store', StoreCemeterySiteController::class)->name('store');
+        Route::patch('{cemetery_site_id}', UpdateCemeterySiteController::class)->name('update');
         Route::post('{cemetery_site_id}/sections', StoreCemeterySectionController::class)->name('sections.store');
+        Route::patch('{cemetery_site_id}/sections/{section_id}', UpdateCemeterySectionController::class)->name('sections.update');
         Route::post('{cemetery_site_id}/sections/{section_id}/blocks', StoreCemeteryBlockController::class)->name('sections.blocks.store');
+        Route::patch('{cemetery_site_id}/sections/{section_id}/blocks/{block_id}', UpdateCemeteryBlockController::class)->name('sections.blocks.update');
         Route::post('{cemetery_site_id}/plots', StorePlotController::class)->name('plots.store');
         Route::delete('{cemetery_site_id}/plots/{plot_id}', DeletePlotController::class)->name('plots.delete');
         Route::post('{cemetery_site_id}/plots/{plot_id}/niches', AddApartmentNichesController::class)->name('plots.niches.store');

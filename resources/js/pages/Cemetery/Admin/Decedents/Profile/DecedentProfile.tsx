@@ -50,8 +50,8 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                         Back to registry
                     </Link>
                     <div className="flex gap-2">
-                        {abilities.manage && record.registration_status === 'draft' && (
-                            <DeleteDraftDialog record={record} municipality={currentMunicipality} displayName={displayName} />
+                        {abilities.manage && ['draft', 'pending_review'].includes(record.registration_status) && (
+                            <DeleteUnverifiedDialog record={record} municipality={currentMunicipality} displayName={displayName} />
                         )}
                         {abilities.manage && ['draft', 'pending_review'].includes(record.registration_status) && (
                             <Link href={cemetery.admin.decedents.edit.page.url([currentMunicipality.slug, record.id])}>
@@ -69,7 +69,7 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                                 Verify Registration
                             </Button>
                         )}
-                        {!record.interment && record.interment_readiness.ready && (
+                        {!record.interment && record.interment_readiness.interment_eligible && (
                             <Link href={cemetery.admin.interments.assign.page.url([currentMunicipality.slug, record.id])}>
                                 <Button className="bg-emerald-600 hover:bg-emerald-700">
                                     <MapPin size={16} className="mr-2" />
@@ -82,13 +82,16 @@ export default function DecedentProfile({ decedent, document_type_options, abili
 
                 <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-col gap-6 bg-slate-900 p-7 text-white md:flex-row md:items-center">
-                        {record.avatar_url ? (
-                            <img src={record.avatar_url} alt={displayName} className="h-28 w-28 rounded-xl object-cover" />
-                        ) : (
-                            <div className="flex h-28 w-28 items-center justify-center rounded-xl bg-slate-800 text-3xl font-bold">
-                                {displayName.slice(0, 1)}
-                            </div>
-                        )}
+                        <div className="flex flex-col items-start gap-3">
+                            {record.avatar_url ? (
+                                <img src={record.avatar_url} alt={displayName} className="h-28 w-28 rounded-xl object-cover" />
+                            ) : (
+                                <div className="flex h-28 w-28 items-center justify-center rounded-xl bg-slate-800 text-3xl font-bold">
+                                    {displayName.slice(0, 1)}
+                                </div>
+                            )}
+                            {abilities.manage && <AvatarUploadDialog record={record} municipality={currentMunicipality} />}
+                        </div>
                         <div className="flex-1">
                             <div className="mb-2 flex flex-wrap gap-2">
                                 <Badge text={record.vital_record_label} />
@@ -114,7 +117,7 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                     </div>
                 </section>
 
-                <ReadinessCard record={record} abilities={abilities} municipality={currentMunicipality} />
+                <ReadinessCard record={record} />
                 <BurialLocationCard record={record} abilities={abilities} municipality={currentMunicipality} />
                 <CemeteryHistoryCard record={record} />
 
@@ -128,6 +131,73 @@ export default function DecedentProfile({ decedent, document_type_options, abili
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function AvatarUploadDialog({ record, municipality }: { record: DecedentProfileType; municipality: Municipality }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const form = useForm<{ avatar: File | null }>({ avatar: null });
+
+    const close = () => {
+        if (form.processing) return;
+
+        setIsOpen(false);
+        form.reset();
+        form.clearErrors();
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+
+        form.post(`/api/decedents/${record.id}/avatar`, {
+            forceFormData: true,
+            headers: { 'X-Municipality-Slug': municipality.slug },
+            preserveScroll: true,
+            onSuccess: close,
+        });
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => (open ? setIsOpen(true) : close())}>
+            <Button type="button" size="sm" variant="secondary" onClick={() => setIsOpen(true)}>
+                <Upload size={14} className="mr-2" />
+                Update Photo
+            </Button>
+
+            <DialogContent className="sm:max-w-lg" showCloseButton={!form.processing}>
+                <form onSubmit={submit} className="space-y-5">
+                    <DialogHeader>
+                        <DialogTitle>Update profile photo</DialogTitle>
+                        <DialogDescription>
+                            Upload a private visual-identification photo for this decedent. This does not change the legal record.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="decedent-avatar">Profile photo</Label>
+                        <input
+                            id="decedent-avatar"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(event) => form.setData('avatar', event.target.files?.[0] ?? null)}
+                            className="block w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-700"
+                        />
+                        <p className="text-xs text-slate-500">Accepted: JPG, PNG, or WEBP. Maximum size: 5 MB.</p>
+                        {form.errors.avatar && <p className="text-sm text-red-600">{form.errors.avatar}</p>}
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={close} disabled={form.processing}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={form.processing}>
+                            {form.processing && <Loader2 size={16} className="mr-2 animate-spin" />}
+                            Save Photo
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -388,7 +458,15 @@ function BurialLocationCard({
     );
 }
 
-function DeleteDraftDialog({ record, municipality, displayName }: { record: DecedentProfileType; municipality: Municipality; displayName: string }) {
+function DeleteUnverifiedDialog({
+    record,
+    municipality,
+    displayName,
+}: {
+    record: DecedentProfileType;
+    municipality: Municipality;
+    displayName: string;
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const form = useForm<{ reason: string }>({ reason: '' });
 
@@ -413,7 +491,7 @@ function DeleteDraftDialog({ record, municipality, displayName }: { record: Dece
         <Dialog open={isOpen} onOpenChange={(open) => (open ? setIsOpen(true) : close())}>
             <Button type="button" variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setIsOpen(true)}>
                 <Trash2 size={16} className="mr-2" />
-                Delete Draft
+                Delete Record
             </Button>
 
             <DialogContent className="border-red-100 sm:max-w-lg" showCloseButton={!form.processing}>
@@ -423,9 +501,9 @@ function DeleteDraftDialog({ record, municipality, displayName }: { record: Dece
                             <AlertTriangle className="h-5 w-5" />
                         </div>
                         <div className="space-y-2 text-left">
-                            <DialogTitle>Delete draft Decedent?</DialogTitle>
+                            <DialogTitle>Delete unverified Decedent?</DialogTitle>
                             <DialogDescription>
-                                {displayName} will be removed from the active registry. Its audit history and uploaded files will be retained.
+                                {displayName} will be removed from the active registry. Use this only for wrong entries before verification.
                             </DialogDescription>
                         </div>
                     </DialogHeader>
@@ -438,7 +516,7 @@ function DeleteDraftDialog({ record, municipality, displayName }: { record: Dece
                             id="delete-draft-reason"
                             value={form.data.reason}
                             onChange={(event) => form.setData('reason', event.target.value)}
-                            placeholder="Explain why this draft should be removed."
+                            placeholder="Explain why this unverified record should be removed."
                             className="min-h-24 resize-none"
                             maxLength={1000}
                             aria-invalid={Boolean(form.errors.reason)}
@@ -454,7 +532,7 @@ function DeleteDraftDialog({ record, municipality, displayName }: { record: Dece
                         </Button>
                         <Button type="submit" variant="destructive" disabled={form.processing || !form.data.reason.trim()}>
                             {form.processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                            {form.processing ? 'Deleting...' : 'Delete Draft'}
+                            {form.processing ? 'Deleting...' : 'Delete Record'}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -463,38 +541,31 @@ function DeleteDraftDialog({ record, municipality, displayName }: { record: Dece
     );
 }
 
-function ReadinessCard({
-    record,
-    abilities,
-    municipality,
-}: {
-    record: DecedentProfileType;
-    abilities: Props['abilities'];
-    municipality: Municipality;
-}) {
-    const form = useForm<{ reason: string; evidence_reference: string; legal_documents_exist: boolean }>({
-        reason: '',
-        evidence_reference: '',
-        legal_documents_exist: false,
-    });
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-        form.post(`/api/decedents/${record.id}/readiness-overrides`, {
-            headers: { 'X-Municipality-Slug': municipality.slug },
-            preserveScroll: true,
-        });
-    };
+function ReadinessCard({ record }: { record: DecedentProfileType }) {
+    const statusLabel = !record.interment_readiness.registration_verified
+        ? 'NEEDS VERIFICATION'
+        : record.interment_readiness.document_complete
+          ? 'READY'
+          : 'PENDING DOCUMENTS';
+    const statusHelp = !record.interment_readiness.registration_verified
+        ? 'Registration must be verified before interment.'
+        : record.interment_readiness.document_complete
+          ? 'Required documents are complete.'
+          : 'This record can still be interred by authorized staff. The reason and follow-up reference will be recorded during interment.';
+    const cardTone = !record.interment_readiness.registration_verified
+        ? 'border-rose-200 bg-rose-50'
+        : record.interment_readiness.document_complete
+          ? 'border-emerald-200 bg-emerald-50'
+          : 'border-amber-200 bg-amber-50';
 
     return (
-        <section
-            className={`rounded-xl border p-5 ${record.interment_readiness.ready ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}
-        >
+        <section className={`rounded-xl border p-5 ${cardTone}`}>
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="font-semibold text-slate-900">Interment Readiness</h2>
-                    <p className="text-sm text-slate-600">Separate from registration verification.</p>
+                    <p className="text-sm text-slate-600">{statusHelp}</p>
                 </div>
-                <span className="font-semibold">{record.interment_readiness.ready ? 'READY' : 'BLOCKED'}</span>
+                <span className="font-semibold">{statusLabel}</span>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {record.interment_readiness.requirements.map((item) => (
@@ -504,39 +575,20 @@ function ReadinessCard({
                     </div>
                 ))}
             </div>
-            {record.interment_readiness.via_override && (
-                <p className="mt-3 text-xs font-medium text-amber-900">
-                    Temporary override: {record.interment_readiness.override?.evidence_reference}, expires{' '}
-                    {record.interment_readiness.override?.expires_at}
-                </p>
-            )}
-            {abilities.override && record.interment_readiness.missing.length > 0 && !record.interment_readiness.via_override && (
-                <form onSubmit={submit} className="mt-4 grid gap-2 sm:grid-cols-3">
-                    <input
-                        required
-                        placeholder="Override reason"
-                        value={form.data.reason}
-                        onChange={(event) => form.setData('reason', event.target.value)}
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <input
-                        required
-                        placeholder="Physical evidence/reference"
-                        value={form.data.evidence_reference}
-                        onChange={(event) => form.setData('evidence_reference', event.target.value)}
-                        className="rounded border px-3 py-2 text-sm"
-                    />
-                    <label className="flex items-center gap-2 rounded border bg-white px-3 py-2 text-xs text-slate-700">
-                        <input
-                            type="checkbox"
-                            required
-                            checked={form.data.legal_documents_exist}
-                            onChange={(event) => form.setData('legal_documents_exist', event.target.checked)}
-                        />
-                        I attest the legal document or formal authorization exists.
-                    </label>
-                    <Button type="submit">Create 7-day Override</Button>
-                </form>
+            {record.interment_readiness.pending_documents && record.interment_readiness.missing.length > 0 && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-white/70 p-4 text-sm text-amber-900">
+                    <p className="font-semibold">Missing documents</p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                        {record.interment_readiness.requirements
+                            .filter((item) => !item.satisfied)
+                            .map((item) => (
+                                <li key={item.type}>{item.label}</li>
+                            ))}
+                    </ul>
+                    <p className="mt-3 text-xs">
+                        This record can still be interred by authorized staff. The reason and follow-up reference will be recorded during interment.
+                    </p>
+                </div>
             )}
         </section>
     );
