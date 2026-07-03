@@ -29,7 +29,6 @@ import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     Binoculars,
-    BookOpen,
     CalendarDays,
     CalendarRange,
     ClipboardList,
@@ -37,18 +36,17 @@ import {
     FileInput,
     Flower,
     Gavel,
-    Grid3X3,
     Landmark,
     Layers,
-    LayoutDashboard,
     LayoutTemplate,
     LogOut,
-    MapPinned,
+    MapPinMinus,
     Megaphone,
     MessageSquareText,
     Palmtree,
     ScrollText,
     Siren,
+    User2Icon,
     UserSearch,
 } from 'lucide-react';
 import * as React from 'react';
@@ -244,33 +242,21 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             icon: Flower,
             items: [
                 {
-                    title: 'Overview',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
-                    icon: LayoutDashboard,
-                    permission: 'cemetery.access',
-                },
-                {
                     title: 'Cemetery Site',
                     url: cemetery.admin.sites.list.page.url({ municipality: currentMunicipality.slug }),
-                    icon: BookOpen,
+                    icon: MapPinMinus,
                     permission: 'cemetery.access',
                 },
                 {
                     title: 'Decedents Records',
                     url: cemetery.admin.decedents.list.page.url({ municipality: currentMunicipality.slug }),
-                    icon: BookOpen,
+                    icon: User2Icon,
                     permission: 'cemetery.access',
                 },
                 {
-                    title: 'Plot Mapping',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
-                    icon: MapPinned,
-                    permission: 'cemetery.access',
-                },
-                {
-                    title: 'Niches & Mausoleums',
-                    url: cemetery.admin.dashboard.url({ municipality: currentMunicipality.slug }),
-                    icon: Grid3X3,
+                    title: 'Reports',
+                    url: `/${currentMunicipality.slug}/cemetery/admin/reports`,
+                    icon: ScrollText,
                     permission: 'cemetery.access',
                 },
             ],

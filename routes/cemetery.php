@@ -37,6 +37,15 @@ use App\External\Web\Controllers\Cemetery\Admin\Interments\CreateSiteIntermentCo
 use App\External\Web\Controllers\Cemetery\Admin\Interments\MoveIntermentController as WebMoveIntermentController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\CreatePlotController;
 use App\External\Web\Controllers\Cemetery\Admin\Plots\ShowPlotController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\Exports\ExportIntermentLifecycleReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\Exports\ExportLeaseReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\Exports\ExportMissingDocumentsReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\Exports\ExportPlotInventoryReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\IndexCemeteryReportsController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\IntermentLifecycleReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\LeaseReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\MissingDocumentsReportController;
+use App\External\Web\Controllers\Cemetery\Admin\Reports\PlotInventoryReportController;
 use App\External\Web\Controllers\Cemetery\Admin\Sites\CreateCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Sites\ListCemeterySiteController;
 use App\External\Web\Controllers\Cemetery\Admin\Sites\ShowCemeterySiteController;
@@ -112,6 +121,21 @@ Route::prefix('/{municipality}/cemetery')
                         Route::get('/assign/{decedent_id}', AssignDecedentToPlotController::class)->middleware('permission:cemetery.decedents.manage')->name('assign.page');
                         Route::get('/{interment_id}/move', WebMoveIntermentController::class)
                             ->middleware('permission:cemetery.decedents.manage')->name('move.page');
+                    });
+
+                // Reports
+                Route::prefix('/reports')
+                    ->name('reports.')
+                    ->group(function () {
+                        Route::get('/', IndexCemeteryReportsController::class)->name('index');
+                        Route::get('/leases', LeaseReportController::class)->name('leases.page');
+                        Route::get('/leases/export', ExportLeaseReportController::class)->name('leases.export');
+                        Route::get('/plots', PlotInventoryReportController::class)->name('plots.page');
+                        Route::get('/plots/export', ExportPlotInventoryReportController::class)->name('plots.export');
+                        Route::get('/missing-documents', MissingDocumentsReportController::class)->name('missing-documents.page');
+                        Route::get('/missing-documents/export', ExportMissingDocumentsReportController::class)->name('missing-documents.export');
+                        Route::get('/interments', IntermentLifecycleReportController::class)->name('interments.page');
+                        Route::get('/interments/export', ExportIntermentLifecycleReportController::class)->name('interments.export');
                     });
             });
     });

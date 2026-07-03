@@ -650,3 +650,138 @@ export type CloseIntermentForm = {
     permit_reference: string;
     transfer_destination: string;
 };
+
+// ─── Reports ────────────────────────────────────────────────────────────────
+
+export type ReportFilterOption = SelectOption & {
+    site_id?: string | null;
+    section_id?: string | null;
+};
+
+export type CemeteryReportFilterOptions = {
+    sites: ReportFilterOption[];
+    sections: ReportFilterOption[];
+    blocks: ReportFilterOption[];
+};
+
+export type LeaseReportStateValue = 'expired' | 'expiring_soon' | 'active' | 'no_active_lease' | 'all';
+
+export type LeaseReportFilters = {
+    site_id: string | null;
+    section_id: string | null;
+    block_id: string | null;
+    lease_state: LeaseReportStateValue;
+    lease_end_from: string | null;
+    lease_end_to: string | null;
+    expiring_within_days: number;
+    per_page: number;
+};
+
+export type LeaseReportRow = {
+    plot_id: string;
+    site_name: string | null;
+    section_name: string | null;
+    block_name: string | null;
+    plot_label: string;
+    active_interments_count: number;
+    lease_state: LeaseReportStateValue;
+    lease_state_label: string;
+    leaseholder_name: string | null;
+    leaseholder_contact: string | null;
+    leaseholder_relationship: string | null;
+    lease_start: string | null;
+    lease_end: string | null;
+    days: number | null;
+    days_label: string;
+    or_number: string | null;
+    amount_paid: string | number | null;
+    status_label: string | null;
+};
+
+export type PlotInventoryReportScopeValue = 'assignable' | 'containers' | 'all';
+
+export type PlotInventoryReportFilters = {
+    site_id: string | null;
+    section_id: string | null;
+    block_id: string | null;
+    type: PlotTypeValue | null;
+    status: PlotStatusValue | null;
+    occupancy_mode: PlotOccupancyModeValue | null;
+    scope: PlotInventoryReportScopeValue;
+    per_page: number;
+};
+
+export type PlotInventoryReportRow = {
+    plot_id: string;
+    site_name: string | null;
+    section_name: string | null;
+    block_name: string | null;
+    plot_label: string;
+    type: PlotTypeValue | null;
+    type_label: string | null;
+    status: PlotStatusValue | null;
+    status_label: string | null;
+    occupancy_mode: PlotOccupancyModeValue | null;
+    occupancy_mode_label: string | null;
+    active_interments_count: number;
+    capacity: number;
+    remaining_capacity: number;
+    area_sqm: string | number | null;
+};
+
+export type MissingDocumentsReportFilters = {
+    registration_status: RegistrationStatusValue | null;
+    vital_record_type: VitalRecordTypeValue | null;
+    missing_document_type: DecedentDocumentTypeValue | null;
+    interment_status: DecedentIntermentStatusFilterValue | null;
+    per_page: number;
+};
+
+export type MissingDocumentsReportRow = {
+    decedent_id: string;
+    decedent_name: string;
+    registry_number: string | null;
+    vital_record_type: VitalRecordTypeValue | null;
+    vital_record_type_label: string | null;
+    date_of_death: string | null;
+    interment_status: DecedentIntermentStatusFilterValue;
+    interment_status_label: string;
+    location_label: string | null;
+    missing_document_types: DecedentDocumentTypeValue[];
+    missing_documents: { type: DecedentDocumentTypeValue; label: string }[];
+    missing_documents_label: string;
+    pending_document_reason: string | null;
+    pending_document_reference: string | null;
+};
+
+export type IntermentLifecycleStatusValue = 'active' | 'moved' | 'exhumed' | 'transferred_out' | 'voided' | 'all';
+
+export type IntermentLifecycleReportFilters = {
+    site_id: string | null;
+    section_id: string | null;
+    block_id: string | null;
+    lifecycle_status: IntermentLifecycleStatusValue;
+    end_type: IntermentEndTypeValue | null;
+    date_from: string | null;
+    date_to: string | null;
+    per_page: number;
+};
+
+export type IntermentLifecycleReportRow = {
+    id: string;
+    decedent_name: string;
+    site_name: string | null;
+    section_name: string | null;
+    block_name: string | null;
+    plot_label: string | null;
+    interment_date: string | null;
+    lifecycle_status: Exclude<IntermentLifecycleStatusValue, 'all'>;
+    lifecycle_label: string;
+    end_type: IntermentEndTypeValue | null;
+    end_type_label: string | null;
+    ended_or_voided_at: string | null;
+    transfer_destination: string | null;
+    permit_reference: string | null;
+    reason: string | null;
+    notes: string | null;
+};
