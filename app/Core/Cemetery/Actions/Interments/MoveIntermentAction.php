@@ -3,6 +3,7 @@
 namespace App\Core\Cemetery\Actions\Interments;
 
 use App\Core\Cemetery\Actions\Plots\RecalculatePlotStatusAction;
+use App\Core\Cemetery\Actions\ServiceRequests\StoreCemeteryServiceRequestAction;
 use App\Core\Cemetery\Dto\Interments\MoveIntermentDto;
 use App\Core\Cemetery\Enums\CemeterySiteStatus;
 use App\Core\Cemetery\Enums\IntermentEndType;
@@ -21,6 +22,7 @@ class MoveIntermentAction
     public function __construct(
         private IdGeneratorInterface $idGenerator,
         private RecalculatePlotStatusAction $recalculatePlotStatus,
+        private StoreCemeteryServiceRequestAction $storeCemeteryServiceRequest,
     ) {}
 
     public function execute(MoveIntermentDto $dto): Interment
@@ -72,6 +74,7 @@ class MoveIntermentAction
 
             $this->recalculatePlotStatus->execute($sourcePlot);
             $this->recalculatePlotStatus->execute($destinationPlot);
+            $this->storeCemeteryServiceRequest->executeForMove($transfer, $sourcePlot, $destinationPlot, $dto);
 
             activity('cemetery_interment')
                 ->performedOn($transfer)

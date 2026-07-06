@@ -3,6 +3,7 @@
 namespace App\Core\Cemetery\Actions\Interments;
 
 use App\Core\Cemetery\Actions\Plots\RecalculatePlotStatusAction;
+use App\Core\Cemetery\Actions\ServiceRequests\StoreCemeteryServiceRequestAction;
 use App\Core\Cemetery\Dto\Interments\CloseIntermentDto;
 use App\Core\Cemetery\Enums\IntermentEndType;
 use App\Core\Cemetery\Models\Interment;
@@ -15,6 +16,7 @@ class CloseIntermentAction
 {
     public function __construct(
         private RecalculatePlotStatusAction $recalculatePlotStatus,
+        private StoreCemeteryServiceRequestAction $storeCemeteryServiceRequest,
     ) {}
 
     public function execute(CloseIntermentDto $dto): Interment
@@ -47,6 +49,7 @@ class CloseIntermentAction
             ])->save();
 
             $this->recalculatePlotStatus->execute($plot);
+            $this->storeCemeteryServiceRequest->executeForClosure($interment, $plot, $dto);
 
             activity('cemetery_interment')
                 ->performedOn($interment)

@@ -423,6 +423,7 @@ function BurialLocationCard({
                         <CloseIntermentDialog
                             closeUrl={interment.close_url}
                             municipalitySlug={municipality.slug}
+                            activeLease={plot.active_lease}
                             size="default"
                             className="w-full lg:w-auto"
                         />

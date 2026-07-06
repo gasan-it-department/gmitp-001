@@ -3,6 +3,7 @@
 namespace App\Core\Cemetery\Actions;
 
 use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
+use App\Core\Cemetery\Actions\ServiceRequests\StoreCemeteryServiceRequestAction;
 use App\Core\Cemetery\Dto\IntermentDto;
 use App\Core\Cemetery\Enums\IntermentEndType;
 use App\Core\Cemetery\Enums\PlotOccupancyMode;
@@ -21,6 +22,7 @@ class RecordIntermentAction
     public function __construct(
         private IdGeneratorInterface $idGenerator,
         private GetIntermentReadinessAction $getIntermentReadiness,
+        private StoreCemeteryServiceRequestAction $storeCemeteryServiceRequest,
     ) {}
 
     public function execute(IntermentDto $dto): Interment
@@ -79,6 +81,8 @@ class RecordIntermentAction
                     'consumed_by_interment_id' => $interment->id,
                 ]);
             }
+
+            $this->storeCemeteryServiceRequest->executeForInterment($interment, $plot, $dto);
 
             return $interment;
         });

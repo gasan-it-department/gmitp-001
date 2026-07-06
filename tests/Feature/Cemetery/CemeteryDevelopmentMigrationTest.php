@@ -234,6 +234,39 @@ it('creates operational plot leases instead of plot deeds', function () {
     }
 });
 
+it('creates cemetery service requests for requester authorization history', function () {
+    Schema::create('municipalities', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
+    Schema::create('users', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+    });
+
+    $migration = require database_path('migrations/2026_06_14_000010_create_cemetery_service_requests_table.php');
+
+    try {
+        $migration->up();
+
+        expect(Schema::hasTable('cemetery_service_requests'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'municipal_id'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'requestable_type'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'requestable_id'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'request_type'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'requesting_party_name'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'requester_is_leaseholder'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'leaseholder_name_snapshot'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'leaseholder_consent_confirmed'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'leaseholder_consent_method'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'leaseholder_consent_reference'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'created_by'))->toBeTrue()
+            ->and(Schema::hasColumn('cemetery_service_requests', 'deleted_at'))->toBeTrue();
+    } finally {
+        $migration->down();
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('municipalities');
+    }
+});
+
 it('creates cemetery plots with explicit occupancy mode and optional area', function () {
     Schema::create('municipalities', function (Blueprint $table) {
         $table->ulid('id')->primary();

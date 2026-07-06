@@ -61,6 +61,7 @@ class AssistanceRequestListResource extends JsonResource
             // `submitted_at` mirrors created_at semantically — kept distinct so
             // the frontend doesn't have to reason about which timestamp to show.
             'submitted_at' => $this->created_at?->toIso8601String(),
+            'reviewed_at' => $this->reviewed_at?->toIso8601String(),
             'approved_at' => $this->approved_at?->toIso8601String(),
             'released_at' => $this->released_at?->toIso8601String(),
 

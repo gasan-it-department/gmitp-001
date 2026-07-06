@@ -147,6 +147,15 @@ class DecedentDetailsResource extends JsonResource
                 'block' => $block ? ['id' => $block->id, 'name' => $block->name] : null,
                 'section' => $section ? ['id' => $section->id, 'name' => $section->name] : null,
                 'cemetery_site' => $site ? ['id' => $site->id, 'name' => $site->name] : null,
+                'active_lease' => $plot->activeLease ? [
+                    'id' => $plot->activeLease->id,
+                    'leaseholder_name' => $plot->activeLease->leaseholder_name,
+                    'leaseholder_contact' => $plot->activeLease->leaseholder_contact,
+                    'leaseholder_relationship' => $plot->activeLease->leaseholder_relationship,
+                    'lease_start' => $plot->activeLease->lease_start?->format('Y-m-d'),
+                    'lease_end' => $plot->activeLease->lease_end?->format('Y-m-d'),
+                    'or_number' => $plot->activeLease->or_number,
+                ] : null,
             ] : null,
         ];
     }

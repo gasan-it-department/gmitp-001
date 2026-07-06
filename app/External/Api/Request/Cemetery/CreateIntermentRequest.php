@@ -2,11 +2,15 @@
 
 namespace App\External\Api\Request\Cemetery;
 
+use App\Core\Cemetery\Enums\CemeteryServiceRequestConsentMethod;
+use App\Core\Cemetery\Enums\PlotLeaseStatus;
 use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\RegistrationStatus;
+use App\Core\Cemetery\Models\PlotLease;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Validates the "assign decedent to available slot" payload (REQ-3.1, FR-6).
@@ -111,6 +115,17 @@ class CreateIntermentRequest extends FormRequest
             'pending_document_reference' => ['nullable', 'string', 'max:255'],
             'pending_document_confirmed' => ['nullable', 'boolean'],
 
+            'requesting_party_name' => ['required', 'string', 'max:255'],
+            'requesting_party_contact' => ['nullable', 'string', 'max:100'],
+            'requesting_party_address' => ['nullable', 'string', 'max:500'],
+            'requesting_party_relationship' => ['required', 'string', 'max:100'],
+            'requester_is_leaseholder' => ['nullable', 'boolean'],
+            'leaseholder_consent_confirmed' => ['nullable', 'boolean'],
+            'leaseholder_consent_method' => ['nullable', Rule::enum(CemeteryServiceRequestConsentMethod::class)],
+            'leaseholder_consent_reference' => ['nullable', 'string', 'max:500'],
+            'service_request_notes' => ['nullable', 'string', 'max:1000'],
+            'authorization_evidence' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+
             'leaseholder_name' => ['prohibited'],
             'leaseholder_contact' => ['prohibited'],
             'leaseholder_address' => ['prohibited'],
@@ -121,6 +136,53 @@ class CreateIntermentRequest extends FormRequest
             'or_number' => ['prohibited'],
             'lease_notes' => ['prohibited'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $plotId = $this->input('plot_id');
+            if (! is_string($plotId) || $plotId === '') {
+                return;
+            }
+
+            $hasActiveLease = PlotLease::query()
+                ->where('municipal_id', app('municipal_id'))
+                ->where('plot_id', $plotId)
+                ->where('status', PlotLeaseStatus::ACTIVE->value)
+                ->exists();
+
+            if (! $hasActiveLease || $this->boolean('requester_is_leaseholder')) {
+                return;
+            }
+
+            if (! $this->boolean('leaseholder_consent_confirmed')) {
+                $validator->errors()->add(
+                    'leaseholder_consent_confirmed',
+                    'Confirm that the active leaseholder authorized this interment request.'
+                );
+            }
+
+            $method = $this->input('leaseholder_consent_method');
+            if (! is_string($method) || $method === '' || $method === CemeteryServiceRequestConsentMethod::NOT_APPLICABLE->value) {
+                $validator->errors()->add(
+                    'leaseholder_consent_method',
+                    'Select how the active leaseholder authorization was confirmed.'
+                );
+            }
+
+            $reference = trim((string) $this->input('leaseholder_consent_reference', ''));
+            if ($reference === '') {
+                $validator->errors()->add(
+                    'leaseholder_consent_reference',
+                    'Enter the authorization reference or proof note.'
+                );
+            }
+        });
     }
 
     public function messages(): array
@@ -134,6 +196,11 @@ class CreateIntermentRequest extends FormRequest
             'type.in' => 'Use the Move Interment flow to create transfer records.',
             'pending_document_reason.max' => 'The pending-document reason must not exceed 1000 characters.',
             'pending_document_reference.max' => 'The follow-up reference must not exceed 255 characters.',
+            'requesting_party_name.required' => 'Enter the name of the person requesting this interment.',
+            'requesting_party_relationship.required' => 'Enter the requester relationship or role.',
+            'leaseholder_consent_method' => 'Select a valid leaseholder consent method.',
+            'authorization_evidence.mimes' => 'Authorization evidence must be a JPG, PNG, WEBP, or PDF file.',
+            'authorization_evidence.max' => 'Authorization evidence must be 5 MB or smaller.',
             'leaseholder_name.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',
             'leaseholder_contact.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',
             'leaseholder_address.prohibited' => 'Leaseholder details are managed from the Plot Profile after interment.',

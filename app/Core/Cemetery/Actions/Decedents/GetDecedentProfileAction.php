@@ -14,6 +14,7 @@ class GetDecedentProfileAction
             'currentInterment.plot.cemeterySite',
             'currentInterment.plot.block.section',
             'currentInterment.plot.parent',
+            'currentInterment.plot.activeLease',
             'interments' => fn ($query) => $query
                 ->with([
                     'plot.cemeterySite',

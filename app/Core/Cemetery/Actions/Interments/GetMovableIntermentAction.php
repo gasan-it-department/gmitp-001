@@ -13,6 +13,7 @@ class GetMovableIntermentAction
             ->with([
                 'decedent.unidentifiedDetail',
                 'plot.parent',
+                'plot.activeLease',
                 'plot.block.section',
                 'plot.cemeterySite',
             ])

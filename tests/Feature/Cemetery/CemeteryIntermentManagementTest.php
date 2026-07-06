@@ -5,8 +5,10 @@ use App\Core\Municipality\Models\Municipality;
 use App\Core\Users\Models\User;
 use App\External\Api\Resources\Cemetery\Decedents\DecedentDetailsResource;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -76,6 +78,7 @@ beforeEach(function () {
         require database_path('migrations/2026_06_14_000007_create_cemetery_unidentified_details_table.php'),
         require database_path('migrations/2026_06_14_000008_create_cemetery_plot_deeds_table.php'),
         require database_path('migrations/2026_06_14_000009_create_cemetery_interments_table.php'),
+        require database_path('migrations/2026_06_14_000010_create_cemetery_service_requests_table.php'),
         require database_path('migrations/2026_06_15_000001_add_cemetery_decedent_registration_fields.php'),
         require database_path('migrations/2026_06_15_000002_create_cemetery_decedent_documents_table.php'),
         require database_path('migrations/2026_06_15_000003_create_cemetery_interment_readiness_overrides_table.php'),
@@ -200,6 +203,8 @@ it('stores a Site-scoped interment without creating a Plot lease', function () {
         'interment_date' => '2026-06-20',
         'type' => 'initial',
         'notes' => 'Burial clearance recorded.',
+        'requesting_party_name' => 'MARIA SANTOS',
+        'requesting_party_relationship' => 'CHILD',
     ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $site,
@@ -207,8 +212,60 @@ it('stores a Site-scoped interment without creating a Plot lease', function () {
     ]));
 
     expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(1)
+        ->and(DB::table('cemetery_service_requests')->where('request_type', 'interment')->count())->toBe(1)
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied')
         ->and(DB::table('cemetery_plot_leases')->where('plot_id', $plot)->count())->toBe(0);
+});
+
+it('requires leaseholder consent when a different requester creates an interment', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'SANTOS', 'ROSA');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 738', 'available');
+
+    DB::table('cemetery_plot_leases')->insert([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $this->gasan->id,
+        'plot_id' => $plot,
+        'leaseholder_name' => 'KAKAROT SHIPUDEN',
+        'leaseholder_contact' => '09994587692',
+        'leaseholder_relationship' => 'CHILD',
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $plot, [
+        'requesting_party_name' => 'VEGETA PRINCE',
+        'requesting_party_relationship' => 'REPRESENTATIVE',
+    ]))->assertSessionHasErrors([
+        'leaseholder_consent_confirmed',
+        'leaseholder_consent_method',
+        'leaseholder_consent_reference',
+    ]);
+
+    expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(0)
+        ->and(DB::table('cemetery_service_requests')->count())->toBe(0)
+        ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('available');
+
+    $this->post(route('interments.store'), intermentPayload($site, $decedent, $plot, [
+        'requesting_party_name' => 'VEGETA PRINCE',
+        'requesting_party_relationship' => 'REPRESENTATIVE',
+        'leaseholder_consent_confirmed' => true,
+        'leaseholder_consent_method' => 'verbal_authorization',
+        'leaseholder_consent_reference' => 'APPROVED BY PHONE CALL WITH ADMIN HEAD',
+    ]))->assertRedirect();
+
+    $serviceRequest = DB::table('cemetery_service_requests')->first();
+
+    expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->count())->toBe(1)
+        ->and($serviceRequest?->request_type)->toBe('interment')
+        ->and($serviceRequest?->requesting_party_name)->toBe('VEGETA PRINCE')
+        ->and((bool) $serviceRequest?->requester_is_leaseholder)->toBeFalse()
+        ->and($serviceRequest?->leaseholder_name_snapshot)->toBe('KAKAROT SHIPUDEN')
+        ->and((bool) $serviceRequest?->leaseholder_consent_confirmed)->toBeTrue()
+        ->and($serviceRequest?->leaseholder_consent_method)->toBe('verbal_authorization')
+        ->and($serviceRequest?->leaseholder_consent_reference)->toBe('APPROVED BY PHONE CALL WITH ADMIN HEAD');
 });
 
 it('requires pending-document authorization when a verified decedent has missing documents', function () {
@@ -291,13 +348,12 @@ it('moves an active interment to another plot in the same Site and preserves the
     $destinationPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 738', 'available');
     $sourceInterment = intermentRecord($this->gasan->id, $decedent, $sourcePlot, '2026-06-20');
 
-    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), [
-        'destination_cemetery_site_id' => $site,
-        'destination_plot_id' => $destinationPlot,
-        'movement_date' => '2026-06-25',
-        'reason' => 'Family requested relocation.',
+    Storage::fake('local');
+
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot, [
         'notes' => 'Moved after caretaker confirmation.',
-    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+        'authorization_evidence' => UploadedFile::fake()->image('authorization.jpg'),
+    ]))->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $site,
         'plot_id' => $destinationPlot,
@@ -315,6 +371,8 @@ it('moves an active interment to another plot in the same Site and preserves the
         ->and($transfer->voided_at)->toBeNull()
         ->and(DB::table('cemetery_plots')->where('id', $sourcePlot)->value('status'))->toBe('available')
         ->and(DB::table('cemetery_plots')->where('id', $destinationPlot)->value('status'))->toBe('occupied')
+        ->and(DB::table('cemetery_service_requests')->where('requestable_id', $transfer->id)->where('request_type', 'plot_move')->count())->toBe(1)
+        ->and(DB::table('media')->where('collection_name', 'authorization_evidence')->count())->toBe(1)
         ->and(DB::table('activity_log')->where('event', 'interment_moved')->exists())->toBeTrue();
 
     $this->get(route('cemetery.admin.sites.plots.profile.page', [
@@ -344,12 +402,9 @@ it('moves an active interment to another Cemetery Site in the same municipality'
     $destinationPlot = intermentPlot($this->gasan->id, $destinationSite, $destinationBlock, 'LOT 9', 'available');
     $sourceInterment = intermentRecord($this->gasan->id, $decedent, $sourcePlot, '2026-06-20');
 
-    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), [
-        'destination_cemetery_site_id' => $destinationSite,
-        'destination_plot_id' => $destinationPlot,
-        'movement_date' => '2026-06-25',
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($destinationSite, $destinationPlot, [
         'reason' => 'Moved to another municipal cemetery site.',
-    ])->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
+    ]))->assertRedirect(route('cemetery.admin.sites.plots.profile.page', [
         'municipality' => $this->gasan->slug,
         'cemetery_site_id' => $destinationSite,
         'plot_id' => $destinationPlot,
@@ -357,6 +412,75 @@ it('moves an active interment to another Cemetery Site in the same municipality'
 
     expect(DB::table('cemetery_interments')->where('decedent_id', $decedent)->whereNull('ended_at')->whereNull('voided_at')->value('plot_id'))
         ->toBe($destinationPlot);
+});
+
+it('requires destination leaseholder consent when a different requester moves an interment', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'SON', 'GOKU');
+    $sourcePlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 737', 'occupied');
+    $destinationPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 738', 'available');
+    $sourceInterment = intermentRecord($this->gasan->id, $decedent, $sourcePlot, '2026-06-20');
+    intermentLease($this->gasan->id, $destinationPlot, 'KAKAROT SHIPUDEN');
+
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot, [
+        'requesting_party_name' => 'VEGETA PRINCE',
+        'requesting_party_relationship' => 'REPRESENTATIVE',
+    ]))->assertSessionHasErrors([
+        'leaseholder_consent_confirmed',
+        'leaseholder_consent_method',
+        'leaseholder_consent_reference',
+    ]);
+
+    expect(DB::table('cemetery_interments')->where('previous_interment_id', $sourceInterment)->count())->toBe(0)
+        ->and(DB::table('cemetery_interments')->where('id', $sourceInterment)->value('ended_at'))->toBeNull()
+        ->and(DB::table('cemetery_service_requests')->count())->toBe(0);
+
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot, [
+        'requesting_party_name' => 'VEGETA PRINCE',
+        'requesting_party_relationship' => 'REPRESENTATIVE',
+        'leaseholder_consent_confirmed' => true,
+        'leaseholder_consent_method' => 'verbal_authorization',
+        'leaseholder_consent_reference' => 'APPROVED BY PHONE CALL WITH ADMIN HEAD',
+    ]))->assertRedirect();
+
+    $transfer = DB::table('cemetery_interments')->where('previous_interment_id', $sourceInterment)->first();
+    $serviceRequest = DB::table('cemetery_service_requests')->where('requestable_id', $transfer->id)->first();
+
+    expect($serviceRequest?->request_type)->toBe('plot_move')
+        ->and($serviceRequest?->leaseholder_name_snapshot)->toBe('KAKAROT SHIPUDEN')
+        ->and((bool) $serviceRequest?->requester_is_leaseholder)->toBeFalse()
+        ->and((bool) $serviceRequest?->leaseholder_consent_confirmed)->toBeTrue()
+        ->and($serviceRequest?->leaseholder_consent_method)->toBe('verbal_authorization')
+        ->and($serviceRequest?->leaseholder_consent_reference)->toBe('APPROVED BY PHONE CALL WITH ADMIN HEAD');
+});
+
+it('falls back to source leaseholder consent when destination has no active lease', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'SON', 'GOHAN');
+    $sourcePlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 801', 'occupied');
+    $destinationPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 802', 'available');
+    $sourceInterment = intermentRecord($this->gasan->id, $decedent, $sourcePlot, '2026-06-20');
+    intermentLease($this->gasan->id, $sourcePlot, 'CHI CHI SON');
+
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot))
+        ->assertSessionHasErrors([
+            'leaseholder_consent_confirmed',
+            'leaseholder_consent_method',
+            'leaseholder_consent_reference',
+        ]);
+
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot, [
+        'requester_is_leaseholder' => true,
+    ]))->assertRedirect();
+
+    $transfer = DB::table('cemetery_interments')->where('previous_interment_id', $sourceInterment)->first();
+    $serviceRequest = DB::table('cemetery_service_requests')->where('requestable_id', $transfer->id)->first();
+
+    expect($serviceRequest?->leaseholder_name_snapshot)->toBe('CHI CHI SON')
+        ->and((bool) $serviceRequest?->requester_is_leaseholder)->toBeTrue()
+        ->and($serviceRequest?->leaseholder_consent_method)->toBe('leaseholder_present');
 });
 
 it('rejects invalid interment move destinations and inactive source rows', function () {
@@ -377,6 +501,8 @@ it('rejects invalid interment move destinations and inactive source rows', funct
         'destination_cemetery_site_id' => $site,
         'movement_date' => '2026-06-25',
         'reason' => 'Invalid move test.',
+        'requesting_party_name' => 'MARIA SANTOS',
+        'requesting_party_relationship' => 'CHILD',
     ];
 
     $this->post(route('interments.move', ['interment_id' => $sourceInterment]), $payload + [
@@ -403,12 +529,9 @@ it('rejects invalid interment move destinations and inactive source rows', funct
 
     session()->flush();
 
-    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), [
-        'destination_cemetery_site_id' => $boacSite,
-        'destination_plot_id' => $boacPlot,
-        'movement_date' => '2026-06-25',
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($boacSite, $boacPlot, [
         'reason' => 'Cross tenant attempt.',
-    ])->assertSessionHasErrors('destination_cemetery_site_id');
+    ]))->assertSessionHasErrors('destination_cemetery_site_id');
 
     DB::table('cemetery_interments')->where('id', $sourceInterment)->update(['ended_at' => now()]);
     session()->flush();
@@ -428,12 +551,9 @@ it('reverses a mistaken moved interment and restores the previous plot', functio
     $destinationPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 2', 'available');
     $sourceInterment = intermentRecord($this->gasan->id, $decedent, $sourcePlot, '2026-06-20');
 
-    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), [
-        'destination_cemetery_site_id' => $site,
-        'destination_plot_id' => $destinationPlot,
-        'movement_date' => '2026-06-25',
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot, [
         'reason' => 'Wrong plot selected.',
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $transfer = DB::table('cemetery_interments')->where('previous_interment_id', $sourceInterment)->first();
 
@@ -461,12 +581,9 @@ it('rejects move reversal when the previous plot can no longer accept the restor
     $destinationPlot = intermentPlot($this->gasan->id, $site, $block, 'LOT 2', 'available');
     $sourceInterment = intermentRecord($this->gasan->id, $decedent, $sourcePlot, '2026-06-20');
 
-    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), [
-        'destination_cemetery_site_id' => $site,
-        'destination_plot_id' => $destinationPlot,
-        'movement_date' => '2026-06-25',
+    $this->post(route('interments.move', ['interment_id' => $sourceInterment]), movePayload($site, $destinationPlot, [
         'reason' => 'Move before conflict.',
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $transfer = DB::table('cemetery_interments')->where('previous_interment_id', $sourceInterment)->first();
     intermentRecord($this->gasan->id, intermentReadyDecedent($this->gasan->id, 'SON', 'GOTEN'), $sourcePlot, '2026-06-26');
@@ -482,23 +599,31 @@ it('rejects move reversal when the previous plot can no longer accept the restor
 
 it('exhumes an active interment and frees a single plot while preserving history', function () {
     activity()->enableLogging();
+    Storage::fake('local');
 
     $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
     $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
     $decedent = intermentReadyDecedent($this->gasan->id, 'DELACRUZ', 'PEDRO');
     $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 40', 'occupied');
     $interment = intermentRecord($this->gasan->id, $decedent, $plot, '2026-06-20');
+    intermentLease($this->gasan->id, $plot, 'MARIA SANTOS');
 
     $this->from(route('cemetery.admin.decedents.profile.page', [
         'municipality' => $this->gasan->slug,
         'decedent_id' => $decedent,
-    ]))->patch(route('interments.close', ['interment_id' => $interment]), [
+    ]))->post(route('interments.close', ['interment_id' => $interment]), closePayload([
+        '_method' => 'patch',
         'end_type' => 'exhumed',
         'ended_date' => '2026-06-30',
         'reason' => 'Court-authorized exhumation.',
         'permit_reference' => 'EXH-2026-001',
         'notes' => 'Witnessed by cemetery caretaker.',
-    ])->assertRedirect(route('cemetery.admin.decedents.profile.page', [
+        'requester_is_leaseholder' => false,
+        'leaseholder_consent_confirmed' => true,
+        'leaseholder_consent_method' => 'written_authorization',
+        'leaseholder_consent_reference' => 'SIGNED EXHUMATION LETTER',
+        'authorization_evidence' => UploadedFile::fake()->image('exhumation-authorization.jpg'),
+    ]))->assertRedirect(route('cemetery.admin.decedents.profile.page', [
         'municipality' => $this->gasan->slug,
         'decedent_id' => $decedent,
     ]));
@@ -511,7 +636,9 @@ it('exhumes an active interment and frees a single plot while preserving history
         ->and($closed->permit_reference)->toBe('EXH-2026-001')
         ->and(DB::table('cemetery_interments')->where('decedent_id', $decedent)->whereNull('ended_at')->whereNull('voided_at')->exists())->toBeFalse()
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('available')
-        ->and(DB::table('activity_log')->where('event', 'interment_closed')->exists())->toBeTrue();
+        ->and(DB::table('activity_log')->where('event', 'interment_closed')->exists())->toBeTrue()
+        ->and(DB::table('cemetery_service_requests')->where('requestable_id', $interment)->where('request_type', 'exhumation')->count())->toBe(1)
+        ->and(DB::table('media')->where('collection_name', 'authorization_evidence')->count())->toBe(1);
 
     $profile = (new DecedentDetailsResource((new GetDecedentProfileAction)->execute($decedent, $this->gasan->id)))->resolve();
 
@@ -529,13 +656,13 @@ it('transfers an interment out and keeps a shared plot occupied when others rema
     $firstInterment = intermentRecord($this->gasan->id, $firstDecedent, $plot, '2026-06-20');
     intermentRecord($this->gasan->id, $secondDecedent, $plot, '2026-06-21');
 
-    $this->patch(route('interments.close', ['interment_id' => $firstInterment]), [
+    $this->patch(route('interments.close', ['interment_id' => $firstInterment]), closePayload([
         'end_type' => 'transferred_out',
         'ended_date' => '2026-06-30',
         'reason' => 'Family transfer outside municipality.',
         'transfer_destination' => 'BOAC MUNICIPAL CEMETERY',
         'permit_reference' => 'TO-2026-001',
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $closed = DB::table('cemetery_interments')->where('id', $firstInterment)->first();
 
@@ -543,7 +670,44 @@ it('transfers an interment out and keeps a shared plot occupied when others rema
         ->and($closed->transfer_destination)->toBe('BOAC MUNICIPAL CEMETERY')
         ->and($closed->permit_reference)->toBe('TO-2026-001')
         ->and(DB::table('cemetery_plots')->where('id', $plot)->value('status'))->toBe('occupied')
-        ->and(DB::table('cemetery_interments')->where('plot_id', $plot)->whereNull('ended_at')->whereNull('voided_at')->count())->toBe(1);
+        ->and(DB::table('cemetery_interments')->where('plot_id', $plot)->whereNull('ended_at')->whereNull('voided_at')->count())->toBe(1)
+        ->and(DB::table('cemetery_service_requests')->where('requestable_id', $firstInterment)->where('request_type', 'transfer_out')->count())->toBe(1);
+});
+
+it('requires active leaseholder consent when a different requester closes an interment', function () {
+    $site = intermentSite($this->gasan->id, 'GASAN CENTRAL');
+    $block = intermentBlock($this->gasan->id, intermentSection($this->gasan->id, $site, 'NEW ANNEX'), 'GENERAL');
+    $decedent = intermentReadyDecedent($this->gasan->id, 'SON', 'GOHAN');
+    $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 41', 'occupied');
+    $interment = intermentRecord($this->gasan->id, $decedent, $plot, '2026-06-20');
+    intermentLease($this->gasan->id, $plot, 'CHI CHI');
+
+    $this->patch(route('interments.close', ['interment_id' => $interment]), closePayload([
+        'requesting_party_name' => 'GOKU SON',
+        'requesting_party_relationship' => 'SPOUSE',
+        'requester_is_leaseholder' => false,
+    ]))->assertSessionHasErrors([
+        'leaseholder_consent_confirmed',
+        'leaseholder_consent_method',
+        'leaseholder_consent_reference',
+    ]);
+
+    expect(DB::table('cemetery_interments')->where('id', $interment)->value('ended_at'))->toBeNull()
+        ->and(DB::table('cemetery_service_requests')->count())->toBe(0);
+
+    session()->flush();
+
+    $this->patch(route('interments.close', ['interment_id' => $interment]), closePayload([
+        'requesting_party_name' => 'CHI CHI',
+        'requesting_party_relationship' => 'LEASEHOLDER',
+        'requester_is_leaseholder' => true,
+    ]))->assertRedirect();
+
+    $serviceRequest = DB::table('cemetery_service_requests')->where('requestable_id', $interment)->first();
+
+    expect($serviceRequest?->request_type)->toBe('exhumation')
+        ->and((bool) $serviceRequest?->requester_is_leaseholder)->toBeTrue()
+        ->and($serviceRequest?->leaseholder_consent_method)->toBe('leaseholder_present');
 });
 
 it('rejects invalid interment close requests', function () {
@@ -553,19 +717,19 @@ it('rejects invalid interment close requests', function () {
     $plot = intermentPlot($this->gasan->id, $site, $block, 'LOT 90', 'occupied');
     $interment = intermentRecord($this->gasan->id, $decedent, $plot, '2026-06-20');
 
-    $this->patch(route('interments.close', ['interment_id' => $interment]), [
+    $this->patch(route('interments.close', ['interment_id' => $interment]), closePayload([
         'end_type' => 'transferred_out',
         'ended_date' => '2026-06-30',
         'reason' => 'Missing destination.',
-    ])->assertSessionHasErrors('transfer_destination');
+    ]))->assertSessionHasErrors('transfer_destination');
 
     session()->flush();
 
-    $this->patch(route('interments.close', ['interment_id' => $interment]), [
+    $this->patch(route('interments.close', ['interment_id' => $interment]), closePayload([
         'end_type' => 'moved',
         'ended_date' => '2026-06-30',
         'reason' => 'Wrong flow.',
-    ])->assertSessionHasErrors('end_type');
+    ]))->assertSessionHasErrors('end_type');
 
     DB::table('cemetery_interments')->where('id', $interment)->update([
         'ended_at' => now(),
@@ -573,11 +737,11 @@ it('rejects invalid interment close requests', function () {
     ]);
     session()->flush();
 
-    $this->patch(route('interments.close', ['interment_id' => $interment]), [
+    $this->patch(route('interments.close', ['interment_id' => $interment]), closePayload([
         'end_type' => 'exhumed',
         'ended_date' => '2026-06-30',
         'reason' => 'Try again.',
-    ])->assertSessionHasErrors('interment');
+    ]))->assertSessionHasErrors('interment');
 });
 
 it('voids a wrong active interment and frees the plot for normal reassignment', function () {
@@ -791,6 +955,8 @@ it('rejects leaseholder fields on interment creation', function () {
         'plot_id' => $plot,
         'interment_date' => '2026-06-20',
         'type' => 'initial',
+        'requesting_party_name' => 'JUAN DELA CRUZ',
+        'requesting_party_relationship' => 'REPRESENTATIVE',
         'leaseholder_name' => 'Juan Dela Cruz',
         'amount_paid' => '500.00',
     ])->assertSessionHasErrors(['leaseholder_name', 'amount_paid']);
@@ -814,6 +980,8 @@ it('rejects a forged sibling Site Plot during Site-scoped interment creation', f
         'interment_date' => '2026-06-20',
         'type' => 'initial',
         'notes' => null,
+        'requesting_party_name' => 'MARIA SANTOS',
+        'requesting_party_relationship' => 'CHILD',
     ])->assertSessionHasErrors('plot_id');
 
     expect(DB::table('cemetery_interments')->count())->toBe(0)
@@ -967,7 +1135,49 @@ function intermentPayload(string $siteId, string $decedentId, string $plotId, ar
         'plot_id' => $plotId,
         'interment_date' => '2026-06-20',
         'type' => 'initial',
+        'requesting_party_name' => 'MARIA SANTOS',
+        'requesting_party_relationship' => 'CHILD',
     ], $overrides);
+}
+
+function movePayload(string $siteId, string $destinationPlotId, array $overrides = []): array
+{
+    return array_merge([
+        'destination_cemetery_site_id' => $siteId,
+        'destination_plot_id' => $destinationPlotId,
+        'movement_date' => '2026-06-25',
+        'reason' => 'Family requested relocation.',
+        'requesting_party_name' => 'MARIA SANTOS',
+        'requesting_party_relationship' => 'CHILD',
+    ], $overrides);
+}
+
+function closePayload(array $overrides = []): array
+{
+    return array_merge([
+        'end_type' => 'exhumed',
+        'ended_date' => '2026-06-30',
+        'reason' => 'Family requested closure.',
+        'requesting_party_name' => 'MARIA SANTOS',
+        'requesting_party_relationship' => 'CHILD',
+    ], $overrides);
+}
+
+function intermentLease(string $municipalId, string $plotId, string $leaseholderName): string
+{
+    DB::table('cemetery_plot_leases')->insert([
+        'id' => $id = (string) Str::ulid(),
+        'municipal_id' => $municipalId,
+        'plot_id' => $plotId,
+        'leaseholder_name' => $leaseholderName,
+        'leaseholder_contact' => '09994587692',
+        'leaseholder_relationship' => 'CHILD',
+        'status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $id;
 }
 
 function intermentStaffUser(): User

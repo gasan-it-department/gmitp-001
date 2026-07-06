@@ -5,11 +5,11 @@ import { PlotProfile as PlotProfileType } from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { Link } from '@inertiajs/react';
 import { ArrowRightLeft, MoreVertical, Users } from 'lucide-react';
+import { useState } from 'react';
 import { CloseIntermentDialog } from '../../../../Interments/Components/CloseIntermentDialog';
 import { ReverseMoveDialog } from '../../../../Interments/Components/ReverseMoveDialog';
 import { VoidIntermentDialog } from '../../../../Interments/Components/VoidIntermentDialog';
 import { EmptyState, formatDate } from '../Helpers';
-import { useState } from 'react';
 
 export function CurrentIntermentsCard({ plot, municipality }: { plot: PlotProfileType; municipality: MunicipalityType }) {
     const [activeDialog, setActiveDialog] = useState<{ type: 'close' | 'void' | 'reverse'; interment: any } | null>(null);
@@ -124,23 +124,30 @@ export function CurrentIntermentsCard({ plot, municipality }: { plot: PlotProfil
             <CloseIntermentDialog
                 closeUrl={activeDialog?.interment?.close_url ?? ''}
                 municipalitySlug={municipality.slug}
+                activeLease={plot.active_lease}
                 label="Exhume / Transfer"
                 open={activeDialog?.type === 'close'}
-                onOpenChange={(open) => { if (!open) setActiveDialog(null); }}
+                onOpenChange={(open) => {
+                    if (!open) setActiveDialog(null);
+                }}
             />
             <VoidIntermentDialog
                 voidUrl={activeDialog?.interment?.void_url ?? ''}
                 municipalitySlug={municipality.slug}
                 label="Void Wrong Interment"
                 open={activeDialog?.type === 'void'}
-                onOpenChange={(open) => { if (!open) setActiveDialog(null); }}
+                onOpenChange={(open) => {
+                    if (!open) setActiveDialog(null);
+                }}
             />
             <ReverseMoveDialog
                 reverseUrl={activeDialog?.interment?.reverse_move_url ?? ''}
                 municipalitySlug={municipality.slug}
                 label="Reverse"
                 open={activeDialog?.type === 'reverse'}
-                onOpenChange={(open) => { if (!open) setActiveDialog(null); }}
+                onOpenChange={(open) => {
+                    if (!open) setActiveDialog(null);
+                }}
             />
         </section>
     );

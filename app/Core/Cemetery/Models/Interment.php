@@ -94,6 +94,11 @@ class Interment extends Model
         return $this->hasOne(Interment::class, 'previous_interment_id')->active()->latestOfMany();
     }
 
+    public function serviceRequests(): MorphMany
+    {
+        return $this->morphMany(CemeteryServiceRequest::class, 'requestable');
+    }
+
     public function endedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ended_by');

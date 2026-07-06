@@ -59,6 +59,7 @@ class StartAssistanceRequestReviewAction
             $request->update([
                 'status' => AssistanceStatus::UnderReview,
                 'reviewed_by_user_id' => $reviewerId,
+                'reviewed_at' => now(),
             ]);
 
             return $request->fresh();

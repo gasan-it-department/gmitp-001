@@ -2,6 +2,7 @@
 
 namespace App\External\Documents\Cemetery\MediaLibrary;
 
+use App\Core\Cemetery\Models\CemeteryServiceRequest;
 use App\Core\Cemetery\Models\Decedent;
 use App\Core\Cemetery\Models\DecedentDocument;
 use BackedEnum;
@@ -39,6 +40,19 @@ class CemeteryPathGenerator extends DefaultPathGenerator
             );
         }
 
+        if ($model instanceof CemeteryServiceRequest) {
+            $requestType = $model->request_type instanceof BackedEnum ? $model->request_type->value : (string) $model->request_type;
+
+            return sprintf(
+                '%s/cemetery/service-requests/%s/%s/%s/%s',
+                $model->municipal_id,
+                $requestType,
+                $model->id,
+                $media->collection_name,
+                $media->id,
+            );
+        }
+
         return parent::getBasePath($media);
     }
 
@@ -56,6 +70,10 @@ class CemeteryPathGenerator extends DefaultPathGenerator
 
         if (is_a($modelClass, Decedent::class, true)) {
             return Decedent::withTrashed()->find($media->model_id);
+        }
+
+        if (is_a($modelClass, CemeteryServiceRequest::class, true)) {
+            return CemeteryServiceRequest::withTrashed()->find($media->model_id);
         }
 
         return null;

@@ -30,6 +30,12 @@ export type IntermentStatusValue = 'interred' | 'unassigned' | 'exhumed' | 'tran
 
 export type IntermentTypeValue = 'initial' | 'transfer';
 export type IntermentEndTypeValue = 'moved' | 'exhumed' | 'transferred_out';
+export type CemeteryServiceRequestConsentMethodValue =
+    | 'leaseholder_present'
+    | 'verbal_authorization'
+    | 'written_authorization'
+    | 'family_attestation'
+    | 'not_applicable';
 
 export interface SelectOption<T extends string = string> {
     value: T;
@@ -272,6 +278,7 @@ export interface DecedentProfile {
             block: { id: string; name: string } | null;
             section: { id: string; name: string } | null;
             cemetery_site: { id: string; name: string } | null;
+            active_lease: PlotLeaseSummary | null;
         } | null;
     } | null;
     interment_history: {
@@ -565,6 +572,16 @@ export type CreateIntermentForm = {
     pending_document_reason: string;
     pending_document_reference: string;
     pending_document_confirmed: boolean;
+    requesting_party_name: string;
+    requesting_party_contact: string;
+    requesting_party_address: string;
+    requesting_party_relationship: string;
+    requester_is_leaseholder: boolean;
+    leaseholder_consent_confirmed: boolean;
+    leaseholder_consent_method: CemeteryServiceRequestConsentMethodValue | '';
+    leaseholder_consent_reference: string;
+    service_request_notes: string;
+    authorization_evidence: File | null;
 };
 
 export type CreateSiteIntermentForm = CreateIntermentForm & {
@@ -620,6 +637,7 @@ export interface IntermentMoveContext {
         slot_label: string;
         type_label: string | null;
         status_label: string | null;
+        active_lease: PlotLeaseSummary | null;
         cemetery_site: { id: string; name: string } | null;
         section: SectionLookup | null;
         block: { id: string; name: string } | null;
@@ -632,6 +650,16 @@ export type MoveIntermentForm = {
     movement_date: string;
     reason: string;
     notes: string;
+    requesting_party_name: string;
+    requesting_party_contact: string;
+    requesting_party_address: string;
+    requesting_party_relationship: string;
+    requester_is_leaseholder: boolean;
+    leaseholder_consent_confirmed: boolean;
+    leaseholder_consent_method: CemeteryServiceRequestConsentMethodValue | '';
+    leaseholder_consent_reference: string;
+    service_request_notes: string;
+    authorization_evidence: File | null;
 };
 
 export type ReverseMovedIntermentForm = {
@@ -643,12 +671,23 @@ export type VoidIntermentForm = {
 };
 
 export type CloseIntermentForm = {
+    _method?: 'patch';
     end_type: Exclude<IntermentEndTypeValue, 'moved'>;
     ended_date: string;
     reason: string;
     notes: string;
     permit_reference: string;
     transfer_destination: string;
+    requesting_party_name: string;
+    requesting_party_contact: string;
+    requesting_party_address: string;
+    requesting_party_relationship: string;
+    requester_is_leaseholder: boolean;
+    leaseholder_consent_confirmed: boolean;
+    leaseholder_consent_method: CemeteryServiceRequestConsentMethodValue | '';
+    leaseholder_consent_reference: string;
+    service_request_notes: string;
+    authorization_evidence: File | null;
 };
 
 // ─── Reports ────────────────────────────────────────────────────────────────

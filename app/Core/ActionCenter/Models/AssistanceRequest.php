@@ -55,6 +55,7 @@ class AssistanceRequest extends Model implements HasMedia
         'status',
         'description',
         'remarks',
+        'reviewed_at',
         'approved_at',
         'released_at',
         'rejected_at',
@@ -66,6 +67,7 @@ class AssistanceRequest extends Model implements HasMedia
     protected $casts = [
         'status' => AssistanceStatus::class,
         'amount_approved' => 'decimal:2',
+        'reviewed_at' => 'datetime',
         'approved_at' => 'datetime',
         'released_at' => 'datetime',
         'rejected_at' => 'datetime',
@@ -82,6 +84,7 @@ class AssistanceRequest extends Model implements HasMedia
                 'amount_approved',
                 'remarks',
                 'reviewed_by_user_id',
+                'reviewed_at',
                 'approved_by_user_id',
                 'rejected_by_user_id',
                 'cancelled_by_user_id',

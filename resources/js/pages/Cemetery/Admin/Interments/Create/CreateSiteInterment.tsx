@@ -43,6 +43,16 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
         pending_document_reason: '',
         pending_document_reference: '',
         pending_document_confirmed: false,
+        requesting_party_name: '',
+        requesting_party_contact: '',
+        requesting_party_address: '',
+        requesting_party_relationship: '',
+        requester_is_leaseholder: false,
+        leaseholder_consent_confirmed: false,
+        leaseholder_consent_method: 'not_applicable',
+        leaseholder_consent_reference: '',
+        service_request_notes: '',
+        authorization_evidence: null,
     });
 
     const filteredDecedents = useMemo(() => {
@@ -60,9 +70,17 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
     const selectedDecedent = decedents.find((decedent) => decedent.id === data.decedent_id) ?? null;
     const selectedPlot = plots.find((plot) => plot.id === data.plot_id) ?? null;
     const needsPendingDocumentAuthorization = selectedDecedent?.pending_documents ?? false;
+    const needsLeaseholderConsent = Boolean(selectedPlot?.active_lease && !data.requester_is_leaseholder);
     const pendingDocumentAuthorizationComplete =
         !needsPendingDocumentAuthorization ||
         (data.pending_document_reason.trim() !== '' && data.pending_document_reference.trim() !== '' && data.pending_document_confirmed);
+    const requesterComplete = data.requesting_party_name.trim() !== '' && data.requesting_party_relationship.trim() !== '';
+    const leaseholderConsentComplete =
+        !needsLeaseholderConsent ||
+        (data.leaseholder_consent_confirmed &&
+            data.leaseholder_consent_method !== '' &&
+            data.leaseholder_consent_method !== 'not_applicable' &&
+            data.leaseholder_consent_reference.trim() !== '');
 
     const updateIntermentDate = (value: string) => {
         setData({
@@ -78,6 +96,18 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
             pending_document_reason: '',
             pending_document_reference: '',
             pending_document_confirmed: false,
+        });
+    };
+
+    const selectPlot = (plot: PlotListItem) => {
+        setData({
+            ...data,
+            plot_id: plot.id,
+            requester_is_leaseholder: false,
+            leaseholder_consent_confirmed: false,
+            leaseholder_consent_method: plot.active_lease ? '' : 'not_applicable',
+            leaseholder_consent_reference: '',
+            authorization_evidence: null,
         });
     };
 
@@ -216,7 +246,7 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                                             <button
                                                 key={plot.id}
                                                 type="button"
-                                                onClick={() => setData('plot_id', plot.id)}
+                                                onClick={() => selectPlot(plot)}
                                                 className={`w-full rounded-lg border p-4 text-left transition ${
                                                     selected
                                                         ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-100'
@@ -236,6 +266,11 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                                                 </p>
                                                 <p className="mt-1 text-xs text-slate-400">{plot.type_label}</p>
                                                 <p className="mt-1 text-xs text-slate-400">Occupancy: {plot.occupancy_label}</p>
+                                                {plot.active_lease && (
+                                                    <p className="mt-1 text-xs text-indigo-600">
+                                                        Active leaseholder: {plot.active_lease.leaseholder_name}
+                                                    </p>
+                                                )}
                                             </button>
                                         );
                                     })
@@ -272,6 +307,187 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                                     className="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                 />
                                 {errors.notes && <p className="mt-1 text-xs text-red-600">{errors.notes}</p>}
+                            </div>
+                        </div>
+
+                        <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                            <div className="flex flex-col gap-1 border-b border-slate-200 pb-3">
+                                <h3 className="text-sm font-semibold text-slate-900">Requesting Party / Authorization</h3>
+                                <p className="text-sm text-slate-500">
+                                    Record who requested this cemetery action. This is separate from the plot leaseholder record.
+                                </p>
+                            </div>
+
+                            {selectedPlot?.active_lease ? (
+                                <div className="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-950">
+                                    <p className="text-xs font-semibold tracking-wide uppercase">Active Leaseholder</p>
+                                    <p className="mt-1 font-medium">{selectedPlot.active_lease.leaseholder_name}</p>
+                                    <p className="mt-1 text-xs text-indigo-700">
+                                        {selectedPlot.active_lease.leaseholder_contact ?? 'No contact recorded'}
+                                        {selectedPlot.active_lease.leaseholder_relationship
+                                            ? ` / ${selectedPlot.active_lease.leaseholder_relationship}`
+                                            : ''}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm text-amber-900">
+                                    No active plot lease is recorded yet. The requester will be saved as the action contact; leaseholder details can
+                                    be added later from the Plot Profile.
+                                </div>
+                            )}
+
+                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-slate-700">Requesting Party Name *</label>
+                                    <Input
+                                        value={data.requesting_party_name}
+                                        onChange={(event) => setData('requesting_party_name', event.target.value)}
+                                        placeholder="e.g. JUAN DELA CRUZ"
+                                        required
+                                    />
+                                    {errors.requesting_party_name && <p className="mt-1 text-xs text-red-600">{errors.requesting_party_name}</p>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-slate-700">Relationship / Role *</label>
+                                    <Input
+                                        value={data.requesting_party_relationship}
+                                        onChange={(event) => setData('requesting_party_relationship', event.target.value)}
+                                        placeholder="e.g. SPOUSE, CHILD, AUTHORIZED REPRESENTATIVE"
+                                        required
+                                    />
+                                    {errors.requesting_party_relationship && (
+                                        <p className="mt-1 text-xs text-red-600">{errors.requesting_party_relationship}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-slate-700">Contact Number</label>
+                                    <Input
+                                        value={data.requesting_party_contact}
+                                        onChange={(event) => setData('requesting_party_contact', event.target.value)}
+                                        placeholder="Optional"
+                                    />
+                                    {errors.requesting_party_contact && (
+                                        <p className="mt-1 text-xs text-red-600">{errors.requesting_party_contact}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-slate-700">Address</label>
+                                    <Input
+                                        value={data.requesting_party_address}
+                                        onChange={(event) => setData('requesting_party_address', event.target.value)}
+                                        placeholder="Optional"
+                                    />
+                                    {errors.requesting_party_address && (
+                                        <p className="mt-1 text-xs text-red-600">{errors.requesting_party_address}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {selectedPlot?.active_lease && (
+                                <div className="mt-4 space-y-4">
+                                    <label className="flex items-start gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.requester_is_leaseholder}
+                                            onChange={(event) =>
+                                                setData({
+                                                    ...data,
+                                                    requester_is_leaseholder: event.target.checked,
+                                                    leaseholder_consent_confirmed: event.target.checked,
+                                                    leaseholder_consent_method: event.target.checked ? 'leaseholder_present' : '',
+                                                    leaseholder_consent_reference: '',
+                                                })
+                                            }
+                                            className="mt-1"
+                                        />
+                                        <span>The requesting party is the active leaseholder shown above.</span>
+                                    </label>
+                                    {errors.requester_is_leaseholder && <p className="text-xs text-red-600">{errors.requester_is_leaseholder}</p>}
+
+                                    {needsLeaseholderConsent && (
+                                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                            <h4 className="text-sm font-semibold text-amber-950">Leaseholder Authorization Required</h4>
+                                            <p className="mt-1 text-sm text-amber-800">
+                                                The requester is different from the active leaseholder, so record how the leaseholder consent was
+                                                confirmed.
+                                            </p>
+                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium text-slate-700">Consent Method *</label>
+                                                    <Select
+                                                        value={data.leaseholder_consent_method}
+                                                        onValueChange={(value) =>
+                                                            setData(
+                                                                'leaseholder_consent_method',
+                                                                value as CreateSiteIntermentForm['leaseholder_consent_method'],
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select consent method" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="leaseholder_present">Leaseholder Present</SelectItem>
+                                                            <SelectItem value="verbal_authorization">Verbal Authorization</SelectItem>
+                                                            <SelectItem value="written_authorization">Written Authorization</SelectItem>
+                                                            <SelectItem value="family_attestation">Family Attestation</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {errors.leaseholder_consent_method && (
+                                                        <p className="mt-1 text-xs text-red-600">{errors.leaseholder_consent_method}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium text-slate-700">Consent Reference *</label>
+                                                    <Input
+                                                        value={data.leaseholder_consent_reference}
+                                                        onChange={(event) => setData('leaseholder_consent_reference', event.target.value)}
+                                                        placeholder="e.g. SIGNED LETTER, CALL WITH ADMIN HEAD"
+                                                        required
+                                                    />
+                                                    {errors.leaseholder_consent_reference && (
+                                                        <p className="mt-1 text-xs text-red-600">{errors.leaseholder_consent_reference}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <label className="mt-4 flex items-start gap-2 rounded border border-amber-200 bg-white px-3 py-2 text-xs text-slate-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.leaseholder_consent_confirmed}
+                                                    onChange={(event) => setData('leaseholder_consent_confirmed', event.target.checked)}
+                                                    required
+                                                    className="mt-0.5"
+                                                />
+                                                <span>I confirm that the active leaseholder authorized this interment request.</span>
+                                            </label>
+                                            {errors.leaseholder_consent_confirmed && (
+                                                <p className="mt-1 text-xs text-red-600">{errors.leaseholder_consent_confirmed}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-slate-700">Authorization Evidence</label>
+                                    <Input
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                                        onChange={(event) => setData('authorization_evidence', event.target.files?.[0] ?? null)}
+                                    />
+                                    <p className="mt-1 text-xs text-slate-500">Optional JPG, PNG, WEBP, or PDF. Max 5 MB.</p>
+                                    {errors.authorization_evidence && <p className="mt-1 text-xs text-red-600">{errors.authorization_evidence}</p>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-slate-700">Request Notes</label>
+                                    <Input
+                                        value={data.service_request_notes}
+                                        onChange={(event) => setData('service_request_notes', event.target.value)}
+                                        placeholder="Optional requester/authorization notes"
+                                    />
+                                    {errors.service_request_notes && <p className="mt-1 text-xs text-red-600">{errors.service_request_notes}</p>}
+                                </div>
                             </div>
                         </div>
 
@@ -362,7 +578,14 @@ export default function CreateSiteInterment({ municipality, site, decedents, ava
                         </Button>
                         <Button
                             type="submit"
-                            disabled={processing || !data.decedent_id || !data.plot_id || !pendingDocumentAuthorizationComplete}
+                            disabled={
+                                processing ||
+                                !data.decedent_id ||
+                                !data.plot_id ||
+                                !requesterComplete ||
+                                !pendingDocumentAuthorizationComplete ||
+                                !leaseholderConsentComplete
+                            }
                             className="bg-indigo-700 hover:bg-indigo-800"
                         >
                             {processing ? 'Saving...' : 'Confirm Interment'}

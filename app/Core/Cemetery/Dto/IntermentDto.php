@@ -3,6 +3,7 @@
 namespace App\Core\Cemetery\Dto;
 
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 
 /**
  * Immutable transport for recording one interment event. Plot assignability is
@@ -20,6 +21,16 @@ final readonly class IntermentDto
         public ?string $pendingDocumentReason,
         public ?string $pendingDocumentReference,
         public bool $pendingDocumentConfirmed,
+        public ?string $requestingPartyName,
+        public ?string $requestingPartyContact,
+        public ?string $requestingPartyAddress,
+        public ?string $requestingPartyRelationship,
+        public bool $requesterIsLeaseholder,
+        public bool $leaseholderConsentConfirmed,
+        public ?string $leaseholderConsentMethod,
+        public ?string $leaseholderConsentReference,
+        public ?string $serviceRequestNotes,
+        public ?UploadedFile $authorizationEvidence,
     ) {}
 
     public static function fromRequest(array $validated): self
@@ -36,6 +47,18 @@ final readonly class IntermentDto
             pendingDocumentReason: self::cleanText($validated['pending_document_reason'] ?? null),
             pendingDocumentReference: self::cleanText($validated['pending_document_reference'] ?? null),
             pendingDocumentConfirmed: (bool) ($validated['pending_document_confirmed'] ?? false),
+            requestingPartyName: self::cleanUpper($validated['requesting_party_name'] ?? null),
+            requestingPartyContact: self::cleanText($validated['requesting_party_contact'] ?? null),
+            requestingPartyAddress: self::cleanUpper($validated['requesting_party_address'] ?? null),
+            requestingPartyRelationship: self::cleanUpper($validated['requesting_party_relationship'] ?? null),
+            requesterIsLeaseholder: (bool) ($validated['requester_is_leaseholder'] ?? false),
+            leaseholderConsentConfirmed: (bool) ($validated['leaseholder_consent_confirmed'] ?? false),
+            leaseholderConsentMethod: self::cleanText($validated['leaseholder_consent_method'] ?? null),
+            leaseholderConsentReference: self::cleanUpper($validated['leaseholder_consent_reference'] ?? null),
+            serviceRequestNotes: self::cleanText($validated['service_request_notes'] ?? null),
+            authorizationEvidence: ($validated['authorization_evidence'] ?? null) instanceof UploadedFile
+                ? $validated['authorization_evidence']
+                : null,
         );
     }
 
@@ -53,5 +76,12 @@ final readonly class IntermentDto
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    private static function cleanUpper(?string $value): ?string
+    {
+        $cleaned = self::cleanText($value);
+
+        return $cleaned === null ? null : mb_strtoupper($cleaned);
     }
 }
