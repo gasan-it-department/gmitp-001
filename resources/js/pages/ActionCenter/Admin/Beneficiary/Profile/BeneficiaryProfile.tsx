@@ -159,6 +159,8 @@ export default function BeneficiaryProfile({
     const members = householdMembers.data;
     const history = assistanceHistory.data;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
+    const rosterMatches = householdMatches ?? [];
+    const activeRosterCount = members.filter((member) => member.is_active).length;
 
     const [linkOpen, setLinkOpen] = useState(false);
     const [avatarViewOpen, setAvatarViewOpen] = useState(false);
@@ -346,6 +348,12 @@ export default function BeneficiaryProfile({
                     </div>
                 )}
 
+                {rosterMatches.length > 0 && (
+                    <div className="container mx-auto max-w-7xl px-6 pt-6">
+                        <PossibleRosterMatchesPanel matches={rosterMatches} municipalitySlug={currentMunicipality.slug} />
+                    </div>
+                )}
+
                 {/* Main grid */}
                 <div className="container mx-auto max-w-7xl px-6 py-6">
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -407,8 +415,15 @@ export default function BeneficiaryProfile({
                                                 className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-slate-700 hover:bg-slate-200"
                                             />
                                         )}
+                                        <HouseholdStatusBadge
+                                            activeRosterCount={activeRosterCount}
+                                            householdOnHold={householdHead.household_on_hold}
+                                            householdVerified={profile.household_verified}
+                                        />
                                     </div>
-                                    <span className="text-xs text-slate-400">{summary.active_member_count} active members</span>
+                                    <span className="text-xs text-slate-400">
+                                        {activeRosterCount} active {activeRosterCount === 1 ? 'member' : 'members'}
+                                    </span>
                                 </CardHeader>
                                 <CardContent>
                                     <HouseholdMembersManager
@@ -748,6 +763,117 @@ function Stat({ label, value, highlight = false }: { label: string; value: strin
             <p className={`text-[10px] font-bold tracking-widest uppercase ${highlight ? 'text-emerald-700' : 'text-slate-400'}`}>{label}</p>
             <p className={`mt-0.5 text-lg font-bold ${highlight ? 'text-emerald-900' : 'text-slate-800'}`}>{value}</p>
         </div>
+    );
+}
+
+function HouseholdStatusBadge({
+    activeRosterCount,
+    householdOnHold,
+    householdVerified,
+}: {
+    activeRosterCount: number;
+    householdOnHold: boolean;
+    householdVerified: boolean;
+}) {
+    if (activeRosterCount === 0) {
+        return (
+            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                <Clock3 className="h-3 w-3" />
+                Historical
+            </span>
+        );
+    }
+
+    if (householdOnHold) {
+        return (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                <AlertTriangle className="h-3 w-3" />
+                On hold: no active head
+            </span>
+        );
+    }
+
+    if (householdVerified) {
+        return (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                <BadgeCheck className="h-3 w-3" />
+                Verified household
+            </span>
+        );
+    }
+
+    return (
+        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <Clock3 className="h-3 w-3" />
+            Pending verification
+        </span>
+    );
+}
+
+function PossibleRosterMatchesPanel({ matches, municipalitySlug }: { matches: HouseholdMatch[]; municipalitySlug: string }) {
+    return (
+        <Card className="border-amber-200 bg-amber-50/70">
+            <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base text-amber-950">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    Possible roster matches
+                </CardTitle>
+                <p className="text-sm text-amber-900">
+                    This beneficiary may already appear as a household member in another household. Review before verifying, approving, or
+                    changing household assignment.
+                </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {matches.map((match) => {
+                    const address = [match.street, match.barangay].filter(Boolean).join(', ') || 'Address unavailable';
+                    const relationship = match.relationship ? match.relationship.replace(/_/g, ' ') : 'Relationship unavailable';
+
+                    return (
+                        <div
+                            key={match.member_id}
+                            className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                        >
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <p className="truncate text-sm font-bold text-slate-900 capitalize">{match.member_name || 'Unnamed roster member'}</p>
+                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                                        Name and birth date match
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-xs text-slate-500 capitalize">
+                                    {[relationship, match.birth_date].filter(Boolean).join(' · ')}
+                                </p>
+                                <p className="mt-1 text-sm text-slate-700">
+                                    {match.head_name ? `${match.head_name}'s household` : 'Household'} · {address}
+                                </p>
+                            </div>
+
+                            <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                {match.household_code && (
+                                    <CopyableBadge
+                                        text={match.household_code}
+                                        className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 font-mono text-[11px] font-semibold tracking-wide text-amber-900 hover:bg-amber-100"
+                                    />
+                                )}
+
+                                {match.head_beneficiary_id && (
+                                    <Link
+                                        href={ShowBeneficiaryProfileController.url({
+                                            municipality: municipalitySlug,
+                                            beneficiaryId: match.head_beneficiary_id,
+                                        })}
+                                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                                    >
+                                        <Eye className="h-3.5 w-3.5" />
+                                        View head profile
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </CardContent>
+        </Card>
     );
 }
 

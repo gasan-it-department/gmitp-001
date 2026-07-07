@@ -17,6 +17,7 @@ class ReassignBeneficiaryHouseholdAction
     public function __construct(
         private readonly \App\Core\ActionCenter\UseCase\Household\EvaluateHouseholdHeadCandidateAction $evaluateCandidate,
         private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
+        private readonly EnsureBeneficiaryHasNoOpenAssistanceRequestAction $ensureNoOpenAssistanceRequest,
     ) {}
 
     public function execute(ReassignBeneficiaryHouseholdDto $dto): Beneficiary
@@ -32,6 +33,8 @@ class ReassignBeneficiaryHouseholdAction
                     'You may only manage beneficiaries from your own municipality.',
                 );
             }
+
+            $this->ensureNoOpenAssistanceRequest->execute($beneficiary->id);
 
             // We allow reassigning inactive (moved-out) beneficiaries, but we cannot move-out an already inactive one.
             if (! $beneficiary->is_active && $dto->operation === HouseholdReassignmentOperation::MoveOut) {

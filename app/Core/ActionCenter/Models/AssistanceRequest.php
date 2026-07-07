@@ -89,6 +89,7 @@ class AssistanceRequest extends Model implements HasMedia
                 'rejected_by_user_id',
                 'cancelled_by_user_id',
                 'released_by_user_id',
+                'released_at',
                 'release_reference_number',
             ])
             ->logOnlyDirty()

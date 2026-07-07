@@ -9,6 +9,124 @@
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10pt; color: #0f172a; }
         thead { display: table-header-group; }
         tr { page-break-inside: avoid; }
+
+        .manual-back-page {
+            page-break-before: always;
+            min-height: 318mm;
+            position: relative;
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10.5pt;
+            line-height: 1.28;
+        }
+
+        .manual-back-page h2 {
+            margin: 0 0 10px;
+            font-size: 13.5pt;
+            font-weight: 800;
+            letter-spacing: .01em;
+            text-transform: uppercase;
+        }
+
+        .manual-section {
+            margin-bottom: 12px;
+        }
+
+        .manual-back-title {
+            padding-top: 38mm;
+        }
+
+        .manual-check-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            row-gap: 9px;
+            width: 80mm;
+            margin-left: 52mm;
+            font-size: 11.5pt;
+            font-weight: 700;
+        }
+
+        .manual-check-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 17px;
+        }
+
+        .manual-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 12px;
+            height: 12px;
+            border: 1.8px solid #111827;
+            font-size: 9pt;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .manual-line {
+            display: inline-block;
+            min-height: 13px;
+            border-bottom: 1.4px solid #111827;
+            vertical-align: baseline;
+        }
+
+        .manual-evaluation {
+            margin-top: 12px;
+            font-size: 12pt;
+            font-weight: 700;
+            line-height: 2.05;
+            text-align: justify;
+        }
+
+        .manual-evaluation .manual-line {
+            padding: 0 4px 1px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .manual-long-lines {
+            margin-top: 5px;
+        }
+
+        .manual-long-lines .manual-line {
+            display: block;
+            width: 100%;
+            height: 18px;
+            margin-bottom: 8px;
+        }
+
+        .manual-signatures {
+            position: absolute;
+            right: 0;
+            bottom: 32mm;
+            left: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 10.5pt;
+            font-weight: 800;
+        }
+
+        .manual-signature-line {
+            width: 72mm;
+            border-top: 1.4px solid #111827;
+            padding-top: 3px;
+            text-align: center;
+        }
+
+        .manual-signature-line.worker {
+            width: 62mm;
+        }
+
+        .manual-small-note {
+            position: absolute;
+            right: 0;
+            bottom: 5mm;
+            color: #6b7280;
+            font-size: 7pt;
+        }
     </style>
 </head>
 <body class="bg-white">
@@ -39,6 +157,45 @@
         $verifiedHouseholdIncome = (float) $data->householdMembers
             ->filter(fn($member) => $member->relationship === 'head' || $member->is_verified_dependent)
             ->sum(fn($member) => (float) $member->monthly_income);
+
+        $human = function (?string $value): string {
+            if ($value === null || trim($value) === '') {
+                return '';
+            }
+
+            return ucwords(str_replace('_', ' ', trim($value)));
+        };
+
+        $contains = fn (?string $haystack, string $needle): bool => $haystack !== null
+            && stripos($haystack, $needle) !== false;
+
+        $ageAtFiling = $snapshot?->birth_date && $request->created_at
+            ? (int) $snapshot->birth_date->diffInYears($request->created_at)
+            : null;
+
+        $assistanceName = $assistanceType?->name ?? '';
+        $assistanceSlug = $assistanceType?->slug ?? '';
+        $assistanceNeedle = trim($assistanceName . ' ' . $assistanceSlug);
+        $problemPresented = [
+            'sick' => false,
+            'inadequate_finances' => false,
+            'helpless_to_bury_dead' => $contains($assistanceNeedle, 'burial') || $contains($assistanceNeedle, 'funeral'),
+            'seeking_medical_assistance' => $contains($assistanceNeedle, 'medical'),
+        ];
+
+        $checked = fn (bool $state): string => $state ? 'X' : '';
+        $householdIncome = $snapshot?->household_total_income ?? $snapshot?->monthly_income;
+        $sourceOfIncome = $snapshot?->occupation ?: '';
+        $recipientName = trim(implode(' ', array_filter([
+            $request->on_behalf_first_name,
+            $request->on_behalf_middle_name,
+            $request->on_behalf_last_name,
+            $request->on_behalf_suffix,
+        ])));
+        $relationship = $request->relationship_to_beneficiary?->label();
+        $forWhom = $relationship
+            ? trim(strtolower($relationship) . ($recipientName ? ' ' . $recipientName : ''))
+            : 'self';
     @endphp
 
     <header class="mb-4 border-b-2 border-slate-800 pb-3">
@@ -88,7 +245,7 @@
     </section>
 
     <section class="mb-4">
-        @include('documents.action_center.partials._section_header', ['title' => 'II. Frozen Beneficiary Snapshot'])
+        @include('documents.action_center.partials._section_header', ['title' => 'II. Beneficiary Details'])
 
         <div class="grid grid-cols-3 gap-3">
             @include('documents.action_center.partials._field', ['label' => 'Beneficiary No.', 'value' => $request->beneficiary?->beneficiary_number])
@@ -98,7 +255,7 @@
             @include('documents.action_center.partials._field', ['label' => 'Age at Filing', 'value' => $snapshot?->birth_date && $request->created_at ? (int) $snapshot->birth_date->diffInYears($request->created_at) . ' years old' : null])
             @include('documents.action_center.partials._field', ['label' => 'Civil Status', 'value' => ucfirst((string) $snapshot?->civil_status)])
             @include('documents.action_center.partials._field', ['label' => 'Religion', 'value' => $snapshot?->religion])
-            @include('documents.action_center.partials._field', ['label' => 'Educational Attainment', 'value' => $snapshot?->educational_attainment])
+            @include('documents.action_center.partials._field', ['label' => 'Educational Attainment', 'value' => \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom($snapshot?->educational_attainment)?->label() ?? $snapshot?->educational_attainment])
             @include('documents.action_center.partials._field', ['label' => 'Occupation', 'value' => $snapshot?->occupation])
             @include('documents.action_center.partials._field', ['label' => 'Monthly Income', 'value' => $formatMoney($snapshot?->monthly_income)])
             @include('documents.action_center.partials._field', ['label' => 'Household Total Income', 'value' => $formatMoney($snapshot?->household_total_income)])
@@ -106,12 +263,11 @@
     </section>
 
     <section class="mb-4">
-        @include('documents.action_center.partials._section_header', ['title' => 'III. Frozen Address Snapshot'])
+        @include('documents.action_center.partials._section_header', ['title' => 'III. Address'])
 
         <div class="grid grid-cols-2 gap-3">
             @include('documents.action_center.partials._field', ['label' => 'Street', 'value' => $snapshot?->street])
             @include('documents.action_center.partials._field', ['label' => 'Barangay', 'value' => $snapshot?->barangay])
-            @include('documents.action_center.partials._field', ['label' => 'Barangay PSGC', 'value' => $snapshot?->barangay_psgc_code])
             @include('documents.action_center.partials._field', ['label' => 'Municipality', 'value' => $data->municipalityName])
         </div>
     </section>
@@ -200,5 +356,53 @@
             </div>
         </div>
     </footer>
+
+    <section class="manual-back-page">
+        <div class="manual-section manual-back-title">
+            <h2>III. Problem Presented:</h2>
+            <div class="manual-check-grid">
+                <div class="manual-check-item"><span class="manual-box">{{ $checked($problemPresented['sick']) }}</span> Sick</div>
+                <div class="manual-check-item"><span class="manual-box">{{ $checked($problemPresented['inadequate_finances']) }}</span> Inadequate Finances</div>
+                <div class="manual-check-item"><span class="manual-box">{{ $checked($problemPresented['helpless_to_bury_dead']) }}</span> Helpless to Bury Dead</div>
+                <div class="manual-check-item"><span class="manual-box">{{ $checked($problemPresented['seeking_medical_assistance']) }}</span> Seeking Medical Assistance</div>
+            </div>
+        </div>
+
+        <div class="manual-section" style="margin-top: 22mm;">
+            <h2>IV. Findings and Evaluation:</h2>
+
+            <div class="manual-evaluation">
+                The client Mr./Mrs./Ms.
+                <span class="manual-line" style="width: 66mm;">{{ $fullSnapshotName }}</span>,
+                <span class="manual-line" style="width: 17mm;">{{ $ageAtFiling }}</span>
+                years old; {{ $human($snapshot?->civil_status) ?: 'Single/Married/Widowed/Separated' }} and resident of Barangay
+                <span class="manual-line" style="width: 48mm;">{{ $snapshot?->barangay }}</span>
+                is seeking
+                <span class="manual-line" style="width: 56mm;">{{ $assistanceName }}</span>
+                for his/her
+                <span class="manual-line" style="width: 52mm;">{{ $forWhom }}</span>
+                based on the information gathered, the family's basic source of income only derives from
+                <span class="manual-line" style="width: 72mm;">{{ $sourceOfIncome }}</span>
+                with a monthly income of
+                <span class="manual-line" style="width: 35mm;">{{ $householdIncome !== null ? 'PHP ' . number_format((float) $householdIncome, 2) : '' }}</span>
+                which is very insufficient for the family's daily supply of food, medicines and other expenses
+                which are necessary for one family to survive. In view of this the undersigned strongly recommended
+                <span class="manual-line" style="width: 98mm;"></span>
+            </div>
+
+            <div class="manual-long-lines">
+                <span class="manual-line"></span>
+                <span class="manual-line"></span>
+                <span class="manual-line"></span>
+            </div>
+        </div>
+
+        <div class="manual-signatures">
+            <div class="manual-signature-line">Signature/Thumb mark of Client</div>
+            <div class="manual-signature-line worker">Signature of Worker</div>
+        </div>
+
+        <div class="manual-small-note">Generated {{ $data->generatedAt->format('F j, Y g:i A') }} by {{ $data->generatedByUserName }}</div>
+    </section>
 </body>
 </html>

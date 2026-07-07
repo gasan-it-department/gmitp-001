@@ -69,7 +69,7 @@ class GetBeneficiaryProfileAction
         // Income + the active count below are computed from the active subset
         // only, so moving someone out drops them from the household economics.
         $householdMembers = HouseholdMember::query()
-            ->with('beneficiary')
+            ->with('beneficiary.household:id,household_code')
             ->where('household_id', $beneficiary->household_id)
             ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
             ->orderByDesc('is_active')
@@ -135,6 +135,16 @@ class GetBeneficiaryProfileAction
                     'barangay' => $member->household?->barangay,
                     'street' => $member->household?->street,
                     'head_name' => $member->household?->activeHead?->beneficiary?->full_name,
+                    'head_beneficiary_id' => $member->household?->activeHead?->beneficiary_id,
+                    'member_name' => trim(implode(' ', array_filter([
+                        $member->first_name,
+                        $member->middle_name,
+                        $member->last_name,
+                        $member->suffix,
+                    ]))),
+                    'birth_date' => $member->birth_date?->toDateString(),
+                    'relationship' => $member->relationship,
+                    'is_exact_match' => true,
                 ])
                 ->values(),
             // Duplicate-merge state for the profile banner + merged-duplicates

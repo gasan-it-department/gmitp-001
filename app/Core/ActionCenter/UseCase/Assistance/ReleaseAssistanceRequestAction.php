@@ -63,11 +63,12 @@ class ReleaseAssistanceRequestAction
             $request->update([
                 'status' => AssistanceStatus::Released,
                 'released_by_user_id' => $dto->cashierId,
-                'released_at' => now(),
+                'released_at' => $dto->releasedAt,
                 'release_reference_number' => $dto->releaseReferenceNumber,
                 'remarks' => $this->appendReleaseNote(
                     existing: $request->remarks,
                     referenceNumber: $dto->releaseReferenceNumber,
+                    releasedAt: $dto->releasedAt->toDateString(),
                     notes: $dto->releaseNotes,
                     cashierName: $dto->cashierName,
                 ),
@@ -136,7 +137,7 @@ class ReleaseAssistanceRequestAction
 
         if ($collision) {
             throw new \DomainException(sprintf(
-                'Reference number "%s" is already used by another released case. Double-check the OR number from your receipt book.',
+                'Reference number "%s" is already used by another released case. Double-check the physical release reference.',
                 $referenceNumber,
             ));
         }
@@ -148,18 +149,20 @@ class ReleaseAssistanceRequestAction
 
     /**
      * Append the release event to remarks with a stamp that includes the
-     * cashier's name AND the OR number on the same line. Both pieces are
-     * useful when COA cross-references the digital record against the
-     * physical receipt book.
+     * cashier's name, actual release date, and reference number on the same
+     * line. The activity log timestamp still records when the release was
+     * encoded in the system.
      */
     private function appendReleaseNote(
         ?string $existing,
         string $referenceNumber,
+        string $releasedAt,
         ?string $notes,
         string $cashierName,
     ): string {
         $stamp = sprintf(
-            '[RELEASED %s by %s | Ref: %s]',
+            '[RELEASED %s | Encoded %s by %s | Ref: %s]',
+            $releasedAt,
             now()->toDateTimeString(),
             $cashierName,
             $referenceNumber,

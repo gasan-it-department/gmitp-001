@@ -3,6 +3,7 @@ import Utility from '@/pages/Utility/Utility';
 
 export interface HouseholdMemberRow {
     id: string;
+    household_id: string;
     first_name: string;
     last_name: string;
     middle_name: string | null;
@@ -17,7 +18,12 @@ export interface HouseholdMemberRow {
     monthly_income: number;
     religion_id: string | null;
     beneficiary_id: string | null;
+    beneficiary_number?: string | null;
+    beneficiary_full_name?: string | null;
     beneficiary_has_portal_account?: boolean;
+    linked_beneficiary_primary_household_id?: string | null;
+    linked_beneficiary_primary_household_code?: string | null;
+    is_linked_to_primary_household?: boolean | null;
     /** False = moved out (kept as history, dropped from active composition). */
     is_active: boolean;
     /** Trust gate for a non-head roster member. */

@@ -16,6 +16,7 @@ export interface HouseholdMatch {
     barangay: string | null;
     street: string | null;
     head_name: string | null;
+    head_beneficiary_id?: string | null;
     member_name?: string;
     birth_date?: string | null;
     relationship?: string | null;

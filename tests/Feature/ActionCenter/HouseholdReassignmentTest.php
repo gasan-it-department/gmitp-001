@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\ActionCenter\Dto\Beneficiary\ReassignBeneficiaryHouseholdDto;
+use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\HouseholdReassignmentOperation;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
@@ -85,6 +86,16 @@ beforeEach(function () {
         $table->ulid('religion_id')->nullable();
         $table->boolean('is_active')->default(true);
         $table->boolean('is_verified_dependent')->default(false);
+        $table->softDeletes();
+        $table->timestamps();
+    });
+
+    Schema::create('ac_assistance_requests', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('municipal_id');
+        $table->ulid('beneficiary_id');
+        $table->ulid('household_id');
+        $table->string('status');
         $table->softDeletes();
         $table->timestamps();
     });
@@ -327,6 +338,72 @@ test('reject duplicate active membership', function () {
     $this->expectExceptionMessage('The beneficiary is already active in the destination household.');
 
     $this->action->execute($dto);
+});
+
+test('blocks reassignment when beneficiary has an open assistance request', function () {
+    DB::table('ac_assistance_requests')->insert([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $this->municipalId,
+        'beneficiary_id' => $this->beneficiaryId,
+        'household_id' => $this->sourceHouseholdId,
+        'status' => AssistanceStatus::UnderReview->value,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $dto = new ReassignBeneficiaryHouseholdDto(
+        beneficiaryId: $this->beneficiaryId,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        operation: HouseholdReassignmentOperation::Transfer,
+        reason: 'Moved to another household',
+        destinationHouseholdId: $this->destHouseholdId,
+        destinationMemberId: null,
+        newHouseholdBarangay: null,
+        newHouseholdStreet: null,
+        verifyAtDestination: false,
+        successorMemberId: null,
+        placeHouseholdOnHold: false,
+    );
+
+    $this->expectException(\DomainException::class);
+    $this->expectExceptionMessage('active assistance request');
+
+    $this->action->execute($dto);
+});
+
+test('allows reassignment when beneficiary assistance requests are final', function () {
+    DB::table('ac_assistance_requests')->insert([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $this->municipalId,
+        'beneficiary_id' => $this->beneficiaryId,
+        'household_id' => $this->sourceHouseholdId,
+        'status' => AssistanceStatus::Released->value,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $dto = new ReassignBeneficiaryHouseholdDto(
+        beneficiaryId: $this->beneficiaryId,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        operation: HouseholdReassignmentOperation::Transfer,
+        reason: 'Moved after completed assistance',
+        destinationHouseholdId: $this->destHouseholdId,
+        destinationMemberId: null,
+        newHouseholdBarangay: null,
+        newHouseholdStreet: null,
+        verifyAtDestination: false,
+        successorMemberId: null,
+        placeHouseholdOnHold: false,
+    );
+
+    $this->action->execute($dto);
+
+    $this->assertDatabaseHas('ac_beneficiaries', [
+        'id' => $this->beneficiaryId,
+        'household_id' => $this->destHouseholdId,
+    ]);
 });
 
 test('dependent verification resets', function () {

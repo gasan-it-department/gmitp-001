@@ -20,8 +20,17 @@ class HouseholdMemberDetailsResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $linkedBeneficiary = $this->relationLoaded('beneficiary')
+            ? $this->beneficiary
+            : null;
+        $linkedPrimaryHouseholdId = $linkedBeneficiary?->household_id;
+        $isLinkedToPrimaryHousehold = $linkedBeneficiary
+            ? $linkedPrimaryHouseholdId === $this->household_id
+            : null;
+
         return [
             'id' => $this->id,
+            'household_id' => $this->household_id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'middle_name' => $this->middle_name,
@@ -39,7 +48,14 @@ class HouseholdMemberDetailsResource extends JsonResource
             // server-managed head (mirrors the beneficiary), and are they
             // currently living in the household?
             'beneficiary_id' => $this->beneficiary_id,
-            'beneficiary_has_portal_account' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->user_id !== null),
+            'beneficiary_number' => $linkedBeneficiary?->beneficiary_number,
+            'beneficiary_full_name' => $linkedBeneficiary?->full_name,
+            'beneficiary_has_portal_account' => $linkedBeneficiary
+                ? $linkedBeneficiary->user_id !== null
+                : null,
+            'linked_beneficiary_primary_household_id' => $linkedPrimaryHouseholdId,
+            'linked_beneficiary_primary_household_code' => $linkedBeneficiary?->household?->household_code,
+            'is_linked_to_primary_household' => $isLinkedToPrimaryHousehold,
             'is_active' => (bool) $this->is_active,
             'is_verified_dependent' => (bool) $this->is_verified_dependent,
         ];

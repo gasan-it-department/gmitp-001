@@ -17,6 +17,15 @@ interface Props {
     onClose: () => void;
 }
 
+function todayDateInputValue(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
 /**
  * Mark-as-Released modal — the cashier event.
  *
@@ -34,6 +43,7 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         release_reference_number: '',
+        release_date: todayDateInputValue(),
         release_notes: '',
         confirm: false as boolean,
     });
@@ -72,8 +82,8 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                     </div>
                     <DialogTitle className="text-xl text-slate-900">Mark as Released</DialogTitle>
                     <DialogDescription className="text-slate-500">
-                        Record the physical disbursement. Enter the OR / voucher number from your receipt book — this entry is COA-immutable
-                        once submitted.
+                        Record the physical disbursement. Use the actual release date and the reference number from the supporting paper trail.
+                        This entry is COA-immutable once submitted.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -86,13 +96,30 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                     )}
 
                     <div className="space-y-2">
+                        <Label htmlFor="release_date" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+                            Actual Release Date
+                        </Label>
+                        <Input
+                            id="release_date"
+                            type="date"
+                            value={data.release_date}
+                            max={todayDateInputValue()}
+                            onChange={(e) => setData('release_date', e.target.value)}
+                        />
+                        {errors.release_date && <p className="text-xs font-medium text-red-500">{errors.release_date}</p>}
+                        <p className="text-[11px] text-slate-400">
+                            Use the date the beneficiary actually received the assistance, even if you encode it later.
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
                         <Label htmlFor="release_reference_number" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
-                            OR / Voucher Number
+                            Release Reference No.
                         </Label>
                         <Input
                             id="release_reference_number"
                             type="text"
-                            placeholder="e.g. OR-2026-001234"
+                            placeholder="e.g. OR-2026-001234, voucher, payroll, or receipt no."
                             value={data.release_reference_number}
                             onChange={(e) => setData('release_reference_number', e.target.value)}
                             autoComplete="off"
@@ -101,7 +128,8 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                             <p className="text-xs font-medium text-red-500">{errors.release_reference_number}</p>
                         )}
                         <p className="text-[11px] text-slate-400">
-                            Must match the number on your physical receipt. Cannot be reused across cases in this municipality.
+                            Must match the physical OR, voucher, payroll, disbursement, or receipt reference. Cannot be reused across cases in this
+                            municipality.
                         </p>
                     </div>
 

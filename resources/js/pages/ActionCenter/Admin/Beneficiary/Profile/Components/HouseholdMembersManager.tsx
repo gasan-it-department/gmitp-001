@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import Utility from '@/pages/Utility/Utility';
 import { Link, router, usePage } from '@inertiajs/react';
-import { BadgeCheck, Link2, LogOut, MoreHorizontal, Pencil, RefreshCw, RotateCcw, Unlink, UserPlus } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Link2, LogOut, MoreHorizontal, Pencil, RefreshCw, RotateCcw, Unlink, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../../../Client/Apply/Beneficiary/types';
 import ChangeHouseholdHeadDialog, { type HouseholdHeadState } from './ChangeHouseholdHeadDialog';
@@ -80,6 +80,17 @@ export default function HouseholdMembersManager({
         setUnlinkOpen(true);
     };
 
+    const hasPrimaryHouseholdElsewhere = (member: HouseholdMemberRow) => (
+        member.beneficiary_id !== null
+        && member.is_linked_to_primary_household === false
+    );
+
+    const primaryHouseholdTitle = (member: HouseholdMemberRow) => (
+        member.linked_beneficiary_primary_household_code
+            ? `Linked beneficiary's primary household is ${member.linked_beneficiary_primary_household_code}`
+            : "Linked beneficiary's primary household is different from this household"
+    );
+
     const active = members.filter((m) => m.is_active);
     const inactive = members.filter((m) => !m.is_active);
 
@@ -130,6 +141,16 @@ export default function HouseholdMembersManager({
                 </button>
             </div>
 
+            {headState.household_on_hold && active.length > 0 && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <p>
+                        This household has no active head. Assign a household head before using this household for verification or assistance
+                        decisions.
+                    </p>
+                </div>
+            )}
+
             <div className="overflow-hidden rounded-md border border-slate-100">
                 <Table>
                     <TableHeader className="bg-slate-50/70">
@@ -146,7 +167,7 @@ export default function HouseholdMembersManager({
                         {active.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="py-4 text-center text-sm text-slate-400 italic">
-                                    No active family members.
+                                    Historical household: no active family members.
                                 </TableCell>
                             </TableRow>
                         )}
@@ -166,6 +187,15 @@ export default function HouseholdMembersManager({
                                         {isHead(member) && (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
                                                 <BadgeCheck className="h-3 w-3" /> Head
+                                            </span>
+                                        )}
+                                        {hasPrimaryHouseholdElsewhere(member) && (
+                                            <span
+                                                title={`${primaryHouseholdTitle(member)}. Use Change beneficiary residence only if this person actually moved.`}
+                                                className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"
+                                            >
+                                                <AlertTriangle className="h-3 w-3" />
+                                                Primary elsewhere
                                             </span>
                                         )}
                                     </div>
@@ -337,6 +367,9 @@ export default function HouseholdMembersManager({
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.4)]" /> Not Linked
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <AlertTriangle className="h-3 w-3 text-amber-500" /> Primary Elsewhere
                             </div>
                         </div>
                     </div>
