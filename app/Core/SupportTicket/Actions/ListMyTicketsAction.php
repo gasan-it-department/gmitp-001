@@ -7,14 +7,14 @@ use Illuminate\Support\Facades\Auth;
 
 class ListMyTicketsAction
 {
-    public function execute()
+    public function execute(int $perPage = 10)
     {
         return SupportTicket::query()
             ->select(['id', 'reference_no', 'category', 'priority', 'status', 'subject', 'created_at'])
             ->where('municipal_id', app('municipal_id'))
             ->where('user_id', Auth::id())
             ->orderByDesc('created_at')
-            ->paginate(10)
+            ->paginate($perPage)
             ->through(fn (SupportTicket $t) => [
                 'id' => $t->id,
                 'reference_no' => $t->reference_no,

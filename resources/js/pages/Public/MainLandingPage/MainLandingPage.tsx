@@ -28,11 +28,7 @@ export default function MainLandingPage() {
             <header className="sticky top-0 z-50 w-full border-b border-[#d9e2df] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80">
                 <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3">
-                        <img
-                            src="https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png"
-                            alt="Marinduque Logo"
-                            className="h-10 w-10 object-contain drop-shadow-sm"
-                        />
+                        <img src="/assets/harvs_logo.png" alt="Harvs Logo" className="h-10 w-10 object-contain drop-shadow-sm" />
                         <div>
                             <p className="text-sm font-bold tracking-wider text-slate-600 uppercase">Municipality Citizen Portal</p>
                         </div>
@@ -62,11 +58,7 @@ export default function MainLandingPage() {
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
                         <div className="lg:col-span-2">
                             <div className="mb-4 flex items-center gap-3">
-                                <img
-                                    src="https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png"
-                                    alt="Marinduque Logo"
-                                    className="h-12 w-12 object-contain opacity-80 grayscale"
-                                />
+                                <img src="/assets/harvs_logo.png" alt="Harvs Logo" className="h-12 w-12 object-contain opacity-80 grayscale" />
                                 <div>
                                     <p className="text-xs text-muted-foreground">Municipality Citizen Portal</p>
                                 </div>

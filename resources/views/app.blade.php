@@ -65,8 +65,10 @@
     <title inertia>{{ config('app.name', 'Marinduque Unified System') }}</title>
 
     {{-- ✅ FAVICONS --}}
-    <link rel="icon" type="image/png" href="{{ asset('assets/logo_gasan.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48x48.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('favicon-96x96.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('favicon-48x48.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     {{--
     <link rel="manifest" href="{{ asset('site.webmanifest') }}"> --}}
     <meta name="theme-color" content="#f97316" />

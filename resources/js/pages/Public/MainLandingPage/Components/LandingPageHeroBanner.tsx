@@ -2,7 +2,7 @@ import { ArrowDown, ClipboardCheck, Eye, FileText, LifeBuoy, MapPinned, MessageS
 import { useEffect, useState } from 'react';
 import { MunicipalityCard } from './MunicipalityCard';
 
-const MARINDUQUE_MARK = 'https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png';
+const MARINDUQUE_MARK = '/assets/harvs_logo.png';
 
 export default function LandingPageHeroBanner() {
     const [fadeVisible, setFadeVisible] = useState(false);
