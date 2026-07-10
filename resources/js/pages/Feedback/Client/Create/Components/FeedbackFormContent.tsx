@@ -6,13 +6,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import LoadingDialog from '@/pages/Utility/LoadingDialog';
 import api from '@/routes/api';
-import { useForm } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { useForm, usePage } from '@inertiajs/react';
 import imageCompression from 'browser-image-compression';
-import { AlertTriangle, Building2, Check, FileIcon, Loader2, MessageSquareText, Paperclip, Upload, UserRound, X } from 'lucide-react';
-import React, { useState } from 'react';
+import { AlertTriangle, Building2, Check, FileIcon, Loader2, MessageSquareText, Paperclip, ShieldCheck, Upload, UserRound, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import StarRating from './StarRatingBar';
 
 export type DepartmentOption = { id: string; name: string };
+
+type TurnstileWidgetId = string;
+
+type TurnstileRenderOptions = {
+    sitekey: string;
+    callback: (token: string) => void;
+    'expired-callback': () => void;
+    'error-callback': () => void;
+};
+
+declare global {
+    interface Window {
+        turnstile?: {
+            render: (container: HTMLElement, options: TurnstileRenderOptions) => TurnstileWidgetId;
+            reset: (widgetId?: TurnstileWidgetId) => void;
+            remove: (widgetId?: TurnstileWidgetId) => void;
+        };
+    }
+}
 
 interface FeedbackFormContentProps {
     departments?: DepartmentOption[];
@@ -31,14 +51,21 @@ type FeedbackFormShape = {
     subject: string;
     message: string;
     rating: number | null;
+    captcha_token: string;
     attachments: File[];
 };
 
 const MAX_FILES = 5;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
+const TURNSTILE_SCRIPT_ID = 'cloudflare-turnstile-script';
 
 export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCancel, onSuccess, onError }: FeedbackFormContentProps) {
     const { currentMunicipality } = useMunicipality();
+    const { auth } = usePage<SharedData>().props;
+    const isGuest = !auth.user;
+    const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+    const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+    const turnstileWidgetIdRef = useRef<TurnstileWidgetId | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm<FeedbackFormShape>({
         citizen_name: '',
@@ -49,11 +76,60 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
         subject: '',
         message: '',
         rating: 5,
+        captcha_token: '',
         attachments: [],
     });
 
     const [fileError, setFileError] = useState<string | null>(null);
     const [isCompressing, setIsCompressing] = useState(false);
+    const captchaRequired = isGuest;
+
+    useEffect(() => {
+        if (!captchaRequired || !turnstileSiteKey || !turnstileContainerRef.current) {
+            return;
+        }
+
+        let cancelled = false;
+        let scriptElement: HTMLElement | null = document.getElementById(TURNSTILE_SCRIPT_ID);
+
+        const renderTurnstile = () => {
+            if (cancelled || !window.turnstile || !turnstileContainerRef.current || turnstileWidgetIdRef.current) {
+                return;
+            }
+
+            turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+                sitekey: turnstileSiteKey,
+                callback: (token) => setData('captcha_token', token),
+                'expired-callback': () => setData('captcha_token', ''),
+                'error-callback': () => setData('captcha_token', ''),
+            });
+        };
+
+        if (window.turnstile) {
+            renderTurnstile();
+        } else if (scriptElement) {
+            scriptElement.addEventListener('load', renderTurnstile);
+        } else {
+            const script = document.createElement('script');
+            script.id = TURNSTILE_SCRIPT_ID;
+            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+            script.async = true;
+            script.defer = true;
+            script.addEventListener('load', renderTurnstile);
+            document.head.appendChild(script);
+            scriptElement = script;
+        }
+
+        return () => {
+            cancelled = true;
+            scriptElement?.removeEventListener('load', renderTurnstile);
+
+            if (turnstileWidgetIdRef.current && window.turnstile) {
+                window.turnstile.remove(turnstileWidgetIdRef.current);
+                turnstileWidgetIdRef.current = null;
+            }
+        };
+    }, [captchaRequired, setData, turnstileSiteKey]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
@@ -127,6 +203,9 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
             },
             onSuccess: () => {
                 reset();
+                if (turnstileWidgetIdRef.current) {
+                    window.turnstile?.reset(turnstileWidgetIdRef.current);
+                }
                 onSuccess?.('Thank you for your feedback!');
             },
             onError: (errs) => {
@@ -304,7 +383,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                     </div>
                     <div>
                         <h3 className="font-bold text-slate-950">Magdagdag ng attachment</h3>
-                        <p className="mt-1 text-xs leading-5 text-slate-600">Opsyonal na larawan o video, hanggang 5 files at 50 MB lahat.</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">Opsyonal na larawan, hanggang 5 photos at 50 MB lahat.</p>
                     </div>
                 </div>
 
@@ -325,9 +404,9 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                         <>
                             <Upload className={`mb-2 h-7 w-7 ${data.attachments.length >= MAX_FILES ? 'text-slate-300' : 'text-violet-600'}`} />
                             <p className="text-xs font-bold text-slate-700">
-                                {data.attachments.length >= MAX_FILES ? 'Puno na ang limitasyon' : 'Pumili ng larawan o video'}
+                                {data.attachments.length >= MAX_FILES ? 'Puno na ang limitasyon' : 'Pumili ng larawan'}
                             </p>
-                            <p className="mt-1 text-[11px] text-slate-500">JPEG, PNG, MP4, AVI, o MPEG</p>
+                            <p className="mt-1 text-[11px] text-slate-500">JPEG, PNG, o WebP</p>
                         </>
                     )}
                 </div>
@@ -336,7 +415,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                     id="feedback-evidence"
                     type="file"
                     multiple
-                    accept="image/jpeg,image/png,video/mp4,video/avi,video/mpeg"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={handleFileChange}
                     className="hidden"
                 />
@@ -373,6 +452,30 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                 )}
             </section>
 
+            {captchaRequired && (
+                <section className="space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/40 p-4 sm:p-5">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                            <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-950">Security check</h3>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">Kumpirmahin muna bago isumite ang feedback.</p>
+                        </div>
+                    </div>
+
+                    {turnstileSiteKey ? (
+                        <div ref={turnstileContainerRef} />
+                    ) : (
+                        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs font-medium text-destructive">
+                            CAPTCHA is not configured.
+                        </div>
+                    )}
+
+                    {errors.captcha_token && <p className="text-xs font-medium text-destructive">{errors.captcha_token}</p>}
+                </section>
+            )}
+
             <div className="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row">
                 {onCancel && (
                     <Button
@@ -389,7 +492,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                 <Button
                     type="submit"
                     className="order-1 h-12 rounded-lg bg-primary text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl active:scale-[0.98] sm:order-2 sm:flex-1"
-                    disabled={processing || isCompressing}
+                    disabled={processing || isCompressing || (captchaRequired && (!data.captcha_token || !turnstileSiteKey))}
                 >
                     {processing ? (
                         <>

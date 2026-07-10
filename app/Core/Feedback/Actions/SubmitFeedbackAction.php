@@ -19,7 +19,7 @@ class SubmitFeedbackAction
 
     public function execute(SubmitFeedbackDto $dto): FeedbackSubmission
     {
-        if (!$this->checkEligibility->execute($dto->userId, $dto->municipalId)) {
+        if (! $this->checkEligibility->execute($dto->userId, $dto->municipalId)) {
             throw FeedbackLimitExceededException::forDailyLimit(3);
         }
 

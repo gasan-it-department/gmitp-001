@@ -1,7 +1,13 @@
 <?php
 
+use App\Core\CommunityReport\Actions\ArchiveReportAction;
 use App\Core\CommunityReport\Actions\GetAdminReportSubmissionsAction;
+use App\Core\CommunityReport\Actions\RestoreReportAction;
 use App\Core\CommunityReport\Dto\AdminReportFiltersDto;
+use App\Core\CommunityReport\Dto\ArchiveReportDto;
+use App\Core\CommunityReport\Dto\RestoreReportDto;
+use App\Core\CommunityReport\Exceptions\InvalidStateTransitionException;
+use App\Core\CommunityReport\Models\ReportSubmission;
 use App\External\Api\Request\CommunityReport\Admin\IndexReportRequest;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -44,12 +50,25 @@ beforeEach(function () {
         $table->softDeletes();
     });
 
+    Schema::create('activity_log', function (Blueprint $table) {
+        $table->id();
+        $table->string('log_name')->nullable()->index();
+        $table->text('description');
+        $table->nullableUlidMorphs('subject', 'subject');
+        $table->string('event')->nullable();
+        $table->nullableUlidMorphs('causer', 'causer');
+        $table->json('attribute_changes')->nullable();
+        $table->json('properties')->nullable();
+        $table->timestamps();
+    });
+
     $this->gasan = (string) Str::ulid();
     $this->boac = (string) Str::ulid();
     $this->reporter = communityReportUser('Grace', 'Santos');
 });
 
 afterEach(function () {
+    Schema::dropIfExists('activity_log');
     Schema::dropIfExists('report_submissions');
     Schema::dropIfExists('users');
 });
@@ -158,12 +177,79 @@ it('searches admin reports by location description and reporter name', function 
         ->toBe([$reporterMatch]);
 });
 
+it('archives reports with soft deletes inside the current municipality', function () {
+    $report = communityReport($this->gasan, $this->reporter, [
+        'status' => 'resolved',
+        'resolved_at' => now(),
+    ]);
+    $otherMunicipalityReport = communityReport($this->boac, $this->reporter);
+
+    (new ArchiveReportAction)->execute(new ArchiveReportDto(
+        municipalId: $this->gasan,
+        reportId: $report,
+        actorUserId: $this->reporter,
+    ));
+
+    expect(ReportSubmission::query()->whereKey($report)->exists())->toBeFalse()
+        ->and(ReportSubmission::withTrashed()->findOrFail($report)->trashed())->toBeTrue()
+        ->and(ReportSubmission::query()->whereKey($otherMunicipalityReport)->exists())->toBeTrue();
+});
+
+it('does not archive reports before they reach a terminal status', function () {
+    $report = communityReport($this->gasan, $this->reporter, [
+        'status' => 'in_progress',
+    ]);
+
+    expect(fn () => (new ArchiveReportAction)->execute(new ArchiveReportDto(
+        municipalId: $this->gasan,
+        reportId: $report,
+        actorUserId: $this->reporter,
+    )))->toThrow(InvalidStateTransitionException::class);
+
+    expect(ReportSubmission::query()->whereKey($report)->exists())->toBeTrue();
+});
+
+it('restores archived reports inside the current municipality', function () {
+    $report = communityReport($this->gasan, $this->reporter, [
+        'deleted_at' => now(),
+    ]);
+
+    (new RestoreReportAction)->execute(new RestoreReportDto(
+        municipalId: $this->gasan,
+        reportId: $report,
+        actorUserId: $this->reporter,
+    ));
+
+    expect(ReportSubmission::query()->whereKey($report)->exists())->toBeTrue()
+        ->and(ReportSubmission::withTrashed()->findOrFail($report)->trashed())->toBeFalse();
+});
+
+it('filters admin reports by archive status', function () {
+    $active = communityReport($this->gasan, $this->reporter, [
+        'created_at' => '2026-05-10 08:00:00',
+    ]);
+    $archived = communityReport($this->gasan, $this->reporter, [
+        'created_at' => '2026-05-11 08:00:00',
+        'deleted_at' => '2026-05-12 08:00:00',
+    ]);
+
+    $action = new GetAdminReportSubmissionsAction;
+
+    expect(collect($action->execute($this->gasan, AdminReportFiltersDto::fromArray([]))->items())->pluck('id')->all())
+        ->toBe([$active])
+        ->and(collect($action->execute($this->gasan, AdminReportFiltersDto::fromArray(['archive_status' => 'archived']))->items())->pluck('id')->all())
+        ->toBe([$archived])
+        ->and(collect($action->execute($this->gasan, AdminReportFiltersDto::fromArray(['archive_status' => 'all']))->items())->pluck('id')->all())
+        ->toBe([$archived, $active]);
+});
+
 it('validates admin report filter query values', function () {
     $rules = (new IndexReportRequest)->rules();
 
     expect(Validator::make(['status' => 'not-a-status'], $rules)->fails())->toBeTrue()
         ->and(Validator::make(['date_from' => '2026-05-10', 'date_to' => '2026-05-01'], $rules)->fails())->toBeTrue()
         ->and(Validator::make(['per_page' => 15], $rules)->fails())->toBeTrue()
+        ->and(Validator::make(['archive_status' => 'deleted'], $rules)->fails())->toBeTrue()
         ->and(Validator::make([
             'status' => 'pending',
             'category' => 'garbage',
@@ -171,6 +257,7 @@ it('validates admin report filter query values', function () {
             'date_from' => '2026-05-01',
             'date_to' => '2026-05-10',
             'sort' => 'oldest',
+            'archive_status' => 'archived',
             'per_page' => 50,
         ], $rules)->passes())->toBeTrue();
 });

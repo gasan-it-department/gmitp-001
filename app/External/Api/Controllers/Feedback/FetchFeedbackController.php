@@ -3,11 +3,11 @@
 namespace App\External\Api\Controllers\Feedback;
 
 use App\Core\Feedback\Actions\ListFeedbackSubmissionsAction;
-use App\Core\Feedback\Dto\FeedbackQueryDto;
+use App\Core\Feedback\Dto\AdminFeedbackFiltersDto;
+use App\External\Api\Request\Feedback\Admin\IndexFeedbackRequest;
 use App\External\Api\Resources\Feedback\FeedbackResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class FetchFeedbackController extends Controller
 {
@@ -16,10 +16,10 @@ class FetchFeedbackController extends Controller
     ) {
     }
 
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(IndexFeedbackRequest $request): JsonResponse
     {
         $feedback = $this->listFeedbackSubmissions->execute(
-            FeedbackQueryDto::fromRequest($request),
+            AdminFeedbackFiltersDto::fromArray($request->filters()),
             app('municipal_id'),
         );
 

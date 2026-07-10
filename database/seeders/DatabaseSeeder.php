@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             MunicipalitySeeder::class,
             SuperAdminSeeder::class,
             PositionSeeder::class,
-            DepartmentSeeder::class,
+                //DepartmentSeeder::class,
                 // EventsSeeder::class,
                 // AnnouncementSeeder::class,
             ProcurementFundingSourceSeeder::class,

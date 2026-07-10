@@ -31,6 +31,11 @@ class IndexReportRequest extends FormRequest
                 AdminReportFiltersDto::SORT_NEWEST,
                 AdminReportFiltersDto::SORT_OLDEST,
             ])],
+            'archive_status' => ['nullable', 'string', Rule::in([
+                AdminReportFiltersDto::ARCHIVE_ACTIVE,
+                AdminReportFiltersDto::ARCHIVE_ARCHIVED,
+                AdminReportFiltersDto::ARCHIVE_ALL,
+            ])],
             'per_page' => ['nullable', 'integer', Rule::in(AdminReportFiltersDto::PER_PAGE_OPTIONS)],
             'page' => ['nullable', 'integer', 'min:1'],
         ];
@@ -46,6 +51,7 @@ class IndexReportRequest extends FormRequest
             'date_from',
             'date_to',
             'sort',
+            'archive_status',
             'per_page',
         ]);
     }

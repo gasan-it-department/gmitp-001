@@ -39,6 +39,11 @@ class IndexReportController extends Controller
                 ['value' => AdminReportFiltersDto::SORT_NEWEST, 'label' => 'Newest first'],
                 ['value' => AdminReportFiltersDto::SORT_OLDEST, 'label' => 'Oldest first'],
             ],
+            'archive_status_options' => [
+                ['value' => AdminReportFiltersDto::ARCHIVE_ACTIVE, 'label' => 'Active'],
+                ['value' => AdminReportFiltersDto::ARCHIVE_ARCHIVED, 'label' => 'Archived'],
+                ['value' => AdminReportFiltersDto::ARCHIVE_ALL, 'label' => 'All'],
+            ],
             'per_page_options' => AdminReportFiltersDto::PER_PAGE_OPTIONS,
         ]);
     }

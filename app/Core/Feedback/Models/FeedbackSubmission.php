@@ -79,9 +79,7 @@ class FeedbackSubmission extends Model implements HasMedia
             ->acceptsMimeTypes([
                 'image/jpeg',
                 'image/png',
-                'video/mp4',
-                'video/avi',
-                'video/mpeg',
+                'image/webp',
             ]);
     }
 

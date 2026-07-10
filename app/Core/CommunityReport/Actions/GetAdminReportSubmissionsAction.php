@@ -20,6 +20,14 @@ class GetAdminReportSubmissionsAction
             ->with('user:id,first_name,last_name')
             ->where('municipal_id', $municipalId);
 
+        if ($filters->archiveStatus === AdminReportFiltersDto::ARCHIVE_ARCHIVED) {
+            $query->onlyTrashed();
+        }
+
+        if ($filters->archiveStatus === AdminReportFiltersDto::ARCHIVE_ALL) {
+            $query->withTrashed();
+        }
+
         if ($filters->search) {
             $search = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $filters->search).'%';
 

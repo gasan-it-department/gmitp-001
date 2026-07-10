@@ -12,16 +12,19 @@ class StoreFeedbackController extends Controller
 {
     public function __construct(
         private SubmitFeedbackAction $submitFeedback,
-    ) {
-    }
+    ) {}
 
     public function __invoke(SubmitFeedbackRequest $request): RedirectResponse
     {
+        $municipalId = app('municipal_id');
+
         $this->submitFeedback->execute(
-            SubmitFeedbackDto::fromRequest($request, app('municipal_id')),
+            SubmitFeedbackDto::fromRequest(
+                request: $request,
+                municipalId: $municipalId,
+            ),
         );
 
-        return redirect()->route('feedback.list', ['municipality' => app('current_municipality')->slug])
-            ->with('success', 'Thank you for your feedback!');
+        return back()->with('success', 'Thank you for your feedback!');
     }
 }

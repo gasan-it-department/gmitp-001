@@ -1,20 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import feedback from '@/routes/feedback';
-import login from '@/routes/login';
-import { SharedData } from '@/types';
-import { Link, router, usePage } from '@inertiajs/react';
-import { ArrowRight, MessageSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Link } from '@inertiajs/react';
+import { ArrowRight, MessageSquare, Star } from 'lucide-react';
+import { useState } from 'react';
 import { FeedbackFormDialog } from './FeedbackFormDialog';
 
 export default function FeedbackUi() {
     const { currentMunicipality } = useMunicipality();
-    const { auth } = usePage<SharedData>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: '',
@@ -25,15 +20,7 @@ export default function FeedbackUi() {
         action: '',
     });
 
-    useEffect(() => {
-        if (auth.user !== null) {
-            setLogInSignUpDialogVisible(false);
-        }
-    }, [auth.user]);
-
-    const feedbackPage = () => {
-        feedback.create.url(currentMunicipality.slug);
-    };
+    const ratingsUrl = `/${currentMunicipality.slug}/feedback/client/department-ratings`;
 
     return (
         <Card className="group flex h-full flex-col rounded-xl border border-primary/20 bg-white p-6 shadow-sm shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-primary/10 sm:p-7">
@@ -51,16 +38,17 @@ export default function FeedbackUi() {
                     </div>
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+                    <Link
+                        href={ratingsUrl}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+                    >
+                        <Star size={16} />
+                        Tingnan ang Ratings
+                    </Link>
                     <Link
                         href={feedback.create.url(currentMunicipality.slug)}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
-                        onClick={(e) => {
-                            if (auth.user === null) {
-                                e.preventDefault();
-                                router.visit(login.page.url({ municipality: currentMunicipality.slug }));
-                            }
-                        }}
                     >
                         Magpadala ng Feedback
                         <ArrowRight size={16} />
@@ -117,8 +105,6 @@ export default function FeedbackUi() {
                         }));
                     }}
                 />
-
-                <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)} />
             </CardContent>
         </Card>
     );

@@ -8,7 +8,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import communityReport from '@/routes/api/communityReport';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Circle, Clock, EyeOff, MapPin, PlayCircle, ShieldCheck, User as UserIcon, XCircle } from 'lucide-react';
+import { Archive, ArrowLeft, CheckCircle2, Circle, Clock, EyeOff, MapPin, PlayCircle, ShieldCheck, User as UserIcon, XCircle } from 'lucide-react';
 import React, { useState } from 'react';
 
 type EnumOption = { value: string; label: string };
@@ -157,7 +157,7 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
 
-    const [activeModal, setActiveModal] = useState<'acknowledge' | 'start' | 'resolve' | 'reject' | null>(null);
+    const [activeModal, setActiveModal] = useState<'acknowledge' | 'start' | 'resolve' | 'reject' | 'archive' | null>(null);
 
     const hasCoordinates = report.latitude !== null && report.longitude !== null;
     const timeline = buildTimeline(report);
@@ -167,6 +167,7 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
     const canStart = report.status.value === 'pending' || report.status.value === 'acknowledged';
     const canResolve = report.status.value === 'in_progress';
     const canReject = !isTerminal;
+    const canArchive = isTerminal;
 
     // --- FORMS ---
 
@@ -185,6 +186,8 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
     const rejectForm = useForm({
         rejection_reason: '',
     });
+
+    const archiveForm = useForm({});
 
     const handleAcknowledge = (e: React.FormEvent) => {
         e.preventDefault();
@@ -234,6 +237,15 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
             onSuccess: () => {
                 setActiveModal(null);
                 rejectForm.reset();
+            },
+        });
+    };
+
+    const handleArchive = (e: React.FormEvent) => {
+        e.preventDefault();
+        archiveForm.delete(communityReport.archive.url(report.id), {
+            headers: {
+                'X-Municipality-Slug': currentMunicipality.slug,
             },
         });
     };
@@ -375,7 +387,7 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                     </div>
 
                     {/* RIGHT: ADMIN CONTROLS + TRACKING TRAIL */}
-                    <div className="space-y-6 lg:sticky lg:top-6 self-start">
+                    <div className="space-y-6 self-start lg:sticky lg:top-6">
                         {/* Admin Controls */}
                         <Card className="shadow-sm">
                             <CardHeader>
@@ -405,6 +417,12 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                                     <Button type="button" variant="destructive" className="justify-start" onClick={() => setActiveModal('reject')}>
                                         <XCircle className="mr-2 h-4 w-4" />
                                         Reject Report
+                                    </Button>
+                                )}
+                                {canArchive && (
+                                    <Button type="button" variant="outline" className="justify-start" onClick={() => setActiveModal('archive')}>
+                                        <Archive className="mr-2 h-4 w-4 text-slate-500" />
+                                        Archive Report
                                     </Button>
                                 )}
                                 {isTerminal && (
@@ -582,6 +600,32 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                             </Button>
                             <Button type="submit" variant="destructive" disabled={rejectForm.processing}>
                                 Reject Report
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Archive Dialog */}
+            <Dialog open={activeModal === 'archive'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Archive Report</DialogTitle>
+                        <DialogDescription>
+                            Archive this {report.status.label.toLowerCase()} report? It will be hidden from the active reports list and can be
+                            restored from archived reports.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleArchive} className="space-y-4 py-4">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                            Only resolved or rejected reports can be archived.
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="ghost" onClick={() => setActiveModal(null)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" variant="destructive" disabled={archiveForm.processing}>
+                                Archive Report
                             </Button>
                         </DialogFooter>
                     </form>

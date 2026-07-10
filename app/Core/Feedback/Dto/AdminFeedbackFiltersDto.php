@@ -1,25 +1,30 @@
 <?php
 
-namespace App\Core\CommunityReport\Dto;
+namespace App\Core\Feedback\Dto;
 
-use App\Core\CommunityReport\Enums\ReportCategory;
-use App\Core\CommunityReport\Enums\ReportStatus;
-
-readonly class AdminReportFiltersDto
+readonly class AdminFeedbackFiltersDto
 {
     public const VISIBILITY_ANONYMOUS = 'anonymous';
 
     public const VISIBILITY_IDENTIFIED = 'identified';
 
+    public const TARGET_EMPLOYEE = 'employee';
+
+    public const TARGET_DEPARTMENT = 'department';
+
+    public const TARGET_UNASSIGNED = 'unassigned';
+
+    public const HAS_ATTACHMENTS_YES = 'yes';
+
+    public const HAS_ATTACHMENTS_NO = 'no';
+
     public const SORT_NEWEST = 'newest';
 
     public const SORT_OLDEST = 'oldest';
 
-    public const ARCHIVE_ACTIVE = 'active';
+    public const SORT_RATING_HIGH = 'rating_high';
 
-    public const ARCHIVE_ARCHIVED = 'archived';
-
-    public const ARCHIVE_ALL = 'all';
+    public const SORT_RATING_LOW = 'rating_low';
 
     public const DEFAULT_PER_PAGE = 20;
 
@@ -27,13 +32,15 @@ readonly class AdminReportFiltersDto
 
     public function __construct(
         public ?string $search,
-        public ?ReportStatus $status,
-        public ?ReportCategory $category,
+        public ?string $departmentId,
+        public ?string $subject,
+        public ?int $rating,
         public ?string $visibility,
+        public ?string $target,
+        public ?string $hasAttachments,
         public ?string $dateFrom,
         public ?string $dateTo,
         public string $sort = self::SORT_NEWEST,
-        public string $archiveStatus = self::ARCHIVE_ACTIVE,
         public int $perPage = self::DEFAULT_PER_PAGE,
     ) {}
 
@@ -41,23 +48,30 @@ readonly class AdminReportFiltersDto
     {
         return new self(
             search: self::nullableString($filters['search'] ?? null),
-            status: self::enumFromValue(ReportStatus::class, $filters['status'] ?? null),
-            category: self::enumFromValue(ReportCategory::class, $filters['category'] ?? null),
+            departmentId: self::nullableString($filters['department_id'] ?? null),
+            subject: self::nullableString($filters['subject'] ?? null),
+            rating: self::nullableInteger($filters['rating'] ?? null),
             visibility: self::allowedString($filters['visibility'] ?? null, [
                 self::VISIBILITY_ANONYMOUS,
                 self::VISIBILITY_IDENTIFIED,
+            ]),
+            target: self::allowedString($filters['target'] ?? null, [
+                self::TARGET_EMPLOYEE,
+                self::TARGET_DEPARTMENT,
+                self::TARGET_UNASSIGNED,
+            ]),
+            hasAttachments: self::allowedString($filters['has_attachments'] ?? null, [
+                self::HAS_ATTACHMENTS_YES,
+                self::HAS_ATTACHMENTS_NO,
             ]),
             dateFrom: self::nullableString($filters['date_from'] ?? null),
             dateTo: self::nullableString($filters['date_to'] ?? null),
             sort: self::allowedString($filters['sort'] ?? null, [
                 self::SORT_NEWEST,
                 self::SORT_OLDEST,
+                self::SORT_RATING_HIGH,
+                self::SORT_RATING_LOW,
             ]) ?? self::SORT_NEWEST,
-            archiveStatus: self::allowedString($filters['archive_status'] ?? null, [
-                self::ARCHIVE_ACTIVE,
-                self::ARCHIVE_ARCHIVED,
-                self::ARCHIVE_ALL,
-            ]) ?? self::ARCHIVE_ACTIVE,
             perPage: self::allowedInteger($filters['per_page'] ?? null, self::PER_PAGE_OPTIONS) ?? self::DEFAULT_PER_PAGE,
         );
     }
@@ -66,30 +80,17 @@ readonly class AdminReportFiltersDto
     {
         return [
             'search' => $this->search,
-            'status' => $this->status?->value,
-            'category' => $this->category?->value,
+            'department_id' => $this->departmentId,
+            'subject' => $this->subject,
+            'rating' => $this->rating,
             'visibility' => $this->visibility,
+            'target' => $this->target,
+            'has_attachments' => $this->hasAttachments,
             'date_from' => $this->dateFrom,
             'date_to' => $this->dateTo,
             'sort' => $this->sort,
-            'archive_status' => $this->archiveStatus,
             'per_page' => $this->perPage,
         ];
-    }
-
-    /**
-     * @template TEnum of \BackedEnum
-     *
-     * @param  class-string<TEnum>  $enum
-     * @return TEnum|null
-     */
-    private static function enumFromValue(string $enum, mixed $value): ?\BackedEnum
-    {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        return $enum::tryFrom(trim($value));
     }
 
     private static function nullableString(mixed $value): ?string
@@ -101,6 +102,15 @@ readonly class AdminReportFiltersDto
         $value = trim((string) $value);
 
         return $value === '' ? null : $value;
+    }
+
+    private static function nullableInteger(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
     }
 
     private static function allowedString(mixed $value, array $allowed): ?string
