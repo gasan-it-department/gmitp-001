@@ -3,19 +3,24 @@
 namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class RejectBeneficiaryIntakeAction
 {
+    public function __construct(
+        private readonly BeneficiarySmsNotifier $smsNotifier,
+    ) {}
+
     public function execute(
         string $beneficiaryId,
         string $municipalId,
         string $actingAdminId,
         string $reason,
     ): Beneficiary {
-        return DB::transaction(function () use ($beneficiaryId, $municipalId, $actingAdminId, $reason) {
+        $beneficiary = DB::transaction(function () use ($beneficiaryId, $municipalId, $actingAdminId, $reason) {
             $beneficiary = Beneficiary::query()
                 ->with('household')
                 ->whereKey($beneficiaryId)
@@ -63,5 +68,9 @@ class RejectBeneficiaryIntakeAction
 
             return $beneficiary->fresh(['household', 'intakeRejector']);
         }, attempts: 3);
+
+        $this->smsNotifier->profileRejected($beneficiary);
+
+        return $beneficiary;
     }
 }

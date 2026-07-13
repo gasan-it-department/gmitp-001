@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\BeneficiaryFlag;
 use App\Core\ActionCenter\Models\Household;
+use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,7 @@ class CreateBeneficiaryProfileAction
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
         private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
+        private readonly BeneficiarySmsNotifier $smsNotifier,
     ) {
     }
 
@@ -157,6 +159,7 @@ class CreateBeneficiaryProfileAction
 
         if ($beneficiary->wasRecentlyCreated) {
             $this->storeIdentityDocuments($beneficiary, $dto);
+            $this->smsNotifier->profileReceived($beneficiary);
         }
 
         return $beneficiary->fresh(['media']);

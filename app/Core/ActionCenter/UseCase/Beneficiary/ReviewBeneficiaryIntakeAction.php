@@ -7,15 +7,20 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class ReviewBeneficiaryIntakeAction
 {
+    public function __construct(
+        private readonly BeneficiarySmsNotifier $smsNotifier,
+    ) {}
+
     public function execute(ReviewBeneficiaryIntakeDto $dto): Beneficiary
     {
-        return DB::transaction(function () use ($dto) {
+        $beneficiary = DB::transaction(function () use ($dto) {
             $beneficiary = Beneficiary::query()
                 ->with('household')
                 ->whereKey($dto->beneficiaryId)
@@ -172,6 +177,10 @@ class ReviewBeneficiaryIntakeAction
 
             return $beneficiary->fresh(['household', 'identityVerifier']);
         }, attempts: 3);
+
+        $this->smsNotifier->profileVerified($beneficiary);
+
+        return $beneficiary;
     }
 
     private function matchesBeneficiary(HouseholdMember $member, Beneficiary $beneficiary): bool
