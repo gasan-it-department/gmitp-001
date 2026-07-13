@@ -11,6 +11,7 @@ import {
 } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
+import actionCenter from '@/routes/actionCenter';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Info, UserCheck, Users } from 'lucide-react';
 import { FormEvent, useState } from 'react';
@@ -248,7 +249,8 @@ export default function ApplyAssistance({
             <div className="border-b border-slate-200 bg-white">
                 <div className="container mx-auto max-w-6xl px-4 py-4">
                     <Link
-                        href={props.ziggy?.url ? props.ziggy.url.replace(/\/apply\/.*$/, '/portal') : '#'}
+                        href={actionCenter.portal.url({ municipality: props.currentMunicipality.slug })}
+                        preserveScroll
                         className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-[#005088]"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" />
