@@ -47,6 +47,20 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'cooldown_months' => (int) $this->assistanceType->cooldown_months,
                 'cooldown_type' => $this->assistanceType->cooldown_type,
                 'cooldown_scope' => $this->assistanceType->cooldown_scope,
+                'documents' => $this->assistanceType->relationLoaded('documents')
+                    ? $this->assistanceType->documents
+                        ->sortBy(fn ($document) => $document->pivot->sort_order ?? 0)
+                        ->values()
+                        ->map(fn ($document) => [
+                            'id' => $document->id,
+                            'key' => $document->key,
+                            'name' => $document->label,
+                            'description' => $document->description,
+                            'examples' => $document->examples,
+                            'is_required' => (bool) $document->pivot->is_required,
+                        ])
+                        ->all()
+                    : [],
             ]),
 
             // ── Money — null until the approver fills it ─────────────────────

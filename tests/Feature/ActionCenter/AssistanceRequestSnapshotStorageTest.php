@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
+use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -319,15 +320,25 @@ it('stores snapshots and permits one newly declared pending member', function ()
         ->and(Schema::hasColumn('ac_assistance_requests', 'on_behalf_first_name'))->toBeFalse();
 });
 
-it('requires both recipient id sides for an adult portal on-behalf request', function () {
+it('allows an adult portal on-behalf request without recipient id uploads', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $action = new StoreAssistanceRequestAction(snapshotTestIdGenerator());
+    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator()))
+        ->execute(adultOnBehalfDto($context));
+    $details = (new ShowClientAssistanceRequestAction)->execute(
+        $context['submitter_user_id'],
+        $created->id,
+        $context['municipal_id'],
+    );
+    $payload = (new AssistanceRequestDetailsResource($details))->resolve();
 
-    expect(fn () => $action->execute(adultOnBehalfDto($context)))
-        ->toThrow(\DomainException::class, 'Upload both sides of the assisted adult');
-
-    expect(DB::table('ac_assistance_requests')->count())->toBe(0);
+    expect(DB::table('ac_assistance_requests')->count())->toBe(1)
+        ->and($created->status->value)->toBe('pending')
+        ->and($created->media)->toBeEmpty()
+        ->and($created->recipient_id_exception)->toBeNull()
+        ->and($payload['assistance_type']['documents'])->toHaveCount(4)
+        ->and(collect($payload['assistance_type']['documents'])->pluck('key')->all())
+        ->toContain('valid_id_front', 'recipient_valid_id_front');
 });
 
 it('stores a documented no-id exception for an adult assisted person', function () {

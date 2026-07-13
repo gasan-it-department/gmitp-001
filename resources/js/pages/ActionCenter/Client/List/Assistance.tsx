@@ -83,7 +83,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
         text: 'text-amber-700',
         border: 'border-amber-200',
         icon: Clock,
-        label: 'In Review'
+        label: 'Awaiting Documents'
     },
     default: {
         bg: 'bg-gray-100',

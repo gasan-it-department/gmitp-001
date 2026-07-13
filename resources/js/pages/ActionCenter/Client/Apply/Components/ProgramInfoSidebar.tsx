@@ -1,8 +1,10 @@
 import { AssistanceTypeDetails } from '@/Core/Types/ActionCenter/assistance';
-import { Banknote, CalendarClock, ShieldCheck } from 'lucide-react';
+import { Banknote, CalendarClock } from 'lucide-react';
+import { DocumentsToBringChecklist } from './DocumentsToBringChecklist';
 
 interface Props {
     assistanceType: AssistanceTypeDetails;
+    requireRecipientIdentity?: boolean;
 }
 
 /**
@@ -14,10 +16,10 @@ interface Props {
  *
  * Pure presentational component — no form state, no submission logic.
  */
-export function ProgramInfoSidebar({ assistanceType }: Props) {
+export function ProgramInfoSidebar({ assistanceType, requireRecipientIdentity = false }: Props) {
     const hasMaxAmount = assistanceType.max_amount !== null && Number(assistanceType.max_amount) > 0;
-    const isOneTime    = assistanceType.cooldown_type === 'one_time';
-    const hasCooldown  = isOneTime || assistanceType.cooldown_months > 0;
+    const isOneTime = assistanceType.cooldown_type === 'one_time';
+    const hasCooldown = isOneTime || assistanceType.cooldown_months > 0;
 
     return (
         <div className="space-y-6">
@@ -34,9 +36,7 @@ export function ProgramInfoSidebar({ assistanceType }: Props) {
                             <div>
                                 <p className="text-[10px] font-bold tracking-widest text-blue-200 uppercase">Allocated Cap</p>
                                 <p className="text-lg font-bold">₱{Number(assistanceType.max_amount).toLocaleString()}</p>
-                                <p className="mt-0.5 text-[10px] text-blue-100 opacity-75">
-                                    Final amount is decided by the approver.
-                                </p>
+                                <p className="mt-0.5 text-[10px] text-blue-100 opacity-75">Final amount is decided by the approver.</p>
                             </div>
                         </div>
                     )}
@@ -59,26 +59,7 @@ export function ProgramInfoSidebar({ assistanceType }: Props) {
                 </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-4 flex items-center gap-2 text-sm font-bold tracking-widest text-slate-800 uppercase">
-                    <ShieldCheck className="h-4 w-4 text-[#005088]" /> Document Checklist
-                </h3>
-                {assistanceType.documents.length === 0 ? (
-                    <p className="text-sm text-slate-500">No documents required for this program.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {assistanceType.documents.map((doc) => (
-                            <div key={doc.id} className="flex items-center gap-3 text-sm text-slate-600">
-                                <div className={`h-2 w-2 rounded-full ${doc.is_required ? 'bg-orange-500' : 'bg-slate-300'}`} />
-                                <span className="flex-1">{doc.name ?? doc.key}</span>
-                                <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                                    {doc.is_required ? 'Required' : 'Optional'}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <DocumentsToBringChecklist documents={assistanceType.documents} requireRecipientIdentity={requireRecipientIdentity} compact />
         </div>
     );
 }

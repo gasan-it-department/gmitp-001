@@ -1,5 +1,7 @@
 import { Head } from '@inertiajs/react';
+import { AssistanceDocumentRequirement } from '@/Core/Types/ActionCenter/assistance';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import { DocumentsToBringChecklist } from '../Apply/Components/DocumentsToBringChecklist';
 import { 
     Calendar, 
     CheckCircle2, 
@@ -13,8 +15,6 @@ import {
     XCircle,
     Info,
     History,
-    Download,
-    Eye,
     GraduationCap,
     Heart,
     Baby
@@ -32,10 +32,12 @@ interface AssistanceRequestDetails {
         name: string;
         slug: string;
         description: string;
+        documents: AssistanceDocumentRequirement[];
     } | null;
     amount_approved: number | null;
     description: string;
     remarks: string | null;
+    privacy_consented_at: string | null;
     submitted_at: string;
     approved_at: string | null;
     released_at: string | null;
@@ -47,6 +49,7 @@ interface AssistanceRequestDetails {
     on_behalf: {
         full_name: string;
         date_of_death: string | null;
+        recipient_id_exception: string | null;
     } | null;
     identity_snapshot: {
         full_name: string;
@@ -69,6 +72,9 @@ interface AssistanceRequestDetails {
         mime_type: string;
         size: number;
         uploaded_at: string;
+        custom_properties: {
+            document_key?: string;
+        };
     }>;
 }
 
@@ -111,7 +117,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
         text: 'text-amber-700',
         border: 'border-amber-200',
         icon: Clock,
-        label: 'Pending',
+        label: 'Awaiting Documents',
         accent: 'bg-amber-500'
     },
     under_review: {
@@ -144,6 +150,13 @@ export default function AssistanceDetails({ request }: Props) {
     const data = request.data;
     const style = STATUS_STYLES[data.status?.toLowerCase()] || STATUS_STYLES.default;
     const StatusIcon = style.icon;
+    const recordedDocumentKeys = data.documents
+        .map((document) => document.custom_properties?.document_key)
+        .filter((key): key is string => Boolean(key));
+    const requireRecipientIdentity =
+        data.on_behalf !== null &&
+        data.assistance_type?.slug !== 'burial' &&
+        !data.on_behalf.recipient_id_exception;
 
     // --- Formatters ---
     const formatDate = (dateString: string | null) => {
@@ -319,12 +332,20 @@ export default function AssistanceDetails({ request }: Props) {
                                 </div>
                             </div>
 
+                            <DocumentsToBringChecklist
+                                documents={data.assistance_type?.documents ?? []}
+                                requireRecipientIdentity={requireRecipientIdentity}
+                                recordedDocumentKeys={recordedDocumentKeys}
+                                showRecordingStatus
+                            />
+
                             {/* 3. ATTACHMENTS SECTION */}
+                            {data.documents.length > 0 && (
                             <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                                 <div className="bg-muted/30 px-6 py-4 border-b border-border flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <FileText className="h-5 w-5 text-primary" />
-                                        <span className="font-black uppercase tracking-wider text-sm">Supporting Documents</span>
+                                        <span className="font-black uppercase tracking-wider text-sm">Documents recorded by MSWD</span>
                                     </div>
                                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black text-primary border border-primary/20">
                                         {data.documents.length} Files
@@ -348,15 +369,6 @@ export default function AssistanceDetails({ request }: Props) {
                                                         </div>
                                                     </div>
                                                     
-                                                    {/* IN A REAL APP, THESE WOULD BE FUNCTIONAL LINKS */}
-                                                    <div className="flex items-center gap-2">
-                                                        <button className="h-8 w-8 flex items-center justify-center rounded-lg border border-border bg-background hover:text-primary transition-all shadow-sm">
-                                                            <Eye className="h-4 w-4" />
-                                                        </button>
-                                                        <button className="h-8 w-8 flex items-center justify-center rounded-lg border border-border bg-background hover:text-primary transition-all shadow-sm">
-                                                            <Download className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -368,6 +380,7 @@ export default function AssistanceDetails({ request }: Props) {
                                     )}
                                 </div>
                             </div>
+                            )}
 
                         </div>
 

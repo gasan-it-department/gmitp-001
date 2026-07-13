@@ -26,7 +26,8 @@ class AssistanceTypeDetailsResource extends JsonResource
             'cooldown_type' => $this->cooldown_type,
             'cooldown_scope' => $this->cooldown_scope,
 
-            // Required + optional documents for the upload form.
+            // Required + optional documents for the public checklist and the
+            // admin-controlled document intake flow.
             // Eager-load `documents` in the action to avoid N+1.
             'documents' => $this->whenLoaded('documents', function () {
                 return $this->documents
@@ -34,7 +35,7 @@ class AssistanceTypeDetailsResource extends JsonResource
                     ->values()
                     ->map(fn($doc) => [
                         'id' => $doc->id,
-                        'key' => $doc->key,                       // used as the form input name + storage collection
+                        'key' => $doc->key,
                         'name' => $doc->label,
                         'description' => $doc->description,
                         'examples' => $doc->examples,

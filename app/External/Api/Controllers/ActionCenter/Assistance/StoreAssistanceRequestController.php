@@ -78,6 +78,9 @@ class StoreAssistanceRequestController extends Controller
 
         return redirect()
             ->route('actionCenter.portal', ['municipality' => $municipality])
-            ->with('success', "Your request {$created->transaction_number} has been received. A social worker will contact you within 3 to 5 working days.");
+            ->with(
+                'success',
+                "Your request {$created->transaction_number} has been recorded. Prepare the listed documents, bring the physical originals to MSWD, and present this transaction number when you arrive.",
+            );
     }
 }

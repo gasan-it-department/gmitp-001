@@ -1,7 +1,10 @@
 import { Pagination } from '@/components/Shared/Pagination';
+import { Button } from '@/components/ui/button';
 import { User } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
-import { Head } from '@inertiajs/react';
+import superAdmin from '@/routes/superAdmin';
+import { Head, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { UserListHeader } from './Components/UserListHeader';
 import { UsersTable } from './Components/UsersTable';
 
@@ -39,8 +42,17 @@ export default function UserManagement({ users, filters }: Props) {
                         <p className="text-sm text-muted-foreground">Manage administrators and users across municipalities.</p>
                     </div>
 
-                    <UserListHeader filters={filters.filter} className="flex justify-end" />
+                    <div className="flex items-center gap-4">
+                        <div className="hidden text-right text-sm text-muted-foreground sm:block">
+                            <span>{users.meta.total ?? 0} records</span>
+                        </div>
+                        <Button onClick={() => router.visit(superAdmin.registry.page.url())}>
+                            <Plus className="mr-2 h-4 w-4" /> Add New
+                        </Button>
+                    </div>
                 </div>
+
+                <UserListHeader filters={filters.filter} />
 
                 <div className="rounded-lg border bg-white">
                     <UsersTable users={users.data} />

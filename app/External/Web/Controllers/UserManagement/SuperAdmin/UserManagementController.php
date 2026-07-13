@@ -4,33 +4,12 @@ namespace App\External\Web\Controllers\UserManagement\SuperAdmin;
 
 use App\Core\Users\UseCases\GetUserByIdUseCase;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
-use App\Core\Users\Dto\UserQueryDto;
-use App\Core\Users\UseCases\GetAllUsersUseCase;
 use App\External\Api\Resources\User\UserResource;
 use App\Core\Users\Services\PermissionOptionService;
 use App\Core\Municipality\Services\GetActiveMunicipality;
 
 class UserManagementController
 {
-
-    public function index(Request $request, GetAllUsersUseCase $getAllUsersUseCase)
-    {
-
-        $dto = UserQueryDto::fromRequest($request);
-
-        $users = $getAllUsersUseCase->execute($dto);
-
-        $users->load(['roles', 'permissions']);
-
-        return Inertia::render('UserManagement/SuperAdmin/List/UserManagement', [
-
-            'users' => UserResource::collection($users),
-
-            'filters' => $request->only(['filter']),
-        ]);
-
-    }
 
     public function show($id, GetUserByIdUseCase $getUser)
     {

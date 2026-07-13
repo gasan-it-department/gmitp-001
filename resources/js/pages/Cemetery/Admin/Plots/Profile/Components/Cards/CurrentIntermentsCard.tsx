@@ -89,14 +89,14 @@ export function CurrentIntermentsCard({ plot, municipality }: { plot: PlotProfil
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onSelect={() => setActiveDialog({ type: 'close', interment })}
+                                                    onSelect={() => setTimeout(() => setActiveDialog({ type: 'close', interment }), 10)}
                                                     className="cursor-pointer text-amber-700 focus:bg-amber-50 focus:text-amber-800"
                                                 >
                                                     <ArrowRightLeft size={14} className="mr-2" />
                                                     Exhume / Transfer
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onSelect={() => setActiveDialog({ type: 'void', interment })}
+                                                    onSelect={() => setTimeout(() => setActiveDialog({ type: 'void', interment }), 10)}
                                                     className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700"
                                                 >
                                                     <Users size={14} className="mr-2" />
@@ -104,7 +104,7 @@ export function CurrentIntermentsCard({ plot, municipality }: { plot: PlotProfil
                                                 </DropdownMenuItem>
                                                 {interment.can_reverse_move && (
                                                     <DropdownMenuItem
-                                                        onSelect={() => setActiveDialog({ type: 'reverse', interment })}
+                                                        onSelect={() => setTimeout(() => setActiveDialog({ type: 'reverse', interment }), 10)}
                                                         className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700"
                                                     >
                                                         <ArrowRightLeft size={14} className="mr-2" />

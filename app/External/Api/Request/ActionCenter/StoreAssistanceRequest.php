@@ -2,9 +2,7 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
-use App\Core\ActionCenter\Models\AssistanceType;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Validates the citizen's submission on POST /apply/{assistanceType:slug}.
@@ -29,11 +27,9 @@ class StoreAssistanceRequest extends FormRequest
         $rules = [
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'privacy_consent' => ['required', 'accepted'],
-            // The frontend sends `documents` as a flat dictionary keyed by
-            // ac_document_types.key — `documents[cert_of_indigency] = <File>`.
-            // Per-key rules are appended dynamically below based on the
-            // selected assistance type's required documents.
-            'documents' => ['required', 'array', 'min:1'],
+            // Supporting evidence is accepted only through the admin workflow
+            // after MSWD inspects the physical documents.
+            'documents' => ['prohibited'],
 
             // ── Representative ("on behalf of") fields ───────────────────────
             // All optional at the validator level. The action layer is responsible
@@ -57,29 +53,6 @@ class StoreAssistanceRequest extends FormRequest
             ],
         ];
 
-        // Dynamic document rules — one entry per ac_assistance_type_documents
-        // row for the resolved assistance type. Keys must match document_types.key.
-        $assistanceType = $this->route('assistanceType');
-
-        if ($assistanceType instanceof AssistanceType) {
-            $requirements = DB::table('ac_assistance_type_documents as atd')
-                ->join('ac_document_types as dt', 'dt.id', '=', 'atd.document_type_id')
-                ->where('atd.assistance_type_id', $assistanceType->id)
-                ->orderBy('atd.sort_order')
-                ->get(['dt.key', 'atd.is_required']);
-
-            foreach ($requirements as $req) {
-                $enforcement = $req->is_required ? 'required' : 'nullable';
-
-                $rules["documents.{$req->key}"] = [
-                    $enforcement,
-                    'file',
-                    'mimes:jpg,jpeg,png,pdf',
-                    'max:5120', // 5 MB
-                ];
-            }
-        }
-
         return $rules;
     }
 
@@ -89,9 +62,7 @@ class StoreAssistanceRequest extends FormRequest
             'description.required' => 'Please briefly explain why you are requesting assistance.',
             'description.min' => 'Please give at least a few words about your situation.',
             'privacy_consent.accepted' => 'You must agree to the Data Privacy notice to submit.',
-            'documents.*.required' => 'This document is required for the selected assistance type.',
-            'documents.*.mimes' => 'Allowed file types: JPG, PNG, PDF.',
-            'documents.*.max' => 'Each file must be 5 MB or smaller.',
+            'documents.prohibited' => 'Supporting documents are recorded by MSWD after the physical originals are inspected.',
             'recipient_id_unavailable_reason.required_if' => 'Explain why the assisted adult cannot provide a government ID.',
             'recipient_id_unavailable_reason.min' => 'Please provide a little more detail about why the assisted adult has no government ID.',
         ];

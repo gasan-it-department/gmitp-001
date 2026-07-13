@@ -197,8 +197,10 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                     <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm">
                         <div className="mb-6 flex items-start justify-between border-b border-gray-100 pb-4">
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-800">Required Documents</h2>
-                                <p className="text-sm text-gray-500">Attach the documents a citizen must submit.</p>
+                                <h2 className="text-lg font-semibold text-gray-800">Document Requirements</h2>
+                                <p className="text-sm text-gray-500">
+                                    Citizens see this checklist; MSWD uploads the official copies before approval.
+                                </p>
                             </div>
                             <ShieldAlert className="h-6 w-6 text-orange-400" />
                         </div>
@@ -248,7 +250,7 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                                     className="data-[state=checked]:bg-red-500"
                                                 />
                                                 <span className={`text-sm font-medium ${doc.is_required ? 'text-red-600' : 'text-gray-500'}`}>
-                                                    {doc.is_required ? 'Mandatory Requirement' : 'Optional (Supporting Only)'}
+                                                    {doc.is_required ? 'Required Before Approval' : 'If Applicable'}
                                                 </span>
                                             </div>
                                         </div>

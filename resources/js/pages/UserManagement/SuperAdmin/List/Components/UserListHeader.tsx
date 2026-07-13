@@ -1,12 +1,15 @@
 import { MunicipalityDropdown } from '@/components/Shared/MunicipalityDropdown';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import SearchBar from '@/pages/Utility/SearchBar';
 import superAdmin from '@/routes/superAdmin';
 import { router } from '@inertiajs/react';
-import { Filter, PlusIcon } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+
+// Radix Select rejects empty-string item values — use a sentinel for "Any".
+const ANY = '__any__';
 
 interface Props {
     className?: string;
@@ -20,62 +23,76 @@ interface Props {
 }
 
 export const UserListHeader = ({ className, filters = {}, municipalities = [] }: Props) => {
-    // 1. Initialize state (Visual only for now)
+    const [search, setSearch] = useState<string>(filters.search ?? '');
     const [role, setRole] = useState(filters.role || 'all');
     const [municipality, setMunicipality] = useState(filters.municipality || 'all');
-    const [search, setSearch] = useState();
+    
     const isMounted = useRef(false);
-    const handleAddAdmin = () => {
-        router.visit(superAdmin.registry.page.url());
-    };
+    
+    const hasCriteria = Boolean(search.trim() || (role && role !== 'all') || (municipality && municipality !== 'all'));
+
     useEffect(() => {
         if (!isMounted.current) {
             isMounted.current = true;
             return;
         }
 
-        const query = {
-            filter: {
-                search: search || undefined,
-                role: role === 'all' ? undefined : role,
-                municipality: municipality === 'all' ? undefined : municipality,
-            },
-            page: 1,
-        };
+        const timeout = setTimeout(() => {
+            const query = {
+                filter: {
+                    search: search.trim() || undefined,
+                    role: role === 'all' ? undefined : role,
+                    municipality: municipality === 'all' ? undefined : municipality,
+                },
+                page: 1,
+            };
 
-        router.get(superAdmin.users.page.url(), query, {
-            preserveState: true, // Don't refresh the whole page
-            preserveScroll: true, // Don't jump to top
-            replace: true, // Clean history
-            only: ['users'], // Only reload the table data
-        });
+            router.get(superAdmin.users.page.url(), query, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                only: ['users', 'filters'],
+            });
+        }, 350);
+        
+        return () => clearTimeout(timeout);
     }, [search, role, municipality]);
 
+    const clearFilters = () => {
+        setSearch('');
+        setRole('all');
+        setMunicipality('all');
+        router.get(superAdmin.users.page.url(), {}, { preserveState: false, replace: true });
+    };
+
     return (
-        <div className={cn('flex flex-wrap items-center gap-2', className)}>
-            {/* SEARCH BAR */}
-            <div className="min-w-[200px] flex-1">
-                <SearchBar
-                    onSearch={(keyword) => {
-                        /* Logic to be added later */
-                    }}
-                    searchBarHint={'Search name, email...'}
-                />
+        <div className={cn("flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-4", className)}>
+            {/* Search */}
+            <div className="min-w-[240px] flex-1">
+                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Search</label>
+                <div className="relative">
+                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search name, email..."
+                        className="h-10 pl-9 bg-white"
+                    />
+                </div>
             </div>
 
-            {/* MUNICIPALITY FILTER (New) */}
-            <div className="w-[180px]">
+            {/* Municipality */}
+            <div className="min-w-[200px]">
+                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Municipality</label>
                 <MunicipalityDropdown value={municipality} onValueChange={setMunicipality} />
             </div>
 
-            {/* ROLE FILTER */}
-            <div className="w-[160px]">
-                <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger className="h-10 border-gray-300 bg-white shadow-sm">
-                        <div className="flex items-center gap-2 text-gray-700">
-                            <Filter className="h-4 w-4 text-blue-500" />
-                            <SelectValue placeholder="All Roles" />
-                        </div>
+            {/* Role */}
+            <div className="min-w-[160px]">
+                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Role</label>
+                <Select value={role || ANY} onValueChange={(v) => setRole(v === ANY ? 'all' : v)}>
+                    <SelectTrigger className="h-10 bg-white">
+                        <SelectValue placeholder="All Roles" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Roles</SelectItem>
@@ -86,17 +103,12 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
                 </Select>
             </div>
 
-            <div className="mx-1 hidden h-6 w-px bg-gray-300 sm:block" />
-
-            {/* ACTION BUTTONS */}
-            {/* <Button variant="outline" className="flex items-center gap-2 rounded-lg border-gray-300 text-gray-700 shadow-sm hover:bg-gray-100">
-                <UploadIcon className="h-4 w-4" />
-                Export
-            </Button> */}
-
-            <Button onClick={handleAddAdmin}>
-                <PlusIcon className="mr-2 h-4 w-4" /> Add New
-            </Button>
+            {/* Clear */}
+            {hasCriteria && (
+                <Button type="button" variant="ghost" className="h-10 text-xs text-gray-600 hover:text-gray-900" onClick={clearFilters}>
+                    <X className="mr-1 h-4 w-4" /> Clear
+                </Button>
+            )}
         </div>
     );
 };

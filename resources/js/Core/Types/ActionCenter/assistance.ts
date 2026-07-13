@@ -107,7 +107,6 @@ export interface HouseholdMemberOption {
 export interface ApplyAssistanceFormData {
     description: string;
     privacy_consent: boolean;
-    documents: Record<string, File | null>;
     [key: string]: unknown;
 }
 

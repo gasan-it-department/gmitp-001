@@ -21,6 +21,7 @@ use App\External\Web\Controllers\Auth\ShowSignupController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use App\External\Web\Controllers\UserManagement\Public\ShowUserProfileController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\EditAdminController;
+use App\External\Web\Controllers\UserManagement\SuperAdmin\ListUserManagementController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -102,7 +103,7 @@ Route::middleware('superAdmin')
         Route::get('/dashboard', [SuperAdminController::class, 'showDashboard'])
             ->name('dashboard');
 
-        Route::get('/user-management', [UserManagementController::class, 'index'])
+        Route::get('/user-management', ListUserManagementController::class)
             ->name('users.page');
 
         Route::get('/user-registry', [UserManagementController::class, 'register'])->name('registry.page');

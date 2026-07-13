@@ -45,7 +45,7 @@ const DialogStatusBadge = ({ status }: { status: string }) => {
         approved: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200', icon: CheckCircle2, label: 'Approved' },
         released: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', icon: HelpingHand, label: 'Released' },
         rejected: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', icon: XCircle, label: 'Rejected' },
-        pending:  { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', icon: Clock, label: 'In Review' },
+        pending:  { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', icon: Clock, label: 'Awaiting Documents' },
         default:  { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border', icon: AlertCircle, label: status },
     };
 

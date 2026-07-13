@@ -12,12 +12,12 @@ interface Props {
 
 const NEXT_STEPS = [
     {
-        label: 'Document Review',
-        detail: 'MSWD staff will verify your uploaded documents and assess your situation.',
+        label: 'Prepare your documents',
+        detail: 'Gather the documents listed for this program and bring the physical originals to MSWD.',
     },
     {
-        label: 'Interview (if needed)',
-        detail: 'You may be contacted for a brief interview or asked for additional supporting documents.',
+        label: 'Visit the MSWD office',
+        detail: 'Present your transaction number. MSWD will inspect the originals, record the official copies, and interview you.',
     },
     {
         label: 'LCE Approval',
@@ -55,8 +55,8 @@ export function SuccessCard({ transactionNumber, programName, portalUrl, request
                 <div className="mb-8 text-center">
                     <h2 className="text-2xl font-bold text-slate-900">Request Submitted!</h2>
                     <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                        Your <strong className="text-slate-700">{programName}</strong> request has been received
-                        and is now pending review by the MSWD office.
+                        Your <strong className="text-slate-700">{programName}</strong> request has been recorded.
+                        It is awaiting your documents and MSWD office visit.
                     </p>
                 </div>
 

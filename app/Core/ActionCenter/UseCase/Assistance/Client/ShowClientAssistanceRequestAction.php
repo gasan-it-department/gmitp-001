@@ -39,7 +39,8 @@ class ShowClientAssistanceRequestAction
         // 3. Eager load relations for the detail view
         return $request->load([
             'snapshot',
-            'assistanceType',
+            'assistanceType.documents' => fn ($query) => $query
+                ->orderBy('ac_assistance_type_documents.sort_order'),
             'encodedBy',
             'reviewedBy',
             'approvedBy',

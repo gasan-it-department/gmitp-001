@@ -90,20 +90,6 @@ readonly class StoreAssistanceRequestDto
         AssistanceType $assistanceType,
         Beneficiary $beneficiary,
     ): self {
-        // The frontend posts `documents` as a flat dictionary
-        //   documents[<document_key>] = <UploadedFile>
-        // where <document_key> is the ac_document_types.key slug. We forward
-        // exactly that shape to the action; Spatie's addMedia() needs the
-        // UploadedFile, and the key is preserved as a custom property so the
-        // admin UI can group uploads by required-document slot.
-        $documents = [];
-
-        foreach ((array) $request->file('documents', []) as $documentKey => $file) {
-            if ($file instanceof UploadedFile) {
-                $documents[$documentKey] = $file;
-            }
-        }
-
         $household = $beneficiary->household;
 
         // Resolve religion name (snapshot the human-readable label, not the FK ULID)
@@ -120,7 +106,7 @@ readonly class StoreAssistanceRequestDto
             encodedByUserId: null, // online self-filed; admin walk-ins set this elsewhere
             description: $request->validated('description'),
             verificationOverrideReason: null,
-            documents: $documents,
+            documents: [],
 
             // Consent is server-stamped. The FormRequest enforced `accepted`;
             // arriving here means the citizen ticked the box.

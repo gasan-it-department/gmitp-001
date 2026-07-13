@@ -13,14 +13,13 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Orchestrator for citizen assistance requests.
+ * Orchestrator shared by citizen preregistration and admin-encoded requests.
  *
  *  1. Generate ULID + transaction number.
  *  2. Persist the request row (status = pending, amount_approved = NULL).
- *  3. Attach each uploaded document to the request's Spatie media
- *     "documents" collection on the private local disk. Each media row is
- *     tagged with the document_key custom property so the admin UI can
- *     present uploads grouped by their required-document slot.
+ *  3. Attach any admin-supplied documents to the request's Spatie media
+ *     "documents" collection. Citizen preregistration always supplies an
+ *     empty document set; MSWD completes evidence through the admin flow.
  *  4. All inside a single DB transaction.
  *
  * Eligibility checks (cooldowns, blacklist flags) belong in a dedicated
@@ -72,16 +71,10 @@ class StoreAssistanceRequestAction
 
         $this->ensureVerificationGate($beneficiary, $dto);
 
-        // Resolve once so the document gate and frozen request metadata use
-        // the same trusted household-member row.
+        // Resolve once so the frozen request metadata uses the trusted
+        // household-member row.
         $member = $this->resolveOnBehalfMember($dto, $beneficiary);
         $recipientIdException = $this->recipientIdException($dto, $assistanceType, $member);
-        $this->ensureRecipientIdentityDocuments(
-            $dto,
-            $assistanceType,
-            $member,
-            $recipientIdException,
-        );
 
         // ── Compute derived economic snapshot BEFORE opening the transaction.
         //    These are read-only SELECTs that do not need to be inside the
@@ -294,41 +287,6 @@ class StoreAssistanceRequestAction
         }
 
         return null;
-    }
-
-    private function ensureRecipientIdentityDocuments(
-        StoreAssistanceRequestDto $dto,
-        AssistanceType $assistanceType,
-        ?HouseholdMember $member,
-        ?string $recipientIdException,
-    ): void {
-        $isOnBehalf = $member !== null || filled($dto->onBehalfFirstName);
-
-        if (! $isOnBehalf || $recipientIdException !== null) {
-            return;
-        }
-
-        $requiresFilerId = $assistanceType->documents->contains(
-            fn ($document) => in_array($document->key, ['valid_id_front', 'valid_id_back'], true)
-                && (bool) $document->pivot->is_required,
-        );
-
-        // Admins may encode first and attach scans through the existing edit
-        // flow. Approval remains blocked until the applicable evidence exists.
-        if (! $requiresFilerId || $dto->encodedByUserId !== null) {
-            return;
-        }
-
-        $missing = collect([
-            'recipient_valid_id_front',
-            'recipient_valid_id_back',
-        ])->reject(fn (string $key) => isset($dto->documents[$key]));
-
-        if ($missing->isNotEmpty()) {
-            throw new \DomainException(
-                'Upload both sides of the assisted adult\'s government ID, or explain why no ID is available.',
-            );
-        }
     }
 
     /**
