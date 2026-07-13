@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
@@ -263,7 +264,7 @@ it('stores snapshots and permits one newly declared pending member', function ()
         }
     };
 
-    $created = (new StoreAssistanceRequestAction($idGenerator))->execute(
+    $created = (new StoreAssistanceRequestAction($idGenerator, snapshotTestSmsNotifier()))->execute(
         new StoreAssistanceRequestDto(
             municipalId: $municipalId,
             beneficiaryId: $beneficiaryId,
@@ -323,7 +324,7 @@ it('stores snapshots and permits one newly declared pending member', function ()
 it('allows an adult portal on-behalf request without recipient id uploads', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator()))
+    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator(), snapshotTestSmsNotifier()))
         ->execute(adultOnBehalfDto($context));
     $details = (new ShowClientAssistanceRequestAction)->execute(
         $context['submitter_user_id'],
@@ -344,7 +345,7 @@ it('allows an adult portal on-behalf request without recipient id uploads', func
 it('stores a documented no-id exception for an adult assisted person', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator()))->execute(
+    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator(), snapshotTestSmsNotifier()))->execute(
         adultOnBehalfDto(
             $context,
             recipientIdUnavailable: true,
@@ -362,7 +363,7 @@ it('stores a documented no-id exception for an adult assisted person', function 
 it('allows an admin to file for a pending household member with an override and trusts the roster relationship', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator()))->execute(
+    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator(), snapshotTestSmsNotifier()))->execute(
         adultOnBehalfDto(
             $context,
             encodedByUserId: $context['submitter_user_id'],
@@ -535,4 +536,12 @@ function snapshotTestIdGenerator(): IdGeneratorInterface
             return (string) Str::ulid();
         }
     };
+}
+
+function snapshotTestSmsNotifier(): AssistanceRequestSmsNotifier
+{
+    $notifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $notifier->shouldReceive('requestReceived')->once();
+
+    return $notifier;
 }

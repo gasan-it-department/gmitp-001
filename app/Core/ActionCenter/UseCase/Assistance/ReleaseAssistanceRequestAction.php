@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -47,9 +48,13 @@ use Illuminate\Support\Facades\DB;
  */
 class ReleaseAssistanceRequestAction
 {
+    public function __construct(
+        private readonly AssistanceRequestSmsNotifier $smsNotifier,
+    ) {}
+
     public function execute(ReleaseAssistanceRequestDto $dto): AssistanceRequest
     {
-        return DB::transaction(function () use ($dto) {
+        $request = DB::transaction(function () use ($dto) {
             $request = AssistanceRequest::query()
                 ->whereKey($dto->assistanceRequestId)
                 ->lockForUpdate()
@@ -76,6 +81,10 @@ class ReleaseAssistanceRequestAction
 
             return $request->fresh();
         }, attempts: 3);
+
+        $this->smsNotifier->requestReleased($request);
+
+        return $request;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -93,14 +102,14 @@ class ReleaseAssistanceRequestAction
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
-        if (!$request->status->canTransitionTo(AssistanceStatus::Released)) {
+        if (! $request->status->canTransitionTo(AssistanceStatus::Released)) {
             throw new \DomainException(
                 match ($request->status) {
-                    AssistanceStatus::Pending     => 'This case has not been approved yet — it cannot be released.',
+                    AssistanceStatus::Pending => 'This case has not been approved yet — it cannot be released.',
                     AssistanceStatus::UnderReview => 'This case is still under review — it must be approved before release.',
-                    AssistanceStatus::Released    => 'This case has already been released.',
-                    AssistanceStatus::Rejected    => 'This case was rejected and cannot be released.',
-                    AssistanceStatus::Cancelled   => 'This case was cancelled and cannot be released.',
+                    AssistanceStatus::Released => 'This case has already been released.',
+                    AssistanceStatus::Rejected => 'This case was rejected and cannot be released.',
+                    AssistanceStatus::Cancelled => 'This case was cancelled and cannot be released.',
                     default => 'This case cannot be released from its current state.',
                 },
             );
@@ -168,10 +177,10 @@ class ReleaseAssistanceRequestAction
             $referenceNumber,
         );
 
-        $block = $notes !== null ? $stamp . "\n" . $notes : $stamp;
+        $block = $notes !== null ? $stamp."\n".$notes : $stamp;
 
         return $existing
-            ? rtrim($existing) . "\n\n" . $block
+            ? rtrim($existing)."\n\n".$block
             : $block;
     }
 }

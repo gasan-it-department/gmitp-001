@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -43,12 +44,13 @@ use Illuminate\Support\Facades\DB;
 class ApproveAssistanceRequestAction
 {
     public function __construct(
-        protected LockAssistanceRequestAction $lockRequest
+        protected LockAssistanceRequestAction $lockRequest,
+        private readonly AssistanceRequestSmsNotifier $smsNotifier,
     ) {}
 
     public function execute(ApproveAssistanceRequestDto $dto): AssistanceRequest
     {
-        return DB::transaction(function () use ($dto) {
+        $request = DB::transaction(function () use ($dto) {
             // Lock the target row AND eager-load every relation the gates
             // / fan-out need. Loading inside the lock window means we
             // operate on the most recent committed state — no stale-read
@@ -87,6 +89,10 @@ class ApproveAssistanceRequestAction
 
             return $request->fresh();
         }, attempts: 3);
+
+        $this->smsNotifier->requestApproved($request);
+
+        return $request;
     }
 
     // ─────────────────────────────────────────────────────────────────────

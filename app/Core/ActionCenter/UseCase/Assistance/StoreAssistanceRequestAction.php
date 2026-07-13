@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -29,6 +30,7 @@ class StoreAssistanceRequestAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
+        private AssistanceRequestSmsNotifier $smsNotifier,
     ) {}
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
@@ -190,7 +192,10 @@ class StoreAssistanceRequestAction
         // Reload with the freshly-attached media so the return value
         // reflects the post-upload state (callers / API resources can
         // serialize `documents_uploaded` correctly on the very first read).
-        return $request->fresh(['media', 'snapshot']);
+        $request = $request->fresh(['media', 'snapshot']);
+        $this->smsNotifier->requestReceived($request);
+
+        return $request;
     }
 
     /**
