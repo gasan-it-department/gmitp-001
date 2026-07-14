@@ -59,18 +59,22 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', LogoutController::class)->name('logout');
 
-    Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
-
-    Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
-
-    Route::get('otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
-
-    Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
-
     //Updating the password Via profile
     Route::put('/password/update', UpdatePasswordController::class)->name('password.change');
 
 });
+
+Route::prefix('{municipality}')
+    ->middleware(['auth', 'municipalityContext'])
+    ->group(function () {
+        Route::get('/otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
+
+        Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
+
+        Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
+
+        Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
+    });
 
 //CRITICAL: for forgot password routings (if any issue ask harvey)
 Route::middleware(['guest'])

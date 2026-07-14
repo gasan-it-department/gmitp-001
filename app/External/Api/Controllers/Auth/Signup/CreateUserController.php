@@ -38,7 +38,9 @@ class CreateUserController extends Controller
 
         $this->cookieSessionService->createAuthenticatedSession($user->id);
 
-        return redirect()->route('otp.verification.page');
+        return redirect()->route('otp.verification.page', [
+            'municipality' => $municipality->slug,
+        ]);
 
     }
 }

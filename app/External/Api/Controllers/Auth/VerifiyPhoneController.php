@@ -28,6 +28,7 @@ class VerifiyPhoneController extends Controller
             'otp' => 'required|string|size:6',
         ]);
 
+        $municipality = app('current_municipality');
         $currentUser = auth()->user();
 
         try {
@@ -40,7 +41,7 @@ class VerifiyPhoneController extends Controller
             $this->verifyUserUseCase->execute($dto);
 
             return redirect()->to(route('home', [
-                'municipality' => session('auth.municipality_slug'),
+                'municipality' => $municipality->slug,
             ]));
 
         } catch (InvalidOtpExceptions $e) {

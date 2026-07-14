@@ -1,5 +1,4 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import api from '@/lib/axios';
 import { social } from '@/routes/login';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -50,46 +49,33 @@ export default function SignupPage() {
         if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
-    const submit: FormEventHandler = async (e) => {
+    const submit: FormEventHandler = (e) => {
         e.preventDefault();
         setProcessing(true);
         setErrors({});
 
-        try {
-            const response = await api.post(
-                '/api/auth/store-account',
-                {
-                    first_name: data.first_name,
-                    middle_name: data.middle_name || null,
-                    last_name: data.last_name,
-                    phone: data.phone,
-                    email: data.email || null,
-                    password: data.password,
-                    password_confirmation: data.password_confirmation,
+        router.post(
+            '/api/auth/store-account',
+            {
+                ...data,
+                middle_name: data.middle_name || null,
+                email: data.email || null,
+            },
+            {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
                 },
-                {
-                    headers: {
-                        'X-Municipality-Slug': currentMunicipality.slug,
-                    },
+                onSuccess: () => toast.success('Account created! Please verify your phone number.'),
+                onError: (serverErrors) => {
+                    const mapped: FormErrors = {};
+                    Object.entries(serverErrors).forEach(([field, message]) => {
+                        mapped[field as keyof FormErrors] = String(message);
+                    });
+                    setErrors(mapped);
                 },
-            );
-
-            toast.success('Account created! Please verify your phone number.');
-            router.visit(response.data.redirect ?? '/');
-        } catch (error: any) {
-            // 422 field errors are handled by the axios interceptor toast,
-            // but we also surface them inline on the form fields.
-            const serverErrors = error.response?.data?.errors;
-            if (serverErrors) {
-                const mapped: FormErrors = {};
-                Object.keys(serverErrors).forEach((key) => {
-                    mapped[key as keyof FormErrors] = serverErrors[key][0];
-                });
-                setErrors(mapped);
-            }
-        } finally {
-            setProcessing(false);
-        }
+                onFinish: () => setProcessing(false),
+            },
+        );
     };
 
     /**
@@ -97,32 +83,25 @@ export default function SignupPage() {
      */
     const handleGoogleLogin = async (googleAccessToken: string) => {
         setIsSocialLoading(true);
-        try {
-            const response = await api.post(
-                social.url(),
-                {
-                    provider: 'google',
-                    access_token: googleAccessToken,
+        router.post(
+            social.url(),
+            {
+                provider: 'google',
+                access_token: googleAccessToken,
+            },
+            {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
                 },
-                {
-                    headers: {
-                        'X-Municipality-Slug': currentMunicipality.slug,
-                    },
+                onSuccess: () => toast.success('Successfully registered with Google!'),
+                onError: () => {
+                    toast.error('Social Signup Failed', {
+                        description: 'Could not authenticate with Google.',
+                    });
                 },
-            );
-
-            if (response.data.success) {
-                toast.success('Successfully registered with Google!');
-                router.visit(response.data.redirect ?? '/');
-            }
-        } catch (error: any) {
-            console.error('Google signup failed', error);
-            toast.error('Social Signup Failed', {
-                description: error.response?.data?.message || 'Could not authenticate with Google.',
-            });
-        } finally {
-            setIsSocialLoading(false);
-        }
+                onFinish: () => setIsSocialLoading(false),
+            },
+        );
     };
 
     const loginWithGoogle = useGoogleLogin({
