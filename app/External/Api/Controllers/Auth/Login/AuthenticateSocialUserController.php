@@ -47,10 +47,9 @@ class AuthenticateSocialUserController extends Controller
             $municipality->slug,
         );
 
-        return response()->json([
-            'success' => true,
-            'redirect' => $result->redirect,
-        ]);
+        session(['auth.municipality_slug' => $municipality->slug]);
+
+        return redirect()->to($result->redirect);
 
     }
 }

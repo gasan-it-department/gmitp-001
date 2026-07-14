@@ -38,11 +38,28 @@ it('sends the assistance request lifecycle messages', function (string $method, 
     (new AssistanceRequestSmsNotifier($provider))->{$method}(actionCenterSmsRequest());
 })->with([
     'received' => ['requestReceived', 'Natanggap ang request'],
-    'under review' => ['reviewStarted', 'Sinusuri na'],
+    'under review' => ['reviewStarted', 'para sa interview, verification'],
     'approved' => ['requestApproved', 'Naaprubahan'],
     'rejected' => ['requestRejected', 'Hindi naaprubahan'],
     'released' => ['requestReleased', 'Naitala nang released'],
 ]);
+
+it('does not invite an admin-encoded walk-in to return to the office', function () {
+    $request = actionCenterSmsRequest();
+    $request->encoded_by_user_id = '01J00000000000000000000003';
+
+    $provider = Mockery::mock(SmsProviderInterface::class);
+    $provider->shouldReceive('send')
+        ->once()
+        ->with(
+            '639171234567',
+            Mockery::on(fn (string $message): bool => str_contains($message, 'Sinusuri na')
+                && ! str_contains($message, 'Pumunta sa MSWD')),
+        )
+        ->andReturn(['message_id' => 1]);
+
+    (new AssistanceRequestSmsNotifier($provider))->reviewStarted($request);
+});
 
 it('does not call the SMS provider when the beneficiary has no contact phone', function () {
     $provider = Mockery::mock(SmsProviderInterface::class);

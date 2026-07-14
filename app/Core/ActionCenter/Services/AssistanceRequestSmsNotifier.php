@@ -30,11 +30,15 @@ class AssistanceRequestSmsNotifier
 
     public function reviewStarted(AssistanceRequest $request): void
     {
+        $message = $request->encoded_by_user_id === null
+            ? '%s: Sinusuri na ang request mo (%s). Pumunta sa MSWD para sa interview, verification, at further processing. Dalhin ang transaction number at required original documents.'
+            : '%s: Sinusuri na ang request mo (%s). Hintayin ang susunod na update.';
+
         $this->notify(
             $request,
             'review_started',
             fn (string $office, string $reference): string => sprintf(
-                '%s: Sinusuri na ang request mo (%s). Hintayin ang susunod na update.',
+                $message,
                 $office,
                 $reference,
             ),

@@ -39,7 +39,9 @@ class VerifiyPhoneController extends Controller
 
             $this->verifyUserUseCase->execute($dto);
 
-            return redirect()->intended(route('landing'));
+            return redirect()->to(route('home', [
+                'municipality' => session('auth.municipality_slug'),
+            ]));
 
         } catch (InvalidOtpExceptions $e) {
 

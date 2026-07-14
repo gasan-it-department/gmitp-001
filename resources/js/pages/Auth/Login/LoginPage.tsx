@@ -1,6 +1,5 @@
 import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import api from '@/lib/axios';
 import { cn } from '@/lib/utils';
 import { PasswordInput } from '@/pages/UserManagement/Profile/Components/PasswordInput';
 import ToastProvider from '@/pages/Utility/ToastShower';
@@ -19,7 +18,7 @@ export default function LoginPage() {
     // Shared by SetMunicipalityContext middleware on the /{municipality}/login route
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     // Inertia's built-in form helper
-    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
+    const { data, setData, post, processing, errors, clearErrors } = useForm({
         user_identifier: '', // Matches backend LoginRequest
         password: '',
         remember_me: false as boolean,
@@ -39,7 +38,7 @@ export default function LoginPage() {
             onSuccess: () => {
                 toast.success('Successfully logged in!');
             },
-            onError: (errors) => {
+            onError: () => {
                 toast.error('Login failed. Please check your credentials.');
             },
         });
@@ -50,32 +49,25 @@ export default function LoginPage() {
      */
     const handleGoogleLogin = async (googleAccessToken: string) => {
         setIsSocialLoading(true);
-        try {
-            const response = await api.post(
-                social.url(),
-                {
-                    provider: 'google',
-                    access_token: googleAccessToken,
+        router.post(
+            social.url(),
+            {
+                provider: 'google',
+                access_token: googleAccessToken,
+            },
+            {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
                 },
-                {
-                    headers: {
-                        'X-Municipality-Slug': currentMunicipality.slug,
-                    },
+                onSuccess: () => toast.success('Successfully logged in with Google!'),
+                onError: () => {
+                    toast.error('Social Login Failed', {
+                        description: 'Could not authenticate with Google.',
+                    });
                 },
-            );
-
-            if (response.data.success) {
-                toast.success('Successfully logged in with Google!');
-                router.visit(response.data.redirect ?? '/');
-            }
-        } catch (error: any) {
-            console.error('Google login failed', error);
-            toast.error('Social Login Failed', {
-                description: error.response?.data?.message || 'Could not authenticate with Google.',
-            });
-        } finally {
-            setIsSocialLoading(false);
-        }
+                onFinish: () => setIsSocialLoading(false),
+            },
+        );
     };
 
     const loginWithGoogle = useGoogleLogin({
