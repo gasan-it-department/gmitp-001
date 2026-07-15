@@ -13,7 +13,6 @@ interface Props {
 export default function VerifyResetPasswordOtp({ phone, initialSecondsRemaining }: Props) {
     // 1. Setup Form
 
-    console.log(initialSecondsRemaining);
     const { data, setData, post, processing, errors, reset } = useForm({
         phone: phone, // Pass phone back to the server for verification
         otp: '',
@@ -47,12 +46,10 @@ export default function VerifyResetPasswordOtp({ phone, initialSecondsRemaining 
     // 3. Handlers
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-
         // Route to: Route::post('/forgot-password/verify', ...)
-        (post(password.otp.submit.url()),
-            {
-                onFinish: () => reset('otp'),
-            });
+        post(password.otp.submit.url(), {
+            onFinish: () => reset('otp'),
+        });
     };
 
     const handleResend = () => {

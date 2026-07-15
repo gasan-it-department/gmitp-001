@@ -64,18 +64,6 @@ Route::middleware('auth')->group(function () {
 
 });
 
-Route::prefix('{municipality}')
-    ->middleware(['auth', 'municipalityContext'])
-    ->group(function () {
-        Route::get('/otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
-
-        Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
-
-        Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
-
-        Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
-    });
-
 //CRITICAL: for forgot password routings (if any issue ask harvey)
 Route::middleware(['guest'])
     ->group(function () {
@@ -98,6 +86,20 @@ Route::middleware(['guest'])
             ->name('password.update')
             ->middleware('signed');
     });
+
+Route::prefix('{municipality}')
+    ->middleware(['auth', 'municipalityContext', 'phone.pending',])
+    ->group(function () {
+        Route::get('/otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
+
+        Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
+
+        Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
+
+        Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
+    });
+
+
 
 //super admin user management
 Route::middleware('superAdmin')

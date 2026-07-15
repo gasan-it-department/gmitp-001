@@ -24,7 +24,6 @@ class ForgotPasswordController
 
     public function requestPassword(Request $request)
     {
-
         $validated = $request->validate([
             'phone' => [
                 'required',
@@ -66,7 +65,6 @@ class ForgotPasswordController
 
     public function verifyForgetPasswordOtp(Request $request, PhoneFormatterService $phoneFormatter)
     {
-
         $validated = $request->validate([
             'phone' => ['required', 'string', 'regex:/^(09|\+639)\d{9}$/'],
             'otp' => ['required', 'string', 'size:6'],

@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { PasswordInput } from './PasswordInput';
 import { toast } from 'sonner';
+import { router } from '@inertiajs/react';
 
 type PasswordFormData = {
     current_password: string;
@@ -40,6 +41,7 @@ export default function SecurityTab() {
         register,
         handleSubmit,
         reset,
+        setError,
         formState: { errors },
     } = useForm<PasswordFormData>();
 
@@ -50,22 +52,38 @@ export default function SecurityTab() {
         }
 
         setIsLoading(true);
-        console.log('Updating password...', data);
         
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
-            reset();
-            setClassicDialog({
-                title: 'Success',
-                message: 'Your password has been updated successfully.',
-                isOpen: true,
-                positiveButtonText: 'Close',
-                negativeButtonText: '',
-                isNegativeButtonVisible: false,
-                currentAction: 'success'
-            });
-        }, 1000);
+        router.put('/password/update', {
+            current_password: data.current_password,
+            password: data.new_password,
+            password_confirmation: data.confirm_password,
+        }, {
+            onSuccess: () => {
+                reset();
+                setClassicDialog({
+                    title: 'Success',
+                    message: 'Your password has been updated successfully.',
+                    isOpen: true,
+                    positiveButtonText: 'Close',
+                    negativeButtonText: '',
+                    isNegativeButtonVisible: false,
+                    currentAction: 'success'
+                });
+            },
+            onError: (errors) => {
+                // Map Laravel validation errors to react-hook-form fields
+                if (errors.current_password) {
+                    setError('current_password', { type: 'server', message: errors.current_password });
+                }
+                if (errors.password) {
+                    setError('new_password', { type: 'server', message: errors.password });
+                }
+                toast.error('Failed to update password. Please check the form for errors.');
+            },
+            onFinish: () => {
+                setIsLoading(false);
+            }
+        });
     };
 
     return (
