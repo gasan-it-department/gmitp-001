@@ -115,7 +115,7 @@ export default function IntakeReviewPanel({
 
     if (intakeStatus === 'rejected') {
         return (
-            <div className="space-y-4 rounded-lg border border-rose-200 bg-rose-50 p-5">
+            <div className="space-y-4 rounded-lg border border-rose-200 bg-rose-50 p-4 sm:p-5">
                 <div className="flex items-start gap-3">
                     <OctagonX className="mt-0.5 h-5 w-5 shrink-0 text-rose-700" />
                     <div>
@@ -237,7 +237,7 @@ export default function IntakeReviewPanel({
     const manualReasonRequired = manualSelection !== null && !manualSelection.is_exact_match;
 
     return (
-        <div className="space-y-5 rounded-lg border border-amber-200 bg-amber-50 p-5">
+        <div className="space-y-5 rounded-lg border border-amber-200 bg-amber-50 p-4 sm:p-5">
             <div className="flex items-start gap-3">
                 <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
                 <div>
@@ -318,7 +318,13 @@ export default function IntakeReviewPanel({
                     </label>
                 )}
 
-                <Button type="button" variant="outline" size="sm" onClick={() => setSearchOpen(true)} className="border-amber-300 bg-white">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearchOpen(true)}
+                    className="w-full border-amber-300 bg-white sm:w-auto"
+                >
                     <UserRoundSearch className="mr-2 h-4 w-4" />
                     Find another household
                 </Button>
@@ -387,7 +393,12 @@ export default function IntakeReviewPanel({
             )}
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-                <Button type="button" onClick={submit} disabled={processing || rejecting} className="w-full bg-slate-900 text-white hover:bg-slate-800">
+                <Button
+                    type="button"
+                    onClick={submit}
+                    disabled={processing || rejecting}
+                    className="w-full bg-slate-900 text-white hover:bg-slate-800"
+                >
                     {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                     Complete intake verification
                 </Button>

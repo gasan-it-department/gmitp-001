@@ -9,7 +9,7 @@ import { getCroppedImg } from '@/lib/cropImage';
 import { useForm, usePage } from '@inertiajs/react';
 import { FileUp, Loader2, RotateCw } from 'lucide-react';
 import { FormEventHandler, useCallback, useRef, useState } from 'react';
-import Cropper from 'react-easy-crop';
+import Cropper, { type Area } from 'react-easy-crop';
 
 type IdentityDocumentSide = 'front' | 'back';
 
@@ -37,7 +37,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
     const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const [isCropping, setIsCropping] = useState(false);
     const [isVertical, setIsVertical] = useState(false);
 
@@ -75,7 +75,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
         }
     };
 
-    const onCropComplete = useCallback((_croppedArea: any, pixels: any) => {
+    const onCropComplete = useCallback((_croppedArea: Area, pixels: Area) => {
         setCroppedAreaPixels(pixels);
     }, []);
 
@@ -188,7 +188,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
 
             {/* Cropper Dialog */}
             <Dialog open={!!cropImageSrc} onOpenChange={(isOpen) => !isOpen && handleCancelCrop()}>
-                <DialogContent className="sm:max-w-xl">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
                     <DialogHeader>
                         <DialogTitle>Crop ID Photo</DialogTitle>
                         <DialogDescription>
@@ -196,7 +196,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="relative h-[400px] w-full overflow-hidden rounded-lg bg-slate-950">
+                    <div className="relative h-[45vh] max-h-[400px] min-h-64 w-full overflow-hidden rounded-lg bg-slate-950">
                         {cropImageSrc && (
                             <Cropper
                                 image={cropImageSrc}
@@ -238,7 +238,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                         </div>
                     </div>
 
-                    <DialogFooter className="mt-4">
+                    <DialogFooter className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <Button type="button" variant="ghost" onClick={handleCancelCrop} disabled={isCropping}>
                             Cancel
                         </Button>

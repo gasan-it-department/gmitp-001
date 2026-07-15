@@ -54,7 +54,7 @@ export default function RejectRequestDialog({ requestId, applicantName, isOpen, 
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
                 <DialogHeader className="flex flex-col gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 ring-4 ring-rose-50">
                         <XCircle className="h-6 w-6 text-rose-600" />
@@ -68,7 +68,7 @@ export default function RejectRequestDialog({ requestId, applicantName, isOpen, 
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                <form onSubmit={handleSubmit} className="space-y-5 pt-2 sm:space-y-6 sm:pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="remarks" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
                             Reason for Rejection
@@ -92,11 +92,16 @@ export default function RejectRequestDialog({ requestId, applicantName, isOpen, 
                             type="button"
                             variant="ghost"
                             onClick={handleClose}
-                            className="text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                            className="w-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:w-auto"
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={processing} variant="destructive" className="bg-rose-600 text-white hover:bg-rose-700">
+                        <Button
+                            type="submit"
+                            disabled={processing}
+                            variant="destructive"
+                            className="w-full bg-rose-600 text-white hover:bg-rose-700 sm:w-auto"
+                        >
                             {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
                             Confirm Rejection
                         </Button>

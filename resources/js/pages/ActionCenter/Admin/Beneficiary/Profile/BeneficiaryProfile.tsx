@@ -6,6 +6,7 @@ import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
@@ -27,6 +28,7 @@ import {
     Link2,
     Mail,
     MapPin,
+    MoreHorizontal,
     OctagonX,
     Pencil,
     Phone,
@@ -151,7 +153,6 @@ export default function BeneficiaryProfile({
     householdHead,
     headDispositions,
 }: Props) {
-    console.log(beneficiary);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const utils = Utility();
 
@@ -174,16 +175,17 @@ export default function BeneficiaryProfile({
             <div className="bg-slate-50 pb-12">
                 {/* Back navigation */}
                 <div className="border-b border-slate-200 bg-white">
-                    <div className="container mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-4">
+                    <div className="container mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:flex-row lg:items-center lg:justify-between">
                         <Link
                             href={actionCenter.admin.beneficiary.index.url({ municipality: currentMunicipality.slug })}
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Beneficiary Search
+                            <span className="sm:hidden">Back to beneficiaries</span>
+                            <span className="hidden sm:inline">Back to Beneficiary Search</span>
                         </Link>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="hidden flex-wrap items-center gap-2 lg:flex">
                             {/* Secondary action: correct a mistake on this record (admin-only) */}
                             <Link
                                 href={EditBeneficiaryProfileController.url({
@@ -240,14 +242,77 @@ export default function BeneficiaryProfile({
                                 </span>
                             )}
                         </div>
+
+                        <div className="grid grid-cols-[minmax(0,1fr)_2.75rem] gap-2 lg:hidden">
+                            {profile.is_active && profile.household_verified ? (
+                                <Link
+                                    href={CreateAssistanceRequestController.url({
+                                        municipality: currentMunicipality.slug,
+                                        beneficiaryId: profile.id,
+                                    })}
+                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                                >
+                                    <HandCoins className="h-4 w-4" />
+                                    File assistance request
+                                </Link>
+                            ) : (
+                                <span
+                                    title={!profile.is_active ? 'Beneficiary record is inactive' : 'Household has no verified active head'}
+                                    className="inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
+                                >
+                                    <HandCoins className="h-4 w-4" />
+                                    Assistance on hold
+                                </span>
+                            )}
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
+                                        aria-label="More beneficiary actions"
+                                        title="More beneficiary actions"
+                                    >
+                                        <MoreHorizontal className="h-5 w-5" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64">
+                                    <DropdownMenuItem asChild>
+                                        <Link
+                                            href={EditBeneficiaryProfileController.url({
+                                                municipality: currentMunicipality.slug,
+                                                beneficiaryId: profile.id,
+                                            })}
+                                            className="cursor-pointer"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                            Edit profile
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setTimeout(() => setReassignOpen(true), 100)}>
+                                        <Home className="h-4 w-4" />
+                                        Change beneficiary residence
+                                    </DropdownMenuItem>
+                                    {!merge.is_merged_duplicate && (
+                                        <DropdownMenuItem
+                                            onSelect={() => setTimeout(() => setMergeOpen(true), 100)}
+                                            className="text-amber-700 focus:text-amber-800"
+                                        >
+                                            <GitMerge className="h-4 w-4" />
+                                            Mark as duplicate
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 </div>
 
                 {/* Header strip */}
                 <header className="border-b border-slate-200 bg-white">
-                    <div className="container mx-auto max-w-7xl px-6 py-6">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div className="flex items-start gap-4">
+                    <div className="container mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
                                 <button
                                     type="button"
                                     onClick={() => profile.avatar_url && setAvatarViewOpen(true)}
@@ -261,13 +326,15 @@ export default function BeneficiaryProfile({
                                         beneficiaryId={profile.id}
                                         avatarUrl={profile.avatar_url}
                                         fullName={profile.full_name}
-                                        sizeClass="h-16 w-16"
+                                        sizeClass="h-14 w-14 sm:h-16 sm:w-16"
                                         editable={false}
                                     />
                                 </button>
-                                <div>
+                                <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 capitalize">{profile.full_name}</h1>
+                                        <h1 className="min-w-0 text-xl font-bold break-words text-slate-900 capitalize sm:text-2xl">
+                                            {profile.full_name}
+                                        </h1>
                                         {profile.beneficiary_number && (
                                             <CopyableBadge
                                                 text={profile.beneficiary_number}
@@ -306,7 +373,7 @@ export default function BeneficiaryProfile({
                             </div>
 
                             {/* Summary stats */}
-                            <div className="flex flex-wrap gap-3">
+                            <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:gap-3">
                                 <Stat label="Total Requests" value={String(summary.total_requests)} />
                                 <Stat label="Released" value={String(summary.released_count)} />
                                 <Stat label="Total Received" value={utils.formatCurrency(summary.total_released_amount)} highlight />
@@ -318,7 +385,7 @@ export default function BeneficiaryProfile({
 
                 {/* This record was merged into a canonical — read-only notice */}
                 {merge.is_merged_duplicate && merge.merged_into && (
-                    <div className="container mx-auto max-w-7xl px-6 pt-6">
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
                         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                             <GitMerge className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                             <div className="text-sm text-amber-900">
@@ -343,22 +410,22 @@ export default function BeneficiaryProfile({
 
                 {/* Cross-municipality double-dip advisory */}
                 {crossMatches.length > 0 && (
-                    <div className="container mx-auto max-w-7xl px-6 pt-6">
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
                         <CrossMunicipalityWarning matches={crossMatches} context="profile" />
                     </div>
                 )}
 
                 {rosterMatches.length > 0 && (
-                    <div className="container mx-auto max-w-7xl px-6 pt-6">
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
                         <PossibleRosterMatchesPanel matches={rosterMatches} municipalitySlug={currentMunicipality.slug} />
                     </div>
                 )}
 
                 {/* Main grid */}
-                <div className="container mx-auto max-w-7xl px-6 py-6">
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                <div className="container mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
                         {/* Left column */}
-                        <div className="space-y-6 lg:col-span-8">
+                        <div className="space-y-4 sm:space-y-6 lg:col-span-8">
                             <IntakeReviewPanel
                                 beneficiaryId={profile.id}
                                 identityVerified={profile.identity_verified}
@@ -376,12 +443,12 @@ export default function BeneficiaryProfile({
 
                             {/* Identity */}
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <User className="h-4 w-4 text-slate-600" /> Personal Information
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <Field label="Full name" value={profile.full_name || '—'} capitalize />
                                         <Field label="Sex" value={profile.sex_label ?? '—'} />
@@ -404,7 +471,7 @@ export default function BeneficiaryProfile({
 
                             {/* Household */}
                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                                <CardHeader className="flex flex-col items-start gap-2 space-y-0 p-4 pb-3 sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pb-4">
                                     <div className="flex flex-wrap items-center gap-3">
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Users className="h-4 w-4 text-slate-600" /> Household Composition
@@ -425,7 +492,7 @@ export default function BeneficiaryProfile({
                                         {activeRosterCount} active {activeRosterCount === 1 ? 'member' : 'members'}
                                     </span>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                     <HouseholdMembersManager
                                         members={members}
                                         totalIncome={householdTotalIncome}
@@ -443,27 +510,27 @@ export default function BeneficiaryProfile({
 
                             {/* Assistance history */}
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <HandCoins className="h-4 w-4 text-slate-600" /> Assistance History (all programs)
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                     <AssistanceHistoryList history={history} municipalitySlug={currentMunicipality.slug} />
                                 </CardContent>
                             </Card>
                         </div>
 
                         {/* Right column */}
-                        <div className="space-y-6 lg:col-span-4">
+                        <div className="space-y-4 sm:space-y-6 lg:col-span-4">
                             {/* Contact / address */}
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <Home className="h-4 w-4 text-slate-600" /> Address & Account
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
+                                <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
                                     <div className="flex items-start gap-3">
                                         <MapPin className="mt-0.5 h-4 w-4 text-slate-400" />
                                         <div>
@@ -505,10 +572,10 @@ export default function BeneficiaryProfile({
 
                             {/* Documents */}
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="text-base">Documents</CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-6">
+                                <CardContent className="space-y-5 px-4 pb-4 sm:space-y-6 sm:px-6 sm:pb-6">
                                     <div className="space-y-3">
                                         <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">System Generated</p>
                                         <div className="grid grid-cols-2 gap-3">
@@ -556,13 +623,12 @@ export default function BeneficiaryProfile({
                                                             FRONT
                                                         </div>
 
-                                                        {/* Hover Actions */}
-                                                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-slate-900/60 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+                                                        <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                                                             <a
                                                                 href={profile.identity_documents.front}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
                                                                 title="View Full Size"
                                                             >
                                                                 <Eye className="h-4 w-4" />
@@ -575,7 +641,7 @@ export default function BeneficiaryProfile({
                                                                 trigger={
                                                                     <button
                                                                         type="button"
-                                                                        className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
                                                                         title="Replace Photo"
                                                                     >
                                                                         <FileUp className="h-4 w-4" />
@@ -619,13 +685,12 @@ export default function BeneficiaryProfile({
                                                             BACK
                                                         </div>
 
-                                                        {/* Hover Actions */}
-                                                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-slate-900/60 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+                                                        <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                                                             <a
                                                                 href={profile.identity_documents.back}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
                                                                 title="View Full Size"
                                                             >
                                                                 <Eye className="h-4 w-4" />
@@ -638,7 +703,7 @@ export default function BeneficiaryProfile({
                                                                 trigger={
                                                                     <button
                                                                         type="button"
-                                                                        className="rounded-full bg-white p-2 text-slate-900 transition hover:bg-slate-100 hover:text-[#005088] hover:shadow-lg"
+                                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
                                                                         title="Replace Photo"
                                                                     >
                                                                         <FileUp className="h-4 w-4" />
@@ -676,12 +741,12 @@ export default function BeneficiaryProfile({
                                 Their history is already folded into the list above. */}
                             {merge.merged_duplicates.length > 0 && (
                                 <Card>
-                                    <CardHeader>
+                                    <CardHeader className="p-4 sm:p-6">
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <GitMerge className="h-4 w-4 text-amber-600" /> Merged Duplicates
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-2">
+                                    <CardContent className="space-y-2 px-4 pb-4 sm:px-6 sm:pb-6">
                                         <p className="flex items-start gap-2 text-xs text-amber-700">
                                             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                                             These records were merged into this one. Their assistance history is included above.
@@ -759,9 +824,11 @@ function Field({ label, value, sub, capitalize = false }: { label: string; value
 
 function Stat({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
     return (
-        <div className={`rounded-xl border px-4 py-2 text-right ${highlight ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+        <div
+            className={`min-w-0 rounded-lg border px-3 py-2 text-left sm:rounded-xl sm:px-4 sm:text-right ${highlight ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}
+        >
             <p className={`text-[10px] font-bold tracking-widest uppercase ${highlight ? 'text-emerald-700' : 'text-slate-400'}`}>{label}</p>
-            <p className={`mt-0.5 text-lg font-bold ${highlight ? 'text-emerald-900' : 'text-slate-800'}`}>{value}</p>
+            <p className={`mt-0.5 text-base font-bold break-words sm:text-lg ${highlight ? 'text-emerald-900' : 'text-slate-800'}`}>{value}</p>
         </div>
     );
 }
@@ -813,17 +880,17 @@ function HouseholdStatusBadge({
 function PossibleRosterMatchesPanel({ matches, municipalitySlug }: { matches: HouseholdMatch[]; municipalitySlug: string }) {
     return (
         <Card className="border-amber-200 bg-amber-50/70">
-            <CardHeader className="pb-3">
+            <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
                 <CardTitle className="flex items-center gap-2 text-base text-amber-950">
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                     Possible roster matches
                 </CardTitle>
                 <p className="text-sm text-amber-900">
-                    This beneficiary may already appear as a household member in another household. Review before verifying, approving, or
-                    changing household assignment.
+                    This beneficiary may already appear as a household member in another household. Review before verifying, approving, or changing
+                    household assignment.
                 </p>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
                 {matches.map((match) => {
                     const address = [match.street, match.barangay].filter(Boolean).join(', ') || 'Address unavailable';
                     const relationship = match.relationship ? match.relationship.replace(/_/g, ' ') : 'Relationship unavailable';
@@ -835,7 +902,9 @@ function PossibleRosterMatchesPanel({ matches, municipalitySlug }: { matches: Ho
                         >
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <p className="truncate text-sm font-bold text-slate-900 capitalize">{match.member_name || 'Unnamed roster member'}</p>
+                                    <p className="truncate text-sm font-bold text-slate-900 capitalize">
+                                        {match.member_name || 'Unnamed roster member'}
+                                    </p>
                                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                                         Name and birth date match
                                     </span>
@@ -897,7 +966,7 @@ function CopyableBadge({ text, className }: { text: string; className?: string }
             {copied ? (
                 <Check className="h-3 w-3 text-emerald-600" />
             ) : (
-                <Copy className="h-3 w-3 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                <Copy className="h-3 w-3 text-slate-400 opacity-60 transition-opacity group-hover:opacity-100" />
             )}
         </button>
     );
