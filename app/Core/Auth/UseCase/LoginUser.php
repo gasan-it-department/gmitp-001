@@ -4,17 +4,19 @@ namespace App\Core\Auth\UseCase;
 
 use App\Core\Auth\Dto\LoginRequestDto;
 use App\Core\Auth\Dto\LoginResponseDto;
+use App\Core\Auth\Exceptions\AccountDeactivatedException;
 use App\Core\Auth\Exceptions\AccountLockedExceptions;
 use App\Core\Auth\Exceptions\InvalidCredentialsExceptions;
 use App\Core\Auth\Exceptions\InvalidPasswordException;
+use App\Core\Auth\Interfaces\CookieSessionInterface;
+use App\Core\Auth\Interfaces\PasswordHasherInterface;
+use App\Core\Auth\Interfaces\RateLimiterInterface;
+use App\Core\Auth\Interfaces\TokenServiceInterface;
 use App\Core\Auth\Services\LoginRedirectionService;
 use App\Core\Auth\Services\VerificationSenderService;
 use App\Core\Users\Repository\UserRepository;
-use App\Core\Auth\Interfaces\PasswordHasherInterface;
-use App\Core\Auth\Interfaces\TokenServiceInterface;
-use App\Core\Auth\Interfaces\RateLimiterInterface;
-use App\Core\Auth\Interfaces\CookieSessionInterface;
 use App\Core\Users\ValueObjects\Phone;
+use Illuminate\Validation\ValidationException;
 
 class LoginUser
 {
@@ -60,6 +62,12 @@ class LoginUser
         $users = $isEmail
             ? $this->userRepository->findByEmail($identifier)
             : $this->userRepository->findByPhone($identifier);
+        // 3. THE FIX: Intercept users with null passwords
+        if ($users && is_null($users->password)) {
+            throw new InvalidCredentialsExceptions(
+                'It looks like you signed up using Google. Please click "Sign in with Google" below, or use the "Forgot Password" link to create a local password.'
+            );
+        }
 
         if (!$users) {
             $this->rateLimiter->hit($rateLimitKey, self::RATE_LIMIT_MINUTES);
@@ -74,6 +82,11 @@ class LoginUser
 
         //clear the ratelimiter after success
         $this->rateLimiter->clear($rateLimitKey);
+
+        // Offboarded accounts cannot log in, even with valid credentials.
+        if ($users->isDeactivated()) {
+            throw new AccountDeactivatedException();
+        }
 
         //give token to logged the user
         $sessionData = $this->cookieSessionService->createAuthenticatedSession($users->id, $dto->rememberMe);

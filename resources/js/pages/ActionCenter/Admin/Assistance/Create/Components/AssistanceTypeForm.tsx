@@ -21,6 +21,9 @@ interface SharedFormProps {
 export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceTypeId, initialData, documentTypes, onCancel }: SharedFormProps) {
     // 1. Initialize form with whatever data the wrapper passed in
     const { data, setData, post, put, processing, errors } = useForm<AssistanceTypeFormData>(initialData);
+    const configurableDocuments = data.documents.filter((document) => !document.key?.startsWith('recipient_valid_id_'));
+
+    const amountValue = (value: number | null | undefined) => (value === null || value === undefined ? '' : value);
 
     // --- Handlers ---
     const handleSubmit = (e: React.FormEvent) => {
@@ -79,7 +82,6 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                     Assistance Name <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
-                                    disabled
                                     id="name"
                                     placeholder="e.g., AICS - Medical Assistance"
                                     value={data.name}
@@ -102,34 +104,64 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 />
                             </div>
 
-                            {/* Business Rules Grid (Max Amount & Cooldown) */}
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="max_amount" className="text-sm font-semibold text-gray-700">
+                            {/* Business Rules Grid (Amount Bounds & Cooldown) */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div className="flex flex-col">
+                                    <Label
+                                        htmlFor="min_amount"
+                                        className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end"
+                                    >
+                                        Minimum Amount Floor (₱)
+                                    </Label>
+                                    <div className="relative mb-2">
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 font-medium text-gray-500">₱</span>
+                                        <Input
+                                            id="min_amount"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="Leave blank"
+                                            value={amountValue(data.min_amount)}
+                                            onChange={(e) => setData('min_amount', e.target.value === '' ? null : Number(e.target.value))}
+                                            className={`bg-gray-50 pl-8 ${errors.min_amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                        />
+                                    </div>
+                                    {errors.min_amount && <p className="mb-1 text-xs font-medium text-red-600">{errors.min_amount}</p>}
+                                    <p className="mt-auto text-xs text-gray-500">Leave blank for no minimum.</p>
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <Label
+                                        htmlFor="max_amount"
+                                        className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end"
+                                    >
                                         Max Amount Cap (₱)
                                     </Label>
-                                    <div className="relative">
+                                    <div className="relative mb-2">
                                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 font-medium text-gray-500">₱</span>
                                         <Input
                                             id="max_amount"
                                             type="number"
                                             min="0"
                                             step="0.01"
-                                            placeholder="0.00"
-                                            value={data.max_amount}
-                                            onChange={(e) => setData('max_amount', Number(e.target.value))}
+                                            placeholder="Leave blank"
+                                            value={amountValue(data.max_amount)}
+                                            onChange={(e) => setData('max_amount', e.target.value === '' ? null : Number(e.target.value))}
                                             className={`bg-gray-50 pl-8 ${errors.max_amount ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                         />
                                     </div>
-                                    {errors.max_amount && <p className="text-xs font-medium text-red-600">{errors.max_amount}</p>}
-                                    <p className="text-xs text-gray-500">Leave as 0 for no limit.</p>
+                                    {errors.max_amount && <p className="mb-1 text-xs font-medium text-red-600">{errors.max_amount}</p>}
+                                    <p className="mt-auto text-xs text-gray-500">Leave blank for no limit.</p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="cooldown_months" className="text-sm font-semibold text-gray-700">
+                                <div className="flex flex-col">
+                                    <Label
+                                        htmlFor="cooldown_months"
+                                        className="mb-2 flex text-sm font-semibold text-gray-700 md:min-h-[40px] md:items-end"
+                                    >
                                         Cooldown Period
                                     </Label>
-                                    <div className="relative">
+                                    <div className="relative mb-2">
                                         <Input
                                             id="cooldown_months"
                                             type="number"
@@ -142,8 +174,8 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                         />
                                         <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-gray-500">Months</span>
                                     </div>
-                                    {errors.cooldown_months && <p className="text-xs font-medium text-red-600">{errors.cooldown_months}</p>}
-                                    <p className="text-xs text-gray-500">Time before re-application.</p>
+                                    {errors.cooldown_months && <p className="mb-1 text-xs font-medium text-red-600">{errors.cooldown_months}</p>}
+                                    <p className="mt-auto text-xs text-gray-500">Time before re-application.</p>
                                 </div>
                             </div>
 
@@ -165,8 +197,10 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                     <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm">
                         <div className="mb-6 flex items-start justify-between border-b border-gray-100 pb-4">
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-800">Required Documents</h2>
-                                <p className="text-sm text-gray-500">Attach the documents a citizen must submit.</p>
+                                <h2 className="text-lg font-semibold text-gray-800">Document Requirements</h2>
+                                <p className="text-sm text-gray-500">
+                                    Citizens see this checklist; MSWD uploads the official copies before approval.
+                                </p>
                             </div>
                             <ShieldAlert className="h-6 w-6 text-orange-400" />
                         </div>
@@ -195,14 +229,14 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
 
                         {/* Dynamic Array List */}
                         <div className="space-y-3">
-                            {data.documents.length === 0 ? (
+                            {configurableDocuments.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12 transition-colors hover:border-gray-300 hover:bg-gray-100">
                                     <FileText className="mb-3 h-10 w-10 text-gray-400" />
                                     <p className="font-medium text-gray-600">No documents added yet</p>
                                     <p className="mt-1 text-sm text-gray-500">Select a document from the dropdown above.</p>
                                 </div>
                             ) : (
-                                data.documents.map((doc) => (
+                                configurableDocuments.map((doc) => (
                                     <div
                                         key={doc.id}
                                         className="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-orange-300 hover:shadow-md"
@@ -216,7 +250,7 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                                     className="data-[state=checked]:bg-red-500"
                                                 />
                                                 <span className={`text-sm font-medium ${doc.is_required ? 'text-red-600' : 'text-gray-500'}`}>
-                                                    {doc.is_required ? 'Mandatory Requirement' : 'Optional (Supporting Only)'}
+                                                    {doc.is_required ? 'Required Before Approval' : 'If Applicable'}
                                                 </span>
                                             </div>
                                         </div>

@@ -4,11 +4,11 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 /**
-
  * ── Lock-order contract ────────────────────────────────────────────────
  * This action locks EXACTLY ONE row (the AssistanceRequest) by primary
  * key. It must not grow to lock additional tables in this method — any
@@ -26,12 +26,16 @@ use Illuminate\Support\Facades\DB;
  */
 class StartAssistanceRequestReviewAction
 {
+    public function __construct(
+        private readonly AssistanceRequestSmsNotifier $smsNotifier,
+    ) {}
+
     public function execute(
         string $assistanceRequestId,
         string $municipalId,
         string $reviewerId,
     ): AssistanceRequest {
-        return DB::transaction(function () use ($assistanceRequestId, $municipalId, $reviewerId) {
+        $request = DB::transaction(function () use ($assistanceRequestId, $municipalId, $reviewerId) {
             // Row-lock the target so concurrent claims serialize.
             $request = AssistanceRequest::query()
                 ->whereKey($assistanceRequestId)
@@ -50,7 +54,7 @@ class StartAssistanceRequestReviewAction
             // Transition guard — the enum decides what's legal.
             // status is cast to AssistanceStatus by the model, so $request->status
             // is already an enum instance here.
-            if (!$request->status->canTransitionTo(AssistanceStatus::UnderReview)) {
+            if (! $request->status->canTransitionTo(AssistanceStatus::UnderReview)) {
                 throw new \DomainException(
                     $this->buildTransitionFailureMessage($request),
                 );
@@ -59,10 +63,15 @@ class StartAssistanceRequestReviewAction
             $request->update([
                 'status' => AssistanceStatus::UnderReview,
                 'reviewed_by_user_id' => $reviewerId,
+                'reviewed_at' => now(),
             ]);
 
             return $request->fresh();
         }, attempts: 3);
+
+        $this->smsNotifier->reviewStarted($request);
+
+        return $request;
     }
 
     /**

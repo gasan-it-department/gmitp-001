@@ -5,8 +5,8 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Dto\Assistance\RejectAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 /**
  * Reject an assistance request that's under_review.
@@ -35,12 +35,13 @@ use Illuminate\Support\Facades\DB;
 class RejectAssistanceRequestAction
 {
     public function __construct(
-        protected LockAssistanceRequestAction $lockRequest
+        protected LockAssistanceRequestAction $lockRequest,
+        private readonly AssistanceRequestSmsNotifier $smsNotifier,
     ) {}
 
     public function execute(RejectAssistanceRequestDto $dto): AssistanceRequest
     {
-        return DB::transaction(function () use ($dto) {
+        $request = DB::transaction(function () use ($dto) {
             $request = $this->lockRequest->execute(
                 id: $dto->assistanceRequestId,
                 municipalId: $dto->municipalId
@@ -62,6 +63,10 @@ class RejectAssistanceRequestAction
 
             return $request->fresh();
         }, attempts: 3);
+
+        $this->smsNotifier->requestRejected($request);
+
+        return $request;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -80,7 +85,7 @@ class RejectAssistanceRequestAction
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
-        if (!$request->status->canTransitionTo(AssistanceStatus::Rejected)) {
+        if (! $request->status->canTransitionTo(AssistanceStatus::Rejected)) {
             throw new \DomainException(
                 match ($request->status) {
                     AssistanceStatus::Approved => 'This case is already approved and can no longer be rejected.',
@@ -104,11 +109,11 @@ class RejectAssistanceRequestAction
      */
     private function appendRejectionReason(?string $existing, string $reason, string $rejectorName): string
     {
-        $stamp = '[REJECTED ' . now()->toDateTimeString() . ' by ' . $rejectorName . ']';
-        $block = $stamp . "\n" . $reason;
+        $stamp = '[REJECTED '.now()->toDateTimeString().' by '.$rejectorName.']';
+        $block = $stamp."\n".$reason;
 
         return $existing
-            ? rtrim($existing) . "\n\n" . $block
+            ? rtrim($existing)."\n\n".$block
             : $block;
     }
 }

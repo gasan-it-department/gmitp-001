@@ -6,7 +6,17 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
+use App\Core\Cemetery\Models\Block as CemeteryBlock;
+use App\Core\Cemetery\Models\CemeteryServiceRequest;
+use App\Core\Cemetery\Models\CemeterySite;
 use App\Core\Cemetery\Models\Decedent;
+use App\Core\Cemetery\Models\DecedentDocument;
+use App\Core\Cemetery\Models\Interment;
+use App\Core\Cemetery\Models\IntermentReadinessOverride;
+use App\Core\Cemetery\Models\Plot as CemeteryPlot;
+use App\Core\Cemetery\Models\PlotLease;
+use App\Core\Cemetery\Models\Section as CemeterySection;
+use App\Core\Cemetery\Models\UnidentifiedDetail;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
 use App\Core\Event\Models\Event;
@@ -59,6 +69,16 @@ class MorphMapServiceProvider extends ServiceProvider
             'official_term' => OfficialTerm::class,
             'term' => Term::class,
             'decedent' => Decedent::class,
+            'cemetery_decedent_document' => DecedentDocument::class,
+            'cemetery_unidentified_detail' => UnidentifiedDetail::class,
+            'cemetery_readiness_override' => IntermentReadinessOverride::class,
+            'cemetery_interment' => Interment::class,
+            'cemetery_plot_lease' => PlotLease::class,
+            'cemetery_plot' => CemeteryPlot::class,
+            'cemetery_block' => CemeteryBlock::class,
+            'cemetery_section' => CemeterySection::class,
+            'cemetery_site' => CemeterySite::class,
+            'cemetery_service_request' => CemeteryServiceRequest::class,
             'municipality_hotline' => MunicipalityHotline::class,
             'support_ticket' => SupportTicket::class,
         ]);

@@ -3,7 +3,9 @@
 namespace App\Core\ActionCenter\Models;
 
 use App\Core\ActionCenter\Enums\CivilStatus;
+use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\Users\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,15 +24,40 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  */
 class Beneficiary extends Model implements HasMedia
 {
-    use HasUlids, SoftDeletes, LogsActivity, InteractsWithMedia;
+    use HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     protected $table = 'ac_beneficiaries';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
+    protected $attributes = [
+        'is_active' => true,
+    ];
 
     protected $fillable = [
         'household_id',
         'user_id',
+        // Intrinsic tenant key. INVARIANT: always equals household.municipal_id
+        // (the household is the source of truth) — it's a denormalised mirror
+        // that also lets us enforce unique(user_id, municipal_id): one portal
+        // login owns one beneficiary PER municipality, so a citizen served by
+        // more than one LGU exists as separate, independently-owned records.
+        'municipal_id',
+        // Lifecycle flag (default true). Reserved for a future moved-out/deceased
+        // flow that retires a record while keeping its history; nothing reads it
+        // yet. Mirrors ac_household_members.is_active.
+        'is_active',
+        // Non-destructive duplicate merge: when set, THIS row is a duplicate
+        // that was merged into the referenced canonical beneficiary. NULL for a
+        // normal standalone record. See MergeBeneficiaryAction.
+        'merged_into_beneficiary_id',
+        'identity_verified_at',
+        'identity_verified_by_user_id',
+        'intake_rejected_at',
+        'intake_rejected_by_user_id',
+        'intake_rejection_reason',
         'beneficiary_number',
         'first_name',
         'middle_name',
@@ -43,6 +70,7 @@ class Beneficiary extends Model implements HasMedia
         'civil_status',
         'occupation',
         'monthly_income',
+        'contact_phone',
         // Data Privacy Act (RA 10173) consent record — captured at profile setup.
         'terms_consented_at',
         'terms_version',
@@ -52,8 +80,11 @@ class Beneficiary extends Model implements HasMedia
         'birth_date' => 'date',
         'terms_consented_at' => 'datetime',
         'monthly_income' => 'decimal:2',
+        'is_active' => 'boolean',
+        'identity_verified_at' => 'datetime',
+        'intake_rejected_at' => 'datetime',
         'civil_status' => CivilStatus::class,
-
+        'educational_attainment' => EducationalAttainment::class,
     ];
 
     /**
@@ -76,6 +107,15 @@ class Beneficiary extends Model implements HasMedia
                 'civil_status',
                 'occupation',
                 'monthly_income',
+                'contact_phone',
+                'is_active',
+                // The merge link is an admin identity decision — audit it.
+                'merged_into_beneficiary_id',
+                'identity_verified_at',
+                'identity_verified_by_user_id',
+                'intake_rejected_at',
+                'intake_rejected_by_user_id',
+                'intake_rejection_reason',
             ])
             ->logOnlyDirty()        // skip no-op saves
             ->dontLogEmptyChanges() // skip if nothing actually changed
@@ -99,6 +139,74 @@ class Beneficiary extends Model implements HasMedia
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function identityVerifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'identity_verified_by_user_id');
+    }
+
+    public function intakeRejector(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'intake_rejected_by_user_id');
+    }
+
+    public function scopeIdentityVerified(Builder $query): Builder
+    {
+        return $query->whereNotNull('identity_verified_at');
+    }
+
+    public function scopePendingIdentityVerification(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('identity_verified_at')
+            ->whereNull('intake_rejected_at');
+    }
+
+    public function scopeIntakeRejected(Builder $query): Builder
+    {
+        return $query->whereNotNull('intake_rejected_at');
+    }
+
+    public function isIdentityVerified(): bool
+    {
+        return $this->identity_verified_at !== null;
+    }
+
+    public function isIntakeRejected(): bool
+    {
+        return $this->intake_rejected_at !== null;
+    }
+
+    public function intakeStatus(): string
+    {
+        if ($this->identity_verified_at !== null) {
+            return 'verified';
+        }
+
+        if ($this->intake_rejected_at !== null) {
+            return 'rejected';
+        }
+
+        return 'pending';
+    }
+
+    /**
+     * The canonical record THIS row was merged into (when it's a duplicate).
+     * NULL for a standalone / canonical record.
+     */
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(Beneficiary::class, 'merged_into_beneficiary_id');
+    }
+
+    /**
+     * The duplicate records that were merged INTO this (canonical) row. Empty
+     * for an ordinary record. The identity group = $this + these.
+     */
+    public function mergedDuplicates(): HasMany
+    {
+        return $this->hasMany(Beneficiary::class, 'merged_into_beneficiary_id');
     }
 
     /**
@@ -150,6 +258,22 @@ class Beneficiary extends Model implements HasMedia
                 'image/jpeg',
                 'image/png',
                 'image/webp',
+            ]);
+
+        $this->addMediaCollection('identity_id_front')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'application/pdf',
+            ]);
+
+        $this->addMediaCollection('identity_id_back')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'application/pdf',
             ]);
     }
 }

@@ -43,12 +43,10 @@ class CreateUserRequest extends FormRequest
                 'regex:/^09\d{9}$/',
                 // Since the regex enforces exact digits, you don't actually need min/max, 
                 // but keeping them doesn't hurt.
-                'size:11'
+                'size:11',
             ],
 
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-
-            'role' => 'nullable|string',
         ];
 
     }
@@ -74,8 +72,8 @@ class CreateUserRequest extends FormRequest
 
             // Phone
             'phone.required' => 'Please enter your phone number.',
-            'phone.digits_between' => 'Phone number must be between :min and :max digits.',
-            'phone.unique' => 'This phone number is already registered.',
+            'phone.regex' => 'Phone number must start with 09 and contain only digits.',
+            'phone.size' => 'Phone number must be exactly :size digits.',
 
             // Password
             'password.required' => 'Please enter a password.',

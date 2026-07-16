@@ -23,7 +23,9 @@ class EnsurePhoneIsVerified
         if ($user->phone !== null && is_null($user->phone_verified_at)) {
             // Optional: Prevent redirect loop if they are already on the OTP page
             if (!$request->routeIs('otp.verification.page')) {
-                return redirect()->route('otp.verification.page');
+                return redirect()->route('otp.verification.page', [
+                    'municipality' => $request->route('municipality'),
+                ]);
             }
         }
 

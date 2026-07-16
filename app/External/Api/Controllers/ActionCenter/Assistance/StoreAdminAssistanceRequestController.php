@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\External\Api\Request\ActionCenter\StoreAdminAssistanceRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -28,6 +29,7 @@ class StoreAdminAssistanceRequestController extends Controller
 {
     public function __construct(
         private readonly StoreAssistanceRequestAction $storeAssistanceRequest,
+        private readonly CheckElegibilityAction $checkEligibility,
     ) {
     }
 
@@ -41,7 +43,7 @@ class StoreAdminAssistanceRequestController extends Controller
         $beneficiary = Beneficiary::query()
             ->with(['household', 'religion'])
             ->whereKey($request->validated('beneficiary_id'))
-            ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
+            ->whereHas('household', fn($q) => $q->where('municipal_id', $municipalId))
             ->first();
 
         if ($beneficiary === null) {
@@ -62,6 +64,17 @@ class StoreAdminAssistanceRequestController extends Controller
                 ->withErrors(['assistance_type_id' => 'That assistance program is not available in your municipality.']);
         }
 
+        // Cooldown, in-flight, and verification eligibility is advisory for an
+        // admin and may be overridden with a reason. An inactive beneficiary or
+        // a household without a verified active Head remains a hard block in
+        // StoreAssistanceRequestAction because the household is not authoritative.
+        $eligibility = $this->checkEligibility->execute(
+            $beneficiary,
+            $assistanceType,
+            $request->input('on_behalf_household_member_id') ?: null,
+            $request->input('on_behalf_date_of_death') ?: null,
+        );
+
         try {
             $dto = StoreAssistanceRequestDto::fromAdmin(
                 $request,
@@ -75,6 +88,23 @@ class StoreAdminAssistanceRequestController extends Controller
             return back()
                 ->withInput()
                 ->withErrors(['request' => $e->getMessage()]);
+        }
+
+        // The officer filed despite a standing eligibility or verification gate.
+        if (!$eligibility->eligible) {
+            activity('assistance_request')
+                ->performedOn($created)
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'override' => true,
+                    'reason' => $eligibility->reason,
+                    'cooldown_ends_at' => $eligibility->cooldownEndsAt?->toIso8601String(),
+                    'message' => $eligibility->message(),
+                    'admin_reason' => $request->input('verification_override_reason'),
+                    'assistance_type_id' => $assistanceType->id,
+                    'beneficiary_id' => $beneficiary->id,
+                ])
+                ->log('Filed with an administrator override');
         }
 
         return redirect()

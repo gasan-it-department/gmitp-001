@@ -42,11 +42,14 @@ export type ProfileSetupFormData = {
     birth_date: string;
     religion_id: string;
     educational_attainment: string;
+    identity_id_front?: File | null;
+    identity_id_back?: File | null;
 
     // Civil status / employment / income — paper-form parity.
     civil_status: string;
     occupation: string;
     monthly_income: string;
+    contact_phone: string;
 
     // Address. `barangay` is the human-readable name; `barangay_code` is the
     // stable PSGC code stored alongside on ac_households for queries.
@@ -62,6 +65,11 @@ export type ProfileSetupFormData = {
     // DB transaction as the beneficiary row. Empty array = citizen
     // chose to skip the household section.
     household_members: HouseholdMemberDraft[];
+}
+
+export type ExistingIdentityDocuments = {
+    front: boolean;
+    back: boolean;
 }
 
 /**

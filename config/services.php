@@ -37,7 +37,7 @@ return [
 
     'semaphore' => [
 
-        'key' => env('SEMAPHOR_API_KEY'),
+        'key' => env('SEMAPHORE_API_KEY'),
 
         'sender_name' => env('SEMAPHORE_SENDER_NAME'),
 
@@ -47,6 +47,17 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'anon_key' => env('SUPABASE_ANON_KEY'),
+        'edge_secret' => env('SUPABASE_LARAVEL_EDGE_SECRET'),
+    ],
+
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
     ],
 
 ];

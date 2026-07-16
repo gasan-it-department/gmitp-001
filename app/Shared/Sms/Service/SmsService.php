@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Http;
 class SmsService implements SmsProviderInterface
 {
     protected string $baseUrl = 'https://api.semaphore.co/api/v4/messages';
-    protected string $apiKey;
-    protected string $senderName;
+    protected ?string $apiKey;
+    protected ?string $senderName;
 
     public function __construct()
     {
@@ -26,11 +26,17 @@ class SmsService implements SmsProviderInterface
      */
     public function send(string $phoneNumber, string $message): ?array
     {
+        if (blank($this->apiKey) || blank($this->senderName)) {
+            Log::warning('SMS was not sent because Semaphore is not configured.');
+
+            return null;
+        }
+
         try {
 
             $formattedNumber = str_replace('+', '', $phoneNumber);
 
-            $response = Http::post($this->baseUrl, [
+            $response = Http::connectTimeout(5)->timeout(10)->post($this->baseUrl, [
                 'apikey' => $this->apiKey,
                 'number' => $formattedNumber,
                 'message' => $message,

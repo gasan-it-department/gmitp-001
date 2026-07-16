@@ -82,17 +82,20 @@ class LinkHouseholdMemberToBeneficiaryAction
 
             // Stamp the link. We deliberately do NOT touch $target->household_id —
             // the target keeps their own primary household.
-            $member->update(['beneficiary_id' => $target->id]);
+            $member->update([
+                'beneficiary_id' => $target->id,
+                'is_verified_dependent' => false,
+            ]);
 
             activity('household-member-link')
                 ->performedOn($member)
                 ->causedBy(User::find($actingAdminId))
                 ->withProperties([
-                    'municipal_id'           => $municipalId,
-                    'household_member_id'    => $member->id,
-                    'household_id'           => $member->household_id,
-                    'linked_beneficiary_id'  => $target->id,
-                    'beneficiary_number'     => $target->beneficiary_number,
+                    'municipal_id' => $municipalId,
+                    'household_member_id' => $member->id,
+                    'household_id' => $member->household_id,
+                    'linked_beneficiary_id' => $target->id,
+                    'beneficiary_number' => $target->beneficiary_number,
                 ])
                 ->log('Linked a household member to an existing beneficiary');
 

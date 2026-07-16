@@ -1,8 +1,10 @@
 <?php
 
 use App\External\Api\Controllers\CommunityReport\Admin\AcknowledgeReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\ArchiveReportController;
 use App\External\Api\Controllers\CommunityReport\Admin\RejectReportController;
 use App\External\Api\Controllers\CommunityReport\Admin\ResolveReportController;
+use App\External\Api\Controllers\CommunityReport\Admin\RestoreReportController;
 use App\External\Api\Controllers\CommunityReport\Admin\StartReportProgressController;
 use App\External\Api\Controllers\CommunityReport\StoreReportController;
 use App\External\Web\Controllers\CommunityReport\Admin\IndexReportController as AdminIndexReportController;
@@ -66,6 +68,14 @@ Route::prefix('api/community-report')
 
             Route::post('/{report_submission}/reject', RejectReportController::class)
                 ->name('reject');
+
+            Route::delete('/{report_submission}', ArchiveReportController::class)
+                ->whereUlid('report_submission')
+                ->name('archive');
+
+            Route::post('/{report_submission}/restore', RestoreReportController::class)
+                ->whereUlid('report_submission')
+                ->name('restore');
         });
 
     });

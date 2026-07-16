@@ -1,20 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
-import LogInSignUpDialog from '@/pages/Auth/LogInSignUpDialog';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import feedback from '@/routes/feedback';
-import login from '@/routes/login';
-import { SharedData } from '@/types';
-import { Link, router, usePage } from '@inertiajs/react';
-import { ArrowRight, MessageSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Link } from '@inertiajs/react';
+import { ArrowRight, MessageSquare, Star } from 'lucide-react';
+import { useState } from 'react';
 import { FeedbackFormDialog } from './FeedbackFormDialog';
 
 export default function FeedbackUi() {
     const { currentMunicipality } = useMunicipality();
-    const { auth } = usePage<SharedData>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isLogInSignUpDialogVisible, setLogInSignUpDialogVisible] = useState(false);
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
         title: '',
@@ -25,52 +20,45 @@ export default function FeedbackUi() {
         action: '',
     });
 
-    useEffect(() => {
-        if (auth.user !== null) {
-            setLogInSignUpDialogVisible(false);
-        }
-    }, [auth.user]);
+    const ratingsUrl = `/${currentMunicipality.slug}/feedback/client/department-ratings`;
 
     const feedbackPage = () => {
         feedback.create.url(currentMunicipality.slug);
     };
 
     return (
-        <Card className="m-3 flex h-full flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-7">
+        <Card className="group flex h-full flex-col rounded-xl border border-primary/20 bg-white p-6 shadow-sm shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-primary/10 sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">
-                {/* Header + Description */}
                 <div className="flex items-start gap-4">
-                    <div className="flex items-center justify-center rounded-lg bg-slate-100 p-3 text-slate-700">
+                    <div className="flex items-center justify-center rounded-lg bg-primary/5 p-3 text-primary ring-1 ring-primary/20 transition-colors group-hover:bg-primary/10">
                         <MessageSquare className="h-6 w-6" />
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">We’d Love Your Feedback</h2>
+                        <h2 className="font-heading text-xl font-bold text-slate-950">Nais Naming Malaman ang Iyong Feedback</h2>
                         <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                            Tell us what you think — your feedback helps us improve your experience.
+                            Sabihin sa amin ang iyong naiisip - ang iyong feedback ay makakatulong upang mapabuti ang aming serbisyo.
                         </p>
                     </div>
                 </div>
 
-                {/* Footer Button (stays bottom-right) */}
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+                    <Link
+                        href={ratingsUrl}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+                    >
+                        <Star size={16} />
+                        Tingnan ang Ratings
+                    </Link>
                     <Link
                         href={feedback.create.url(currentMunicipality.slug)}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
-                        onClick={(e) => {
-                            // If the user isn't logged in, redirect to the login page
-                            if (auth.user === null) {
-                                e.preventDefault();
-                                router.visit(login.page.url({ municipality: currentMunicipality.slug }));
-                            }
-                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
                     >
-                        Submit Feedback
+                        Magpadala ng Feedback
                         <ArrowRight size={16} />
                     </Link>
                 </div>
 
-                {/* Feedback Form Modal */}
                 <FeedbackFormDialog
                     open={isDialogOpen}
                     onOpenChange={setIsDialogOpen}
@@ -121,8 +109,6 @@ export default function FeedbackUi() {
                         }));
                     }}
                 />
-
-                <LogInSignUpDialog isOpen={isLogInSignUpDialogVisible} onClose={() => setLogInSignUpDialogVisible(false)} />
             </CardContent>
         </Card>
     );

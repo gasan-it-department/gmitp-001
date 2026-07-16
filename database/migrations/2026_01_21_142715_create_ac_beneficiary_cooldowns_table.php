@@ -40,7 +40,6 @@ return new class extends Migration {
 
             $table->foreignUlid('household_member_id')
                 ->nullable()
-                ->after('beneficiary_id')
                 ->constrained('ac_household_members')
                 ->nullOnDelete();
 

@@ -24,12 +24,12 @@ class AssistanceApprovalException extends DomainException
     public static function invalidTransition(AssistanceStatus $status): self
     {
         return new self(match ($status) {
-            AssistanceStatus::Pending   => 'This case is still pending — pick it up first before approving.',
-            AssistanceStatus::Approved  => 'This case has already been approved.',
-            AssistanceStatus::Released  => 'This case has already been released and cannot be re-approved.',
-            AssistanceStatus::Rejected  => 'This case was rejected and cannot be approved.',
+            AssistanceStatus::Pending => 'This case is still pending — pick it up first before approving.',
+            AssistanceStatus::Approved => 'This case has already been approved.',
+            AssistanceStatus::Released => 'This case has already been released and cannot be re-approved.',
+            AssistanceStatus::Rejected => 'This case was rejected and cannot be approved.',
             AssistanceStatus::Cancelled => 'This case was cancelled and cannot be approved.',
-            default                     => 'This case cannot be approved from its current state.',
+            default => 'This case cannot be approved from its current state.',
         });
     }
 
@@ -61,7 +61,14 @@ class AssistanceApprovalException extends DomainException
     {
         return new self(
             'Cannot approve — the following required document(s) are missing: '
-            . $missingLabels->implode(', '),
+            .$missingLabels->implode(', '),
+        );
+    }
+
+    public static function dependentNotVerified(): self
+    {
+        return new self(
+            'Cannot approve this request until the newly declared household member is verified by MSWD.',
         );
     }
 

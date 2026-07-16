@@ -3,10 +3,10 @@
 namespace Database\Seeders;
 
 use App\Core\Users\Enums\EnumPermissions;
-use Illuminate\Database\Seeder;
 use App\Core\Users\Models\Permission;
+use App\Core\Users\Models\User;
+use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PermissionSeeder extends Seeder
 {
@@ -24,6 +24,18 @@ class PermissionSeeder extends Seeder
 
         }
 
+        $decedentPermissions = [
+            EnumPermissions::CEMETERY_DECEDENTS_VIEW->value,
+            EnumPermissions::CEMETERY_DECEDENTS_MANAGE->value,
+            EnumPermissions::CEMETERY_DECEDENTS_VERIFY->value,
+            EnumPermissions::CEMETERY_DECEDENTS_CORRECT->value,
+            EnumPermissions::CEMETERY_DECEDENTS_OVERRIDE->value,
+            EnumPermissions::CEMETERY_DECEDENTS_DOCUMENTS_VIEW->value,
+        ];
+
+        // Preserve access for existing Cemetery admins during the permission split.
+        User::permission(EnumPermissions::CEMETERY_ACCESS->value)
+            ->each(fn (User $user) => $user->givePermissionTo($decedentPermissions));
 
     }
 }

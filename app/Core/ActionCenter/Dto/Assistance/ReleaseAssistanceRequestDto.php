@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\Dto\Assistance;
 
 use App\External\Api\Request\ActionCenter\ReleaseAssistanceRequestRequest;
+use Carbon\CarbonImmutable;
 
 /**
  * Pure-primitives DTO for the "Mark as Released" workflow event.
@@ -23,6 +24,7 @@ readonly class ReleaseAssistanceRequestDto
         public string $cashierId,
         public string $cashierName,
         public string $releaseReferenceNumber,
+        public CarbonImmutable $releasedAt,
         public ?string $releaseNotes,
     ) {
     }
@@ -42,6 +44,10 @@ readonly class ReleaseAssistanceRequestDto
             cashierId: $cashierId,
             cashierName: $cashierName,
             releaseReferenceNumber: trim((string) $request->validated('release_reference_number')),
+            releasedAt: CarbonImmutable::parse(
+                (string) $request->validated('release_date'),
+                config('app.timezone'),
+            )->startOfDay(),
             releaseNotes: is_string($notes) && trim($notes) !== '' ? trim($notes) : null,
         );
     }

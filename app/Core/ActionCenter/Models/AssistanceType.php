@@ -25,6 +25,7 @@ class AssistanceType extends Model
         'cooldown_months',
         'cooldown_type',
         'cooldown_scope',
+        'is_independent',
         'min_amount',
         'max_amount',
         'sort_order',
@@ -33,6 +34,7 @@ class AssistanceType extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'cooldown_months' => 'integer',
+        'is_independent' => 'boolean',
         'min_amount' => 'decimal:2',
         'max_amount' => 'decimal:2',
         'sort_order' => 'integer',

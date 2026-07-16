@@ -36,7 +36,7 @@ Route::prefix('municipality')
         // ========================
         // PUBLIC MUNICIPAL ROUTES
         // ========================
-    
+
         Route::get('/', [MunicipalityController::class, 'indexActiveMunicipalities'])
             ->name('index');
 

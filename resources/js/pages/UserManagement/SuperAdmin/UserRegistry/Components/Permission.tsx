@@ -1,93 +1,165 @@
-import { Permission } from '@/Core/Types/User/UserTypes';
-import { Building2, CheckCircle2, ClipboardList, MapPin, Megaphone, Newspaper, Settings, ShieldAlert, Users } from 'lucide-react';
+import { PermissionCatalog, PermissionModule } from '@/Core/Types/User/UserTypes';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Building2, ClipboardList, FileText, Landmark, MapPin, Megaphone, MessageSquare, Settings, ShieldAlert, Ticket, Users } from 'lucide-react';
+import { ElementType } from 'react';
 
-const MODULE_STYLES: Record<string, { icon: React.ElementType; colorTheme: string }> = {
-    'action_center.access': { icon: ShieldAlert, colorTheme: 'red' },
-    'bulletin_board.access': { icon: Megaphone, colorTheme: 'orange' },
-    'tourism.access': { icon: MapPin, colorTheme: 'teal' },
-    'community_report.access': { icon: ClipboardList, colorTheme: 'amber' },
-    'municipality_settings.access': { icon: Settings, colorTheme: 'slate' },
-    'public_information.access': { icon: Newspaper, colorTheme: 'sky' },
-    'users.access': { icon: Users, colorTheme: 'indigo' },
-    default: { icon: Building2, colorTheme: 'gray' },
-};
-
-const getCardStyles = (value: string, theme: string, isSelected: boolean) => {
-    const baseStyles = 'relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group text-left h-full';
-    if (isSelected) {
-        return `${baseStyles} border-${theme}-500 bg-${theme}-50/50 ring-1 ring-${theme}-500`;
-    } else {
-        return `${baseStyles} border-gray-200 hover:border-${theme}-300 hover:bg-gray-50`;
-    }
+const MODULE_STYLES: Record<string, { icon: ElementType; accent: string }> = {
+    action_center: { icon: ShieldAlert, accent: 'text-red-600 bg-red-50 border-red-100' },
+    bulletin_board: { icon: Megaphone, accent: 'text-orange-600 bg-orange-50 border-orange-100' },
+    cemetery: { icon: Building2, accent: 'text-stone-700 bg-stone-50 border-stone-200' },
+    community_report: { icon: ClipboardList, accent: 'text-amber-600 bg-amber-50 border-amber-100' },
+    department: { icon: Landmark, accent: 'text-cyan-700 bg-cyan-50 border-cyan-100' },
+    feedback: { icon: MessageSquare, accent: 'text-violet-600 bg-violet-50 border-violet-100' },
+    government: { icon: Landmark, accent: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
+    municipality_settings: { icon: Settings, accent: 'text-slate-700 bg-slate-50 border-slate-200' },
+    public_information: { icon: FileText, accent: 'text-sky-700 bg-sky-50 border-sky-100' },
+    support_ticket: { icon: Ticket, accent: 'text-rose-600 bg-rose-50 border-rose-100' },
+    tourism: { icon: MapPin, accent: 'text-teal-700 bg-teal-50 border-teal-100' },
+    users: { icon: Users, accent: 'text-indigo-700 bg-indigo-50 border-indigo-100' },
+    wedding: { icon: FileText, accent: 'text-pink-700 bg-pink-50 border-pink-100' },
 };
 
 interface Props {
-    allPermissions: Permission[];
+    permissionCatalog: PermissionCatalog;
     selectedValues: string[];
-    onToggle: (values: string) => void;
+    onChange: (values: string[]) => void;
 }
 
-export const PermissionSelector = ({ allPermissions, selectedValues, onToggle }: Props) => {
+const getAccessPermission = (module: PermissionModule) => module.permissions.find((permission) => permission.is_access);
+
+const uniqueValues = (values: string[]) => Array.from(new Set(values));
+
+export const PermissionSelector = ({ permissionCatalog, selectedValues, onChange }: Props) => {
+    const selectedSet = new Set(selectedValues);
+    const selectedModuleCount = permissionCatalog.modules.filter((module) => {
+        const accessPermission = getAccessPermission(module);
+
+        return accessPermission ? selectedSet.has(accessPermission.value) : false;
+    }).length;
+
+    const selectModule = (module: PermissionModule, enabled: boolean) => {
+        const accessPermission = getAccessPermission(module);
+
+        if (!accessPermission) {
+            return;
+        }
+
+        if (enabled) {
+            onChange(uniqueValues([...selectedValues, accessPermission.value]));
+            return;
+        }
+
+        const modulePermissionValues = module.permissions.map((permission) => permission.value);
+        onChange(selectedValues.filter((value) => !modulePermissionValues.includes(value)));
+    };
+
+    const togglePermission = (module: PermissionModule, permissionValue: string, enabled: boolean) => {
+        const accessPermission = getAccessPermission(module);
+
+        if (!accessPermission) {
+            return;
+        }
+
+        if (permissionValue === accessPermission.value) {
+            selectModule(module, enabled);
+            return;
+        }
+
+        if (enabled) {
+            onChange(uniqueValues([...selectedValues, accessPermission.value, permissionValue]));
+            return;
+        }
+
+        onChange(selectedValues.filter((value) => value !== permissionValue));
+    };
+
     return (
         <div>
             <h4 className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">2</span>
                 Module Access & Permissions
             </h4>
-            <p className="mb-6 ml-8 text-sm text-gray-500">Click to activate the modules this admin can manage.</p>
+            <p className="mb-6 ml-8 text-sm text-gray-500">Grant module access first, then choose any detailed permissions for that module.</p>
 
-            {/* THE GRID OF COLORFUL CARDS */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                {allPermissions.map((option) => {
-                    // LOGIC: Check if this specific card's ID exists in the 'selectedValues' array
-                    const isSelected = selectedValues.includes(option.value);
-
-                    // LOGIC: Lookup the icon/color, or use default if missing
-                    const uiStyle = MODULE_STYLES[option.value] || MODULE_STYLES.default;
-                    const Icon = uiStyle.icon;
-                    const theme = uiStyle.colorTheme;
+            <Accordion type="multiple" className="space-y-3">
+                {permissionCatalog.modules.map((module) => {
+                    const accessPermission = getAccessPermission(module);
+                    const isModuleEnabled = accessPermission ? selectedSet.has(accessPermission.value) : false;
+                    const childPermissions = module.permissions.filter((permission) => !permission.is_access);
+                    const selectedChildrenCount = childPermissions.filter((permission) => selectedSet.has(permission.value)).length;
+                    const style = MODULE_STYLES[module.value] ?? MODULE_STYLES.department;
+                    const Icon = style.icon;
 
                     return (
-                        <button
-                            type="button" // Important: prevents submitting the form
-                            key={option.value}
-                            onClick={() => onToggle(option.value)}
-                            className={getCardStyles(option.value, theme, isSelected)}
-                        >
-                            {/* Icon Box */}
-                            <div
-                                className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${isSelected ? `bg-${theme}-100 text-${theme}-600` : `bg-gray-100 text-gray-400 group-hover:bg-${theme}-50 group-hover:text-${theme}-500`}`}
-                            >
-                                <Icon size={24} strokeWidth={isSelected ? 2 : 1.5} />
-                            </div>
-
-                            {/* Text Content */}
-                            <div className="flex-1">
-                                <p
-                                    className={`text-sm font-bold transition-colors duration-200 ${isSelected ? `text-${theme}-900` : 'text-gray-700'}`}
-                                >
-                                    {option.label}
-                                </p>
-                                <p className={`mt-1 text-xs transition-colors duration-200 ${isSelected ? `text-${theme}-700` : 'text-gray-400'}`}>
-                                    Click to {isSelected ? 'revoke' : 'grant'} access
-                                </p>
-                            </div>
-
-                            {/* Selected Checkmark Indicator */}
-                            {isSelected && (
-                                <div className={`absolute top-3 right-3 text-${theme}-600`}>
-                                    <CheckCircle2 size={20} fill="currentColor" className="text-white" />
+                        <AccordionItem key={module.value} value={module.value} className="rounded-lg border bg-white px-4">
+                            <div className="flex items-center gap-4 py-4">
+                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${style.accent}`}>
+                                    <Icon className="h-5 w-5" />
                                 </div>
+
+                                <AccordionTrigger className="min-w-0 flex-1 py-0 text-left hover:no-underline">
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-semibold text-gray-900">{module.label}</span>
+                                            {childPermissions.length > 0 && (
+                                                <Badge variant="secondary" className="font-normal">
+                                                    {selectedChildrenCount}/{childPermissions.length} details
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {isModuleEnabled ? 'Module access granted' : 'Module access not granted'}
+                                        </p>
+                                    </div>
+                                </AccordionTrigger>
+
+                                {accessPermission && (
+                                    <Switch
+                                        checked={isModuleEnabled}
+                                        onCheckedChange={(checked) => selectModule(module, checked)}
+                                        aria-label={`Toggle ${module.label} access`}
+                                    />
+                                )}
+                            </div>
+
+                            {childPermissions.length > 0 && (
+                                <AccordionContent className="border-t pt-3 pb-4">
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {childPermissions.map((permission) => {
+                                            const isChecked = selectedSet.has(permission.value);
+
+                                            return (
+                                                <label
+                                                    key={permission.value}
+                                                    className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 transition-colors hover:bg-gray-100"
+                                                >
+                                                    <Checkbox
+                                                        checked={isChecked}
+                                                        onCheckedChange={(checked) => togglePermission(module, permission.value, checked === true)}
+                                                        className="mt-0.5"
+                                                    />
+                                                    <span className="min-w-0">
+                                                        <span className="block text-sm font-medium text-gray-800">{permission.label}</span>
+                                                        <span className="block text-xs break-all text-gray-500">{permission.value}</span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </AccordionContent>
                             )}
-                        </button>
+                        </AccordionItem>
                     );
                 })}
-            </div>
-            {/* End Grid */}
+            </Accordion>
 
             <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <p className="text-sm text-gray-600">
-                    <span className="font-bold">{selectedValues.length}</span> modules selected.
+                    <span className="font-bold">{selectedModuleCount}</span> modules selected,{' '}
+                    <span className="font-bold">{selectedValues.length}</span> total permissions granted.
                 </p>
             </div>
         </div>

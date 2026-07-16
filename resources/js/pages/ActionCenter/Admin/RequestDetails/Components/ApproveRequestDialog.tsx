@@ -48,7 +48,7 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
                 <DialogHeader className="flex flex-col gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
                         <CheckCircle2 className="h-6 w-6 text-emerald-600" />
@@ -60,7 +60,7 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                <form onSubmit={handleSubmit} className="space-y-5 pt-2 sm:space-y-6 sm:pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="amount_approved" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
                             Approved Amount (PHP)
@@ -124,11 +124,11 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                             type="button"
                             variant="ghost"
                             onClick={handleClose}
-                            className="text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                            className="w-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:w-auto"
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={processing} className="bg-emerald-600 text-white hover:bg-emerald-700">
+                        <Button type="submit" disabled={processing} className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
                             {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Confirm Approval
                         </Button>

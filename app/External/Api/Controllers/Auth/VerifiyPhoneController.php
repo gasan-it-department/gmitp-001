@@ -23,11 +23,12 @@ class VerifiyPhoneController extends Controller
 
     public function verify(Request $request)
     {
-
+        dd('bulls eye');
         $validated = $request->validate([
             'otp' => 'required|string|size:6',
         ]);
 
+        $municipality = app('current_municipality');
         $currentUser = auth()->user();
 
         try {
@@ -39,7 +40,9 @@ class VerifiyPhoneController extends Controller
 
             $this->verifyUserUseCase->execute($dto);
 
-            return redirect()->intended(route('landing'));
+            return redirect()->to(route('home', [
+                'municipality' => $municipality->slug,
+            ]));
 
         } catch (InvalidOtpExceptions $e) {
 

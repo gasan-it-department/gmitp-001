@@ -1,5 +1,5 @@
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { Permission } from '@/Core/Types/User/UserTypes';
+import { PermissionCatalog } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
 import { useForm } from '@inertiajs/react';
 import { PermissionSelector } from './Components/Permission';
@@ -15,7 +15,7 @@ import { MunicipalitySelect } from './Components/MunicipalitySelect';
 
 interface Props {
     data: {
-        permissions: Permission[];
+        permissions: PermissionCatalog;
         municipality: MunicipalityType[];
     };
 }
@@ -38,12 +38,6 @@ export default function UserRegistry({ data }: Props) {
         password_confirmation: '',
         permission: [] as string[],
     });
-
-    const handleToggle = (value: string) => {
-        const current = formData.permission;
-        const updated = current.includes(value) ? current.filter((id) => id !== value) : [...current, value];
-        setData('permission', updated);
-    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -136,17 +130,23 @@ export default function UserRegistry({ data }: Props) {
 
                             <Separator className="my-2" />
 
-                            {/* Row 3: Contact (Optional) */}
+                            {/* Row 3: Contact */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Email (Required)</Label>
-                                    <Input value={formData.email} onChange={(e) => setData('email', e.target.value)} />
-                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                                    <Label>Phone (Required)</Label>
+                                    <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} placeholder="e.g. 09123456789" />
+                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                    <p className="text-xs text-gray-400">An OTP will be sent to verify this number.</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Phone (Required)</Label>
-                                    <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} />
-                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                    <Label>Email (Optional)</Label>
+                                    <Input
+                                        value={formData.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        placeholder="e.g. admin@municipality.gov.ph"
+                                    />
+                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                                    <p className="text-xs text-gray-400">Can be linked later via Google OAuth in profile settings.</p>
                                 </div>
                             </div>
 
@@ -181,7 +181,11 @@ export default function UserRegistry({ data }: Props) {
                     {/* SECTION B: Permissions */}
                     <div className="rounded-xl border bg-white p-8 shadow-sm">
                         {/* We reuse your component here, but it sits naturally in the flow now */}
-                        <PermissionSelector allPermissions={data.permissions} selectedValues={formData.permission} onToggle={handleToggle} />
+                        <PermissionSelector
+                            permissionCatalog={data.permissions}
+                            selectedValues={formData.permission}
+                            onChange={(values) => setData('permission', values)}
+                        />
                         {errors.permission && <p className="mt-4 text-center text-sm text-red-500">{errors.permission}</p>}
                     </div>
                 </div>

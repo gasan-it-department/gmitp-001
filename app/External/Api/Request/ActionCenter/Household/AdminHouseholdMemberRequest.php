@@ -30,22 +30,23 @@ class AdminHouseholdMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name'             => ['required', 'string', 'max:100'],
-            'last_name'              => ['required', 'string', 'max:100'],
-            'middle_name'            => ['nullable', 'string', 'max:100'],
-            'suffix'                 => ['nullable', 'string', 'max:20'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'string', 'max:100'],
+            'suffix' => ['nullable', 'string', 'max:20'],
 
-            'relationship'           => ['required', Rule::in($this->nonHeadRelationshipValues())],
+            'relationship' => ['required', Rule::in($this->nonHeadRelationshipValues())],
 
-            'birth_date'             => ['nullable', 'date', 'before_or_equal:today'],
-            'sex'                    => ['nullable', Rule::in($this->sexValues())],
-            'civil_status'           => ['nullable', Rule::in($this->civilStatusValues())],
+            'birth_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'sex' => ['nullable', Rule::in($this->sexValues())],
+            'civil_status' => ['nullable', Rule::in($this->civilStatusValues())],
             'educational_attainment' => ['nullable', Rule::in($this->educationalAttainmentValues())],
 
-            'occupation'             => ['nullable', 'string', 'max:120'],
-            'monthly_income'         => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'occupation' => ['nullable', 'string', 'max:120'],
+            'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
 
-            'religion_id'            => ['nullable', 'ulid', Rule::exists('ac_religions', 'id')],
+            'religion_id' => ['nullable', 'ulid', Rule::exists('ac_religions', 'id')],
+            'is_verified_dependent' => ['sometimes', 'boolean'],
         ];
     }
 

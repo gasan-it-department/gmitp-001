@@ -5,21 +5,21 @@ namespace App\Core\Procurement\UseCases;
 use App\Core\Procurement\Dto\UpdateProcurementDto;
 use App\Core\Procurement\Enums\ProcurementStatus;
 use App\Core\Procurement\Exceptions\ProcurementDomainException;
-use App\Core\Procurement\Repositories\ProcurementsRepository;
+use App\Core\Procurement\Models\Procurement;
 use App\Core\Procurement\Services\ProcurementTimelineValidator;
 use Carbon\Carbon;
 
 class UpdateProcurementUseCase
 {
     public function __construct(
-        protected ProcurementsRepository $procurementsRepo,
         protected ProcurementTimelineValidator $procurementTimelineValidator
     ) {
     }
 
     public function execute(UpdateProcurementDto $dto, string $procurementId)
     {
-        $procurement = $this->procurementsRepo->findByIdAndMunicipality($procurementId, $dto->municipalId);
+        $procurement = Procurement::where('municipal_id', $dto->municipalId)
+            ->findOrFail($procurementId);
 
         if (!$procurement->status instanceof ProcurementStatus) {
             throw new ProcurementDomainException("Action Denied: Invalid state or record.");
@@ -48,9 +48,10 @@ class UpdateProcurementUseCase
 
         $this->procurementTimelineValidator->validateSequence($dto->preBidDate, $dto->closingDate);
 
-        $updateData = [
+        $procurement->update([
             'reference_number' => $dto->referenceNumber,
             'funding_source_id' => $dto->fundingSourceId,
+            'custom_funding_source' => $dto->customFundingSource,
             'department_id' => $dto->departmentId,
             'title' => $dto->title,
             'category' => $dto->category,
@@ -61,9 +62,6 @@ class UpdateProcurementUseCase
             'closing_date' => $dto->closingDate,
             'awarded_date' => $dto->awardDate,
             'notes' => $dto->notes,
-        ];
-
-        $this->procurementsRepo->update($dto->municipalId, $procurementId, $updateData);
-
+        ]);
     }
 }

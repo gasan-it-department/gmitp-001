@@ -43,18 +43,36 @@ class StoreAdminAssistanceRequest extends FormRequest
 
             // Admin affirmation that on-behalf RA 10173 consent was obtained.
             'privacy_consent' => ['required', 'accepted'],
+            'verification_override_reason' => ['nullable', 'string', 'min:10', 'max:500'],
 
             // Optional for the admin path — see class docblock.
             'documents' => ['nullable', 'array'],
 
             // ── Representative ("on behalf of") fields ───────────────────────
-            'relationship_to_beneficiary' => ['nullable', 'in:spouse,parent,child,sibling'],
-            'on_behalf_household_member_id' => ['nullable', 'ulid', 'exists:ac_household_members,id'],
+            'relationship_to_beneficiary' => [
+                'nullable',
+                'required_with:on_behalf_household_member_id',
+                'in:spouse,parent,child,sibling',
+            ],
+            'on_behalf_household_member_id' => [
+                'nullable',
+                'required_with:relationship_to_beneficiary,on_behalf_date_of_death',
+                'ulid',
+                'exists:ac_household_members,id',
+            ],
             'on_behalf_first_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_middle_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_last_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_suffix' => ['nullable', 'string', 'max:20'],
             'on_behalf_date_of_death' => ['nullable', 'date', 'before_or_equal:today'],
+            'recipient_id_unavailable' => ['nullable', 'boolean'],
+            'recipient_id_unavailable_reason' => [
+                'nullable',
+                'required_if:recipient_id_unavailable,1',
+                'string',
+                'min:10',
+                'max:500',
+            ],
         ];
 
         // Per-document slot rules for the SELECTED assistance type — resolved
@@ -92,6 +110,9 @@ class StoreAdminAssistanceRequest extends FormRequest
             'privacy_consent.accepted' => 'Confirm the applicant consented (RA 10173) before submitting.',
             'documents.*.mimes' => 'Allowed file types: JPG, PNG, PDF.',
             'documents.*.max' => 'Each file must be 5 MB or smaller.',
+            'relationship_to_beneficiary.required_with' => 'Choose the assisted person\'s relationship to the beneficiary.',
+            'on_behalf_household_member_id.required_with' => 'Select the household member receiving assistance.',
+            'recipient_id_unavailable_reason.required_if' => 'Explain why the assisted adult cannot provide a government ID.',
         ];
     }
 }

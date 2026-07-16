@@ -1,13 +1,12 @@
 export type FeedbackData = {
     id: string;
-    feedback_target: string;
+    subject?: string;
     employee_name?: string;
     rating?: number;
-    sender_name?: string;
+    citizen_name?: string;
     message?: string;
     is_anonymous: boolean;
-    user_agent?: string;
-    ip_address?: string;
+    department?: { id: string; name: string };
     created_at: string;
     attachments: FeedbackAttachments[];
 }

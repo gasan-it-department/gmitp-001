@@ -64,6 +64,7 @@ export interface BeneficiarySummary {
     suffix: string | null;
     sex: string | null;
     birth_date: string | null;
+    is_verified_dependent: boolean;
 }
 
 /**
@@ -96,6 +97,7 @@ export interface HouseholdMemberOption {
     suffix: string | null;
     relationship: string | null;
     birth_date: string | null;
+    is_verified_dependent: boolean;
 }
 
 /**
@@ -105,7 +107,6 @@ export interface HouseholdMemberOption {
 export interface ApplyAssistanceFormData {
     description: string;
     privacy_consent: boolean;
-    documents: Record<string, File | null>;
     [key: string]: unknown;
 }
 
@@ -115,12 +116,12 @@ export interface AssistanceTypeFormData {
     slug?: string;
     description?: string;
     is_active: boolean;
-    max_amount: number;
-    min_amount?: number;
+    max_amount: number | null;
+    min_amount: number | null;
     cooldown_months: number;
     cooldown_type?: CooldownType;
     cooldown_scope?: CooldownScope;
-    documents: { id: string; is_required: boolean; name: string }[];
+    documents: { id: string; key?: string; is_required: boolean; name: string }[];
 }
 
 /** Legacy alias still used by admin edit screens. */
@@ -128,7 +129,8 @@ export interface AssistanceType {
     id: string;
     name: string;
     slug?: string;
-    max_amount: number;
+    max_amount: number | null;
+    min_amount?: number | null;
     cooldown_months: number;
     description: string | null;
     is_active: boolean;

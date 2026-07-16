@@ -1,4 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
+import DownloadAcknowledgementReceiptController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAcknowledgementReceiptController';
+import DownloadAssistanceRequestIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAssistanceRequestIntakeSheetController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
@@ -71,6 +73,7 @@ interface DocumentBlock {
     file_name: string;
     mime_type: string | null;
     size: number;
+    url: string;
     uploaded_at: string | null;
     custom_properties: Record<string, unknown>;
 }
@@ -101,7 +104,10 @@ interface OnBehalfBlock {
     last_name: string | null;
     suffix: string | null;
     full_name: string;
+    birth_date: string | null;
     date_of_death: string | null;
+    recipient_id_exception: string | null;
+    recipient_id_exception_reason: string | null;
 }
 
 interface HouseholdMemberBlock {
@@ -207,25 +213,35 @@ export default function AssistanceRequestsDetails({
     householdMembers,
     crossMunicipalityMatches,
 }: Props) {
-    console.log(request);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
     const utils = Utility();
-    const requiredDocumentsData = requiredDocuments.data;
+    const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
+    const recipientIdIsRequired = detail.on_behalf !== null && detail.assistance_type?.slug !== 'burial' && !detail.on_behalf.recipient_id_exception;
+    const requiredDocumentsData = requiredDocuments.data
+        .filter((document) => !document.key.startsWith('recipient_valid_id_') || detail.on_behalf !== null)
+        .map((document) => (document.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...document, is_required: true } : document));
     const recentHistoryData = recentHistory.data;
     const activityLogData = activityLog.data;
     const householdMembersData = householdMembers.data;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
-    const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
-
     const isMine = detail.reviewed_by?.id === auth.user?.id;
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
 
-    const uploadedByKey = new Map((detail.documents ?? []).map((d) => [d.collection_name, d]));
-    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === d.collection_name));
+    // Every upload lives in the single spatie collection "documents"; the slot
+    // it fills is in custom_properties.document_key — NOT collection_name. Match
+    // on that, falling back to collection_name for any legacy/unkeyed media.
+    const documentKeyOf = (d: DocumentBlock) => (d.custom_properties?.document_key as string | undefined) ?? d.collection_name;
+    const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
+    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
+    const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
+    const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
+        municipality: currentMunicipality.slug,
+        assistanceRequestId: detail.id,
+    });
 
     const handleAction = (label: string) => () => {
         if (label === 'Approve') {
@@ -240,13 +256,11 @@ export default function AssistanceRequestsDetails({
             setIsReleaseOpen(true);
             return;
         }
-        // eslint-disable-next-line no-console
         console.warn(`[admin] action not yet wired: ${label}`, { requestId: detail.id, note: adminNote || undefined });
         alert(`"${label}" is not wired yet.`);
     };
 
     const stubAction = (label: string) => () => {
-        // eslint-disable-next-line no-console
         console.warn(`[admin] action not yet wired: ${label}`, { requestId: detail.id, note: adminNote || undefined });
         alert(`"${label}" is not wired yet.`);
     };
@@ -270,24 +284,27 @@ export default function AssistanceRequestsDetails({
             <div className="bg-slate-50 pb-12">
                 {/* Back navigation */}
                 <div className="border-b border-slate-200 bg-white">
-                    <div className="container mx-auto max-w-7xl px-6 py-4">
+                    <div className="container mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
                         <Link
                             href={ListAssistanceRequestController.url({ municipality: currentMunicipality.slug })}
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Assistance Requests
+                            <span className="sm:hidden">Back to requests</span>
+                            <span className="hidden sm:inline">Back to Assistance Requests</span>
                         </Link>
                     </div>
                 </div>
 
                 {/* Header strip */}
                 <header className="border-b border-slate-200 bg-white">
-                    <div className="container mx-auto max-w-7xl px-6 py-6">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3">
-                                    <h1 className="font-mono text-2xl font-bold tracking-tight text-slate-900">{detail.transaction_number}</h1>
+                    <div className="container mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                    <h1 className="min-w-0 font-mono text-xl font-bold break-all text-slate-900 sm:text-2xl">
+                                        {detail.transaction_number}
+                                    </h1>
                                     <span
                                         className={`inline-flex rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase ${statusClass(detail.status)}`}
                                     >
@@ -306,13 +323,14 @@ export default function AssistanceRequestsDetails({
                                 </p>
 
                                 {/* Action Buttons moved here */}
-                                <div className="mt-6 flex flex-wrap items-center gap-3">
+                                <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                                     <ActionButtons
                                         status={detail.status}
                                         onAction={handleAction}
                                         onPickUp={handlePickUp}
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
+                                        acknowledgementReceiptUrl={acknowledgementReceiptUrl}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
@@ -322,9 +340,11 @@ export default function AssistanceRequestsDetails({
                                             municipality: currentMunicipality.slug,
                                             beneficiaryId: detail.beneficiary_id,
                                         })}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                        className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 sm:w-auto"
                                     >
-                                        <User className="h-4 w-4" /> View Beneficiary Profile
+                                        <User className="h-4 w-4" />
+                                        <span className="sm:hidden">Beneficiary</span>
+                                        <span className="hidden sm:inline">View Beneficiary Profile</span>
                                     </Link>
 
                                     {/* Correct a mistake — only while the request is still
@@ -336,7 +356,7 @@ export default function AssistanceRequestsDetails({
                                                 municipality: currentMunicipality.slug,
                                                 assistanceRequest: detail.id,
                                             })}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 sm:w-auto"
                                         >
                                             <Pencil className="h-4 w-4" /> Edit Request
                                         </Link>
@@ -345,60 +365,86 @@ export default function AssistanceRequestsDetails({
                             </div>
 
                             {detail.amount_approved !== null && (
-                                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-right">
+                                <div className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-left sm:rounded-xl sm:px-5 lg:w-auto lg:text-right">
                                     <p className="text-[10px] font-bold tracking-widest text-emerald-700 uppercase">Amount Approved</p>
-                                    <p className="mt-0.5 text-2xl font-bold text-emerald-900">{utils.formatCurrency(detail.amount_approved)}</p>
+                                    <p className="mt-0.5 text-xl font-bold break-words text-emerald-900 sm:text-2xl">
+                                        {utils.formatCurrency(detail.amount_approved)}
+                                    </p>
                                 </div>
                             )}
                         </div>
                     </div>
                 </header>
 
+                {crossMatches.length > 0 && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:hidden">
+                        <CrossMunicipalityWarning matches={crossMatches} context="release" />
+                    </div>
+                )}
+
                 {/* Main Content Grid */}
-                <div className="container mx-auto max-w-7xl px-6 py-6">
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                <div className="container mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
                         {/* ─── Tabbed Layout Left Panel ─── */}
                         <div className="lg:col-span-8">
-                            <Tabs defaultValue="intake" className="space-y-6">
-                                <TabsList className="grid w-full grid-cols-4 bg-slate-200/70 p-1">
-                                    <TabsTrigger value="intake" className="text-xs font-medium">
-                                        Intake Summary
+                            <Tabs defaultValue="intake" className="space-y-4 sm:space-y-6">
+                                <TabsList className="grid h-11 w-full grid-cols-4 bg-slate-200/70 p-1">
+                                    <TabsTrigger value="intake" className="min-w-0 px-1 text-[11px] font-medium sm:px-2 sm:text-xs">
+                                        <span className="sm:hidden">Summary</span>
+                                        <span className="hidden sm:inline">Intake Summary</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="household" className="flex items-center gap-1.5 text-xs font-medium">
-                                        Household{' '}
+                                    <TabsTrigger
+                                        value="household"
+                                        className="min-w-0 gap-1 px-1 text-[11px] font-medium sm:gap-1.5 sm:px-2 sm:text-xs"
+                                    >
+                                        <span className="sm:hidden">Family</span>
+                                        <span className="hidden sm:inline">Household</span>
                                         <Badge variant="secondary" className="h-4 bg-slate-300 px-1 text-[10px]">
                                             {householdMembersData.length}
                                         </Badge>
                                     </TabsTrigger>
-                                    <TabsTrigger value="documents" className="text-xs font-medium">
-                                        Documents
+                                    <TabsTrigger value="documents" className="min-w-0 px-1 text-[11px] font-medium sm:px-2 sm:text-xs">
+                                        <span className="sm:hidden">Files</span>
+                                        <span className="hidden sm:inline">Documents</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="audit" className="text-xs font-medium">
-                                        Audit Trails
+                                    <TabsTrigger value="audit" className="min-w-0 px-1 text-[11px] font-medium sm:px-2 sm:text-xs">
+                                        <span className="sm:hidden">Audit</span>
+                                        <span className="hidden sm:inline">Audit Trails</span>
                                     </TabsTrigger>
                                 </TabsList>
 
                                 {/* TAB 1: INTAKE SUMMARY */}
-                                <TabsContent value="intake" className="space-y-6 outline-none">
+                                <TabsContent value="intake" className="space-y-4 outline-none sm:space-y-6">
                                     <Card>
-                                        <CardHeader>
+                                        <CardHeader className="p-4 sm:p-6">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <User className="h-4 w-4 text-slate-600" /> Subject of the Request
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-4">
+                                        <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
                                             {detail.filed_for_self ? (
                                                 <InfoLine icon={<UserCheck className="h-4 w-4" />}>Filed by the beneficiary for themselves.</InfoLine>
                                             ) : (
-                                                <InfoLine icon={<Info className="h-4 w-4 text-blue-600" />} variant="info">
-                                                    Filed on behalf of <strong>{detail.on_behalf?.full_name}</strong> by their{' '}
-                                                    <strong>{detail.relationship?.label.toLowerCase()}</strong>.
-                                                    {detail.on_behalf?.date_of_death && (
-                                                        <span className="ml-1">
-                                                            Date of death: {utils.formatToReadableDateNoTime(detail.on_behalf.date_of_death)}.
-                                                        </span>
+                                                <div className="space-y-2">
+                                                    <InfoLine icon={<Info className="h-4 w-4 text-blue-600" />} variant="info">
+                                                        Filed on behalf of <strong>{detail.on_behalf?.full_name}</strong> by their{' '}
+                                                        <strong>{detail.relationship?.label.toLowerCase()}</strong>.
+                                                        {detail.on_behalf?.date_of_death && (
+                                                            <span className="ml-1">
+                                                                Date of death: {utils.formatToReadableDateNoTime(detail.on_behalf.date_of_death)}.
+                                                            </span>
+                                                        )}
+                                                    </InfoLine>
+                                                    {detail.on_behalf?.recipient_id_exception && (
+                                                        <InfoLine icon={<Info className="h-4 w-4" />}>
+                                                            Assisted-person ID exception:{' '}
+                                                            <strong>{detail.on_behalf.recipient_id_exception.replace(/_/g, ' ')}</strong>
+                                                            {detail.on_behalf.recipient_id_exception_reason
+                                                                ? ` — ${detail.on_behalf.recipient_id_exception_reason}`
+                                                                : '.'}
+                                                        </InfoLine>
                                                     )}
-                                                </InfoLine>
+                                                </div>
                                             )}
 
                                             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
@@ -424,12 +470,12 @@ export default function AssistanceRequestsDetails({
                                     </Card>
 
                                     <Card>
-                                        <CardHeader>
+                                        <CardHeader className="p-4 sm:p-6">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <MapPin className="h-4 w-4 text-slate-600" /> Home Address (at submission)
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                 <Field label="Street / Purok" value={detail.address_snapshot.street ?? '—'} capitalize />
                                                 <Field
@@ -443,12 +489,12 @@ export default function AssistanceRequestsDetails({
                                     </Card>
 
                                     <Card>
-                                        <CardHeader>
+                                        <CardHeader className="p-4 sm:p-6">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <MessageSquare className="h-4 w-4 text-slate-600" /> Reason for Request
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                             <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-700">
                                                 {detail.description?.trim() || <span className="text-slate-400 italic">No reason provided.</span>}
                                             </p>
@@ -459,7 +505,7 @@ export default function AssistanceRequestsDetails({
                                 {/* TAB 2: HOUSEHOLD COMPOSITION (RESILIENT SIDE-BY-SIDE INTEGRATION) */}
                                 <TabsContent value="household" className="outline-none">
                                     <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                                        <CardHeader className="flex flex-col items-start gap-2 space-y-0 p-4 pb-3 sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pb-4">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <Users className="h-4 w-4 text-slate-600" /> Family Composition
                                             </CardTitle>
@@ -470,46 +516,85 @@ export default function AssistanceRequestsDetails({
                                                 <span className="text-sm font-bold text-slate-700">{utils.formatCurrency(totalHouseholdIncome)}</span>
                                             </div>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                             {householdMembersData.length === 0 ? (
                                                 <p className="py-4 text-center text-sm text-slate-400 italic">No family profiles declared.</p>
                                             ) : (
-                                                <div className="overflow-hidden rounded-md border border-slate-100">
-                                                    <Table>
-                                                        <TableHeader className="bg-slate-50/70">
-                                                            <TableRow>
-                                                                <TableHead className="text-xs">Name</TableHead>
-                                                                <TableHead className="text-xs">Relationship</TableHead>
-                                                                <TableHead className="text-xs">Age/Sex</TableHead>
-                                                                <TableHead className="text-xs">Occupation</TableHead>
-                                                                <TableHead className="text-right text-xs">Income</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {householdMembersData.map((member) => (
-                                                                <TableRow key={member.id} className="hover:bg-slate-50/50">
-                                                                    <TableCell className="text-xs font-medium text-slate-900 capitalize">
-                                                                        {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''}{' '}
-                                                                        {member.last_name} {member.suffix}
-                                                                    </TableCell>
-                                                                    <TableCell className="text-xs text-slate-600 capitalize">
-                                                                        {member.relationship.toLowerCase()}
-                                                                    </TableCell>
-                                                                    <TableCell className="text-xs text-slate-600">
-                                                                        {member.age ?? '—'} yrs / {member.sex || '—'}
-                                                                    </TableCell>
-                                                                    <TableCell className="max-w-[120px] truncate text-xs text-slate-500 capitalize">
-                                                                        {member.occupation?.toLowerCase() || 'none'}
-                                                                    </TableCell>
-                                                                    <TableCell className="text-right text-xs font-semibold text-slate-700">
-                                                                        {member.monthly_income > 0
-                                                                            ? utils.formatCurrency(member.monthly_income)
-                                                                            : '—'}
-                                                                    </TableCell>
+                                                <div>
+                                                    <div className="space-y-2 md:hidden">
+                                                        {householdMembersData.map((member) => (
+                                                            <div key={member.id} className="rounded-md border border-slate-200 bg-white p-3">
+                                                                <p className="text-sm font-semibold break-words text-slate-900 capitalize">
+                                                                    {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''}
+                                                                    {member.last_name} {member.suffix}
+                                                                </p>
+                                                                <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
+                                                                    <MobileDetail
+                                                                        label="Relationship"
+                                                                        value={member.relationship.toLowerCase()}
+                                                                        capitalize
+                                                                    />
+                                                                    <MobileDetail
+                                                                        label="Age / Sex"
+                                                                        value={`${member.age ?? '—'} yrs / ${member.sex || '—'}`}
+                                                                    />
+                                                                    <MobileDetail
+                                                                        label="Occupation"
+                                                                        value={member.occupation?.toLowerCase() || 'none'}
+                                                                        capitalize
+                                                                    />
+                                                                    <MobileDetail
+                                                                        label="Monthly income"
+                                                                        value={
+                                                                            member.monthly_income > 0
+                                                                                ? utils.formatCurrency(member.monthly_income)
+                                                                                : '—'
+                                                                        }
+                                                                        strong
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="hidden overflow-hidden rounded-md border border-slate-100 md:block">
+                                                        <Table>
+                                                            <TableHeader className="bg-slate-50/70">
+                                                                <TableRow>
+                                                                    <TableHead className="text-xs">Name</TableHead>
+                                                                    <TableHead className="text-xs">Relationship</TableHead>
+                                                                    <TableHead className="text-xs">Age/Sex</TableHead>
+                                                                    <TableHead className="text-xs">Occupation</TableHead>
+                                                                    <TableHead className="text-right text-xs">Income</TableHead>
                                                                 </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {householdMembersData.map((member) => (
+                                                                    <TableRow key={member.id} className="hover:bg-slate-50/50">
+                                                                        <TableCell className="text-xs font-medium text-slate-900 capitalize">
+                                                                            {member.first_name}{' '}
+                                                                            {member.middle_name ? `${member.middle_name[0]}. ` : ''}{' '}
+                                                                            {member.last_name} {member.suffix}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-xs text-slate-600 capitalize">
+                                                                            {member.relationship.toLowerCase()}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-xs text-slate-600">
+                                                                            {member.age ?? '—'} yrs / {member.sex || '—'}
+                                                                        </TableCell>
+                                                                        <TableCell className="max-w-[120px] truncate text-xs text-slate-500 capitalize">
+                                                                            {member.occupation?.toLowerCase() || 'none'}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right text-xs font-semibold text-slate-700">
+                                                                            {member.monthly_income > 0
+                                                                                ? utils.formatCurrency(member.monthly_income)
+                                                                                : '—'}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
                                                 </div>
                                             )}
                                         </CardContent>
@@ -517,27 +602,31 @@ export default function AssistanceRequestsDetails({
                                 </TabsContent>
 
                                 {/* TAB 3: DOCUMENTS */}
-                                <TabsContent value="documents" className="space-y-6 outline-none">
+                                <TabsContent value="documents" className="space-y-4 outline-none sm:space-y-6">
                                     <Card>
-                                        <CardHeader>
+                                        <CardHeader className="p-4 sm:p-6">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <FileText className="h-4 w-4 text-slate-600" /> Supporting Certificates & Verification Layouts
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            {requiredDocumentsData.map((req) => {
-                                                const uploaded = uploadedByKey.get(req.key);
-                                                return <DocumentRow key={req.key} required={req} file={uploaded} />;
-                                            })}
+                                        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                                                {requiredDocumentsData.map((req) => {
+                                                    const uploaded = uploadedByKey.get(req.key);
+                                                    return <DocumentRow key={req.key} required={req} file={uploaded} />;
+                                                })}
+                                            </div>
 
                                             {extraDocuments.length > 0 && (
                                                 <>
-                                                    <p className="mt-4 mb-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                                                    <p className="mt-6 mb-3 border-t border-slate-100 pt-6 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
                                                         Extra attachments
                                                     </p>
-                                                    {extraDocuments.map((doc) => (
-                                                        <DocumentRow key={doc.id} file={doc} />
-                                                    ))}
+                                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                                                        {extraDocuments.map((doc) => (
+                                                            <DocumentRow key={doc.id} file={doc} />
+                                                        ))}
+                                                    </div>
                                                 </>
                                             )}
 
@@ -549,14 +638,14 @@ export default function AssistanceRequestsDetails({
                                 </TabsContent>
 
                                 {/* TAB 4: AUDIT HISTORY */}
-                                <TabsContent value="audit" className="space-y-6 outline-none">
+                                <TabsContent value="audit" className="space-y-4 outline-none sm:space-y-6">
                                     <Card>
-                                        <CardHeader>
+                                        <CardHeader className="p-4 sm:p-6">
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <ShieldCheck className="h-4 w-4 text-slate-600" /> Core Workflow Milestones
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-3">
+                                        <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
                                             <AuditRow
                                                 label="Submitted"
                                                 at={detail.submitted_at}
@@ -583,25 +672,25 @@ export default function AssistanceRequestsDetails({
 
                                     {activityLogData.length > 0 && (
                                         <Card>
-                                            <CardHeader>
+                                            <CardHeader className="p-4 sm:p-6">
                                                 <CardTitle className="flex items-center gap-2 text-base">
                                                     <ClockArrowUp className="h-4 w-4 text-slate-600" /> System Activity Log
                                                 </CardTitle>
                                             </CardHeader>
-                                            <CardContent>
+                                            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                                 <ol className="space-y-4">
                                                     {activityLogData.map((entry) => (
                                                         <li key={entry.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
-                                                            <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                                                                 <p className="text-xs font-semibold text-slate-700">{entry.by ?? 'System'}</p>
-                                                                <p className="text-[11px] text-slate-400">
+                                                                <p className="text-[11px] text-slate-400 sm:text-right">
                                                                     {entry.at ? new Date(entry.at).toLocaleString() : '—'}
                                                                 </p>
                                                             </div>
                                                             {Object.keys(entry.changes).length > 0 && (
                                                                 <ul className="mt-2 space-y-1">
                                                                     {Object.entries(entry.changes).map(([field, newVal]) => (
-                                                                        <li key={field} className="text-xs text-slate-600">
+                                                                        <li key={field} className="text-xs break-words text-slate-600">
                                                                             <span className="font-mono text-slate-500">
                                                                                 {field.replace(/_/g, ' ')}
                                                                             </span>
@@ -628,13 +717,13 @@ export default function AssistanceRequestsDetails({
 
                             {/* Internal remarks row (renders unconditionally if populated) */}
                             {detail.remarks && (
-                                <Card className="mt-6">
-                                    <CardHeader>
+                                <Card className="mt-4 sm:mt-6">
+                                    <CardHeader className="p-4 sm:p-6">
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <MessageSquare className="h-4 w-4 text-slate-600" /> Historical Verification Remarks
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                         <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{detail.remarks}</p>
                                     </CardContent>
                                 </Card>
@@ -642,19 +731,46 @@ export default function AssistanceRequestsDetails({
                         </div>
 
                         {/* ─── Right Column (Static Action Control Panel) ─── */}
-                        <div className="space-y-6 lg:col-span-4">
+                        <div className="space-y-4 sm:space-y-6 lg:col-span-4">
                             {/* Cross-municipality double-dip advisory — shown to the
                                 cashier BEFORE release so they can coordinate. */}
-                            {crossMatches.length > 0 && <CrossMunicipalityWarning matches={crossMatches} context="release" />}
+                            {crossMatches.length > 0 && (
+                                <div className="hidden lg:block">
+                                    <CrossMunicipalityWarning matches={crossMatches} context="release" />
+                                </div>
+                            )}
 
                             {/* ─── Documents: printable PDFs for case folder / COA ─── */}
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <FileText className="h-4 w-4 text-slate-600" /> Documents
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-2">
+                                <CardContent className="space-y-2 px-4 pb-4 sm:px-6 sm:pb-6">
+                                    {canPrintAcknowledgementReceipt && (
+                                        <a
+                                            href={acknowledgementReceiptUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 hover:text-blue-900"
+                                        >
+                                            <Printer className="h-4 w-4" />
+                                            Print Acknowledgement Receipt
+                                        </a>
+                                    )}
+                                    <a
+                                        href={DownloadAssistanceRequestIntakeSheetController.url({
+                                            municipality: currentMunicipality.slug,
+                                            assistanceRequestId: detail.id,
+                                        })}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Download Request Intake Sheet (PDF)
+                                    </a>
                                     <a
                                         href={DownloadBeneficiaryIntakeSheetController.url({
                                             municipality: currentMunicipality.slug,
@@ -665,10 +781,11 @@ export default function AssistanceRequestsDetails({
                                         className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                                     >
                                         <Download className="h-4 w-4" />
-                                        Download Intake Sheet (PDF)
+                                        Download Beneficiary Intake Sheet (PDF)
                                     </a>
                                     <p className="text-[11px] leading-snug text-slate-400">
-                                        Generates the official beneficiary intake sheet for the case folder. Opens in a new tab.
+                                        Receipt proves release. Request sheet records this transaction. Beneficiary sheet records the claimant
+                                        identity file.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -676,12 +793,12 @@ export default function AssistanceRequestsDetails({
                             {/* Sticky context metrics below actions */}
                             {detail.assistance_type && (
                                 <Card>
-                                    <CardHeader>
+                                    <CardHeader className="p-4 sm:p-6">
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Home className="h-4 w-4 text-slate-600" /> Program Parameters
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-2 text-sm">
+                                    <CardContent className="space-y-2 px-4 pb-4 text-sm sm:px-6 sm:pb-6">
                                         <p className="font-semibold text-slate-900">{detail.assistance_type.name}</p>
                                         {detail.assistance_type.description && (
                                             <p className="text-xs leading-relaxed text-slate-600">{detail.assistance_type.description}</p>
@@ -712,20 +829,24 @@ export default function AssistanceRequestsDetails({
                             )}
 
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="text-base">Filer's Case History</CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
                                     {recentHistoryData.length === 0 ? (
                                         <p className="py-2 text-center text-sm text-slate-400 italic">First-time program applicant.</p>
                                     ) : (
                                         <ul className="space-y-2">
                                             {recentHistoryData.map((row) => (
-                                                <li key={row.id} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
+                                                <li key={row.id} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-3 sm:py-2">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="min-w-0">
-                                                            <p className="font-mono text-xs font-semibold text-slate-800">{row.transaction_number}</p>
-                                                            <p className="truncate text-xs text-slate-600">{row.program_name ?? '—'}</p>
+                                                            <p className="font-mono text-xs font-semibold break-all text-slate-800">
+                                                                {row.transaction_number}
+                                                            </p>
+                                                            <p className="line-clamp-2 text-xs text-slate-600 sm:truncate">
+                                                                {row.program_name ?? '—'}
+                                                            </p>
                                                         </div>
                                                         <span
                                                             className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase ${statusClass(row.status)}`}
@@ -745,10 +866,10 @@ export default function AssistanceRequestsDetails({
                             </Card>
 
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="text-base">Internal Note</CardTitle>
                                 </CardHeader>
-                                <CardContent className="space-y-3">
+                                <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
                                     <div className="pt-1">
                                         <label className="mb-1.5 block text-[11px] font-bold tracking-widest text-slate-600 uppercase">
                                             Append detail to case history
@@ -818,6 +939,25 @@ function Field({ label, value, sub, capitalize = false }: { label: string; value
     );
 }
 
+function MobileDetail({
+    label,
+    value,
+    capitalize = false,
+    strong = false,
+}: {
+    label: string;
+    value: string;
+    capitalize?: boolean;
+    strong?: boolean;
+}) {
+    return (
+        <div className="min-w-0">
+            <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">{label}</p>
+            <p className={`mt-0.5 text-xs break-words text-slate-700 ${capitalize ? 'capitalize' : ''} ${strong ? 'font-semibold' : ''}`}>{value}</p>
+        </div>
+    );
+}
+
 function InfoLine({ icon, children, variant = 'neutral' }: { icon: React.ReactNode; children: React.ReactNode; variant?: 'neutral' | 'info' }) {
     const tone = variant === 'info' ? 'border-blue-100 bg-blue-50 text-blue-900' : 'border-slate-100 bg-slate-50 text-slate-700';
     return (
@@ -831,12 +971,12 @@ function InfoLine({ icon, children, variant = 'neutral' }: { icon: React.ReactNo
 function AuditRow({ label, at, by }: { label: string; at: string | null; by?: string }) {
     const utils = Utility();
     return (
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 last:border-0">
+        <div className="flex flex-col gap-1 border-b border-slate-100 pb-2 last:border-0 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
             <div className="min-w-0">
                 <p className="text-xs font-semibold text-slate-700">{label}</p>
                 {by && <p className="mt-0.5 text-[11px] text-slate-500">{by}</p>}
             </div>
-            <p className="shrink-0 text-[11px] whitespace-nowrap text-slate-400">{at ? utils.formatToReadableDate(at) : '—'}</p>
+            <p className="text-[11px] text-slate-400 sm:shrink-0 sm:text-right sm:whitespace-nowrap">{at ? utils.formatToReadableDate(at) : '—'}</p>
         </div>
     );
 }
@@ -845,17 +985,20 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
     const utils = Utility();
     const isMissing = required && !file;
     const isOptional = required && !required.is_required;
-    const label = required?.label ?? file?.collection_name.replace(/_/g, ' ');
+    const label = required?.label ?? ((file?.custom_properties?.document_key as string | undefined) ?? file?.collection_name)?.replace(/_/g, ' ');
 
     if (isMissing && !isOptional) {
         return (
-            <div className="flex items-center justify-between rounded-lg border border-rose-100 bg-rose-50/50 px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <XCircle className="h-5 w-5 shrink-0 text-rose-500" />
-                    <div>
-                        <p className="text-sm font-semibold text-rose-900 capitalize">{label}</p>
-                        <p className="text-xs text-rose-700">Required Document — Missing</p>
-                    </div>
+            <div className="flex flex-row overflow-hidden rounded-lg border border-rose-200 bg-rose-50/50 transition hover:shadow-sm sm:flex-col sm:rounded-xl">
+                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 border-r border-rose-100 bg-white p-2 text-center sm:h-32 sm:w-full sm:gap-2 sm:border-r-0 sm:border-b sm:p-4">
+                    <XCircle className="h-8 w-8 text-rose-300" />
+                    <p className="text-[10px] font-bold tracking-widest text-rose-600 uppercase">Missing Required</p>
+                </div>
+                <div className="min-w-0 flex-1 p-3">
+                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>
+                        {label}
+                    </p>
+                    <p className="mt-0.5 text-xs text-rose-500">Action required</p>
                 </div>
             </div>
         );
@@ -863,13 +1006,16 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
 
     if (isMissing && isOptional) {
         return (
-            <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/30 px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <Circle className="h-5 w-5 shrink-0 text-slate-300" />
-                    <div>
-                        <p className="text-sm font-medium text-slate-500 capitalize">{label}</p>
-                        <p className="text-xs text-slate-400">Optional Document — Not Provided</p>
-                    </div>
+            <div className="flex flex-row overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition hover:shadow-sm sm:flex-col sm:rounded-xl">
+                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 border-r border-slate-100 bg-white p-2 text-center opacity-60 sm:h-32 sm:w-full sm:gap-2 sm:border-r-0 sm:border-b sm:p-4">
+                    <Circle className="h-8 w-8 text-slate-300" />
+                    <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Optional</p>
+                </div>
+                <div className="min-w-0 flex-1 p-3 opacity-60">
+                    <p className="truncate text-sm font-medium text-slate-500 capitalize" title={label}>
+                        {label}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">Not provided</p>
                 </div>
             </div>
         );
@@ -877,27 +1023,50 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
 
     if (!file) return null;
 
+    const isImage = file.mime_type?.startsWith('image/');
+
     return (
-        <div className="flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/40 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-                <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900 capitalize">{label}</p>
-                    <p className="truncate text-xs text-slate-500">
-                        {file.file_name} · {formatBytes(file.size)}
-                        {file.uploaded_at && <> · Uploaded {utils.formatToReadableDateNoTime(file.uploaded_at)}</>}
-                    </p>
+        <a
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex min-h-20 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:border-[#005088] hover:shadow-md sm:flex-col sm:rounded-xl"
+        >
+            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-r border-slate-100 bg-slate-50 sm:h-32 sm:w-full sm:border-r-0 sm:border-b">
+                {isImage ? (
+                    <img
+                        src={file.url}
+                        alt={file.file_name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                ) : (
+                    <FileText className="h-10 w-10 text-slate-300 transition-colors group-hover:text-[#005088]" />
+                )}
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 hidden items-center justify-center bg-slate-900/40 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100 sm:flex">
+                    <span className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-900 shadow-sm">
+                        <CheckCircle2 className="h-4 w-4 text-[#005088]" /> View Document
+                    </span>
                 </div>
+                <span className="absolute right-1 bottom-1 rounded bg-white px-1.5 py-1 text-[9px] font-bold text-slate-700 shadow-sm sm:hidden">
+                    View
+                </span>
             </div>
-            <Button
-                size="sm"
-                variant="ghost"
-                className="ml-3 shrink-0 text-slate-700 hover:bg-emerald-100"
-                onClick={() => alert(`Download trigger for ${file.file_name}`)}
-            >
-                <Download className="mr-1.5 h-3.5 w-3.5" /> Download
-            </Button>
-        </div>
+
+            <div className="min-w-0 flex-1 p-3">
+                <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>
+                        {label}
+                    </p>
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                </div>
+                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                    {formatBytes(file.size)}
+                    {file.uploaded_at && <> • {utils.formatToReadableDateNoTime(file.uploaded_at)}</>}
+                </p>
+            </div>
+        </a>
     );
 }
 
@@ -907,24 +1076,26 @@ function ActionButtons({
     onPickUp,
     isMine,
     reviewerName,
+    acknowledgementReceiptUrl,
 }: {
     status: string;
     onAction: (label: string) => () => void;
     onPickUp: () => void;
     isMine: boolean;
     reviewerName: string | null;
+    acknowledgementReceiptUrl: string;
 }) {
     switch (status) {
         case 'pending':
             return (
-                <Button className="w-full sm:w-auto" onClick={onPickUp}>
+                <Button className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto" onClick={onPickUp}>
                     <UserCheck className="mr-2 h-4 w-4" /> Pick Up Case
                 </Button>
             );
         case 'under_review':
             if (!isMine) {
                 return (
-                    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    <div className="col-span-2 flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 sm:col-auto">
                         <UserCheck className="h-4 w-4 text-slate-400" />
                         <span className="font-semibold text-slate-700">Claimed by {reviewerName ?? 'another reviewer'}</span>
                     </div>
@@ -932,13 +1103,13 @@ function ActionButtons({
             }
             return (
                 <>
-                    <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto" onClick={onAction('Approve')}>
+                    <Button className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto" onClick={onAction('Approve')}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                     </Button>
-                    <Button variant="destructive" className="w-full sm:w-auto" onClick={onAction('Reject')}>
+                    <Button variant="destructive" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reject')}>
                         <XCircle className="mr-2 h-4 w-4" /> Reject
                     </Button>
-                    <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Request More Info')}>
+                    <Button variant="outline" className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto" onClick={onAction('Request More Info')}>
                         <AlertTriangle className="mr-2 h-4 w-4" /> Request More Info
                     </Button>
                 </>
@@ -946,23 +1117,31 @@ function ActionButtons({
         case 'approved':
             return (
                 <>
-                    <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
+                    <Button className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
                     </Button>
-                    <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Print Voucher')}>
-                        <Printer className="mr-2 h-4 w-4" /> Print Voucher
+                    <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
+                        <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
+                            <Printer className="mr-2 h-4 w-4" />
+                            <span className="sm:hidden">Print receipt</span>
+                            <span className="hidden sm:inline">Print Acknowledgement Receipt</span>
+                        </a>
                     </Button>
                 </>
             );
         case 'released':
             return (
-                <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Print Receipt')}>
-                    <Printer className="mr-2 h-4 w-4" /> Print Receipt
+                <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
+                    <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
+                        <Printer className="mr-2 h-4 w-4" />
+                        <span className="sm:hidden">Print receipt</span>
+                        <span className="hidden sm:inline">Print Acknowledgement Receipt</span>
+                    </a>
                 </Button>
             );
         case 'rejected':
             return (
-                <Button variant="outline" className="w-full sm:w-auto" onClick={onAction('Reopen')}>
+                <Button variant="outline" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reopen')}>
                     <AlertTriangle className="mr-2 h-4 w-4" /> Reopen
                 </Button>
             );

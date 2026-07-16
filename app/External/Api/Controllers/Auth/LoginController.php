@@ -29,9 +29,7 @@ class LoginController extends Controller
 
             $result = $this->loginUser->execute($loginDto, $municipality->slug);
 
-            return redirect()->intended(
-                route('home', ['municipality' => app('current_municipality')->slug])
-            );
+            return redirect()->to($result->redirect);
 
         } catch (DomainException $e) {
             throw ValidationException::withMessages([

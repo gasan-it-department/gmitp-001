@@ -15,16 +15,19 @@ interface Props {
 export function RequestReasonSection({ value, onChange, error }: Props) {
     return (
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-                    <FileText className="h-4 w-4" />
+            <div className="mb-6 flex items-center gap-4 border-b border-slate-100 pb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600">
+                    <FileText className="h-6 w-6" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">Why are you requesting assistance?</h2>
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900">Bakit ka humihingi ng tulong?</h2>
+                    <p className="text-sm text-slate-500">Ibigay ang mga detalye tungkol sa iyong sitwasyon.</p>
+                </div>
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="description" className="text-xs font-bold text-slate-500 uppercase">
-                    Briefly explain your situation
+                <Label htmlFor="description" className="sr-only">
+                    Ibahagi nang maikli ang iyong sitwasyon
                 </Label>
                 <Textarea
                     id="description"
@@ -34,9 +37,9 @@ export function RequestReasonSection({ value, onChange, error }: Props) {
                     onChange={(e) => onChange(e.target.value)}
                 />
                 <p className="text-[11px] text-slate-400">
-                    The social worker will use this when contacting you. The exact assistance amount will be decided after the interview.
+                    Gagamitin ito ng social worker kapag nakipag-ugnayan sa iyo. Ang eksaktong halaga ng tulong ay pagpapasyahan pagkatapos ng interview.
                 </p>
-                {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+                {error && <p className="text-xs text-red-500">{error}</p>}
             </div>
         </div>
     );

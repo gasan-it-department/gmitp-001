@@ -98,7 +98,7 @@ class CreateAdminUseCase
 
     }
 
-    private function ensureUserDoesNotExist(string $phone, string $email): void
+    private function ensureUserDoesNotExist(string $phone, ?string $email): void
     {
         if ($this->userRepo->findByPhone($phone) !== null) {
 
@@ -106,7 +106,7 @@ class CreateAdminUseCase
 
         }
 
-        if ($this->userRepo->findByEmail($email)) {
+        if ($email !== null && $this->userRepo->findByEmail($email)) {
 
             throw UserAlreadyExistExceptions::withEmail($email);
 

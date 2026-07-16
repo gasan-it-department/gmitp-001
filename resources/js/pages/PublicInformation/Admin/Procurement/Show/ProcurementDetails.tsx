@@ -86,7 +86,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
         if (window.history.length > 1) {
             window.history.back();
         } else {
-            router.visit(procurementRoute.admin.index.url({ municipality: currentMunicipality.slug }));
+            router.visit(procurementRoute.admin.page.url({ municipality: currentMunicipality.slug }));
         }
     };
     return (
@@ -230,7 +230,11 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                                 </div>
                                 <div>
                                     <p className="mb-1 text-sm text-slate-500">Funding Source</p>
-                                    <p className="text-base font-medium text-slate-900">{data.funding_source.label}</p>
+                                    <p className="text-base font-medium text-slate-900">
+                                        {data.funding_source?.code === 'OTHERS' && data.custom_funding_source
+                                            ? data.custom_funding_source
+                                            : data.funding_source?.label || data.funding_source?.name}
+                                    </p>
                                 </div>
                                 <div className="border-t pt-4 sm:col-span-2">
                                     <p className="mb-1 text-sm text-slate-500">Requesting Department</p>

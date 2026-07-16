@@ -17,6 +17,15 @@ interface Props {
     onClose: () => void;
 }
 
+function todayDateInputValue(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
 /**
  * Mark-as-Released modal — the cashier event.
  *
@@ -34,6 +43,7 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         release_reference_number: '',
+        release_date: todayDateInputValue(),
         release_notes: '',
         confirm: false as boolean,
     });
@@ -59,25 +69,23 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
     };
 
     const formattedAmount =
-        amountApproved != null
-            ? new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amountApproved)
-            : null;
+        amountApproved != null ? new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amountApproved) : null;
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
                 <DialogHeader className="flex flex-col gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 ring-4 ring-blue-50">
                         <Banknote className="h-6 w-6 text-blue-600" />
                     </div>
                     <DialogTitle className="text-xl text-slate-900">Mark as Released</DialogTitle>
                     <DialogDescription className="text-slate-500">
-                        Record the physical disbursement. Enter the OR / voucher number from your receipt book — this entry is COA-immutable
-                        once submitted.
+                        Record the physical disbursement. Use the actual release date and the reference number from the supporting paper trail. This
+                        entry is COA-immutable once submitted.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                <form onSubmit={handleSubmit} className="space-y-5 pt-2 sm:space-y-6 sm:pt-4">
                     {formattedAmount && (
                         <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-4 py-3">
                             <p className="text-[10px] font-bold tracking-widest text-blue-700 uppercase">Approved Amount Being Released</p>
@@ -86,22 +94,38 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                     )}
 
                     <div className="space-y-2">
+                        <Label htmlFor="release_date" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+                            Actual Release Date
+                        </Label>
+                        <Input
+                            id="release_date"
+                            type="date"
+                            value={data.release_date}
+                            max={todayDateInputValue()}
+                            onChange={(e) => setData('release_date', e.target.value)}
+                        />
+                        {errors.release_date && <p className="text-xs font-medium text-red-500">{errors.release_date}</p>}
+                        <p className="text-[11px] text-slate-400">
+                            Use the date the beneficiary actually received the assistance, even if you encode it later.
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
                         <Label htmlFor="release_reference_number" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
-                            OR / Voucher Number
+                            Release Reference No.
                         </Label>
                         <Input
                             id="release_reference_number"
                             type="text"
-                            placeholder="e.g. OR-2026-001234"
+                            placeholder="e.g. OR-2026-001234, voucher, payroll, or receipt no."
                             value={data.release_reference_number}
                             onChange={(e) => setData('release_reference_number', e.target.value)}
                             autoComplete="off"
                         />
-                        {errors.release_reference_number && (
-                            <p className="text-xs font-medium text-red-500">{errors.release_reference_number}</p>
-                        )}
+                        {errors.release_reference_number && <p className="text-xs font-medium text-red-500">{errors.release_reference_number}</p>}
                         <p className="text-[11px] text-slate-400">
-                            Must match the number on your physical receipt. Cannot be reused across cases in this municipality.
+                            Must match the physical OR, voucher, payroll, disbursement, or receipt reference. Cannot be reused across cases in this
+                            municipality.
                         </p>
                     </div>
 
@@ -146,11 +170,11 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                             type="button"
                             variant="ghost"
                             onClick={handleClose}
-                            className="text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                            className="w-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:w-auto"
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={processing} className="bg-blue-600 text-white hover:bg-blue-700">
+                        <Button type="submit" disabled={processing} className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto">
                             {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Banknote className="mr-2 h-4 w-4" />}
                             Confirm Release
                         </Button>

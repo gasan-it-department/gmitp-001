@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 interface Props {
   onSearch: (value: string) => void;
   searchBarHint: string;
+  initialQuery?: string;
 }
 
-const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint }) => {
-  const [query, setQuery] = useState("");
+const SearchBar: React.FC<Props> = ({ onSearch, searchBarHint, initialQuery = "" }) => {
+  const [query, setQuery] = useState(initialQuery);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(query);

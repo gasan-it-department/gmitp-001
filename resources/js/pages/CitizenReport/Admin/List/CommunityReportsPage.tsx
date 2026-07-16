@@ -1,14 +1,28 @@
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { Eye, EyeOff, FileText, Inbox } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Eye, EyeOff, FileText, Inbox, Search, X } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
 
 type EnumOption = { value: string; label: string };
 
 type ReporterShape = { id: string; full_name: string } | null;
+
+type AdminReportFilters = {
+    search: string | null;
+    status: string | null;
+    category: string | null;
+    visibility: string | null;
+    date_from: string | null;
+    date_to: string | null;
+    sort: string;
+    per_page: number;
+};
 
 type AdminReportListItem = {
     id: string;
@@ -22,6 +36,12 @@ type AdminReportListItem = {
 
 interface CommunityReportPageProps {
     reports: PaginatedResponse<AdminReportListItem>;
+    filters: AdminReportFilters;
+    status_options: EnumOption[];
+    category_options: EnumOption[];
+    visibility_options: EnumOption[];
+    sort_options: EnumOption[];
+    per_page_options: number[];
 }
 
 const statusBadgeClasses = (status: string): string => {
@@ -39,16 +59,72 @@ const statusBadgeClasses = (status: string): string => {
     }
 };
 
-export default function CommunityReportsPage({ reports }: CommunityReportPageProps) {
+export default function CommunityReportsPage({
+    reports,
+    filters,
+    status_options,
+    category_options,
+    visibility_options,
+    sort_options,
+    per_page_options,
+}: CommunityReportPageProps) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
+    const [searchValue, setSearchValue] = useState(filters.search ?? '');
+    const path = `/${slug}/admin/community-reports`;
+    const hasActiveFilters = Boolean(
+        filters.search ||
+            filters.status ||
+            filters.category ||
+            filters.visibility ||
+            filters.date_from ||
+            filters.date_to ||
+            filters.sort !== 'newest' ||
+            filters.per_page !== 20,
+    );
+
+    useEffect(() => {
+        setSearchValue(filters.search ?? '');
+    }, [filters.search]);
+
+    const applyFilters = (patch: Partial<AdminReportFilters>) => {
+        const nextFilters = {
+            ...filters,
+            ...patch,
+        };
+
+        router.get(
+            path,
+            cleanQuery({
+                search: nextFilters.search,
+                status: nextFilters.status,
+                category: nextFilters.category,
+                visibility: nextFilters.visibility,
+                date_from: nextFilters.date_from,
+                date_to: nextFilters.date_to,
+                sort: nextFilters.sort === 'newest' ? null : nextFilters.sort,
+                per_page: nextFilters.per_page === 20 ? null : nextFilters.per_page,
+                page: 1,
+            }),
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    const submitSearch = (event: FormEvent) => {
+        event.preventDefault();
+        applyFilters({ search: searchValue.trim() || null });
+    };
+
+    const clearFilters = () => {
+        setSearchValue('');
+        router.get(path, {}, { preserveState: true, preserveScroll: true, replace: true });
+    };
 
     return (
         <AppLayout>
             <Head title="Community Reports — Admin" />
 
             <div className="mx-auto min-h-screen w-full bg-slate-50/50 p-8">
-
                 {/* 1. Page Header */}
                 <div className="mb-6 flex items-end justify-between">
                     <div>
@@ -56,12 +132,77 @@ export default function CommunityReportsPage({ reports }: CommunityReportPagePro
                             <FileText className="h-6 w-6 text-slate-500" />
                             Community Reports
                         </h2>
-                        <p className="mt-1 text-sm text-slate-500">
-                            Manage and track all community reports for {currentMunicipality.name}.
-                        </p>
+                        <p className="mt-1 text-sm text-slate-500">Manage and track all community reports for {currentMunicipality.name}.</p>
                     </div>
                     <div className="text-xs text-slate-500">
                         {reports.meta.total} total {reports.meta.total === 1 ? 'report' : 'reports'}
+                    </div>
+                </div>
+
+                <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <form onSubmit={submitSearch} className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_auto]">
+                        <Input
+                            value={searchValue}
+                            onChange={(event) => setSearchValue(event.target.value)}
+                            placeholder="Search location, description, or reporter..."
+                        />
+                        <Button type="submit" className="gap-2">
+                            <Search className="h-4 w-4" />
+                            Search
+                        </Button>
+                    </form>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(6,minmax(130px,1fr))_auto]">
+                        <FilterSelect
+                            value={filters.status}
+                            placeholder="Status"
+                            options={status_options}
+                            onChange={(status) => applyFilters({ status })}
+                        />
+                        <FilterSelect
+                            value={filters.category}
+                            placeholder="Category"
+                            options={category_options}
+                            onChange={(category) => applyFilters({ category })}
+                        />
+                        <FilterSelect
+                            value={filters.visibility}
+                            placeholder="Visibility"
+                            options={visibility_options}
+                            onChange={(visibility) => applyFilters({ visibility })}
+                        />
+                        <Input
+                            type="date"
+                            value={filters.date_from ?? ''}
+                            onChange={(event) => applyFilters({ date_from: event.target.value || null })}
+                            aria-label="From date"
+                        />
+                        <Input
+                            type="date"
+                            value={filters.date_to ?? ''}
+                            onChange={(event) => applyFilters({ date_to: event.target.value || null })}
+                            aria-label="To date"
+                        />
+                        <FilterSelect
+                            value={filters.sort}
+                            placeholder="Sort"
+                            options={sort_options}
+                            allLabel={null}
+                            onChange={(sort) => applyFilters({ sort: sort ?? 'newest' })}
+                        />
+                        <div className="flex gap-2">
+                            <FilterSelect
+                                value={String(filters.per_page)}
+                                placeholder="Per page"
+                                options={per_page_options.map((value) => ({ value: String(value), label: `${value} / page` }))}
+                                allLabel={null}
+                                onChange={(perPage) => applyFilters({ per_page: Number(perPage ?? 20) })}
+                            />
+                            <Button type="button" variant="outline" onClick={clearFilters} disabled={!hasActiveFilters} className="shrink-0 gap-2">
+                                <X className="h-4 w-4" />
+                                Clear
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -70,9 +211,13 @@ export default function CommunityReportsPage({ reports }: CommunityReportPagePro
                     {reports.data.length === 0 ? (
                         <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
                             <Inbox className="mb-3 h-10 w-10 text-slate-400" />
-                            <p className="text-base font-semibold text-slate-900">No community reports yet.</p>
+                            <p className="text-base font-semibold text-slate-900">
+                                {hasActiveFilters ? 'No reports match the current filters.' : 'No community reports yet.'}
+                            </p>
                             <p className="mt-1 text-sm text-slate-500">
-                                When citizens file reports for {currentMunicipality.name}, they'll appear here.
+                                {hasActiveFilters
+                                    ? 'Adjust or clear the filters to see more community reports.'
+                                    : `When citizens file reports for ${currentMunicipality.name}, they'll appear here.`}
                             </p>
                         </div>
                     ) : (
@@ -80,41 +225,25 @@ export default function CommunityReportsPage({ reports }: CommunityReportPagePro
                             <table className="min-w-full divide-y divide-slate-200">
                                 <thead className="bg-slate-50">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                            Date
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                            Reporter
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                            Category
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                            Location
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                            Actions
-                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">Date</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">Reporter</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">Category</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">Location</th>
+                                        <th className="px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">Status</th>
+                                        <th className="px-4 py-3 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 bg-white">
                                     {reports.data.map((report) => (
                                         <tr key={report.id} className="transition-colors hover:bg-slate-50/60">
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                                                {report.created_at ?? '—'}
-                                            </td>
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-slate-700">{report.created_at ?? '—'}</td>
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-slate-900">
-                                                        {report.reporter?.full_name ?? 'Unknown'}
-                                                    </span>
+                                                    <span className="font-medium text-slate-900">{report.reporter?.full_name ?? 'Unknown'}</span>
                                                     {report.is_anonymous && (
                                                         <span
                                                             title="Citizen requested anonymity — do not publish this name."
-                                                            className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-300"
+                                                            className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-purple-300 ring-inset"
                                                         >
                                                             <EyeOff className="h-3 w-3" />
                                                             Anonymous to Public
@@ -122,9 +251,7 @@ export default function CommunityReportsPage({ reports }: CommunityReportPagePro
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                                                {report.category.label}
-                                            </td>
+                                            <td className="px-4 py-3 text-sm font-medium text-slate-900">{report.category.label}</td>
                                             <td className="px-4 py-3 text-sm text-slate-600">
                                                 <span className="line-clamp-1 max-w-xs">{report.location_text}</span>
                                             </td>
@@ -160,4 +287,34 @@ export default function CommunityReportsPage({ reports }: CommunityReportPagePro
             </div>
         </AppLayout>
     );
+}
+
+interface FilterSelectProps {
+    value: string | null;
+    placeholder: string;
+    options: EnumOption[];
+    allLabel?: string | null;
+    onChange: (value: string | null) => void;
+}
+
+function FilterSelect({ value, placeholder, options, allLabel, onChange }: FilterSelectProps) {
+    return (
+        <Select value={value ?? 'all'} onValueChange={(nextValue) => onChange(nextValue === 'all' ? null : nextValue)}>
+            <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+                {allLabel !== null && <SelectItem value="all">{allLabel ?? `All ${placeholder}`}</SelectItem>}
+                {options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+
+function cleanQuery(query: Record<string, string | number | null | undefined>) {
+    return Object.fromEntries(Object.entries(query).filter(([, value]) => value !== null && value !== undefined && value !== ''));
 }

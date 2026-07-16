@@ -11,6 +11,8 @@ use App\External\Api\Controllers\Auth\UpdatePhoneController;
 use App\External\Api\Controllers\Auth\VerifiyPhoneController;
 use App\External\Api\Controllers\Profile\LinkSocialAccountController;
 use App\External\Api\Controllers\UserManagement\CreateAdminController;
+use App\External\Api\Controllers\UserManagement\DeactivateAdminController;
+use App\External\Api\Controllers\UserManagement\ReactivateAdminController;
 use App\External\Api\Controllers\UserManagement\UpdateAdminProfileController;
 use App\External\Web\Controllers\Auth\AuthController;
 use App\External\Web\Controllers\Auth\ForgotPasswordViewController;
@@ -19,6 +21,7 @@ use App\External\Web\Controllers\Auth\ShowSignupController;
 use App\External\Web\Controllers\SuperAdmin\SuperAdminController;
 use App\External\Web\Controllers\UserManagement\Public\ShowUserProfileController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\EditAdminController;
+use App\External\Web\Controllers\UserManagement\SuperAdmin\ListUserManagementController;
 use App\External\Web\Controllers\UserManagement\SuperAdmin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,14 +59,6 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', LogoutController::class)->name('logout');
 
-    Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
-
-    Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
-
-    Route::get('otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
-
-    Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
-
     //Updating the password Via profile
     Route::put('/password/update', UpdatePasswordController::class)->name('password.change');
 
@@ -92,6 +87,20 @@ Route::middleware(['guest'])
             ->middleware('signed');
     });
 
+Route::prefix('{municipality}')
+    ->middleware(['auth', 'municipalityContext', 'phone.pending',])
+    ->group(function () {
+        Route::get('/otp', [AuthController::class, 'showOtpPage'])->name('otp.verification.page');
+
+        Route::post('/verify', [VerifiyPhoneController::class, 'verify'])->name('verify');
+
+        Route::post('/resend-otp', [VerifiyPhoneController::class, 'resendOtp'])->name('resend.otp');
+
+        Route::put('/update/phone-number', [UpdatePhoneController::class, 'update'])->name('update.phone');
+    });
+
+
+
 //super admin user management
 Route::middleware('superAdmin')
     ->prefix('super-admin')
@@ -100,7 +109,7 @@ Route::middleware('superAdmin')
         Route::get('/dashboard', [SuperAdminController::class, 'showDashboard'])
             ->name('dashboard');
 
-        Route::get('/user-management', [UserManagementController::class, 'index'])
+        Route::get('/user-management', ListUserManagementController::class)
             ->name('users.page');
 
         Route::get('/user-registry', [UserManagementController::class, 'register'])->name('registry.page');
@@ -120,4 +129,8 @@ Route::prefix('api/user-management')
 
         // Invokable controller. Resulting name: 'user.management.updateAdmin'
         Route::put('/update-admin/{id}', UpdateAdminProfileController::class)->name('updateAdmin');
+
+        // Offboarding. Resulting names: 'user.management.deactivateAdmin' / '...reactivateAdmin'
+        Route::put('/deactivate-admin/{id}', DeactivateAdminController::class)->name('deactivateAdmin');
+        Route::put('/reactivate-admin/{id}', ReactivateAdminController::class)->name('reactivateAdmin');
     });

@@ -5,6 +5,7 @@ namespace App\Core\Auth\UseCase;
 use App\Core\Auth\Actions\AuthenticateSocialUserAction;
 use App\Core\Auth\Dto\LoginResponseDto;
 use App\Core\Auth\Dto\SocialUserDto;
+use App\Core\Auth\Exceptions\AccountDeactivatedException;
 use App\Core\Auth\Interfaces\CookieSessionInterface;
 use App\Core\Auth\Services\LoginRedirectionService;
 
@@ -24,6 +25,11 @@ class LoginWithSocialProvider
     {
         // Step 1: Resolve or create the user (Existing Action)
         $user = $this->authenticateSocialUser->execute($dto);
+
+        // Offboarded accounts cannot log in via social either.
+        if ($user->isDeactivated()) {
+            throw new AccountDeactivatedException();
+        }
 
         // Step 2: Create the session — identical to what LoginUser does
         $sessionData = $this->cookieSessionService->createAuthenticatedSession($user->id, false);

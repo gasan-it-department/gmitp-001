@@ -4,7 +4,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\UseCase\Assistance\ListAssistanceRequestAction;
-use App\External\Api\Resources\ActionCenter\AssistanceRequestListResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestListResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;

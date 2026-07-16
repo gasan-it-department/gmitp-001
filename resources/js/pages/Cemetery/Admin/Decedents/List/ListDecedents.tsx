@@ -1,36 +1,78 @@
-import { DecedentListItem } from '@/Core/Types/Cemetery/cemetery';
+import { Button } from '@/components/ui/button';
+import {
+    DecedentIntermentStatusFilterValue,
+    DecedentListFilters,
+    DecedentListItem,
+    IdentityStatusValue,
+    RegistrationStatusValue,
+    SelectOption,
+    VitalRecordTypeValue,
+} from '@/Core/Types/Cemetery/cemetery';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
+import cemetery from '@/routes/cemetery';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import { DecedentsTable } from './Components/DecedentsTable';
 
 interface Props {
     decedents: PaginatedResponse<DecedentListItem>;
-    filters?: Record<string, string>;
+    filters: DecedentListFilters;
+    registration_status_options: SelectOption<RegistrationStatusValue>[];
+    identity_status_options: SelectOption<IdentityStatusValue>[];
+    vital_record_type_options: SelectOption<VitalRecordTypeValue>[];
+    interment_status_options: SelectOption<DecedentIntermentStatusFilterValue>[];
 }
 
-export default function ListDecedents({ decedents }: Props) {
+export default function ListDecedents({
+    decedents,
+    filters,
+    registration_status_options,
+    identity_status_options,
+    vital_record_type_options,
+    interment_status_options,
+}: Props) {
     const rows = decedents.data;
 
     return (
         <AppLayout>
-            <section className="">
-                <div className="m-5 mt-0 flex bg-white">
-                    <div className="w-full p-5">
-                        {/* Stat strip */}
-                        <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <StatCard label="Total Records" value={decedents.meta.total ?? rows.length} tone="indigo" />
-                            <StatCard
-                                label="Awaiting Plot Assignment"
-                                value={rows.filter((r) => r.interment_status === 'unassigned' || r.interment_status === 'pending').length}
-                                tone="amber"
-                            />
-                            <StatCard label="Interred" value={rows.filter((r) => r.interment_status === 'interred').length} tone="emerald" />
-                        </section>
+            <Head title="Decedents Registry" />
 
-                        <DecedentsTable decedents={decedents} />
+            <div className="m-6 space-y-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Decedents Registry</h1>
+                        <p className="text-sm text-muted-foreground">Manage and track decedent records and interments.</p>
                     </div>
+
+                    <Link href={cemetery.admin.decedents.create.page.url({ municipality: currentMunicipality.slug })}>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" /> New Decedent
+                        </Button>
+                    </Link>
                 </div>
-            </section>
+
+                {/* Stat strip */}
+                <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <StatCard label="Total Records" value={decedents.meta.total ?? rows.length} tone="indigo" />
+                    <StatCard
+                        label="Awaiting Plot Assignment"
+                        value={rows.filter((r) => r.interment_status === 'unassigned' || r.interment_status === 'pending').length}
+                        tone="amber"
+                    />
+                    <StatCard label="Interred" value={rows.filter((r) => r.interment_status === 'interred').length} tone="emerald" />
+                </section>
+
+                <DecedentsTable
+                    decedents={decedents}
+                    filters={filters}
+                    registrationStatusOptions={registration_status_options}
+                    identityStatusOptions={identity_status_options}
+                    vitalRecordTypeOptions={vital_record_type_options}
+                    intermentStatusOptions={interment_status_options}
+                />
+            </div>
         </AppLayout>
     );
 }

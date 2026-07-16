@@ -55,9 +55,9 @@ class LinkBeneficiaryToUserAction
 
             $this->ensureTenantMatch($beneficiary, $dto->municipalId);
 
-            // Resolve the target account, scoped to THIS municipality so an admin
-            // can never reach across tenants (case-insensitive, trimmed).
-            $user = $this->resolveAccount($dto->accountEmail, $dto->municipalId);
+            // Resolve the target account by email. Client accounts are global
+            // (no municipal_id), so resolution is system-wide; email is unique.
+            $user = $this->resolveAccount($dto->accountEmail);
 
             if ($beneficiary->user_id === $user->id) {
                 throw new \DomainException('This beneficiary is already linked to that account.');
@@ -72,7 +72,7 @@ class LinkBeneficiaryToUserAction
                 );
             }
 
-            $this->ensureAccountFree($user->id, $beneficiary->id);
+            $this->ensureAccountFree($user->id, $beneficiary->id, $beneficiary->municipal_id);
 
             try {
                 $beneficiary->update(['user_id' => $user->id]);
@@ -109,16 +109,20 @@ class LinkBeneficiaryToUserAction
         }
     }
 
-    private function resolveAccount(string $email, string $municipalId): User
+    private function resolveAccount(string $email): User
     {
+        // Citizen portal accounts are global (users.municipal_id is NULL), so we
+        // resolve by email across all accounts. Email is unique system-wide, so
+        // there is no cross-tenant ambiguity. (Filtering by municipal_id here
+        // would never match a citizen and was the reason linking silently failed
+        // for client accounts.)
         $user = User::query()
-            ->where('municipal_id', $municipalId)
             ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
             ->first();
 
-        if (! $user) {
+        if (!$user) {
             throw new \DomainException(
-                'No portal account with that email exists in this municipality. '
+                'No portal account with that email exists. '
                 . 'Ask the applicant to confirm the email they registered with.',
             );
         }
@@ -126,17 +130,22 @@ class LinkBeneficiaryToUserAction
         return $user;
     }
 
-    private function ensureAccountFree(string $userId, string $beneficiaryId): void
+    private function ensureAccountFree(string $userId, string $beneficiaryId, string $municipalId): void
     {
+        // Per-LGU model: one login may own one record PER municipality, so a
+        // conflict exists only if the account already owns a DIFFERENT record in
+        // THIS municipality. (The same login legitimately owns records in other
+        // LGUs — those must not block this link.)
         $existing = Beneficiary::query()
             ->where('user_id', $userId)
+            ->where('municipal_id', $municipalId)
             ->whereKeyNot($beneficiaryId)
             ->lockForUpdate()
             ->first();
 
         if ($existing) {
             throw new \DomainException(sprintf(
-                'That account is already linked to another beneficiary record (%s). '
+                'That account is already linked to another beneficiary record (%s) in this municipality. '
                 . 'This is likely a duplicate — resolve it before re-linking.',
                 trim($existing->full_name) ?: $existing->id,
             ));
@@ -163,12 +172,12 @@ class LinkBeneficiaryToUserAction
             ->performedOn($beneficiary)
             ->causedBy(User::find($dto->actingAdminId))
             ->withProperties([
-                'municipal_id'     => $dto->municipalId,
-                'beneficiary_id'   => $beneficiary->id,
-                'from_user_id'     => $previousUserId,
-                'to_user_id'       => $user->id,
+                'municipal_id' => $dto->municipalId,
+                'beneficiary_id' => $beneficiary->id,
+                'from_user_id' => $previousUserId,
+                'to_user_id' => $user->id,
                 'to_account_email' => $user->email,
-                'reason'           => $dto->reason,
+                'reason' => $dto->reason,
             ])
             ->log($previousUserId
                 ? 'Re-linked beneficiary to a different portal account'

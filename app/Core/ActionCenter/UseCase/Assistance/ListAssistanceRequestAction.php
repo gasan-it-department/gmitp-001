@@ -44,17 +44,18 @@ class ListAssistanceRequestAction
             ->with([
                 'assistanceType:id,name,slug',
                 'media',
+                'snapshot',
             ])
             ->where('ac_assistance_requests.municipal_id', $municipalId)
             ->orderBy('ac_assistance_requests.created_at', 'desc');
 
         // ── Status ────────────────────────────────────────────────────────────
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
         // ── Assistance type ───────────────────────────────────────────────────
-        if (!empty($filters['assistance_type_id'])) {
+        if (! empty($filters['assistance_type_id'])) {
             $query->where('assistance_type_id', $filters['assistance_type_id']);
         }
 
@@ -63,30 +64,33 @@ class ListAssistanceRequestAction
         // admin owns. Composes with the status filter so the My Cases controller
         // can pass status=under_review + reviewed_by_user_id=auth->id() and get
         // exactly the personal worklist.
-        if (!empty($filters['reviewed_by_user_id'])) {
+        if (! empty($filters['reviewed_by_user_id'])) {
             $query->where('reviewed_by_user_id', $filters['reviewed_by_user_id']);
         }
 
         // ── Date range (inclusive, on created_at) ─────────────────────────────
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('ac_assistance_requests.created_at', '>=', $filters['date_from']);
         }
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('ac_assistance_requests.created_at', '<=', $filters['date_to']);
         }
 
         // ── Free-text search ──────────────────────────────────────────────────
         // Covers transaction number, the filer's frozen identity snapshot, and
         // the on-behalf name columns so admins can find a record by any name.
-        if (!empty($filters['search'])) {
-            $term = '%' . $filters['search'] . '%';
+        if (! empty($filters['search'])) {
+            $term = '%'.$filters['search'].'%';
 
             $query->where(function ($q) use ($term) {
                 $q->where('transaction_number', 'like', $term)
-                    ->orWhere('snapshot_first_name', 'like', $term)
-                    ->orWhere('snapshot_last_name', 'like', $term)
-                    ->orWhere('on_behalf_first_name', 'like', $term)
-                    ->orWhere('on_behalf_last_name', 'like', $term);
+                    ->orWhereHas('snapshot', function ($snapshotQuery) use ($term) {
+                        $snapshotQuery
+                            ->where('first_name', 'like', $term)
+                            ->orWhere('last_name', 'like', $term);
+                    })
+                    ->orWhere('metadata->on_behalf_first_name', 'like', $term)
+                    ->orWhere('metadata->on_behalf_last_name', 'like', $term);
             });
         }
 

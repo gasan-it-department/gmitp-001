@@ -28,11 +28,12 @@ export default function Edit({ procurement, fundingSources, categories, statuses
         awarded_date: existingData.awarded_date ? existingData.awarded_date.split('T')[0] : null,
 
         winning_bidder: existingData.winning_bidder || null,
-        documents: existingData.documents || [],
+        documents: existingData.media || [],
 
         //  FIX 3: Safely extract the ID from the nested relationship objects
         department_id: existingData.department?.id || '',
         funding_source_id: existingData.funding_source?.id || '',
+        custom_funding_source: existingData.custom_funding_source || null,
 
         notes: existingData.notes || '',
 

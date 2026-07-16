@@ -15,11 +15,15 @@ use Illuminate\Support\Collection;
  */
 class ListBlocksAction
 {
-    public function execute(string $municipalId): Collection
+    public function execute(string $municipalId, string $cemeterySiteId): Collection
     {
         return Block::with('section')
             ->where('municipal_id', $municipalId)
             ->where('status', 'active')
+            ->whereHas('section', fn ($query) => $query
+                ->where('municipal_id', $municipalId)
+                ->where('cemetery_site_id', $cemeterySiteId)
+                ->where('status', 'active'))
             ->orderBy('name')
             ->get();
     }

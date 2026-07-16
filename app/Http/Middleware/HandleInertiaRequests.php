@@ -53,8 +53,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? (new UserResource($user))->resolve() : null,
                 'roles' => [
-                    'isClient' => $user ? $roleChecker->isClient($user) : false,
-                    'isAdmin' => $user ? $roleChecker->isAdmin($user) : false,
+                    'isClient'    => $user ? $roleChecker->isClient($user) : false,
+                    'isAdmin'     => $user ? $roleChecker->isAdmin($user) : false,
                     'isSuperAdmin' => $user ? $roleChecker->isSuperAdmin($user) : false,
                 ],
                 // Permission names the admin holds — drives `{module}.access`

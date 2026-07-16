@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
+import { AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { usePage } from '@inertiajs/react';
+import actionCenter from '@/routes/actionCenter';
+import { router, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import AssistanceTypeForm from './Components/AssistanceTypeForm';
 // ... other layout imports like AppLayout, FlashHandler, ToastProvider
@@ -12,17 +14,18 @@ interface Props {
 export default function CreateAssistanceType({ documentTypes }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    const emptyInitialData = {
+    const emptyInitialData: AssistanceTypeFormData = {
         name: '',
         description: '',
-        max_amount: 0,
+        max_amount: null,
+        min_amount: null,
         cooldown_months: 0,
         is_active: true,
         documents: [],
     };
     const handleCancel = () => {
         // Navigates back to your list view
-        // router.visit(route('admin.assistance-types.index', { municipality: currentMunicipality.slug }));
+        router.visit(actionCenter.admin.list.assistance.types.url({ municipality: currentMunicipality.slug }));
     };
 
     return (

@@ -8,8 +8,9 @@ use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -43,12 +44,13 @@ use Illuminate\Support\Facades\DB;
 class ApproveAssistanceRequestAction
 {
     public function __construct(
-        protected LockAssistanceRequestAction $lockRequest
+        protected LockAssistanceRequestAction $lockRequest,
+        private readonly AssistanceRequestSmsNotifier $smsNotifier,
     ) {}
 
     public function execute(ApproveAssistanceRequestDto $dto): AssistanceRequest
     {
-        return DB::transaction(function () use ($dto) {
+        $request = DB::transaction(function () use ($dto) {
             // Lock the target row AND eager-load every relation the gates
             // / fan-out need. Loading inside the lock window means we
             // operate on the most recent committed state — no stale-read
@@ -56,13 +58,14 @@ class ApproveAssistanceRequestAction
             $request = $this->lockRequest->execute(
                 id: $dto->assistanceRequestId,
                 municipalId: $dto->municipalId,
-                with: ['assistanceType.documents', 'media'],
+                with: ['assistanceType.documents', 'media', 'onBehalfHouseholdMember'],
             );
 
             // Run all hard gates (cheap to expensive). Any failure aborts
             // the transaction without writing anything.
             $this->ensureTransitionAllowed($request);
             $this->ensureReviewerAssigned($request);
+            $this->ensureOnBehalfMemberVerified($request);
             $this->ensureAmountWithinLimits($request, $dto->amountApproved);
             $this->ensureRequiredDocumentsReady($request);
 
@@ -86,6 +89,10 @@ class ApproveAssistanceRequestAction
 
             return $request->fresh();
         }, attempts: 3);
+
+        $this->smsNotifier->requestApproved($request);
+
+        return $request;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -94,7 +101,7 @@ class ApproveAssistanceRequestAction
 
     private function ensureTransitionAllowed(AssistanceRequest $request): void
     {
-        if (!$request->status->canTransitionTo(AssistanceStatus::Approved)) {
+        if (! $request->status->canTransitionTo(AssistanceStatus::Approved)) {
             throw AssistanceApprovalException::invalidTransition($request->status);
         }
     }
@@ -103,6 +110,17 @@ class ApproveAssistanceRequestAction
     {
         if ($request->reviewed_by_user_id === null) {
             throw AssistanceApprovalException::noReviewerAssigned();
+        }
+    }
+
+    private function ensureOnBehalfMemberVerified(AssistanceRequest $request): void
+    {
+        $member = $request->onBehalfHouseholdMember;
+
+        if ($member !== null
+            && $member->relationship !== 'head'
+            && ! $member->is_verified_dependent) {
+            throw AssistanceApprovalException::dependentNotVerified();
         }
     }
 
@@ -140,7 +158,7 @@ class ApproveAssistanceRequestAction
     private function ensureRequiredDocumentsReady(AssistanceRequest $request): void
     {
         $requiredDocs = $request->assistanceType->documents
-            ->filter(fn($doc) => (bool) $doc->pivot->is_required);
+            ->filter(fn ($doc) => (bool) $doc->pivot->is_required);
 
         if ($requiredDocs->isEmpty()) {
             return;
@@ -153,14 +171,56 @@ class ApproveAssistanceRequestAction
         // EVERY approval was blocked even when all scans were attached. Read
         // the slot keys back from the custom property instead.
         $uploadedKeys = $request->media
-            ->map(fn($media) => $media->getCustomProperty('document_key'))
+            ->map(fn ($media) => $media->getCustomProperty('document_key'))
             ->filter()
             ->unique();
 
         // Report the human-readable labels ("Valid ID"), not the raw keys.
         $missing = $requiredDocs
-            ->reject(fn($doc) => $uploadedKeys->contains($doc->key))
+            ->reject(fn ($doc) => $uploadedKeys->contains($doc->key))
             ->pluck('label');
+
+        if ($missing->isNotEmpty()) {
+            throw AssistanceApprovalException::missingRequiredDocuments($missing);
+        }
+
+        $this->ensureRecipientIdentityDocumentsReady($request, $requiredDocs, $uploadedKeys);
+    }
+
+    private function ensureRecipientIdentityDocumentsReady(
+        AssistanceRequest $request,
+        Collection $requiredDocs,
+        Collection $uploadedKeys,
+    ): void {
+        if ($request->on_behalf_household_member_id === null) {
+            return;
+        }
+
+        $requiresFilerId = $requiredDocs->contains(
+            fn ($document) => in_array($document->key, ['valid_id_front', 'valid_id_back'], true),
+        );
+
+        if (! $requiresFilerId) {
+            return;
+        }
+
+        $exception = $request->recipient_id_exception;
+        $hasValidUnavailableReason = $exception === 'no_government_id'
+            && filled($request->recipient_id_exception_reason)
+            && mb_strlen(trim($request->recipient_id_exception_reason)) >= 10;
+
+        if ($request->assistanceType->slug === 'burial'
+            || in_array($exception, ['minor', 'deceased'], true)
+            || $hasValidUnavailableReason) {
+            return;
+        }
+
+        $missing = collect([
+            'recipient_valid_id_front' => 'Assisted Person Valid Government ID - Front',
+            'recipient_valid_id_back' => 'Assisted Person Valid Government ID - Back',
+        ])
+            ->reject(fn ($label, $key) => $uploadedKeys->contains($key))
+            ->values();
 
         if ($missing->isNotEmpty()) {
             throw AssistanceApprovalException::missingRequiredDocuments($missing);
@@ -184,11 +244,11 @@ class ApproveAssistanceRequestAction
             ? (trim("{$user->first_name} {$user->last_name}") ?: ($user->user_name ?? $approverId))
             : $approverId;
 
-        $stamp = '[APPROVED ' . now()->toDateTimeString() . ' by ' . $name . ']';
-        $block = $stamp . "\n" . $notes;
+        $stamp = '[APPROVED '.now()->toDateTimeString().' by '.$name.']';
+        $block = $stamp."\n".$notes;
 
         return $existing
-            ? rtrim($existing) . "\n\n" . $block
+            ? rtrim($existing)."\n\n".$block
             : $block;
     }
 
@@ -219,6 +279,14 @@ class ApproveAssistanceRequestAction
             'assistance_type_id' => $request->assistance_type_id,
             'assistance_request_id' => $request->id,
             'household_id' => $request->household_id,
+            // For an INDEPENDENT, on-behalf-of-deceased program (Burial) the
+            // cooldown is keyed to the deceased (the on-behalf household member)
+            // so a DIFFERENT death in the household within the window is NOT
+            // blocked. Standard programs leave this null — they cool down the
+            // filer (per_beneficiary) or the whole household (per_household).
+            'household_member_id' => $type->is_independent
+                ? $request->on_behalf_household_member_id
+                : null,
             'cooldown_starts_at' => now(),
             'cooldown_expires_at' => $expiresAt,
         ];
@@ -232,6 +300,10 @@ class ApproveAssistanceRequestAction
                 ->where('household_id', $request->household_id)
                 ->where('is_active', true)
                 ->whereNotNull('beneficiary_id')
+                ->where(function ($query) {
+                    $query->where('relationship', 'head')
+                        ->orWhere('is_verified_dependent', true);
+                })
                 ->orderBy('id')
                 ->get(['id', 'beneficiary_id']);
 

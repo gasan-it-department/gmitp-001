@@ -8,12 +8,12 @@ class CheckEligibilityToSendFeedbackAction
 {
     private const DAILY_LIMIT = 3;
 
-    /**
-     * Check if a user is allowed to send new feedback.
-     * Logic: Max 3 feedbacks per user per municipality per day.
-     */
-    public function execute(string $userId, string $municipalId): bool
+    public function execute(?string $userId, string $municipalId): bool
     {
+        if ($userId === null) {
+            return true;
+        }
+
         $count = FeedbackSubmission::query()
             ->where('municipal_id', $municipalId)
             ->where('user_id', $userId)

@@ -5,10 +5,12 @@ namespace App\External\Api\Controllers\Auth\Login;
 use App\Core\Auth\Dto\SocialUserDto;
 use App\Core\Auth\UseCase\LoginWithSocialProvider;
 use App\Http\Controllers\Controller;
+use App\Shared\Exceptions\Interfaces\DomainException;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
+use Nette\Schema\ValidationException;
 
 class AuthenticateSocialUserController extends Controller
 {
@@ -22,38 +24,30 @@ class AuthenticateSocialUserController extends Controller
      * Expects a 'provider' and an 'access_token' from the client-side OAuth flow.
      * Creates a cookie session — identical to the phone/password login path.
      */
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request)
     {
         $request->validate([
-            'provider'     => ['required', 'string'],
+            'provider' => ['required', 'string'],
             'access_token' => ['required', 'string'],
         ]);
 
-        try {
-            $provider = $request->input('provider');
-            $token    = $request->input('access_token');
 
-            // Verify the access token directly with the provider (no redirect/callback needed)
-            $socialiteUser = Socialite::driver($provider)
-                ->stateless()
-                ->userFromToken($token);
+        $provider = $request->input('provider');
+        $token = $request->input('access_token');
 
-            $municipality = app('current_municipality');
+        // Verify the access token directly with the provider (no redirect/callback needed)
+        $socialiteUser = Socialite::driver($provider)
+            ->stateless()
+            ->userFromToken($token);
 
-            $result = $this->loginWithSocialProvider->execute(
-                SocialUserDto::fromSocialite($provider, $socialiteUser),
-                $municipality->slug,
-            );
+        $municipality = app('current_municipality');
 
-            return response()->json([
-                'success'  => true,
-                'redirect' => $result->redirect,
-            ]);
+        $result = $this->loginWithSocialProvider->execute(
+            SocialUserDto::fromSocialite($provider, $socialiteUser),
+            $municipality->slug,
+        );
 
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 401);
-        }
+        return redirect()->to($result->redirect);
+
     }
 }

@@ -3,7 +3,7 @@
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
-use App\External\Api\Resources\ActionCenter\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\External\Api\Resources\ActionCenter\RequiredDocumentResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;

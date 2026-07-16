@@ -5,8 +5,11 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\BeneficiaryFlag;
 use App\Core\ActionCenter\Models\Household;
+use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -18,8 +21,8 @@ use Illuminate\Support\Facades\DB;
  * Step 2 — Beneficiary: inserts one row into ac_beneficiaries linked to the
  *           household above and to the portal user account (user_id).
  *
- * After this action succeeds the citizen will pass the profile gate in
- * ApplyAssistanceRequestController and can submit assistance requests.
+ * After this action succeeds the citizen has a provisional household and
+ * remains pending until an MSWD administrator verifies the intake.
  *
  * ── Lock-order contract ────────────────────────────────────────────────
  * Locks in this order: users row → households insert → beneficiaries
@@ -39,33 +42,45 @@ class CreateBeneficiaryProfileAction
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
+        private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
+        private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
+        private readonly BeneficiarySmsNotifier $smsNotifier,
     ) {
     }
 
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
-        return DB::transaction(function () use ($dto) {
+        $beneficiary = DB::transaction(function () use ($dto) {
 
             DB::table('users')
                 ->where('id', $dto->userId)
                 ->lockForUpdate()
                 ->first();
 
-            $existing = Beneficiary::where('user_id', $dto->userId)->first();
+            // Idempotency is PER MUNICIPALITY: a citizen already registered in
+            // THIS LGU gets their existing record back, but the same login in a
+            // DIFFERENT LGU falls through to create a fresh, separate record
+            // there (one beneficiary per (user, municipality)).
+            $existing = Beneficiary::where('user_id', $dto->userId)
+                ->where('municipal_id', $dto->municipalId)
+                ->first();
             if ($existing) {
 
                 return $existing;
             }
 
-            $household = Household::create([
-                'municipal_id' => $dto->municipalId,
-                'barangay' => $dto->barangay,
-                'street' => $dto->street,
-            ]);
+            $household = $this->createHousehold->execute(
+                $dto->municipalId,
+                $dto->barangay,
+                $dto->barangayCode,
+                $dto->street,
+            );
 
             $beneficiary = Beneficiary::create([
                 'household_id' => $household->id,
                 'user_id' => $dto->userId,
+                // Intrinsic tenant key — must mirror the household's municipality.
+                'municipal_id' => $dto->municipalId,
                 // Human-friendly lifelong ID (e.g. GAS-000123). Allocated under
                 // a per-municipality row lock inside this same transaction.
                 'beneficiary_number' => $this->generateBeneficiaryNumber->execute($dto->municipalId),
@@ -81,6 +96,7 @@ class CreateBeneficiaryProfileAction
                 'civil_status' => $dto->civilStatus,
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome,
+                'contact_phone' => $dto->contactPhone,
                 'terms_consented_at' => $dto->termsConsentedAt,
                 'terms_version' => $dto->termsVersion,
             ]);
@@ -112,7 +128,64 @@ class CreateBeneficiaryProfileAction
                 );
             }
 
+            // ── Soft duplicate detection (online self-service) ───────────
+            // Never blocks — twins and common name+DOB collisions are real, so
+            // hard-stopping a citizen's own registration would be hostile. We
+            // instead raise a WARNING flag so an admin reviews it at interview
+            // (where the government-ID check is the real gate). A confirmed
+            // duplicate is later reconciled via MergeBeneficiaryAction.
+            $possibleDuplicates = $this->findPotentialDuplicates->execute(
+                firstName: $dto->firstName,
+                lastName: $dto->lastName,
+                birthDate: $dto->birthDate,
+                municipalId: $dto->municipalId,
+                excludeBeneficiaryId: $beneficiary->id,
+            );
+
+            if ($possibleDuplicates->isNotEmpty()) {
+                BeneficiaryFlag::create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'user_id' => null, // system-raised, not an admin action
+                    'reason' => 'potential_duplicate',
+                    'severity' => BeneficiaryFlag::SEVERITY_WARNING,
+                    'notes' => 'Possible duplicate of: ' . $possibleDuplicates
+                        ->map(fn(Beneficiary $b) => $b->beneficiary_number ?? $b->id)
+                        ->implode(', ') . '. Verify against government ID before assisting.',
+                ]);
+            }
+
             return $beneficiary;
         }, attempts: 3);
+
+        if ($beneficiary->wasRecentlyCreated) {
+            $this->storeIdentityDocuments($beneficiary, $dto);
+            $this->smsNotifier->profileReceived($beneficiary);
+        }
+
+        return $beneficiary->fresh(['media']);
+    }
+
+    private function storeIdentityDocuments(Beneficiary $beneficiary, CreateBeneficiaryProfileDto $dto): void
+    {
+        if ($dto->identityIdFront instanceof UploadedFile) {
+            $beneficiary
+                ->addMedia($dto->identityIdFront)
+                ->usingFileName($this->identityDocumentFileName($beneficiary, 'front', $dto->identityIdFront))
+                ->toMediaCollection('identity_id_front');
+        }
+
+        if ($dto->identityIdBack instanceof UploadedFile) {
+            $beneficiary
+                ->addMedia($dto->identityIdBack)
+                ->usingFileName($this->identityDocumentFileName($beneficiary, 'back', $dto->identityIdBack))
+                ->toMediaCollection('identity_id_back');
+        }
+    }
+
+    private function identityDocumentFileName(Beneficiary $beneficiary, string $side, UploadedFile $file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
+
+        return 'identity-id-' . $side . '-' . $beneficiary->getKey() . '.' . $extension;
     }
 }

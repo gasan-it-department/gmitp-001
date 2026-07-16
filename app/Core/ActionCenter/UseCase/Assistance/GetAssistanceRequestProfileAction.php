@@ -12,8 +12,7 @@ class GetAssistanceRequestProfileAction
 {
     public function __construct(
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
-    ) {
-    }
+    ) {}
 
     public function execute(string $municipalId, string $assistanceRequestId)
     {
@@ -28,19 +27,20 @@ class GetAssistanceRequestProfileAction
             'reviewedBy',
             'approvedBy',
             'media',
+            'snapshot',
             // Live beneficiary — powers the cross-LGU warning AND the
             // beneficiary_number on the detail resource.
             'beneficiary',
         ])->findOrFail($assistanceRequestId);
 
         if ($assistanceRequest->municipal_id !== $municipalId) {
-            throw new ModelNotFoundException();
+            throw new ModelNotFoundException;
         }
 
         $recentHistory = AssistanceRequest::query()
             ->where('beneficiary_id', $assistanceRequest->beneficiary_id)
             ->where('id', '!=', $assistanceRequest->id)
-            ->with('assistanceType')
+            ->with(['assistanceType', 'snapshot'])
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
@@ -51,7 +51,6 @@ class GetAssistanceRequestProfileAction
             ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
             ->orderBy('created_at')
             ->get();
-
 
         // Audit trail for THIS specific request — the `=` (not `!=`) is
         // critical. With `!=` you'd get the audit log of every OTHER

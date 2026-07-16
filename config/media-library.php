@@ -93,6 +93,9 @@ return [
      */
     'custom_path_generators' => [
         \App\Core\ActionCenter\Models\AssistanceRequest::class => \App\External\Documents\ActionCenter\MediaLibrary\ActionCenterPathGenerator::class,
+        \App\Core\Cemetery\Models\Decedent::class => \App\External\Documents\Cemetery\MediaLibrary\CemeteryPathGenerator::class,
+        \App\Core\Cemetery\Models\DecedentDocument::class => \App\External\Documents\Cemetery\MediaLibrary\CemeteryPathGenerator::class,
+        \App\Core\Cemetery\Models\CemeteryServiceRequest::class => \App\External\Documents\Cemetery\MediaLibrary\CemeteryPathGenerator::class,
         \App\Core\Feedback\Models\FeedbackSubmission::class => \App\External\Documents\Feedback\MediaLibrary\FeedbackPathGenerator::class,
         \App\Core\CommunityReport\Models\ReportSubmission::class => \App\External\Documents\CommunityReport\MediaLibrary\CommunityReportPathGenerator::class,
         \App\Core\Department\Models\Department::class => \App\External\Documents\Department\MediaLibrary\DepartmentPathGenerator::class,

@@ -4,7 +4,7 @@ import { Mail, MapPin, Phone, Shield } from 'lucide-react';
 
 export default function MainLandingPage() {
     return (
-        <div className="text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-screen flex-col bg-[#f8faf9] font-sans antialiased">
+        <div className="flex min-h-screen flex-col bg-[#f8faf9] font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
             {/* Top Bar */}
             <div className="bg-slate-900 px-4 py-2 text-xs text-white sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
@@ -28,13 +28,9 @@ export default function MainLandingPage() {
             <header className="sticky top-0 z-50 w-full border-b border-[#d9e2df] bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80">
                 <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3">
-                        <img
-                            src="https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png"
-                            alt="Marinduque Logo"
-                            className="h-10 w-10 object-contain drop-shadow-sm"
-                        />
+                        <img src="/assets/harvs_logo.png" alt="Harvs Logo" className="h-10 w-10 object-contain drop-shadow-sm" />
                         <div>
-                            <p className="text-sm font-bold uppercase tracking-wider text-slate-600">Municipality Citizen Portal</p>
+                            <p className="text-sm font-bold tracking-wider text-slate-600 uppercase">Municipality Citizen Portal</p>
                         </div>
                     </div>
                     <nav className="ml-auto hidden items-center gap-6 text-sm font-semibold text-slate-700 md:flex">
@@ -57,21 +53,17 @@ export default function MainLandingPage() {
             </main>
 
             {/* Footer */}
-            <footer id="contact" className="text-card-foreground border-t border-[#d9e2df] bg-white">
+            <footer id="contact" className="border-t border-[#d9e2df] bg-white text-card-foreground">
                 <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
                         <div className="lg:col-span-2">
                             <div className="mb-4 flex items-center gap-3">
-                                <img
-                                    src="https://res.cloudinary.com/drhkb0ubf/image/upload/v1768972079/landing_design_1_g2ta8o.png"
-                                    alt="Marinduque Logo"
-                                    className="h-12 w-12 object-contain opacity-80 grayscale"
-                                />
+                                <img src="/assets/harvs_logo.png" alt="Harvs Logo" className="h-12 w-12 object-contain opacity-80 grayscale" />
                                 <div>
-                                    <p className="text-muted-foreground text-xs">Municipality Citizen Portal</p>
+                                    <p className="text-xs text-muted-foreground">Municipality Citizen Portal</p>
                                 </div>
                             </div>
-                            <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                            <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
                                 Simple, ligtas, at bukas na access sa lokal na serbisyo para sa bawat mamamayan ng Marinduque.
                             </p>
                         </div>
@@ -147,8 +139,8 @@ export default function MainLandingPage() {
                         </div>
                     </div>
 
-                    <div className="border-border/50 mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
-                        <p className="text-muted-foreground text-xs">
+                    <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 md:flex-row">
+                        <p className="text-xs text-muted-foreground">
                             &copy; {new Date().getFullYear()} Pamahalaang Panlalawigan ng Marinduque. Lahat ng karapatan ay reserbado.
                         </p>
                         <div className="flex items-center gap-4">

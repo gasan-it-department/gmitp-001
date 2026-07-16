@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use App\Core\ActionCenter\Requests\Models\AssistanceRequest;
 
 class User extends Authenticatable
 {
@@ -46,7 +45,8 @@ class User extends Authenticatable
         'email',
         'municipal_id',
         'password',
-        'phone_verified_at'
+        'phone_verified_at',
+        'deactivated_at',
 
     ];
 
@@ -70,7 +70,13 @@ class User extends Authenticatable
         return [
             'phone_verified_at' => 'datetime',
             'phone' => 'string',
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    public function isDeactivated(): bool
+    {
+        return ! is_null($this->deactivated_at);
     }
 
     public function municipality(): BelongsTo

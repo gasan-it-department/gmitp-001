@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Beneficiary\UpdateBeneficiaryProfileDto;
 use App\Core\ActionCenter\UseCase\Beneficiary\UpdateBeneficiaryProfileAction;
 use App\External\Api\Request\ActionCenter\Beneficiary\UpdateBeneficiaryProfileRequest;
 use App\Http\Controllers\Controller;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,7 @@ class UpdateBeneficiaryProfileController extends Controller
 {
     public function __construct(
         private readonly UpdateBeneficiaryProfileAction $updateProfile,
+        private readonly PhoneFormatterService $phoneFormatter,
     ) {
     }
 
@@ -42,6 +44,7 @@ class UpdateBeneficiaryProfileController extends Controller
                 beneficiaryId: $beneficiaryId,
                 municipalId: app('municipal_id'),
                 actingAdminId: Auth::id(),
+                phoneFormatter: $this->phoneFormatter,
             );
 
             $beneficiary = $this->updateProfile->execute($dto);

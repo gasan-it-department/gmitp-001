@@ -5,7 +5,7 @@ namespace App\External\Web\Controllers\ActionCenter\Public;
 use App\Core\ActionCenter\UseCase\Assistance\ListActiveAssistanceTypeAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
-use App\External\Api\Resources\ActionCenter\AssistanceTypeListResource;
+use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeListResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,8 +28,7 @@ class IndexAssistanceRequestController extends Controller
         private readonly ListActiveAssistanceTypeAction $listAssistanceTypes,
         private readonly ResolveApplicantProfileAction $resolveProfile,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request)
     {
@@ -40,15 +39,20 @@ class IndexAssistanceRequestController extends Controller
         // The frontend treats an empty map as "no per-card gating" and just
         // shows every card enabled.
         $eligibilityByType = [];
+        $profileVerification = null;
 
         if ($user = $request->user()) {
-            $beneficiary = $this->resolveProfile->execute($user->id);
+            $beneficiary = $this->resolveProfile->execute($user->id, app('municipal_id'));
 
             if ($beneficiary !== null) {
+                $profileVerification = [
+                    'has_profile' => true,
+                    'identity_verified' => $beneficiary->isIdentityVerified(),
+                ];
                 $eligibilityByType = collect(
                     $this->checkEligibility->executeBatch($beneficiary, $assistanceTypes)
                 )
-                    ->map(fn($result) => $result->toArray())
+                    ->map(fn ($result) => $result->toArray())
                     ->all();
 
             }
@@ -56,7 +60,11 @@ class IndexAssistanceRequestController extends Controller
 
         return Inertia::render('ActionCenter/Public/ActionCenterPortal', [
             'assistanceTypes' => AssistanceTypeListResource::collection($assistanceTypes),
-            'eligibilityByType' => null,
+            // Per-card eligibility so the grid can disable cards the citizen
+            // can't currently apply for. Empty map (guest / no profile) → the
+            // frontend treats every card as enabled.
+            'eligibilityByType' => $eligibilityByType,
+            'profileVerification' => $profileVerification,
         ]);
     }
 }

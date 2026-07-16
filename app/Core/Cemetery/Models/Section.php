@@ -19,11 +19,13 @@ class Section extends Model
     protected $table = 'cemetery_sections';
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
         'id',
         'municipal_id',
+        'cemetery_site_id',
         'name',
         'description',
         'status',
@@ -57,7 +59,7 @@ class Section extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'description', 'status'])
+            ->logOnly(['cemetery_site_id', 'name', 'description', 'status'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('cemetery_section');

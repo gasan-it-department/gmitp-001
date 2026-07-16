@@ -34,7 +34,6 @@ export function CivilStatusEmploymentSection({ data, setData, errors, civilStatu
                 <FormInput
                     id="occupation"
                     label="Occupation"
-                    required
                     value={data.occupation}
                     onChange={(e) => setData('occupation', e.target.value)}
                     placeholder='e.g. Farmer, Driver, "None"'
@@ -46,7 +45,6 @@ export function CivilStatusEmploymentSection({ data, setData, errors, civilStatu
                 <FormInput
                     id="monthly_income"
                     label="Monthly Income (₱)"
-                    required
                     type="number"
                     min={0}
                     step={0.01}

@@ -32,7 +32,9 @@ export const ProjectDetails = ({
     departments,
     isHistorical,
 }: ProjectDetailsProps) => {
-    console.log(departments, 'ji');
+    const selectedFundingSource = fundingSources?.find((s: any) => s.id === data.funding_source_id);
+    const isOthersFundingSource = selectedFundingSource?.code === 'OTHERS';
+
     return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Reference Number - Keeps standard width */}
@@ -143,6 +145,20 @@ export const ProjectDetails = ({
                     </SelectContent>
                 </Select>
                 {errors.funding_source_id && <span className="animate-pulse text-sm text-red-500">{errors.funding_source_id}</span>}
+
+                {isOthersFundingSource && (
+                    <div className="mt-3">
+                        <FormInput
+                            label="Specify Funding Source"
+                            id="custom_funding_source"
+                            value={data.custom_funding_source || ''}
+                            onChange={(e) => setData('custom_funding_source', e.target.value)}
+                            disabled={processing}
+                            error={errors.custom_funding_source}
+                            placeholder="e.g. NGO Grant, Private Donation"
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

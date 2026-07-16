@@ -10,7 +10,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
  *
  * Used by every entry point that creates a household member:
  *   - CreateBeneficiaryProfileAction (fan-out at profile setup)
- *   - StoreInlineHouseholdMemberController (citizen on-behalf-of modal)
+ *   - DeclareHouseholdMemberForAssistanceAction (citizen on-behalf-of modal)
  *   - Future admin household editor during under_review
  *
  * NO model references — the calling action resolves household_id from
@@ -71,12 +71,12 @@ readonly class StoreHouseholdMemberDto
             birthDate: $beneficiary->birth_date?->toDateString(),
             sex: $beneficiary->sex,
             civilStatus: $beneficiary->civil_status?->value,
-            educationalAttainment: $beneficiary->educational_attainment,
+            educationalAttainment: $beneficiary->educational_attainment->value,
 
             occupation: $beneficiary->occupation,
             monthlyIncome: $beneficiary->monthly_income !== null
-                ? (float) $beneficiary->monthly_income
-                : null,
+            ? (float) $beneficiary->monthly_income
+            : null,
 
             religionId: $beneficiary->religion_id,
         );
@@ -106,8 +106,8 @@ readonly class StoreHouseholdMemberDto
             sex: $data['sex'] ?? null,
             civilStatus: $data['civil_status'] ?? null,
             educationalAttainment: !empty($data['educational_attainment'])
-                ? mb_strtoupper($data['educational_attainment'])
-                : null,
+            ? $data['educational_attainment']
+            : null,
 
             occupation: !empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
             monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : null,

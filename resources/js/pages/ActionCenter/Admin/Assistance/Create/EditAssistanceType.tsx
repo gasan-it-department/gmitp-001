@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
-import { usePage } from '@inertiajs/react';
+import actionCenter from '@/routes/actionCenter';
+import { router, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import AssistanceTypeForm from './Components/AssistanceTypeForm';
 
@@ -17,14 +18,13 @@ interface Props {
 }
 
 export default function EditAssistanceType({ existingAssistance, documentTypes }: Props) {
-    console.log(documentTypes);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     // --- Navigation Handlers ---
     const handleCancel = () => {
         // Adjust this route to match your actual named route for the list view
         // router.visit(route('admin.assistance-types.index', { municipality: currentMunicipality.slug }));
-        console.log('Returning to list view...');
+        router.visit(actionCenter.admin.list.assistance.types.url({ municipality: currentMunicipality.slug }));
     };
     return (
         <div className="min-h-screen bg-gray-50/50 pb-24">

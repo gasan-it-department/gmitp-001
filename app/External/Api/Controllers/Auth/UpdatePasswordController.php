@@ -12,7 +12,6 @@ class UpdatePasswordController extends Controller
 
     public function __invoke(Request $request)
     {
-
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],
 

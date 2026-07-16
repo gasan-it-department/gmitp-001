@@ -1,7 +1,7 @@
-import { HouseholdMemberOption, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
-import api from '@/lib/axios';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { HouseholdMemberOption, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
+import api from '@/lib/axios';
 import axios from 'axios';
 import { AlertTriangle, Info, Plus, UserPlus, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -19,35 +19,38 @@ export type RelationshipType = string;
 export interface OnBehalfOfData {
     /** FK to ac_household_members; '' means no member is selected yet. */
     household_member_id: string;
-    first_name:          string;
-    middle_name:         string;
-    last_name:           string;
-    suffix:              string;
-    date_of_death:       string; // only used when isBurial = true
-    relationship:        RelationshipType;
+    first_name: string;
+    middle_name: string;
+    last_name: string;
+    suffix: string;
+    date_of_death: string; // only used when isBurial = true
+    relationship: RelationshipType;
 }
 
 interface Props {
-    data:               OnBehalfOfData;
-    onChange:           <K extends keyof OnBehalfOfData>(field: K, value: OnBehalfOfData[K]) => void;
+    data: OnBehalfOfData;
+    onChange: <K extends keyof OnBehalfOfData>(field: K, value: OnBehalfOfData[K]) => void;
     /** Options to render in the selector. Comes from
      *  `Relationship::toOptions()` on the backend so this UI never duplicates
      *  the enum copy. The `requires_legal_age` flag drives the "Must be 18+"
      *  pill rendered under the option. */
-    relationships:      RelationshipOption[];
+    relationships: RelationshipOption[];
     /** True when the assistance type is burial — reveals the Date of Death field
      *  and adjusts copy to say "Deceased" instead of "Family Member". */
-    isBurial:           boolean;
+    isBurial: boolean;
     /** Used to enforce the "legal age" rule for child/sibling relationships. */
     applicantBirthDate: string | null;
     /** Existing household roster the filer can pick from. */
-    householdMembers:   HouseholdMemberOption[];
+    householdMembers: HouseholdMemberOption[];
     /** API endpoint that creates a new ac_household_members row inline. */
     storeHouseholdMemberUrl: string;
+    /** Required by the tenant context middleware for routes without a municipality path segment. */
+    municipalitySlug: string;
     /** Notified after a new member is persisted so the parent can append it
      *  to the roster and auto-select it. */
-    onMemberCreated:    (member: HouseholdMemberOption) => void;
-    errors?:            Record<string, string | undefined>;
+    onMemberCreated: (member: HouseholdMemberOption) => void;
+    audience?: 'citizen' | 'admin';
+    errors?: Record<string, string | undefined>;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -84,20 +87,24 @@ export function OnBehalfOfSection({
     applicantBirthDate,
     householdMembers,
     storeHouseholdMemberUrl,
+    municipalitySlug,
     onMemberCreated,
+    audience = 'citizen',
     errors = {},
 }: Props) {
     const age = calculateAge(applicantBirthDate);
-    const selectedOption   = relationships.find((r) => r.value === data.relationship);
+    const selectedOption = relationships.find((r) => r.value === data.relationship);
     const requiresLegalAge = selectedOption?.requires_legal_age ?? false;
-    const isUnderAge       = requiresLegalAge && age < 18;
+    const isUnderAge = requiresLegalAge && age < 18;
 
     const today = new Date().toISOString().split('T')[0];
 
-    const heading     = isBurial ? "Deceased Person's Information" : 'Person Being Assisted';
-    const subheading  = isBurial
+    const heading = isBurial ? "Deceased Person's Information" : 'Person Being Assisted';
+    const subheading = isBurial
         ? 'Burial assistance is filed by an authorized family representative, not the deceased.'
-        : 'You are filing this request on behalf of a family member who needs assistance.';
+        : audience === 'admin'
+          ? 'Record the household member receiving assistance and keep the selected beneficiary as the filer.'
+          : 'You are filing this request on behalf of a family member who needs assistance.';
 
     const selectedMember = useMemo(
         () => householdMembers.find((m) => m.id === data.household_member_id) ?? null,
@@ -111,10 +118,10 @@ export function OnBehalfOfSection({
         if (!member) return;
 
         onChange('household_member_id', member.id);
-        onChange('first_name',  member.first_name);
+        onChange('first_name', member.first_name);
         onChange('middle_name', member.middle_name ?? '');
-        onChange('last_name',   member.last_name);
-        onChange('suffix',      member.suffix ?? '');
+        onChange('last_name', member.last_name);
+        onChange('suffix', member.suffix ?? '');
         if (member.relationship) {
             onChange('relationship', member.relationship);
         }
@@ -122,10 +129,10 @@ export function OnBehalfOfSection({
 
     const handleClearSelection = () => {
         onChange('household_member_id', '');
-        onChange('first_name',  '');
+        onChange('first_name', '');
         onChange('middle_name', '');
-        onChange('last_name',   '');
-        onChange('suffix',      '');
+        onChange('last_name', '');
+        onChange('suffix', '');
         onChange('relationship', '');
     };
 
@@ -147,28 +154,32 @@ export function OnBehalfOfSection({
                 <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                     <p className="text-xs leading-relaxed text-blue-800">
-                        Per the <strong>Gasan AICS Executive Order</strong>, only the <strong>spouse, parent, adult
-                        child (18+), or adult sibling (18+)</strong> of the deceased may file this request.
+                        Per the <strong>Gasan AICS Executive Order</strong>, only the{' '}
+                        <strong>spouse, parent, adult child (18+), or adult sibling (18+)</strong> of the deceased may file this request.
                     </p>
                 </div>
             ) : (
                 <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
                     <p className="text-xs leading-relaxed text-slate-700">
-                        As an <strong>authorized representative</strong>, you may file on behalf of a
-                        spouse, parent, child (18+), or sibling (18+). Your own verified identity will
-                        be recorded as the filing party.
+                        {audience === 'admin' ? (
+                            <>
+                                The selected beneficiary remains the <strong>filing representative</strong>. The household member selected below is
+                                recorded as the person receiving assistance.
+                            </>
+                        ) : (
+                            <>
+                                As an <strong>authorized representative</strong>, you may file on behalf of a spouse, parent, child (18+), or sibling
+                                (18+). Your own verified identity will be recorded as the filing party.
+                            </>
+                        )}
                     </p>
                 </div>
             )}
 
             {/* ── Selected member card OR picker ── */}
             {selectedMember ? (
-                <SelectedMemberCard
-                    member={selectedMember}
-                    relationships={relationships}
-                    onClear={handleClearSelection}
-                />
+                <SelectedMemberCard member={selectedMember} relationships={relationships} onClear={handleClearSelection} />
             ) : (
                 <FamilyMemberPicker
                     members={householdMembers}
@@ -184,6 +195,7 @@ export function OnBehalfOfSection({
                 <InlineAddMemberForm
                     relationships={relationships}
                     storeHouseholdMemberUrl={storeHouseholdMemberUrl}
+                    municipalitySlug={municipalitySlug}
                     onCancel={() => setIsAdding(false)}
                     onCreated={(member) => {
                         onMemberCreated(member);
@@ -205,9 +217,7 @@ export function OnBehalfOfSection({
                         max={today}
                         className="rounded-xl border-slate-200 text-sm focus-visible:ring-[#005088]/30"
                     />
-                    {errors['on_behalf_date_of_death'] && (
-                        <p className="text-xs text-rose-500">{errors['on_behalf_date_of_death']}</p>
-                    )}
+                    {errors['on_behalf_date_of_death'] && <p className="text-xs text-rose-500">{errors['on_behalf_date_of_death']}</p>}
                 </div>
             )}
 
@@ -216,10 +226,9 @@ export function OnBehalfOfSection({
                 <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                     <p className="text-xs leading-relaxed text-red-800">
-                        Based on your profile, you appear to be <strong>under 18 years old</strong>. The Executive
-                        Order requires that a son/daughter or brother/sister must be of{' '}
-                        <strong>legal age (18+)</strong> to file on behalf of another person. Please ask a
-                        qualified family member (spouse or parent) to file instead.
+                        Based on your profile, you appear to be <strong>under 18 years old</strong>. The Executive Order requires that a son/daughter
+                        or brother/sister must be of <strong>legal age (18+)</strong> to file on behalf of another person. Please ask a qualified
+                        family member (spouse or parent) to file instead.
                     </p>
                 </div>
             )}
@@ -234,9 +243,9 @@ function SelectedMemberCard({
     relationships,
     onClear,
 }: {
-    member:        HouseholdMemberOption;
+    member: HouseholdMemberOption;
     relationships: RelationshipOption[];
-    onClear:       () => void;
+    onClear: () => void;
 }) {
     const relationshipLabel = relationships.find((r) => r.value === member.relationship)?.label ?? null;
 
@@ -250,9 +259,10 @@ function SelectedMemberCard({
                 {relationshipLabel ? (
                     <p className="text-xs text-slate-600">{relationshipLabel}</p>
                 ) : (
-                    <p className="text-xs text-amber-600">
-                        Relationship not yet set — please add this person again with the relationship filled in.
-                    </p>
+                    <p className="text-xs text-amber-600">Relationship not yet set — please add this person again with the relationship filled in.</p>
+                )}
+                {!member.is_verified_dependent && member.relationship !== 'head' && (
+                    <p className="mt-1 text-xs font-medium text-amber-700">Pending MSWD household verification</p>
                 )}
             </div>
             <button
@@ -274,17 +284,16 @@ function FamilyMemberPicker({
     onStartAdding,
     error,
 }: {
-    members:       HouseholdMemberOption[];
-    isBurial:      boolean;
-    onPick:        (memberId: string) => void;
+    members: HouseholdMemberOption[];
+    isBurial: boolean;
+    onPick: (memberId: string) => void;
     onStartAdding: () => void;
-    error?:        string;
+    error?: string;
 }) {
     return (
         <div className="space-y-3">
             <Label className="text-xs font-semibold text-slate-700">
-                {isBurial ? 'Pick the deceased' : 'Pick a family member'}{' '}
-                <span className="text-rose-500">*</span>
+                {isBurial ? 'Pick the deceased' : 'Pick a family member'} <span className="text-rose-500">*</span>
             </Label>
 
             {members.length > 0 ? (
@@ -297,11 +306,7 @@ function FamilyMemberPicker({
                             className="flex flex-col items-start gap-0.5 rounded-xl border-2 border-slate-200 px-4 py-3 text-left transition-all hover:border-[#005088]/40 hover:bg-slate-50"
                         >
                             <span className="text-sm font-semibold text-slate-800">{formatMemberName(member)}</span>
-                            {member.relationship && (
-                                <span className="text-[11px] font-normal capitalize text-slate-500">
-                                    {member.relationship}
-                                </span>
-                            )}
+                            {member.relationship && <span className="text-[11px] font-normal text-slate-500 capitalize">{member.relationship}</span>}
                         </button>
                     ))}
                 </div>
@@ -328,54 +333,58 @@ function FamilyMemberPicker({
 function InlineAddMemberForm({
     relationships,
     storeHouseholdMemberUrl,
+    municipalitySlug,
     onCancel,
     onCreated,
 }: {
-    relationships:           RelationshipOption[];
+    relationships: RelationshipOption[];
     storeHouseholdMemberUrl: string;
-    onCancel:                () => void;
-    onCreated:               (member: HouseholdMemberOption) => void;
+    municipalitySlug: string;
+    onCancel: () => void;
+    onCreated: (member: HouseholdMemberOption) => void;
 }) {
-    const [firstName,    setFirstName]    = useState('');
-    const [middleName,   setMiddleName]   = useState('');
-    const [lastName,     setLastName]     = useState('');
-    const [suffix,       setSuffix]       = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [suffix, setSuffix] = useState('');
     const [relationship, setRelationship] = useState('');
-    const [birthDate,    setBirthDate]    = useState('');
-    const [sex,          setSex]          = useState<'' | 'male' | 'female'>('');
-    const [saving,       setSaving]       = useState(false);
-    const [serverError,  setServerError]  = useState<string | null>(null);
+    const [birthDate, setBirthDate] = useState('');
+    const [sex, setSex] = useState<'' | 'male' | 'female'>('');
+    const [saving, setSaving] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
     const today = new Date().toISOString().split('T')[0];
 
-    const canSave =
-        firstName.trim().length > 0 &&
-        lastName.trim().length  > 0 &&
-        relationship !== ''         &&
-        !saving;
+    const canSave = firstName.trim().length > 0 && lastName.trim().length > 0 && relationship !== '' && !saving;
 
     const handleSave = async () => {
         setServerError(null);
         setSaving(true);
         try {
-            const response = await api.post(storeHouseholdMemberUrl, {
-                first_name:   firstName,
-                middle_name:  middleName || null,
-                last_name:    lastName,
-                suffix:       suffix || null,
-                relationship,
-                birth_date:   birthDate || null,
-                sex:          sex || null,
-            });
+            const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+            const response = await api.post(
+                storeHouseholdMemberUrl,
+                {
+                    first_name: firstName,
+                    middle_name: middleName || null,
+                    last_name: lastName,
+                    suffix: suffix || null,
+                    relationship,
+                    birth_date: birthDate || null,
+                    sex: sex || null,
+                },
+                {
+                    headers: {
+                        'X-Municipality-Slug': municipalitySlug,
+                        ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                    },
+                },
+            );
             onCreated(response.data.data as HouseholdMemberOption);
         } catch (err) {
             // The shared axios interceptor already raises a toast; we surface
             // the validation message inline too so the user sees it next to
             // the inputs.
-            const message =
-                axios.isAxiosError(err) && err.response?.data?.message
-                    ? err.response.data.message
-                    : 'Could not save the family member. Please try again.';
-            setServerError(message);
+            setServerError(getHouseholdMemberError(err));
         } finally {
             setSaving(false);
         }
@@ -385,11 +394,7 @@ function InlineAddMemberForm({
         <div className="space-y-4 rounded-xl border-2 border-dashed border-[#005088]/40 bg-blue-50/40 p-5">
             <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-slate-800">New family member</h4>
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="text-xs font-medium text-slate-500 hover:text-slate-800"
-                >
+                <button type="button" onClick={onCancel} className="text-xs font-medium text-slate-500 hover:text-slate-800">
                     Cancel
                 </button>
             </div>
@@ -467,34 +472,34 @@ function InlineAddMemberForm({
                     Relationship to you <span className="text-rose-500">*</span>
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {relationships.map((r) => {
-                        const isSelected = relationship === r.value;
-                        return (
-                            <button
-                                key={r.value}
-                                type="button"
-                                onClick={() => setRelationship(r.value)}
-                                className={`flex flex-col items-center justify-center gap-1 rounded-xl border-2 px-3 py-3 text-center text-xs font-semibold transition-all
-                                    ${isSelected
-                                        ? 'border-[#005088] bg-[#005088]/5 text-[#005088] shadow-sm'
-                                        : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    {relationships
+                        .filter((option) => option.value !== 'head')
+                        .map((r) => {
+                            const isSelected = relationship === r.value;
+                            return (
+                                <button
+                                    key={r.value}
+                                    type="button"
+                                    onClick={() => setRelationship(r.value)}
+                                    className={`flex flex-col items-center justify-center gap-1 rounded-xl border-2 px-3 py-3 text-center text-xs font-semibold transition-all ${
+                                        isSelected
+                                            ? 'border-[#005088] bg-[#005088]/5 text-[#005088] shadow-sm'
+                                            : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                                     }`}
-                            >
-                                <span>{r.label}</span>
-                                {r.requires_legal_age && (
-                                    <span className={`text-[10px] font-normal ${isSelected ? 'text-[#005088]/70' : 'text-slate-400'}`}>
-                                        Must be 18+
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
+                                >
+                                    <span>{r.label}</span>
+                                    {r.requires_legal_age && (
+                                        <span className={`text-[10px] font-normal ${isSelected ? 'text-[#005088]/70' : 'text-slate-400'}`}>
+                                            Must be 18+
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                 </div>
             </div>
 
-            {serverError && (
-                <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{serverError}</p>
-            )}
+            {serverError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600">{serverError}</p>}
 
             <button
                 type="button"
@@ -506,4 +511,43 @@ function InlineAddMemberForm({
             </button>
         </div>
     );
+}
+
+function getHouseholdMemberError(error: unknown): string {
+    if (!axios.isAxiosError(error)) {
+        return 'Could not save the family member. Please try again.';
+    }
+
+    if (!error.response) {
+        return 'Could not connect to the server. Please check your connection and try again.';
+    }
+
+    const data = error.response.data as
+        | {
+              message?: string;
+              errors?: Record<string, string[]>;
+          }
+        | string
+        | undefined;
+
+    if (typeof data === 'object' && data !== null) {
+        if (data.message) {
+            return data.message;
+        }
+
+        const firstValidationMessage = Object.values(data.errors ?? {}).flat()[0];
+        if (firstValidationMessage) {
+            return firstValidationMessage;
+        }
+    }
+
+    if (error.response.status === 419) {
+        return 'Your session expired. Refresh the page and try again.';
+    }
+
+    if (error.response.status === 401) {
+        return 'Please sign in again before adding a household member.';
+    }
+
+    return 'Could not save the family member. Please try again.';
 }

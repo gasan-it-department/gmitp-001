@@ -15,7 +15,7 @@ export function LayoutHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
     return (
         <>
-            <div className="sticky top-0 z-50 w-full border-b border-sidebar-border/80 bg-white">
+            <div className="sticky top-0 z-50 w-full border-b border-sidebar-border/80 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80">
                 <div className="flex h-16 items-center justify-between px-4">
                     <div className="hidden max-[1210px]:block">
                         <LeftNavigation />

@@ -1,5 +1,4 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import api from '@/lib/axios';
 import { social } from '@/routes/login';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -50,46 +49,33 @@ export default function SignupPage() {
         if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
-    const submit: FormEventHandler = async (e) => {
+    const submit: FormEventHandler = (e) => {
         e.preventDefault();
         setProcessing(true);
         setErrors({});
 
-        try {
-            const response = await api.post(
-                '/api/auth/store-account',
-                {
-                    first_name: data.first_name,
-                    middle_name: data.middle_name || null,
-                    last_name: data.last_name,
-                    phone: data.phone,
-                    email: data.email || null,
-                    password: data.password,
-                    password_confirmation: data.password_confirmation,
+        router.post(
+            '/api/auth/store-account',
+            {
+                ...data,
+                middle_name: data.middle_name || null,
+                email: data.email || null,
+            },
+            {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
                 },
-                {
-                    headers: {
-                        'X-Municipality-Slug': currentMunicipality.slug,
-                    },
+                onSuccess: () => toast.success('Account created! Please verify your phone number.'),
+                onError: (serverErrors) => {
+                    const mapped: FormErrors = {};
+                    Object.entries(serverErrors).forEach(([field, message]) => {
+                        mapped[field as keyof FormErrors] = String(message);
+                    });
+                    setErrors(mapped);
                 },
-            );
-
-            toast.success('Account created! Please verify your phone number.');
-            router.visit(response.data.redirect ?? '/');
-        } catch (error: any) {
-            // 422 field errors are handled by the axios interceptor toast,
-            // but we also surface them inline on the form fields.
-            const serverErrors = error.response?.data?.errors;
-            if (serverErrors) {
-                const mapped: FormErrors = {};
-                Object.keys(serverErrors).forEach((key) => {
-                    mapped[key as keyof FormErrors] = serverErrors[key][0];
-                });
-                setErrors(mapped);
-            }
-        } finally {
-            setProcessing(false);
-        }
+                onFinish: () => setProcessing(false),
+            },
+        );
     };
 
     /**
@@ -97,32 +83,25 @@ export default function SignupPage() {
      */
     const handleGoogleLogin = async (googleAccessToken: string) => {
         setIsSocialLoading(true);
-        try {
-            const response = await api.post(
-                social.url(),
-                {
-                    provider: 'google',
-                    access_token: googleAccessToken,
+        router.post(
+            social.url(),
+            {
+                provider: 'google',
+                access_token: googleAccessToken,
+            },
+            {
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
                 },
-                {
-                    headers: {
-                        'X-Municipality-Slug': currentMunicipality.slug,
-                    },
+                onSuccess: () => toast.success('Successfully registered with Google!'),
+                onError: () => {
+                    toast.error('Social Signup Failed', {
+                        description: 'Could not authenticate with Google.',
+                    });
                 },
-            );
-
-            if (response.data.success) {
-                toast.success('Successfully registered with Google!');
-                router.visit(response.data.redirect ?? '/');
-            }
-        } catch (error: any) {
-            console.error('Google signup failed', error);
-            toast.error('Social Signup Failed', {
-                description: error.response?.data?.message || 'Could not authenticate with Google.',
-            });
-        } finally {
-            setIsSocialLoading(false);
-        }
+                onFinish: () => setIsSocialLoading(false),
+            },
+        );
     };
 
     const loginWithGoogle = useGoogleLogin({
@@ -215,66 +194,51 @@ export default function SignupPage() {
                             {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                         </div>
 
-                        {/* Email */}
-                        <div>
-                            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-                                Email Address <span className="text-xs text-gray-400">(optional)</span>
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={data.email}
-                                onChange={set('email')}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-black focus:ring-2 focus:ring-black"
-                                placeholder="juan@gmail.com"
-                            />
-                            {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
-                        </div>
-
                         {/* Password */}
-                        <div>
-                            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-                                Password <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={data.password}
-                                    onChange={set('password')}
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm transition-colors focus:border-black focus:ring-2 focus:ring-black"
-                                    placeholder="Min. 8 characters"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword((p) => !p)}
-                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    tabIndex={-1}
-                                >
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                        <div className="grid-cols-2 space-y-3 space-x-3 md:grid">
+                            <div>
+                                <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
+                                    Password <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={data.password}
+                                        onChange={set('password')}
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm transition-colors focus:border-black focus:ring-2 focus:ring-black"
+                                        placeholder="Min. 8 characters"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((p) => !p)}
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
+                                {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                             </div>
-                            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div>
-                            <label htmlFor="password_confirmation" className="mb-1 block text-sm font-medium text-gray-700">
-                                Confirm Password <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="password_confirmation"
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={data.password_confirmation}
-                                    onChange={set('password_confirmation')}
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm transition-colors focus:border-black focus:ring-2 focus:ring-black"
-                                    placeholder="Re-enter your password"
-                                    required
-                                />
+                            {/* Confirm Password */}
+                            <div>
+                                <label htmlFor="password_confirmation" className="mb-1 block text-sm font-medium text-gray-700">
+                                    Confirm Password <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        id="password_confirmation"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={data.password_confirmation}
+                                        onChange={set('password_confirmation')}
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm transition-colors focus:border-black focus:ring-2 focus:ring-black"
+                                        placeholder="Re-enter your password"
+                                        required
+                                    />
+                                </div>
+                                {errors.password_confirmation && <p className="mt-1 text-xs text-red-500">{errors.password_confirmation}</p>}
                             </div>
-                            {errors.password_confirmation && <p className="mt-1 text-xs text-red-500">{errors.password_confirmation}</p>}
                         </div>
 
                         {/* Submit */}
@@ -346,14 +310,15 @@ export default function SignupPage() {
                 {/* Right: Image Placeholder */}
                 <div className="relative hidden w-1/2 bg-gray-100 md:block">
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <svg className="h-24 w-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {/* <svg className="h-24 w-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth="1"
                                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                             />
-                        </svg>
+                        </svg> */}
+                        <img src="/assets/authImage.jpg" alt="gasan" className="h-full bg-cover" />
                     </div>
                 </div>
             </div>

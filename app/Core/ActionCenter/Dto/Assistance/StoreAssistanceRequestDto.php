@@ -34,6 +34,7 @@ readonly class StoreAssistanceRequestDto
         public string $submitterUserId,
         public ?string $encodedByUserId,   // null for self-filed online; admin user id for walk-in
         public string $description,
+        public ?string $verificationOverrideReason,
 
         // ── Data Privacy Act (RA 10173) consent ──────────────────────────────
         public CarbonImmutable $privacyConsentedAt,
@@ -55,6 +56,8 @@ readonly class StoreAssistanceRequestDto
         public ?string $onBehalfLastName,
         public ?string $onBehalfSuffix,
         public ?string $onBehalfDateOfDeath,   // burial only
+        public bool $recipientIdUnavailable,
+        public ?string $recipientIdUnavailableReason,
 
         // ── Identity snapshot ────────────────────────────────────────────────
         // Frozen copy of ac_beneficiaries at submission time. Pulled from the
@@ -76,8 +79,7 @@ readonly class StoreAssistanceRequestDto
         public ?string $snapshotStreet,
         public array $documents = [],
 
-    ) {
-    }
+    ) {}
 
     /**
      * Build the DTO from a validated request, the route-bound AssistanceType,
@@ -88,20 +90,6 @@ readonly class StoreAssistanceRequestDto
         AssistanceType $assistanceType,
         Beneficiary $beneficiary,
     ): self {
-        // The frontend posts `documents` as a flat dictionary
-        //   documents[<document_key>] = <UploadedFile>
-        // where <document_key> is the ac_document_types.key slug. We forward
-        // exactly that shape to the action; Spatie's addMedia() needs the
-        // UploadedFile, and the key is preserved as a custom property so the
-        // admin UI can group uploads by required-document slot.
-        $documents = [];
-
-        foreach ((array) $request->file('documents', []) as $documentKey => $file) {
-            if ($file instanceof UploadedFile) {
-                $documents[$documentKey] = $file;
-            }
-        }
-
         $household = $beneficiary->household;
 
         // Resolve religion name (snapshot the human-readable label, not the FK ULID)
@@ -117,7 +105,8 @@ readonly class StoreAssistanceRequestDto
             submitterUserId: $request->user()->id,
             encodedByUserId: null, // online self-filed; admin walk-ins set this elsewhere
             description: $request->validated('description'),
-            documents: $documents,
+            verificationOverrideReason: null,
+            documents: [],
 
             // Consent is server-stamped. The FormRequest enforced `accepted`;
             // arriving here means the citizen ticked the box.
@@ -133,6 +122,8 @@ readonly class StoreAssistanceRequestDto
             onBehalfLastName: $request->input('on_behalf_last_name') ?: null,
             onBehalfSuffix: $request->input('on_behalf_suffix') ?: null,
             onBehalfDateOfDeath: $request->input('on_behalf_date_of_death') ?: null,
+            recipientIdUnavailable: $request->boolean('recipient_id_unavailable'),
+            recipientIdUnavailableReason: $request->input('recipient_id_unavailable_reason') ?: null,
 
             // Identity snapshot from the beneficiary at submission time.
             snapshotFirstName: $beneficiary->first_name,
@@ -141,7 +132,89 @@ readonly class StoreAssistanceRequestDto
             snapshotSuffix: $beneficiary->suffix,
             snapshotSex: $beneficiary->sex,
             snapshotBirthDate: $beneficiary->birth_date?->toDateString(),
-            snapshotEducationalAttainment: $beneficiary->educational_attainment,
+            snapshotEducationalAttainment: $beneficiary->educational_attainment?->value,
+            snapshotReligion: $religionName,
+
+            // Address snapshot from the household at submission time.
+            snapshotBarangay: $household->barangay,
+            snapshotBarangayPsgcCode: $household->barangay_psgc_code,
+            snapshotStreet: $household->street,
+        );
+    }
+
+    /**
+     * Build the DTO for an ADMIN-encoded request (walk-in counter, or filed on
+     * behalf of an online beneficiary who cannot use the portal).
+     *
+     * Identical to fromRequest in every snapshot it freezes — identity, address
+     * and economic data still come ONLY from the resolved beneficiary, never
+     * from request input — with two differences:
+     *
+     *   • `encodedByUserId` AND `submitterUserId` are the acting admin's id
+     *     (the citizen has no account in the walk-in case).
+     *   • The assistance type and beneficiary are resolved by the controller
+     *     from the submitted ids, not from a route-model binding.
+     *
+     * Documents are optional here (the admin verifies physical originals at the
+     * desk); whatever was attached is forwarded exactly as in the online flow.
+     */
+    public static function fromAdmin(
+        StoreAdminAssistanceRequest $request,
+        AssistanceType $assistanceType,
+        Beneficiary $beneficiary,
+        string $adminUserId,
+    ): self {
+        $documents = [];
+
+        foreach ((array) $request->file('documents', []) as $documentKey => $file) {
+            if ($file instanceof UploadedFile) {
+                $documents[$documentKey] = $file;
+            }
+        }
+
+        $household = $beneficiary->household;
+
+        $religionName = $beneficiary->relationLoaded('religion')
+            ? $beneficiary->religion?->name
+            : ($beneficiary->religion_id ? $beneficiary->religion()->value('name') : null);
+
+        return new self(
+            municipalId: $assistanceType->municipal_id,
+            beneficiaryId: $beneficiary->id,
+            householdId: $household->id,
+            assistanceTypeId: $assistanceType->id,
+            // The admin is both the submitter (operated the system) and the
+            // encoder (recorded it on someone's behalf).
+            submitterUserId: $adminUserId,
+            encodedByUserId: $adminUserId,
+            description: $request->validated('description'),
+            verificationOverrideReason: $request->input('verification_override_reason') ?: null,
+            documents: $documents,
+
+            // Consent is the admin's on-behalf affirmation. The FormRequest
+            // enforced `accepted`; arriving here means the box was ticked.
+            privacyConsentedAt: CarbonImmutable::now(),
+            privacyNoticeVersion: self::PRIVACY_NOTICE_VERSION,
+
+            // Representative info — only present when filing for a family member.
+            relationshipToBeneficiary: $request->input('relationship_to_beneficiary') ?: null,
+            onBehalfHouseholdMemberId: $request->input('on_behalf_household_member_id') ?: null,
+            onBehalfFirstName: $request->input('on_behalf_first_name') ?: null,
+            onBehalfMiddleName: $request->input('on_behalf_middle_name') ?: null,
+            onBehalfLastName: $request->input('on_behalf_last_name') ?: null,
+            onBehalfSuffix: $request->input('on_behalf_suffix') ?: null,
+            onBehalfDateOfDeath: $request->input('on_behalf_date_of_death') ?: null,
+            recipientIdUnavailable: $request->boolean('recipient_id_unavailable'),
+            recipientIdUnavailableReason: $request->input('recipient_id_unavailable_reason') ?: null,
+
+            // Identity snapshot from the beneficiary at submission time.
+            snapshotFirstName: $beneficiary->first_name,
+            snapshotLastName: $beneficiary->last_name,
+            snapshotMiddleName: $beneficiary->middle_name,
+            snapshotSuffix: $beneficiary->suffix,
+            snapshotSex: $beneficiary->sex,
+            snapshotBirthDate: $beneficiary->birth_date?->toDateString(),
+            snapshotEducationalAttainment: $beneficiary->educational_attainment?->value,
             snapshotReligion: $religionName,
 
             // Address snapshot from the household at submission time.

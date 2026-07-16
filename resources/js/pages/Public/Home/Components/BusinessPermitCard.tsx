@@ -17,7 +17,7 @@ export default function BusinessPermitCard() {
                             Business One-Stop Shop
                         </CardTitle>
                         <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground/70">
-                            Licensing & Permits Division
+                            Sangay ng Paglilisensya at Permit
                         </p>
                     </div>
                 </div>
@@ -36,7 +36,7 @@ export default function BusinessPermitCard() {
                 {/* Badge */}
                 <div className="absolute bottom-3 left-6">
                     <span className="inline-block rounded-md bg-background/90 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-foreground shadow-sm backdrop-blur-sm border border-border/50">
-                        Online Services
+                        Mga Online na Serbisyo
                     </span>
                 </div>
             </div>
@@ -45,10 +45,10 @@ export default function BusinessPermitCard() {
             <CardContent className="flex flex-1 flex-col justify-between p-6">
                 <div className="space-y-3">
                     <h3 className="text-xl font-black uppercase tracking-tight text-foreground leading-tight">
-                        Streamline Your Business Application
+                        Pabilisin ang Iyong Aplikasyon sa Negosyo
                     </h3>
                     <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-                        Register a new business, renew your existing permit, or update your business details comfortably from your home or office.
+                        Magrehistro ng bagong negosyo, i-renew ang iyong kasalukuyang permit, o i-update ang mga detalye ng iyong negosyo nang komportable mula sa iyong bahay o opisina.
                     </p>
                 </div>
 
@@ -59,11 +59,11 @@ export default function BusinessPermitCard() {
                     >
                         {/* Replace '#' with your actual route/URL */}
                         <a href="https://elgu-gasan-marinduque.e.gov.ph/" target="_blank" rel="noopener noreferrer">
-                            Access e-BPLS Portal <ExternalLink className="h-4 w-4" />
+                            I-access ang e-BPLS Portal <ExternalLink className="h-4 w-4" />
                         </a>
                     </Button>
                     <p className="mt-3 text-center text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wide">
-                        Redirects to Official Business Portal
+                        Nagre-redirect sa Opisyal na Portal ng Negosyo
                     </p>
                 </div>
             </CardContent>

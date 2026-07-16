@@ -1,9 +1,7 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
-import Utility from '@/pages/Utility/Utility';
 import { usePage } from '@inertiajs/react';
-import { AlertTriangle } from 'lucide-react';
 import ActionCenterUi from './Components/ActionCenterForm/ActionCenterCard';
 import Carousel from './Components/Carousel';
 import EventsCalendarUi from './Components/EventsCalendarUi';
@@ -25,49 +23,58 @@ export default function HomePage({ announcements, events }: HomePageProps) {
         <PublicLayout title="Home" description="">
             <div className="bg-background">
                 {/* --- ALPHA TEST NOTICE --- */}
-                <div className="relative z-20 bg-amber-500 px-4 py-3 text-white shadow-sm">
+                {/* <div className="relative z-20 bg-amber-500 px-4 py-3 text-white shadow-sm">
                     <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-3 text-center">
                         <AlertTriangle className="h-5 w-5 shrink-0 animate-pulse" />
                         <div className="flex flex-col items-center gap-0.5 sm:flex-row sm:gap-2">
-                            <span className="text-xs font-black tracking-widest uppercase sm:text-sm">System Alpha Test</span>
+                            <span className="text-xs font-black tracking-widest uppercase sm:text-sm">Pagsusuri ng Alpha System</span>
                             <span className="hidden h-4 w-px bg-white/40 sm:block" />
                             <span className="text-[10px] leading-tight font-medium text-white/90 sm:text-xs">
-                                This portal is currently under active development. Report any bugs or errors. ({Utility().getCurrentWebsiteVersion()})
+                                Ang portal na ito ay kasalukuyang binubuo. I-report ang anumang bug o error. ({Utility().getCurrentWebsiteVersion()})
                             </span>
                         </div>
                     </div>
+                </div> */}
+
+                <div className="mx-auto max-w-screen-2xl p-4 sm:p-6 lg:p-8">
+                    <div className="overflow-hidden rounded-2xl shadow-2xl ring-1 ring-black/5">
+                        <Carousel slides={currentMunicipality.settings?.banner_urls} />
+                    </div>
                 </div>
 
-                <Carousel slides={currentMunicipality.settings?.banner_urls} />
-
                 <div className="mx-auto max-w-screen-2xl">
-                    <div className="h-8" />
+                    <div className="h-6 sm:h-8" />
 
                     {/* Primary Actions Grid */}
                     <div className="px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="font-heading text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Mga Pangunahing Serbisyo</h2>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
                             <FeedbackUi />
                             <ActionCenterUi />
                             <Report />
                         </div>
                     </div>
 
-                    <div className="h-12" />
+                    <div className="h-8 sm:h-10" />
 
                     {/* Information Dashboard */}
                     <div className="px-4 sm:px-6 lg:px-8">
                         <InformationDashboard />
                     </div>
 
-                    <div className="h-12" />
+                    <div className="h-8 sm:h-10" />
 
                     {/* Announcements & Events Section */}
-                    <div className="grid grid-cols-1 gap-0 divide-border border-t border-border lg:grid-cols-12 lg:divide-x">
-                        <div className="lg:col-span-8">
-                            <GeneralAnnouncementUi announcements={announcements} />
-                        </div>
-                        <div className="bg-muted/10 lg:col-span-4">
-                            <EventsCalendarUi events={events} />
+                    <div className="px-4 pb-10 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 gap-6 rounded-xl border border-border/70 bg-background/80 p-4 shadow-sm shadow-primary/5 backdrop-blur lg:grid-cols-12 lg:p-5">
+                            <div className="lg:col-span-8">
+                                <GeneralAnnouncementUi announcements={announcements} />
+                            </div>
+                            <div className="rounded-lg border border-primary/10 bg-primary/[0.03] lg:col-span-4">
+                                <EventsCalendarUi events={events} />
+                            </div>
                         </div>
                     </div>
                 </div>

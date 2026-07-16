@@ -22,6 +22,7 @@ class ProcurementRequest extends FormRequest
             // --- RELATIONSHIPS ---
             'department_id' => ['required', 'string', 'exists:departments,id'],
             'funding_source_id' => ['required', 'string', 'exists:procurement_funding_sources,id'],
+            'custom_funding_source' => ['nullable', 'string', 'max:255'],
 
             // --- CORE DETAILS ---
             'reference_number' => [

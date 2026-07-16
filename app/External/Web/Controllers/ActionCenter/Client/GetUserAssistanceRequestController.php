@@ -3,7 +3,7 @@
 namespace App\External\Web\Controllers\ActionCenter\Client;
 
 use App\Core\ActionCenter\UseCase\Assistance\GetUserAssistanceRequestAction;
-use App\External\Api\Resources\ActionCenter\AssistanceRequestListResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestListResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +18,7 @@ class GetUserAssistanceRequestController extends Controller
     {
         $userId = $request->user()->id;
 
-        $requests = $action->execute($userId);
+        $requests = $action->execute($userId, app('municipal_id'));
 
         return Inertia::render('ActionCenter/Client/List/AssistanceList', [
             'requests' => AssistanceRequestListResource::collection($requests),

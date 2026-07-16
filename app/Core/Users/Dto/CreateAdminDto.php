@@ -16,7 +16,7 @@ class CreateAdminDto
 
         public readonly string $phone,
 
-        public readonly string $email,
+        public readonly ?string $email,
 
         public readonly string $municipalId,
 
@@ -36,7 +36,7 @@ class CreateAdminDto
             middleName: isset($validated['middle_name']) ? strtoupper($validated['middle_name']) : null,
             lastName: strtoupper($validated['last_name']),
             phone: $validated['phone'],
-            email: $validated['email'],
+            email: $validated['email'] ?? null,
             municipalId: $validated['municipal_id'],
             password: $validated['password'],
             permissions: $validated['permission'] ?? null,

@@ -2,6 +2,8 @@
 
 namespace App\Core\Cemetery\Models;
 
+use App\Core\Cemetery\Enums\PlotLeaseStatus;
+use App\Core\Cemetery\Enums\PlotOccupancyMode;
 use App\Core\Cemetery\Enums\PlotStatus;
 use App\Core\Cemetery\Enums\PlotTypes;
 use App\Core\Cemetery\Traits\BelongsToMunicipality;
@@ -23,27 +25,33 @@ class Plot extends Model
     protected $table = 'cemetery_plots';
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
         'id',
         'municipal_id',
+        'cemetery_site_id',
         'block_id',
         'parent_plot_id',
         'name',
         'type',
         'status',
+        'occupancy_mode',
         'row',
         'level',
         'position',
         'capacity',
+        'area_sqm',
     ];
 
     protected $casts = [
         'type' => PlotTypes::class,
         'status' => PlotStatus::class,
+        'occupancy_mode' => PlotOccupancyMode::class,
         'level' => 'integer',
         'capacity' => 'integer',
+        'area_sqm' => 'decimal:2',
     ];
 
     public function block(): BelongsTo
@@ -51,9 +59,14 @@ class Plot extends Model
         return $this->belongsTo(Block::class, 'block_id');
     }
 
+    public function cemeterySite(): BelongsTo
+    {
+        return $this->belongsTo(CemeterySite::class, 'cemetery_site_id');
+    }
+
     /**
-     * Container / slot discriminator. NULL parent means this row is itself a
-     * container (or a single-capacity plot with no children).
+     * Apartment parent/child grouping. Standard plots stay parentless even
+     * when they allow shared occupancy.
      */
     public function parent(): BelongsTo
     {
@@ -61,8 +74,7 @@ class Plot extends Model
     }
 
     /**
-     * Child slots of a multi-capacity parent. Ordered by level for the
-     * detail page rendering.
+     * Child niches of an apartment parent. Ordered by level for detail views.
      */
     public function slots(): HasMany
     {
@@ -75,6 +87,23 @@ class Plot extends Model
         return $this->hasMany(Interment::class, 'plot_id');
     }
 
+    public function intermentHistory(): HasMany
+    {
+        return $this->hasMany(Interment::class, 'plot_id');
+    }
+
+    public function leases(): HasMany
+    {
+        return $this->hasMany(PlotLease::class, 'plot_id');
+    }
+
+    public function activeLease(): HasOne
+    {
+        return $this->hasOne(PlotLease::class, 'plot_id')
+            ->where('status', PlotLeaseStatus::ACTIVE->value)
+            ->latestOfMany();
+    }
+
     /**
      * Current interment on this leaf/slot. Exhumation soft-deletes the row,
      * so the SoftDeletes scope surfaces only the active occupant.
@@ -82,7 +111,7 @@ class Plot extends Model
      */
     public function activeInterment(): HasOne
     {
-        return $this->hasOne(Interment::class, 'plot_id')->latestOfMany();
+        return $this->hasOne(Interment::class, 'plot_id')->active()->latestOfMany();
     }
 
     public function activities(): MorphMany
@@ -92,7 +121,7 @@ class Plot extends Model
 
     /**
      * Canonical slot identifier for UI display (SR-7).
-     *   {name}                          when no level (single-capacity / parent)
+     *   {name}                          when no level
      *   {name}-L{level}                 when stacked
      *   {name}-L{level}-{position}      when a grid position is also set
      *
@@ -104,12 +133,26 @@ class Plot extends Model
             get: function (): string {
                 $label = (string) $this->name;
 
+                if ($this->type === PlotTypes::APARTMENT_NICHE && $this->level !== null) {
+                    $parts = ['F'.$this->level];
+
+                    if (filled($this->row)) {
+                        $parts[] = (string) $this->row;
+                    }
+
+                    if (filled($this->position)) {
+                        $parts[] = (string) $this->position;
+                    }
+
+                    return $label.'-'.implode('-', $parts);
+                }
+
                 if ($this->level !== null) {
-                    $label .= '-L' . $this->level;
+                    $label .= '-L'.$this->level;
                 }
 
                 if (filled($this->position)) {
-                    $label .= '-' . $this->position;
+                    $label .= '-'.$this->position;
                 }
 
                 return $label;
@@ -121,15 +164,18 @@ class Plot extends Model
     {
         return LogOptions::defaults()
             ->logOnly([
+                'cemetery_site_id',
                 'block_id',
                 'parent_plot_id',
                 'name',
                 'type',
                 'status',
+                'occupancy_mode',
                 'row',
                 'level',
                 'position',
                 'capacity',
+                'area_sqm',
             ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges()

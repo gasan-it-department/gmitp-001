@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\Dto\Beneficiary;
 
 use App\External\Api\Request\ActionCenter\Beneficiary\UpdateBeneficiaryProfileRequest;
+use App\Shared\Phone\Services\PhoneFormatterService;
 
 /**
  * Pure-primitives DTO for an ADMIN correction to an existing beneficiary's
@@ -45,6 +46,7 @@ readonly class UpdateBeneficiaryProfileDto
         public string $civilStatus,
         public string $occupation,
         public float $monthlyIncome,
+        public ?string $contactPhone,
     ) {
     }
 
@@ -56,7 +58,12 @@ readonly class UpdateBeneficiaryProfileDto
         string $beneficiaryId,
         string $municipalId,
         string $actingAdminId,
+        PhoneFormatterService $phoneFormatter,
     ): self {
+        $contactPhone = $request->filled('contact_phone')
+            ? $phoneFormatter->normalize($request->string('contact_phone')->toString())
+            : null;
+
         return new self(
             beneficiaryId: $beneficiaryId,
             municipalId: $municipalId,
@@ -82,13 +89,14 @@ readonly class UpdateBeneficiaryProfileDto
                 : null,
 
             educationalAttainment: $request->filled('educational_attainment')
-                ? mb_strtoupper($request->string('educational_attainment')->toString())
+                ? $request->string('educational_attainment')->toString()
                 : null,
 
             // Enum backing string (lowercase) — model casts it back on read.
             civilStatus: $request->string('civil_status')->toString(),
             occupation: mb_strtoupper($request->string('occupation')->toString()),
             monthlyIncome: (float) $request->input('monthly_income'),
+            contactPhone: $contactPhone,
         );
     }
 }

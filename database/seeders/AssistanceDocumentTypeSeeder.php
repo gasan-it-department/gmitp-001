@@ -18,11 +18,32 @@ class AssistanceDocumentTypeSeeder extends Seeder
     {
         $documents = [
             [
-                'key'         => 'valid_id',
-                'label'       => 'Valid Government ID',
-                'description' => 'A valid, unexpired identification card issued by the Philippine government.',
+                'key'         => 'valid_id_front',
+                'label'       => 'Filer Valid Government ID - Front',
+                'description' => 'The front side of the valid government ID belonging to the adult filing the request.',
                 'examples'    => 'Philsys ID, Voter\'s ID, Driver\'s License, Passport, Senior Citizen ID',
                 'sort_order'  => 10,
+            ],
+            [
+                'key'         => 'valid_id_back',
+                'label'       => 'Filer Valid Government ID - Back',
+                'description' => 'The back side of the valid government ID belonging to the adult filing the request.',
+                'examples'    => 'Back side of the same ID uploaded for the filer',
+                'sort_order'  => 11,
+            ],
+            [
+                'key'         => 'recipient_valid_id_front',
+                'label'       => 'Assisted Person Valid Government ID - Front',
+                'description' => 'The front side of the assisted adult\'s valid government ID for an on-behalf request.',
+                'examples'    => 'Required for an adult assisted person when available',
+                'sort_order'  => 12,
+            ],
+            [
+                'key'         => 'recipient_valid_id_back',
+                'label'       => 'Assisted Person Valid Government ID - Back',
+                'description' => 'The back side of the assisted adult\'s valid government ID for an on-behalf request.',
+                'examples'    => 'Back side of the same ID uploaded for the assisted person',
+                'sort_order'  => 13,
             ],
             [
                 'key'         => 'cert_indigency',
@@ -95,6 +116,12 @@ class AssistanceDocumentTypeSeeder extends Seeder
                 ]
             );
         }
+
+        // Preserve legacy request media tagged with `valid_id`, but stop
+        // offering the old single-file slot for new assistance requests.
+        DocumentType::query()
+            ->where('key', 'valid_id')
+            ->update(['is_active' => false]);
 
         $this->command->info('AssistanceDocumentTypeSeeder: ' . count($documents) . ' document types seeded.');
     }

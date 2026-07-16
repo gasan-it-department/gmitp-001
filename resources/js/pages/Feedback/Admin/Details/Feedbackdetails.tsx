@@ -66,24 +66,25 @@ export default function FeedbackDetails({ feedback }: Props) {
                             <CardHeader className="bg-gray-50/50 pb-4">
                                 <div className="flex items-start justify-between">
                                     <div>
-                                        <p className="mb-1 text-sm font-medium text-gray-500">Feedback Target</p>
+                                        <p className="mb-1 text-sm font-medium text-gray-500">Target Department & Employee</p>
                                         <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                                            {feedback.feedback_target.toUpperCase()}
-                                            <span className="text-base font-normal text-gray-400">/ {feedback.employee_name ?? "Unknown department"}</span>
+                                            {feedback.department?.name || 'No Department'}
+                                            {feedback.employee_name && <span className="text-base font-normal text-gray-400">/ {feedback.employee_name}</span>}
                                         </h2>
+                                        <div className="mt-2">
+                                            <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
+                                                {feedback.subject || 'No Subject'}
+                                            </Badge>
+                                        </div>
                                     </div>
-                                    {
-                                        feedback.feedback_target === "department" && (
-                                            <div
-                                                className={`flex flex-col items-center justify-center rounded-lg border px-4 py-2 ${getSentimentColor(feedback.rating)}`}
-                                            >
-                                                <StarRating rating={feedback.rating} />
-                                                <span className="mt-1 text-xs font-bold tracking-wide uppercase">
-                                                    {feedback.rating ? `${feedback.rating} / 5 Rating` : 'No Rating'}
-                                                </span>
-                                            </div>
-                                        )
-                                    }
+                                    <div
+                                        className={`flex flex-col items-center justify-center rounded-lg border px-4 py-2 ${getSentimentColor(feedback.rating)}`}
+                                    >
+                                        <StarRating rating={feedback.rating || 0} />
+                                        <span className="mt-1 text-xs font-bold tracking-wide uppercase">
+                                            {feedback.rating ? `${feedback.rating} / 5 Rating` : 'No Rating'}
+                                        </span>
+                                    </div>
                                 </div>
                             </CardHeader>
                             <Separator />
@@ -110,7 +111,7 @@ export default function FeedbackDetails({ feedback }: Props) {
                                     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                                         {feedback.attachments.map((file) => (
                                             <div key={file.id} className="group relative aspect-square overflow-hidden rounded-lg border bg-gray-100">
-                                                {file.type.startsWith('image') ? (
+                                                {file.mime_type && file.mime_type.startsWith('image') ? (
                                                     <img src={file.view_url} alt={file.name} className="h-full w-full object-cover" />
                                                 ) : (
                                                     <div className="flex h-full w-full flex-col items-center justify-center text-gray-400">
@@ -157,7 +158,7 @@ export default function FeedbackDetails({ feedback }: Props) {
                                     </div>
                                     <div>
                                         <p className="text-lg font-bold text-gray-900">
-                                            {feedback.is_anonymous ? 'Anonymous Citizen' : feedback.sender_name}
+                                            {feedback.is_anonymous || !feedback.citizen_name ? 'Anonymous Citizen' : feedback.citizen_name}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             {feedback.is_anonymous ? 'Identity hidden by request' : 'Verified Identity'}

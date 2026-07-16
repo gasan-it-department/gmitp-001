@@ -1,5 +1,5 @@
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { Permission, User } from '@/Core/Types/User/UserTypes';
+import { PermissionCatalog, User } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
 import { useForm } from '@inertiajs/react';
 import { MunicipalitySelect } from '../UserRegistry/Components/MunicipalitySelect';
@@ -16,7 +16,7 @@ import { Save } from 'lucide-react';
 interface Props {
     user: { data: User };
     data: {
-        permissions: Permission[];
+        permissions: PermissionCatalog;
         municipality: MunicipalityType[];
     };
 }
@@ -41,12 +41,6 @@ export default function EditAdmin({ user, data }: Props) {
         password_confirmation: '',
         permission: (userData.all_permission ?? []) as string[],
     });
-
-    const handleToggle = (value: string) => {
-        const current = formData.permission;
-        const updated = current.includes(value) ? current.filter((id) => id !== value) : [...current, value];
-        setData('permission', updated);
-    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -144,24 +138,26 @@ export default function EditAdmin({ user, data }: Props) {
                             {/* Row 3: Contact */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Email (Required)</Label>
-                                    <Input value={formData.email} onChange={(e) => setData('email', e.target.value)} />
-                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                                    <Label>Phone (Required)</Label>
+                                    <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} placeholder="e.g. 09123456789" />
+                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                    <p className="text-xs text-gray-400">An OTP will be sent to verify this number.</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Phone (Required)</Label>
-                                    <Input value={formData.phone} onChange={(e) => setData('phone', e.target.value)} />
-                                    {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                    <Label>Email (Optional)</Label>
+                                    <Input
+                                        value={formData.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        placeholder="e.g. admin@municipality.gov.ph"
+                                    />
+                                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                                    <p className="text-xs text-gray-400">Can be linked later via Google OAuth in profile settings.</p>
                                 </div>
                             </div>
 
-                            <Separator className="my-2" />
-
                             {/* Row 4: Password (optional on edit) */}
                             <div>
-                                <p className="mb-4 text-xs text-gray-500">
-                                    Leave the password fields blank to keep the current password.
-                                </p>
+                                <p className="mb-4 text-xs text-gray-500">Leave the password fields blank to keep the current password.</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="password">New Password</Label>
@@ -194,7 +190,11 @@ export default function EditAdmin({ user, data }: Props) {
 
                     {/* SECTION B: Permissions */}
                     <div className="rounded-xl border bg-white p-8 shadow-sm">
-                        <PermissionSelector allPermissions={data.permissions} selectedValues={formData.permission} onToggle={handleToggle} />
+                        <PermissionSelector
+                            permissionCatalog={data.permissions}
+                            selectedValues={formData.permission}
+                            onChange={(values) => setData('permission', values)}
+                        />
                         {errors.permission && <p className="mt-4 text-center text-sm text-red-500">{errors.permission}</p>}
                     </div>
                 </div>

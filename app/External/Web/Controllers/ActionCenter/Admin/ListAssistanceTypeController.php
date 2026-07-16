@@ -3,7 +3,7 @@
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\UseCase\Assistance\ListAssistanceTypesAction;
-use App\External\Api\Resources\ActionCenter\AssistanceTypeListResource;
+use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeListResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 

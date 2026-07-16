@@ -4,9 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\BeneficiaryIntakeSheetData;
 use App\Core\ActionCenter\Models\Beneficiary;
-use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
-use App\Core\ActionCenter\Models\AssistanceRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -42,13 +40,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  */
 class GenerateBeneficiaryIntakeSheetAction
 {
-    /**
-     * How many recent assistance requests to include on the intake sheet.
-     * Anything older than the most-recent N is omitted to keep the
-     * printed sheet readable on one or two pages.
-     */
-    private const ASSISTANCE_HISTORY_LIMIT = 10;
-
     public function execute(
         string $beneficiaryId,
         string $municipalId,
@@ -62,17 +53,16 @@ class GenerateBeneficiaryIntakeSheetAction
 
         $householdMembers = $this->loadHouseholdMembers($beneficiary->household_id);
         $householdTotalIncome = $this->computeHouseholdTotalIncome($householdMembers);
-        $history = $this->loadAssistanceHistory($beneficiary->id);
-        $cooldowns = $this->loadActiveCooldowns($beneficiary->id);
+
         return new BeneficiaryIntakeSheetData(
             beneficiary: $beneficiary,
             householdMembers: $householdMembers,
             householdTotalMonthlyIncome: $householdTotalIncome,
-            assistanceHistory: $history,
-            activeCooldowns: $cooldowns,
             municipalityName: $municipalityName,
             generatedByUserName: $generatedByUserName,
             generatedAt: now(),
+            hasIdentityIdFront: $beneficiary->getFirstMedia('identity_id_front') !== null,
+            hasIdentityIdBack: $beneficiary->getFirstMedia('identity_id_back') !== null,
         );
     }
 
@@ -83,7 +73,7 @@ class GenerateBeneficiaryIntakeSheetAction
     private function loadBeneficiary(string $beneficiaryId): Beneficiary
     {
         return Beneficiary::query()
-            ->with(['household', 'religion', 'user'])
+            ->with(['household', 'religion', 'user', 'identityVerifier', 'intakeRejector'])
             ->whereKey($beneficiaryId)
             ->firstOr(function () {
                 throw new ModelNotFoundException('Beneficiary not found.');
@@ -120,32 +110,5 @@ class GenerateBeneficiaryIntakeSheetAction
     private function computeHouseholdTotalIncome(\Illuminate\Support\Collection $members): float
     {
         return (float) $members->sum(fn($m) => (float) $m->monthly_income);
-    }
-
-    private function loadAssistanceHistory(string $beneficiaryId): \Illuminate\Support\Collection
-    {
-        return AssistanceRequest::query()
-            ->with('assistanceType:id,name')
-            ->where('beneficiary_id', $beneficiaryId)
-            ->orderByDesc('created_at')
-            ->limit(self::ASSISTANCE_HISTORY_LIMIT)
-            ->get();
-    }
-
-    /**
-     * Active cooldowns = expires_at is in the future, OR is NULL (one_time
-     * programs like Burial set expires_at = NULL to mean "permanent block").
-     */
-    private function loadActiveCooldowns(string $beneficiaryId): \Illuminate\Support\Collection
-    {
-        return BeneficiaryCooldown::query()
-            ->with('assistanceType:id,name')
-            ->where('beneficiary_id', $beneficiaryId)
-            ->where(function ($q) {
-                $q->whereNull('cooldown_expires_at')
-                    ->orWhere('cooldown_expires_at', '>', now());
-            })
-            ->orderByDesc('cooldown_starts_at')
-            ->get();
     }
 }

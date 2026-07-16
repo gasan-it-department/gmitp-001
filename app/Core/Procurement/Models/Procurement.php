@@ -36,6 +36,7 @@ class Procurement extends Model implements HasMedia
         'municipal_id',
         'department_id',
         'funding_source_id',
+        'custom_funding_source',
         'reference_number',
         'title',
         'description',
@@ -76,6 +77,16 @@ class Procurement extends Model implements HasMedia
             ->logFillable()
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
+    }
+    public function registerMediaCollections(): void
+    {
+        $disk = config('filesystems.disks.procurement', config('filesystems.default'));
+
+        foreach (ProcurementDocumentType::cases() as $type) {
+            $this->addMediaCollection($type->value)
+                ->useDisk($disk)
+                ->acceptsMimeTypes(['application/pdf']); // FR-2.2
+        }
     }
 public function registerMediaCollections(): void
 {

@@ -19,6 +19,7 @@ interface Props {
 }
 
 export default function ProcurementDocumentSection({ procurementId, documents, status, documentTypes }: Props) {
+    console.log(documents, 'dfa');
     const MAX_DOCUMENTS = 15;
     const { currentMunicipality } = useMunicipality();
     // UI States
@@ -120,15 +121,13 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
 
                                 {/* Action Buttons Container */}
                                 <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => downloadDocument(doc.url, doc.file_name)}
-                                        type="button"
+                                    <a
+                                        href={doc.url}
+                                        target="_blank"
                                         className="rounded-md p-2 text-slate-400 transition hover:bg-blue-100 hover:text-blue-600"
-                                        title="Download Document"
                                     >
                                         <Download className="h-4 w-4" />
-                                    </button>
-
+                                    </a>
                                     <button
                                         // 🌟 3. Trigger the dialog by setting the state
                                         onClick={() => setDocumentToDelete(doc)}

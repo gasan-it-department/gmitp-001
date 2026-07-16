@@ -30,13 +30,11 @@ readonly class BeneficiaryIntakeSheetData
         /** @var Collection<int, \App\Core\ActionCenter\Models\HouseholdMember> head first, then by created_at */
         public Collection $householdMembers,
         public float $householdTotalMonthlyIncome,
-        /** @var Collection<int, \App\Core\ActionCenter\Models\AssistanceRequest> last N requests, newest first */
-        public Collection $assistanceHistory,
-        /** @var Collection<int, \App\Core\ActionCenter\Models\BeneficiaryCooldown> active cooldowns only */
-        public Collection $activeCooldowns,
         public ?string $municipalityName,
         public string $generatedByUserName,
         public \DateTimeInterface $generatedAt,
+        public bool $hasIdentityIdFront,
+        public bool $hasIdentityIdBack,
     ) {
     }
 }

@@ -12,20 +12,43 @@ return new class extends Migration {
     {
         Schema::create('ac_beneficiaries', function (Blueprint $table) {
             $table->ulid('id')->primary();
+
             $table->foreignUlid('household_id')
                 ->constrained('ac_households')
                 ->cascadeOnDelete();
 
             $table->foreignUlid('user_id')
                 ->nullable()
-                ->after('id')
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->string('beneficiary_number')
-                ->nullable()
-                ->unique();
+            $table->foreignUlid('municipal_id')
+                ->constrained('municipalities')
+                ->restrictOnDelete();
 
+            $table->boolean('is_active')->default(true);
+
+            $table->ulid('merged_into_beneficiary_id')->nullable();
+
+            $table->timestamp('identity_verified_at')->nullable();
+
+            $table->foreignUlid('identity_verified_by_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->timestamp('intake_rejected_at')->nullable();
+
+            $table->foreignUlid('intake_rejected_by_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->string('intake_rejection_reason', 1000)->nullable();
+
+            $table->string('contact_phone', 20)->nullable();
+
+            $table->string('beneficiary_number')->nullable()->unique();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('middle_name')->nullable();
@@ -39,12 +62,9 @@ return new class extends Migration {
                 ->nullOnDelete();
 
             $table->string('educational_attainment')->nullable();
-
             $table->string('civil_status')->nullable();
             $table->string('occupation')->nullable();
-            // Same shape as ac_household_members: decimal(10,2) with default 0
             $table->decimal('monthly_income', 10, 2)->default(0);
-
             $table->timestamp('terms_consented_at');
             $table->string('terms_version');
 
@@ -52,16 +72,22 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['last_name', 'first_name']);
+            $table->index(
+                ['municipal_id', 'identity_verified_at'],
+                'ac_beneficiaries_municipal_identity_verified_idx',
+            );
+            $table->index(
+                ['municipal_id', 'intake_rejected_at'],
+                'ac_beneficiaries_municipal_intake_rejected_idx',
+            );
+            $table->unique(['user_id', 'municipal_id']);
+        });
 
-            // One portal user can only ever own ONE beneficiary record.
-            // Walk-ins keep user_id NULL — SQL allows multiple NULLs in a
-            // UNIQUE column so this does not block them.
-            //
-            // This is the last-line safety net against duplicate submissions
-            // from double-clicks, network retries, concurrent tabs, or
-            // bypassed front-end validation. The action layer also guards
-            // this with a row lock, but the DB is the source of truth.
-            $table->unique('user_id');
+        Schema::table('ac_beneficiaries', function (Blueprint $table) {
+            $table->foreign('merged_into_beneficiary_id')
+                ->references('id')
+                ->on('ac_beneficiaries')
+                ->nullOnDelete();
         });
     }
 
@@ -73,4 +99,3 @@ return new class extends Migration {
         Schema::dropIfExists('ac_beneficiaries');
     }
 };
-

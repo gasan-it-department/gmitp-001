@@ -19,9 +19,7 @@ class ForgotPasswordViewController
 
     public function index()
     {
-
         return Inertia::render('Auth/ForgotPassword/ForgotPassword');
-
     }
 
     public function showOtpForm(Request $request, OtpService $otpService)

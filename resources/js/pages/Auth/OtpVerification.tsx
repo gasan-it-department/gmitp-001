@@ -2,8 +2,9 @@ import { update } from '@/actions/App/External/Api/Controllers/Auth/UpdatePhoneC
 import { verify } from '@/actions/App/External/Api/Controllers/Auth/VerifiyPhoneController';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import resend from '@/routes/resend';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Check, Loader2, Pencil, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export default function OtpVerification({ secondsRemaining, phoneNumber }: Props) {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+
     // --- 1. OTP Submission Form ---
     const {
         data: otpData,
@@ -63,7 +66,7 @@ export default function OtpVerification({ secondsRemaining, phoneNumber }: Props
 
     const handleResend = () => {
         router.post(
-            resend.otp.url(),
+            resend.otp.url({ municipality: currentMunicipality.slug }),
             {},
             {
                 onStart: () => console.log('Resending code...'),
@@ -80,7 +83,7 @@ export default function OtpVerification({ secondsRemaining, phoneNumber }: Props
         e.preventDefault();
 
         // Connects to your Route::put('/update/phone-number')
-        updatePhoneForm.put(update.url(), {
+        updatePhoneForm.put(update.url({ municipality: currentMunicipality.slug }), {
             onSuccess: () => {
                 setIsEditing(false);
                 // Reset timer because a new code is sent to the new number
@@ -93,7 +96,7 @@ export default function OtpVerification({ secondsRemaining, phoneNumber }: Props
 
     const submitOtp = (e: React.FormEvent) => {
         e.preventDefault();
-        postOtp(verify.url(), {
+        postOtp(verify.url({ municipality: currentMunicipality.slug }), {
             onFinish: () => resetOtp('otp'),
         });
     };

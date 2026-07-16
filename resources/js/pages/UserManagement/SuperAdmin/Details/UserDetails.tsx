@@ -49,7 +49,7 @@ export default function UserDetails({ user }: Props) {
                         <ArrowLeft size={18} />
                         Back to users
                     </Button>
-                    <UserDetailsActionMenu userId={userData.id} userName={userData.first_name} />
+                    <UserDetailsActionMenu userId={userData.id} userName={userData.first_name} isActive={userData.is_active} />
                 </div>
                 {/* 1. HEADER CARD */}
                 <div className="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -76,6 +76,16 @@ export default function UserDetails({ user }: Props) {
                                             {role.replace('_', ' ')}
                                         </span>
                                     ))}
+
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase ring-1 ring-inset ${
+                                            userData.is_active
+                                                ? 'bg-green-50 text-green-700 ring-green-700/10'
+                                                : 'bg-red-50 text-red-700 ring-red-700/10'
+                                        }`}
+                                    >
+                                        {userData.is_active ? 'Active' : 'Deactivated'}
+                                    </span>
                                 </div>
                             </div>
 

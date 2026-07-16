@@ -1,49 +1,48 @@
 import Plots from '@/actions/App/External/Api/Controllers/Cemetery/Plots';
 import { FormInput } from '@/components/FormInputField';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BlockLookup, CreatePlotForm, PlotTypeValue, SelectOption } from '@/Core/Types/Cemetery/cemetery';
+import { BlockLookup, CemeterySiteListItem, CreatePlotForm, PlotTypeValue, SelectOption } from '@/Core/Types/Cemetery/cemetery';
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import cemetery from '@/routes/cemetery';
-import { Link, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, LandPlot } from 'lucide-react';
 import { FormEvent } from 'react';
 
 interface Props {
     municipality: MunicipalityType;
+    site: CemeterySiteListItem;
     blocks: BlockLookup[];
     type_options: SelectOption<PlotTypeValue>[];
 }
 
-export default function CreatePlot({ municipality, blocks, type_options }: Props) {
+export default function CreatePlot({ municipality, site, blocks, type_options }: Props) {
+    const standardPlotTypeOptions = type_options.filter((option) => option.value !== 'apartment_niche');
     const { data, setData, post, processing, errors } = useForm<CreatePlotForm>({
         block_id: '',
         name: '',
         type: '',
         capacity: 1,
-        row: '',
-        position: '',
+        area_sqm: '',
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(Plots.StorePlotController.url(), {
+        post(Plots.StorePlotController.url({ cemetery_site_id: site.id }), {
             headers: {
                 'X-Municipality-Slug': municipality.slug,
             },
         });
     };
 
-    // Multi-level structures auto-generate slots when capacity > 1; single
-    // lawn lots are typically single-capacity but family lots can exceed 1.
-    const capacityNumber = typeof data.capacity === 'number' ? data.capacity : 0;
-    const generatesSlots = capacityNumber > 1;
-
     return (
         <AppLayout>
             <div className="mx-auto max-w-4xl space-y-6 p-6">
                 <Link
-                    href={cemetery.admin.plots.list.page.url(municipality.slug)}
+                    href={cemetery.admin.sites.workspace.page.url({
+                        municipality: municipality.slug,
+                        cemetery_site_id: site.id,
+                    })}
                     className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
                 >
                     <ArrowLeft size={16} />
@@ -57,17 +56,14 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                     <div>
                         <h1 className="text-xl font-semibold text-slate-900">Register New Plot</h1>
                         <p className="text-sm text-slate-500">
-                            Add a physical burial location to the municipal cemetery inventory. Capacity &gt; 1 will automatically
-                            create individual levels (slots) inside this plot.
+                            Add a standard burial location to {site.name}. Use the apartment niche generator for apartment-style slots.
                         </p>
                     </div>
                 </header>
 
                 <form onSubmit={submit} className="space-y-6">
                     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <h2 className="mb-4 border-b border-slate-100 pb-3 text-sm font-semibold tracking-wide text-slate-700 uppercase">
-                            Location
-                        </h2>
+                        <h2 className="mb-4 border-b border-slate-100 pb-3 text-sm font-semibold tracking-wide text-slate-700 uppercase">Location</h2>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="md:col-span-2">
@@ -97,7 +93,7 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                             <FormInput
                                 id="name"
                                 label="PLOT NAME *"
-                                placeholder="e.g. APARTMENT A-12"
+                                placeholder="e.g. LOT 737"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 isUppercase
@@ -134,16 +130,13 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-slate-700">PLOT TYPE *</label>
-                                <Select
-                                    value={data.type}
-                                    onValueChange={(v) => setData('type', v as CreatePlotForm['type'])}
-                                >
+                                <Select value={data.type} onValueChange={(v) => setData('type', v as CreatePlotForm['type'])}>
                                     <SelectTrigger className={errors.type ? 'border-red-500' : ''}>
                                         <SelectValue placeholder="Select plot type" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            {type_options.map((opt) => (
+                                            {standardPlotTypeOptions.map((opt) => (
                                                 <SelectItem key={opt.value} value={opt.value}>
                                                     {opt.label}
                                                 </SelectItem>
@@ -151,6 +144,7 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
+                                <p className="mt-1 text-xs text-slate-500">Apartment niches are created through the dedicated generator.</p>
                                 {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
                             </div>
 
@@ -160,19 +154,25 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                                     label="CAPACITY *"
                                     type="number"
                                     value={String(data.capacity)}
-                                    onChange={(e) =>
-                                        setData('capacity', e.target.value === '' ? '' : Number(e.target.value))
-                                    }
+                                    onChange={(e) => setData('capacity', e.target.value === '' ? '' : Number(e.target.value))}
                                     error={errors.capacity}
                                 />
                                 <p className="mt-1 text-xs text-slate-500">
-                                    Capacity &gt; 1 will automatically create individual levels (slots) inside this plot.
+                                    Capacity means the maximum decedents/remains this physical plot can hold. It will not create child slots.
                                 </p>
-                                {generatesSlots && (
-                                    <p className="mt-1 text-xs font-medium text-emerald-700">
-                                        This will create 1 container row + {capacityNumber} child slots (levels 1–{capacityNumber}).
-                                    </p>
-                                )}
+                            </div>
+                            <div>
+                                <FormInput
+                                    id="area_sqm"
+                                    label="AREA (SQM)"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="e.g. 6.00"
+                                    value={String(data.area_sqm)}
+                                    onChange={(e) => setData('area_sqm', e.target.value === '' ? '' : Number(e.target.value))}
+                                    error={errors.area_sqm}
+                                />
+                                <p className="mt-1 text-xs text-slate-500">Optional lot size. Apartment niches do not use area.</p>
                             </div>
                         </div>
                     </section>
@@ -180,7 +180,14 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                     <div className="flex items-center justify-end gap-3">
                         <button
                             type="button"
-                            onClick={() => window.history.back()}
+                            onClick={() =>
+                                router.visit(
+                                    cemetery.admin.sites.workspace.page.url({
+                                        municipality: municipality.slug,
+                                        cemetery_site_id: site.id,
+                                    }),
+                                )
+                            }
                             className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
                         >
                             Cancel
@@ -190,7 +197,7 @@ export default function CreatePlot({ municipality, blocks, type_options }: Props
                             disabled={processing}
                             className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
                         >
-                            {processing ? 'Saving…' : 'Register Plot'}
+                            {processing ? 'Saving...' : 'Register Plot'}
                         </button>
                     </div>
                 </form>

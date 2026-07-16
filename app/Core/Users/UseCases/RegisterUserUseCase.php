@@ -4,16 +4,16 @@ declare(Strict_types=1);
 
 namespace App\Core\Users\UseCases;
 
-use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
-use App\Core\Users\ValueObjects\Phone;
-use Illuminate\Support\Facades\DB;
-use App\Core\Users\Enums\EnumRoles;
+use App\Core\Auth\Services\LoginRedirectionService;
 use App\Core\Users\Dto\RegisterUserDto;
+use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Events\UserRegistered;
+use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Users\Services\PasswordHasherService;
-use App\Core\Auth\Services\LoginRedirectionService;
+use App\Core\Users\ValueObjects\Phone;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
+use Illuminate\Support\Facades\DB;
 
 class RegisterUserUseCase
 {

@@ -79,9 +79,17 @@ class FeedbackSubmission extends Model implements HasMedia
             ->acceptsMimeTypes([
                 'image/jpeg',
                 'image/png',
-                'video/mp4',
-                'video/avi',
-                'video/mpeg',
+                'image/webp',
             ]);
+    }
+
+    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('optimized_logo')
+            ->performOnCollections('attachments')
+            ->width(400)
+            ->format('webp')
+            ->quality(90)
+            ->nonQueued();
     }
 }

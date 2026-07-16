@@ -4,37 +4,40 @@ namespace App\Core\Procurement\Enums;
 
 enum ProcurementCategory: string
 {
+    // The Big 3 (RA 9184 Macros)
     case GOODS = 'goods';
-    case SERVICES = 'services';
-    case CONSULTING = 'consulting';
     case INFRASTRUCTURE = 'infrastructure';
-    case IT_EQUIPMENT = 'it_equipment';
+    case CONSULTING = 'consulting';
+
+    // Sub-categories (For better UI filtering)
+    case FURNITURE_AND_FIXTURES = 'furniture_and_fixtures';
     case OFFICE_SUPPLIES = 'office_supplies';
+    case OFFICE_EQUIPMENT = 'office_equipment'; // Split for clarity, or combine if you prefer
     case VEHICLES = 'vehicles';
     case MEDICAL_SUPPLIES = 'medical_supplies';
     case OTHERS = 'others';
 
-    // Optional: You can add a method to get a human-readable label
     public function label(): string
     {
         return match ($this) {
             self::GOODS => 'Goods',
-            self::SERVICES => 'General Services',
-            self::CONSULTING => 'Consulting Services',
             self::INFRASTRUCTURE => 'Infrastructure Projects',
-            self::IT_EQUIPMENT => 'IT Equipment & Software',
+            self::CONSULTING => 'Consulting Services',
+
+            self::FURNITURE_AND_FIXTURES => 'Furniture & Fixtures',
             self::OFFICE_SUPPLIES => 'Office Supplies',
+            self::OFFICE_EQUIPMENT => 'Office Equipment',
             self::VEHICLES => 'Vehicles & Transportation',
             self::MEDICAL_SUPPLIES => 'Medical & Laboratory Supplies',
             self::OTHERS => 'Others',
         };
     }
 
-    public static function toSelectOption()
+    public static function toSelectOption(): array
     {
         return array_map(fn(self $case) => [
             'value' => $case->value,
             'label' => $case->label(),
-        ], ProcurementCategory::cases());
+        ], self::cases()); // You can just use self::cases() instead of ProcurementCategory::cases()
     }
 }

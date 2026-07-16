@@ -20,6 +20,8 @@ return new class extends Migration {
                 ->restrictOnDelete();
             // Kept only the ID, removed the duplicate string column
             $table->foreignUlid('funding_source_id')->nullable()->constrained('procurement_funding_sources')->cascadeOnUpdate()->restrictOnDelete();
+            $table->string('custom_funding_source')->nullable();
+
             $table->foreignUlid('department_id')->nullable()->constrained('departments')->restrictOnDelete();
 
             // PhilGEPS Reference Number

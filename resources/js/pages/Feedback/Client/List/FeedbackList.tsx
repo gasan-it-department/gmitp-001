@@ -24,7 +24,8 @@ interface Attachment {
     name: string;
     mime_type: string;
     size: number;
-    url: string;
+    view_url: string;
+    download_url: string;
 }
 
 interface FeedbackData {
@@ -84,11 +85,11 @@ const FeedbackImageGallery = ({ attachments }: { attachments: Attachment[] }) =>
             {images.map((img) => (
                 <button
                     key={img.id}
-                    onClick={() => setSelectedImage(img.url)}
+                    onClick={() => setSelectedImage(img.download_url)}
                     className="group relative h-16 w-16 overflow-hidden rounded-xl border-2 border-slate-100 transition-all hover:border-primary active:scale-95"
                 >
                     <img
-                        src={img.url}
+                        src={img.view_url}
                         alt={img.name}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />

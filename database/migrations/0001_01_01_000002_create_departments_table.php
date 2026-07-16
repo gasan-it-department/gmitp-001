@@ -22,7 +22,8 @@ return new class extends Migration {
                 ->constrained('municipalities')
                 ->restrictOnDelete();
 
-            $table->string('code')->unique(); // e.g., 'MEO', 'MHO'
+            $table->string('code'); // e.g., 'MEO', 'MHO'
+            $table->unique(['code', 'municipal_id']);
 
             $table->boolean('is_active')->default(true);
 

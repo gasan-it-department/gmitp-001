@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
 use App\External\Api\Request\ActionCenter\StoreProfileSetupRequest;
 use App\Http\Controllers\Controller;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -22,6 +23,7 @@ class StoreProfileSetupController extends Controller
 {
     public function __construct(
         private readonly CreateBeneficiaryProfileAction $createProfile,
+        private readonly PhoneFormatterService $phoneFormatter,
     ) {
     }
 
@@ -34,6 +36,9 @@ class StoreProfileSetupController extends Controller
             $request->validated(),
             $request->user()->id,
             $municipality->id,
+            $request->file('identity_id_front'),
+            $request->file('identity_id_back'),
+            $this->phoneFormatter,
         );
 
         $this->createProfile->execute($dto);
@@ -41,6 +46,6 @@ class StoreProfileSetupController extends Controller
         $fallback = route('actionCenter.portal', ['municipality' => $municipality->slug]);
 
         return redirect(session()->pull('url.intended', $fallback))
-            ->with('success', 'Profile saved! You can now apply for assistance.');
+            ->with('success', 'Profile submitted for MSWD review. You can apply after your identity is verified.');
     }
 }

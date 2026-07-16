@@ -2,9 +2,10 @@
 
 namespace App\External\Web\Controllers\Cemetery\Admin\Interments;
 
-use App\Core\Cemetery\Actions\GetAvailablePlotsAction;
-use App\Core\Cemetery\Actions\GetDecedentProfileAction;
-use App\External\Api\Resources\Cemetery\PlotListResource;
+use App\Core\Cemetery\Actions\Decedents\GetDecedentProfileAction;
+use App\Core\Cemetery\Actions\Decedents\GetIntermentReadinessAction;
+use App\Core\Cemetery\Actions\Sites\ListCemeterySitesAction;
+use App\External\Api\Resources\Cemetery\Sites\CemeterySiteResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 
@@ -17,38 +18,45 @@ class AssignDecedentToPlotController extends Controller
 {
     public function __construct(
         private GetDecedentProfileAction $getDecedentProfile,
-        private GetAvailablePlotsAction $getAvailablePlots,
-    ) {
-    }
+        private GetIntermentReadinessAction $getIntermentReadiness,
+        private ListCemeterySitesAction $listCemeterySites,
+    ) {}
 
     public function __invoke(string $municipality, string $decedentId)
     {
         $municipalId = app('municipal_id');
 
         $decedent = $this->getDecedentProfile->execute($decedentId, $municipalId);
-        $plots = $this->getAvailablePlots->execute($municipalId);
+        $readiness = $this->getIntermentReadiness->execute($decedent);
+        abort_unless(
+            $readiness['registration_verified'],
+            409,
+            'This decedent must be verified before interment.',
+        );
+        $sites = $this->listCemeterySites->execute($municipalId)
+            ->where('status', 'active')
+            ->values();
 
         return Inertia::render('Cemetery/Admin/Interments/Assign/AssignDecedent', [
             'decedent' => [
                 'id' => $decedent->id,
                 'display_name' => $this->resolveDisplay($decedent),
-                'decedent_type' => $decedent->decedent_type?->value,
+                'record_type' => $decedent->vital_record_type?->value,
+                'identity_status' => $decedent->identity_status?->value,
                 'date_of_death' => $decedent->date_of_death?->format('M d, Y'),
             ],
-            'available_plots' => PlotListResource::collection($plots),
+            'sites' => CemeterySiteResource::collection($sites)->resolve(),
         ]);
     }
 
     private function resolveDisplay($decedent): string
     {
-        if (filled($decedent->memorial_name) && blank($decedent->last_name)) {
-            return $decedent->memorial_name;
+        if ($decedent->identity_status?->value === 'unidentified') {
+            return 'UNIDENTIFIED - '.($decedent->unidentifiedDetail?->case_reference ?? $decedent->id);
         }
 
-        if (blank($decedent->first_name) && blank($decedent->last_name)) {
-            return $decedent->reference_document_number
-                ? 'UNKNOWN — ' . $decedent->reference_document_number
-                : 'UNKNOWN';
+        if (! $decedent->has_legal_name && filled($decedent->memorial_name)) {
+            return $decedent->memorial_name;
         }
 
         return trim(sprintf(

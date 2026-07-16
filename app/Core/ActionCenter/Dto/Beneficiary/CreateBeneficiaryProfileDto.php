@@ -2,7 +2,9 @@
 
 namespace App\Core\ActionCenter\Dto\Beneficiary;
 
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 
 readonly class CreateBeneficiaryProfileDto
 {
@@ -33,6 +35,7 @@ readonly class CreateBeneficiaryProfileDto
         public string $civilStatus,
         public string $occupation,
         public float $monthlyIncome,
+        public ?string $contactPhone,
 
         // Home address — written to ac_households
         public string $barangay,
@@ -54,11 +57,29 @@ readonly class CreateBeneficiaryProfileDto
         //
         // @var array<int, array<string, mixed>>
         public array $householdMembers = [],
+
+        // Citizen-uploaded ID evidence for admin intake review. These files are
+        // attached to the Beneficiary media collections after the DB transaction.
+        public ?UploadedFile $identityIdFront = null,
+        public ?UploadedFile $identityIdBack = null,
     ) {
     }
 
-    public static function fromArray(array $data, string $userId, string $municipalId): self
+    public static function fromArray(
+        array $data,
+        string $userId,
+        string $municipalId,
+        ?UploadedFile $identityIdFront = null,
+        ?UploadedFile $identityIdBack = null,
+        ?PhoneFormatterService $phoneFormatter = null,
+    ): self
     {
+        $phoneFormatter ??= app(PhoneFormatterService::class);
+
+        $contactPhone = ! empty($data['contact_phone']) && $phoneFormatter !== null
+            ? $phoneFormatter->normalize((string) $data['contact_phone'])
+            : null;
+
         return new self(
             // IDs are left exactly as they are
             userId: $userId,
@@ -79,7 +100,7 @@ readonly class CreateBeneficiaryProfileDto
             // Religion is a UUID/ULID, so we leave it alone
             religionId: $data['religion_id'] ?? null,
 
-            educationalAttainment: !empty($data['educational_attainment']) ? mb_strtoupper($data['educational_attainment']) : null,
+            educationalAttainment: !empty($data['educational_attainment']) ? $data['educational_attainment'] : null,
 
             // Civil status — stored as the enum's backing string value (lowercase).
             // The model casts it back to CivilStatus on read.
@@ -90,6 +111,7 @@ readonly class CreateBeneficiaryProfileDto
             // Cast to float because the DB column is decimal(10,2). The
             // FormRequest already validated numeric + min:0.
             monthlyIncome: (float) $data['monthly_income'],
+            contactPhone: $contactPhone,
 
             // Address details uppercase
             barangay: mb_strtoupper($data['barangay']),
@@ -104,6 +126,8 @@ readonly class CreateBeneficiaryProfileDto
             // Action will iterate and hand each one to StoreHouseholdMemberDto.
             // Missing key → empty array = citizen skipped the section.
             householdMembers: $data['household_members'] ?? [],
+            identityIdFront: $identityIdFront,
+            identityIdBack: $identityIdBack,
         );
     }
 }
