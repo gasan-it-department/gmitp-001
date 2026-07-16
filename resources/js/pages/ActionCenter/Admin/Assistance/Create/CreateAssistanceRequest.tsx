@@ -332,7 +332,7 @@ export default function CreateAssistanceRequest({
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to beneficiary profile
+                            Bumalik sa profile ng benepisyaryo
                         </Link>
                     </div>
                 </div>
@@ -344,10 +344,10 @@ export default function CreateAssistanceRequest({
                             <HandCoins className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold tracking-tight text-slate-900">File an Assistance Request</h1>
+                            <h1 className="text-xl font-bold tracking-tight text-slate-900">Mag-file ng Request para sa Tulong</h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                Recording this request on behalf of the beneficiary below. Their identity is taken from the verified registry record —
-                                only the request details are entered here.
+                                Nagtatala ng request na ito para sa benepisyaryo sa ibaba. Ang kanilang pagkakakilanlan ay kinuha mula sa verified registry record —
+                                tanging ang mga detalye ng request ang ilalagay dito.
                             </p>
                         </div>
                     </div>
@@ -356,7 +356,7 @@ export default function CreateAssistanceRequest({
                         {/* ── Read-only beneficiary identity ── */}
                         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                <User className="h-4 w-4 text-[#005088]" /> Beneficiary
+                                <User className="h-4 w-4 text-[#005088]" /> Benepisyaryo
                             </div>
                             <div className="mt-4 flex flex-wrap items-center gap-2">
                                 <span className="text-lg font-bold text-slate-900 capitalize">{profile.full_name.toLowerCase()}</span>
@@ -370,10 +370,10 @@ export default function CreateAssistanceRequest({
                                 )}
                             </div>
                             <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-                                <ReadOnly label="Sex" value={profile.sex_label ?? '—'} />
-                                <ReadOnly label="Age" value={profile.age !== null ? `${profile.age} yrs` : '—'} />
-                                <ReadOnly label="Civil status" value={profile.civil_status_label ?? '—'} />
-                                <ReadOnly label="Address" value={address} className="col-span-2 sm:col-span-3" capitalize />
+                                <ReadOnly label="Kasarian" value={profile.sex_label ?? '—'} />
+                                <ReadOnly label="Edad" value={profile.age !== null ? `${profile.age} taon` : '—'} />
+                                <ReadOnly label="Katayuang Sibil" value={profile.civil_status_label ?? '—'} />
+                                <ReadOnly label="Tirahan" value={address} className="col-span-2 sm:col-span-3" capitalize />
                             </dl>
                             <input type="hidden" name="beneficiary_id" value={data.beneficiary_id} />
                         </section>
@@ -406,17 +406,17 @@ export default function CreateAssistanceRequest({
                         {/* ── Request details ── */}
                         <section className="space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                <FileText className="h-4 w-4 text-[#005088]" /> Request Details
+                                <FileText className="h-4 w-4 text-[#005088]" /> Mga Detalye ng Request
                             </div>
 
                             {/* Assistance type */}
                             <div className="space-y-2">
                                 <Label>
-                                    Type of Assistance <span className="text-red-500">*</span>
+                                    Uri ng Tulong <span className="text-red-500">*</span>
                                 </Label>
                                 <Select value={data.assistance_type_id} onValueChange={(value) => setData('assistance_type_id', value)}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select an assistance program" />
+                                        <SelectValue placeholder="Pumili ng programa para sa tulong" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {types.map((type) => (
@@ -438,7 +438,7 @@ export default function CreateAssistanceRequest({
                                     <div>
                                         <p className="font-semibold">{advisoryText(selectedEligibility)}</p>
                                         <p className="mt-0.5 text-amber-700">
-                                            Proceed only for a verified emergency — this override will be recorded in the audit trail.
+                                            Magpatuloy lamang para sa kumpirmadong emergency — ang pag-override na ito ay itatala sa audit trail.
                                         </p>
                                     </div>
                                 </div>
@@ -447,13 +447,13 @@ export default function CreateAssistanceRequest({
                             {requiresVerificationOverride && (
                                 <div className="space-y-2">
                                     <Label>
-                                        Verification override reason <span className="text-red-500">*</span>
+                                        Dahilan ng verification override <span className="text-red-500">*</span>
                                     </Label>
                                     <Textarea
                                         rows={3}
                                         value={data.verification_override_reason}
                                         onChange={(e) => setData('verification_override_reason', e.target.value)}
-                                        placeholder="Explain the urgent reason for filing before verification is complete."
+                                        placeholder="Ipaliwanag ang apurahang dahilan ng pag-file bago makumpleto ang verification."
                                     />
                                     {errors.verification_override_reason && (
                                         <p className="text-xs text-red-500">{errors.verification_override_reason}</p>
@@ -464,11 +464,11 @@ export default function CreateAssistanceRequest({
                             {/* Description */}
                             <div className="space-y-2">
                                 <Label>
-                                    What is being requested / situation <span className="text-red-500">*</span>
+                                    Ano ang hinihinging tulong / sitwasyon <span className="text-red-500">*</span>
                                 </Label>
                                 <Textarea
                                     rows={4}
-                                    placeholder="Describe the assistance the beneficiary is asking for and their situation…"
+                                    placeholder="Ilarawan ang tulong na hinihingi ng benepisyaryo at ang kanilang sitwasyon…"
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
                                 />
@@ -479,10 +479,10 @@ export default function CreateAssistanceRequest({
                             {selectedType && selectedType.documents.length > 0 && (
                                 <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
                                     <h4 className="mb-1 flex items-center gap-2 text-sm font-semibold text-blue-900">
-                                        <Paperclip className="h-4 w-4" /> Supporting documents
+                                        <Paperclip className="h-4 w-4" /> Mga sumusuportang dokumento
                                     </h4>
                                     <p className="mb-4 text-xs text-blue-800/80">
-                                        Optional — attach scans if available. You may also verify physical originals at the desk and attach later.
+                                        Opsyonal — maglakip ng scans kung mayroon. Maaari mo ring i-verify ang mga orihinal na dokumento sa desk at i-attach na lang mamaya.
                                     </p>
                                     <div className="space-y-4">
                                         {selectedFilerIdDocuments.length > 0 && (
@@ -549,20 +549,20 @@ export default function CreateAssistanceRequest({
                                                                     htmlFor="recipient_id_unavailable"
                                                                     className="text-sm leading-relaxed text-slate-700"
                                                                 >
-                                                                    The assisted adult does not have an available government ID
+                                                                    Walang maipapakitang government ID ang taong tinutulungan
                                                                 </Label>
                                                             </div>
 
                                                             {data.recipient_id_unavailable && (
                                                                 <div className="mt-4 space-y-2">
-                                                                    <Label htmlFor="recipient_id_unavailable_reason">Reason</Label>
+                                                                    <Label htmlFor="recipient_id_unavailable_reason">Dahilan</Label>
                                                                     <Textarea
                                                                         id="recipient_id_unavailable_reason"
                                                                         value={data.recipient_id_unavailable_reason}
                                                                         onChange={(event) =>
                                                                             setData('recipient_id_unavailable_reason', event.target.value)
                                                                         }
-                                                                        placeholder="Explain why the assisted adult cannot provide a government ID."
+                                                                        placeholder="Ipaliwanag kung bakit walang maipakitang ID ang taong tinutulungan."
                                                                         rows={3}
                                                                     />
                                                                     {errors.recipient_id_unavailable_reason && (
@@ -620,11 +620,11 @@ export default function CreateAssistanceRequest({
                         )}
 
                         {effectiveFilingFor === 'family_member' && !representativeInfoComplete && (
-                            <p className="text-center text-xs text-slate-500">Select the household member receiving assistance before submitting.</p>
+                            <p className="text-center text-xs text-slate-500">Piliin ang miyembro ng pamilya na makakatanggap ng tulong bago mag-submit.</p>
                         )}
                         {legalAgeBlocked && (
                             <p className="text-center text-xs text-red-600">
-                                This beneficiary cannot act as the representative for this relationship while under 18 years old.
+                                Hindi maaaring maging kinatawan ang benepisyaryong ito para sa relasyong ito kung siya ay wala pang 18 taong gulang.
                             </p>
                         )}
 
@@ -636,10 +636,10 @@ export default function CreateAssistanceRequest({
                         >
                             {processing ? (
                                 <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting…
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Nagsa-submit…
                                 </>
                             ) : (
-                                'Submit Request'
+                                'I-submit ang Request'
                             )}
                         </Button>
                     </form>
@@ -660,7 +660,7 @@ function AdminWhoIsThisForSection({
 }) {
     return (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">Who will receive the assistance?</h2>
+            <h2 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">Sino ang makakatanggap ng tulong?</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                     type="button"
@@ -682,8 +682,8 @@ function AdminWhoIsThisForSection({
                         <UserCheck className="h-5 w-5" />
                     </span>
                     <span>
-                        <span className="block text-sm font-bold text-slate-800">Selected beneficiary</span>
-                        <span className="block text-xs text-slate-500">The beneficiary is filing for themselves</span>
+                        <span className="block text-sm font-bold text-slate-800">Piling benepisyaryo</span>
+                        <span className="block text-xs text-slate-500">Ang benepisyaryo ay nagpa-file para sa kanyang sarili</span>
                     </span>
                     <span
                         aria-hidden="true"
@@ -708,9 +708,9 @@ function AdminWhoIsThisForSection({
                         <Users className="h-5 w-5" />
                     </span>
                     <span>
-                        <span className="block text-sm font-bold text-slate-800">Household member</span>
+                        <span className="block text-sm font-bold text-slate-800">Miyembro ng pamilya</span>
                         <span className="block text-xs text-slate-500">
-                            {isBurial ? 'Required for the deceased person' : 'The beneficiary is filing as representative'}
+                            {isBurial ? 'Kailangan para sa namatay na tao' : 'Ang benepisyaryo ay nagpa-file bilang kinatawan'}
                         </span>
                     </span>
                     <span

@@ -26,10 +26,10 @@ export function DocumentsToBringChecklist({
             <div className="border-b border-amber-100 bg-amber-50 px-4 py-4 sm:px-5">
                 <h2 className="flex items-center gap-2 text-sm font-bold text-amber-950">
                     <ClipboardList className="h-4 w-4 text-amber-700" />
-                    Documents to bring to MSWD
+                    Mga dokumentong dadalhin sa MSWD
                 </h2>
                 <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
-                    Prepare these documents and bring the physical originals when you visit the MSWD office.
+                    Ihanda ang mga dokumentong ito at dalhin ang mga pisikal na orihinal kapag pumunta ka sa opisina ng MSWD.
                 </p>
             </div>
 

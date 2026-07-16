@@ -27,8 +27,8 @@ import { RequestReasonSection } from './Components/RequestReasonSection';
 
 interface Props {
     assistanceType: { data: AssistanceTypeDetails } | AssistanceTypeDetails;
-    beneficiary: BeneficiarySummary;
-    household: HouseholdSummary;
+    beneficiary: { data: BeneficiarySummary } | BeneficiarySummary;
+    household: { data: HouseholdSummary } | HouseholdSummary;
     // Driven by App\Core\ActionCenter\Enums\Relationship::toOptions() — the
     // enum is the single source of truth for both the label copy and the
     // legal-age rule that gates child/sibling representatives.
@@ -74,8 +74,8 @@ export default function ApplyAssistance({
     // The Inertia resource may arrive wrapped ({ data: … }) or raw — handle both.
     const program: AssistanceTypeDetails = 'data' in assistanceType ? assistanceType.data : assistanceType;
 
-    const beneficiaryData = beneficiary;
-    const householdData = household;
+    const beneficiaryData: BeneficiarySummary = 'data' in beneficiary ? beneficiary.data : beneficiary;
+    const householdData: HouseholdSummary = 'data' in household ? household.data : household;
     const formAction = submitUrl;
 
     // householdMembers may arrive as { data: [...] } (ResourceCollection) or
@@ -428,7 +428,7 @@ interface WhoIsThisForProps {
 function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">Who is this request for?</h3>
+            <h3 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">Para kanino ang request na ito?</h3>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {/* Option: Myself */}
