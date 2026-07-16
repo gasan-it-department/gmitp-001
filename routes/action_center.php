@@ -27,14 +27,9 @@ use App\External\Api\Controllers\ActionCenter\Household\StoreAdminHouseholdMembe
 use App\External\Api\Controllers\ActionCenter\Household\UnlinkHouseholdMemberBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
-use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryIdentityDocumentController;
 use App\External\Documents\ActionCenter\ReplaceBeneficiaryIdentityDocumentController;
-use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
-use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\EditBeneficiaryProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ListBeneficiaryController;
-use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryProfileController;
-use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAcknowledgementReceiptController;
@@ -48,7 +43,6 @@ use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryP
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
 use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
-use App\External\Web\Controllers\ActionCenter\Admin\Walkin\ShowCreateWalkInBeneficiaryController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
