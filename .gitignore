@@ -27,3 +27,4 @@ yarn-error.log
 /.zed
 resources/js/actions/
 resources/js/routes/
+.vite/
