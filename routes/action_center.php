@@ -190,6 +190,7 @@ Route::prefix('{municipality}/action-center')
             ->name('apply.assistance');
 
         Route::post('/apply/{assistanceType:slug}', StoreAssistanceRequestController::class)
+            ->middleware('throttle:5,1')
             ->name('apply.assistance.store');
 
     });

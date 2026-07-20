@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 // ----------------------------------------------------------------------
-// TYPES (Based on AssistanceRequestDetailsResource)
+// TYPES (Based on ClientAssistanceRequestDetailsResource)
 // ----------------------------------------------------------------------
 interface AssistanceRequestDetails {
     id: string;
@@ -36,7 +36,6 @@ interface AssistanceRequestDetails {
     } | null;
     amount_approved: number | null;
     description: string;
-    remarks: string | null;
     privacy_consented_at: string | null;
     submitted_at: string;
     approved_at: string | null;
@@ -65,10 +64,7 @@ interface AssistanceRequestDetails {
     };
     documents: Array<{
         id: number;
-        uuid: string;
-        collection_name: string;
         name: string;
-        file_name: string;
         mime_type: string;
         size: number;
         uploaded_at: string;
@@ -246,9 +242,9 @@ export default function AssistanceDetails({ request }: Props) {
                                     </div>
 
                                     {/* Assessment Results (If approved or rejected) */}
-                                    {(data.amount_approved !== null || data.remarks) && (
+                                    {data.amount_approved !== null && (
                                         <div className="border-t border-border pt-6 mt-6">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                            <div>
                                                 <div>
                                                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Approved Amount</label>
                                                     <div className="flex items-center gap-2">
@@ -258,14 +254,6 @@ export default function AssistanceDetails({ request }: Props) {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                {data.remarks && (
-                                                    <div>
-                                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Admin Feedback</label>
-                                                        <p className="text-xs font-bold text-foreground bg-primary/5 p-3 rounded-lg border border-primary/10">
-                                                            {data.remarks}
-                                                        </p>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     )}

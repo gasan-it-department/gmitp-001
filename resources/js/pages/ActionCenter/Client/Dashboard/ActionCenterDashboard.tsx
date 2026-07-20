@@ -208,7 +208,7 @@ export default function ActionCenterDashboard({ profile, requests }: Props) {
                         </div>
                     </div>
                     <Link
-                        href={route('actionCenter.profile.setup', { municipality: currentMunicipality.slug })}
+                        href={actionCenter.profile.setup.url({ municipality: currentMunicipality.slug })}
                         className="mt-6 flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-blue-600 transition-transform active:scale-95"
                     >
                         Set up profile

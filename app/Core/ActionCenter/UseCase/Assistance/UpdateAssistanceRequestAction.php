@@ -4,72 +4,72 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\Core\Users\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Admin correction of an in-flight assistance request's CONTENT — the
- * description and supporting-document scans. Admin-only, status-gated.
+ * Admin correction of an in-flight request's description and documents.
  *
- * ── Why status-gated, not free editing ─────────────────────────────────────
- * The assistance request and its one-to-one snapshot are COA evidence:
- * identity/income/address are frozen, amount_approved is bound on approval,
- * and release is immutable.
- * So editing is allowed ONLY while the request is still undecided (pending /
- * under_review — AssistanceStatus::isEditable()). After that the record is
- * content-locked; corrections go through reject/cancel + re-file.
+ * The request row is locked before checking its status, and the lock remains
+ * held through media replacement. Approval and release use the same row-first
+ * lock order, so whichever operation obtains the lock first completes before
+ * the other operation checks the latest committed status.
  *
- * Never touched here: snapshot relation, amount_approved, transaction_number,
- * assistance_type_id, status. Identity fixes belong to the beneficiary-profile
- * editor; the request keeps its frozen snapshot on purpose.
- *
- * Mirrors StoreAssistanceRequestAction: the row write is in a tight transaction
- * (`attempts: 3`); media I/O runs OUTSIDE it so a multi-MB upload never holds a
- * row lock. Audited with one explicit activity entry on the request's trail.
+ * UploadedFile instances are moved by Spatie and cannot be safely replayed.
+ * This transaction therefore is not retried automatically.
  */
 class UpdateAssistanceRequestAction
 {
+    public function __construct(
+        private readonly LockAssistanceRequestAction $lockRequest,
+    ) {}
+
     public function execute(UpdateAssistanceRequestDto $dto): AssistanceRequest
     {
-        $request = AssistanceRequest::with('media')->findOrFail($dto->assistanceRequestId);
+        [$request, $descriptionChanged, $replacedKeys] = DB::transaction(
+            function () use ($dto): array {
+                $request = $this->lockRequest->execute(
+                    id: $dto->assistanceRequestId,
+                    municipalId: $dto->municipalId,
+                    with: ['media'],
+                );
 
-        // Tenant guard — municipal_id lives directly on the request.
-        if ($request->municipal_id !== $dto->municipalId) {
-            throw new AuthorizationException(
-                'You may only edit assistance requests from your own municipality.',
-            );
-        }
+                // A concurrent approval/release that committed first is visible
+                // here, after this action has acquired the same request-row lock.
+                $this->ensureEditable($request);
 
-        // Lifecycle gate — only in-flight requests are editable.
-        if (! $request->status->isEditable()) {
-            throw new \DomainException(
-                'This request can no longer be edited because it has already been '
-                .$request->status->label().'. Use reject/cancel and re-file if a correction is needed.',
-            );
-        }
+                $descriptionChanged = $request->description !== $dto->description;
+                $request->update(['description' => $dto->description]);
 
-        $descriptionChanged = $request->description !== $dto->description;
+                // Storage I/O intentionally stays inside the lock window.
+                $replacedKeys = $this->replaceDocuments($request, $dto->documents);
 
-        DB::transaction(function () use ($request, $dto) {
-            $request->update(['description' => $dto->description]);
-        }, attempts: 3);
-
-        // Media replace runs OUTSIDE the transaction (disk I/O). For each slot
-        // that received a new file, drop the existing scan(s) for that
-        // document_key and attach the replacement — untouched slots are left
-        // exactly as they were.
-        $replacedKeys = $this->replaceDocuments($request, $dto->documents);
+                return [$request, $descriptionChanged, $replacedKeys];
+            },
+        );
 
         $this->recordAudit($request, $dto, $descriptionChanged, $replacedKeys);
 
         return $request->fresh(['media']);
     }
 
+    private function ensureEditable(AssistanceRequest $request): void
+    {
+        if ($request->status->isEditable()) {
+            return;
+        }
+
+        throw new \DomainException(
+            'This request can no longer be edited because it has already been '
+            .$request->status->label().'. Use reject/cancel and re-file if a correction is needed.',
+        );
+    }
+
     /**
-     * Replace/add documents by slot key. Returns the keys that were changed
-     * (for the audit entry).
+     * Store the new file before deleting the previous file for that slot. A
+     * failed upload therefore leaves the previously accepted scan available.
      *
      * @param  array<string, UploadedFile>  $documents
      * @return array<int, string>
@@ -83,10 +83,8 @@ class UpdateAssistanceRequestAction
                 continue;
             }
 
-            // Remove the previous scan(s) filed under this slot.
-            $request->getMedia('documents')
-                ->filter(fn ($media) => $media->getCustomProperty('document_key') === $documentKey)
-                ->each(fn ($media) => $media->delete());
+            $existingMedia = $request->getMedia('documents')
+                ->filter(fn ($media) => $media->getCustomProperty('document_key') === $documentKey);
 
             $request
                 ->addMedia($file)
@@ -94,15 +92,13 @@ class UpdateAssistanceRequestAction
                 ->withCustomProperties(['document_key' => $documentKey])
                 ->toMediaCollection('documents');
 
+            $existingMedia->each(fn ($media) => $media->delete());
             $replaced[] = (string) $documentKey;
         }
 
         return $replaced;
     }
 
-    /**
-     * Sanitise the on-disk filename (mirrors StoreAssistanceRequestAction).
-     */
     private function safeFileName(UploadedFile $file): string
     {
         $extension = $file->getClientOriginalExtension();
@@ -112,11 +108,6 @@ class UpdateAssistanceRequestAction
         return $slug.($extension ? ".{$extension}" : '');
     }
 
-    /**
-     * One explicit audit entry on THIS request's trail. `description` is not in
-     * the model's LogsActivity::logOnly() set and media changes aren't captured
-     * by it at all, so this is the record of an admin edit (who / when / what).
-     */
     private function recordAudit(
         AssistanceRequest $request,
         UpdateAssistanceRequestDto $dto,
@@ -124,14 +115,15 @@ class UpdateAssistanceRequestAction
         array $replacedKeys,
     ): void {
         $changed = [];
+
         if ($descriptionChanged) {
             $changed[] = 'description';
         }
+
         if ($replacedKeys !== []) {
             $changed[] = 'documents';
         }
 
-        // Nothing actually changed — don't write a noise row.
         if ($changed === []) {
             return;
         }

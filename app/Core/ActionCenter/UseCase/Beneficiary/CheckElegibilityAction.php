@@ -48,7 +48,7 @@ use Illuminate\Support\Collection;
  *   2. Cross-program cooldown — any STANDARD-type row exists for this group
  *      with cooldown_expires_at > NOW(). Blocks every standard type until the
  *      longest-running cooldown expires.
- *   3. Cross-program in-flight — a pending/under_review request for ANY STANDARD
+ *   3. Cross-program in-flight — a pending/under_review/approved request for ANY STANDARD
  *      type. Blocks every standard card until that request resolves.
  *
  * Use the bulk path (executeBatch) on the portal card grid so we hit the
@@ -59,10 +59,10 @@ use Illuminate\Support\Collection;
 class CheckElegibilityAction
 {
     /**
-     * Statuses that count as "open" — the citizen has something in queue.
-     * Approved/released/rejected/cancelled are all terminal for this guard.
+     * Statuses that count as open for submission integrity. Approved remains
+     * open until physical release; released/rejected/cancelled are final.
      */
-    private const IN_FLIGHT_STATUSES = ['pending', 'under_review'];
+    private const IN_FLIGHT_STATUSES = ['pending', 'under_review', 'approved'];
 
     public function __construct(
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
@@ -96,6 +96,8 @@ class CheckElegibilityAction
             return EligibilityResult::householdHeadRequired();
         }
 
+        $member = null;
+
         if ($onBehalfHouseholdMemberId !== null) {
             $member = HouseholdMember::query()
                 ->whereKey($onBehalfHouseholdMemberId)
@@ -109,6 +111,7 @@ class CheckElegibilityAction
                 && ! $allowPendingDependent) {
                 return EligibilityResult::dependentUnverified();
             }
+
         }
 
         $group = $this->resolveGroup->execute($beneficiary);
@@ -141,6 +144,10 @@ class CheckElegibilityAction
         }
 
         // Rule 3 — cross-program in-flight request (standard types only)
+        if ($member !== null && $this->hasAnyInFlightRequestForRecipient($member->id)) {
+            return EligibilityResult::inFlightRequest();
+        }
+
         if ($this->hasAnyInFlightRequest($group)) {
             return EligibilityResult::inFlightRequest();
         }
@@ -323,7 +330,7 @@ class CheckElegibilityAction
                 return EligibilityResult::onCooldown($active->cooldown_expires_at);
             }
 
-            // A pending / under_review request for the SAME deceased blocks a duplicate.
+            // Any open request for the SAME deceased blocks a duplicate.
             $inFlight = AssistanceRequest::query()
                 ->where('assistance_type_id', $type->id)
                 ->where('on_behalf_household_member_id', $memberId)
@@ -414,6 +421,18 @@ class CheckElegibilityAction
             ->whereIn('beneficiary_id', $group->beneficiaryIds)
             ->whereIn('status', self::IN_FLIGHT_STATUSES)
             ->whereHas('assistanceType', fn (Builder $q) => $q->where('is_independent', false))
+            ->exists();
+    }
+
+    private function hasAnyInFlightRequestForRecipient(string $memberId): bool
+    {
+        return AssistanceRequest::query()
+            ->where('on_behalf_household_member_id', $memberId)
+            ->whereIn('status', self::IN_FLIGHT_STATUSES)
+            ->whereHas(
+                'assistanceType',
+                fn (Builder $query) => $query->where('is_independent', false),
+            )
             ->exists();
     }
 

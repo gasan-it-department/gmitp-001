@@ -1,10 +1,21 @@
 <?php
 
+use App\Core\ActionCenter\Dto\Assistance\RejectAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
+use App\Core\ActionCenter\Dto\Beneficiary\BeneficiaryIdentityGroup;
+use App\Core\ActionCenter\Dto\Beneficiary\EligibilityResult;
+use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
+use App\Core\ActionCenter\Models\AssistanceType;
+use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Assistance\RejectAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\ResolveBeneficiaryIdentityGroupAction;
+use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\ClientAssistanceRequestDetailsResource;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
@@ -116,9 +127,14 @@ beforeEach(function () {
         $table->string('transaction_number')->unique();
         $table->string('status');
         $table->text('description')->nullable();
+        $table->text('remarks')->nullable();
+        $table->ulid('reviewed_by_user_id')->nullable();
+        $table->ulid('rejected_by_user_id')->nullable();
         $table->decimal('amount_approved', 10, 2)->nullable();
+        $table->timestamp('reviewed_at')->nullable();
         $table->timestamp('approved_at')->nullable();
         $table->timestamp('released_at')->nullable();
+        $table->timestamp('rejected_at')->nullable();
         $table->timestamp('privacy_consented_at');
         $table->string('privacy_notice_version');
         $table->timestamps();
@@ -146,6 +162,26 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('ac_beneficiary_flags', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('beneficiary_id');
+        $table->string('severity');
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::create('ac_beneficiary_cooldowns', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('beneficiary_id');
+        $table->ulid('assistance_type_id');
+        $table->ulid('assistance_request_id');
+        $table->ulid('household_member_id')->nullable();
+        $table->ulid('household_id')->nullable();
+        $table->timestamp('cooldown_starts_at');
+        $table->timestamp('cooldown_expires_at')->nullable();
+        $table->timestamps();
+    });
+
     Schema::create('ac_request_sequences', function (Blueprint $table) {
         $table->id();
         $table->unsignedSmallInteger('year')->unique();
@@ -168,6 +204,8 @@ afterEach(function () {
     foreach ([
         'media',
         'ac_request_sequences',
+        'ac_beneficiary_cooldowns',
+        'ac_beneficiary_flags',
         'ac_assistance_request_snapshots',
         'ac_assistance_requests',
         'ac_assistance_type_documents',
@@ -264,7 +302,11 @@ it('stores snapshots and permits one newly declared pending member', function ()
         }
     };
 
-    $created = (new StoreAssistanceRequestAction($idGenerator, snapshotTestSmsNotifier()))->execute(
+    $created = (new StoreAssistanceRequestAction(
+        $idGenerator,
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))->execute(
         new StoreAssistanceRequestDto(
             municipalId: $municipalId,
             beneficiaryId: $beneficiaryId,
@@ -324,7 +366,11 @@ it('stores snapshots and permits one newly declared pending member', function ()
 it('allows an adult portal on-behalf request without recipient id uploads', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator(), snapshotTestSmsNotifier()))
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))
         ->execute(adultOnBehalfDto($context));
     $details = (new ShowClientAssistanceRequestAction)->execute(
         $context['submitter_user_id'],
@@ -342,10 +388,63 @@ it('allows an adult portal on-behalf request without recipient id uploads', func
         ->toContain('valid_id_front', 'recipient_valid_id_front');
 });
 
+it('keeps internal rejection remarks and staff data out of the citizen request payload', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    $reason = 'The submitted documents did not establish eligibility for this assistance.';
+
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))
+        ->execute(adultOnBehalfDto($context));
+
+    $created->update([
+        'status' => 'under_review',
+        'reviewed_by_user_id' => $context['submitter_user_id'],
+        'reviewed_at' => now(),
+        'remarks' => 'Internal assessment details that the citizen must not see.',
+    ]);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldReceive('requestRejected')->once();
+
+    $rejected = (new RejectAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $smsNotifier,
+    ))->execute(new RejectAssistanceRequestDto(
+        assistanceRequestId: $created->id,
+        municipalId: $context['municipal_id'],
+        rejectedByUserId: $context['submitter_user_id'],
+        rejectedByUserName: 'Action Center Reviewer',
+        remarks: $reason,
+    ));
+
+    $details = (new ShowClientAssistanceRequestAction)->execute(
+        $context['submitter_user_id'],
+        $rejected->id,
+        $context['municipal_id'],
+    );
+    $clientPayload = (new ClientAssistanceRequestDetailsResource($details))->resolve();
+    $adminPayload = (new AssistanceRequestDetailsResource($details))->resolve();
+
+    expect($rejected->remarks)->toContain('Internal assessment details')
+        ->and($rejected->remarks)->toContain($reason)
+        ->and(array_key_exists('remarks', $clientPayload))->toBeFalse()
+        ->and(array_key_exists('reviewed_by', $clientPayload))->toBeFalse()
+        ->and(array_key_exists('approved_by', $clientPayload))->toBeFalse()
+        ->and(array_key_exists('encoded_by', $clientPayload))->toBeFalse()
+        ->and($adminPayload['remarks'])->toContain('Internal assessment details');
+});
+
 it('stores a documented no-id exception for an adult assisted person', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator(), snapshotTestSmsNotifier()))->execute(
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))->execute(
         adultOnBehalfDto(
             $context,
             recipientIdUnavailable: true,
@@ -363,7 +462,11 @@ it('stores a documented no-id exception for an adult assisted person', function 
 it('allows an admin to file for a pending household member with an override and trusts the roster relationship', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
-    $created = (new StoreAssistanceRequestAction(snapshotTestIdGenerator(), snapshotTestSmsNotifier()))->execute(
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))->execute(
         adultOnBehalfDto(
             $context,
             encodedByUserId: $context['submitter_user_id'],
@@ -379,6 +482,115 @@ it('allows an admin to file for a pending household member with an override and 
             'on_behalf_first_name' => 'Pedro',
             'on_behalf_verification_pending' => true,
         ]);
+});
+
+it('rechecks citizen eligibility after acquiring submission locks', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    $dto = adultOnBehalfDto($context);
+
+    (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))->execute($dto);
+
+    // This represents the second HTTP request after it waited for the first
+    // transaction to commit. Its controller precheck may have been stale.
+    $eligibility = Mockery::mock(CheckElegibilityAction::class);
+    $eligibility->shouldReceive('execute')
+        ->once()
+        ->andReturnUsing(function () {
+            expect(DB::transactionLevel())->toBeGreaterThan(0)
+                ->and(DB::table('ac_assistance_requests')->count())->toBe(1);
+
+            return EligibilityResult::inFlightRequest();
+        });
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldNotReceive('requestReceived');
+
+    $secondSubmission = new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        $smsNotifier,
+        $eligibility,
+    );
+
+    expect(fn () => $secondSubmission->execute($dto))
+        ->toThrow(AssistanceEligibilityException::class);
+
+    expect(DB::table('ac_assistance_requests')->count())->toBe(1)
+        ->and(DB::table('ac_request_sequences')->value('last_seq'))->toBe(1);
+});
+
+it('blocks another claimant from targeting a household member with an open standard request', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+
+    (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+    ))->execute(adultOnBehalfDto($context));
+
+    $secondBeneficiaryId = (string) Str::ulid();
+    $now = now();
+
+    DB::table('ac_beneficiaries')->insert([
+        'id' => $secondBeneficiaryId,
+        'user_id' => (string) Str::ulid(),
+        'household_id' => $context['household_id'],
+        'municipal_id' => $context['municipal_id'],
+        'is_active' => true,
+        'first_name' => 'Ana',
+        'last_name' => 'Santos',
+        'birth_date' => '1992-04-05',
+        'monthly_income' => 0,
+        'identity_verified_at' => $now,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(),
+        'household_id' => $context['household_id'],
+        'beneficiary_id' => $secondBeneficiaryId,
+        'first_name' => 'Ana',
+        'last_name' => 'Santos',
+        'birth_date' => '1992-04-05',
+        'relationship' => 'sibling',
+        'is_active' => true,
+        'is_verified_dependent' => true,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $secondBeneficiary = Beneficiary::query()
+        ->with('household')
+        ->findOrFail($secondBeneficiaryId);
+    $identityGroup = Mockery::mock(ResolveBeneficiaryIdentityGroupAction::class);
+    $identityGroup->shouldReceive('execute')
+        ->once()
+        ->andReturn(new BeneficiaryIdentityGroup(
+            canonical: $secondBeneficiary,
+            beneficiaryIds: [$secondBeneficiaryId],
+            householdIds: [$context['household_id']],
+        ));
+
+    $result = (new CheckElegibilityAction($identityGroup))->execute(
+        $secondBeneficiary,
+        AssistanceType::query()->findOrFail($context['assistance_type_id']),
+        $context['member_id'],
+        allowPendingDependent: true,
+    );
+
+    expect($result->eligible)->toBeFalse()
+        ->and($result->reason)->toBe(EligibilityResult::REASON_IN_FLIGHT);
+});
+
+it('throttles citizen assistance submissions as abuse protection', function () {
+    $route = app('router')->getRoutes()->getByName('actionCenter.apply.assistance.store');
+
+    expect($route)->not->toBeNull()
+        ->and($route->gatherMiddleware())->toContain('throttle:5,1');
 });
 
 function seedAdultOnBehalfIdentityContext(): array
@@ -544,4 +756,14 @@ function snapshotTestSmsNotifier(): AssistanceRequestSmsNotifier
     $notifier->shouldReceive('requestReceived')->once();
 
     return $notifier;
+}
+
+function snapshotTestEligibility(): CheckElegibilityAction
+{
+    $eligibility = Mockery::mock(CheckElegibilityAction::class);
+    $eligibility->shouldReceive('execute')
+        ->once()
+        ->andReturn(EligibilityResult::eligible());
+
+    return $eligibility;
 }

@@ -41,9 +41,6 @@ class ShowClientAssistanceRequestAction
             'snapshot',
             'assistanceType.documents' => fn ($query) => $query
                 ->orderBy('ac_assistance_type_documents.sort_order'),
-            'encodedBy',
-            'reviewedBy',
-            'approvedBy',
             'media',
         ]);
     }

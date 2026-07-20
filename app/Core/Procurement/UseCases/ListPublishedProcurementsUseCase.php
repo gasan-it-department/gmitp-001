@@ -13,13 +13,32 @@ class ListPublishedProcurementsUseCase
             // 1. TENANT SECURITY (Always first)
             ->where('municipal_id', $municipalId)
 
+            ->select([
+                'id',
+                'municipal_id',
+                'department_id',
+                'reference_number',
+                'title',
+                'category',
+                'status',
+                'abc_amount',
+                'published_at',
+                'closing_date',
+                'pre_bid_date',
+                'winning_bidder_name',
+                'contract_amount',
+                'awarded_date',
+                'failure_reason',
+                'failed_date',
+            ])
+
             // 2. THE IRON DOME: Force public visibility rules
             ->whereNotNull('published_at') // Must have a published date
             ->where('published_at', '<=', now()) // Prevents seeing future scheduled posts
             ->where('status', '!=', 'draft') // Double security: Never return drafts
 
             // 3. Eager load safe relationships (Public needs to know the department)
-            ->with(['department:id,name', 'media'])
+            ->with('department:id,name')
 
             // 4. Apply the Public Filters (Omni-Search, Category, Status)
             ->when($dto->search, function ($query) use ($dto) {
@@ -29,8 +48,8 @@ class ListPublishedProcurementsUseCase
                         ->orWhere('reference_number', 'like', $searchTerm);
                 });
             })
-            ->when($dto->status, fn($query) => $query->where('status', $dto->status->value))
-            ->when($dto->category, fn($query) => $query->where('category', $dto->category))
+            ->when($dto->status, fn ($query) => $query->where('status', $dto->status->value))
+            ->when($dto->category, fn ($query) => $query->where('category', $dto->category))
 
             // 5. Public sorting is usually latest published first
             ->latest('published_at')

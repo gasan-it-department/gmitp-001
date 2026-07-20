@@ -29,6 +29,25 @@ class AssistanceRequest extends Model implements HasMedia
 {
     use HasFactory, HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
+    /** Fields written by the dedicated approved-to-released transition. */
+    private const APPROVED_RELEASE_FIELDS = [
+        'status',
+        'released_by_user_id',
+        'released_at',
+        'release_reference_number',
+        'remarks',
+        'updated_at',
+    ];
+
+    /** Reserved for the documented future admin pre-release cancellation. */
+    private const APPROVED_CANCELLATION_FIELDS = [
+        'status',
+        'cancelled_by_user_id',
+        'cancelled_at',
+        'remarks',
+        'updated_at',
+    ];
+
     protected $table = 'ac_assistance_requests';
 
     protected $keyType = 'string';
@@ -95,6 +114,42 @@ class AssistanceRequest extends Model implements HasMedia
             ->logOnlyDirty()
             ->dontLogEmptyChanges()
             ->useLogName('assistance_request');
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $request): void {
+            $originalStatus = AssistanceStatus::tryFrom(
+                (string) $request->getRawOriginal('status'),
+            );
+            $dirtyFields = array_keys($request->getDirty());
+
+            if ($dirtyFields === []) {
+                return;
+            }
+
+            if ($originalStatus === AssistanceStatus::Released) {
+                throw new \DomainException(
+                    'Released assistance requests are immutable. Record a separate correction entry instead.',
+                );
+            }
+
+            if ($originalStatus !== AssistanceStatus::Approved) {
+                return;
+            }
+
+            $allowedFields = match ($request->status) {
+                AssistanceStatus::Released => self::APPROVED_RELEASE_FIELDS,
+                AssistanceStatus::Cancelled => self::APPROVED_CANCELLATION_FIELDS,
+                default => [],
+            };
+
+            if (array_diff($dirtyFields, $allowedFields) !== []) {
+                throw new \DomainException(
+                    'Approved assistance requests are content-locked and may only proceed through a dedicated workflow action.',
+                );
+            }
+        });
     }
 
     protected static function newFactory()

@@ -19,7 +19,7 @@ interface Props {
  * Reject Assistance Request modal.
  *
  * Intentionally simpler than ApproveRequestDialog:
- *   - one required field (remarks) — the citizen-facing reason
+ *   - one required field (remarks) for the internal case record
  *   - no amount, no confirm checkbox
  *
  * The 10-char-min textarea IS the deliberate act; rejection is reversible
@@ -64,7 +64,7 @@ export default function RejectRequestDialog({ requestId, applicantName, isOpen, 
                         {applicantName
                             ? `Provide the reason ${applicantName}'s request is being denied. `
                             : 'Provide the reason this request is being denied. '}
-                        The reason is recorded on the case file and the applicant will be notified.
+                        The reason is recorded in the internal case file. The applicant receives a status notification only.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -83,7 +83,7 @@ export default function RejectRequestDialog({ requestId, applicantName, isOpen, 
                         />
                         {errors.remarks && <p className="text-xs font-medium text-red-500">{errors.remarks}</p>}
                         <p className="text-[11px] text-slate-400">
-                            Be specific — this text appears on the case record and is what the citizen will read.
+                            Be specific. This reason is restricted to authorized MSWD staff.
                         </p>
                     </div>
 
