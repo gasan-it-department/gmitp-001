@@ -73,19 +73,19 @@ interface Props {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, string> = {
-    pending:      'bg-amber-100  text-amber-800  ring-1 ring-amber-200',
+    pending: 'bg-amber-100  text-amber-800  ring-1 ring-amber-200',
     under_review: 'bg-sky-100    text-sky-800    ring-1 ring-sky-200',
-    approved:     'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
-    released:     'bg-blue-100   text-blue-800   ring-1 ring-blue-200',
-    rejected:     'bg-rose-100   text-rose-800   ring-1 ring-rose-200',
-    cancelled:    'bg-gray-100   text-gray-700   ring-1 ring-gray-200',
+    approved: 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
+    released: 'bg-blue-100   text-blue-800   ring-1 ring-blue-200',
+    rejected: 'bg-rose-100   text-rose-800   ring-1 ring-rose-200',
+    cancelled: 'bg-gray-100   text-gray-700   ring-1 ring-gray-200',
 };
 
-function statusClass(status: string): string {
+export function statusClass(status: string): string {
     return STATUS_BADGE[status] ?? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
 }
 
-function humanizeStatus(status: string): string {
+export function humanizeStatus(status: string): string {
     return status.replace(/_/g, ' ');
 }
 
@@ -115,7 +115,7 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
 
     return (
         <div className="flex h-full flex-col">
-            <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="max-h-[75vh] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-sm">
                 <Table className="w-full">
                     <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur">
                         <TableRow>
@@ -141,22 +141,15 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
                             />
                         ) : (
                             rows.map((row, index) => {
-                                const rowNumber = meta
-                                    ? (meta.current_page - 1) * meta.per_page + (index + 1)
-                                    : index + 1;
+                                const rowNumber = meta ? (meta.current_page - 1) * meta.per_page + (index + 1) : index + 1;
 
                                 return (
-                                    <TableRow
-                                        key={row.id}
-                                        className="group transition-colors hover:bg-gray-50"
-                                    >
+                                    <TableRow key={row.id} className="group transition-colors hover:bg-gray-50">
                                         {/* # */}
                                         <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
 
                                         {/* Ref No. */}
-                                        <TableCell className="font-mono text-xs font-semibold text-gray-800">
-                                            {row.transaction_number}
-                                        </TableCell>
+                                        <TableCell className="font-mono text-xs font-semibold text-gray-800">{row.transaction_number}</TableCell>
 
                                         {/* Subject — full name + filing-context hint */}
                                         <TableCell className="text-xs">
@@ -169,17 +162,13 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
                                                 </div>
                                             )}
                                             {row.is_walkin && (
-                                                <div className="mt-0.5 text-[10px] font-medium tracking-wide text-purple-700 uppercase">
-                                                    walk-in
-                                                </div>
+                                                <div className="mt-0.5 text-[10px] font-medium tracking-wide text-purple-700 uppercase">walk-in</div>
                                             )}
                                         </TableCell>
 
                                         {/* Program */}
                                         <TableCell className="text-xs text-gray-700">
-                                            {row.assistance_type?.name ?? (
-                                                <span className="text-gray-400 italic">—</span>
-                                            )}
+                                            {row.assistance_type?.name ?? <span className="text-gray-400 italic">—</span>}
                                         </TableCell>
 
                                         {/* Barangay */}
@@ -203,17 +192,16 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
 
                                         {/* Amount */}
                                         <TableCell className="text-right text-xs font-semibold whitespace-nowrap text-gray-800">
-                                            {row.amount_approved !== null
-                                                ? utils.formatCurrency(row.amount_approved)
-                                                : <span className="text-gray-400">—</span>}
+                                            {row.amount_approved !== null ? (
+                                                utils.formatCurrency(row.amount_approved)
+                                            ) : (
+                                                <span className="text-gray-400">—</span>
+                                            )}
                                         </TableCell>
 
                                         {/* Documents — count badge with collection-key tooltip */}
                                         <TableCell className="text-center">
-                                            <DocumentsBadge
-                                                count={row.documents_count}
-                                                uploaded={row.documents_uploaded}
-                                            />
+                                            <DocumentsBadge count={row.documents_count} uploaded={row.documents_uploaded} />
                                         </TableCell>
 
                                         {/* Actions */}
@@ -263,9 +251,7 @@ function DocumentsBadge({ count, uploaded }: { count: number | undefined; upload
         return <span className="text-xs text-gray-400">0</span>;
     }
 
-    const tooltipBody = uploaded && uploaded.length > 0
-        ? uploaded.map((key) => key.replace(/_/g, ' ')).join(', ')
-        : 'Files attached';
+    const tooltipBody = uploaded && uploaded.length > 0 ? uploaded.map((key) => key.replace(/_/g, ' ')).join(', ') : 'Files attached';
 
     return (
         <TooltipProvider delayDuration={150}>

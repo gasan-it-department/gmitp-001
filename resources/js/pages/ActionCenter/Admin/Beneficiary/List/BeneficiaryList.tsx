@@ -10,8 +10,8 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { ArrowRight, BadgeCheck, Clock3, Loader2, OctagonX, Plus, UserCircle2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { BeneficiaryRow } from '../BeneficiarySearch';
-import BeneficiaryResultCard from '../Components/BeneficiaryResultCard';
 import SearchFilters from '../Components/SearchFilters';
+import BeneficiaryRegistryItem from './Components/BeneficiaryRegistryItem';
 
 interface Filters {
     search?: string | null;
@@ -89,15 +89,18 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
 
     return (
         <AdminLayout>
-            <main className="m-6 space-y-6">
-                <div className="flex items-center justify-between">
+            <main className="space-y-4 px-3 py-4 sm:px-4 md:space-y-5 md:px-5 lg:px-6 lg:py-6">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Beneficiaries</h1>
-                        <p className="text-sm text-muted-foreground">Registry for {currentMunicipality.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                            Registry for {currentMunicipality.name}
+                            <span className="sm:hidden"> / {meta?.total ?? 0} records</span>
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="hidden text-right text-sm text-muted-foreground sm:block">
+                    <div className="flex w-full items-center gap-4 md:w-auto">
+                        <div className="hidden flex-1 text-right text-sm text-muted-foreground sm:block">
                             {loading ? (
                                 <span className="inline-flex items-center gap-2">
                                     <Loader2 className="h-4 w-4 animate-spin" /> Loading
@@ -106,9 +109,9 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                                 <span>{meta?.total ?? 0} records</span>
                             )}
                         </div>
-                        <Link href={actionCenter.admin.walkin.create.url({ municipality: currentMunicipality.slug })}>
-                            <Button type="button">
-                                <Plus className="mr-2 h-4 w-4" /> Register Walk-in
+                        <Link className="w-full md:w-auto" href={actionCenter.admin.walkin.create.url({ municipality: currentMunicipality.slug })}>
+                            <Button type="button" className="w-full md:w-auto">
+                                <Plus className="h-4 w-4" /> Register Walk-in
                             </Button>
                         </Link>
                     </div>
@@ -137,6 +140,7 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                     onClear={clearFilters}
                     hasCriteria={hasCriteria}
                     loading={loading}
+                    collapseOnMobile
                 />
 
                 {rows.length === 0 ? (
@@ -145,13 +149,12 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                     </div>
                 ) : (
                     <>
-                        {/* Mobile View: Cards */}
-                        <div className="mt-4 grid grid-cols-1 gap-3 md:hidden">
+                        {/* Mobile and tablet registry items */}
+                        <div className="mt-4 grid grid-cols-1 gap-2 md:gap-3 lg:grid-cols-2 xl:hidden">
                             {rows.map((row) => (
-                                <BeneficiaryResultCard
+                                <BeneficiaryRegistryItem
                                     key={row.id}
                                     row={row}
-                                    isPossibleDuplicate={false}
                                     profileHref={ShowBeneficiaryProfileController.url({
                                         municipality: currentMunicipality.slug,
                                         beneficiaryId: row.id,
@@ -160,8 +163,8 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                             ))}
                         </div>
 
-                        {/* Desktop View: Table */}
-                        <div className="hidden rounded-lg border bg-white md:block">
+                        {/* Desktop registry table */}
+                        <div className="hidden overflow-hidden rounded-md border bg-white xl:block">
                             <Table>
                                 <TableHeader className="bg-slate-50/70">
                                     <TableRow>
