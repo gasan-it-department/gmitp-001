@@ -88,16 +88,6 @@ class Procurement extends Model implements HasMedia
                 ->acceptsMimeTypes(['application/pdf']); // FR-2.2
         }
     }
-public function registerMediaCollections(): void
-{
-    $disk = config('filesystems.disks.procurement', config('filesystems.default', 'public'));
-
-    foreach (ProcurementDocumentType::cases() as $type) {
-        $this->addMediaCollection($type->value)
-            ->useDisk($disk)
-            ->acceptsMimeTypes(['application/pdf']); // FR-2.2
-    }
-}
 
     public function creator(): BelongsTo
     {
