@@ -60,8 +60,6 @@ enum EnumPermissions: string
 
     //government
     case GOVERNMENT_ACCESS = 'government.access';
-    case DEPARTMENT_ACCESS = 'department.access';
-
     // --- Reserved for delegation (NOT seeded yet) -------------------------
     // Uncomment + add labels + re-seed when you let municipal admins manage
     // other admins within their own municipality. CreateAdminUseCase already
@@ -144,7 +142,7 @@ enum EnumPermissions: string
     public static function values(): array
     {
         return array_map(
-            fn (self $permission): string => $permission->value,
+            fn(self $permission): string => $permission->value,
             self::cases(),
         );
     }
