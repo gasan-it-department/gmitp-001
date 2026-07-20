@@ -1,4 +1,4 @@
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 
 export default function PrivacyPolicyPage() {
     return (

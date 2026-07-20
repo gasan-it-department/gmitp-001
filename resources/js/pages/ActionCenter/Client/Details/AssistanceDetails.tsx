@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { AssistanceDocumentRequirement } from '@/Core/Types/ActionCenter/assistance';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { DocumentsToBringChecklist } from '../Apply/Components/DocumentsToBringChecklist';
 import { 
     Calendar, 

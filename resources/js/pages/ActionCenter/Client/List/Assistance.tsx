@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head } from '@inertiajs/react'; 
 import { Pagination } from '@/components/Shared/Pagination';
 import { 

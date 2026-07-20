@@ -1,4 +1,4 @@
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';

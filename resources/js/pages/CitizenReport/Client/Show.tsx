@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, Circle, Clock, MapPin, ShieldCheck, XCircle } from 'lucide-react';
 

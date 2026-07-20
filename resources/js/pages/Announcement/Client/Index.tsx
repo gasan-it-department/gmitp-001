@@ -1,5 +1,5 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AlertOctagon, AlertTriangle, Calendar, ChevronRight, Construction, Megaphone, Zap } from 'lucide-react';
 import announcement from '@/routes/announcement';

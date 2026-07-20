@@ -1,5 +1,5 @@
 import ListFeedbackController from '@/actions/App/External/Web/Controllers/Feedback/Client/ListFeedbackController';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import actionCenter from '@/routes/actionCenter';
 import communityReport from '@/routes/communityReport';
 import supportTicket from '@/routes/supportTicket';

@@ -1,5 +1,5 @@
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import government from '@/routes/government';
 import { router } from '@inertiajs/react';

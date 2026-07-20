@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
