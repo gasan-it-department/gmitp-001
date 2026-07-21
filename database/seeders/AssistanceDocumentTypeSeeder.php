@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Core\ActionCenter\Models\DocumentType;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AssistanceDocumentTypeSeeder extends Seeder
 {
@@ -16,6 +18,11 @@ class AssistanceDocumentTypeSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->reconcileLegacyDocumentKey(
+            'cert_indigency',
+            'indigency_or_need_certificate',
+        );
+
         $documents = [
             [
                 'key' => 'valid_id_front',
@@ -46,7 +53,7 @@ class AssistanceDocumentTypeSeeder extends Seeder
                 'sort_order' => 13,
             ],
             [
-                'key' => 'cert_indigency',
+                'key' => 'indigency_or_need_certificate',
                 'label' => 'Certificate of Indigency / Certificate of Need',
                 'description' => 'Orihinal na Certificate of Indigency mula sa barangay o katumbas na sertipikong nagpapatunay na nangangailangan ng tulong ang non-indigent na aplikante.',
                 'examples' => 'Barangay Certificate of Indigency or Certificate of Need issued within the last 3 months',
@@ -138,5 +145,79 @@ class AssistanceDocumentTypeSeeder extends Seeder
             ->update(['is_active' => false]);
 
         $this->command->info('AssistanceDocumentTypeSeeder: ' . count($documents) . ' document types seeded.');
+    }
+
+    private function reconcileLegacyDocumentKey(string $legacyKey, string $canonicalKey): void
+    {
+        DB::transaction(function () use ($legacyKey, $canonicalKey): void {
+            $documents = DocumentType::query()
+                ->whereIn('key', [$legacyKey, $canonicalKey])
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('key');
+
+            $legacy = $documents->get($legacyKey);
+
+            if (!$legacy) {
+                return;
+            }
+
+            $canonical = $documents->get($canonicalKey);
+
+            if (!$canonical) {
+                $legacy->update(['key' => $canonicalKey]);
+
+                return;
+            }
+
+            $legacyAssignments = DB::table('ac_assistance_type_documents')
+                ->where('document_type_id', $legacy->id)
+                ->get();
+
+            foreach ($legacyAssignments as $legacyAssignment) {
+                $canonicalAssignment = DB::table('ac_assistance_type_documents')
+                    ->where('assistance_type_id', $legacyAssignment->assistance_type_id)
+                    ->where('document_type_id', $canonical->id)
+                    ->first();
+
+                if (!$canonicalAssignment) {
+                    DB::table('ac_assistance_type_documents')
+                        ->where('id', $legacyAssignment->id)
+                        ->update([
+                            'document_type_id' => $canonical->id,
+                            'updated_at' => now(),
+                        ]);
+
+                    continue;
+                }
+
+                DB::table('ac_assistance_type_documents')
+                    ->where('id', $canonicalAssignment->id)
+                    ->update([
+                        'is_required' => (bool) $canonicalAssignment->is_required
+                            || (bool) $legacyAssignment->is_required,
+                        'sort_order' => min(
+                            $canonicalAssignment->sort_order,
+                            $legacyAssignment->sort_order,
+                        ),
+                        'updated_at' => now(),
+                    ]);
+
+                DB::table('ac_assistance_type_documents')
+                    ->where('id', $legacyAssignment->id)
+                    ->delete();
+            }
+
+            $legacy->delete();
+        });
+
+        Media::query()
+            ->where('custom_properties->document_key', $legacyKey)
+            ->get()
+            ->each(function (Media $media) use ($canonicalKey): void {
+                $media->setCustomProperty('document_key', $canonicalKey);
+                $media->save();
+            });
     }
 }
