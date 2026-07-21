@@ -172,9 +172,8 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
-                    ['key' => 'med_abstract', 'is_required' => true, 'sort_order' => 30],
-                    ['key' => 'hospital_bill', 'is_required' => true, 'sort_order' => 40],
-                    ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 50],
+                    ['key' => 'medical_supporting_document', 'is_required' => true, 'sort_order' => 30],
+                    ['key' => 'med_abstract', 'is_required' => true, 'sort_order' => 40],
                 ],
             ],
 

@@ -24,6 +24,7 @@ import feedback from '@/routes/feedback';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
 import procurement from '@/routes/procurement';
+import supportTicket from '@/routes/supportTicket';
 import tourism from '@/routes/tourism';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -39,6 +40,7 @@ import {
     Landmark,
     Layers,
     LayoutTemplate,
+    LifeBuoy,
     LogOut,
     MapPinMinus,
     Megaphone,
@@ -168,6 +170,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: communityReport.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Siren,
                     permission: 'community_report.access',
+                },
+                {
+                    title: 'Support Tickets',
+                    url: supportTicket.admin.index.url({ municipality: currentMunicipality.slug }),
+                    icon: LifeBuoy,
+                    permission: 'support_ticket.access',
                 },
             ],
         },
