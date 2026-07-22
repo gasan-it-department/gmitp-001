@@ -34,6 +34,7 @@ import {
     Printer,
     Send,
     ShieldCheck,
+    Upload,
     User,
     UserCheck,
     Users,
@@ -217,7 +218,14 @@ export default function AssistanceRequestsDetails({
     const { auth } = usePage<SharedData>().props;
     const utils = Utility();
     const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
-    const recipientIdIsRequired = detail.on_behalf !== null && detail.assistance_type?.slug !== 'burial' && !detail.on_behalf.recipient_id_exception;
+    const filerIdIsRequired = requiredDocuments.data.some(
+        (document) => ['valid_id_front', 'valid_id_back'].includes(document.key) && document.is_required,
+    );
+    const recipientIdIsRequired =
+        detail.on_behalf !== null &&
+        filerIdIsRequired &&
+        detail.assistance_type?.slug !== 'burial' &&
+        !detail.on_behalf.recipient_id_exception;
     const requiredDocumentsData = requiredDocuments.data
         .filter((document) => !document.key.startsWith('recipient_valid_id_') || detail.on_behalf !== null)
         .map((document) => (document.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...document, is_required: true } : document));
@@ -236,11 +244,18 @@ export default function AssistanceRequestsDetails({
     // on that, falling back to collection_name for any legacy/unkeyed media.
     const documentKeyOf = (d: DocumentBlock) => (d.custom_properties?.document_key as string | undefined) ?? d.collection_name;
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
+    const missingRequiredDocuments = requiredDocumentsData.filter((document) => document.is_required && !uploadedByKey.has(document.key));
+    const hasMissingRequiredDocuments = missingRequiredDocuments.length > 0;
+    const canEditRequest = detail.status === 'pending' || detail.status === 'under_review';
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
     const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
         municipality: currentMunicipality.slug,
         assistanceRequestId: detail.id,
+    });
+    const editRequestUrl = EditAssistanceRequestController.url({
+        municipality: currentMunicipality.slug,
+        assistanceRequest: detail.id,
     });
 
     const handleAction = (label: string) => () => {
@@ -331,6 +346,7 @@ export default function AssistanceRequestsDetails({
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
                                         acknowledgementReceiptUrl={acknowledgementReceiptUrl}
+                                        hasMissingRequiredDocuments={hasMissingRequiredDocuments}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
@@ -350,12 +366,9 @@ export default function AssistanceRequestsDetails({
                                     {/* Correct a mistake — only while the request is still
                                         editable (pending / under_review). Locked states show
                                         no button; the server enforces the same gate. */}
-                                    {(detail.status === 'pending' || detail.status === 'under_review') && (
+                                    {canEditRequest && (
                                         <Link
-                                            href={EditAssistanceRequestController.url({
-                                                municipality: currentMunicipality.slug,
-                                                assistanceRequest: detail.id,
-                                            })}
+                                            href={editRequestUrl}
                                             className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 sm:w-auto"
                                         >
                                             <Pencil className="h-4 w-4" /> Edit Request
@@ -379,6 +392,28 @@ export default function AssistanceRequestsDetails({
                 {crossMatches.length > 0 && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:hidden">
                         <CrossMunicipalityWarning matches={crossMatches} context="release" />
+                    </div>
+                )}
+
+                {canEditRequest && hasMissingRequiredDocuments && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+                        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-amber-950">Awaiting required documents</p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+                                        {missingRequiredDocuments.length} required {missingRequiredDocuments.length === 1 ? 'document is' : 'documents are'} still missing:{' '}
+                                        {missingRequiredDocuments.map((document) => document.label).join(', ')}. Approval remains unavailable until MSWD records them.
+                                    </p>
+                                </div>
+                            </div>
+                            <Button asChild variant="outline" className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto">
+                                <Link href={editRequestUrl}>
+                                    <Upload className="mr-2 h-4 w-4" /> Upload documents
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
                 )}
 
@@ -1077,6 +1112,7 @@ function ActionButtons({
     isMine,
     reviewerName,
     acknowledgementReceiptUrl,
+    hasMissingRequiredDocuments,
 }: {
     status: string;
     onAction: (label: string) => () => void;
@@ -1084,6 +1120,7 @@ function ActionButtons({
     isMine: boolean;
     reviewerName: string | null;
     acknowledgementReceiptUrl: string;
+    hasMissingRequiredDocuments: boolean;
 }) {
     switch (status) {
         case 'pending':
@@ -1103,7 +1140,12 @@ function ActionButtons({
             }
             return (
                 <>
-                    <Button className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto" onClick={onAction('Approve')}>
+                    <Button
+                        className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+                        onClick={onAction('Approve')}
+                        disabled={hasMissingRequiredDocuments}
+                        title={hasMissingRequiredDocuments ? 'Upload all required documents before approval.' : undefined}
+                    >
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                     </Button>
                     <Button variant="destructive" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reject')}>

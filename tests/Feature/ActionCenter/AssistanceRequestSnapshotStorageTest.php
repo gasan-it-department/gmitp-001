@@ -14,13 +14,16 @@ use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveBeneficiaryIdentityGroupAction;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
+use App\External\Api\Request\ActionCenter\StoreAdminAssistanceRequest;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\ClientAssistanceRequestDetailsResource;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
@@ -218,6 +221,39 @@ afterEach(function () {
     ] as $table) {
         Schema::dropIfExists($table);
     }
+});
+
+it('allows an admin to open a walk-in assistance case without documents', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    $payload = [
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'description' => 'Medical assistance requested during an MSWD walk-in interview.',
+        'privacy_consent' => true,
+    ];
+    $request = StoreAdminAssistanceRequest::create('/', 'POST', $payload);
+
+    $validator = Validator::make($payload, $request->rules(), $request->messages());
+
+    expect($validator->passes())->toBeTrue();
+});
+
+it('accepts a valid optional document supplied during walk-in encoding', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    $payload = [
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'description' => 'Medical assistance requested during an MSWD walk-in interview.',
+        'privacy_consent' => true,
+        'documents' => [
+            'valid_id_front' => UploadedFile::fake()->image('valid-id-front.jpg'),
+        ],
+    ];
+    $request = StoreAdminAssistanceRequest::create('/', 'POST', $payload, [], $payload['documents']);
+
+    $validator = Validator::make($payload, $request->rules(), $request->messages());
+
+    expect($validator->passes())->toBeTrue();
 });
 
 it('stores snapshots and permits one newly declared pending member', function () {
@@ -476,6 +512,8 @@ it('allows an admin to file for a pending household member with an override and 
     );
 
     expect($created->encoded_by_user_id)->toBe($context['submitter_user_id'])
+        ->and($created->status->value)->toBe('pending')
+        ->and(DB::table('media')->count())->toBe(0)
         ->and($created->on_behalf_household_member_id)->toBe($context['member_id'])
         ->and($created->metadata)->toMatchArray([
             'relationship_to_beneficiary' => 'parent',

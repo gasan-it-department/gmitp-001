@@ -13,8 +13,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * The permanent identity record for any person served by the MSWD —
@@ -25,6 +27,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Beneficiary extends Model implements HasMedia
 {
     use HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
+
+    public const AVATAR_DISPLAY_CONVERSION = 'avatar-display';
 
     protected $table = 'ac_beneficiaries';
 
@@ -275,5 +279,15 @@ class Beneficiary extends Model implements HasMedia
                 'image/png',
                 'application/pdf',
             ]);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion(self::AVATAR_DISPLAY_CONVERSION)
+            ->performOnCollections('avatar')
+            ->fit(Fit::Crop, 512, 512)
+            ->format('webp')
+            ->quality(84)
+            ->nonQueued();
     }
 }

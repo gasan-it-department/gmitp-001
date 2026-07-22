@@ -41,6 +41,18 @@ class ShowBeneficiaryAvatarController extends Controller
             abort(404);
         }
 
-        return $media->toInlineResponse($request);
+        $conversion = Beneficiary::AVATAR_DISPLAY_CONVERSION;
+        $hasConversion = $media->hasGeneratedConversion($conversion);
+        $response = $media->toAvailableInlineResponse($request, [$conversion]);
+
+        if ($hasConversion) {
+            $response->headers->set('Content-Type', 'image/webp');
+        }
+
+        // Resource URLs include the media timestamp, so a replaced avatar gets
+        // a new URL while each private version can remain cached by the browser.
+        $response->headers->set('Cache-Control', 'private, max-age=31536000, immutable');
+
+        return $response;
     }
 }

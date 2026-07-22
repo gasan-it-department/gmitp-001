@@ -93,15 +93,16 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
 
                             <div className="space-y-2">
                                 <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
-                                    Description
+                                    Description <span className="text-red-500">*</span>
                                 </Label>
                                 <Textarea
                                     id="description"
                                     placeholder="Briefly describe the purpose of this assistance..."
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
-                                    className="min-h-[120px] resize-none bg-gray-50"
+                                    className={`min-h-[120px] resize-none bg-gray-50 ${errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.description && <p className="text-xs font-medium text-red-600">{errors.description}</p>}
                             </div>
 
                             {/* Business Rules Grid (Amount Bounds & Cooldown) */}

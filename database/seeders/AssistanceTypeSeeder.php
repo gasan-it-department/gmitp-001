@@ -206,8 +206,11 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
                     ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'death_cert', 'is_required' => true, 'sort_order' => 30],
-                    ['key' => 'funeral_contract', 'is_required' => true, 'sort_order' => 40],
-                    ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 50],
+                    ['key' => 'deceased_senior_citizen_id', 'is_required' => false, 'sort_order' => 40],
+                    ['key' => 'proof_of_relationship_to_deceased', 'is_required' => true, 'sort_order' => 50],
+                    ['key' => 'burial_expense_receipt', 'is_required' => true, 'sort_order' => 60],
+                    ['key' => 'funeral_contract', 'is_required' => false, 'sort_order' => 70],
+                    ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 80],
                 ],
             ],
 

@@ -482,7 +482,7 @@ export default function CreateAssistanceRequest({
                                         <Paperclip className="h-4 w-4" /> Mga sumusuportang dokumento
                                     </h4>
                                     <p className="mb-4 text-xs text-blue-800/80">
-                                        Opsyonal — maglakip ng scans kung mayroon. Maaari mo ring i-verify ang mga orihinal na dokumento sa desk at i-attach na lang mamaya.
+                                        Opsyonal habang ine-encode ang request. Ilakip ngayon kung na-inspect na ng MSWD, o i-upload mamaya bago aprubahan ang request.
                                     </p>
                                     <div className="space-y-4">
                                         {selectedFilerIdDocuments.length > 0 && (
@@ -583,7 +583,7 @@ export default function CreateAssistanceRequest({
                                                 <Label className="text-sm">
                                                     {doc.name}
                                                     {doc.is_required && (
-                                                        <span className="ml-1 text-[10px] font-medium text-amber-600">(usually required)</span>
+                                                        <span className="ml-1 text-[10px] font-medium text-amber-600">(Required before approval)</span>
                                                     )}
                                                 </Label>
                                                 {doc.description && <p className="text-xs text-slate-500">{doc.description}</p>}

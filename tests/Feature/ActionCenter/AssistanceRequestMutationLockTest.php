@@ -4,6 +4,7 @@ use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
+use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
@@ -43,6 +44,16 @@ beforeEach(function () {
         $table->decimal('min_amount', 10, 2)->default(0);
         $table->decimal('max_amount', 10, 2)->nullable();
         $table->unsignedInteger('sort_order')->default(0);
+        $table->timestamps();
+        $table->softDeletes();
+    });
+
+    Schema::create('ac_household_members', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('household_id');
+        $table->ulid('beneficiary_id')->nullable();
+        $table->string('relationship')->nullable();
+        $table->boolean('is_verified_dependent')->default(false);
         $table->timestamps();
         $table->softDeletes();
     });
@@ -136,6 +147,7 @@ afterEach(function () {
         'ac_assistance_requests',
         'ac_assistance_type_documents',
         'ac_document_types',
+        'ac_household_members',
         'ac_assistance_types',
         'users',
     ] as $table) {
@@ -238,6 +250,86 @@ it('allows the dedicated release transition and rejects every later content edit
         ->and($request->fresh()->getMedia('documents'))->toHaveCount(0);
 });
 
+it('blocks approval until required documents are uploaded and ignores optional omissions', function () {
+    $context = mutationLockContext();
+    $request = mutationLockRequest($context);
+    mutationDocumentRequirement($context, 'medical_certificate', 'Medical Certificate', true, 10);
+    mutationDocumentRequirement($context, 'barangay_clearance', 'Barangay Clearance', false, 20);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldReceive('requestApproved')->once();
+    $action = new ApproveAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $smsNotifier,
+    );
+    $dto = new ApproveAssistanceRequestDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        approverId: $context['admin_id'],
+        amountApproved: 2000,
+        approvalNotes: 'Approved after MSWD inspected the required document.',
+    );
+
+    expect(fn () => $action->execute($dto))
+        ->toThrow(AssistanceApprovalException::class, 'Medical Certificate');
+
+    $request
+        ->addMedia(UploadedFile::fake()->image('medical-certificate.jpg'))
+        ->withCustomProperties(['document_key' => 'medical_certificate'])
+        ->toMediaCollection('documents');
+
+    $approved = $action->execute($dto);
+
+    expect($approved->status)->toBe(AssistanceStatus::Approved)
+        ->and($approved->getMedia('documents'))->toHaveCount(1);
+});
+
+it('does not require assisted-person id uploads when a recorded exception applies', function () {
+    $context = mutationLockContext();
+    mutationDocumentRequirement($context, 'valid_id_front', 'Filer Valid Government ID - Front', true, 10);
+    mutationDocumentRequirement($context, 'valid_id_back', 'Filer Valid Government ID - Back', true, 11);
+    $request = mutationLockRequest($context);
+    $memberId = (string) Str::ulid();
+    DB::table('ac_household_members')->insert([
+        'id' => $memberId,
+        'household_id' => $context['household_id'],
+        'relationship' => 'child',
+        'is_verified_dependent' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $request->update([
+        'on_behalf_household_member_id' => $memberId,
+        'metadata' => [
+            'recipient_id_exception' => 'minor',
+            'relationship_to_beneficiary' => 'child',
+        ],
+    ]);
+
+    foreach (['valid_id_front', 'valid_id_back'] as $key) {
+        $request
+            ->addMedia(UploadedFile::fake()->image("{$key}.jpg"))
+            ->withCustomProperties(['document_key' => $key])
+            ->toMediaCollection('documents');
+    }
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldReceive('requestApproved')->once();
+
+    $approved = (new ApproveAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $smsNotifier,
+    ))->execute(new ApproveAssistanceRequestDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        approverId: $context['admin_id'],
+        amountApproved: 2000,
+        approvalNotes: 'Approved after reviewing the minor recipient exception.',
+    ));
+
+    expect($approved->status)->toBe(AssistanceStatus::Approved);
+});
+
 function mutationLockContext(): array
 {
     $context = [
@@ -292,6 +384,35 @@ function mutationLockRequest(array $context): AssistanceRequest
         'reviewed_at' => now(),
         'privacy_consented_at' => now(),
         'privacy_notice_version' => 'v1.0',
+    ]);
+}
+
+function mutationDocumentRequirement(
+    array $context,
+    string $key,
+    string $label,
+    bool $isRequired,
+    int $sortOrder,
+): void {
+    $documentTypeId = (string) Str::ulid();
+    $now = now();
+
+    DB::table('ac_document_types')->insert([
+        'id' => $documentTypeId,
+        'key' => $key,
+        'label' => $label,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    DB::table('ac_assistance_type_documents')->insert([
+        'id' => (string) Str::ulid(),
+        'assistance_type_id' => $context['assistance_type_id'],
+        'document_type_id' => $documentTypeId,
+        'is_required' => $isRequired,
+        'sort_order' => $sortOrder,
+        'created_at' => $now,
+        'updated_at' => $now,
     ]);
 }
 

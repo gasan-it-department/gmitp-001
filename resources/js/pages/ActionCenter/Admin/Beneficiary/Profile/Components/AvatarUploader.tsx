@@ -3,6 +3,10 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { router, usePage } from '@inertiajs/react';
 import { Camera, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import AvatarCropDialog from './AvatarCropDialog';
+
+const MAX_SOURCE_FILE_SIZE = 15 * 1024 * 1024;
+const ACCEPTED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 interface Props {
     beneficiaryId: string;
@@ -27,6 +31,7 @@ export default function AvatarUploader({ beneficiaryId, avatarUrl, fullName, siz
     const inputRef = useRef<HTMLInputElement>(null);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const initials =
         fullName
@@ -39,7 +44,24 @@ export default function AvatarUploader({ beneficiaryId, avatarUrl, fullName, siz
 
     const handlePick = (file: File | null) => {
         if (!file) return;
+
         setError(null);
+
+        if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
+            setError('Use a JPG, PNG, or WEBP image.');
+            return;
+        }
+
+        if (file.size > MAX_SOURCE_FILE_SIZE) {
+            setError('Choose a photo smaller than 15 MB.');
+            return;
+        }
+
+        setSelectedFile(file);
+    };
+
+    const upload = (file: File) => {
+        setSelectedFile(null);
         router.post(
             UploadBeneficiaryAvatarController.url({ beneficiaryId }),
             { avatar: file },
@@ -50,7 +72,6 @@ export default function AvatarUploader({ beneficiaryId, avatarUrl, fullName, siz
                 onStart: () => setProcessing(true),
                 onFinish: () => {
                     setProcessing(false);
-                    if (inputRef.current) inputRef.current.value = '';
                 },
                 onError: (errs) => setError((errs as Record<string, string | undefined>).avatar ?? 'Upload failed.'),
             },
@@ -96,11 +117,15 @@ export default function AvatarUploader({ beneficiaryId, avatarUrl, fullName, siz
             <input
                 ref={inputRef}
                 type="file"
-                accept="image/*"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                 className="hidden"
-                onChange={(e) => handlePick(e.target.files?.[0] ?? null)}
+                onChange={(event) => {
+                    handlePick(event.target.files?.[0] ?? null);
+                    event.target.value = '';
+                }}
             />
             {error && <p className="max-w-[8rem] text-center text-[11px] leading-tight text-red-500">{error}</p>}
+            <AvatarCropDialog file={selectedFile} onCancel={() => setSelectedFile(null)} onReady={upload} />
         </div>
     );
 }

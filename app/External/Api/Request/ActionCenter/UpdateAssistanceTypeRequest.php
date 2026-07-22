@@ -21,9 +21,9 @@ class UpdateAssistanceTypeRequest extends FormRequest
                 'max:255',
             ],
 
-            // 2. Standard nullable text field
+            // 2. Standard required text field
             'description' => [
-                'nullable',
+                'required',
                 'string',
                 'max:1000'
             ],
