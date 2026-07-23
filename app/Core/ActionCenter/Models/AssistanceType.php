@@ -73,8 +73,7 @@ class AssistanceType extends Model
             'assistance_type_id',
             'document_type_id'
         )
-            ->withPivot(['is_required', 'sort_order'])
+            ->withPivot(['is_required', 'physical_copy_requirement', 'sort_order'])
             ->withTimestamps();
     }
 }
-

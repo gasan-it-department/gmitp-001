@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
 import actionCenter from '@/routes/actionCenter';
@@ -160,6 +161,8 @@ interface RequiredDocument {
     label: string;
     description: string | null;
     is_required: boolean;
+    physical_copy_requirement: PhysicalCopyRequirement;
+    physical_copy_requirement_label: string;
     sort_order: number;
 }
 
@@ -1034,6 +1037,9 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
                         {label}
                     </p>
                     <p className="mt-0.5 text-xs text-rose-500">Action required</p>
+                    {required.physical_copy_requirement !== 'unspecified' && (
+                        <p className="mt-1 text-[11px] font-medium text-blue-700">Bring: {required.physical_copy_requirement_label}</p>
+                    )}
                 </div>
             </div>
         );
@@ -1051,6 +1057,9 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
                         {label}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-400">Not provided</p>
+                    {required.physical_copy_requirement !== 'unspecified' && (
+                        <p className="mt-1 text-[11px] text-slate-500">Bring: {required.physical_copy_requirement_label}</p>
+                    )}
                 </div>
             </div>
         );
@@ -1100,6 +1109,9 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
                     {formatBytes(file.size)}
                     {file.uploaded_at && <> • {utils.formatToReadableDateNoTime(file.uploaded_at)}</>}
                 </p>
+                {required && required.physical_copy_requirement !== 'unspecified' && (
+                    <p className="mt-1 text-[11px] font-medium text-blue-700">Physical copy: {required.physical_copy_requirement_label}</p>
+                )}
             </div>
         </a>
     );

@@ -113,6 +113,7 @@ beforeEach(function () {
         $table->ulid('assistance_type_id');
         $table->ulid('document_type_id');
         $table->boolean('is_required')->default(true);
+        $table->string('physical_copy_requirement')->default('unspecified');
         $table->unsignedInteger('sort_order')->default(0);
         $table->timestamps();
         $table->unique(['assistance_type_id', 'document_type_id']);

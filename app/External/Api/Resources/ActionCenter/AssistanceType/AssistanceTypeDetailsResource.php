@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\ActionCenter\AssistanceType;
 
+use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,14 +34,22 @@ class AssistanceTypeDetailsResource extends JsonResource
                 return $this->documents
                     ->sortBy(fn($doc) => $doc->pivot->sort_order ?? 0)
                     ->values()
-                    ->map(fn($doc) => [
-                        'id' => $doc->id,
-                        'key' => $doc->key,
-                        'name' => $doc->label,
-                        'description' => $doc->description,
-                        'examples' => $doc->examples,
-                        'is_required' => (bool) $doc->pivot->is_required,
-                    ]);
+                    ->map(function ($doc) {
+                        $physicalCopyRequirement = PhysicalCopyRequirement::tryFrom(
+                            (string) ($doc->pivot->physical_copy_requirement ?? ''),
+                        ) ?? PhysicalCopyRequirement::Unspecified;
+
+                        return [
+                            'id' => $doc->id,
+                            'key' => $doc->key,
+                            'name' => $doc->label,
+                            'description' => $doc->description,
+                            'examples' => $doc->examples,
+                            'is_required' => (bool) $doc->pivot->is_required,
+                            'physical_copy_requirement' => $physicalCopyRequirement->value,
+                            'physical_copy_requirement_label' => $physicalCopyRequirement->label(),
+                        ];
+                    });
             }, []),
         ];
     }

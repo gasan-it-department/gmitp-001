@@ -150,6 +150,7 @@ class AssistanceDocumentTypeSeeder extends Seeder
             DocumentType::updateOrCreate(
                 ['key' => $doc['key']],
                 [
+                    'municipal_id' => null,
                     'label' => $doc['label'],
                     'description' => $doc['description'],
                     'examples' => $doc['examples'],
@@ -162,6 +163,7 @@ class AssistanceDocumentTypeSeeder extends Seeder
         // Preserve legacy request media tagged with `valid_id`, but stop
         // offering the old single-file slot for new assistance requests.
         DocumentType::query()
+            ->whereNull('municipal_id')
             ->where('key', 'valid_id')
             ->update(['is_active' => false]);
 
@@ -172,6 +174,7 @@ class AssistanceDocumentTypeSeeder extends Seeder
     {
         DB::transaction(function () use ($legacyKey, $canonicalKey): void {
             $documents = DocumentType::query()
+                ->whereNull('municipal_id')
                 ->whereIn('key', [$legacyKey, $canonicalKey])
                 ->orderBy('id')
                 ->lockForUpdate()

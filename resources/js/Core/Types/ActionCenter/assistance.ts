@@ -5,6 +5,20 @@
 
 export type CooldownType = 'per_request' | 'one_time';
 export type CooldownScope = 'per_beneficiary' | 'per_household';
+export type PhysicalCopyRequirement =
+    | 'unspecified'
+    | 'original'
+    | 'certified_true_copy'
+    | 'original_or_certified_true_copy'
+    | 'photocopy';
+
+export const PHYSICAL_COPY_REQUIREMENT_OPTIONS: { value: PhysicalCopyRequirement; label: string }[] = [
+    { value: 'unspecified', label: 'Not specified' },
+    { value: 'original', label: 'Original' },
+    { value: 'certified_true_copy', label: 'Certified True Copy' },
+    { value: 'original_or_certified_true_copy', label: 'Original or Certified True Copy' },
+    { value: 'photocopy', label: 'Photocopy' },
+];
 
 /** Mirrors AssistanceTypeListResource — for the portal card grid. */
 export interface AssistanceTypeListItem {
@@ -26,6 +40,8 @@ export interface AssistanceDocumentRequirement {
     description: string | null;
     examples: string | null;
     is_required: boolean;
+    physical_copy_requirement: PhysicalCopyRequirement;
+    physical_copy_requirement_label: string;
 }
 
 /** Mirrors AssistanceTypeDetailsResource — for the Apply page. */
@@ -121,7 +137,14 @@ export interface AssistanceTypeFormData {
     cooldown_months: number;
     cooldown_type?: CooldownType;
     cooldown_scope?: CooldownScope;
-    documents: { id: string; key?: string; is_required: boolean; name: string }[];
+    documents: {
+        id: string;
+        key?: string;
+        is_required: boolean;
+        name: string;
+        physical_copy_requirement: PhysicalCopyRequirement;
+        physical_copy_requirement_label?: string;
+    }[];
 }
 
 /** Legacy alias still used by admin edit screens. */

@@ -16,7 +16,7 @@ class CreateAssistanceTypeController extends Controller
     public function __invoke()
     {
         return Inertia::render('ActionCenter/Admin/Assistance/Create/CreateAssistanceType', [
-            'documentTypes' => $this->getActiveDocumentTypesForDropdown->execute(),
+            'documentTypes' => $this->getActiveDocumentTypesForDropdown->execute(app('municipal_id')),
         ]);
     }
 }

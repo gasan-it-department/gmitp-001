@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { HouseholdMemberOption, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
+import { HouseholdMemberOption, PhysicalCopyRequirement, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
@@ -24,6 +24,8 @@ interface DocumentSlot {
     description: string | null;
     examples: string | null;
     is_required: boolean;
+    physical_copy_requirement: PhysicalCopyRequirement;
+    physical_copy_requirement_label: string;
 }
 
 interface AssistanceTypeOption {
@@ -587,6 +589,11 @@ export default function CreateAssistanceRequest({
                                                     )}
                                                 </Label>
                                                 {doc.description && <p className="text-xs text-slate-500">{doc.description}</p>}
+                                                {doc.physical_copy_requirement !== 'unspecified' && (
+                                                    <p className="text-xs font-medium text-blue-700">
+                                                        Physical copy: {doc.physical_copy_requirement_label}
+                                                    </p>
+                                                )}
                                                 <Input
                                                     type="file"
                                                     accept=".jpg,.jpeg,.png,.pdf"
