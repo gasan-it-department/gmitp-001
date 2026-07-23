@@ -54,6 +54,10 @@ class UpdateHouseholdMemberAction
                 || $member->sex !== $dto->sex
                 || $member->relationship !== $dto->relationship;
 
+            $isVerifiedDependent = $member->is_verified_dependent && $materialIdentityChanged
+                ? false
+                : ($member->is_verified_dependent || $dto->isVerifiedDependent);
+
             $member->update([
                 'first_name' => $dto->firstName,
                 'last_name' => $dto->lastName,
@@ -67,7 +71,7 @@ class UpdateHouseholdMemberAction
                 'occupation' => $dto->occupation,
                 'monthly_income' => $dto->monthlyIncome ?? 0,
                 'religion_id' => $dto->religionId,
-                'is_verified_dependent' => $dto->isVerifiedDependent,
+                'is_verified_dependent' => $isVerifiedDependent,
             ]);
 
             return $member->fresh();

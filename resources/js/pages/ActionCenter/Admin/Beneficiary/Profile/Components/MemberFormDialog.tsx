@@ -107,6 +107,7 @@ export default function MemberFormDialog({
     }, [open, member?.id]);
 
     const serverError = (errors as Record<string, string | undefined>).member;
+    const isEditingVerifiedMember = mode === 'edit' && member?.is_verified_dependent === true;
 
     const handleClose = () => {
         clearErrors();
@@ -158,6 +159,13 @@ export default function MemberFormDialog({
                     <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>{serverError}</span>
+                    </div>
+                )}
+
+                {isEditingVerifiedMember && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>Name, birth date, sex, suffix, or relationship changes will return this member to pending verification.</span>
                     </div>
                 )}
 
@@ -284,19 +292,28 @@ export default function MemberFormDialog({
                         <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-500 hover:bg-slate-100">
                             Cancel
                         </Button>
-                        <Button type="submit" variant="outline" disabled={!canSubmit}>
-                            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save pending
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={() => submitWithVerification(true)}
-                            disabled={!canSubmit}
-                            className="bg-emerald-700 text-white hover:bg-emerald-800"
-                        >
-                            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save verified
-                        </Button>
+                        {isEditingVerifiedMember ? (
+                            <Button type="submit" disabled={!canSubmit}>
+                                {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save changes
+                            </Button>
+                        ) : (
+                            <>
+                                <Button type="submit" variant="outline" disabled={!canSubmit}>
+                                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save pending
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => submitWithVerification(true)}
+                                    disabled={!canSubmit}
+                                    className="bg-emerald-700 text-white hover:bg-emerald-800"
+                                >
+                                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save verified
+                                </Button>
+                            </>
+                        )}
                     </DialogFooter>
                 </form>
             </DialogContent>

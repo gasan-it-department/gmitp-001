@@ -433,6 +433,19 @@ it('revokes dependent verification on material edits and preserves it on non-mat
     ], $member->id, $this->municipalId));
 
     expect($member->fresh()->is_verified_dependent)->toBeTrue();
+
+    $pendingMember = createDependent($beneficiary->household_id, 'MARIA', 'CRUZ', verified: false);
+
+    $action->execute(UpdateHouseholdMemberDto::fromArray([
+        'first_name' => 'MARIA TERESA',
+        'last_name' => 'CRUZ',
+        'relationship' => 'sibling',
+        'birth_date' => '1995-08-20',
+        'monthly_income' => 0,
+        'is_verified_dependent' => true,
+    ], $pendingMember->id, $this->municipalId));
+
+    expect($pendingMember->fresh()->is_verified_dependent)->toBeTrue();
 });
 
 it('allows only one unresolved citizen-declared member at a time', function () {
