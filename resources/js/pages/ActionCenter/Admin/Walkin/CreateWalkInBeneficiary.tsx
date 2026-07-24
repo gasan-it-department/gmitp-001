@@ -120,7 +120,7 @@ export default function CreateWalkInBeneficiary({
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Beneficiary List
+                            Bumalik sa Listahan ng Benepisyaryo
                         </button>
                     </div>
                 </div>
@@ -132,10 +132,9 @@ export default function CreateWalkInBeneficiary({
                             <UserPlus className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold tracking-tight text-slate-900">Register a Walk-in Beneficiary</h1>
+                            <h1 className="text-xl font-bold tracking-tight text-slate-900">Magrehistro ng Walk-in na Benepisyaryo</h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                Encode a person who has no online account. Make sure you searched the registry first — a new record should only be
-                                created when no existing match is found.
+                                I-encode ang taong walang online account. Siguruhing naghanap muna sa registry — dapat lamang gumawa ng bagong record kung walang nahanap na kaparehong tao.
                             </p>
                         </div>
                     </div>
@@ -151,7 +150,7 @@ export default function CreateWalkInBeneficiary({
 
                         {/* ── Section 1: Personal Information ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<User className="h-4 w-4 text-[#005088]" />} title="Personal Information" />
+                            <SectionHeader icon={<User className="h-4 w-4 text-[#005088]" />} title="Personal na Impormasyon" />
                             <div className="mt-6">
                                 <PersonalInformationSection
                                     data={data}
@@ -165,16 +164,16 @@ export default function CreateWalkInBeneficiary({
 
                         {/* ── Section 2: Identity documents ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Communication" />
+                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Impormasyon sa Pagkontak" />
                             <div className="mt-6">
                                 <CommunicationSection data={data} setData={setData} errors={errors} />
                             </div>
                         </div>
 
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Identity Documents" />
+                            <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Mga Dokumento ng Pagkakakilanlan" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                Upload the applicant's ID evidence. The front ID is required when saving this walk-in as verified.
+                                I-upload ang ebidensya ng ID ng aplikante. Kinakailangan ang harap ng ID kapag ise-save ang walk-in na ito bilang verified.
                             </p>
                             <div className="mt-6">
                                 <IdentityDocumentUploadSection
@@ -189,7 +188,7 @@ export default function CreateWalkInBeneficiary({
 
                         {/* ── Section 2: Civil Status & Employment ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Briefcase className="h-4 w-4 text-[#005088]" />} title="Civil Status & Employment" />
+                            <SectionHeader icon={<Briefcase className="h-4 w-4 text-[#005088]" />} title="Katayuang Sibil at Trabaho" />
                             <div className="mt-6">
                                 <CivilStatusEmploymentSection data={data} setData={setData} errors={errors} civilStatus={civilStatus} />
                             </div>
@@ -197,7 +196,7 @@ export default function CreateWalkInBeneficiary({
 
                         {/* ── Section 3: Home Address ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Home className="h-4 w-4 text-[#005088]" />} title="Home Address" />
+                            <SectionHeader icon={<Home className="h-4 w-4 text-[#005088]" />} title="Tirahan" />
                             <div className="mt-6">
                                 <HomeAddressSection
                                     data={data}
@@ -210,10 +209,9 @@ export default function CreateWalkInBeneficiary({
 
                         {/* ── Section 4: Household Members ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Users className="h-4 w-4 text-[#005088]" />} title="Household" />
+                            <SectionHeader icon={<Users className="h-4 w-4 text-[#005088]" />} title="Sambahayan" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                List the other family members who live with the applicant. The applicant is counted automatically as the head of the
-                                household.
+                                Ilista ang iba pang miyembro ng pamilya na kasama sa bahay ng aplikante. Ang aplikante ay awtomatikong itinuturing na puno ng sambahayan (head of household).
                             </p>
                             <div className="mt-6">
                                 <HouseholdMembersSection
@@ -254,10 +252,10 @@ export default function CreateWalkInBeneficiary({
                             >
                                 {processing ? (
                                     <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving…
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Sini-save…
                                     </>
                                 ) : (
-                                    'Save Pending'
+                                    'I-save bilang Pending'
                                 )}
                             </Button>
                             <Button
@@ -266,7 +264,7 @@ export default function CreateWalkInBeneficiary({
                                 disabled={!canSaveVerified}
                                 className="h-14 w-full rounded-2xl bg-emerald-700 text-base font-bold tracking-wide text-white uppercase shadow-lg hover:bg-emerald-800 disabled:opacity-50"
                             >
-                                {processing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Save Verified'}
+                                {processing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'I-save bilang Verified'}
                             </Button>
                         </div>
                     </form>

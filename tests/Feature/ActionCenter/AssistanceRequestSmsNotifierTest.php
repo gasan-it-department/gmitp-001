@@ -16,7 +16,7 @@ function actionCenterSmsRequest(?string $phone = '639171234567'): AssistanceRequ
     $request = new AssistanceRequest([
         'municipal_id' => '01J00000000000000000000000',
         'beneficiary_id' => $beneficiary->id,
-        'transaction_number' => '#REQ-2026-0001',
+        'transaction_number' => 'REQ-2026-0001',
     ]);
     $request->id = '01J00000000000000000000002';
     $request->setRelation('beneficiary', $beneficiary);
@@ -31,7 +31,7 @@ it('sends the assistance request lifecycle messages', function (string $method, 
         ->with(
             '639171234567',
             Mockery::on(fn (string $message): bool => str_contains($message, $expectedText)
-                && str_contains($message, '#REQ-2026-0001')),
+                && str_contains($message, 'REQ-2026-0001')),
         )
         ->andReturn(['message_id' => 1]);
 

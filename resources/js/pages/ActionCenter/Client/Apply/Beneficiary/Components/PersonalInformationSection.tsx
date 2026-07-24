@@ -30,7 +30,7 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                     required
                     value={data.first_name}
                     onChange={(e) => setData('first_name', e.target.value)}
-                    placeholder="e.g. Maria"
+                    placeholder="hal. Maria"
                     error={errors.first_name}
                 />
 
@@ -39,7 +39,7 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                     label="Middle Name"
                     value={data.middle_name}
                     onChange={(e) => setData('middle_name', e.target.value)}
-                    placeholder="e.g. Santos"
+                    placeholder="hal. Santos"
                     error={errors.middle_name}
                 />
 
@@ -49,7 +49,7 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                     required
                     value={data.last_name}
                     onChange={(e) => setData('last_name', e.target.value)}
-                    placeholder="e.g. Dela Cruz"
+                    placeholder="hal. Dela Cruz"
                     error={errors.last_name}
                 />
             </div>
@@ -59,26 +59,26 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                 <ShadcnSelectField
                     id="suffix"
                     label="Suffix"
-                    placeholder="None"
+                    placeholder="Wala (None)"
                     value={data.suffix}
                     onValueChange={(value) => setData('suffix', value === 'none' ? '' : value)}
                     error={errors.suffix}
-                    options={[{ value: 'none', label: 'None' }, ...SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))]}
+                    options={[{ value: 'none', label: 'Wala (None)' }, ...SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))]}
                 />
 
                 <ShadcnSelectField
                     id="sex"
-                    label="Sex"
+                    label="Kasarian"
                     required
-                    placeholder="Select…"
+                    placeholder="Pumili…"
                     value={data.sex}
                     onValueChange={(value) => setData('sex', value)}
                     error={errors.sex}
-                    options={SEX_OPTIONS.map((s) => ({ value: s, label: s }))}
+                    options={SEX_OPTIONS.map((s) => ({ value: s, label: s === 'male' ? 'Lalaki' : 'Babae' }))}
                 />
 
                 <DatePicker
-                    label="Date of Birth"
+                    label="Araw ng Kapanganakan"
                     value={data.birth_date}
                     onChange={(dateValue) => setData('birth_date', dateValue)}
                 />
@@ -88,8 +88,8 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <ShadcnSelectField
                     id="religion_id"
-                    label="Religion"
-                    placeholder="Prefer not to say"
+                    label="Relihiyon"
+                    placeholder="Mas piniling hindi sabihin"
                     value={data.religion_id}
                     onValueChange={(value) => setData('religion_id', value)}
                     error={errors.religion_id}

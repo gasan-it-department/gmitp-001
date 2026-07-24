@@ -383,6 +383,7 @@ it('stores snapshots and permits one newly declared pending member', function ()
 
     expect(DB::table('ac_assistance_requests')->count())->toBe(1)
         ->and(DB::table('ac_assistance_request_snapshots')->count())->toBe(1)
+        ->and($created->transaction_number)->toMatch('/^REQ-\d{4}-\d{4}$/')
         ->and($created->metadata)->toMatchArray([
             'relationship_to_beneficiary' => 'parent',
             'on_behalf_first_name' => 'Pedro',

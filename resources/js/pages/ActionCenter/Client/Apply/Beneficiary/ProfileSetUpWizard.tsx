@@ -121,11 +121,11 @@ export default function ProfileSetUpWizard({
 
     return (
         <PublicLayout
-            title={isCorrection ? 'Correct Your Profile' : 'Complete Your Profile'}
+            title={isCorrection ? 'Itama ang Iyong Profile' : 'Kumpletuhin ang Iyong Profile'}
             description={
                 isCorrection
-                    ? 'Submit corrected beneficiary information for MSWD review.'
-                    : 'Set up your MSWD profile before applying for assistance.'
+                    ? 'I-submit ang itinamang impormasyon ng benepisyaryo para suriin ng MSWD.'
+                    : 'I-set up ang iyong profile sa MSWD bago humingi ng tulong.'
             }
         >
             {/* Back nav */}
@@ -136,7 +136,7 @@ export default function ProfileSetUpWizard({
                         className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-[#005088]"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Action Center
+                        Bumalik sa Action Center
                     </Link>
                 </div>
             </div>
@@ -151,12 +151,12 @@ export default function ProfileSetUpWizard({
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight">
-                                    {isCorrection ? 'Correct Your Profile' : 'Complete Your Profile'}
+                                    {isCorrection ? 'Itama ang Iyong Profile' : 'Kumpletuhin ang Iyong Profile'}
                                 </h1>
                                 <p className="mt-1 text-sm leading-relaxed text-blue-100 opacity-90">
                                     {isCorrection
-                                        ? 'Update the details MSWD could not verify. Your correction will return to pending review.'
-                                        : 'This is a one-time setup. Your information is used to verify your eligibility for MSWD assistance programs.'}
+                                        ? 'I-update ang mga detalyeng hindi ma-verify ng MSWD. Babalik sa pending review ang iyong itinama.'
+                                        : 'Isang beses lang itong setup. Ginagamit ang impormasyon mo para i-verify kung kwalipikado ka sa mga programa ng MSWD.'}
                                 </p>
                             </div>
                         </div>
@@ -165,14 +165,14 @@ export default function ProfileSetUpWizard({
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {isCorrection && rejectionReason && (
                             <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">
-                                <p className="font-bold">Reason for rejection</p>
+                                <p className="font-bold">Dahilan ng pagka-reject</p>
                                 <p className="mt-1 leading-relaxed">{rejectionReason}</p>
                             </div>
                         )}
 
                         {/* ── Section 1: Personal Information ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<User className="h-4 w-4 text-[#005088]" />} title="Personal Information" />
+                            <SectionHeader icon={<User className="h-4 w-4 text-[#005088]" />} title="Personal na Impormasyon" />
                             <div className="mt-6">
                                 <PersonalInformationSection
                                     data={data}
@@ -186,7 +186,7 @@ export default function ProfileSetUpWizard({
 
                         {/* Communication details */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Communication" />
+                            <SectionHeader icon={<Phone className="h-4 w-4 text-[#005088]" />} title="Impormasyon sa Pagkontak" />
                             <div className="mt-6">
                                 <CommunicationSection data={data} setData={setData} errors={errors} phoneRequired />
                             </div>
@@ -197,8 +197,8 @@ export default function ProfileSetUpWizard({
                             <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Valid ID" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
                                 {isCorrection
-                                    ? 'Replace your valid ID only if the previous upload was unclear or incorrect. MSWD staff will review your correction.'
-                                    : 'Upload a clear photo or PDF of your valid ID. MSWD staff will review this before your profile is verified.'}
+                                    ? 'Palitan ang iyong valid ID lamang kung hindi malinaw o mali ang na-upload noon. Susuriin ng staff ng MSWD ang iyong pagtatama.'
+                                    : 'Mag-upload ng malinaw na litrato o PDF ng iyong valid ID. Susuriin ito ng MSWD bago ma-verify ang profile mo.'}
                             </p>
                             <div className="mt-6">
                                 <IdentityDocumentUploadSection
@@ -207,7 +207,7 @@ export default function ProfileSetUpWizard({
                                     errors={errors}
                                     frontRequired={!isCorrection || !existingIdentityDocuments.front}
                                     frontEmptyHint={
-                                        isCorrection && existingIdentityDocuments.front ? 'Already submitted' : 'Required for verification review'
+                                        isCorrection && existingIdentityDocuments.front ? 'Naipasa na' : 'Kailangan para ma-verify'
                                     }
                                     existingFrontUploaded={isCorrection && existingIdentityDocuments.front}
                                     existingBackUploaded={isCorrection && existingIdentityDocuments.back}
@@ -217,7 +217,7 @@ export default function ProfileSetUpWizard({
 
                         {/* ── Section 2: Civil Status & Employment ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Briefcase className="h-4 w-4 text-[#005088]" />} title="Civil Status & Employment" />
+                            <SectionHeader icon={<Briefcase className="h-4 w-4 text-[#005088]" />} title="Katayuang Sibil at Trabaho" />
                             <div className="mt-6">
                                 <CivilStatusEmploymentSection data={data} setData={setData} errors={errors} civilStatus={civilStatus} />
                             </div>
@@ -225,7 +225,7 @@ export default function ProfileSetUpWizard({
 
                         {/* ── Section 3: Home Address ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Home className="h-4 w-4 text-[#005088]" />} title="Home Address" />
+                            <SectionHeader icon={<Home className="h-4 w-4 text-[#005088]" />} title="Tirahan" />
                             <div className="mt-6">
                                 <HomeAddressSection
                                     data={data}
@@ -238,11 +238,11 @@ export default function ProfileSetUpWizard({
 
                         {/* ── Section 4: Household Members ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                            <SectionHeader icon={<Users className="h-4 w-4 text-[#005088]" />} title="Your Household" />
+                            <SectionHeader icon={<Users className="h-4 w-4 text-[#005088]" />} title="Iyong Sambahayan" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
                                 {isCorrection
-                                    ? 'This corrected list will replace your previous unverified submitted household members.'
-                                    : 'Listing your family members helps MSWD assess your eligibility for assistance programs accurately. You can also skip this and have an admin collect it later during the interview.'}
+                                    ? 'Papalitan ng naitamang listahang ito ang mga nauna mong ipinasang miyembro ng pamilya na hindi na-verify.'
+                                    : 'Ang paglista ng iyong pamilya ay nakakatulong sa MSWD upang tumpak na masuri kung kwalipikado ka. Maaari mo rin itong laktawan at hayaan na lang ang admin na kunin ito sa oras ng interview.'}
                             </p>
                             <div className="mt-6">
                                 <HouseholdMembersSection
@@ -262,8 +262,8 @@ export default function ProfileSetUpWizard({
                             <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                             <p className="text-xs leading-relaxed text-blue-800">
                                 {isCorrection
-                                    ? 'Your corrected information will be reviewed again by MSWD staff before you can file assistance requests.'
-                                    : 'The information you provide will be verified by MSWD staff. Please ensure all details match your valid government-issued ID.'}
+                                    ? 'Susuriing muli ng MSWD ang iyong itinamang impormasyon bago ka makahingi ng tulong.'
+                                    : 'Ang ibibigay mong impormasyon ay ive-verify ng MSWD. Siguruhing tugma lahat ng detalye sa iyong valid ID na inisyu ng gobyerno.'}
                             </p>
                         </div>
 
@@ -276,7 +276,7 @@ export default function ProfileSetUpWizard({
                             disabled={!canSubmit}
                             className="h-16 w-full rounded-2xl bg-[#005088] text-lg font-black tracking-widest text-white uppercase shadow-xl shadow-blue-900/20 transition-all hover:bg-[#003d66] active:scale-[0.98] disabled:opacity-50"
                         >
-                            {processing ? 'Saving...' : isCorrection ? 'Submit Correction' : 'Save & Continue'}
+                            {processing ? 'Sini-save...' : isCorrection ? 'I-submit ang Itinama' : 'I-save at Magpatuloy'}
                         </Button>
                     </form>
                 </div>

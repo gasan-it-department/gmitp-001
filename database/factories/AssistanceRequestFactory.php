@@ -17,7 +17,7 @@ class AssistanceRequestFactory extends Factory
     {
         return [
             'transaction_number' => sprintf(
-                '#REQ-%s-%s',
+                'REQ-%s-%s',
                 now()->year,
                 Str::upper(Str::random(8)),
             ),

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * One row per year. Each row is the running counter used to generate the
- * citizen-facing transaction_number (#REQ-YYYY-XXXX).
+ * citizen-facing transaction_number (REQ-YYYY-XXXX).
  *
  * The previous implementation used COUNT(*) + 1 in ac_assistance_requests,
  * which races under concurrent submission and produces duplicate transaction

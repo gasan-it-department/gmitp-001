@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CalendarDays, FileText, MapPin } from 'lucide-react';
+import { ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AssistanceRequestListItem, humanizeStatus, statusClass } from './AssistanceRequestTable';
 
@@ -37,14 +37,16 @@ export default function AssistanceRequestRegistryItem({ row, onView }: Props) {
                 )}
             </div>
 
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3 text-xs md:grid-cols-4 lg:grid-cols-2">
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 border-t border-slate-100 pt-3 text-xs">
                 <RegistryDetail label="Barangay" value={row.snapshot_barangay || 'Not recorded'} icon={<MapPin className="h-3.5 w-3.5" />} />
                 <RegistryDetail label="Submitted" value={formatDate(row.submitted_at)} icon={<CalendarDays className="h-3.5 w-3.5" />} />
-                <RegistryDetail label="Approved amount" value={row.amount_approved === null ? 'Not approved' : formatCurrency(row.amount_approved)} />
-                <RegistryDetail label="Documents" value={formatDocumentCount(row.documents_count)} icon={<FileText className="h-3.5 w-3.5" />} />
             </dl>
 
-            <Button type="button" variant="outline" className="mt-3 min-h-10 w-full" onClick={() => onView(row)}>
+            <Button
+                type="button"
+                className="mt-3 min-h-10 w-full border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white"
+                onClick={() => onView(row)}
+            >
                 View request <ArrowRight className="h-4 w-4" />
             </Button>
         </article>
@@ -79,19 +81,4 @@ function formatDate(value: string | null): string {
         month: 'short',
         day: 'numeric',
     });
-}
-
-function formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-PH', {
-        style: 'currency',
-        currency: 'PHP',
-    }).format(value);
-}
-
-function formatDocumentCount(count: number | undefined): string {
-    if (count === undefined) {
-        return 'Not loaded';
-    }
-
-    return `${count} ${count === 1 ? 'file' : 'files'}`;
 }

@@ -423,7 +423,7 @@ class StoreAssistanceRequestAction
     }
 
     /**
-     * Format: #REQ-YYYY-XXXX where XXXX is a 4-digit sequence within the year.
+     * Format: REQ-YYYY-XXXX where XXXX is a 4-digit sequence within the year.
      *
      * Atomically reads-and-increments the per-year row in ac_request_sequences
      * under SELECT … FOR UPDATE so concurrent submissions never collide on the
@@ -459,6 +459,6 @@ class StoreAssistanceRequestAction
             ]);
         }
 
-        return sprintf('#REQ-%d-%04d', $year, $next);
+        return sprintf('REQ-%d-%04d', $year, $next);
     }
 }
