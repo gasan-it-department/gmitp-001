@@ -1,6 +1,6 @@
 import { Pagination } from '@/components/Shared/Pagination';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import actionCenter from '@/routes/actionCenter';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
