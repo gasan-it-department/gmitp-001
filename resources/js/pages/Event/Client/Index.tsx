@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';

@@ -21,7 +21,7 @@ class EditAssistanceTypeController extends Controller
         $assistance = $this->getAssistanceType->execute(app('municipal_id'), $typeId);
         return Inertia::render('ActionCenter/Admin/Assistance/Create/EditAssistanceType', [
             'existingAssistance' => new AssistanceTypeDetailsResource($assistance),
-            'documentTypes' => $this->getActiveDocumentTypesForDropdown->execute(),
+            'documentTypes' => $this->getActiveDocumentTypesForDropdown->execute(app('municipal_id')),
         ]);
     }
 }

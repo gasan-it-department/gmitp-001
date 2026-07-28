@@ -26,7 +26,8 @@ class CreatePlotController extends Controller
     public function __construct(
         private ListBlocksAction $listBlocks,
         private GetCemeterySiteAction $getCemeterySite,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $municipality, string $cemetery_site_id): Response
     {
@@ -34,18 +35,7 @@ class CreatePlotController extends Controller
         $site = $this->getCemeterySite->execute($municipalId, $cemetery_site_id, activeOnly: true);
 
         $blocks = $this->listBlocks->execute($municipalId, $site->id)
-            ->map(fn ($block) => [
-                'id' => $block->id,
-                'name' => $block->name,
-                'section' => $block->section ? [
-                    'id' => $block->section->id,
-                    'name' => $block->section->name,
-                ] : null,
-            ])
-            ->values();
-
-        $blocks = $this->listBlocks->execute($municipalId)
-            ->map(fn ($block) => [
+            ->map(fn($block) => [
                 'id' => $block->id,
                 'name' => $block->name,
                 'section' => $block->section ? [

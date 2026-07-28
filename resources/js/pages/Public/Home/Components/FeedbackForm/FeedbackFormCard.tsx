@@ -22,10 +22,6 @@ export default function FeedbackUi() {
 
     const ratingsUrl = `/${currentMunicipality.slug}/feedback/client/department-ratings`;
 
-    const feedbackPage = () => {
-        feedback.create.url(currentMunicipality.slug);
-    };
-
     return (
         <Card className="group flex h-full flex-col rounded-xl border border-primary/20 bg-white p-6 shadow-sm shadow-primary/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-primary/10 sm:p-7">
             <CardContent className="flex h-full flex-col justify-between p-0">

@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AlertOctagon, AlertTriangle, ArrowLeft, Calendar, Construction, Megaphone, Zap } from 'lucide-react';
 import React from 'react';

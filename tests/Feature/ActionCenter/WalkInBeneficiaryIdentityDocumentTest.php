@@ -1,8 +1,12 @@
 <?php
 
+use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
+use App\Core\ActionCenter\Exceptions\BeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
+use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
 use App\External\Api\Request\ActionCenter\StoreProfileSetupRequest;
 use App\External\Api\Request\ActionCenter\Walkin\StoreWalkInBeneficiaryRequest;
@@ -141,7 +145,8 @@ beforeEach(function () {
         'updated_at' => now(),
     ]);
 
-    $this->app->bind(IdGeneratorInterface::class, fn () => new class implements IdGeneratorInterface {
+    $this->app->bind(IdGeneratorInterface::class, fn () => new class implements IdGeneratorInterface
+    {
         public function generate(): string
         {
             return (string) Str::ulid();
@@ -184,6 +189,54 @@ it('requires a valid contact phone for portal profile setup', function () {
 
     expect(Validator::make($missingPhone->all(), $missingPhone->rules())->errors()->has('contact_phone'))->toBeTrue()
         ->and(Validator::make($validPhone->all(), $validPhone->rules())->passes())->toBeTrue();
+});
+
+it('recovers a missing portal front ID on retry without recreating or overwriting the profile', function () {
+    $notifier = \Mockery::mock(BeneficiarySmsNotifier::class);
+    $notifier->shouldReceive('profileReceived')->once();
+    $this->app->instance(BeneficiarySmsNotifier::class, $notifier);
+
+    $failedFront = UploadedFile::fake()->image('front-failed.jpg');
+    @unlink($failedFront->getPathname());
+
+    $action = app(CreateBeneficiaryProfileAction::class);
+
+    expect(fn () => $action->execute(portalProfileDto(
+        municipalId: $this->municipalId,
+        userId: $this->adminId,
+        identityIdFront: $failedFront,
+    )))->toThrow(
+        BeneficiaryIdentityDocumentStorageException::class,
+        'profile was saved, but the front ID could not be stored',
+    );
+
+    expect(Beneficiary::count())->toBe(1)
+        ->and(DB::table('ac_households')->count())->toBe(1)
+        ->and(DB::table('ac_household_members')->count())->toBe(1)
+        ->and(DB::table('media')->count())->toBe(0);
+
+    $recovered = $action->execute(portalProfileDto(
+        municipalId: $this->municipalId,
+        userId: $this->adminId,
+        identityIdFront: UploadedFile::fake()->image('front-retry.jpg'),
+    ));
+    $storedFront = $recovered->getFirstMedia('identity_id_front');
+
+    expect($storedFront)->not->toBeNull()
+        ->and(Beneficiary::count())->toBe(1)
+        ->and(DB::table('ac_households')->count())->toBe(1)
+        ->and(DB::table('ac_household_members')->count())->toBe(1)
+        ->and(DB::table('media')->count())->toBe(1);
+
+    $returnedAgain = $action->execute(portalProfileDto(
+        municipalId: $this->municipalId,
+        userId: $this->adminId,
+        identityIdFront: UploadedFile::fake()->image('must-not-replace.jpg'),
+    ));
+
+    expect($returnedAgain->id)->toBe($recovered->id)
+        ->and($returnedAgain->getFirstMedia('identity_id_front')?->id)->toBe($storedFront?->id)
+        ->and(DB::table('media')->count())->toBe(1);
 });
 
 it('stores normalized walk-in contact phone when provided', function () {
@@ -311,4 +364,27 @@ function walkInDto(
         'force' => $force,
         'household_members' => [],
     ], $overrides), $adminId, $municipalId, $identityIdFront, $identityIdBack);
+}
+
+function portalProfileDto(
+    string $municipalId,
+    string $userId,
+    UploadedFile $identityIdFront,
+    ?UploadedFile $identityIdBack = null,
+): CreateBeneficiaryProfileDto {
+    return CreateBeneficiaryProfileDto::fromArray([
+        'first_name' => 'Maria',
+        'last_name' => 'Santos',
+        'sex' => 'female',
+        'birth_date' => '1992-04-10',
+        'educational_attainment' => 'hs_grad',
+        'civil_status' => 'single',
+        'occupation' => 'none',
+        'monthly_income' => '0',
+        'contact_phone' => '09171234567',
+        'barangay' => 'Poblacion',
+        'street' => 'Rizal',
+        'terms_consent' => true,
+        'household_members' => [],
+    ], $userId, $municipalId, $identityIdFront, $identityIdBack);
 }

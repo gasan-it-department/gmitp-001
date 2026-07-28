@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link } from '@inertiajs/react';
 import { ArrowRightIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, LucideIcon } from 'lucide-react';
 import { ReactNode, TouchEvent, useEffect, useRef, useState } from 'react';

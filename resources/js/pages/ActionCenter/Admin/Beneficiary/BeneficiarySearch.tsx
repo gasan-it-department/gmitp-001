@@ -104,7 +104,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
     const [verification, setVerification] = useState(filters.verification ?? '');
     const [searching, setSearching] = useState(false);
 
-    const rows = results.data ?? [];
+    const rows = useMemo(() => results.data ?? [], [results.data]);
     const meta = results.meta ?? null;
     const hasCriteria = Boolean(search.trim() || birthDate || barangay.trim() || sex || verification);
 
@@ -160,14 +160,14 @@ export default function BeneficiarySearch({ results, filters }: Props) {
 
     return (
         <AdminLayout>
-            <div className="m-5 mt-0 bg-white">
+            <main className="space-y-4 px-3 py-4 sm:px-4 md:space-y-5 md:px-5 lg:px-6 lg:py-6">
                 {/* ── Header ── */}
-                <div className="mt-5 mb-2 flex items-start gap-3">
-                    <div className="rounded-xl bg-slate-900 p-2.5 text-white">
+                <div className="flex items-start gap-3">
+                    <div className="shrink-0 rounded-md bg-slate-900 p-2.5 text-white">
                         <UserSearch className="h-5 w-5" />
                     </div>
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-800">Find a Beneficiary</h2>
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">Find a Beneficiary</h1>
                         <p className="text-sm text-gray-500">
                             Search the registry for {currentMunicipality.name} during the interview. Match every result against the applicant&rsquo;s
                             uploaded government ID before approving.
@@ -176,8 +176,8 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                 </div>
 
                 {/* ── ID-verification reminder ── */}
-                <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
-                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:px-4">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
                         A new account does not mean a new person. Confirm identity against the uploaded ID — duplicates are caught here, by you.
                     </span>
@@ -207,11 +207,12 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                     onClear={clearFilters}
                     hasCriteria={hasCriteria}
                     loading={searching}
+                    collapseOnMobile
                 />
 
                 {/* ── Result count / status line ── */}
                 {hasCriteria && (
-                    <div className="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
                         {searching ? (
                             <>
                                 <Loader2 className="h-4 w-4 animate-spin" /> Searching…
@@ -231,7 +232,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
 
                 {/* ── Empty prompt (no criteria yet) ── */}
                 {!hasCriteria && (
-                    <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50/60 px-4 py-12 text-center md:px-6 md:py-16">
                         <UserSearch className="h-9 w-9 text-gray-400" />
                         <p className="text-sm font-medium text-gray-700">Start typing to search the beneficiary registry.</p>
                         <p className="max-w-md text-xs text-gray-500">
@@ -242,7 +243,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
 
                 {/* ── No results ── */}
                 {hasCriteria && !searching && rows.length === 0 && (
-                    <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50/60 px-4 py-12 text-center md:px-6 md:py-16">
                         <SearchX className="h-9 w-9 text-gray-400" />
                         <p className="text-sm font-medium text-gray-700">No beneficiary matches these details.</p>
                         <p className="max-w-md text-xs text-gray-500">
@@ -250,7 +251,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                         </p>
                         <Link
                             href={ShowCreateWalkInBeneficiaryController.url({ municipality: currentMunicipality.slug })}
-                            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                            className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 sm:w-auto"
                         >
                             <UserPlus className="h-4 w-4" />
                             Register walk-in beneficiary
@@ -260,7 +261,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
 
                 {/* ── Results ── */}
                 {rows.length > 0 && (
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-2 md:gap-3">
                         {rows.map((row) => (
                             <BeneficiaryResultCard
                                 key={row.id}
@@ -277,7 +278,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
 
                 {/* ── Pagination (URL-param links, preserves filters) ── */}
                 <Pagination links={meta?.links ?? []} />
-            </div>
+            </main>
         </AdminLayout>
     );
 }

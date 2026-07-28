@@ -32,7 +32,7 @@ class ListBeneficiaryAction
             ->whereNull('merged_into_beneficiary_id')
             ->withCount([
                 'assistanceRequests as total_requests_count',
-                'assistanceRequests as released_count' => fn (Builder $query) => $query->where('status', 'released'),
+                'assistanceRequests as released_count' => fn(Builder $query) => $query->where('status', 'released'),
             ])
             ->addSelect([
                 'last_released_at' => AssistanceRequest::query()
@@ -69,7 +69,7 @@ class ListBeneficiaryAction
         }
 
         foreach (preg_split('/\s+/', $search) ?: [] as $word) {
-            $like = '%'.mb_strtolower($word).'%';
+            $like = '%' . mb_strtolower($word) . '%';
 
             $query->where(function (Builder $query) use ($like) {
                 $query->whereRaw('LOWER(first_name) LIKE ?', [$like])
@@ -90,12 +90,12 @@ class ListBeneficiaryAction
 
     private function applyBarangay(Builder $query, ?string $barangay): void
     {
-        if (! filled($barangay)) {
+        if (!filled($barangay)) {
             return;
         }
 
-        $like = '%'.mb_strtolower(trim($barangay)).'%';
-        $query->whereHas('household', fn (Builder $query) => $query->whereRaw('LOWER(barangay) LIKE ?', [$like]));
+        $like = '%' . mb_strtolower(trim($barangay)) . '%';
+        $query->whereHas('household', fn(Builder $query) => $query->whereRaw('LOWER(barangay) LIKE ?', [$like]));
     }
 
     private function applySex(Builder $query, ?string $sex): void

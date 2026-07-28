@@ -60,14 +60,6 @@ enum EnumPermissions: string
 
     //government
     case GOVERNMENT_ACCESS = 'government.access';
-    // --- Reserved for delegation (NOT seeded yet) -------------------------
-    // Uncomment + add labels + re-seed when you let municipal admins manage
-    // other admins within their own municipality. CreateAdminUseCase already
-    // enforces the matching anti-escalation / municipality-lock guards.
-    // case USERS_CREATE = 'users.create';
-    // case USERS_UPDATE = 'users.update';
-    // case USERS_DELETE = 'users.delete';
-    // ---------------------------------------------------------------------
 
     //department
     case DEPARTMENT_ACCESS = 'department.access';

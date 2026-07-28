@@ -200,12 +200,21 @@
 
     <header class="mb-4 border-b-2 border-slate-800 pb-3">
         <div class="flex items-start justify-between">
-            <div>
-                <p class="text-[8pt] font-bold tracking-widest text-slate-500 uppercase">Republic of the Philippines</p>
-                <p class="text-[8pt] font-bold tracking-widest text-slate-500 uppercase">Municipality of {{ $data->municipalityName ?? '---' }}</p>
-                <p class="text-[8pt] font-bold tracking-widest text-slate-500 uppercase">Municipal Social Welfare and Development Office</p>
-                <h1 class="mt-2 text-[16pt] font-bold text-slate-900">Assistance Request Intake Sheet</h1>
-                <p class="mt-1 font-mono text-[9pt] text-slate-600">{{ $request->transaction_number }}</p>
+            <div class="flex items-start gap-3">
+                @if($data->municipalityLogoDataUri)
+                    <img
+                        src="{{ $data->municipalityLogoDataUri }}"
+                        alt="{{ $data->municipalityName ?? 'Municipality' }} logo"
+                        class="h-16 w-16 shrink-0 object-contain"
+                    >
+                @endif
+                <div>
+                    <p class="text-[8pt] font-bold tracking-widest text-slate-500 uppercase">Republic of the Philippines</p>
+                    <p class="text-[8pt] font-bold tracking-widest text-slate-500 uppercase">Municipality of {{ $data->municipalityName ?? '---' }}</p>
+                    <p class="text-[8pt] font-bold tracking-widest text-slate-500 uppercase">Municipal Social Welfare and Development Office</p>
+                    <h1 class="mt-2 text-[16pt] font-bold text-slate-900">Assistance Request Intake Sheet</h1>
+                    <p class="mt-1 font-mono text-[9pt] text-slate-600">{{ $request->transaction_number }}</p>
+                </div>
             </div>
             <div class="text-right">
                 <p class="text-[8pt] font-semibold tracking-widest text-slate-500 uppercase">Generated</p>

@@ -24,6 +24,7 @@ import feedback from '@/routes/feedback';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
 import procurement from '@/routes/procurement';
+import supportTicket from '@/routes/supportTicket';
 import tourism from '@/routes/tourism';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
@@ -31,6 +32,7 @@ import {
     Binoculars,
     CalendarDays,
     CalendarRange,
+    ChartNoAxesCombined,
     ClipboardList,
     Contact,
     FileInput,
@@ -39,6 +41,7 @@ import {
     Landmark,
     Layers,
     LayoutTemplate,
+    LifeBuoy,
     LogOut,
     MapPinMinus,
     Megaphone,
@@ -139,6 +142,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     icon: UserSearch,
                     permission: 'action_center.access',
                 },
+                {
+                    title: 'Reports',
+                    url: actionCenter.admin.reports.index.url({ municipality: currentMunicipality.slug }),
+                    icon: ChartNoAxesCombined,
+                    permission: 'action_center.access',
+                },
             ],
         },
         {
@@ -168,6 +177,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: communityReport.admin.index.url({ municipality: currentMunicipality.slug }),
                     icon: Siren,
                     permission: 'community_report.access',
+                },
+                {
+                    title: 'Support Tickets',
+                    url: supportTicket.admin.index.url({ municipality: currentMunicipality.slug }),
+                    icon: LifeBuoy,
+                    permission: 'support_ticket.access',
                 },
             ],
         },

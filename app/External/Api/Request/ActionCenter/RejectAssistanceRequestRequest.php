@@ -21,9 +21,8 @@ class RejectAssistanceRequestRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'remarks.required' => 'You must provide a reason for rejecting this request so the citizen understands why.',
+            'remarks.required' => 'You must provide a reason for rejecting this request in the internal case record.',
             'remarks.min' => 'Please provide a clearer, more detailed reason for the rejection.',
         ];
     }
-
 }

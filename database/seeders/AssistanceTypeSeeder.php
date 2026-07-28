@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\DocumentType;
 use App\Core\Municipality\Models\Municipality;
@@ -34,7 +35,10 @@ class AssistanceTypeSeeder extends Seeder
         }
 
         // Pre-load all document types so we can resolve keys without N+1 queries.
-        $docTypes = DocumentType::all()->keyBy('key');
+        $docTypes = DocumentType::query()
+            ->whereNull('municipal_id')
+            ->get()
+            ->keyBy('key');
 
         // Guard: every document key referenced below must already exist.
         $allDocKeys = collect($this->programs())
@@ -93,12 +97,13 @@ class AssistanceTypeSeeder extends Seeder
                         'assistance_type_id' => $type->id,
                         'document_type_id' => $docTypes->get($row['key'])->id,
                         'is_required' => $row['is_required'],
+                        'physical_copy_requirement' => $this->physicalCopyRequirementFor($row),
                         'sort_order' => $row['sort_order'],
                         'created_at' => $now,
                         'updated_at' => $now,
                     ],
                     ['assistance_type_id', 'document_type_id'], // conflict columns (unique index)
-                    ['is_required', 'sort_order', 'updated_at'] // columns updated on conflict
+                    ['is_required', 'physical_copy_requirement', 'sort_order', 'updated_at'] // columns updated on conflict
                 );
             }
 
@@ -171,10 +176,19 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
-                    ['key' => 'med_abstract', 'is_required' => true, 'sort_order' => 30],
-                    ['key' => 'hospital_bill', 'is_required' => true, 'sort_order' => 40],
-                    ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 50],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
+                    [
+                        'key' => 'medical_supporting_document',
+                        'is_required' => true,
+                        'physical_copy_requirement' => PhysicalCopyRequirement::OriginalOrCertifiedTrueCopy->value,
+                        'sort_order' => 30,
+                    ],
+                    [
+                        'key' => 'med_abstract',
+                        'is_required' => true,
+                        'physical_copy_requirement' => PhysicalCopyRequirement::Original->value,
+                        'sort_order' => 40,
+                    ],
                 ],
             ],
 
@@ -205,10 +219,28 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
-                    ['key' => 'death_cert', 'is_required' => true, 'sort_order' => 30],
-                    ['key' => 'funeral_contract', 'is_required' => true, 'sort_order' => 40],
-                    ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 50],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
+                    [
+                        'key' => 'death_cert',
+                        'is_required' => true,
+                        'physical_copy_requirement' => PhysicalCopyRequirement::Photocopy->value,
+                        'sort_order' => 30,
+                    ],
+                    [
+                        'key' => 'deceased_senior_citizen_id',
+                        'is_required' => false,
+                        'physical_copy_requirement' => PhysicalCopyRequirement::Photocopy->value,
+                        'sort_order' => 40,
+                    ],
+                    ['key' => 'proof_of_relationship_to_deceased', 'is_required' => true, 'sort_order' => 50],
+                    [
+                        'key' => 'burial_expense_receipt',
+                        'is_required' => true,
+                        'physical_copy_requirement' => PhysicalCopyRequirement::Original->value,
+                        'sort_order' => 60,
+                    ],
+                    ['key' => 'funeral_contract', 'is_required' => false, 'sort_order' => 70],
+                    ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 80],
                 ],
             ],
 
@@ -231,7 +263,7 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'cert_enrollment', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 40],
                     ['key' => 'report_card', 'is_required' => false, 'sort_order' => 50],
@@ -258,7 +290,7 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'cert_enrollment', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 40],
                     ['key' => 'report_card', 'is_required' => false, 'sort_order' => 50],
@@ -286,7 +318,7 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'cert_enrollment', 'is_required' => true, 'sort_order' => 30],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 40],
                     ['key' => 'report_card', 'is_required' => false, 'sort_order' => 50],
@@ -313,7 +345,7 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 30],
                 ],
             ],
@@ -338,10 +370,29 @@ class AssistanceTypeSeeder extends Seeder
                     ['key' => 'valid_id_back', 'is_required' => true, 'sort_order' => 11],
                     ['key' => 'recipient_valid_id_front', 'is_required' => false, 'sort_order' => 12],
                     ['key' => 'recipient_valid_id_back', 'is_required' => false, 'sort_order' => 13],
-                    ['key' => 'cert_indigency', 'is_required' => true, 'sort_order' => 20],
+                    ['key' => 'indigency_or_need_certificate', 'is_required' => true, 'sort_order' => 20],
                     ['key' => 'brgy_clearance', 'is_required' => false, 'sort_order' => 30],
                 ],
             ],
         ];
+    }
+
+    /**
+     * @param  array{key: string, physical_copy_requirement?: string}  $document
+     */
+    private function physicalCopyRequirementFor(array $document): string
+    {
+        if (isset($document['physical_copy_requirement'])) {
+            return $document['physical_copy_requirement'];
+        }
+
+        return match ($document['key']) {
+            'valid_id_front',
+            'valid_id_back',
+            'recipient_valid_id_front',
+            'recipient_valid_id_back' => PhysicalCopyRequirement::Photocopy->value,
+            'indigency_or_need_certificate' => PhysicalCopyRequirement::Original->value,
+            default => PhysicalCopyRequirement::Unspecified->value,
+        };
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\ActionCenter\AssistanceRequest;
 
+use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,7 +38,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             'status' => $this->status,
 
             // ── Program ──────────────────────────────────────────────────────
-            'assistance_type' => $this->whenLoaded('assistanceType', fn () => [
+            'assistance_type' => $this->whenLoaded('assistanceType', fn() => [
                 'id' => $this->assistanceType->id,
                 'name' => $this->assistanceType->name,
                 'slug' => $this->assistanceType->slug,
@@ -49,16 +50,24 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'cooldown_scope' => $this->assistanceType->cooldown_scope,
                 'documents' => $this->assistanceType->relationLoaded('documents')
                     ? $this->assistanceType->documents
-                        ->sortBy(fn ($document) => $document->pivot->sort_order ?? 0)
+                        ->sortBy(fn($document) => $document->pivot->sort_order ?? 0)
                         ->values()
-                        ->map(fn ($document) => [
-                            'id' => $document->id,
-                            'key' => $document->key,
-                            'name' => $document->label,
-                            'description' => $document->description,
-                            'examples' => $document->examples,
-                            'is_required' => (bool) $document->pivot->is_required,
-                        ])
+                        ->map(function ($document) {
+                            $physicalCopyRequirement = PhysicalCopyRequirement::tryFrom(
+                                (string) ($document->pivot->physical_copy_requirement ?? ''),
+                            ) ?? PhysicalCopyRequirement::Unspecified;
+
+                            return [
+                                'id' => $document->id,
+                                'key' => $document->key,
+                                'name' => $document->label,
+                                'description' => $document->description,
+                                'examples' => $document->examples,
+                                'is_required' => (bool) $document->pivot->is_required,
+                                'physical_copy_requirement' => $physicalCopyRequirement->value,
+                                'physical_copy_requirement_label' => $physicalCopyRequirement->label(),
+                            ];
+                        })
                         ->all()
                     : [],
             ]),
@@ -78,9 +87,9 @@ class AssistanceRequestDetailsResource extends JsonResource
 
             // ── Audit trail (who did what) ───────────────────────────────────
             'is_walkin' => $this->encoded_by_user_id !== null,
-            'encoded_by' => $this->whenLoaded('encodedBy', fn () => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
-            'reviewed_by' => $this->whenLoaded('reviewedBy', fn () => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
-            'approved_by' => $this->whenLoaded('approvedBy', fn () => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
+            'encoded_by' => $this->whenLoaded('encodedBy', fn() => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
+            'reviewed_by' => $this->whenLoaded('reviewedBy', fn() => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
+            'approved_by' => $this->whenLoaded('approvedBy', fn() => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
 
             // ── Representative — null when filed for self ────────────────────
             'filed_for_self' => $this->relationship_to_beneficiary === null,
@@ -114,8 +123,8 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'sex' => $snapshot?->sex,
                 'birth_date' => $snapshot?->birth_date?->toDateString(),
                 'age_at_submission' => $this->calculateAgeAtSubmission(),
-                'educational_attainment' => $snapshot?->educational_attainment 
-                    ? \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom($snapshot->educational_attainment)?->label() 
+                'educational_attainment' => $snapshot?->educational_attainment
+                    ? \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom($snapshot->educational_attainment)?->label()
                     : null,
                 'religion' => $snapshot?->religion,
             ],
@@ -136,7 +145,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             'beneficiary_id' => $this->beneficiary_id,
             // Live human-friendly ID of the beneficiary (e.g. GAS-000123).
             // Present when the beneficiary relation is eager-loaded.
-            'beneficiary_number' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->beneficiary_number),
+            'beneficiary_number' => $this->whenLoaded('beneficiary', fn() => $this->beneficiary?->beneficiary_number),
             'household_id' => $this->household_id,
 
             // ── Uploaded documents (via spatie media) ────────────────────────
@@ -148,8 +157,8 @@ class AssistanceRequestDetailsResource extends JsonResource
             // build a signed download URL when that route exists.
             'documents' => $this->whenLoaded(
                 'media',
-                fn () => $this->media
-                    ->map(fn ($m) => [
+                fn() => $this->media
+                    ->map(fn($m) => [
                         'id' => $m->id,
                         'uuid' => $m->uuid,
                         'collection_name' => $m->collection_name,
@@ -235,7 +244,7 @@ class AssistanceRequestDetailsResource extends JsonResource
     {
         $birthDate = $this->resource->snapshot?->birth_date;
 
-        if (! $birthDate || ! $this->created_at) {
+        if (!$birthDate || !$this->created_at) {
             return null;
         }
 

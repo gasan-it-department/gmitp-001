@@ -1,5 +1,5 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, HeartHandshake, MessageCircleHeart, ShieldCheck } from 'lucide-react';

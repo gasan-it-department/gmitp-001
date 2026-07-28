@@ -29,7 +29,7 @@ export function DocumentsToBringChecklist({
                     Mga dokumentong dadalhin sa MSWD
                 </h2>
                 <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
-                    Ihanda ang mga dokumentong ito at dalhin ang mga pisikal na orihinal kapag pumunta ka sa opisina ng MSWD.
+                    Ihanda ang mga dokumentong ito at dalhin ang uri ng pisikal na kopyang nakasaad kapag pumunta sa MSWD.
                 </p>
             </div>
 
@@ -59,6 +59,11 @@ export function DocumentsToBringChecklist({
                                                 >
                                                     {isRequired ? 'Required before approval' : 'If applicable'}
                                                 </span>
+                                                {document.physical_copy_requirement !== 'unspecified' && (
+                                                    <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase">
+                                                        {document.physical_copy_requirement_label}
+                                                    </span>
+                                                )}
                                             </div>
                                             {document.description && (
                                                 <p className="mt-1 text-xs leading-relaxed text-slate-600">{document.description}</p>

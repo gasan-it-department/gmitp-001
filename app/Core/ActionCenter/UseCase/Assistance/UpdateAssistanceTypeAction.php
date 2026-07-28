@@ -14,10 +14,12 @@ class UpdateAssistanceTypeAction
         private NormalizeAssistanceTypeDocumentSlotsAction $normalizeDocumentSlots,
     ) {
     }
-    public function execute(UpdateAssistanceTypeDto $dto, string $typeId)
+    public function execute(UpdateAssistanceTypeDto $dto, string $typeId, string $municipalId)
     {
-        return DB::transaction(function () use ($dto, $typeId) {
-            $assistanceType = AssistanceType::findOrFail($typeId);
+        return DB::transaction(function () use ($dto, $typeId, $municipalId) {
+            $assistanceType = AssistanceType::query()
+                ->where('municipal_id', $municipalId)
+                ->findOrFail($typeId);
 
             $assistanceType->update([
                 'name' => $dto->name,
@@ -29,8 +31,12 @@ class UpdateAssistanceTypeAction
             ]);
 
             $syncData = [];
-            foreach ($this->normalizeDocumentSlots->execute($dto->documents) as $doc) {
-                $syncData[$doc['id']] = ['id' => $this->idGenerator->generate(), 'is_required' => $doc['is_required']];
+            foreach ($this->normalizeDocumentSlots->execute($dto->documents, $municipalId) as $doc) {
+                $syncData[$doc['id']] = [
+                    'id' => $this->idGenerator->generate(),
+                    'is_required' => $doc['is_required'],
+                    'physical_copy_requirement' => $doc['physical_copy_requirement'],
+                ];
             }
 
             $assistanceType->documents()->sync($syncData);

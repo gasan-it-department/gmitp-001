@@ -3,11 +3,13 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
+use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -16,36 +18,28 @@ use Illuminate\Support\Facades\DB;
 /**
  * Orchestrator shared by citizen preregistration and admin-encoded requests.
  *
- *  1. Generate ULID + transaction number.
- *  2. Persist the request row (status = pending, amount_approved = NULL).
- *  3. Attach any admin-supplied documents to the request's Spatie media
+ *  1. Lock the claimant, then the selected household member when present.
+ *  2. Recheck citizen eligibility while those locks are held.
+ *  3. Generate the ULID + transaction number and persist the request.
+ *  4. Attach any admin-supplied documents to the request's Spatie media
  *     "documents" collection. Citizen preregistration always supplies an
  *     empty document set; MSWD completes evidence through the admin flow.
- *  4. All inside a single DB transaction.
  *
- * Eligibility checks (cooldowns, blacklist flags) belong in a dedicated
- * CheckEligibilityAction called by the controller BEFORE this action runs.
+ * The controller eligibility check is fast feedback. The transaction check is
+ * the integrity boundary that closes concurrent-submission races.
  */
 class StoreAssistanceRequestAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
         private AssistanceRequestSmsNotifier $smsNotifier,
-    ) {}
+        private CheckElegibilityAction $checkEligibility,
+    ) {
+    }
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
     {
-        // Load the beneficiary ONCE here — the action owns I/O. The DTO
-        // stayed pure (just IDs / primitives), the model fetch happens
-        // in the action layer per our layered-architecture contract.
-        $beneficiary = Beneficiary::with(['household', 'religion'])->findOrFail($dto->beneficiaryId);
         $assistanceType = AssistanceType::with('documents')->findOrFail($dto->assistanceTypeId);
-
-        if ($beneficiary->household->municipal_id !== $dto->municipalId) {
-            throw new AuthorizationException(
-                'You may only request assistance from the municipality where you reside.'
-            );
-        }
 
         if ($assistanceType->municipal_id !== $dto->municipalId) {
             throw new AuthorizationException(
@@ -53,49 +47,64 @@ class StoreAssistanceRequestAction
             );
         }
 
-        if (! $beneficiary->is_active) {
-            throw new \DomainException(
-                'This beneficiary record is inactive. Resolve the beneficiary residence or status before filing assistance.',
+        // Media uploads remain outside this transaction. The claimant/member
+        // locks protect the eligibility check and request insert only.
+        $request = DB::transaction(function () use ($dto, $assistanceType, ) {
+            // Submission lock order is always claimant first, then the
+            // selected recipient. Every citizen/admin store path shares this
+            // action, so competing submissions cannot reverse that order.
+            $beneficiary = Beneficiary::query()
+                ->whereKey($dto->beneficiaryId)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $beneficiary->load(['household', 'religion']);
+
+            if (
+                $beneficiary->household_id !== $dto->householdId
+                || $beneficiary->household?->municipal_id !== $dto->municipalId
+            ) {
+                throw new AuthorizationException(
+                    'You may only request assistance from the municipality where you reside.',
+                );
+            }
+
+            if (!$beneficiary->is_active) {
+                throw new \DomainException(
+                    'This beneficiary record is inactive. Resolve the beneficiary residence or status before filing assistance.',
+                );
+            }
+
+            if ($beneficiary->isIntakeRejected()) {
+                throw new \DomainException(
+                    'This beneficiary intake was rejected by MSWD. Reopen or correct the intake before filing assistance.',
+                );
+            }
+
+            if (!$beneficiary->household->isVerified()) {
+                throw new \DomainException(
+                    'This household is on hold until an active, identity-verified head is assigned.',
+                );
+            }
+
+            $member = $this->resolveOnBehalfMember($dto, $beneficiary, lock: true);
+            $this->ensureVerificationGate($beneficiary, $dto);
+
+            // The controller check is only fast feedback. This second complete
+            // check runs after both serialization locks have been acquired.
+            $eligibility = $this->checkEligibility->execute(
+                $beneficiary,
+                $assistanceType,
+                $member?->id,
+                $dto->onBehalfDateOfDeath,
+                allowPendingDependent: $dto->encodedByUserId === null,
             );
-        }
 
-        if ($beneficiary->isIntakeRejected()) {
-            throw new \DomainException(
-                'This beneficiary intake was rejected by MSWD. Reopen or correct the intake before filing assistance.',
-            );
-        }
+            if (!$eligibility->eligible && $dto->encodedByUserId === null) {
+                throw AssistanceEligibilityException::from($eligibility);
+            }
 
-        if (! $beneficiary->household->isVerified()) {
-            throw new \DomainException(
-                'This household is on hold until an active, identity-verified head is assigned.',
-            );
-        }
-
-        $this->ensureVerificationGate($beneficiary, $dto);
-
-        // Resolve once so the frozen request metadata uses the trusted
-        // household-member row.
-        $member = $this->resolveOnBehalfMember($dto, $beneficiary);
-        $recipientIdException = $this->recipientIdException($dto, $assistanceType, $member);
-
-        // ── Compute derived economic snapshot BEFORE opening the transaction.
-        //    These are read-only SELECTs that do not need to be inside the
-        //    lock window — pulling them out keeps the transaction tight.
-        $householdTotalIncome = $this->computeHouseholdTotalIncome($beneficiary);
-
-        // ── Transaction scope: ONLY the row insert + sequence increment.
-        //    Media uploads (multi-MB disk I/O) are deliberately kept OUTSIDE
-        //    so the lock on ac_request_sequences never waits for a file
-        //    write. `attempts: 3` auto-retries on the rare sequence-table
-        //    serialization conflict (two citizens hitting submit within
-        //    the same millisecond).
-        $request = DB::transaction(function () use (
-            $dto,
-            $beneficiary,
-            $householdTotalIncome,
-            $member,
-            $recipientIdException,
-        ) {
+            $recipientIdException = $this->recipientIdException($dto, $assistanceType, $member);
+            $householdTotalIncome = $this->computeHouseholdTotalIncome($beneficiary);
             $requestId = $this->idGenerator->generate();
 
             $onBehalfFirstName = $member?->first_name ?? $dto->onBehalfFirstName;
@@ -118,10 +127,10 @@ class StoreAssistanceRequestAction
                     : null,
                 'on_behalf_verification_pending' => $member !== null
                     && $member->relationship !== 'head'
-                    && ! $member->is_verified_dependent
-                        ? true
-                        : null,
-            ], static fn ($value) => $value !== null);
+                    && !$member->is_verified_dependent
+                    ? true
+                    : null,
+            ], static fn($value) => $value !== null);
 
             $request = AssistanceRequest::create([
                 'id' => $requestId,
@@ -228,7 +237,7 @@ class StoreAssistanceRequestAction
     ): void {
         $message = null;
 
-        if (! $beneficiary->isIdentityVerified()) {
+        if (!$beneficiary->isIdentityVerified()) {
             $message = 'The claimant identity has not been verified by MSWD.';
         } elseif ($dto->onBehalfHouseholdMemberId !== null) {
             $member = HouseholdMember::query()
@@ -237,10 +246,12 @@ class StoreAssistanceRequestAction
                 ->where('is_active', true)
                 ->first();
 
-            if ($member !== null
+            if (
+                $member !== null
                 && $member->relationship !== 'head'
-                && ! $member->is_verified_dependent) {
-                if (! $this->isAllowedPendingCitizenMember($beneficiary, $member, $dto)) {
+                && !$member->is_verified_dependent
+            ) {
+                if (!$this->isAllowedPendingCitizenMember($beneficiary, $member, $dto)) {
                     $message = 'The selected household member has not been verified by MSWD.';
                 }
             }
@@ -256,7 +267,7 @@ class StoreAssistanceRequestAction
 
         if (blank($dto->verificationOverrideReason)) {
             throw new \DomainException(
-                $message.' Enter an override reason to continue as an administrator.',
+                $message . ' Enter an override reason to continue as an administrator.',
             );
         }
     }
@@ -268,7 +279,7 @@ class StoreAssistanceRequestAction
     ): ?string {
         $isOnBehalf = $member !== null || filled($dto->onBehalfFirstName);
 
-        if (! $isOnBehalf) {
+        if (!$isOnBehalf) {
             return null;
         }
 
@@ -281,8 +292,10 @@ class StoreAssistanceRequestAction
         }
 
         if ($dto->recipientIdUnavailable) {
-            if (blank($dto->recipientIdUnavailableReason)
-                || mb_strlen(trim($dto->recipientIdUnavailableReason)) < 10) {
+            if (
+                blank($dto->recipientIdUnavailableReason)
+                || mb_strlen(trim($dto->recipientIdUnavailableReason)) < 10
+            ) {
                 throw new \DomainException(
                     'Explain why the assisted adult cannot provide a government ID.',
                 );
@@ -307,7 +320,7 @@ class StoreAssistanceRequestAction
     {
         foreach ($documents as $documentKey => $file) {
 
-            if (! $file instanceof UploadedFile) {
+            if (!$file instanceof UploadedFile) {
                 continue;
             }
 
@@ -332,7 +345,7 @@ class StoreAssistanceRequestAction
         $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $slug = preg_replace('/[^A-Za-z0-9_-]+/', '_', $base) ?: 'document';
 
-        return $slug.($extension ? ".{$extension}" : '');
+        return $slug . ($extension ? ".{$extension}" : '');
     }
 
     /**
@@ -343,30 +356,39 @@ class StoreAssistanceRequestAction
     private function resolveOnBehalfMember(
         StoreAssistanceRequestDto $dto,
         Beneficiary $beneficiary,
+        bool $lock = false,
     ): ?HouseholdMember {
-        if (! $dto->onBehalfHouseholdMemberId) {
+        if (!$dto->onBehalfHouseholdMemberId) {
             return null;
         }
 
-        $member = HouseholdMember::find($dto->onBehalfHouseholdMemberId);
+        $query = HouseholdMember::query()->whereKey($dto->onBehalfHouseholdMemberId);
 
-        if (! $member || $member->household_id !== $dto->householdId) {
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $member = $query->first();
+
+        if (!$member || $member->household_id !== $dto->householdId) {
             throw new AuthorizationException(
                 'The selected family member does not belong to your household.'
             );
         }
 
-        if (! $member->is_active) {
+        if (!$member->is_active) {
             throw new AuthorizationException('The selected household member is no longer active.');
         }
 
-        if ($member->relationship !== 'head'
-            && ! $member->is_verified_dependent
-            && ! $this->isAllowedPendingCitizenMember(
+        if (
+            $member->relationship !== 'head'
+            && !$member->is_verified_dependent
+            && !$this->isAllowedPendingCitizenMember(
                 $beneficiary,
                 $member,
                 $dto,
-            )) {
+            )
+        ) {
             if ($dto->encodedByUserId === null || blank($dto->verificationOverrideReason)) {
                 throw new AuthorizationException(
                     'The selected household member is awaiting MSWD verification.',
@@ -382,12 +404,14 @@ class StoreAssistanceRequestAction
         HouseholdMember $member,
         StoreAssistanceRequestDto $dto,
     ): bool {
-        if ($dto->encodedByUserId !== null
+        if (
+            $dto->encodedByUserId !== null
             || $beneficiary->user_id !== $dto->submitterUserId
             || $member->household_id !== $beneficiary->household_id
-            || ! $member->is_active
+            || !$member->is_active
             || $member->relationship === 'head'
-            || $member->is_verified_dependent) {
+            || $member->is_verified_dependent
+        ) {
             return false;
         }
 
@@ -407,7 +431,7 @@ class StoreAssistanceRequestAction
     }
 
     /**
-     * Format: #REQ-YYYY-XXXX where XXXX is a 4-digit sequence within the year.
+     * Format: REQ-YYYY-XXXX where XXXX is a 4-digit sequence within the year.
      *
      * Atomically reads-and-increments the per-year row in ac_request_sequences
      * under SELECT … FOR UPDATE so concurrent submissions never collide on the
@@ -443,6 +467,6 @@ class StoreAssistanceRequestAction
             ]);
         }
 
-        return sprintf('#REQ-%d-%04d', $year, $next);
+        return sprintf('REQ-%d-%04d', $year, $next);
     }
 }

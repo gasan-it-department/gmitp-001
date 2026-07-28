@@ -374,7 +374,7 @@ export interface PlotListItem {
     occupancy_label: string;
     type: PlotTypeValue | null;
     type_label: string | null;
-    status: PlotStatusValue | null; // NULL for parent containers — they are not bookable
+    status: PlotStatusValue | null;
     status_label: string | null;
     status_tone: string | null;
     active_lease: PlotLeaseSummary | null;

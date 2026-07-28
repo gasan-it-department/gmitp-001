@@ -46,6 +46,10 @@ use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryS
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
+use App\External\Web\Controllers\ActionCenter\Admin\Report\AssistanceRequestReportController;
+use App\External\Web\Controllers\ActionCenter\Admin\Report\BeneficiaryRegistryReportController;
+use App\External\Web\Controllers\ActionCenter\Admin\Report\ExportAssistanceRequestReportController;
+use App\External\Web\Controllers\ActionCenter\Admin\Report\ExportBeneficiaryRegistryReportController;
 use App\External\Web\Controllers\ActionCenter\Admin\ShowAssistanceRequestProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\Walkin\ShowCreateWalkInBeneficiaryController;
 use App\External\Web\Controllers\ActionCenter\Client\ShowBeneficiaryProfileCorrectionController;
@@ -69,6 +73,16 @@ Route::prefix('{municipality}/action-center')
             ->group(function () {
 
             Route::get('list/assitance-request', ListAssistanceRequestController::class)->name('list.assistance');
+
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('/', AssistanceRequestReportController::class)->name('index');
+                Route::get('/assistance-requests/export', ExportAssistanceRequestReportController::class)
+                    ->name('assistance.export');
+                Route::get('/beneficiaries', BeneficiaryRegistryReportController::class)
+                    ->name('beneficiaries');
+                Route::get('/beneficiaries/export', ExportBeneficiaryRegistryReportController::class)
+                    ->name('beneficiaries.export');
+            });
 
             // Full municipality beneficiary registry. Unlike the interview
             // lookup below, this page intentionally lists records without
@@ -190,6 +204,7 @@ Route::prefix('{municipality}/action-center')
             ->name('apply.assistance');
 
         Route::post('/apply/{assistanceType:slug}', StoreAssistanceRequestController::class)
+            ->middleware('throttle:5,1')
             ->name('apply.assistance.store');
 
     });

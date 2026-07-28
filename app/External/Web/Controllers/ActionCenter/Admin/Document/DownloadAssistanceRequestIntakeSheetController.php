@@ -3,7 +3,6 @@
 namespace App\External\Web\Controllers\ActionCenter\Admin\Document;
 
 use App\Core\ActionCenter\UseCase\Assistance\GenerateAssistanceRequestIntakeSheetAction;
-use App\Core\Municipality\Models\Municipality;
 use App\External\Documents\ActionCenter\Pdf\AssistanceRequestIntakeSheetPdf;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -31,7 +30,6 @@ class DownloadAssistanceRequestIntakeSheetController extends Controller
             $data = $this->generate->execute(
                 assistanceRequestId: $assistanceRequestId,
                 municipalId: $municipalId,
-                municipalityName: $this->resolveMunicipalityName($municipalId),
                 generatedByUserName: $user->full_name,
             );
 
@@ -41,12 +39,5 @@ class DownloadAssistanceRequestIntakeSheetController extends Controller
         } catch (AuthorizationException $e) {
             abort(403, $e->getMessage());
         }
-    }
-
-    private function resolveMunicipalityName(string $municipalId): ?string
-    {
-        return Municipality::query()
-            ->whereKey($municipalId)
-            ->value('name');
     }
 }

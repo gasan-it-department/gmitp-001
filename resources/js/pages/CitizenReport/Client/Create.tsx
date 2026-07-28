@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import imageCompression from 'browser-image-compression';
 import { AlertCircle, AlertTriangle, ArrowLeft, Check, FileIcon, Loader2, MapPin, MapPinned, ShieldCheck, Upload, X } from 'lucide-react';

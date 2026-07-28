@@ -41,7 +41,7 @@ class CreateIntermentRequest extends FormRequest
                 'nullable',
                 'ulid',
                 Rule::exists('cemetery_sites', 'id')
-                    ->where(fn ($q) => $q
+                    ->where(fn($q) => $q
                         ->where('municipal_id', $municipalId)
                         ->where('status', 'active')
                         ->whereNull('deleted_at')),
@@ -52,7 +52,7 @@ class CreateIntermentRequest extends FormRequest
                 'ulid',
                 // Must belong to this tenant and not be soft-deleted.
                 Rule::exists('cemetery_decedents', 'id')
-                    ->where(fn ($q) => $q
+                    ->where(fn($q) => $q
                         ->where('municipal_id', $municipalId)
                         ->where('registration_status', RegistrationStatus::VERIFIED->value)
                         ->whereNull('deleted_at')),
@@ -60,7 +60,7 @@ class CreateIntermentRequest extends FormRequest
                 // In the event-typed schema, "active" = "not soft-deleted"
                 // (exhumation / transfer soft-deletes the prior row).
                 Rule::unique('cemetery_interments', 'decedent_id')
-                    ->where(fn ($q) => $q
+                    ->where(fn($q) => $q
                         ->whereNull('ended_at')
                         ->whereNull('voided_at')
                         ->whereNull('deleted_at')),
@@ -68,7 +68,7 @@ class CreateIntermentRequest extends FormRequest
                 // In the event-typed schema, "active" = "not soft-deleted"
                 // (exhumation / transfer soft-deletes the prior row).
                 Rule::unique('cemetery_interments', 'decedent_id')
-                    ->where(fn ($q) => $q->whereNull('deleted_at')),
+                    ->where(fn($q) => $q->whereNull('deleted_at')),
             ],
 
             'plot_id' => [
@@ -79,9 +79,9 @@ class CreateIntermentRequest extends FormRequest
                 // NULL) OR a single-capacity plot (capacity = 1). Parent
                 // containers fail closed here even if the UI sends one.
                 Rule::exists('cemetery_plots', 'id')
-                    ->where(fn ($q) => $q
+                    ->where(fn($q) => $q
                         ->where('municipal_id', $municipalId)
-                        ->when($cemeterySiteId, fn ($query) => $query->where('cemetery_site_id', $cemeterySiteId))
+                        ->when($cemeterySiteId, fn($query) => $query->where('cemetery_site_id', $cemeterySiteId))
                         ->whereNull('deleted_at')
                         ->where(function ($assignable) {
                             $assignable->where(function ($single) {
@@ -155,7 +155,7 @@ class CreateIntermentRequest extends FormRequest
             }
 
             $plotId = $this->input('plot_id');
-            if (! is_string($plotId) || $plotId === '') {
+            if (!is_string($plotId) || $plotId === '') {
                 return;
             }
 
@@ -165,11 +165,11 @@ class CreateIntermentRequest extends FormRequest
                 ->where('status', PlotLeaseStatus::ACTIVE->value)
                 ->exists();
 
-            if (! $hasActiveLease || $this->boolean('requester_is_leaseholder')) {
+            if (!$hasActiveLease || $this->boolean('requester_is_leaseholder')) {
                 return;
             }
 
-            if (! $this->boolean('leaseholder_consent_confirmed')) {
+            if (!$this->boolean('leaseholder_consent_confirmed')) {
                 $validator->errors()->add(
                     'leaseholder_consent_confirmed',
                     'Confirm that the active leaseholder authorized this interment request.'
@@ -177,7 +177,7 @@ class CreateIntermentRequest extends FormRequest
             }
 
             $method = $this->input('leaseholder_consent_method');
-            if (! is_string($method) || $method === '' || $method === CemeteryServiceRequestConsentMethod::NOT_APPLICABLE->value) {
+            if (!is_string($method) || $method === '' || $method === CemeteryServiceRequestConsentMethod::NOT_APPLICABLE->value) {
                 $validator->errors()->add(
                     'leaseholder_consent_method',
                     'Select how the active leaseholder authorization was confirmed.'

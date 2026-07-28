@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import transparency from '@/routes/transparency';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Building2, Calendar, FileText, Search, X, Award, AlertCircle, Clock } from 'lucide-react';

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import {
     AlertCircle,
     ArrowLeft,

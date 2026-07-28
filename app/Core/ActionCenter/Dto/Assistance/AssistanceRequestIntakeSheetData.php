@@ -12,6 +12,7 @@ readonly class AssistanceRequestIntakeSheetData
         /** @var Collection<int, \App\Core\ActionCenter\Models\HouseholdMember> */
         public Collection $householdMembers,
         public ?string $municipalityName,
+        public ?string $municipalityLogoDataUri,
         public string $generatedByUserName,
         public \DateTimeInterface $generatedAt,
     ) {

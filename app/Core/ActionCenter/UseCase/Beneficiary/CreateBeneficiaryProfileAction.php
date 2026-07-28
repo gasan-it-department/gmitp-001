@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
+use App\Core\ActionCenter\Exceptions\BeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\BeneficiaryFlag;
 use App\Core\ActionCenter\Models\Household;
@@ -11,6 +12,7 @@ use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Creates the citizen's MSWD identity record in a single atomic transaction.
@@ -157,28 +159,73 @@ class CreateBeneficiaryProfileAction
             return $beneficiary;
         }, attempts: 3);
 
-        if ($beneficiary->wasRecentlyCreated) {
-            $this->storeIdentityDocuments($beneficiary, $dto);
+        $wasRecentlyCreated = $beneficiary->wasRecentlyCreated;
+        $frontWasMissing = !$beneficiary->hasMedia('identity_id_front');
+
+        // A previous request may have committed the database records and then
+        // failed while writing the required ID to object storage. In that case,
+        // a retry must repair the missing media instead of returning the
+        // existing beneficiary unchanged. Existing media is never replaced by
+        // this recovery path; deliberate replacements remain admin-only.
+        if ($wasRecentlyCreated || $frontWasMissing) {
+            $this->storeMissingRequiredFront($beneficiary, $dto);
+            $this->storeMissingOptionalBack($beneficiary, $dto);
             $this->smsNotifier->profileReceived($beneficiary);
         }
 
         return $beneficiary->fresh(['media']);
     }
 
-    private function storeIdentityDocuments(Beneficiary $beneficiary, CreateBeneficiaryProfileDto $dto): void
-    {
-        if ($dto->identityIdFront instanceof UploadedFile) {
+    private function storeMissingRequiredFront(
+        Beneficiary $beneficiary,
+        CreateBeneficiaryProfileDto $dto,
+    ): void {
+        if ($beneficiary->hasMedia('identity_id_front')) {
+            return;
+        }
+
+        if (!$dto->identityIdFront instanceof UploadedFile) {
+            throw BeneficiaryIdentityDocumentStorageException::requiredFrontMissing();
+        }
+
+        try {
             $beneficiary
                 ->addMedia($dto->identityIdFront)
                 ->usingFileName($this->identityDocumentFileName($beneficiary, 'front', $dto->identityIdFront))
                 ->toMediaCollection('identity_id_front');
+        } catch (Throwable $exception) {
+            report($exception);
+
+            // Some storage adapters can throw after the media row was already
+            // persisted. Only ask the citizen to retry when the required file
+            // is genuinely still absent.
+            if (!$beneficiary->fresh()->hasMedia('identity_id_front')) {
+                throw BeneficiaryIdentityDocumentStorageException::frontUploadFailed();
+            }
+        }
+    }
+
+    private function storeMissingOptionalBack(
+        Beneficiary $beneficiary,
+        CreateBeneficiaryProfileDto $dto,
+    ): void {
+        if (
+            $beneficiary->hasMedia('identity_id_back')
+            || !$dto->identityIdBack instanceof UploadedFile
+        ) {
+            return;
         }
 
-        if ($dto->identityIdBack instanceof UploadedFile) {
+        try {
             $beneficiary
                 ->addMedia($dto->identityIdBack)
                 ->usingFileName($this->identityDocumentFileName($beneficiary, 'back', $dto->identityIdBack))
                 ->toMediaCollection('identity_id_back');
+        } catch (Throwable $exception) {
+            // The back image is optional in v1. Keep the valid profile/front-ID
+            // submission usable while still surfacing the storage failure to
+            // operations for investigation.
+            report($exception);
         }
     }
 

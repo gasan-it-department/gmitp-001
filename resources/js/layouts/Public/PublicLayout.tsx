@@ -1,21 +1,39 @@
+import { ReactNode } from 'react';
+import { Head } from '@inertiajs/react';
 import { Content } from '@/components/Content';
 import { LayoutHeader } from '@/components/LayoutHeader';
 import LayoutShell from '@/components/LayoutShell';
 import { MunicipalityProvider } from '@/Core/Context/MunicipalityContext';
-import Footer from '@/pages/Public/Home/Components/Footer';
+
+import Footer from '@/components/Public/Footer'; 
 
 interface PublicLayoutProps {
-    children: React.ReactNode;
-    title: string;
-    description: string;
+    children: ReactNode;
+    title?: string;
+    description?: string;
 }
 
-export default function PublicLayoutTemplate({ children }: PublicLayoutProps) {
+export default function PublicLayout({ 
+    children, 
+    title = 'Welcome', 
+    description = 'Default description for the application.' 
+}: PublicLayoutProps) {
     return (
         <MunicipalityProvider>
+            {/* Add Inertia Head for SEO using your props */}
+            <Head>
+                <title>{title}</title>
+                <meta name="description" content={description} />
+            </Head>
+
             <LayoutShell variant="header">
                 <LayoutHeader />
-                <Content>{children}</Content>
+                
+                {/* Main content area */}
+                <Content>
+                    {children}
+                </Content>
+                
                 <Footer />
             </LayoutShell>
         </MunicipalityProvider>

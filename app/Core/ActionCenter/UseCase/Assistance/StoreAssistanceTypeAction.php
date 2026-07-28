@@ -54,13 +54,17 @@ class StoreAssistanceTypeAction
                 throw $exception;
             }
 
-            $documents = $this->normalizeDocumentSlots->execute($dto->documents);
+            $documents = $this->normalizeDocumentSlots->execute($dto->documents, $municipalId);
 
             if (!empty($documents)) {
                 $syncData = [];
 
                 foreach ($documents as $doc) {
-                    $syncData[$doc['id']] = ['id' => $this->idGeneratorInterface->generate(), 'is_required' => $doc['is_required']];
+                    $syncData[$doc['id']] = [
+                        'id' => $this->idGeneratorInterface->generate(),
+                        'is_required' => $doc['is_required'],
+                        'physical_copy_requirement' => $doc['physical_copy_requirement'],
+                    ];
                 }
                 $assistanceType->documents()->sync($syncData);
             }

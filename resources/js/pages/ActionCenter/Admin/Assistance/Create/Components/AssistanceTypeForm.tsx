@@ -4,7 +4,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
+import {
+    AssistanceTypeFormData,
+    PHYSICAL_COPY_REQUIREMENT_OPTIONS,
+    PhysicalCopyRequirement,
+} from '@/Core/Types/ActionCenter/assistance';
 import actionCenter from '@/routes/actionCenter';
 import { useForm } from '@inertiajs/react';
 import { FileText, ShieldAlert, Trash2 } from 'lucide-react';
@@ -51,7 +55,15 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
         const docToAdd = documentTypes.find((d) => d.id === documentId);
         if (!docToAdd) return;
 
-        setData('documents', [...data.documents, { id: docToAdd.id, name: docToAdd.name, is_required: true }]);
+        setData('documents', [
+            ...data.documents,
+            {
+                id: docToAdd.id,
+                name: docToAdd.name,
+                is_required: true,
+                physical_copy_requirement: 'unspecified',
+            },
+        ]);
     };
 
     const removeDocument = (idToRemove: string) => {
@@ -65,6 +77,13 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
         setData(
             'documents',
             data.documents.map((doc) => (doc.id === idToToggle ? { ...doc, is_required: isRequired } : doc)),
+        );
+    };
+
+    const updatePhysicalCopyRequirement = (idToUpdate: string, requirement: PhysicalCopyRequirement) => {
+        setData(
+            'documents',
+            data.documents.map((doc) => (doc.id === idToUpdate ? { ...doc, physical_copy_requirement: requirement } : doc)),
         );
     };
 
@@ -93,15 +112,16 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
 
                             <div className="space-y-2">
                                 <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
-                                    Description
+                                    Description <span className="text-red-500">*</span>
                                 </Label>
                                 <Textarea
                                     id="description"
                                     placeholder="Briefly describe the purpose of this assistance..."
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
-                                    className="min-h-[120px] resize-none bg-gray-50"
+                                    className={`min-h-[120px] resize-none bg-gray-50 ${errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                                 />
+                                {errors.description && <p className="text-xs font-medium text-red-600">{errors.description}</p>}
                             </div>
 
                             {/* Business Rules Grid (Amount Bounds & Cooldown) */}
@@ -237,32 +257,57 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 </div>
                             ) : (
                                 configurableDocuments.map((doc) => (
-                                    <div
-                                        key={doc.id}
-                                        className="group flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-orange-300 hover:shadow-md"
-                                    >
-                                        <div>
-                                            <h4 className="font-semibold text-gray-800">{doc.name}</h4>
-                                            <div className="mt-2 flex items-center gap-3">
-                                                <Switch
-                                                    checked={doc.is_required}
-                                                    onCheckedChange={(c) => toggleRequirement(doc.id, c)}
-                                                    className="data-[state=checked]:bg-red-500"
-                                                />
-                                                <span className={`text-sm font-medium ${doc.is_required ? 'text-red-600' : 'text-gray-500'}`}>
-                                                    {doc.is_required ? 'Required Before Approval' : 'If Applicable'}
-                                                </span>
+                                    <div key={doc.id} className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-orange-300 hover:shadow-md">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="font-semibold text-gray-800">{doc.name}</h4>
+                                                <div className="mt-2 flex items-center gap-3">
+                                                    <Switch
+                                                        checked={doc.is_required}
+                                                        onCheckedChange={(c) => toggleRequirement(doc.id, c)}
+                                                        className="data-[state=checked]:bg-red-500"
+                                                    />
+                                                    <span
+                                                        className={`text-sm font-medium ${doc.is_required ? 'text-red-600' : 'text-gray-500'}`}
+                                                    >
+                                                        {doc.is_required ? 'Required Before Approval' : 'If Applicable'}
+                                                    </span>
+                                                </div>
                                             </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                title="Remove requirement"
+                                                onClick={() => removeDocument(doc.id)}
+                                                className="shrink-0 text-gray-400 transition hover:bg-red-50 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                                            >
+                                                <Trash2 className="h-5 w-5" />
+                                            </Button>
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => removeDocument(doc.id)}
-                                            className="text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600"
-                                        >
-                                            <Trash2 className="h-5 w-5" />
-                                        </Button>
+
+                                        <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+                                            <Label htmlFor={`physical-copy-${doc.id}`} className="text-xs font-semibold text-gray-600">
+                                                Physical copy to bring
+                                            </Label>
+                                            <Select
+                                                value={doc.physical_copy_requirement}
+                                                onValueChange={(value) =>
+                                                    updatePhysicalCopyRequirement(doc.id, value as PhysicalCopyRequirement)
+                                                }
+                                            >
+                                                <SelectTrigger id={`physical-copy-${doc.id}`} className="w-full bg-gray-50 sm:max-w-sm">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {PHYSICAL_COPY_REQUIREMENT_OPTIONS.map((option) => (
+                                                        <SelectItem key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 ))
                             )}

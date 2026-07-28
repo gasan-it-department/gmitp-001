@@ -48,7 +48,7 @@ use Illuminate\Support\Collection;
  *   2. Cross-program cooldown — any STANDARD-type row exists for this group
  *      with cooldown_expires_at > NOW(). Blocks every standard type until the
  *      longest-running cooldown expires.
- *   3. Cross-program in-flight — a pending/under_review request for ANY STANDARD
+ *   3. Cross-program in-flight — a pending/under_review/approved request for ANY STANDARD
  *      type. Blocks every standard card until that request resolves.
  *
  * Use the bulk path (executeBatch) on the portal card grid so we hit the
@@ -59,14 +59,15 @@ use Illuminate\Support\Collection;
 class CheckElegibilityAction
 {
     /**
-     * Statuses that count as "open" — the citizen has something in queue.
-     * Approved/released/rejected/cancelled are all terminal for this guard.
+     * Statuses that count as open for submission integrity. Approved remains
+     * open until physical release; released/rejected/cancelled are final.
      */
-    private const IN_FLIGHT_STATUSES = ['pending', 'under_review'];
+    private const IN_FLIGHT_STATUSES = ['pending', 'under_review', 'approved'];
 
     public function __construct(
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
-    ) {}
+    ) {
+    }
 
     /**
      * Single-type evaluation. Use this in the Apply controller and the citizen
@@ -80,7 +81,7 @@ class CheckElegibilityAction
         ?string $onBehalfDateOfDeath = null,
         bool $allowPendingDependent = false,
     ): EligibilityResult {
-        if (! $beneficiary->is_active) {
+        if (!$beneficiary->is_active) {
             return EligibilityResult::beneficiaryInactive();
         }
 
@@ -88,13 +89,15 @@ class CheckElegibilityAction
             return EligibilityResult::intakeRejected();
         }
 
-        if (! $beneficiary->isIdentityVerified()) {
+        if (!$beneficiary->isIdentityVerified()) {
             return EligibilityResult::identityUnverified();
         }
 
-        if (! $beneficiary->household?->isVerified()) {
+        if (!$beneficiary->household?->isVerified()) {
             return EligibilityResult::householdHeadRequired();
         }
+
+        $member = null;
 
         if ($onBehalfHouseholdMemberId !== null) {
             $member = HouseholdMember::query()
@@ -103,12 +106,15 @@ class CheckElegibilityAction
                 ->where('is_active', true)
                 ->first();
 
-            if ($member !== null
+            if (
+                $member !== null
                 && $member->relationship !== 'head'
-                && ! $member->is_verified_dependent
-                && ! $allowPendingDependent) {
+                && !$member->is_verified_dependent
+                && !$allowPendingDependent
+            ) {
                 return EligibilityResult::dependentUnverified();
             }
+
         }
 
         $group = $this->resolveGroup->execute($beneficiary);
@@ -141,6 +147,10 @@ class CheckElegibilityAction
         }
 
         // Rule 3 — cross-program in-flight request (standard types only)
+        if ($member !== null && $this->hasAnyInFlightRequestForRecipient($member->id)) {
+            return EligibilityResult::inFlightRequest();
+        }
+
         if ($this->hasAnyInFlightRequest($group)) {
             return EligibilityResult::inFlightRequest();
         }
@@ -169,27 +179,27 @@ class CheckElegibilityAction
             return [];
         }
 
-        if (! $beneficiary->is_active) {
+        if (!$beneficiary->is_active) {
             return $types->mapWithKeys(
-                fn (AssistanceType $type) => [$type->id => EligibilityResult::beneficiaryInactive()]
+                fn(AssistanceType $type) => [$type->id => EligibilityResult::beneficiaryInactive()]
             )->all();
         }
 
         if ($beneficiary->isIntakeRejected()) {
             return $types->mapWithKeys(
-                fn (AssistanceType $type) => [$type->id => EligibilityResult::intakeRejected()]
+                fn(AssistanceType $type) => [$type->id => EligibilityResult::intakeRejected()]
             )->all();
         }
 
-        if (! $beneficiary->isIdentityVerified()) {
+        if (!$beneficiary->isIdentityVerified()) {
             return $types->mapWithKeys(
-                fn (AssistanceType $type) => [$type->id => EligibilityResult::identityUnverified()]
+                fn(AssistanceType $type) => [$type->id => EligibilityResult::identityUnverified()]
             )->all();
         }
 
-        if (! $beneficiary->household?->isVerified()) {
+        if (!$beneficiary->household?->isVerified()) {
             return $types->mapWithKeys(
-                fn (AssistanceType $type) => [$type->id => EligibilityResult::householdHeadRequired()]
+                fn(AssistanceType $type) => [$type->id => EligibilityResult::householdHeadRequired()]
             )->all();
         }
 
@@ -198,7 +208,7 @@ class CheckElegibilityAction
         // Rule 0 — a blacklist hold blocks every card outright.
         if ($this->hasActiveBlacklistFlag($group)) {
             return $types->mapWithKeys(
-                fn (AssistanceType $type) => [$type->id => EligibilityResult::blocked()]
+                fn(AssistanceType $type) => [$type->id => EligibilityResult::blocked()]
             )->all();
         }
 
@@ -206,8 +216,8 @@ class CheckElegibilityAction
         // (any member beneficiary or any member household). Independent-type rows
         // (Burial) are excluded so they never cross-block other programs.
         $cooldowns = BeneficiaryCooldown::query()
-            ->where(fn (Builder $q) => $this->scopeToGroup($q, $group))
-            ->whereHas('assistanceType', fn (Builder $q) => $q->where('is_independent', false))
+            ->where(fn(Builder $q) => $this->scopeToGroup($q, $group))
+            ->whereHas('assistanceType', fn(Builder $q) => $q->where('is_independent', false))
             ->get();
 
         $permanentBlockedTypeIds = $cooldowns
@@ -216,7 +226,7 @@ class CheckElegibilityAction
             ->all();
 
         $longestActiveCooldown = $cooldowns
-            ->filter(fn (BeneficiaryCooldown $c) => $c->cooldown_expires_at !== null
+            ->filter(fn(BeneficiaryCooldown $c) => $c->cooldown_expires_at !== null
                 && $c->cooldown_expires_at->isFuture())
             ->sortByDesc('cooldown_expires_at')
             ->first();
@@ -227,7 +237,7 @@ class CheckElegibilityAction
         $hasInFlight = AssistanceRequest::query()
             ->whereIn('beneficiary_id', $group->beneficiaryIds)
             ->whereIn('status', self::IN_FLIGHT_STATUSES)
-            ->whereHas('assistanceType', fn (Builder $q) => $q->where('is_independent', false))
+            ->whereHas('assistanceType', fn(Builder $q) => $q->where('is_independent', false))
             ->exists();
 
         // Per-type verdicts, applying the rule precedence in memory.
@@ -314,7 +324,7 @@ class CheckElegibilityAction
             }
 
             $active = $rows
-                ->filter(fn (BeneficiaryCooldown $c) => $c->cooldown_expires_at !== null
+                ->filter(fn(BeneficiaryCooldown $c) => $c->cooldown_expires_at !== null
                     && $c->cooldown_expires_at->isFuture())
                 ->sortByDesc('cooldown_expires_at')
                 ->first();
@@ -323,7 +333,7 @@ class CheckElegibilityAction
                 return EligibilityResult::onCooldown($active->cooldown_expires_at);
             }
 
-            // A pending / under_review request for the SAME deceased blocks a duplicate.
+            // Any open request for the SAME deceased blocks a duplicate.
             $inFlight = AssistanceRequest::query()
                 ->where('assistance_type_id', $type->id)
                 ->where('on_behalf_household_member_id', $memberId)
@@ -400,8 +410,8 @@ class CheckElegibilityAction
     private function findLongestActiveCooldown(BeneficiaryIdentityGroup $group): ?BeneficiaryCooldown
     {
         return BeneficiaryCooldown::query()
-            ->where(fn (Builder $q) => $this->scopeToGroup($q, $group))
-            ->whereHas('assistanceType', fn (Builder $q) => $q->where('is_independent', false))
+            ->where(fn(Builder $q) => $this->scopeToGroup($q, $group))
+            ->whereHas('assistanceType', fn(Builder $q) => $q->where('is_independent', false))
             ->whereNotNull('cooldown_expires_at')
             ->where('cooldown_expires_at', '>', now())
             ->orderByDesc('cooldown_expires_at')
@@ -413,7 +423,19 @@ class CheckElegibilityAction
         return AssistanceRequest::query()
             ->whereIn('beneficiary_id', $group->beneficiaryIds)
             ->whereIn('status', self::IN_FLIGHT_STATUSES)
-            ->whereHas('assistanceType', fn (Builder $q) => $q->where('is_independent', false))
+            ->whereHas('assistanceType', fn(Builder $q) => $q->where('is_independent', false))
+            ->exists();
+    }
+
+    private function hasAnyInFlightRequestForRecipient(string $memberId): bool
+    {
+        return AssistanceRequest::query()
+            ->where('on_behalf_household_member_id', $memberId)
+            ->whereIn('status', self::IN_FLIGHT_STATUSES)
+            ->whereHas(
+                'assistanceType',
+                fn(Builder $query) => $query->where('is_independent', false),
+            )
             ->exists();
     }
 
@@ -430,7 +452,7 @@ class CheckElegibilityAction
             ->where('assistance_type_id', $type->id);
 
         $useHouseholdScope = $type->cooldown_scope === 'per_household'
-            && ! empty($group->householdIds);
+            && !empty($group->householdIds);
 
         return $useHouseholdScope
             ? $query->whereIn('household_id', $group->householdIds)
@@ -446,7 +468,7 @@ class CheckElegibilityAction
     {
         $query->whereIn('beneficiary_id', $group->beneficiaryIds);
 
-        if (! empty($group->householdIds)) {
+        if (!empty($group->householdIds)) {
             $query->orWhereIn('household_id', $group->householdIds);
         }
 

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, CheckCircle2, FileText, Loader2, Paperclip } from 'lucide-react';
@@ -36,6 +37,8 @@ interface DocumentSlot {
     label: string;
     description: string | null;
     is_required: boolean;
+    physical_copy_requirement: PhysicalCopyRequirement;
+    physical_copy_requirement_label: string;
     sort_order: number;
 }
 
@@ -189,6 +192,11 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                                                     )}
                                                 </Label>
                                                 {slot.description && <p className="text-xs text-slate-500">{slot.description}</p>}
+                                                {slot.physical_copy_requirement !== 'unspecified' && (
+                                                    <p className="text-xs font-medium text-blue-700">
+                                                        Physical copy: {slot.physical_copy_requirement_label}
+                                                    </p>
+                                                )}
 
                                                 {current ? (
                                                     <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">

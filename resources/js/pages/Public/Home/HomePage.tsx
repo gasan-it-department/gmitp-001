@@ -1,6 +1,6 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { usePage } from '@inertiajs/react';
 import ActionCenterUi from './Components/ActionCenterForm/ActionCenterCard';
 import Carousel from './Components/Carousel';

@@ -18,7 +18,7 @@ class UpdateAssistanceTypeController extends Controller
         $municipality = app('current_municipality');
         $dto = UpdateAssistanceTypeDto::fromRequest($request);
 
-        $this->updateAction->execute($dto, $typeId);
+        $this->updateAction->execute($dto, $typeId, $municipality->id);
 
         return redirect()
             ->route('actionCenter.admin.list.assistance.types', ['municipality' => $municipality->slug])

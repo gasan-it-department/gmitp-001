@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/wrapper/PublicLayoutTemplate';
+import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Circle, Loader2, Paperclip, RotateCcw } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Paperclip, RotateCcw } from 'lucide-react';
 import { statusBadgeClasses } from './List';
 
 type Option = { value: string; label: string };
@@ -44,18 +43,9 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
 
-    const { data, setData, post, processing, errors, reset } = useForm<{ body: string }>({ body: '' });
+    const { post, processing } = useForm({});
 
     const canReopen = ticket.status.value === 'resolved' || ticket.status.value === 'closed';
-
-    const submitReply = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(`/api/support/${ticket.id}/replies`, {
-            preserveScroll: true,
-            headers: { 'X-Municipality-Slug': slug },
-            onSuccess: () => reset(),
-        });
-    };
 
     const reopen = () => {
         post(`/api/support/${ticket.id}/reopen`, {
@@ -78,7 +68,7 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                 <Card className="mb-6 border-2 border-slate-100">
                     <CardHeader className="space-y-3">
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs font-extrabold uppercase tracking-wider text-primary/80">
+                            <span className="text-xs font-extrabold tracking-wider text-primary/80 uppercase">
                                 {ticket.reference_no} · {ticket.category.label}
                             </span>
                             <span
@@ -90,12 +80,12 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                             </span>
                         </div>
                         <CardTitle className="text-xl font-extrabold tracking-tight">{ticket.subject}</CardTitle>
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                        <p className="text-[11px] font-bold tracking-widest text-slate-400 uppercase">
                             Priority: {ticket.priority.label} · Opened {ticket.created_at ?? '—'}
                         </p>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{ticket.description}</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{ticket.description}</p>
 
                         {attachments.length > 0 && (
                             <div className="flex flex-wrap gap-2">
@@ -119,7 +109,7 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                 {/* TIMELINE */}
                 <Card className="mb-6 border-2 border-slate-100">
                     <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-500">Progress</CardTitle>
+                        <CardTitle className="text-sm font-bold tracking-wider text-slate-500 uppercase">Progress</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ol className="space-y-4">
@@ -133,7 +123,7 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                                     <div className="space-y-0.5">
                                         <p className={`text-sm font-bold ${step.reached ? 'text-slate-900' : 'text-slate-400'}`}>{step.label}</p>
                                         <p className="text-xs text-slate-500">{step.description}</p>
-                                        {step.at && <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{step.at}</p>}
+                                        {step.at && <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">{step.at}</p>}
                                     </div>
                                 </li>
                             ))}
@@ -144,7 +134,7 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                 {/* CONVERSATION */}
                 <Card className="border-2 border-slate-100">
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-500">Conversation</CardTitle>
+                        <CardTitle className="text-sm font-bold tracking-wider text-slate-500 uppercase">Conversation</CardTitle>
                         {canReopen && (
                             <Button variant="outline" size="sm" onClick={reopen} disabled={processing} className="rounded-xl">
                                 <RotateCcw className="mr-2 h-4 w-4" />
@@ -154,7 +144,7 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {replies.length === 0 ? (
-                            <p className="py-4 text-center text-sm text-slate-400">No replies yet. Our team will respond here.</p>
+                            <p className="py-4 text-center text-sm text-slate-400">No updates have been posted for this ticket.</p>
                         ) : (
                             <div className="space-y-3">
                                 {replies.map((reply) => (
@@ -164,10 +154,10 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                                                 reply.is_staff ? 'bg-slate-100 text-slate-800' : 'bg-primary/10 text-slate-800'
                                             }`}
                                         >
-                                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                                {reply.is_staff ? reply.author?.full_name ?? 'Support' : 'You'} · {reply.created_at ?? ''}
+                                            <p className="mb-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                                                {reply.is_staff ? (reply.author?.full_name ?? 'Support') : 'You'} · {reply.created_at ?? ''}
                                             </p>
-                                            <p className="whitespace-pre-wrap leading-relaxed">{reply.body}</p>
+                                            <p className="leading-relaxed whitespace-pre-wrap">{reply.body}</p>
                                             {reply.attachments.length > 0 && (
                                                 <div className="mt-2 flex flex-wrap gap-2">
                                                     {reply.attachments.map((a) => (
@@ -189,25 +179,6 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
                                 ))}
                             </div>
                         )}
-
-                        {/* REPLY FORM */}
-                        <form onSubmit={submitReply} className="space-y-3 border-t border-slate-100 pt-4">
-                            <Textarea
-                                rows={3}
-                                maxLength={5000}
-                                value={data.body}
-                                onChange={(e) => setData('body', e.target.value)}
-                                placeholder="Write a reply…"
-                                className={`resize-none rounded-xl ${errors.body ? 'border-destructive' : 'bg-slate-50'}`}
-                            />
-                            {errors.body && <p className="text-xs font-medium text-destructive">{errors.body}</p>}
-                            <div className="flex justify-end">
-                                <Button type="submit" disabled={processing || data.body.trim() === ''} className="rounded-xl font-bold">
-                                    {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    Send Reply
-                                </Button>
-                            </div>
-                        </form>
                     </CardContent>
                 </Card>
             </div>
