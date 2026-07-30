@@ -23,7 +23,6 @@ class VerifiyPhoneController extends Controller
 
     public function verify(Request $request)
     {
-        dd('bulls eye');
         $validated = $request->validate([
             'otp' => 'required|string|size:6',
         ]);
