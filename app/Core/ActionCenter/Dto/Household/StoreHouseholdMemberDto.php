@@ -71,7 +71,7 @@ readonly class StoreHouseholdMemberDto
             birthDate: $beneficiary->birth_date?->toDateString(),
             sex: $beneficiary->sex,
             civilStatus: $beneficiary->civil_status?->value,
-            educationalAttainment: $beneficiary->educational_attainment->value,
+            educationalAttainment: $beneficiary->educational_attainment?->value,
 
             occupation: $beneficiary->occupation,
             monthlyIncome: $beneficiary->monthly_income !== null
