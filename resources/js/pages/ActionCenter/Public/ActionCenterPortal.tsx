@@ -4,12 +4,11 @@ import ToastProvider from '@/pages/Utility/ToastShower';
 import { AssistanceTypeListItem } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
-import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import apply from '@/routes/actionCenter/apply';
-import { SharedData } from '@/types';
+import actionCenter from '@/routes/actionCenter';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Ambulance,
+    ArrowRight,
     Banknote,
     BookOpen,
     Bus,
@@ -19,13 +18,13 @@ import {
     HandHeart,
     Heart,
     Lock,
+    ShieldAlert,
     ShieldCheck,
     Sparkles,
     Users,
     Utensils,
     Wallet,
 } from 'lucide-react';
-import { useState } from 'react';
 
 // 1. Define the Expected Interface from Laravel
 interface Eligibility {
@@ -38,7 +37,11 @@ interface Eligibility {
 interface Props {
     assistanceTypes: { data: AssistanceTypeListItem[] };
     eligibilityByType: Record<string, Eligibility>;
-    profileVerification: { has_profile: boolean; identity_verified: boolean } | null;
+    profileVerification: {
+        has_profile: boolean;
+        identity_verified: boolean;
+        status: 'pending' | 'rejected' | 'inactive' | 'household_on_hold' | 'verified';
+    } | null;
 }
 
 // 2. Dynamic Icon Mapper
@@ -68,16 +71,6 @@ const getAssistanceColor = (name: string) => {
 export default function ActionCenterPortal({ assistanceTypes, eligibilityByType, profileVerification }: Props) {
     const assistanceData = assistanceTypes.data;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const { auth } = usePage<SharedData>().props;
-    const [classicDialog, setClassicDialog] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        positiveButtonText: '',
-        negativeButtonText: '',
-        isNegativeButtonHidden: false,
-        action: null as string | null,
-    });
 
     // Filter out inactive ones so citizens only see what they can apply for
     const activeAssistance = assistanceData?.filter((type) => type.is_active) || [];
@@ -138,8 +131,8 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
                             },
                             {
                                 step: '03',
-                                title: 'I-upload ang Dokumento',
-                                description: 'Kunan ng malinaw na larawan at i-upload ang mga sumusuportang dokumento tulad ng Barangay Indigency.',
+                                title: 'Ihanda ang mga Dokumento',
+                                description: 'Ihanda ang mga nakalistang dokumento at dalhin ang mga ito sa MSWD kasama ang transaction number.',
                                 icon: FileText,
                             },
                             {
@@ -167,7 +160,28 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
 
             {/* DYNAMIC SERVICES OVERVIEW */}
             <section className="container mx-auto max-w-6xl px-4 py-20">
-                {profileVerification && !profileVerification.identity_verified && (
+                {!profileVerification && (
+                    <div className="mb-10 flex flex-col gap-4 rounded-lg border border-blue-200 bg-blue-50 p-5 text-blue-950 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <Users className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+                            <div>
+                                <p className="font-bold">Maaari mong tingnan muna ang lahat ng programa.</p>
+                                <p className="mt-1 text-sm leading-relaxed text-blue-800">
+                                    Kailangan lamang gumawa ng beneficiary profile kapag handa ka nang magsumite ng assistance request.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href={actionCenter.profile.setup.url({ municipality: currentMunicipality.slug })}
+                            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-[#005088] px-4 py-2 text-sm font-bold text-white hover:bg-[#003d66]"
+                        >
+                            Create profile
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                )}
+
+                {profileVerification?.status === 'pending' && (
                     <div className="mb-10 flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-5 text-amber-900 dark:border-amber-950/20 dark:bg-amber-950/10 dark:text-amber-300">
                         <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400" />
                         <div>
@@ -175,6 +189,39 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
                             <p className="mt-1 text-sm leading-relaxed text-amber-800 dark:text-amber-400">
                                 Ang mga programa ng tulong ay magiging bukas para sa inyo pagkatapos ma-verify ng administrator ang inyong
                                 pagkakakilanlan (identity) at household intake.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {profileVerification?.status === 'rejected' && (
+                    <div className="mb-10 flex flex-col gap-4 rounded-lg border border-red-200 bg-red-50 p-5 text-red-950 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+                            <div>
+                                <p className="font-bold">Kailangang itama ang iyong beneficiary profile.</p>
+                                <p className="mt-1 text-sm leading-relaxed text-red-800">
+                                    Maaari mo pa ring tingnan ang mga programa habang inihahanda ang iyong profile correction.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href={actionCenter.profile.correction.url({ municipality: currentMunicipality.slug })}
+                            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-bold text-white hover:bg-red-800"
+                        >
+                            Correct profile
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                )}
+
+                {(profileVerification?.status === 'inactive' || profileVerification?.status === 'household_on_hold') && (
+                    <div className="mb-10 flex items-start gap-4 rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-950">
+                        <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                        <div>
+                            <p className="font-bold">Kailangang ayusin ang iyong beneficiary record sa MSWD.</p>
+                            <p className="mt-1 text-sm leading-relaxed text-amber-800">
+                                Maaari mong tingnan ang mga programa, ngunit hindi muna maaaring magsumite habang naka-hold ang iyong record.
                             </p>
                         </div>
                     </div>
@@ -204,12 +251,15 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
                             const eligibility = eligibilityByType?.[type.id];
                             const isBlocked = eligibility ? !eligibility.eligible : false;
 
-                            // Each card routes to /{municipality}/action-center/apply/{slug}.
-                            const applyHref = auth.user
-                                ? apply.assistance.url({ municipality: currentMunicipality.slug, assistanceType: type.slug })
-                                : '#';
+                            // Program cards are informational. The details page decides
+                            // whether the citizen may continue to profile setup or apply.
+                            const detailsHref = actionCenter.assistance.details.url({
+                                municipality: currentMunicipality.slug,
+                                assistanceType: type.slug,
+                            });
 
-                            // Shared card body so the disabled and enabled branches stay visually identical
+                            // Shared body keeps available and temporarily blocked programs
+                            // equally discoverable while preserving their status message.
                             const cardBody = (
                                 <>
                                     <div className="flex items-start justify-between">
@@ -287,38 +337,33 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
 
                             if (isBlocked) {
                                 return (
-                                    <div
+                                    <Link
                                         key={type.id}
-                                        role="group"
-                                        aria-disabled="true"
-                                        title={eligibility?.message}
-                                        className="flex cursor-not-allowed flex-col space-y-4 rounded-2xl border border-border/60 bg-muted/40 p-6 opacity-60 shadow-sm"
+                                        href={detailsHref}
+                                        aria-label={`View details for ${type.name}`}
+                                        className="group flex flex-col space-y-4 rounded-2xl border border-amber-200 bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-md"
                                     >
                                         {cardBody}
-                                    </div>
+                                        <span className="flex items-center justify-between text-xs font-bold text-[#005088]">
+                                            Tingnan ang detalye at requirements
+                                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        </span>
+                                    </Link>
                                 );
                             }
 
                             return (
                                 <Link
                                     key={type.id}
-                                    href={applyHref}
+                                    href={detailsHref}
+                                    aria-label={`View details for ${type.name}`}
                                     className="group flex flex-col space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-md"
-                                    onClick={(e) => {
-                                        if (!auth.user) {
-                                            e.preventDefault();
-                                            setClassicDialog((prev) => ({
-                                                ...prev,
-                                                isOpen: true,
-                                                title: 'Kailangan ng Account',
-                                                message: 'Mangyaring mag-log in o mag-register muna upang makagawa ng aplikasyon para sa tulong.',
-                                                positiveButtonText: 'Sige',
-                                                isNegativeButtonHidden: true,
-                                            }));
-                                        }
-                                    }}
                                 >
                                     {cardBody}
+                                    <span className="flex items-center justify-between text-xs font-bold text-[#005088]">
+                                        Tingnan ang detalye at requirements
+                                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                    </span>
                                 </Link>
                             );
                         })}
@@ -338,21 +383,6 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
                     </p>
                 </div>
             </section>
-
-            <ClassicDialog
-                title={classicDialog.title}
-                message={classicDialog.message}
-                open={classicDialog.isOpen}
-                positiveButtonText={classicDialog.positiveButtonText}
-                negativeButtonText={classicDialog.negativeButtonText}
-                hideNegativeButton={classicDialog.isNegativeButtonHidden}
-                onPositiveClick={() => {
-                    setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
-                }}
-                onNegativeClick={() => {
-                    setClassicDialog((prev) => ({ ...prev, action: null, isOpen: false }));
-                }}
-            />
 
             {/* <Toaster /> */}
             <FlashHandler />

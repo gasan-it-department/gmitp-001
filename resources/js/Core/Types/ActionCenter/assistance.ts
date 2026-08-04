@@ -5,12 +5,7 @@
 
 export type CooldownType = 'per_request' | 'one_time';
 export type CooldownScope = 'per_beneficiary' | 'per_household';
-export type PhysicalCopyRequirement =
-    | 'unspecified'
-    | 'original'
-    | 'certified_true_copy'
-    | 'original_or_certified_true_copy'
-    | 'photocopy';
+export type PhysicalCopyRequirement = 'unspecified' | 'original' | 'certified_true_copy' | 'original_or_certified_true_copy' | 'photocopy';
 
 export const PHYSICAL_COPY_REQUIREMENT_OPTIONS: { value: PhysicalCopyRequirement; label: string }[] = [
     { value: 'unspecified', label: 'Not specified' },
@@ -51,7 +46,7 @@ export interface AssistanceTypeDetails {
     name: string;
     description: string;
     is_active: boolean;
-    min_amount: number;
+    min_amount: number | null;
     max_amount: number | null;
     cooldown_months: number;
     cooldown_type: CooldownType;

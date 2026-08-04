@@ -48,6 +48,13 @@ class IndexAssistanceRequestController extends Controller
                 $profileVerification = [
                     'has_profile' => true,
                     'identity_verified' => $beneficiary->isIdentityVerified(),
+                    'status' => match (true) {
+                        $beneficiary->isIntakeRejected() => 'rejected',
+                        ! $beneficiary->isIdentityVerified() => 'pending',
+                        ! $beneficiary->is_active => 'inactive',
+                        ! $beneficiary->household?->isVerified() => 'household_on_hold',
+                        default => 'verified',
+                    },
                 ];
                 $eligibilityByType = collect(
                     $this->checkEligibility->executeBatch($beneficiary, $assistanceTypes)

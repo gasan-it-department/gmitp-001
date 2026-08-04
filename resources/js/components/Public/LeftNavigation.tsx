@@ -166,6 +166,27 @@ export function LeftNavigation() {
                                 const targetPath = normalize(href);
                                 const isActive = item.id === 'home' ? currentPath === targetPath : currentPath.startsWith(targetPath);
 
+                                if (item.disabled) {
+                                    return (
+                                        <div
+                                            key={item.title}
+                                            className="flex min-h-12 items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold opacity-50 cursor-not-allowed bg-muted/20"
+                                        >
+                                            <div className="flex items-center gap-3 text-muted-foreground">
+                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/50">
+                                                    {Icon ? <Icon size={20} strokeWidth={2} /> : <HomeIcon size={20} />}
+                                                </span>
+                                                <span>{item.title}</span>
+                                            </div>
+                                            {item.badge && (
+                                                <span className="rounded-md bg-primary/10 px-2 py-1 text-[9px] uppercase tracking-widest text-primary font-bold">
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                }
+
                                 return (
                                     <SheetClose asChild key={item.title}>
                                         <Link
@@ -187,7 +208,12 @@ export function LeftNavigation() {
                                             >
                                                 {Icon ? <Icon size={20} strokeWidth={isActive ? 2.25 : 2} /> : <HomeIcon size={20} />}
                                             </span>
-                                            <span>{item.title}</span>
+                                            <span className="flex-1">{item.title}</span>
+                                            {item.badge && (
+                                                <span className="rounded-md bg-primary/10 px-2 py-1 text-[9px] uppercase tracking-widest text-primary font-bold">
+                                                    {item.badge}
+                                                </span>
+                                            )}
                                         </Link>
                                     </SheetClose>
                                 );

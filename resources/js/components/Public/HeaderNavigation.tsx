@@ -44,33 +44,52 @@ export function HeaderNav() {
                             <NavigationMenuLink asChild>
                                 {/* Wrapper must be h-full so the absolute underline sits at the header bottom */}
                                 <div className="h-full flex items-center relative px-1">
-                                    <Link 
-                                        href={href} 
-                                        className={cn(
-                                            "group flex items-center gap-2 px-4 transition-all duration-300 h-full relative",
-                                            isActive 
-                                                ? "text-primary font-black" 
-                                                : "text-muted-foreground font-bold hover:text-primary"
-                                        )}
-                                    >
-                                        {item.icon && (
-                                            <item.icon className={cn(
-                                                "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
-                                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
-                                            )} />
-                                        )}
-                                        
-                                        <span className="uppercase tracking-[0.12em] text-[11px] sm:text-xs">
-                                            {item.title}
-                                        </span>
+                                    {item.disabled ? (
+                                        <div className="group flex items-center gap-2 px-4 h-full relative cursor-not-allowed opacity-50 text-muted-foreground font-bold">
+                                            {item.icon && <item.icon className="h-4 w-4" />}
+                                            <span className="uppercase tracking-[0.12em] text-[11px] sm:text-xs flex items-center gap-2">
+                                                {item.title}
+                                                {item.badge && (
+                                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] text-primary">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <Link 
+                                            href={href} 
+                                            className={cn(
+                                                "group flex items-center gap-2 px-4 transition-all duration-300 h-full relative",
+                                                isActive 
+                                                    ? "text-primary font-black" 
+                                                    : "text-muted-foreground font-bold hover:text-primary"
+                                            )}
+                                        >
+                                            {item.icon && (
+                                                <item.icon className={cn(
+                                                    "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                                                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                                                )} />
+                                            )}
+                                            
+                                            <span className="uppercase tracking-[0.12em] text-[11px] sm:text-xs flex items-center gap-2">
+                                                {item.title}
+                                                {item.badge && (
+                                                    <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[9px] text-primary">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </span>
 
-                                        {/* THE UNDERLINE */}
-                                        {isActive && (
-                                            <div 
-                                                className="absolute bottom-0 left-0 right-0 h-[4px] bg-primary rounded-t-full shadow-[0_-2px_10px_rgba(var(--primary),0.5)] z-[100] animate-in fade-in slide-in-from-bottom-2 duration-300" 
-                                            />
-                                        )}
-                                    </Link>
+                                            {/* THE UNDERLINE */}
+                                            {isActive && (
+                                                <div 
+                                                    className="absolute bottom-0 left-0 right-0 h-[4px] bg-primary rounded-t-full shadow-[0_-2px_10px_rgba(var(--primary),0.5)] z-[100] animate-in fade-in slide-in-from-bottom-2 duration-300" 
+                                                />
+                                            )}
+                                        </Link>
+                                    )}
                                 </div>
                             </NavigationMenuLink>
                         </NavigationMenuItem>
