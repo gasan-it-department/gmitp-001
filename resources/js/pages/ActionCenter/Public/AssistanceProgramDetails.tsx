@@ -148,7 +148,7 @@ export default function AssistanceProgramDetails({ assistanceType, applicationSt
                             <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">{program.description}</p>
                         </div>
 
-                        <dl className="mt-8 grid grid-cols-1 border-y border-slate-200 sm:grid-cols-3">
+                        <dl className="mt-8 grid grid-cols-1 border-y border-slate-200 sm:grid-cols-2">
                             <div className="flex gap-3 py-4 sm:pr-5">
                                 <Banknote className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
                                 <div>
@@ -161,13 +161,6 @@ export default function AssistanceProgramDetails({ assistanceType, applicationSt
                                 <div>
                                     <dt className="text-xs font-bold text-slate-500 uppercase">Kailan Available</dt>
                                     <dd className="mt-1 text-sm font-semibold text-slate-900">{availabilityLabel}</dd>
-                                </div>
-                            </div>
-                            <div className="flex gap-3 border-t border-slate-200 py-4 sm:border-t-0 sm:border-l sm:pl-5">
-                                <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                                <div>
-                                    <dt className="text-xs font-bold text-slate-500 uppercase">Mga Kakailanganin</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-slate-900">{program.documents.length} na dokumento</dd>
                                 </div>
                             </div>
                         </dl>
