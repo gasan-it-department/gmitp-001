@@ -123,6 +123,13 @@ class BeneficiaryProfileResource extends JsonResource
 
     private function identityDocuments(Request $request): array
     {
+        if (! $request->user()?->can('action_center.beneficiaries.verify')) {
+            return [
+                'front' => null,
+                'back' => null,
+            ];
+        }
+
         return [
             'front' => $this->identityDocumentUrl($request, 'front', 'identity_id_front'),
             'back' => $this->identityDocumentUrl($request, 'back', 'identity_id_back'),

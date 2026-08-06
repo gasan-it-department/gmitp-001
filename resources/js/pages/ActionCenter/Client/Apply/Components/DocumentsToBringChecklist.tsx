@@ -35,7 +35,7 @@ export function DocumentsToBringChecklist({
 
             <div className={compact ? 'p-4' : 'p-4 sm:p-5'}>
                 {visibleDocuments.length === 0 ? (
-                    <p className="text-sm text-slate-500">No supporting documents are configured for this program.</p>
+                    <p className="text-sm text-slate-500">Walang nakatakdang karagdagang dokumento para sa programang ito.</p>
                 ) : (
                     <ol className="space-y-3">
                         {visibleDocuments.map((document, index) => {
@@ -44,20 +44,30 @@ export function DocumentsToBringChecklist({
                             const isRecorded = recordedKeys.has(document.key);
 
                             return (
-                                <li key={document.id} className="flex flex-col gap-2 rounded-md border border-slate-200 p-3 sm:flex-row sm:items-start sm:gap-3">
+                                <li 
+                                    key={document.id} 
+                                    className={`flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-start sm:gap-3 ${
+                                        isRequired ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-white'
+                                    }`}
+                                >
                                     <div className="flex min-w-0 flex-1 items-start gap-3">
-                                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                            isRequired ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
+                                        }`}>
                                             {index + 1}
                                         </span>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <p className="text-sm font-semibold text-slate-900">{document.name}</p>
+                                                <p className="text-sm font-semibold text-slate-900">
+                                                    {document.name}
+                                                    {isRequired && <span className="ml-1 font-bold text-red-500">*</span>}
+                                                </p>
                                                 <span
                                                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                                                        isRequired ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                                                        isRequired ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600'
                                                     }`}
                                                 >
-                                                    {isRequired ? 'Required before approval' : 'If applicable'}
+                                                    {isRequired ? 'Kailangan bago maaprubahan' : 'Kung naaangkop'}
                                                 </span>
                                                 {document.physical_copy_requirement !== 'unspecified' && (
                                                     <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase">
@@ -68,7 +78,7 @@ export function DocumentsToBringChecklist({
                                             {document.description && (
                                                 <p className="mt-1 text-xs leading-relaxed text-slate-600">{document.description}</p>
                                             )}
-                                            {document.examples && <p className="mt-1 text-xs text-slate-500">Examples: {document.examples}</p>}
+                                            {document.examples && <p className="mt-1 text-xs text-slate-500"><span className="font-semibold">Mga Halimbawa:</span> {document.examples}</p>}
                                         </div>
                                     </div>
                                     {showRecordingStatus && (
@@ -78,7 +88,7 @@ export function DocumentsToBringChecklist({
                                             }`}
                                         >
                                             {isRecorded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <MapPin className="h-3.5 w-3.5" />}
-                                            {isRecorded ? 'Recorded by MSWD' : 'Bring to MSWD'}
+                                            {isRecorded ? 'Na-record na ng MSWD' : 'Dalhin sa MSWD'}
                                         </span>
                                     )}
                                 </li>
@@ -89,7 +99,7 @@ export function DocumentsToBringChecklist({
 
                 <div className="mt-4 flex items-start gap-2 rounded-md bg-blue-50 p-3 text-xs leading-relaxed text-blue-800">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                    Bring your transaction number with these documents. MSWD staff will inspect the originals and record the official copies.
+                    Dalhin ang iyong transaction number kasama ang mga dokumentong ito. Susuriin ng staff ng MSWD ang mga orihinal at ire-record ang mga opisyal na kopya.
                 </div>
             </div>
         </section>

@@ -4,6 +4,7 @@ use App\Http\Middleware\Admin\AdminGuardMiddleware;
 use App\Http\Middleware\Client\ClientGuardMiddleware;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Http\Middleware\EnsurePhoneVerificationPending;
+use App\Http\Middleware\External\VerifyAgaEdgeSecret;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\Municipality\SetMunicipalityContext;
 use App\Http\Middleware\RoleCheckRedirect;
@@ -56,7 +57,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'roleCheckRedirect' => RoleCheckRedirect::class,
             'municipalityContext' => SetMunicipalityContext::class,
             'verified.phone' => EnsurePhoneIsVerified::class,
-            'phone.pending' => EnsurePhoneVerificationPending::class
+            'phone.pending' => EnsurePhoneVerificationPending::class,
+            'aga.edge.secret' => VerifyAgaEdgeSecret::class,
         ]);
 
         // Tenant context (app('municipal_id')) MUST be bound before route-model

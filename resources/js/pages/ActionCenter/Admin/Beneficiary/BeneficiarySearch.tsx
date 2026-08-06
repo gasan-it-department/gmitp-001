@@ -2,6 +2,7 @@ import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import ShowCreateWalkInBeneficiaryController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Walkin/ShowCreateWalkInBeneficiaryController';
 import { Pagination } from '@/components/Shared/Pagination';
+import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -94,6 +95,8 @@ interface Props {
  */
 export default function BeneficiarySearch({ results, filters }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { can } = usePermissions();
+    const canManageBeneficiaries = can('action_center.beneficiaries.manage');
     const baseUrl = ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug });
 
     // Local mirror of the server-side filter state.
@@ -249,13 +252,15 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                         <p className="max-w-md text-xs text-gray-500">
                             Loosen the search (fewer words, drop the middle name) before concluding this is a first-time applicant.
                         </p>
-                        <Link
-                            href={ShowCreateWalkInBeneficiaryController.url({ municipality: currentMunicipality.slug })}
-                            className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 sm:w-auto"
-                        >
-                            <UserPlus className="h-4 w-4" />
-                            Register walk-in beneficiary
-                        </Link>
+                        {canManageBeneficiaries && (
+                            <Link
+                                href={ShowCreateWalkInBeneficiaryController.url({ municipality: currentMunicipality.slug })}
+                                className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 sm:w-auto"
+                            >
+                                <UserPlus className="h-4 w-4" />
+                                Register walk-in beneficiary
+                            </Link>
+                        )}
                     </div>
                 )}
 

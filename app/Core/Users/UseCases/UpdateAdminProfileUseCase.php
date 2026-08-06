@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Core\Users\UseCases;
 
-use App\Core\Users\Models\User;
-use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Dto\UpdateAdminProfileDto;
+use App\Core\Users\Enums\EnumRoles;
+use App\Core\Users\Models\User;
 use App\Core\Users\Services\PasswordHasherService;
+use App\Core\Users\Services\PermissionDependencyService;
 use App\Shared\Phone\Services\PhoneFormatterService;
 
 class UpdateAdminProfileUseCase
@@ -18,8 +19,9 @@ class UpdateAdminProfileUseCase
 
         protected PhoneFormatterService $phoneFormatterService,
 
-    ) {
-    }
+        protected PermissionDependencyService $permissionDependencyService,
+
+    ) {}
 
     public function execute(UpdateAdminProfileDto $dto, ?User $actor = null): User
     {
@@ -32,15 +34,16 @@ class UpdateAdminProfileUseCase
         $actorIsSuperAdmin = $actor === null
             || $actor->hasRole(EnumRoles::SUPER_ADMIN->value);
 
-        $permissions = $dto->permissions ?? [];
+        $permissions = $this->permissionDependencyService->normalize($dto->permissions ?? []);
 
         $municipalId = $dto->municipalId;
 
         if (! $actorIsSuperAdmin) {
 
             // Anti-escalation: only grant permissions the actor already holds.
-            $permissions = array_values(
-                array_intersect($permissions, $actor->getPermissionNames()->all())
+            $permissions = $this->permissionDependencyService->normalizeWithin(
+                $permissions,
+                $actor->getPermissionNames()->all(),
             );
 
             // Municipality lock: keep the admin within the actor's municipality.

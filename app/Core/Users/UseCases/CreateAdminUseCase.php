@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Core\Users\UseCases;
 
-use App\Core\Users\Models\User;
-use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Dto\CreateAdminDto;
+use App\Core\Users\Enums\EnumRoles;
+use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
+use App\Core\Users\Models\User;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Users\Services\PasswordHasherService;
-use App\Shared\Phone\Services\PhoneFormatterService;
-use App\Core\Users\Exceptions\UserAlreadyExistExceptions;
+use App\Core\Users\Services\PermissionDependencyService;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
+use App\Shared\Phone\Services\PhoneFormatterService;
 
 class CreateAdminUseCase
 {
@@ -25,8 +26,9 @@ class CreateAdminUseCase
 
         protected PhoneFormatterService $phoneFormatterService,
 
-    ) {
-    }
+        protected PermissionDependencyService $permissionDependencyService,
+
+    ) {}
 
     public function execute(CreateAdminDto $dto, ?User $actor = null)
     {
@@ -40,7 +42,7 @@ class CreateAdminUseCase
 
         // Defaults come straight from the request; a delegated (non-super)
         // admin gets them clamped below before anything is persisted.
-        $permissions = $dto->permissions ?? [];
+        $permissions = $this->permissionDependencyService->normalize($dto->permissions ?? []);
 
         $municipalId = $dto->municipalId;
 
@@ -48,8 +50,9 @@ class CreateAdminUseCase
 
             // Anti-escalation: a delegated admin can only grant permissions
             // they themselves already hold.
-            $permissions = array_values(
-                array_intersect($permissions, $actor->getPermissionNames()->all())
+            $permissions = $this->permissionDependencyService->normalizeWithin(
+                $permissions,
+                $actor->getPermissionNames()->all(),
             );
 
             // Municipality lock: force the new admin into the actor's own
@@ -103,13 +106,11 @@ class CreateAdminUseCase
         if ($this->userRepo->findByPhone($phone) !== null) {
 
             throw UserAlreadyExistExceptions::withPhone($phone);
-
         }
 
         if ($email !== null && $this->userRepo->findByEmail($email)) {
 
             throw UserAlreadyExistExceptions::withEmail($email);
-
         }
     }
 }

@@ -56,6 +56,24 @@ export const PermissionSelector = ({ permissionCatalog, selectedValues, onChange
         onChange(selectedValues.filter((value) => !modulePermissionValues.includes(value)));
     };
 
+    const removePermissionAndDependents = (module: PermissionModule, permissionValue: string) => {
+        const valuesToRemove = new Set([permissionValue]);
+
+        let changed = true;
+        while (changed) {
+            changed = false;
+
+            module.permissions.forEach((permission) => {
+                if (permission.dependencies.some((dependency) => valuesToRemove.has(dependency)) && !valuesToRemove.has(permission.value)) {
+                    valuesToRemove.add(permission.value);
+                    changed = true;
+                }
+            });
+        }
+
+        onChange(selectedValues.filter((value) => !valuesToRemove.has(value)));
+    };
+
     const togglePermission = (module: PermissionModule, permissionValue: string, enabled: boolean) => {
         const accessPermission = getAccessPermission(module);
 
@@ -69,11 +87,12 @@ export const PermissionSelector = ({ permissionCatalog, selectedValues, onChange
         }
 
         if (enabled) {
-            onChange(uniqueValues([...selectedValues, accessPermission.value, permissionValue]));
+            const selectedPermission = module.permissions.find((permission) => permission.value === permissionValue);
+            onChange(uniqueValues([...selectedValues, accessPermission.value, ...(selectedPermission?.dependencies ?? []), permissionValue]));
             return;
         }
 
-        onChange(selectedValues.filter((value) => value !== permissionValue));
+        removePermissionAndDependents(module, permissionValue);
     };
 
     return (

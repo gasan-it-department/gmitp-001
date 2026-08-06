@@ -14,6 +14,8 @@ export type NavigationItem = {
     label: string;
     href: string;
   }[];
+  disabled?: boolean;
+  badge?: string;
 };
 
 export const useNavigation = (): NavigationItem[] => [
@@ -27,7 +29,9 @@ export const useNavigation = (): NavigationItem[] => [
     title: "Travel",
     route: travel,
     icon: MapPinned,
-    id: "travel"
+    id: "travel",
+    disabled: true,
+    badge: "Coming Soon"
   },
   {
     title: "Government",

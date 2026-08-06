@@ -7,6 +7,7 @@ import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/compone
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
@@ -154,6 +155,7 @@ export default function BeneficiaryProfile({
     headDispositions,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { can } = usePermissions();
     const utils = Utility();
 
     const profile: BeneficiaryProfileData = 'data' in beneficiary ? beneficiary.data : beneficiary;
@@ -162,6 +164,11 @@ export default function BeneficiaryProfile({
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const rosterMatches = householdMatches ?? [];
     const activeRosterCount = members.filter((member) => member.is_active).length;
+    const canManageBeneficiaries = can('action_center.beneficiaries.manage');
+    const canVerifyBeneficiaries = can('action_center.beneficiaries.verify');
+    const canCorrectBeneficiaries = can('action_center.beneficiaries.correct');
+    const canProcessRequests = can('action_center.requests.process');
+    const canViewRequests = can('action_center.requests.view');
 
     const [linkOpen, setLinkOpen] = useState(false);
     const [avatarViewOpen, setAvatarViewOpen] = useState(false);
@@ -187,29 +194,33 @@ export default function BeneficiaryProfile({
 
                         <div className="hidden flex-wrap items-center gap-2 lg:flex">
                             {/* Secondary action: correct a mistake on this record (admin-only) */}
-                            <Link
-                                href={EditBeneficiaryProfileController.url({
-                                    municipality: currentMunicipality.slug,
-                                    beneficiaryId: profile.id,
-                                })}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                            >
-                                <Pencil className="h-4 w-4" />
-                                Edit profile
-                            </Link>
+                            {canManageBeneficiaries && (
+                                <Link
+                                    href={EditBeneficiaryProfileController.url({
+                                        municipality: currentMunicipality.slug,
+                                        beneficiaryId: profile.id,
+                                    })}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    Edit profile
+                                </Link>
+                            )}
 
-                            <button
-                                type="button"
-                                onClick={() => setReassignOpen(true)}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                            >
-                                <Home className="h-4 w-4" />
-                                Change beneficiary residence
-                            </button>
+                            {canCorrectBeneficiaries && (
+                                <button
+                                    type="button"
+                                    onClick={() => setReassignOpen(true)}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                                >
+                                    <Home className="h-4 w-4" />
+                                    Change beneficiary residence
+                                </button>
+                            )}
 
                             {/* Identity reconciliation: mark this record as a duplicate of
                                 another. Hidden once it's already been merged away. */}
-                            {!merge.is_merged_duplicate && (
+                            {canCorrectBeneficiaries && !merge.is_merged_duplicate && (
                                 <button
                                     type="button"
                                     onClick={() => setMergeOpen(true)}
@@ -221,90 +232,100 @@ export default function BeneficiaryProfile({
                             )}
 
                             {/* Primary action: file an assistance request for this person */}
-                            {profile.is_active && profile.household_verified ? (
-                                <Link
-                                    href={CreateAssistanceRequestController.url({
-                                        municipality: currentMunicipality.slug,
-                                        beneficiaryId: profile.id,
-                                    })}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                                >
-                                    <HandCoins className="h-4 w-4" />
-                                    File assistance request
-                                </Link>
-                            ) : (
-                                <span
-                                    title={!profile.is_active ? 'Beneficiary record is inactive' : 'Household has no verified active head'}
-                                    className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
-                                >
-                                    <HandCoins className="h-4 w-4" />
-                                    Assistance on hold
-                                </span>
-                            )}
+                            {canProcessRequests &&
+                                (profile.is_active && profile.household_verified ? (
+                                    <Link
+                                        href={CreateAssistanceRequestController.url({
+                                            municipality: currentMunicipality.slug,
+                                            beneficiaryId: profile.id,
+                                        })}
+                                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                                    >
+                                        <HandCoins className="h-4 w-4" />
+                                        File assistance request
+                                    </Link>
+                                ) : (
+                                    <span
+                                        title={!profile.is_active ? 'Beneficiary record is inactive' : 'Household has no verified active head'}
+                                        className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
+                                    >
+                                        <HandCoins className="h-4 w-4" />
+                                        Assistance on hold
+                                    </span>
+                                ))}
                         </div>
 
-                        <div className="grid grid-cols-[minmax(0,1fr)_2.75rem] gap-2 lg:hidden">
-                            {profile.is_active && profile.household_verified ? (
-                                <Link
-                                    href={CreateAssistanceRequestController.url({
-                                        municipality: currentMunicipality.slug,
-                                        beneficiaryId: profile.id,
-                                    })}
-                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                                >
-                                    <HandCoins className="h-4 w-4" />
-                                    File assistance request
-                                </Link>
-                            ) : (
-                                <span
-                                    title={!profile.is_active ? 'Beneficiary record is inactive' : 'Household has no verified active head'}
-                                    className="inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
-                                >
-                                    <HandCoins className="h-4 w-4" />
-                                    Assistance on hold
-                                </span>
-                            )}
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button
-                                        type="button"
-                                        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
-                                        aria-label="More beneficiary actions"
-                                        title="More beneficiary actions"
-                                    >
-                                        <MoreHorizontal className="h-5 w-5" />
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-64">
-                                    <DropdownMenuItem asChild>
+                        {(canProcessRequests || canManageBeneficiaries || canCorrectBeneficiaries) && (
+                            <div className={`${canProcessRequests ? 'grid grid-cols-[minmax(0,1fr)_2.75rem]' : 'flex justify-end'} gap-2 lg:hidden`}>
+                                {canProcessRequests &&
+                                    (profile.is_active && profile.household_verified ? (
                                         <Link
-                                            href={EditBeneficiaryProfileController.url({
+                                            href={CreateAssistanceRequestController.url({
                                                 municipality: currentMunicipality.slug,
                                                 beneficiaryId: profile.id,
                                             })}
-                                            className="cursor-pointer"
+                                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                                         >
-                                            <Pencil className="h-4 w-4" />
-                                            Edit profile
+                                            <HandCoins className="h-4 w-4" />
+                                            File assistance request
                                         </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setTimeout(() => setReassignOpen(true), 100)}>
-                                        <Home className="h-4 w-4" />
-                                        Change beneficiary residence
-                                    </DropdownMenuItem>
-                                    {!merge.is_merged_duplicate && (
-                                        <DropdownMenuItem
-                                            onSelect={() => setTimeout(() => setMergeOpen(true), 100)}
-                                            className="text-amber-700 focus:text-amber-800"
+                                    ) : (
+                                        <span
+                                            title={!profile.is_active ? 'Beneficiary record is inactive' : 'Household has no verified active head'}
+                                            className="inline-flex min-h-11 cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500"
                                         >
-                                            <GitMerge className="h-4 w-4" />
-                                            Mark as duplicate
-                                        </DropdownMenuItem>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                                            <HandCoins className="h-4 w-4" />
+                                            Assistance on hold
+                                        </span>
+                                    ))}
+
+                                {(canManageBeneficiaries || canCorrectBeneficiaries) && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50"
+                                                aria-label="More beneficiary actions"
+                                                title="More beneficiary actions"
+                                            >
+                                                <MoreHorizontal className="h-5 w-5" />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-64">
+                                            {canManageBeneficiaries && (
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={EditBeneficiaryProfileController.url({
+                                                            municipality: currentMunicipality.slug,
+                                                            beneficiaryId: profile.id,
+                                                        })}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                        Edit profile
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canCorrectBeneficiaries && (
+                                                <DropdownMenuItem onSelect={() => setTimeout(() => setReassignOpen(true), 100)}>
+                                                    <Home className="h-4 w-4" />
+                                                    Change beneficiary residence
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canCorrectBeneficiaries && !merge.is_merged_duplicate && (
+                                                <DropdownMenuItem
+                                                    onSelect={() => setTimeout(() => setMergeOpen(true), 100)}
+                                                    className="text-amber-700 focus:text-amber-800"
+                                                >
+                                                    <GitMerge className="h-4 w-4" />
+                                                    Mark as duplicate
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -426,20 +447,22 @@ export default function BeneficiaryProfile({
                     <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
                         {/* Left column */}
                         <div className="space-y-4 sm:space-y-6 lg:col-span-8">
-                            <IntakeReviewPanel
-                                beneficiaryId={profile.id}
-                                identityVerified={profile.identity_verified}
-                                verifiedAt={profile.identity_verified_at}
-                                verifiedBy={profile.identity_verified_by}
-                                intakeStatus={profile.intake_status}
-                                canRejectIntake={profile.has_account}
-                                rejectedAt={profile.intake_rejected_at}
-                                rejectedBy={profile.intake_rejected_by}
-                                rejectionReason={profile.intake_rejection_reason}
-                                identityDocuments={profile.identity_documents}
-                                members={members}
-                                householdMatches={householdMatches ?? []}
-                            />
+                            {canVerifyBeneficiaries && (
+                                <IntakeReviewPanel
+                                    beneficiaryId={profile.id}
+                                    identityVerified={profile.identity_verified}
+                                    verifiedAt={profile.identity_verified_at}
+                                    verifiedBy={profile.identity_verified_by}
+                                    intakeStatus={profile.intake_status}
+                                    canRejectIntake={profile.has_account}
+                                    rejectedAt={profile.intake_rejected_at}
+                                    rejectedBy={profile.intake_rejected_by}
+                                    rejectionReason={profile.intake_rejection_reason}
+                                    identityDocuments={profile.identity_documents}
+                                    members={members}
+                                    householdMatches={householdMatches ?? []}
+                                />
+                            )}
 
                             {/* Identity */}
                             <Card>
@@ -516,7 +539,11 @@ export default function BeneficiaryProfile({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                                    <AssistanceHistoryList history={history} municipalitySlug={currentMunicipality.slug} />
+                                    <AssistanceHistoryList
+                                        history={history}
+                                        municipalitySlug={currentMunicipality.slug}
+                                        canOpenRequests={canViewRequests}
+                                    />
                                 </CardContent>
                             </Card>
                         </div>
@@ -557,14 +584,16 @@ export default function BeneficiaryProfile({
                                                     ? profile.account_email || profile.account_phone || 'Portal Account'
                                                     : 'Walk-in (no portal account)'}
                                             </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => setLinkOpen(true)}
-                                                className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
-                                            >
-                                                <Link2 className="h-3.5 w-3.5" />
-                                                {profile.has_account ? 'Change linked account' : 'Link a portal account'}
-                                            </button>
+                                            {canCorrectBeneficiaries && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLinkOpen(true)}
+                                                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
+                                                >
+                                                    <Link2 className="h-3.5 w-3.5" />
+                                                    {profile.has_account ? 'Change linked account' : 'Link a portal account'}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </CardContent>
@@ -591,149 +620,153 @@ export default function BeneficiaryProfile({
                                                 <Download className="h-5 w-5" />
                                                 <span className="text-center text-xs">Intake Sheet</span>
                                             </a>
-                                            <a
-                                                href={DownloadBeneficiaryIdentityDocumentSheetController.url({
-                                                    municipality: currentMunicipality.slug,
-                                                    beneficiaryId: profile.id,
-                                                })}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 transition hover:border-[#005088] hover:bg-white hover:text-[#005088] hover:shadow-sm"
-                                            >
-                                                <Printer className="h-5 w-5" />
-                                                <span className="text-center text-xs">ID Sheet</span>
-                                            </a>
+                                            {canVerifyBeneficiaries && (
+                                                <a
+                                                    href={DownloadBeneficiaryIdentityDocumentSheetController.url({
+                                                        municipality: currentMunicipality.slug,
+                                                        beneficiaryId: profile.id,
+                                                    })}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-700 transition hover:border-[#005088] hover:bg-white hover:text-[#005088] hover:shadow-sm"
+                                                >
+                                                    <Printer className="h-5 w-5" />
+                                                    <span className="text-center text-xs">ID Sheet</span>
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3 border-t border-slate-100 pt-6">
-                                        <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Uploaded Identity</p>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {/* Front ID Card */}
-                                            <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                                                {profile.identity_documents?.front ? (
-                                                    <>
-                                                        <img
-                                                            src={profile.identity_documents.front}
-                                                            alt="Front ID"
-                                                            className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
-                                                        />
-                                                        <div className="absolute inset-0 bg-slate-900/10" />
-                                                        <div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
-                                                            FRONT
-                                                        </div>
+                                    {canVerifyBeneficiaries && (
+                                        <div className="space-y-3 border-t border-slate-100 pt-6">
+                                            <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Uploaded Identity</p>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {/* Front ID Card */}
+                                                <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                    {profile.identity_documents?.front ? (
+                                                        <>
+                                                            <img
+                                                                src={profile.identity_documents.front}
+                                                                alt="Front ID"
+                                                                className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
+                                                            />
+                                                            <div className="absolute inset-0 bg-slate-900/10" />
+                                                            <div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
+                                                                FRONT
+                                                            </div>
 
-                                                        <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-                                                            <a
-                                                                href={profile.identity_documents.front}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
-                                                                title="View Full Size"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </a>
+                                                            <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                                                                <a
+                                                                    href={profile.identity_documents.front}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                    title="View Full Size"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </a>
+                                                                <ReplaceIdentityDocumentDialog
+                                                                    beneficiaryId={profile.id}
+                                                                    side="front"
+                                                                    isVerified={profile.identity_verified}
+                                                                    hasDocument={true}
+                                                                    trigger={
+                                                                        <button
+                                                                            type="button"
+                                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                            title="Replace Photo"
+                                                                        >
+                                                                            <FileUp className="h-4 w-4" />
+                                                                        </button>
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center gap-2">
+                                                            <p className="text-[10px] font-bold tracking-widest text-slate-400">FRONT ID</p>
                                                             <ReplaceIdentityDocumentDialog
                                                                 beneficiaryId={profile.id}
                                                                 side="front"
                                                                 isVerified={profile.identity_verified}
-                                                                hasDocument={true}
+                                                                hasDocument={false}
                                                                 trigger={
                                                                     <button
                                                                         type="button"
-                                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
-                                                                        title="Replace Photo"
+                                                                        className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-[#005088] hover:ring-[#005088]"
                                                                     >
-                                                                        <FileUp className="h-4 w-4" />
+                                                                        <Plus className="h-4 w-4" />
                                                                     </button>
                                                                 }
                                                             />
                                                         </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center gap-2">
-                                                        <p className="text-[10px] font-bold tracking-widest text-slate-400">FRONT ID</p>
-                                                        <ReplaceIdentityDocumentDialog
-                                                            beneficiaryId={profile.id}
-                                                            side="front"
-                                                            isVerified={profile.identity_verified}
-                                                            hasDocument={false}
-                                                            trigger={
-                                                                <button
-                                                                    type="button"
-                                                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-[#005088] hover:ring-[#005088]"
+                                                    )}
+                                                </div>
+
+                                                {/* Back ID Card */}
+                                                <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                    {profile.identity_documents?.back ? (
+                                                        <>
+                                                            <img
+                                                                src={profile.identity_documents.back}
+                                                                alt="Back ID"
+                                                                className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
+                                                            />
+                                                            <div className="absolute inset-0 bg-slate-900/10" />
+                                                            <div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
+                                                                BACK
+                                                            </div>
+
+                                                            <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                                                                <a
+                                                                    href={profile.identity_documents.back}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                    title="View Full Size"
                                                                 >
-                                                                    <Plus className="h-4 w-4" />
-                                                                </button>
-                                                            }
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Back ID Card */}
-                                            <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                                                {profile.identity_documents?.back ? (
-                                                    <>
-                                                        <img
-                                                            src={profile.identity_documents.back}
-                                                            alt="Back ID"
-                                                            className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-110 group-hover:opacity-100"
-                                                        />
-                                                        <div className="absolute inset-0 bg-slate-900/10" />
-                                                        <div className="absolute top-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">
-                                                            BACK
-                                                        </div>
-
-                                                        <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-                                                            <a
-                                                                href={profile.identity_documents.back}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
-                                                                title="View Full Size"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </a>
+                                                                    <Eye className="h-4 w-4" />
+                                                                </a>
+                                                                <ReplaceIdentityDocumentDialog
+                                                                    beneficiaryId={profile.id}
+                                                                    side="back"
+                                                                    isVerified={profile.identity_verified}
+                                                                    hasDocument={true}
+                                                                    trigger={
+                                                                        <button
+                                                                            type="button"
+                                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                            title="Replace Photo"
+                                                                        >
+                                                                            <FileUp className="h-4 w-4" />
+                                                                        </button>
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center gap-2">
+                                                            <p className="text-[10px] font-bold tracking-widest text-slate-400">BACK ID</p>
                                                             <ReplaceIdentityDocumentDialog
                                                                 beneficiaryId={profile.id}
                                                                 side="back"
                                                                 isVerified={profile.identity_verified}
-                                                                hasDocument={true}
+                                                                hasDocument={false}
                                                                 trigger={
                                                                     <button
                                                                         type="button"
-                                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
-                                                                        title="Replace Photo"
+                                                                        className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-[#005088] hover:ring-[#005088]"
                                                                     >
-                                                                        <FileUp className="h-4 w-4" />
+                                                                        <Plus className="h-4 w-4" />
                                                                     </button>
                                                                 }
                                                             />
                                                         </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center gap-2">
-                                                        <p className="text-[10px] font-bold tracking-widest text-slate-400">BACK ID</p>
-                                                        <ReplaceIdentityDocumentDialog
-                                                            beneficiaryId={profile.id}
-                                                            side="back"
-                                                            isVerified={profile.identity_verified}
-                                                            hasDocument={false}
-                                                            trigger={
-                                                                <button
-                                                                    type="button"
-                                                                    className="rounded-full bg-white p-2 text-slate-400 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-[#005088] hover:ring-[#005088]"
-                                                                >
-                                                                    <Plus className="h-4 w-4" />
-                                                                </button>
-                                                            }
-                                                        />
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -774,28 +807,32 @@ export default function BeneficiaryProfile({
                 </div>
             </div>
 
-            <LinkAccountDialog
-                beneficiaryId={profile.id}
-                beneficiaryName={profile.full_name}
-                currentEmail={profile.account_email}
-                isOpen={linkOpen}
-                onClose={() => setLinkOpen(false)}
-            />
+            {canCorrectBeneficiaries && (
+                <>
+                    <LinkAccountDialog
+                        beneficiaryId={profile.id}
+                        beneficiaryName={profile.full_name}
+                        currentEmail={profile.account_email}
+                        isOpen={linkOpen}
+                        onClose={() => setLinkOpen(false)}
+                    />
 
-            <ReassignHouseholdDialog
-                open={reassignOpen}
-                onClose={() => setReassignOpen(false)}
-                beneficiaryId={profile.id}
-                members={members}
-                headState={householdHead}
-            />
+                    <ReassignHouseholdDialog
+                        open={reassignOpen}
+                        onClose={() => setReassignOpen(false)}
+                        beneficiaryId={profile.id}
+                        members={members}
+                        headState={householdHead}
+                    />
 
-            <MergeDuplicateDialog
-                beneficiaryId={profile.id}
-                beneficiaryName={profile.full_name}
-                isOpen={mergeOpen}
-                onClose={() => setMergeOpen(false)}
-            />
+                    <MergeDuplicateDialog
+                        beneficiaryId={profile.id}
+                        beneficiaryName={profile.full_name}
+                        isOpen={mergeOpen}
+                        onClose={() => setMergeOpen(false)}
+                    />
+                </>
+            )}
 
             <Dialog open={avatarViewOpen} onOpenChange={setAvatarViewOpen}>
                 <DialogContent className="max-w-md border-none bg-transparent p-0 shadow-none">

@@ -26,6 +26,7 @@ class PermissionOptionService
                 'value' => $permission->value,
                 'label' => $permission->label(),
                 'is_access' => $permission->isAccess(),
+                'dependencies' => $permission->dependencies(),
             ];
         }
 

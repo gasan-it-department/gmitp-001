@@ -3,6 +3,7 @@ import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import actionCenter from '@/routes/actionCenter';
@@ -36,6 +37,8 @@ interface Props {
 
 export default function BeneficiaryList({ beneficiaries, filters }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { can } = usePermissions();
+    const canManageBeneficiaries = can('action_center.beneficiaries.manage');
     const baseUrl = ListBeneficiaryController.url({ municipality: currentMunicipality.slug });
     const [search, setSearch] = useState(filters.search ?? '');
     const [birthDate, setBirthDate] = useState(filters.birth_date ?? '');
@@ -109,11 +112,16 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                                 <span>{meta?.total ?? 0} records</span>
                             )}
                         </div>
-                        <Link className="w-full md:w-auto" href={actionCenter.admin.walkin.create.url({ municipality: currentMunicipality.slug })}>
-                            <Button type="button" className="w-full md:w-auto">
-                                <Plus className="h-4 w-4" /> Register Walk-in
-                            </Button>
-                        </Link>
+                        {canManageBeneficiaries && (
+                            <Link
+                                className="w-full md:w-auto"
+                                href={actionCenter.admin.walkin.create.url({ municipality: currentMunicipality.slug })}
+                            >
+                                <Button type="button" className="w-full md:w-auto">
+                                    <Plus className="h-4 w-4" /> Register Walk-in
+                                </Button>
+                            </Link>
+                        )}
                     </div>
                 </div>
 

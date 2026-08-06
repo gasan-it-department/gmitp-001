@@ -6,9 +6,9 @@ namespace App\Core\Users\Enums;
  * Single source of truth for every admin permission string.
  *
  * Naming convention: `{module}.{ability}` (snake_case module = its Core folder).
- *  - `access`  → umbrella switch: may the admin enter the module at all
- *               (menu visibility + route-group entry). The only ability v1 ships.
- *  - verbs     → `view` / `create` / `update` / `delete` (+ module-specific verbs
+ *  - `access`  -> umbrella switch: may the admin enter the module at all
+ *               (menu visibility + route-group entry).
+ *  - verbs     -> `view` / `create` / `update` / `delete` (+ module-specific verbs
  *               such as `bug.escalate`) gate individual actions WITHIN a module.
  *
  * Adding a permission post-deploy is safe & idempotent: add a case here, then run
@@ -19,37 +19,47 @@ namespace App\Core\Users\Enums;
  */
 enum EnumPermissions: string
 {
-    //action center
+    // action center
     case ACTION_CENTER_ACCESS = 'action_center.access';
+    case ACTION_CENTER_BENEFICIARIES_VIEW = 'action_center.beneficiaries.view';
+    case ACTION_CENTER_BENEFICIARIES_MANAGE = 'action_center.beneficiaries.manage';
+    case ACTION_CENTER_BENEFICIARIES_VERIFY = 'action_center.beneficiaries.verify';
+    case ACTION_CENTER_BENEFICIARIES_CORRECT = 'action_center.beneficiaries.correct';
+    case ACTION_CENTER_REQUESTS_VIEW = 'action_center.requests.view';
+    case ACTION_CENTER_REQUESTS_PROCESS = 'action_center.requests.process';
+    case ACTION_CENTER_REQUESTS_DECIDE = 'action_center.requests.decide';
+    case ACTION_CENTER_REQUESTS_RELEASE = 'action_center.requests.release';
+    case ACTION_CENTER_REPORTS_VIEW = 'action_center.reports.view';
+    case ACTION_CENTER_SETTINGS_MANAGE = 'action_center.settings.manage';
 
-    //announcement & events
+    // announcement & events
     case BULLETIN_BOARD_ACCESS = 'bulletin_board.access';
 
-    //community reports
+    // community reports
     case COMMUNITY_REPORT_ACCESS = 'community_report.access';
 
-    //support ticket
+    // support ticket
     case SUPPORT_TICKET_ACCESS = 'support_ticket.access';
 
-    //feedback
+    // feedback
     case FEEDBACK_ACCESS = 'feedback.access';
 
-    //municipality settings
+    // municipality settings
     case MUNICIPALITY_SETTINGS_ACCESS = 'municipality_settings.access';
 
-    //public information
+    // public information
     case PUBLIC_INFORMATION_ACCESS = 'public_information.access';
 
-    //tourism
+    // tourism
     case TOURISM_ACCESS = 'tourism.access';
 
-    //users
+    // users
     case USERS_ACCESS = 'users.access';
 
-    //wedding
+    // wedding
     case WEDDING_ACCESS = 'wedding.access';
 
-    //cemetery
+    // cemetery
     case CEMETERY_ACCESS = 'cemetery.access';
     case CEMETERY_DECEDENTS_VIEW = 'cemetery.decedents.view';
     case CEMETERY_DECEDENTS_MANAGE = 'cemetery.decedents.manage';
@@ -58,10 +68,10 @@ enum EnumPermissions: string
     case CEMETERY_DECEDENTS_OVERRIDE = 'cemetery.decedents.override';
     case CEMETERY_DECEDENTS_DOCUMENTS_VIEW = 'cemetery.decedents.documents.view';
 
-    //government
+    // government
     case GOVERNMENT_ACCESS = 'government.access';
 
-    //department
+    // department
     case DEPARTMENT_ACCESS = 'department.access';
 
     // --- Reserved for delegation (NOT seeded yet) -------------------------
@@ -77,6 +87,16 @@ enum EnumPermissions: string
     {
         return match ($this) {
             self::ACTION_CENTER_ACCESS => 'Action Center',
+            self::ACTION_CENTER_BENEFICIARIES_VIEW => 'Action Center - View Beneficiaries',
+            self::ACTION_CENTER_BENEFICIARIES_MANAGE => 'Action Center - Manage Beneficiaries',
+            self::ACTION_CENTER_BENEFICIARIES_VERIFY => 'Action Center - Verify Beneficiaries',
+            self::ACTION_CENTER_BENEFICIARIES_CORRECT => 'Action Center - Correct Beneficiary Records',
+            self::ACTION_CENTER_REQUESTS_VIEW => 'Action Center - View Assistance Requests',
+            self::ACTION_CENTER_REQUESTS_PROCESS => 'Action Center - Process Assistance Requests',
+            self::ACTION_CENTER_REQUESTS_DECIDE => 'Action Center - Approve or Reject Requests',
+            self::ACTION_CENTER_REQUESTS_RELEASE => 'Action Center - Release Assistance',
+            self::ACTION_CENTER_REPORTS_VIEW => 'Action Center - View Reports',
+            self::ACTION_CENTER_SETTINGS_MANAGE => 'Action Center - Manage Assistance Settings',
             self::BULLETIN_BOARD_ACCESS => 'Bulletin Board',
             self::COMMUNITY_REPORT_ACCESS => 'Community Reporting',
             self::SUPPORT_TICKET_ACCESS => 'Support & Help Desk',
@@ -101,7 +121,17 @@ enum EnumPermissions: string
     public function module(): EnumPermissionModule
     {
         return match ($this) {
-            self::ACTION_CENTER_ACCESS => EnumPermissionModule::ACTION_CENTER,
+            self::ACTION_CENTER_ACCESS,
+            self::ACTION_CENTER_BENEFICIARIES_VIEW,
+            self::ACTION_CENTER_BENEFICIARIES_MANAGE,
+            self::ACTION_CENTER_BENEFICIARIES_VERIFY,
+            self::ACTION_CENTER_BENEFICIARIES_CORRECT,
+            self::ACTION_CENTER_REQUESTS_VIEW,
+            self::ACTION_CENTER_REQUESTS_PROCESS,
+            self::ACTION_CENTER_REQUESTS_DECIDE,
+            self::ACTION_CENTER_REQUESTS_RELEASE,
+            self::ACTION_CENTER_REPORTS_VIEW,
+            self::ACTION_CENTER_SETTINGS_MANAGE => EnumPermissionModule::ACTION_CENTER,
             self::BULLETIN_BOARD_ACCESS => EnumPermissionModule::BULLETIN_BOARD,
             self::COMMUNITY_REPORT_ACCESS => EnumPermissionModule::COMMUNITY_REPORT,
             self::SUPPORT_TICKET_ACCESS => EnumPermissionModule::SUPPORT_TICKET,
@@ -129,12 +159,44 @@ enum EnumPermissions: string
     }
 
     /**
+     * Permissions that must accompany this permission when it is assigned.
+     *
+     * @return list<string>
+     */
+    public function dependencies(): array
+    {
+        return match ($this) {
+            self::ACTION_CENTER_BENEFICIARIES_VIEW => [
+                self::ACTION_CENTER_ACCESS->value,
+            ],
+            self::ACTION_CENTER_BENEFICIARIES_MANAGE,
+            self::ACTION_CENTER_BENEFICIARIES_VERIFY,
+            self::ACTION_CENTER_BENEFICIARIES_CORRECT => [
+                self::ACTION_CENTER_ACCESS->value,
+                self::ACTION_CENTER_BENEFICIARIES_VIEW->value,
+            ],
+            self::ACTION_CENTER_REQUESTS_VIEW,
+            self::ACTION_CENTER_REPORTS_VIEW,
+            self::ACTION_CENTER_SETTINGS_MANAGE => [
+                self::ACTION_CENTER_ACCESS->value,
+            ],
+            self::ACTION_CENTER_REQUESTS_PROCESS,
+            self::ACTION_CENTER_REQUESTS_DECIDE,
+            self::ACTION_CENTER_REQUESTS_RELEASE => [
+                self::ACTION_CENTER_ACCESS->value,
+                self::ACTION_CENTER_REQUESTS_VIEW->value,
+            ],
+            default => [],
+        };
+    }
+
+    /**
      * @return list<string>
      */
     public static function values(): array
     {
         return array_map(
-            fn(self $permission): string => $permission->value,
+            fn (self $permission): string => $permission->value,
             self::cases(),
         );
     }

@@ -30,6 +30,7 @@ use App\Core\Municipality\Models\MunicipalityHotline;
 use App\Core\Municipality\Models\MunicipalitySettings;
 use App\Core\Procurement\Models\Procurement;
 use App\Core\SupportTicket\Models\SupportTicket;
+use App\Core\SupportTicket\Models\SupportTicketReply;
 use App\Core\Tourism\Models\TourismAsset;
 use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -81,6 +82,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'cemetery_service_request' => CemeteryServiceRequest::class,
             'municipality_hotline' => MunicipalityHotline::class,
             'support_ticket' => SupportTicket::class,
+            'support_ticket_reply' => SupportTicketReply::class,
         ]);
     }
 }

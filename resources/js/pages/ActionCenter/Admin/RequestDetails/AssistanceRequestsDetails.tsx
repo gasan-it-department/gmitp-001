@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import { PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
 import actionCenter from '@/routes/actionCenter';
@@ -219,16 +220,14 @@ export default function AssistanceRequestsDetails({
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
+    const { can } = usePermissions();
     const utils = Utility();
     const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
     const filerIdIsRequired = requiredDocuments.data.some(
         (document) => ['valid_id_front', 'valid_id_back'].includes(document.key) && document.is_required,
     );
     const recipientIdIsRequired =
-        detail.on_behalf !== null &&
-        filerIdIsRequired &&
-        detail.assistance_type?.slug !== 'burial' &&
-        !detail.on_behalf.recipient_id_exception;
+        detail.on_behalf !== null && filerIdIsRequired && detail.assistance_type?.slug !== 'burial' && !detail.on_behalf.recipient_id_exception;
     const requiredDocumentsData = requiredDocuments.data
         .filter((document) => !document.key.startsWith('recipient_valid_id_') || detail.on_behalf !== null)
         .map((document) => (document.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...document, is_required: true } : document));
@@ -237,6 +236,10 @@ export default function AssistanceRequestsDetails({
     const householdMembersData = householdMembers.data;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const isMine = detail.reviewed_by?.id === auth.user?.id;
+    const canViewBeneficiaries = can('action_center.beneficiaries.view');
+    const canProcessRequests = can('action_center.requests.process');
+    const canDecideRequests = can('action_center.requests.decide');
+    const canReleaseRequests = can('action_center.requests.release');
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -249,7 +252,8 @@ export default function AssistanceRequestsDetails({
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
     const missingRequiredDocuments = requiredDocumentsData.filter((document) => document.is_required && !uploadedByKey.has(document.key));
     const hasMissingRequiredDocuments = missingRequiredDocuments.length > 0;
-    const canEditRequest = detail.status === 'pending' || detail.status === 'under_review';
+    const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
+    const canEditRequest = requestIsEditable && canProcessRequests;
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
     const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
@@ -350,21 +354,26 @@ export default function AssistanceRequestsDetails({
                                         reviewerName={detail.reviewed_by?.name ?? null}
                                         acknowledgementReceiptUrl={acknowledgementReceiptUrl}
                                         hasMissingRequiredDocuments={hasMissingRequiredDocuments}
+                                        canProcess={canProcessRequests}
+                                        canDecide={canDecideRequests}
+                                        canRelease={canReleaseRequests}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
 
-                                    <Link
-                                        href={ShowBeneficiaryProfileController.url({
-                                            municipality: currentMunicipality.slug,
-                                            beneficiaryId: detail.beneficiary_id,
-                                        })}
-                                        className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 sm:w-auto"
-                                    >
-                                        <User className="h-4 w-4" />
-                                        <span className="sm:hidden">Beneficiary</span>
-                                        <span className="hidden sm:inline">View Beneficiary Profile</span>
-                                    </Link>
+                                    {canViewBeneficiaries && (
+                                        <Link
+                                            href={ShowBeneficiaryProfileController.url({
+                                                municipality: currentMunicipality.slug,
+                                                beneficiaryId: detail.beneficiary_id,
+                                            })}
+                                            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 sm:w-auto"
+                                        >
+                                            <User className="h-4 w-4" />
+                                            <span className="sm:hidden">Beneficiary</span>
+                                            <span className="hidden sm:inline">View Beneficiary Profile</span>
+                                        </Link>
+                                    )}
 
                                     {/* Correct a mistake — only while the request is still
                                         editable (pending / under_review). Locked states show
@@ -398,7 +407,7 @@ export default function AssistanceRequestsDetails({
                     </div>
                 )}
 
-                {canEditRequest && hasMissingRequiredDocuments && (
+                {requestIsEditable && hasMissingRequiredDocuments && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
                         <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex min-w-0 items-start gap-3">
@@ -406,16 +415,24 @@ export default function AssistanceRequestsDetails({
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-amber-950">Awaiting required documents</p>
                                     <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
-                                        {missingRequiredDocuments.length} required {missingRequiredDocuments.length === 1 ? 'document is' : 'documents are'} still missing:{' '}
-                                        {missingRequiredDocuments.map((document) => document.label).join(', ')}. Approval remains unavailable until MSWD records them.
+                                        {missingRequiredDocuments.length} required{' '}
+                                        {missingRequiredDocuments.length === 1 ? 'document is' : 'documents are'} still missing:{' '}
+                                        {missingRequiredDocuments.map((document) => document.label).join(', ')}. Approval remains unavailable until
+                                        MSWD records them.
                                     </p>
                                 </div>
                             </div>
-                            <Button asChild variant="outline" className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto">
-                                <Link href={editRequestUrl}>
-                                    <Upload className="mr-2 h-4 w-4" /> Upload documents
-                                </Link>
-                            </Button>
+                            {canProcessRequests && (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                >
+                                    <Link href={editRequestUrl}>
+                                        <Upload className="mr-2 h-4 w-4" /> Upload documents
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -809,18 +826,20 @@ export default function AssistanceRequestsDetails({
                                         <Download className="h-4 w-4" />
                                         Download Request Intake Sheet (PDF)
                                     </a>
-                                    <a
-                                        href={DownloadBeneficiaryIntakeSheetController.url({
-                                            municipality: currentMunicipality.slug,
-                                            beneficiaryId: detail.beneficiary_id,
-                                        })}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        Download Beneficiary Intake Sheet (PDF)
-                                    </a>
+                                    {canViewBeneficiaries && (
+                                        <a
+                                            href={DownloadBeneficiaryIntakeSheetController.url({
+                                                municipality: currentMunicipality.slug,
+                                                beneficiaryId: detail.beneficiary_id,
+                                            })}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                        >
+                                            <Download className="h-4 w-4" />
+                                            Download Beneficiary Intake Sheet (PDF)
+                                        </a>
+                                    )}
                                     <p className="text-[11px] leading-snug text-slate-400">
                                         Receipt proves release. Request sheet records this transaction. Beneficiary sheet records the claimant
                                         identity file.
@@ -903,60 +922,68 @@ export default function AssistanceRequestsDetails({
                                 </CardContent>
                             </Card>
 
-                            <Card>
-                                <CardHeader className="p-4 sm:p-6">
-                                    <CardTitle className="text-base">Internal Note</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
-                                    <div className="pt-1">
-                                        <label className="mb-1.5 block text-[11px] font-bold tracking-widest text-slate-600 uppercase">
-                                            Append detail to case history
-                                        </label>
-                                        <Textarea
-                                            value={adminNote}
-                                            onChange={(e) => setAdminNote(e.target.value)}
-                                            placeholder="Type internal remarks here…"
-                                            rows={3}
-                                            className="resize-none text-sm"
-                                        />
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            className="mt-2 w-full"
-                                            disabled={!adminNote.trim()}
-                                            onClick={stubAction('Add Note')}
-                                        >
-                                            <Send className="mr-2 h-3.5 w-3.5" /> Append Note
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            {canProcessRequests && (
+                                <Card>
+                                    <CardHeader className="p-4 sm:p-6">
+                                        <CardTitle className="text-base">Internal Note</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
+                                        <div className="pt-1">
+                                            <label className="mb-1.5 block text-[11px] font-bold tracking-widest text-slate-600 uppercase">
+                                                Append detail to case history
+                                            </label>
+                                            <Textarea
+                                                value={adminNote}
+                                                onChange={(e) => setAdminNote(e.target.value)}
+                                                placeholder="Type internal remarks here…"
+                                                rows={3}
+                                                className="resize-none text-sm"
+                                            />
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                className="mt-2 w-full"
+                                                disabled={!adminNote.trim()}
+                                                onClick={stubAction('Add Note')}
+                                            >
+                                                <Send className="mr-2 h-3.5 w-3.5" /> Append Note
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <ApproveRequestDialog
-                requestId={detail.id}
-                isOpen={isApproveOpen}
-                onClose={() => setIsApproveOpen(false)}
-                minAmount={detail.assistance_type?.min_amount}
-                maxAmount={detail.assistance_type?.max_amount}
-            />
+            {canDecideRequests && (
+                <>
+                    <ApproveRequestDialog
+                        requestId={detail.id}
+                        isOpen={isApproveOpen}
+                        onClose={() => setIsApproveOpen(false)}
+                        minAmount={detail.assistance_type?.min_amount}
+                        maxAmount={detail.assistance_type?.max_amount}
+                    />
 
-            <RejectRequestDialog
-                requestId={detail.id}
-                applicantName={detail.identity_snapshot?.full_name || undefined}
-                isOpen={isRejectOpen}
-                onClose={() => setIsRejectOpen(false)}
-            />
+                    <RejectRequestDialog
+                        requestId={detail.id}
+                        applicantName={detail.identity_snapshot?.full_name || undefined}
+                        isOpen={isRejectOpen}
+                        onClose={() => setIsRejectOpen(false)}
+                    />
+                </>
+            )}
 
-            <ReleaseRequestDialog
-                requestId={detail.id}
-                amountApproved={detail.amount_approved}
-                isOpen={isReleaseOpen}
-                onClose={() => setIsReleaseOpen(false)}
-            />
+            {canReleaseRequests && (
+                <ReleaseRequestDialog
+                    requestId={detail.id}
+                    amountApproved={detail.amount_approved}
+                    isOpen={isReleaseOpen}
+                    onClose={() => setIsReleaseOpen(false)}
+                />
+            )}
             <FlashHandler />
             <ToastProvider position="top-right" />
         </>
@@ -1125,6 +1152,9 @@ function ActionButtons({
     reviewerName,
     acknowledgementReceiptUrl,
     hasMissingRequiredDocuments,
+    canProcess,
+    canDecide,
+    canRelease,
 }: {
     status: string;
     onAction: (label: string) => () => void;
@@ -1133,16 +1163,19 @@ function ActionButtons({
     reviewerName: string | null;
     acknowledgementReceiptUrl: string;
     hasMissingRequiredDocuments: boolean;
+    canProcess: boolean;
+    canDecide: boolean;
+    canRelease: boolean;
 }) {
     switch (status) {
         case 'pending':
-            return (
+            return canProcess ? (
                 <Button className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto" onClick={onPickUp}>
                     <UserCheck className="mr-2 h-4 w-4" /> Pick Up Case
                 </Button>
-            );
+            ) : null;
         case 'under_review':
-            if (!isMine) {
+            if (!isMine && !canDecide) {
                 return (
                     <div className="col-span-2 flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 sm:col-auto">
                         <UserCheck className="h-4 w-4 text-slate-400" />
@@ -1152,28 +1185,40 @@ function ActionButtons({
             }
             return (
                 <>
-                    <Button
-                        className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
-                        onClick={onAction('Approve')}
-                        disabled={hasMissingRequiredDocuments}
-                        title={hasMissingRequiredDocuments ? 'Upload all required documents before approval.' : undefined}
-                    >
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
-                    </Button>
-                    <Button variant="destructive" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reject')}>
-                        <XCircle className="mr-2 h-4 w-4" /> Reject
-                    </Button>
-                    <Button variant="outline" className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto" onClick={onAction('Request More Info')}>
-                        <AlertTriangle className="mr-2 h-4 w-4" /> Request More Info
-                    </Button>
+                    {canDecide && (
+                        <>
+                            <Button
+                                className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+                                onClick={onAction('Approve')}
+                                disabled={hasMissingRequiredDocuments}
+                                title={hasMissingRequiredDocuments ? 'Upload all required documents before approval.' : undefined}
+                            >
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
+                            </Button>
+                            <Button variant="destructive" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reject')}>
+                                <XCircle className="mr-2 h-4 w-4" /> Reject
+                            </Button>
+                        </>
+                    )}
+                    {canProcess && isMine && (
+                        <Button
+                            variant="outline"
+                            className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto"
+                            onClick={onAction('Request More Info')}
+                        >
+                            <AlertTriangle className="mr-2 h-4 w-4" /> Request More Info
+                        </Button>
+                    )}
                 </>
             );
         case 'approved':
             return (
                 <>
-                    <Button className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
-                    </Button>
+                    {canRelease && (
+                        <Button className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
+                        </Button>
+                    )}
                     <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
                         <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
                             <Printer className="mr-2 h-4 w-4" />
@@ -1194,11 +1239,11 @@ function ActionButtons({
                 </Button>
             );
         case 'rejected':
-            return (
+            return canDecide ? (
                 <Button variant="outline" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reopen')}>
                     <AlertTriangle className="mr-2 h-4 w-4" /> Reopen
                 </Button>
-            );
+            ) : null;
         default:
             return <p className="text-xs text-slate-400 italic">No actions for this state.</p>;
     }

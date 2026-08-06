@@ -1,7 +1,6 @@
-import { LucideIcon } from 'lucide-react';
-import { User } from '@/Core/Types/User/UserTypes';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-
+import { User } from '@/Core/Types/User/UserTypes';
+import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
@@ -9,8 +8,9 @@ export interface Auth {
         isClient: boolean;
         isAdmin: boolean;
         isSuperAdmin: boolean;
-    }
-    access: ["action-center" | ""]
+    };
+    permissions: string[];
+    access: ['action-center' | ''];
 }
 
 export interface BreadcrumbItem {
@@ -31,7 +31,7 @@ export interface NavItem {
 }
 
 export interface SharedData {
-    currentMunicipality: Municipality
+    currentMunicipality: Municipality;
     app_name: string;
     auth: Auth;
     sidebarOpen: boolean;

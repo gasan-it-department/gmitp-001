@@ -3,15 +3,16 @@
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceTypeDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceTypeDto;
 use App\Core\ActionCenter\Exceptions\AssistanceTypeException;
+use App\Core\ActionCenter\UseCase\Assistance\GetActiveAssistanceTypeBySlugAction;
 use App\Core\ActionCenter\UseCase\Assistance\GetActiveDocumentTypesForDropdown;
-use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceTypeAction;
 use App\Core\ActionCenter\UseCase\Assistance\NormalizeAssistanceTypeDocumentSlotsAction;
+use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceTypeAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceTypeAction;
 use App\External\Api\Request\ActionCenter\StoreAssistanceTypeRequest;
 use App\External\Api\Resources\ActionCenter\AssistanceType\AssistanceTypeDetailsResource;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -58,14 +59,15 @@ beforeEach(function () {
         $table->timestamps();
     });
 
-    $idGenerator = new class implements IdGeneratorInterface {
+    $idGenerator = new class implements IdGeneratorInterface
+    {
         public function generate(): string
         {
             return (string) str()->ulid();
         }
     };
 
-    $normalizeDocumentSlots = new NormalizeAssistanceTypeDocumentSlotsAction();
+    $normalizeDocumentSlots = new NormalizeAssistanceTypeDocumentSlotsAction;
     $this->storeAction = new StoreAssistanceTypeAction($idGenerator, $normalizeDocumentSlots);
     $this->updateAction = new UpdateAssistanceTypeAction($idGenerator, $normalizeDocumentSlots);
 });
@@ -96,7 +98,7 @@ it('stores a zero minimum when the field is left blank', function () {
 it('blocks a duplicate slug within the same municipality', function () {
     $this->storeAction->execute(storeDto('Medical Assistance'), 'municipality-a');
 
-    expect(fn() => $this->storeAction->execute(storeDto('Medical-Assistance'), 'municipality-a'))
+    expect(fn () => $this->storeAction->execute(storeDto('Medical-Assistance'), 'municipality-a'))
         ->toThrow(AssistanceTypeException::class, 'already exists in this municipality');
 });
 
@@ -123,6 +125,20 @@ it('keeps the slug stable when the assistance type name changes', function () {
     ), $assistanceType->id, 'municipality-a');
 
     expect($assistanceType->fresh()->slug)->toBe('medical-assistance');
+});
+
+it('resolves an active assistance program by tenant and slug', function () {
+    $assistanceType = $this->storeAction->execute(storeDto('Medical Assistance'), 'municipality-a');
+    $lookup = new GetActiveAssistanceTypeBySlugAction;
+
+    expect($lookup->execute('municipality-a', 'medical-assistance')->is($assistanceType))->toBeTrue()
+        ->and(fn () => $lookup->execute('municipality-b', 'medical-assistance'))
+        ->toThrow(ModelNotFoundException::class);
+
+    $assistanceType->update(['is_active' => false]);
+
+    expect(fn () => $lookup->execute('municipality-a', 'medical-assistance'))
+        ->toThrow(ModelNotFoundException::class);
 });
 
 it('automatically attaches conditional recipient id slots when filer id is configured', function () {
@@ -269,7 +285,7 @@ it('shows only global and current municipality document types', function () {
         ],
     ]);
 
-    $visibleIds = (new GetActiveDocumentTypesForDropdown())
+    $visibleIds = (new GetActiveDocumentTypesForDropdown)
         ->execute('municipality-a')
         ->pluck('id');
 
@@ -348,7 +364,7 @@ it('rejects foreign custom document types during request validation', function (
         ]],
     ];
 
-    $request = new StoreAssistanceTypeRequest();
+    $request = new StoreAssistanceTypeRequest;
 
     expect(Validator::make($payload($globalDocumentId), $request->rules())->passes())->toBeTrue()
         ->and(Validator::make($payload($foreignDocumentId), $request->rules())->fails())->toBeTrue();
