@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Users\Enums\EnumPermissions;
+use App\Core\Users\Services\PermissionDependencyService;
 use App\Core\Users\Services\PermissionOptionService;
 use App\External\Api\Request\Auth\CreateAdminRequest;
 use App\External\Api\Request\Auth\UpdateAdminRequest;
@@ -29,7 +30,46 @@ it('groups every enum permission under one module option', function () {
             ->toHaveKeys(['value', 'label', 'permissions'])
             ->and($module['permissions'])
             ->not->toBeEmpty();
+
+        foreach ($module['permissions'] as $permission) {
+            expect($permission)->toHaveKey('dependencies');
+        }
     }
+});
+
+it('publishes and normalizes action center permission dependencies', function () {
+    $options = app(PermissionOptionService::class)->getPermissionOptions();
+    $actionCenter = collect($options['modules'])->firstWhere('value', 'action_center');
+    $permissions = collect($actionCenter['permissions'])->keyBy('value');
+
+    expect($permissions[EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value]['dependencies'])
+        ->toBe([
+            EnumPermissions::ACTION_CENTER_ACCESS->value,
+            EnumPermissions::ACTION_CENTER_BENEFICIARIES_VIEW->value,
+        ])
+        ->and($permissions[EnumPermissions::ACTION_CENTER_REQUESTS_RELEASE->value]['dependencies'])
+        ->toBe([
+            EnumPermissions::ACTION_CENTER_ACCESS->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
+        ]);
+
+    $service = app(PermissionDependencyService::class);
+
+    expect($service->normalize([
+        EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value,
+    ]))->toBe([
+        EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value,
+        EnumPermissions::ACTION_CENTER_ACCESS->value,
+        EnumPermissions::ACTION_CENTER_BENEFICIARIES_VIEW->value,
+    ])->and($service->normalizeWithin(
+        [EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value],
+        [
+            EnumPermissions::ACTION_CENTER_ACCESS->value,
+            EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value,
+        ],
+    ))->toBe([
+        EnumPermissions::ACTION_CENTER_ACCESS->value,
+    ]);
 });
 
 it('rejects permission values outside the enum catalog', function (string $requestClass) {

@@ -21,6 +21,7 @@ export interface Permission {
     value: string;
     label: string;
     is_access: boolean;
+    dependencies: string[];
 }
 
 export interface PermissionModule {

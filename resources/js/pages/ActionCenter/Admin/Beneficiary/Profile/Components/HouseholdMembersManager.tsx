@@ -2,6 +2,7 @@ import SetHouseholdMemberActiveController from '@/actions/App/External/Api/Contr
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import Utility from '@/pages/Utility/Utility';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -49,6 +50,9 @@ export default function HouseholdMembersManager({
 }: Props) {
     const utils = Utility();
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { can } = usePermissions();
+    const canManageBeneficiaries = can('action_center.beneficiaries.manage');
+    const canCorrectBeneficiaries = can('action_center.beneficiaries.correct');
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
@@ -124,84 +128,98 @@ export default function HouseholdMembersManager({
         return member.beneficiary_has_portal_account ? 'Portal account' : 'Walk-in profile';
     };
 
-    const renderMobileMemberMenu = (member: HouseholdMemberRow, movedOut = false) => (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <button
-                    type="button"
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                    aria-label={`Actions for ${member.first_name} ${member.last_name}`}
-                >
-                    <MoreHorizontal className="h-5 w-5" />
-                </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                {member.beneficiary_id &&
-                    (member.beneficiary_id === beneficiaryId ? (
-                        <DropdownMenuItem disabled>
-                            <Link2 className="h-4 w-4" /> Current Profile
-                        </DropdownMenuItem>
-                    ) : (
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={ShowBeneficiaryProfileController.url({
-                                    municipality: currentMunicipality.slug,
-                                    beneficiaryId: member.beneficiary_id,
-                                })}
-                                className="cursor-pointer"
-                            >
-                                <Link2 className="h-4 w-4" /> View Linked Profile
-                            </Link>
-                        </DropdownMenuItem>
-                    ))}
+    const renderMobileMemberMenu = (member: HouseholdMemberRow, movedOut = false) => {
+        const canViewLinkedProfile = member.beneficiary_id !== null && member.beneficiary_id !== beneficiaryId;
+        const hasAvailableAction = canViewLinkedProfile || canManageBeneficiaries || (canCorrectBeneficiaries && !isHead(member));
 
-                {movedOut ? (
-                    <>
-                        <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
-                            <Pencil className="h-4 w-4" /> Edit Member
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onSelect={() => setTimeout(() => setActive(member, true), 150)}
-                            className="text-emerald-600 focus:text-emerald-700"
-                        >
-                            <RotateCcw className="h-4 w-4" /> Move Back In
-                        </DropdownMenuItem>
-                    </>
-                ) : (
-                    !isHead(member) && (
-                        <>
-                            {member.beneficiary_id ? (
-                                <DropdownMenuItem
-                                    onSelect={() => setTimeout(() => openUnlink(member), 150)}
-                                    className="text-rose-600 focus:text-rose-700"
+        if (!hasAvailableAction) {
+            return null;
+        }
+
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        type="button"
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                        aria-label={`Actions for ${member.first_name} ${member.last_name}`}
+                    >
+                        <MoreHorizontal className="h-5 w-5" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                    {member.beneficiary_id &&
+                        (member.beneficiary_id === beneficiaryId ? (
+                            <DropdownMenuItem disabled>
+                                <Link2 className="h-4 w-4" /> Current Profile
+                            </DropdownMenuItem>
+                        ) : (
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={ShowBeneficiaryProfileController.url({
+                                        municipality: currentMunicipality.slug,
+                                        beneficiaryId: member.beneficiary_id,
+                                    })}
+                                    className="cursor-pointer"
                                 >
-                                    <Unlink className="h-4 w-4" /> Unlink Profile
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem onSelect={() => setTimeout(() => openLink(member), 150)}>
-                                    <Link2 className="h-4 w-4" /> Link to Existing
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
-                                <Pencil className="h-4 w-4" /> Edit Member
+                                    <Link2 className="h-4 w-4" /> View Linked Profile
+                                </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onSelect={() => setTimeout(() => setActive(member, false), 150)}
-                                className="text-amber-600 focus:text-amber-700"
-                            >
-                                <LogOut className="h-4 w-4" /> Remove from Household
-                            </DropdownMenuItem>
-                        </>
-                    )
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
+                        ))}
+
+                    {movedOut
+                        ? canManageBeneficiaries && (
+                              <>
+                                  <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
+                                      <Pencil className="h-4 w-4" /> Edit Member
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                      onSelect={() => setTimeout(() => setActive(member, true), 150)}
+                                      className="text-emerald-600 focus:text-emerald-700"
+                                  >
+                                      <RotateCcw className="h-4 w-4" /> Move Back In
+                                  </DropdownMenuItem>
+                              </>
+                          )
+                        : !isHead(member) && (
+                              <>
+                                  {canCorrectBeneficiaries &&
+                                      (member.beneficiary_id ? (
+                                          <DropdownMenuItem
+                                              onSelect={() => setTimeout(() => openUnlink(member), 150)}
+                                              className="text-rose-600 focus:text-rose-700"
+                                          >
+                                              <Unlink className="h-4 w-4" /> Unlink Profile
+                                          </DropdownMenuItem>
+                                      ) : (
+                                          <DropdownMenuItem onSelect={() => setTimeout(() => openLink(member), 150)}>
+                                              <Link2 className="h-4 w-4" /> Link to Existing
+                                          </DropdownMenuItem>
+                                      ))}
+                                  {canManageBeneficiaries && (
+                                      <>
+                                          <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
+                                              <Pencil className="h-4 w-4" /> Edit Member
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                              onSelect={() => setTimeout(() => setActive(member, false), 150)}
+                                              className="text-amber-600 focus:text-amber-700"
+                                          >
+                                              <LogOut className="h-4 w-4" /> Remove from Household
+                                          </DropdownMenuItem>
+                                      </>
+                                  )}
+                              </>
+                          )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    };
 
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                {(headState.profile_is_current_head || headState.household_on_hold) && (
+                {canCorrectBeneficiaries && (headState.profile_is_current_head || headState.household_on_hold) && (
                     <button
                         type="button"
                         onClick={() => setHeadDialogOpen(true)}
@@ -211,13 +229,15 @@ export default function HouseholdMembersManager({
                         {headState.household_on_hold ? 'Assign household head' : 'Change household head'}
                     </button>
                 )}
-                <button
-                    type="button"
-                    onClick={openAdd}
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-                >
-                    <UserPlus className="h-3.5 w-3.5" /> Add member
-                </button>
+                {canManageBeneficiaries && (
+                    <button
+                        type="button"
+                        onClick={openAdd}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                    >
+                        <UserPlus className="h-3.5 w-3.5" /> Add member
+                    </button>
+                )}
             </div>
 
             {headState.household_on_hold && active.length > 0 && (
@@ -441,35 +461,40 @@ export default function HouseholdMembersManager({
 
                                                 {!isHead(member) && (
                                                     <>
-                                                        {member.beneficiary_id ? (
-                                                            <DropdownMenuItem
-                                                                onSelect={() => setTimeout(() => openUnlink(member), 150)}
-                                                                className="flex cursor-pointer items-center gap-2 text-rose-600 focus:text-rose-700"
-                                                            >
-                                                                <Unlink className="h-4 w-4" /> Unlink Profile
-                                                            </DropdownMenuItem>
-                                                        ) : (
-                                                            <DropdownMenuItem
-                                                                onSelect={() => setTimeout(() => openLink(member), 150)}
-                                                                className="flex cursor-pointer items-center gap-2"
-                                                            >
-                                                                <Link2 className="h-4 w-4" /> Link to Existing
-                                                            </DropdownMenuItem>
+                                                        {canCorrectBeneficiaries &&
+                                                            (member.beneficiary_id ? (
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => setTimeout(() => openUnlink(member), 150)}
+                                                                    className="flex cursor-pointer items-center gap-2 text-rose-600 focus:text-rose-700"
+                                                                >
+                                                                    <Unlink className="h-4 w-4" /> Unlink Profile
+                                                                </DropdownMenuItem>
+                                                            ) : (
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => setTimeout(() => openLink(member), 150)}
+                                                                    className="flex cursor-pointer items-center gap-2"
+                                                                >
+                                                                    <Link2 className="h-4 w-4" /> Link to Existing
+                                                                </DropdownMenuItem>
+                                                            ))}
+
+                                                        {canManageBeneficiaries && (
+                                                            <>
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => setTimeout(() => openEdit(member), 150)}
+                                                                    className="flex cursor-pointer items-center gap-2"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" /> Edit Member
+                                                                </DropdownMenuItem>
+
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => setTimeout(() => setActive(member, false), 150)}
+                                                                    className="flex cursor-pointer items-center gap-2 text-amber-600 focus:text-amber-700"
+                                                                >
+                                                                    <LogOut className="h-4 w-4" /> Remove from Household
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
-
-                                                        <DropdownMenuItem
-                                                            onSelect={() => setTimeout(() => openEdit(member), 150)}
-                                                            className="flex cursor-pointer items-center gap-2"
-                                                        >
-                                                            <Pencil className="h-4 w-4" /> Edit Member
-                                                        </DropdownMenuItem>
-
-                                                        <DropdownMenuItem
-                                                            onSelect={() => setTimeout(() => setActive(member, false), 150)}
-                                                            className="flex cursor-pointer items-center gap-2 text-amber-600 focus:text-amber-700"
-                                                        >
-                                                            <LogOut className="h-4 w-4" /> Remove from Household
-                                                        </DropdownMenuItem>
                                                     </>
                                                 )}
                                             </DropdownMenuContent>
@@ -534,18 +559,22 @@ export default function HouseholdMembersManager({
                                                                 </Link>
                                                             </DropdownMenuItem>
                                                         )}
-                                                        <DropdownMenuItem
-                                                            onSelect={() => setTimeout(() => openEdit(member), 150)}
-                                                            className="flex cursor-pointer items-center gap-2"
-                                                        >
-                                                            <Pencil className="h-4 w-4" /> Edit Member
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onSelect={() => setTimeout(() => setActive(member, true), 150)}
-                                                            className="flex cursor-pointer items-center gap-2 text-emerald-600 focus:text-emerald-700"
-                                                        >
-                                                            <RotateCcw className="h-4 w-4" /> Move Back In
-                                                        </DropdownMenuItem>
+                                                        {canManageBeneficiaries && (
+                                                            <>
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => setTimeout(() => openEdit(member), 150)}
+                                                                    className="flex cursor-pointer items-center gap-2"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" /> Edit Member
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => setTimeout(() => setActive(member, true), 150)}
+                                                                    className="flex cursor-pointer items-center gap-2 text-emerald-600 focus:text-emerald-700"
+                                                                >
+                                                                    <RotateCcw className="h-4 w-4" /> Move Back In
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
@@ -578,19 +607,21 @@ export default function HouseholdMembersManager({
                 </div>
             </div>
 
-            <MemberFormDialog
-                open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                mode={dialogMode}
-                beneficiaryId={beneficiaryId}
-                member={editing}
-                religions={religions}
-                civilStatus={civilStatus}
-                educationalAttainment={educationalAttainment}
-                relationships={relationships}
-            />
+            {canManageBeneficiaries && (
+                <MemberFormDialog
+                    open={dialogOpen}
+                    onClose={() => setDialogOpen(false)}
+                    mode={dialogMode}
+                    beneficiaryId={beneficiaryId}
+                    member={editing}
+                    religions={religions}
+                    civilStatus={civilStatus}
+                    educationalAttainment={educationalAttainment}
+                    relationships={relationships}
+                />
+            )}
 
-            {linking && (
+            {canCorrectBeneficiaries && linking && (
                 <LinkMemberDialog
                     open={linkOpen}
                     onClose={() => setLinkOpen(false)}
@@ -599,7 +630,7 @@ export default function HouseholdMembersManager({
                 />
             )}
 
-            {unlinking && (
+            {canCorrectBeneficiaries && unlinking && (
                 <UnlinkMemberDialog
                     open={unlinkOpen}
                     onClose={() => setUnlinkOpen(false)}
@@ -608,15 +639,17 @@ export default function HouseholdMembersManager({
                 />
             )}
 
-            <ChangeHouseholdHeadDialog
-                open={headDialogOpen}
-                onClose={() => setHeadDialogOpen(false)}
-                householdId={householdId}
-                members={members}
-                headState={headState}
-                relationships={relationships}
-                headDispositions={headDispositions}
-            />
+            {canCorrectBeneficiaries && (
+                <ChangeHouseholdHeadDialog
+                    open={headDialogOpen}
+                    onClose={() => setHeadDialogOpen(false)}
+                    householdId={householdId}
+                    members={members}
+                    headState={headState}
+                    relationships={relationships}
+                    headDispositions={headDispositions}
+                />
+            )}
         </div>
     );
 }

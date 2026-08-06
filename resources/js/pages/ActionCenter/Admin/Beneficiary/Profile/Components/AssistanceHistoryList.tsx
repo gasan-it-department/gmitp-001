@@ -14,6 +14,7 @@ export interface AssistanceHistoryRow {
 interface Props {
     history: AssistanceHistoryRow[];
     municipalitySlug: string;
+    canOpenRequests: boolean;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -32,7 +33,7 @@ const humanize = (s: string) => s.replace(/_/g, ' ');
  * Full cross-program assistance history for the beneficiary. Each row links to
  * that request's detail page so the reviewer can drill in.
  */
-export default function AssistanceHistoryList({ history, municipalitySlug }: Props) {
+export default function AssistanceHistoryList({ history, municipalitySlug, canOpenRequests }: Props) {
     const utils = Utility();
 
     if (history.length === 0) {
@@ -44,11 +45,18 @@ export default function AssistanceHistoryList({ history, municipalitySlug }: Pro
             {history.map((row) => (
                 <li key={row.id}>
                     <Link
-                        href={ShowAssistanceRequestProfileController.url({
-                            municipality: municipalitySlug,
-                            assistanceRequest: row.id,
-                        })}
-                        className="block min-h-16 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-3 transition hover:border-slate-300 hover:bg-white sm:min-h-0 sm:py-2"
+                        as={canOpenRequests ? 'a' : 'div'}
+                        href={
+                            canOpenRequests
+                                ? ShowAssistanceRequestProfileController.url({
+                                      municipality: municipalitySlug,
+                                      assistanceRequest: row.id,
+                                  })
+                                : '#'
+                        }
+                        className={`block min-h-16 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-3 sm:min-h-0 sm:py-2 ${
+                            canOpenRequests ? 'transition hover:border-slate-300 hover:bg-white' : ''
+                        }`}
                     >
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">

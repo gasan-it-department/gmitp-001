@@ -15,13 +15,38 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $actionCenterPermissions = [
+            EnumPermissions::ACTION_CENTER_BENEFICIARIES_VIEW->value,
+            EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value,
+            EnumPermissions::ACTION_CENTER_BENEFICIARIES_VERIFY->value,
+            EnumPermissions::ACTION_CENTER_BENEFICIARIES_CORRECT->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_PROCESS->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_DECIDE->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_RELEASE->value,
+            EnumPermissions::ACTION_CENTER_REPORTS_VIEW->value,
+            EnumPermissions::ACTION_CENTER_SETTINGS_MANAGE->value,
+        ];
+
+        $actionCenterSplitAlreadyExists = Permission::query()
+            ->whereIn('name', $actionCenterPermissions)
+            ->count() === count($actionCenterPermissions);
+
+        foreach (EnumPermissions::cases() as $permission) {
+            Permission::firstOrCreate(['name' => $permission->value]);
+        }
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        foreach (EnumPermissions::cases() as $permission) {
-
-            Permission::firstOrCreate(['name' => $permission->value]);
-
+        // Preserve the effective access existing Action Center admins had at
+        // the moment the complete capability split is first deployed. Later
+        // seeder runs see the catalog already present, so they do not restore
+        // permissions that were deliberately revoked.
+        if (! $actionCenterSplitAlreadyExists) {
+            User::permission(EnumPermissions::ACTION_CENTER_ACCESS->value)
+                ->each(fn (User $user) => $user->givePermissionTo($actionCenterPermissions));
         }
 
         $decedentPermissions = [

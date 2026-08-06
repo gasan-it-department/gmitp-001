@@ -12,6 +12,7 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
 import { home } from '@/routes';
 import actionCenter from '@/routes/actionCenter';
@@ -105,12 +106,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         }
     }, [url]);
 
-    // 1. HELPER: Check if user has permission
-    const hasPermission = (permission?: string) => {
-        if (!permission) return true;
-        if (auth.roles?.isSuperAdmin) return true;
-        return auth.user?.all_permission?.includes(permission);
-    };
+    const { can } = usePermissions();
+    const hasPermission = (permission?: string) => !permission || can(permission);
 
     // 2. DATA
     const RawSidebarItems = [
@@ -122,31 +119,31 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     title: 'Assistance Requests',
                     url: actionCenter.admin.list.assistance.url({ municipality: currentMunicipality.slug }),
                     icon: FileInput,
-                    permission: 'action_center.access',
+                    permission: 'action_center.requests.view',
                 },
                 {
                     title: 'Assistance Types',
                     url: actionCenter.admin.list.assistance.types.url({ municipality: currentMunicipality.slug }),
                     icon: Layers,
-                    permission: 'action_center.access',
+                    permission: 'action_center.settings.manage',
                 },
                 {
                     title: 'Beneficiaries',
                     url: actionCenter.admin.beneficiary.index.url({ municipality: currentMunicipality.slug }),
                     icon: Contact,
-                    permission: 'action_center.access',
+                    permission: 'action_center.beneficiaries.view',
                 },
                 {
                     title: 'Search Beneficiary',
                     url: actionCenter.admin.beneficiary.search.url({ municipality: currentMunicipality.slug }),
                     icon: UserSearch,
-                    permission: 'action_center.access',
+                    permission: 'action_center.beneficiaries.view',
                 },
                 {
                     title: 'Reports',
                     url: actionCenter.admin.reports.index.url({ municipality: currentMunicipality.slug }),
                     icon: ChartNoAxesCombined,
-                    permission: 'action_center.access',
+                    permission: 'action_center.reports.view',
                 },
             ],
         },
