@@ -4,6 +4,7 @@ namespace App\External\Api\Controllers\ActionCenter\Walkin;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
+use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
 use App\External\Api\Request\ActionCenter\Walkin\StoreWalkInBeneficiaryRequest;
 use App\External\Api\Resources\ActionCenter\Walkin\WalkInBeneficiaryResource;
@@ -33,8 +34,7 @@ class StoreWalkInBeneficiaryController extends Controller
     public function __construct(
         private readonly CreateWalkInBeneficiaryAction $createWalkIn,
         private readonly PhoneFormatterService $phoneFormatter,
-    ) {
-    }
+    ) {}
 
     public function __invoke(StoreWalkInBeneficiaryRequest $request): RedirectResponse
     {
@@ -54,10 +54,17 @@ class StoreWalkInBeneficiaryController extends Controller
 
             return redirect()
                 ->route('actionCenter.admin.beneficiary.profile', [
-                    'municipality'  => $municipality->slug,
+                    'municipality' => $municipality->slug,
                     'beneficiaryId' => $beneficiary->id,
                 ])
-                ->with('success', 'Walk-in beneficiary ' . (trim($beneficiary->full_name) ?: 'record') . ' was registered.');
+                ->with('success', 'Walk-in beneficiary '.(trim($beneficiary->full_name) ?: 'record').' was registered.');
+        } catch (WalkInBeneficiaryIdentityDocumentStorageException $e) {
+            return redirect()
+                ->route('actionCenter.admin.beneficiary.profile', [
+                    'municipality' => $municipality->slug,
+                    'beneficiaryId' => $e->beneficiaryId(),
+                ])
+                ->with('error', $e->getMessage());
         } catch (PotentialDuplicateBeneficiaryException $e) {
             // Flash the matches so the Web show controller can render them as a
             // prop, and surface a shared error. The form state is preserved by

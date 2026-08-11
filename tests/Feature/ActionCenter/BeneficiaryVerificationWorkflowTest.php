@@ -22,11 +22,16 @@ use App\Core\ActionCenter\UseCase\Household\StoreAdminHouseholdMemberAction;
 use App\Core\ActionCenter\UseCase\Household\UnlinkHouseholdMemberBeneficiaryAction;
 use App\Core\ActionCenter\UseCase\Household\UpdateHouseholdMemberAction;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
+    Storage::fake('public');
+    config()->set('media-library.disk_name', 'public');
+
     Schema::create('municipalities', function (Blueprint $table) {
         $table->ulid('id')->primary();
     });
@@ -110,6 +115,25 @@ beforeEach(function () {
         $table->softDeletes();
     });
 
+    Schema::create('media', function (Blueprint $table) {
+        $table->id();
+        $table->ulidMorphs('model');
+        $table->uuid()->nullable()->unique();
+        $table->string('collection_name');
+        $table->string('name');
+        $table->string('file_name');
+        $table->string('mime_type')->nullable();
+        $table->string('disk');
+        $table->string('conversions_disk')->nullable();
+        $table->unsignedBigInteger('size');
+        $table->json('manipulations');
+        $table->json('custom_properties');
+        $table->json('generated_conversions');
+        $table->json('responsive_images');
+        $table->unsignedInteger('order_column')->nullable()->index();
+        $table->nullableTimestamps();
+    });
+
     $this->municipalId = (string) Str::ulid();
     $this->adminId = (string) Str::ulid();
 
@@ -129,6 +153,7 @@ beforeEach(function () {
 
 afterEach(function () {
     activity()->enableLogging();
+    Schema::dropIfExists('media');
     Schema::dropIfExists('ac_assistance_requests');
     Schema::dropIfExists('ac_household_members');
     Schema::dropIfExists('ac_beneficiaries');
@@ -185,6 +210,49 @@ it('reviews a provisional household and verifies accepted dependents', function 
         verifiedMemberIds: [$accepted->id],
         rejectedMemberIds: [],
     )))->toThrow(DomainException::class, 'already been verified');
+});
+
+it('requires a stored front ID before mutating a pending intake', function () {
+    [$beneficiary] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        withFrontId: false,
+    );
+    $dependent = createDependent($beneficiary->household_id, 'PEDRO', 'CRUZ');
+
+    expect(fn () => app(ReviewBeneficiaryIntakeAction::class)->execute(new ReviewBeneficiaryIntakeDto(
+        beneficiaryId: $beneficiary->id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        householdResolution: 'keep_existing',
+        targetMemberId: null,
+        householdResolutionReason: null,
+        verifiedMemberIds: [$dependent->id],
+        rejectedMemberIds: [],
+    )))->toThrow(DomainException::class, 'front ID');
+
+    expect($beneficiary->fresh()->identity_verified_at)->toBeNull()
+        ->and($dependent->fresh()->is_active)->toBeTrue()
+        ->and($dependent->fresh()->is_verified_dependent)->toBeFalse();
+
+    $beneficiary
+        ->addMedia(UploadedFile::fake()->image('front-retry.jpg'))
+        ->toMediaCollection('identity_id_front');
+
+    app(ReviewBeneficiaryIntakeAction::class)->execute(new ReviewBeneficiaryIntakeDto(
+        beneficiaryId: $beneficiary->id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        householdResolution: 'keep_existing',
+        targetMemberId: null,
+        householdResolutionReason: null,
+        verifiedMemberIds: [$dependent->id],
+        rejectedMemberIds: [],
+    ));
+
+    expect($beneficiary->fresh()->identity_verified_at)->not->toBeNull()
+        ->and($dependent->fresh()->is_verified_dependent)->toBeTrue();
 });
 
 it('rejects a portal beneficiary intake with a reason while preserving the household', function () {
@@ -688,6 +756,7 @@ function createClaimant(
     string $birthDate = '1990-01-01',
     ?string $verifiedBy = null,
     ?string $userId = null,
+    bool $withFrontId = true,
 ): array {
     $household = Household::create([
         'municipal_id' => $municipalId,
@@ -722,6 +791,12 @@ function createClaimant(
         'relationship' => 'head',
         'is_active' => true,
     ]);
+
+    if ($withFrontId) {
+        $beneficiary
+            ->addMedia(UploadedFile::fake()->image('identity-front-'.$beneficiary->id.'.jpg'))
+            ->toMediaCollection('identity_id_front');
+    }
 
     return [$beneficiary, $head];
 }

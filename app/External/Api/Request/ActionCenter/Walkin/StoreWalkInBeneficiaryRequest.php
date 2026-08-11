@@ -101,8 +101,6 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'religion_id.ulid' => 'Invalid religion selection.',
             'religion_id.exists' => 'The selected religion is no longer available.',
             'civil_status.required' => 'Please select the applicant\'s civil status.',
-            'occupation.required' => 'Please describe the applicant\'s occupation (write "None" if unemployed).',
-            'monthly_income.required' => 'Please enter the applicant\'s monthly income (enter 0 if none).',
             'monthly_income.min' => 'Monthly income cannot be negative.',
             'terms_consent.accepted' => 'Confirm the applicant gave consent and that you checked the registry for an existing record.',
             'identity_id_front.required' => 'Upload the front of the applicant\'s valid ID before saving as verified.',
@@ -125,5 +123,4 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             }
         };
     }
-
 }

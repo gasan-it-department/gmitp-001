@@ -4,7 +4,9 @@ use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Exceptions\BeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
+use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
@@ -258,12 +260,78 @@ it('stores walk-in identity documents on the beneficiary media collections', fun
         verifyNow: true,
         identityIdFront: UploadedFile::fake()->image('front.jpg'),
         identityIdBack: UploadedFile::fake()->image('back.png'),
+        overrides: [
+            'household_members' => [[
+                'first_name' => 'Pedro',
+                'last_name' => 'Cruz',
+                'relationship' => 'sibling',
+            ]],
+        ],
     ));
+
+    $dependent = HouseholdMember::query()
+        ->where('household_id', $beneficiary->household_id)
+        ->where('relationship', 'sibling')
+        ->firstOrFail();
 
     expect($beneficiary->identity_verified_at)->not->toBeNull()
         ->and($beneficiary->identity_verified_by_user_id)->toBe($this->adminId)
+        ->and($dependent->is_verified_dependent)->toBeTrue()
         ->and($beneficiary->getFirstMedia('identity_id_front')?->file_name)->toContain('identity-id-front-')
         ->and($beneficiary->getFirstMedia('identity_id_back')?->file_name)->toContain('identity-id-back-');
+});
+
+it('retains a failed verified walk-in as pending with pending dependents', function () {
+    $failedFront = UploadedFile::fake()->image('front-failed.jpg');
+    @unlink($failedFront->getPathname());
+
+    $caught = null;
+
+    try {
+        app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+            municipalId: $this->municipalId,
+            adminId: $this->adminId,
+            verifyNow: true,
+            identityIdFront: $failedFront,
+            overrides: [
+                'household_members' => [[
+                    'first_name' => 'Pedro',
+                    'last_name' => 'Cruz',
+                    'relationship' => 'sibling',
+                ]],
+            ],
+        ));
+    } catch (WalkInBeneficiaryIdentityDocumentStorageException $exception) {
+        $caught = $exception;
+    }
+
+    $beneficiary = Beneficiary::query()->sole();
+    $dependent = HouseholdMember::query()
+        ->where('household_id', $beneficiary->household_id)
+        ->where('relationship', 'sibling')
+        ->firstOrFail();
+
+    expect($caught)->toBeInstanceOf(WalkInBeneficiaryIdentityDocumentStorageException::class)
+        ->and($caught?->beneficiaryId())->toBe($beneficiary->id)
+        ->and($beneficiary->identity_verified_at)->toBeNull()
+        ->and($beneficiary->identity_verified_by_user_id)->toBeNull()
+        ->and($dependent->is_verified_dependent)->toBeFalse()
+        ->and($beneficiary->hasMedia('identity_id_front'))->toBeFalse();
+});
+
+it('defaults omitted optional walk-in employment values', function () {
+    $dto = CreateWalkInBeneficiaryDto::fromArray([
+        'first_name' => 'Juan',
+        'last_name' => 'Cruz',
+        'sex' => 'male',
+        'birth_date' => '1990-01-01',
+        'civil_status' => 'single',
+        'barangay' => 'Poblacion',
+        'terms_consent' => true,
+    ], $this->adminId, $this->municipalId);
+
+    expect($dto->occupation)->toBeNull()
+        ->and($dto->monthlyIncome)->toBe(0.0);
 });
 
 it('does not store identity documents when the duplicate guard blocks walk-in creation', function () {

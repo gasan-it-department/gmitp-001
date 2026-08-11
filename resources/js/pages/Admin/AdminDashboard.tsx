@@ -60,9 +60,9 @@ export default function AdminDashboard() {
                                             <ExternalLink className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
-                                    <Button asChild variant="outline" className="h-11 rounded-lg font-bold">
+                                    {/* <Button asChild variant="outline" className="h-11 rounded-lg font-bold">
                                         <Link href={`/${municipalitySlug}/admin/municipality/settings`}>Manage Site Settings</Link>
-                                    </Button>
+                                    </Button> */}
                                 </div>
                             </div>
 

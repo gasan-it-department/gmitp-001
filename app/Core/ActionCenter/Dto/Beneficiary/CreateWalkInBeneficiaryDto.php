@@ -48,7 +48,7 @@ readonly class CreateWalkInBeneficiaryDto
 
         // Civil status / employment / income
         public string $civilStatus,
-        public string $occupation,
+        public ?string $occupation,
         public float $monthlyIncome,
         public ?string $contactPhone,
 
@@ -92,8 +92,7 @@ readonly class CreateWalkInBeneficiaryDto
         ?UploadedFile $identityIdFront = null,
         ?UploadedFile $identityIdBack = null,
         ?PhoneFormatterService $phoneFormatter = null,
-    ): self
-    {
+    ): self {
         $phoneFormatter ??= app(PhoneFormatterService::class);
 
         $contactPhone = ! empty($data['contact_phone']) && $phoneFormatter !== null
@@ -123,8 +122,8 @@ readonly class CreateWalkInBeneficiaryDto
 
             // Enum backing string (lowercase) — model casts it back on read.
             civilStatus: $data['civil_status'],
-            occupation: mb_strtoupper($data['occupation']),
-            monthlyIncome: (float) $data['monthly_income'],
+            occupation: ! empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
+            monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : 0.0,
             contactPhone: $contactPhone,
 
             // Address details uppercased; code (PSGC) left alone.
