@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import AppLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, FileImage, ImagePlus, Info, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
@@ -57,7 +56,7 @@ export default function AnnouncementForm({ announcement, types }: Props) {
         ...(isEdit ? { _method: 'PUT' as const } : {}),
     };
 
-    const { data, setData, post, processing, errors, clearErrors, progress, setError } = useForm<FormShape>(initialForm);
+    const { data, setData, post, processing, errors, clearErrors, progress, setError, isDirty, reset } = useForm<FormShape>(initialForm);
 
     const [previews, setPreviews] = useState<string[]>([]);
 
@@ -120,7 +119,7 @@ export default function AnnouncementForm({ announcement, types }: Props) {
     const willReplaceExisting = isEdit && data.images.length > 0;
 
     return (
-        <AppLayout>
+        <>
             <Head title={isEdit ? `Edit ${announcement!.title}` : 'New Announcement'} />
 
             <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -133,20 +132,29 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                             <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
                             Back to Announcements
                         </Link>
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                             {isEdit ? 'Edit Announcement' : 'Create Announcement'}
+                            {isDirty && (
+                                <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">Unsaved Changes</span>
+                            )}
                         </h1>
                     </div>
                     <div className="flex items-center gap-3">
                         <Link href={`/${slug}/admin/announcement`}>
-                            <Button type="button" variant="outline" className="rounded-full bg-white px-5 shadow-sm">
-                                Cancel
-                            </Button>
+                            {isDirty ? (
+                                <Button onClick={() => reset()} type="button" variant="outline" className="rounded-full bg-white px-5 shadow-sm">
+                                    Discard Changes
+                                </Button>
+                            ) : (
+                                <Button type="button" variant="outline" className="rounded-full bg-white px-5 shadow-sm">
+                                    Cancel
+                                </Button>
+                            )}
                         </Link>
                         <Button
                             type="submit"
                             form="announcement-form"
-                            disabled={processing}
+                            disabled={processing || (!isDirty && isEdit)}
                             className="rounded-full bg-indigo-600 px-6 shadow-sm transition-all hover:bg-indigo-700 hover:shadow"
                         >
                             {processing ? 'Saving...' : isEdit ? 'Save Changes' : 'Publish Announcement'}
@@ -271,7 +279,7 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                                         ))}
                                     </div>
                                     <div className="mt-3 flex items-start rounded-lg bg-blue-50 p-3 text-xs text-blue-700">
-                                        <Info className="mr-2 mt-0.5 h-4 w-4 shrink-0" />
+                                        <Info className="mt-0.5 mr-2 h-4 w-4 shrink-0" />
                                         <span>Selecting new images above will replace these existing images when you save.</span>
                                     </div>
                                 </div>
@@ -298,7 +306,7 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeNewImage(i)}
-                                                    className="absolute right-2 top-2 rounded-full bg-white/90 p-1.5 text-slate-700 opacity-0 shadow-sm backdrop-blur-sm transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                                                    className="absolute top-2 right-2 rounded-full bg-white/90 p-1.5 text-slate-700 opacity-0 shadow-sm backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-600"
                                                     aria-label="Remove image"
                                                 >
                                                     <X className="h-4 w-4" />
@@ -323,7 +331,7 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                     {/* Right Column - Settings */}
                     <div className="space-y-6">
                         <div className="sticky top-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h3 className="mb-5 text-xs font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+                            <h3 className="mb-5 text-xs font-bold tracking-wider text-slate-400 uppercase">Settings</h3>
 
                             <div className="space-y-6">
                                 <div>
@@ -378,6 +386,6 @@ export default function AnnouncementForm({ announcement, types }: Props) {
                     </div>
                 </form>
             </div>
-        </AppLayout>
+        </>
     );
 }
