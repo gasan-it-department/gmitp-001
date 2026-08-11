@@ -34,6 +34,7 @@ export default function ListDecedents({
     interment_status_options,
 }: Props) {
     const rows = decedents.data;
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     return (
         <AppLayout>
