@@ -1,3 +1,4 @@
+import { absoluteUrl, SeoSharedData } from '@/components/Seo/PublicSeo';
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import transparency from '@/routes/transparency';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Building2, Calendar, FileText, Search, X, Award, AlertCircle, Clock } from 'lucide-react';
+import { AlertCircle, Award, Building2, Calendar, Clock, FileText, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // Adjusted PublicProcurementItem to match the backend Resource
@@ -42,8 +43,9 @@ interface Props {
 }
 
 export default function Transparency({ procurements, filterOptions, activeFilters }: Props) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
     const procurementData = procurements.data;
+    const transparencyUrl = absoluteUrl(`/${currentMunicipality.slug}/transparency`, seo.site_url);
 
     // --- PUBLIC FILTER STATE ---
     const [searchQuery, setSearchQuery] = useState(activeFilters?.search || '');
@@ -116,7 +118,24 @@ export default function Transparency({ procurements, filterOptions, activeFilter
     };
 
     return (
-        <PublicLayout title="Bids and Awards" description="Track public procurements and municipal projects.">
+        <PublicLayout
+            title="Transparency Portal"
+            description={`View public procurements, bidding opportunities, awards, and municipal projects from the Municipality of ${currentMunicipality.name}.`}
+            canonicalUrl={transparencyUrl}
+            structuredData={{
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                    {
+                        '@type': 'ListItem',
+                        position: 1,
+                        name: 'Home',
+                        item: absoluteUrl(`/${currentMunicipality.slug}/home`, seo.site_url),
+                    },
+                    { '@type': 'ListItem', position: 2, name: 'Transparency Portal', item: transparencyUrl },
+                ],
+            }}
+        >
             {/* 1. THE HERO SECTION */}
             <div className="bg-slate-900 px-4 py-12 text-center text-white md:px-12 md:py-16">
                 <h1 className="text-3xl font-bold tracking-tight md:text-5xl">Transparency Portal</h1>
@@ -133,7 +152,7 @@ export default function Transparency({ procurements, filterOptions, activeFilter
                             placeholder="Search projects, PhilGEPS REF..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-12 w-full rounded-full border-0 bg-white pr-4 pl-12 text-sm text-slate-900 shadow-lg focus-visible:ring-2 focus-visible:ring-indigo-500 md:h-14 md:text-base uppercase"
+                            className="h-12 w-full rounded-full border-0 bg-white pr-4 pl-12 text-sm text-slate-900 uppercase shadow-lg focus-visible:ring-2 focus-visible:ring-indigo-500 md:h-14 md:text-base"
                         />
                     </div>
                 </div>
@@ -143,7 +162,7 @@ export default function Transparency({ procurements, filterOptions, activeFilter
             <div className="mx-auto max-w-5xl px-4 py-8 md:py-12 lg:px-8">
                 {/* Responsive Filters */}
                 <div className="mb-6 flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center md:mb-8">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
+                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -169,7 +188,7 @@ export default function Transparency({ procurements, filterOptions, activeFilter
                     </div>
 
                     {hasActiveFilters && (
-                        <Button variant="ghost" onClick={handleClearFilters} className="text-slate-500 w-full sm:w-auto">
+                        <Button variant="ghost" onClick={handleClearFilters} className="w-full text-slate-500 sm:w-auto">
                             <X className="mr-2 h-4 w-4" /> Clear Filters
                         </Button>
                     )}
@@ -210,13 +229,13 @@ export default function Transparency({ procurements, filterOptions, activeFilter
                                             </span>
                                         </div>
 
-                                        <h3 className="text-lg font-bold leading-tight text-slate-900 group-hover:text-indigo-700 md:text-xl">
+                                        <h3 className="text-lg leading-tight font-bold text-slate-900 group-hover:text-indigo-700 md:text-xl">
                                             {item.title}
                                         </h3>
 
                                         <div className="flex flex-col gap-2 text-xs text-slate-600 sm:flex-row sm:items-center sm:gap-4 md:text-sm">
                                             <div className="flex items-center gap-1.5">
-                                                <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
+                                                <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
                                                 <span className="truncate">{item.department_name}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
@@ -224,16 +243,16 @@ export default function Transparency({ procurements, filterOptions, activeFilter
                                                 <span className="truncate">{item.reference_number}</span>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Status specific extra info below the title */}
                                         {getStatusString(item.status).toLowerCase() === 'awarded' && item.winning_bidder && (
-                                            <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 w-fit px-2 py-1 rounded md:text-sm">
+                                            <div className="mt-2 flex w-fit items-center gap-1.5 rounded bg-emerald-50 px-2 py-1 text-xs text-emerald-700 md:text-sm">
                                                 <Award className="h-3.5 w-3.5" />
                                                 Awarded to: <span className="font-semibold">{item.winning_bidder}</span>
                                             </div>
                                         )}
                                         {getStatusString(item.status).toLowerCase() === 'failed' && item.failure_reason && (
-                                            <div className="mt-2 flex items-center gap-1.5 text-xs text-red-700 bg-red-50 w-fit px-2 py-1 rounded md:text-sm">
+                                            <div className="mt-2 flex w-fit items-center gap-1.5 rounded bg-red-50 px-2 py-1 text-xs text-red-700 md:text-sm">
                                                 <AlertCircle className="h-3.5 w-3.5" />
                                                 <span className="line-clamp-1">{item.failure_reason}</span>
                                             </div>
@@ -248,13 +267,15 @@ export default function Transparency({ procurements, filterOptions, activeFilter
                                             {getStatusLabel(item.status)}
                                         </span>
 
-                                        <div className="text-left md:text-right w-full">
-                                            <p className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase md:text-xs">Approved Budget</p>
+                                        <div className="w-full text-left md:text-right">
+                                            <p className="text-[11px] font-semibold tracking-wider text-slate-500 uppercase md:text-xs">
+                                                Approved Budget
+                                            </p>
                                             <p className="mt-0.5 font-mono text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
                                                 {formatCurrency(item.abc_amount)}
                                             </p>
                                         </div>
-                                        
+
                                         {/* Closing / Pre-bid context based on status */}
                                         {['open', 'evaluating'].includes(getStatusString(item.status).toLowerCase()) && item.closing_date && (
                                             <div className="flex items-center gap-1 text-[11px] text-slate-500 md:text-xs">

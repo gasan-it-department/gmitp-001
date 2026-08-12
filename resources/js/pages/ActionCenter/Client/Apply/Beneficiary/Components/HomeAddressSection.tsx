@@ -26,6 +26,8 @@ export function HomeAddressSection({ data, setData, errors, municipalityPsgcId }
                         setData('barangay', name);
                         setData('barangay_code', psgc_code);
                     }}
+                    error={errors.barangay}
+                    required
                 />
 
                 <FormInput

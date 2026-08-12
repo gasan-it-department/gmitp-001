@@ -2,6 +2,7 @@
 
 use App\External\Web\Controllers\Public\Home\ShowHomePageController;
 use App\External\Web\Controllers\Public\PublicController;
+use App\External\Web\Controllers\Public\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('{municipality}')
@@ -10,7 +11,7 @@ Route::prefix('{municipality}')
         // Route::get('/services', [PublicController::class, 'showServicePage'])->name('services');
         Route::get('/home', ShowHomePageController::class)->name('home');
         Route::get('/privacy-policy', [PublicController::class, 'showPrivacyPolicyPage'])->name('privacy');
-        //Route::get('/government', [PublicController::class, 'showGovernmentPage'])->name('government');
+        // Route::get('/government', [PublicController::class, 'showGovernmentPage'])->name('government');
         Route::get('/municipal-admin', [PublicController::class, 'showMunicipalAdminPage'])->name('admin');
         Route::get('/action-center/create', [PublicController::class, 'showActionCenterPage'])->name('actionCenter');
         Route::get('/action-center/request-list', [PublicController::class, 'showActionCenterRequestPage'])->name('requests');
@@ -23,3 +24,4 @@ Route::prefix('{municipality}')
     });
 
 Route::get('/', [PublicController::class, 'showMainLandingPage'])->name('landing');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');

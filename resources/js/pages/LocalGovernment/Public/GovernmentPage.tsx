@@ -1,8 +1,9 @@
 import { MunicipalityType } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { absoluteUrl, SeoSharedData } from '@/components/Seo/PublicSeo';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import government from '@/routes/government';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 // Make sure your PublicRosterItem interface includes 'category' and 'title'
 
@@ -19,6 +20,8 @@ export default function GovernmentPage({ municipality, term, publishedTerms, ros
     const termData = term.data;
     const publishedTermsData = publishedTerms.data;
     const rosterData = roster.data;
+    const { seo } = usePage<{ seo: SeoSharedData }>().props;
+    const rosterUrl = absoluteUrl(`/${municipalityData.slug}/government/roster`, seo.site_url);
 
     const handleTermChange = (selectedSlug: string) => {
         router.get(
@@ -64,8 +67,30 @@ export default function GovernmentPage({ municipality, term, publishedTerms, ros
 
     return (
         <PublicLayout
-            title={`Government Officials | ${municipalityData.name}`}
-            description={`The Elective Officials of the Municipality of ${municipalityData.name} for the term ${termData.name}`}
+            title="Government Officials"
+            description={`Meet the elected officials of the Municipality of ${municipalityData.name} serving during the ${termData.name} term.`}
+            canonicalUrl={rosterUrl}
+            structuredData={[
+                {
+                    '@context': 'https://schema.org',
+                    '@type': 'GovernmentOrganization',
+                    name: `Municipality of ${municipalityData.name}`,
+                    url: absoluteUrl(`/${municipalityData.slug}/home`, seo.site_url),
+                },
+                {
+                    '@context': 'https://schema.org',
+                    '@type': 'BreadcrumbList',
+                    itemListElement: [
+                        {
+                            '@type': 'ListItem',
+                            position: 1,
+                            name: 'Home',
+                            item: absoluteUrl(`/${municipalityData.slug}/home`, seo.site_url),
+                        },
+                        { '@type': 'ListItem', position: 2, name: 'Government Officials', item: rosterUrl },
+                    ],
+                },
+            ]}
         >
             <div className="min-h-screen bg-[#fcfcfc] dark:bg-zinc-950">
                 <div className="h-1.5 w-full bg-gradient-to-r from-blue-900 via-orange-500 to-blue-900" />

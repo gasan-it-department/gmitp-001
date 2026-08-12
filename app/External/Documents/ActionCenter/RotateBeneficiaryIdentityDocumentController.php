@@ -13,7 +13,8 @@ class RotateBeneficiaryIdentityDocumentController extends Controller
 {
     public function __construct(
         private readonly RotateBeneficiaryIdentityDocumentAction $rotateIdentityDocument,
-    ) {}
+    ) {
+    }
 
     public function __invoke(
         string $beneficiaryId,
@@ -30,7 +31,7 @@ class RotateBeneficiaryIdentityDocumentController extends Controller
             );
 
             return back()->with('success', 'Identity document orientation updated.');
-        } catch (AuthorizationException|InvalidArgumentException|\DomainException $exception) {
+        } catch (AuthorizationException | InvalidArgumentException | \DomainException $exception) {
             return back()->withErrors(['identity_document' => $exception->getMessage()]);
         }
     }

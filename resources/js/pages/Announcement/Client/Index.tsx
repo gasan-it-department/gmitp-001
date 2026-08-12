@@ -1,9 +1,10 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import PublicLayout from '@/layouts/Public/PublicLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { AlertOctagon, AlertTriangle, Calendar, ChevronRight, Construction, Megaphone, Zap } from 'lucide-react';
-import announcement from '@/routes/announcement';
+import { absoluteUrl, SeoSharedData } from '@/components/Seo/PublicSeo';
 import { Card, CardContent } from '@/components/ui/card';
+import PublicLayout from '@/layouts/Public/PublicLayout';
+import announcement from '@/routes/announcement';
+import { Link, usePage } from '@inertiajs/react';
+import { AlertOctagon, AlertTriangle, Calendar, ChevronRight, Construction, Megaphone, Zap } from 'lucide-react';
 
 type EnumOption = { value: string; label: string };
 
@@ -63,22 +64,35 @@ const TYPE_STYLES: Record<string, TypeStyle> = {
 const styleFor = (type: string): TypeStyle => TYPE_STYLES[type] ?? TYPE_STYLES.general;
 
 export default function AnnouncementClientIndex({ announcements }: Props) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
     const slug = currentMunicipality.slug;
+    const announcementsUrl = absoluteUrl(`/${slug}/announcement`, seo.site_url);
 
     const list = announcements?.data ?? [];
     const meta = announcements?.meta;
 
     return (
-        <PublicLayout title="" description="">
-            <Head title="Mga Paunawa at Anunsyo" />
-
+        <PublicLayout
+            title="Announcements and Advisories"
+            description={`Read the latest announcements, advisories, emergency notices, and public information from the Municipality of ${currentMunicipality.name}.`}
+            structuredData={{
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                    {
+                        '@type': 'ListItem',
+                        position: 1,
+                        name: 'Home',
+                        item: absoluteUrl(`/${slug}/home`, seo.site_url),
+                    },
+                    { '@type': 'ListItem', position: 2, name: 'Announcements', item: announcementsUrl },
+                ],
+            }}
+        >
             <div className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
                 {/* Header Section */}
                 <div className="mb-8 space-y-2 text-center sm:text-left">
-                    <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-                        Mga Paunawa at Anunsyo
-                    </h1>
+                    <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Mga Paunawa at Anunsyo</h1>
                     <p className="text-sm font-medium text-slate-500">
                         Manatiling updated sa pinakabagong balita at impormasyon mula sa {currentMunicipality.name}.
                     </p>
@@ -91,7 +105,7 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                 <Megaphone className="h-10 w-10 text-slate-400" />
                             </div>
                             <h3 className="text-lg font-bold text-slate-900">Walang anunsyo sa ngayon</h3>
-                            <p className="mt-2 max-w-xs text-sm font-medium text-slate-500 leading-relaxed">
+                            <p className="mt-2 max-w-xs text-sm leading-relaxed font-medium text-slate-500">
                                 Abangan ang mga susunod na balita at anunsyo mula sa ating lokal na pamahalaan.
                             </p>
                         </CardContent>
@@ -128,7 +142,7 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                                 <div className="flex flex-col gap-4 p-5">
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span
-                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight ${style.chip}`}
+                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-tight uppercase ${style.chip}`}
                                                         >
                                                             <Icon className="h-3 w-3" />
                                                             {a.type.label}
@@ -139,7 +153,7 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                                         </span>
                                                     </div>
 
-                                                    <h2 className="line-clamp-2 text-base font-extrabold leading-tight text-slate-800 group-hover:text-primary transition-colors sm:text-lg">
+                                                    <h2 className="line-clamp-2 text-base leading-tight font-extrabold text-slate-800 transition-colors group-hover:text-primary sm:text-lg">
                                                         {a.title}
                                                     </h2>
 
@@ -167,7 +181,7 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                             .replace('&raquo;', '›')
                                             .replace('Previous', '')
                                             .replace('Next', '');
-                                        
+
                                         if (!link.url) {
                                             return (
                                                 <span
@@ -185,24 +199,24 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
                                                 className={`flex h-10 min-w-[40px] items-center justify-center rounded-xl px-3 text-xs font-bold transition-all ${
                                                     link.active
                                                         ? 'bg-primary text-white shadow-md shadow-primary/20'
-                                                        : 'bg-white text-slate-600 border-2 border-slate-100 hover:border-primary/30 hover:text-primary'
+                                                        : 'border-2 border-slate-100 bg-white text-slate-600 hover:border-primary/30 hover:text-primary'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: label }}
                                             />
                                         );
                                     })}
                                 </div>
-                                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                <p className="text-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                                     Ipinapakita ang {meta.from} hanggang {meta.to} ng {meta.total} anunsyo
                                 </p>
                             </div>
                         )}
                     </div>
                 )}
-                
+
                 {/* LGU Motto / Brand */}
                 <div className="mt-12 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">
                         Ligtas at Mabilis na Serbisyo • {currentMunicipality.name}
                     </p>
                 </div>
@@ -210,4 +224,3 @@ export default function AnnouncementClientIndex({ announcements }: Props) {
         </PublicLayout>
     );
 }
-

@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { Link } from '@inertiajs/react';
-import { ArrowRightIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, LucideIcon } from 'lucide-react';
+import { ArrowRightIcon, Briefcase, BriefcaseMedical, ChevronLeftIcon, ChevronRightIcon, FileText, Stethoscope } from 'lucide-react';
 import { ReactNode, TouchEvent, useEffect, useRef, useState } from 'react';
-import { Briefcase, Stethoscope, FileText, BriefcaseMedical } from 'lucide-react';
 
 type BlogPost = {
     id: number;
@@ -20,25 +19,29 @@ const blogPosts: BlogPost[] = [
         id: 1,
         title: 'Business Permit and Licensing Office (BPLO)',
         icon: <Briefcase size={80} />,
-        excerpt: 'A government process that ensures businesses operate legally and comply with local regulations. It involves issuing permits, collecting fees, and monitoring business activities to promote safety, fair trade, and local economic development.',
+        excerpt:
+            'A government process that ensures businesses operate legally and comply with local regulations. It involves issuing permits, collecting fees, and monitoring business activities to promote safety, fair trade, and local economic development.',
     },
     {
         id: 2,
-        title: "Health Certificate and Sanitary Permit",
+        title: 'Health Certificate and Sanitary Permit',
         icon: <Stethoscope size={80} />,
-        excerpt: 'Documents issued by the local health office to ensure public safety and hygiene. A Health Certificate confirms an individual is medically fit and free from communicable diseases, while a Sanitary Permit authorizes establishments to operate in compliance with health and sanitation standards.',
+        excerpt:
+            'Documents issued by the local health office to ensure public safety and hygiene. A Health Certificate confirms an individual is medically fit and free from communicable diseases, while a Sanitary Permit authorizes establishments to operate in compliance with health and sanitation standards.',
     },
     {
         id: 3,
         title: 'Local Civil Registry',
         icon: <FileText size={80} />,
-        excerpt: 'Responsible for recording vital events such as births, marriages, deaths, and other civil status documents. It ensures the proper registration, issuance, and safekeeping of legal records for individuals.',
+        excerpt:
+            'Responsible for recording vital events such as births, marriages, deaths, and other civil status documents. It ensures the proper registration, issuance, and safekeeping of legal records for individuals.',
     },
     {
         id: 3,
         title: 'Medical Services',
         icon: <BriefcaseMedical size={80} />,
-        excerpt: 'Provide health consultations, checkups, treatments, and preventive care to ensure the well-being of individuals and communities through accessible public healthcare programs.',
+        excerpt:
+            'Provide health consultations, checkups, treatments, and preventive care to ensure the well-being of individuals and communities through accessible public healthcare programs.',
     },
 ];
 
@@ -169,7 +172,10 @@ export default function BlogSectionSlider() {
     };
 
     return (
-        <PublicLayout title="service" description="">
+        <PublicLayout
+            title="Municipal Services"
+            description="Explore available municipal services, citizen assistance programs, permits, requests, and online government transactions."
+        >
             <section className="py-12 md:py-20 lg:py-24">
                 <div ref={containerRef} className="container mx-auto space-y-6 px-4 md:space-y-8 md:px-6 2xl:max-w-[1400px]">
                     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -200,16 +206,14 @@ export default function BlogSectionSlider() {
                                 <div key={post.id} className="carousel-item w-full flex-none snap-start px-2 sm:w-1/2 sm:px-4 lg:w-1/3">
                                     <Card className="flex h-full flex-col overflow-hidden p-0 shadow-sm transition-shadow hover:shadow-md">
                                         <div className="relative h-40">
-                                            <div className='p-10'>
-                                                {post.icon}
-                                            </div>
+                                            <div className="p-10">{post.icon}</div>
                                         </div>
                                         <CardContent className="flex-grow">
                                             <h3 className="mb-2 line-clamp-2 text-base font-semibold sm:text-lg">{post.title}</h3>
                                             <p className="line-clamp-2 text-xs text-muted-foreground sm:line-clamp-3 sm:text-sm">{post.excerpt}</p>
                                         </CardContent>
                                         <CardFooter className="pb-6">
-                                            <Button variant="outline" size="sm" className="w-full text-sm p-5" asChild>
+                                            <Button variant="outline" size="sm" className="w-full p-5 text-sm" asChild>
                                                 <Link href="" className="flex items-center justify-center">
                                                     Apply
                                                     <ArrowRightIcon className="ml-1 h-4 w-4" />

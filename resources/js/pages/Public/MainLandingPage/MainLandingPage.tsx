@@ -1,10 +1,24 @@
+import PublicSeo, { SeoSharedData } from '@/components/Seo/PublicSeo';
 import LandingPageHeroBanner from '@/pages/Public/MainLandingPage/Components/LandingPageHeroBanner';
-import { Link } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { Mail, MapPin, Phone, Shield } from 'lucide-react';
 
 export default function MainLandingPage() {
+    const { app_name: appName, seo } = usePage<SharedData & { seo: SeoSharedData }>().props;
+
     return (
         <div className="flex min-h-screen flex-col bg-[#f8faf9] font-sans text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
+            <PublicSeo
+                title="Marinduque Municipal Citizen Portal"
+                description="Choose your municipality to access local government services, announcements, events, and public information across Marinduque."
+                structuredData={{
+                    '@context': 'https://schema.org',
+                    '@type': 'WebSite',
+                    name: appName,
+                    url: seo.site_url,
+                }}
+            />
             {/* Top Bar */}
             <div className="bg-slate-900 px-4 py-2 text-xs text-white sm:px-6 lg:px-8">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
@@ -69,25 +83,25 @@ export default function MainLandingPage() {
                         </div>
 
                         <div>
-                            <h3 className="text-foreground mb-4 font-semibold">Mabilis na Links</h3>
-                            <ul className="text-muted-foreground space-y-2 text-sm">
+                            <h3 className="mb-4 font-semibold text-foreground">Mabilis na Links</h3>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Pamahalaang Panlalawigan
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Opisina ng Turismo
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Pagtugon sa Sakuna
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Portal ng Trabaho
                                     </Link>
                                 </li>
@@ -95,25 +109,25 @@ export default function MainLandingPage() {
                         </div>
 
                         <div>
-                            <h3 className="text-foreground mb-4 font-semibold">Legal</h3>
-                            <ul className="text-muted-foreground space-y-2 text-sm">
+                            <h3 className="mb-4 font-semibold text-foreground">Legal</h3>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Patakaran sa Privacy
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Kasunduan sa Serbisyo
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Data Privacy Act
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="#" className="hover:text-primary transition-colors">
+                                    <Link href="#" className="transition-colors hover:text-primary">
                                         Kalayaan sa Impormasyon
                                     </Link>
                                 </li>
@@ -121,18 +135,18 @@ export default function MainLandingPage() {
                         </div>
 
                         <div>
-                            <h3 className="text-foreground mb-4 font-semibold">Kontak</h3>
-                            <ul className="text-muted-foreground space-y-3 text-sm">
+                            <h3 className="mb-4 font-semibold text-foreground">Kontak</h3>
+                            <ul className="space-y-3 text-sm text-muted-foreground">
                                 <li className="flex items-start gap-3">
-                                    <MapPin className="text-primary mt-0.5 h-4 w-4 shrink-0" />
+                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                                     <span>Provincial Capitol Compound, Boac, Marinduque, Philippines</span>
                                 </li>
                                 <li className="flex items-center gap-3">
-                                    <Phone className="text-primary h-4 w-4 shrink-0" />
+                                    <Phone className="h-4 w-4 shrink-0 text-primary" />
                                     <span>(042) 332-1002</span>
                                 </li>
                                 <li className="flex items-center gap-3">
-                                    <Mail className="text-primary h-4 w-4 shrink-0" />
+                                    <Mail className="h-4 w-4 shrink-0 text-primary" />
                                     <span>info@marinduque.gov.ph</span>
                                 </li>
                             </ul>
@@ -144,7 +158,7 @@ export default function MainLandingPage() {
                             &copy; {new Date().getFullYear()} Pamahalaang Panlalawigan ng Marinduque. Lahat ng karapatan ay reserbado.
                         </p>
                         <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Bagong Pilipinas</span>
+                            <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Bagong Pilipinas</span>
                         </div>
                     </div>
                 </div>

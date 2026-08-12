@@ -1,9 +1,9 @@
-import PublicLayout from "@/layouts/Public/PublicLayout";
-import AllEvenntsTable from "./Components/AllEventsTable";
+import PublicLayout from '@/layouts/Public/PublicLayout';
+import AllEvenntsTable from './Components/AllEventsTable';
 
 export default function AllEventsPage() {
     return (
-        <PublicLayout title="All Events" description="">
+        <PublicLayout title="Municipal Events" description="Browse festivals, government activities, and community events from the municipality.">
             <AllEvenntsTable />
         </PublicLayout>
     );

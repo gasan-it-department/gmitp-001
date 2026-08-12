@@ -2,10 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\External\Api\Resources\User\UserResource;
-use Inertia\Middleware;
-use Illuminate\Http\Request;
 use App\Core\Users\Services\UserRoleCheckerService;
+use App\External\Api\Resources\User\UserResource;
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+
 class HandleInertiaRequests extends Middleware
 {
     /**
@@ -50,11 +51,15 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error'),
             ],
             'app_name' => config('app.name'),
+            'seo' => [
+                'site_url' => rtrim((string) config('app.url'), '/'),
+                'default_image' => rtrim((string) config('app.url'), '/').'/assets/gasan-poster-banner.png',
+            ],
             'auth' => [
                 'user' => $user ? (new UserResource($user))->resolve() : null,
                 'roles' => [
-                    'isClient'    => $user ? $roleChecker->isClient($user) : false,
-                    'isAdmin'     => $user ? $roleChecker->isAdmin($user) : false,
+                    'isClient' => $user ? $roleChecker->isClient($user) : false,
+                    'isAdmin' => $user ? $roleChecker->isAdmin($user) : false,
                     'isSuperAdmin' => $user ? $roleChecker->isSuperAdmin($user) : false,
                 ],
                 // Permission names the admin holds — drives `{module}.access`

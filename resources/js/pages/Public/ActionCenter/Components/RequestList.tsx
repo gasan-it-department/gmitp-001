@@ -103,7 +103,7 @@ export default function RequestList() {
     }
 
     return (
-        <PublicLayout title="Request List" description="">
+        <PublicLayout title="Request List" description="View your private municipal assistance requests." noIndex>
             <div className="p-5">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <span className="p-2 text-center text-[20px] font-bold sm:p-5 sm:text-left sm:text-[24px]">Action Center Request</span>

@@ -1,8 +1,10 @@
+import { absoluteUrl, SeoSharedData, summarizeText } from '@/components/Seo/PublicSeo';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import eventRoute from '@/routes/event';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, CalendarDays, CalendarRange, Landmark, MapPin, PartyPopper, Sparkles, Users } from 'lucide-react';
 import React from 'react';
 
@@ -16,6 +18,8 @@ interface EventDetail {
     is_published: boolean;
     start_datetime: string | null;
     end_datetime: string | null;
+    start_datetime_iso: string | null;
+    end_datetime_iso: string | null;
     location_name: string;
     created_at: string | null;
     banner_url: string | null;
@@ -62,20 +66,73 @@ const styleFor = (type: string): TypeStyle =>
     };
 
 export default function EventClientShow({ event }: Props) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
     const slug = currentMunicipality.slug;
     const style = styleFor(event.type.value);
     const Icon = style.icon;
+    const canonicalUrl = absoluteUrl(eventRoute.show.url({ municipality: slug, event: event.id }), seo.site_url);
+    const description = summarizeText(event.description);
 
     return (
-        <PublicLayout title="" description="">
-            <Head title={event.title} />
-
+        <PublicLayout
+            title={event.title}
+            description={description}
+            canonicalUrl={canonicalUrl}
+            imageUrl={event.banner_url || undefined}
+            structuredData={[
+                {
+                    '@context': 'https://schema.org',
+                    '@type': 'Event',
+                    name: event.title,
+                    description,
+                    image: [absoluteUrl(event.banner_url || seo.default_image, seo.site_url)],
+                    startDate: event.start_datetime_iso,
+                    endDate: event.end_datetime_iso,
+                    eventStatus: 'https://schema.org/EventScheduled',
+                    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+                    url: canonicalUrl,
+                    location: {
+                        '@type': 'Place',
+                        name: event.location_name,
+                        address: {
+                            '@type': 'PostalAddress',
+                            addressLocality: currentMunicipality.name,
+                            addressRegion: 'Marinduque',
+                            addressCountry: 'PH',
+                        },
+                    },
+                    organizer: {
+                        '@type': 'GovernmentOrganization',
+                        name: `Municipality of ${currentMunicipality.name}`,
+                        url: absoluteUrl(`/${slug}/home`, seo.site_url),
+                    },
+                },
+                {
+                    '@context': 'https://schema.org',
+                    '@type': 'BreadcrumbList',
+                    itemListElement: [
+                        {
+                            '@type': 'ListItem',
+                            position: 1,
+                            name: 'Home',
+                            item: absoluteUrl(`/${slug}/home`, seo.site_url),
+                        },
+                        {
+                            '@type': 'ListItem',
+                            position: 2,
+                            name: 'Events',
+                            item: absoluteUrl(`/${slug}/event`, seo.site_url),
+                        },
+                        { '@type': 'ListItem', position: 3, name: event.title, item: canonicalUrl },
+                    ],
+                },
+            ]}
+        >
             <div className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
                 {/* Back Button */}
                 <div className="mb-6">
                     <Link href={`/${slug}/event`}>
-                        <button className="flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+                        <button className="flex items-center text-sm font-bold text-slate-500 transition-colors hover:text-primary">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Bumalik sa mga Kaganapan
                         </button>
@@ -105,16 +162,17 @@ export default function EventClientShow({ event }: Props) {
                             <div className="space-y-8">
                                 {/* Category Badge */}
                                 <div>
-                                    <Badge variant="secondary" className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest ${style.chip} ring-0 shadow-sm`}>
+                                    <Badge
+                                        variant="secondary"
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black tracking-widest uppercase ${style.chip} shadow-sm ring-0`}
+                                    >
                                         <Icon className="h-3.5 w-3.5" />
                                         {event.type.label}
                                     </Badge>
                                 </div>
 
                                 {/* Title */}
-                                <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl">
-                                    {event.title}
-                                </h1>
+                                <h1 className="text-2xl leading-tight font-black tracking-tight text-slate-900 sm:text-4xl">{event.title}</h1>
 
                                 {/* Info Grid (When / Where) */}
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -123,7 +181,7 @@ export default function EventClientShow({ event }: Props) {
                                             <CalendarRange className="h-5 w-5" />
                                         </div>
                                         <div className="min-w-0 flex-1 space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kailan</p>
+                                            <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Kailan</p>
                                             <div className="text-sm font-bold text-slate-700">
                                                 <p>{event.start_datetime ?? '—'}</p>
                                                 {event.end_datetime && event.end_datetime !== event.start_datetime && (
@@ -138,27 +196,23 @@ export default function EventClientShow({ event }: Props) {
                                             <MapPin className="h-5 w-5" />
                                         </div>
                                         <div className="min-w-0 flex-1 space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Saan</p>
-                                            <p className="text-sm font-bold text-slate-700 leading-tight">
-                                                {event.location_name}
-                                            </p>
+                                            <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Saan</p>
+                                            <p className="text-sm leading-tight font-bold text-slate-700">{event.location_name}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Description */}
                                 <div className="prose prose-slate max-w-none">
-                                    <div className="text-base leading-relaxed whitespace-pre-wrap text-slate-700 sm:text-lg">
-                                        {event.description}
-                                    </div>
+                                    <div className="text-base leading-relaxed whitespace-pre-wrap text-slate-700 sm:text-lg">{event.description}</div>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Brand Footer */}
-                    <div className="text-center pt-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+                    <div className="pt-4 text-center">
+                        <p className="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">
                             Ligtas at Mabilis na Serbisyo • {currentMunicipality.name}
                         </p>
                     </div>
@@ -167,4 +221,3 @@ export default function EventClientShow({ event }: Props) {
         </PublicLayout>
     );
 }
-

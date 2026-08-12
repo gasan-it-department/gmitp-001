@@ -33,6 +33,10 @@ export interface NavItem {
 export interface SharedData {
     currentMunicipality: Municipality;
     app_name: string;
+    seo: {
+        site_url: string;
+        default_image: string;
+    };
     auth: Auth;
     sidebarOpen: boolean;
     [key: string]: unknown;

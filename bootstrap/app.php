@@ -8,6 +8,7 @@ use App\Http\Middleware\External\VerifyAgaEdgeSecret;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\Municipality\SetMunicipalityContext;
 use App\Http\Middleware\RoleCheckRedirect;
+use App\Http\Middleware\SetRobotsTag;
 use App\Http\Middleware\SuperAdmin\SuperAdminGuardMiddleware;
 use App\Shared\Exceptions\Interfaces\DomainException;
 use Illuminate\Foundation\Application;
@@ -15,11 +16,12 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        api: __DIR__ . '/../routes/api.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
 
@@ -45,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Session\Middleware\AuthenticateSession::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            SetRobotsTag::class,
         ]);
 
         $middleware->alias([
@@ -87,7 +90,6 @@ return Application::configure(basePath: dirname(__DIR__))
         base_path('app/Core/*/Listeners'),
     ])
 
-
     ->withExceptions(function (Exceptions $exceptions) {
 
         // 1. Register the renderer for ALL DomainExceptions
@@ -95,7 +97,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // 2. Handle API / Axios Requests
             // if ($request->wantsJson() || !$request->hasHeader('X-Inertia')) {
-    
+
             //     return response()->json([
             //         'error' => class_basename($e),
             //         'code' => $e->errorCode(),
@@ -115,6 +117,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->back()
                     ->with('error', $e->getMessage());
             }
+
             // 3. Handle Inertia Web Requests
             return redirect()
                 ->back()
