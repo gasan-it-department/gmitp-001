@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Image\Enums\Fit;
+use Spatie\Image\Enums\Orientation;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -29,6 +30,8 @@ class Beneficiary extends Model implements HasMedia
     use HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     public const AVATAR_DISPLAY_CONVERSION = 'avatar-display';
+
+    public const IDENTITY_DISPLAY_CONVERSION = 'identity-display';
 
     protected $table = 'ac_beneficiaries';
 
@@ -288,6 +291,25 @@ class Beneficiary extends Model implements HasMedia
             ->fit(Fit::Crop, 512, 512)
             ->format('webp')
             ->quality(84)
+            ->nonQueued();
+
+        if (
+            $media !== null
+            && ! in_array($media->mime_type, ['image/jpeg', 'image/png'], true)
+        ) {
+            return;
+        }
+
+        $rotation = Orientation::tryFrom(
+            (int) ($media?->getCustomProperty('display_rotation', 0) ?? 0),
+        ) ?? Orientation::Rotate0;
+
+        $this->addMediaConversion(self::IDENTITY_DISPLAY_CONVERSION)
+            ->performOnCollections('identity_id_front', 'identity_id_back')
+            ->orientation($rotation)
+            ->fit(Fit::Max, 1800, 1800)
+            ->format('webp')
+            ->quality(88)
             ->nonQueued();
     }
 }

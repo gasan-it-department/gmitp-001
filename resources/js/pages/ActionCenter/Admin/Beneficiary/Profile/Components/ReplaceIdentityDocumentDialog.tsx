@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { getCroppedImg } from '@/lib/cropImage';
 import { useForm, usePage } from '@inertiajs/react';
-import { FileUp, Loader2, RotateCw } from 'lucide-react';
+import { FileUp, Loader2, Ratio, RotateCcw, RotateCw } from 'lucide-react';
 import { FormEventHandler, useCallback, useRef, useState } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 
@@ -40,6 +40,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
     const [isCropping, setIsCropping] = useState(false);
     const [isVertical, setIsVertical] = useState(false);
+    const [rotation, setRotation] = useState(0);
 
     const sideLabel = side === 'front' ? 'front' : 'back';
     const actionLabel = hasDocument ? `Replace ID ${sideLabel}` : `Upload ID ${sideLabel}`;
@@ -69,6 +70,9 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
 
             const reader = new FileReader();
             reader.addEventListener('load', () => {
+                setCrop({ x: 0, y: 0 });
+                setZoom(1);
+                setRotation(0);
                 setCropImageSrc(reader.result?.toString() ?? null);
             });
             reader.readAsDataURL(selectedFile);
@@ -84,7 +88,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
 
         setIsCropping(true);
         try {
-            const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels, `cropped-id-${side}.jpg`);
+            const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels, `cropped-id-${side}.jpg`, rotation);
             setData('document', croppedFile);
             setCropImageSrc(null);
         } catch (e) {
@@ -192,7 +196,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                     <DialogHeader>
                         <DialogTitle>Crop ID Photo</DialogTitle>
                         <DialogDescription>
-                            Pinch or drag to align your ID within the frame. Ensure all text and corners are visible.
+                            Rotate the ID until the text is upright, then keep all text and corners inside the frame.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -202,6 +206,7 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                                 image={cropImageSrc}
                                 crop={crop}
                                 zoom={zoom}
+                                rotation={rotation}
                                 aspect={isVertical ? 53.98 / 85.6 : 85.6 / 53.98}
                                 onCropChange={setCrop}
                                 onCropComplete={onCropComplete}
@@ -224,18 +229,41 @@ export default function ReplaceIdentityDocumentDialog({ beneficiaryId, side, isV
                             />
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setRotation((current) => (current + 270) % 360)}
+                                className="gap-2"
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                                Rotate left
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setRotation((current) => (current + 90) % 360)}
+                                className="gap-2"
+                            >
+                                <RotateCw className="h-4 w-4" />
+                                Rotate right
+                            </Button>
                             <Button
                                 type="button"
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => setIsVertical(!isVertical)}
-                                className="flex items-center gap-2"
+                                className="gap-2 sm:ml-auto"
                             >
-                                <RotateCw className="h-4 w-4" />
-                                {isVertical ? 'Switch to Horizontal' : 'Switch to Vertical'}
+                                <Ratio className="h-4 w-4" />
+                                {isVertical ? 'Horizontal frame' : 'Vertical frame'}
                             </Button>
                         </div>
+                        <p className="text-xs leading-relaxed text-slate-500">
+                            Confirm that the ID is upright and readable before saving the replacement.
+                        </p>
                     </div>
 
                     <DialogFooter className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

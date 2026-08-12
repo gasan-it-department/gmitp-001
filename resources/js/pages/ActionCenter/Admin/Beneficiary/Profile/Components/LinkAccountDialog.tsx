@@ -12,8 +12,9 @@ import { FormEventHandler } from 'react';
 interface Props {
     beneficiaryId: string;
     beneficiaryName: string;
-    /** The currently-linked account email, or null for a walk-in. Drives link-vs-change mode. */
+    hasAccount: boolean;
     currentEmail: string | null;
+    currentPhone: string | null;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -23,7 +24,7 @@ interface Props {
  *
  * Posts to the same endpoint in both modes; the backend decides link vs. change
  * from the row's current user_id and enforces every rule (account resolved by
- * email within the tenant, one-account-one-beneficiary, reason-required-on-
+ * email or phone, one account per beneficiary per municipality, reason-required-on-
  * change, full audit). The tenant is carried by the X-Municipality-Slug header
  * because the API route has no {municipality} segment — same pattern as Approve.
  *
@@ -31,12 +32,12 @@ interface Props {
  * back under the `account` key and are surfaced in a banner; field-level
  * validation errors render under their inputs.
  */
-export default function LinkAccountDialog({ beneficiaryId, beneficiaryName, currentEmail, isOpen, onClose }: Props) {
+export default function LinkAccountDialog({ beneficiaryId, beneficiaryName, hasAccount, currentEmail, currentPhone, isOpen, onClose }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const isChange = Boolean(currentEmail);
+    const isChange = hasAccount;
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
-        account_email: '',
+        account_identifier: '',
         reason: '',
     });
 
@@ -71,9 +72,7 @@ export default function LinkAccountDialog({ beneficiaryId, beneficiaryName, curr
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 ring-4 ring-blue-50">
                         <Link2 className="h-6 w-6 text-blue-600" />
                     </div>
-                    <DialogTitle className="text-xl text-slate-900">
-                        {isChange ? 'Change linked account' : 'Link a portal account'}
-                    </DialogTitle>
+                    <DialogTitle className="text-xl text-slate-900">{isChange ? 'Change linked account' : 'Link a portal account'}</DialogTitle>
                     <DialogDescription className="text-slate-500">
                         {isChange
                             ? `Re-point ${beneficiaryName}'s record to a different portal account. This change is logged.`
@@ -83,9 +82,10 @@ export default function LinkAccountDialog({ beneficiaryId, beneficiaryName, curr
 
                 {/* Current link (change mode only) */}
                 {isChange && (
-                    <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
-                        <span className="text-slate-400">Currently linked to </span>
-                        <span className="font-medium break-all text-slate-700">{currentEmail}</span>
+                    <div className="space-y-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
+                        <p className="text-slate-400">Currently linked to</p>
+                        {currentEmail && <p className="font-medium break-all text-slate-700">Email: {currentEmail}</p>}
+                        {currentPhone && <p className="font-medium break-all text-slate-700">Phone: {currentPhone}</p>}
                     </div>
                 )}
 
@@ -105,19 +105,21 @@ export default function LinkAccountDialog({ beneficiaryId, beneficiaryName, curr
 
                 <form onSubmit={handleSubmit} className="space-y-5 pt-1">
                     <div className="space-y-2">
-                        <Label htmlFor="account_email" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
-                            Account email
+                        <Label htmlFor="account_identifier" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+                            Account email or phone
                         </Label>
                         <Input
-                            id="account_email"
-                            type="email"
+                            id="account_identifier"
+                            type="text"
                             autoFocus
-                            placeholder="name@example.com"
-                            value={data.account_email}
-                            onChange={(e) => setData('account_email', e.target.value)}
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            placeholder="name@example.com or 09XXXXXXXXX"
+                            value={data.account_identifier}
+                            onChange={(e) => setData('account_identifier', e.target.value)}
                         />
-                        {errors.account_email && <p className="text-xs font-medium text-red-500">{errors.account_email}</p>}
-                        <p className="text-[11px] text-slate-400">The email the applicant used to register their portal account.</p>
+                        {errors.account_identifier && <p className="text-xs font-medium text-red-500">{errors.account_identifier}</p>}
+                        <p className="text-[11px] text-slate-400">Use the email or Philippine mobile number registered on the portal.</p>
                     </div>
 
                     <div className="space-y-2">
@@ -127,9 +129,7 @@ export default function LinkAccountDialog({ beneficiaryId, beneficiaryName, curr
                         <Textarea
                             id="reason"
                             placeholder={
-                                isChange
-                                    ? 'Why is this record being moved to a different account? (required)'
-                                    : 'Optional note for the record…'
+                                isChange ? 'Why is this record being moved to a different account? (required)' : 'Optional note for the record…'
                             }
                             className="resize-none"
                             rows={3}

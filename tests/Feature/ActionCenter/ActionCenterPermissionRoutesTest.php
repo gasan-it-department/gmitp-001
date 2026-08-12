@@ -43,6 +43,7 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.beneficiary.household-members.search' => 'action_center.beneficiaries.verify|action_center.beneficiaries.correct',
         'actionCenter.beneficiary.avatar.upload' => 'action_center.beneficiaries.manage',
         'actionCenter.beneficiary.identity-document.replace' => 'action_center.beneficiaries.verify',
+        'actionCenter.beneficiary.identity-document.rotate' => 'action_center.beneficiaries.verify',
         'actionCenter.household.members.update' => 'action_center.beneficiaries.manage',
         'actionCenter.household.members.set-active' => 'action_center.beneficiaries.manage',
         'actionCenter.household.change-head' => 'action_center.beneficiaries.correct',

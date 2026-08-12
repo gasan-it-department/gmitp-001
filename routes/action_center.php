@@ -28,6 +28,7 @@ use App\External\Api\Controllers\ActionCenter\Household\UnlinkHouseholdMemberBen
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Documents\ActionCenter\ReplaceBeneficiaryIdentityDocumentController;
+use App\External\Documents\ActionCenter\RotateBeneficiaryIdentityDocumentController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryAvatarController;
 use App\External\Documents\ActionCenter\ShowBeneficiaryIdentityDocumentController;
 use App\External\Documents\ActionCenter\UploadBeneficiaryAvatarController;
@@ -368,6 +369,14 @@ Route::prefix('/api/action-center')
                 )->whereIn('side', ['front', 'back'])
                     ->middleware('permission:action_center.beneficiaries.verify')
                     ->name('beneficiary.identity-document.replace');
+
+                Route::post(
+                    '/beneficiary/{beneficiaryId}/identity-document/{side}/rotate/{direction}',
+                    RotateBeneficiaryIdentityDocumentController::class,
+                )->whereIn('side', ['front', 'back'])
+                    ->whereIn('direction', ['left', 'right'])
+                    ->middleware('permission:action_center.beneficiaries.verify')
+                    ->name('beneficiary.identity-document.rotate');
 
                 // ── Admin household-roster management ─────────────────────────
                 // Edit a non-head member, toggle moved-out (is_active, never

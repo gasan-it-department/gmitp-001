@@ -1,3 +1,4 @@
+import RotateBeneficiaryIdentityDocumentController from '@/actions/App/External/Documents/ActionCenter/RotateBeneficiaryIdentityDocumentController';
 import EditBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/EditBeneficiaryProfileController';
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
@@ -12,7 +13,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
 import actionCenter from '@/routes/actionCenter';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -27,6 +28,7 @@ import {
     HandCoins,
     Home,
     Link2,
+    Loader2,
     Mail,
     MapPin,
     MoreHorizontal,
@@ -35,6 +37,8 @@ import {
     Phone,
     Plus,
     Printer,
+    RotateCcw,
+    RotateCw,
     User,
     Users,
 } from 'lucide-react';
@@ -174,6 +178,28 @@ export default function BeneficiaryProfile({
     const [avatarViewOpen, setAvatarViewOpen] = useState(false);
     const [reassignOpen, setReassignOpen] = useState(false);
     const [mergeOpen, setMergeOpen] = useState(false);
+    const [rotatingIdentityDocument, setRotatingIdentityDocument] = useState<string | null>(null);
+
+    const rotateIdentityDocument = (side: 'front' | 'back', direction: 'left' | 'right') => {
+        const operation = `${side}-${direction}`;
+
+        router.post(
+            RotateBeneficiaryIdentityDocumentController.url({
+                beneficiaryId: profile.id,
+                side,
+                direction,
+            }),
+            {},
+            {
+                preserveScroll: true,
+                headers: {
+                    'X-Municipality-Slug': currentMunicipality.slug,
+                },
+                onStart: () => setRotatingIdentityDocument(operation),
+                onFinish: () => setRotatingIdentityDocument(null),
+            },
+        );
+    };
 
     const address = [profile.household?.street, profile.household?.barangay].filter(Boolean).join(', ') || '—';
 
@@ -640,9 +666,9 @@ export default function BeneficiaryProfile({
                                     {canVerifyBeneficiaries && (
                                         <div className="space-y-3 border-t border-slate-100 pt-6">
                                             <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Uploaded Identity</p>
-                                            <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                 {/* Front ID Card */}
-                                                <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                <div className="group relative flex h-32 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:h-24">
                                                     {profile.identity_documents?.front ? (
                                                         <>
                                                             <img
@@ -655,16 +681,44 @@ export default function BeneficiaryProfile({
                                                                 FRONT
                                                             </div>
 
-                                                            <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                                                            <div className="absolute right-2 bottom-2 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                                                                 <a
                                                                     href={profile.identity_documents.front}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] sm:h-8 sm:w-8"
                                                                     title="View Full Size"
                                                                 >
                                                                     <Eye className="h-4 w-4" />
                                                                 </a>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => rotateIdentityDocument('front', 'left')}
+                                                                    disabled={rotatingIdentityDocument !== null}
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] disabled:cursor-wait disabled:opacity-60 sm:h-8 sm:w-8"
+                                                                    title="Rotate left"
+                                                                    aria-label="Rotate front ID left"
+                                                                >
+                                                                    {rotatingIdentityDocument === 'front-left' ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <RotateCcw className="h-4 w-4" />
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => rotateIdentityDocument('front', 'right')}
+                                                                    disabled={rotatingIdentityDocument !== null}
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] disabled:cursor-wait disabled:opacity-60 sm:h-8 sm:w-8"
+                                                                    title="Rotate right"
+                                                                    aria-label="Rotate front ID right"
+                                                                >
+                                                                    {rotatingIdentityDocument === 'front-right' ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <RotateCw className="h-4 w-4" />
+                                                                    )}
+                                                                </button>
                                                                 <ReplaceIdentityDocumentDialog
                                                                     beneficiaryId={profile.id}
                                                                     side="front"
@@ -673,7 +727,7 @@ export default function BeneficiaryProfile({
                                                                     trigger={
                                                                         <button
                                                                             type="button"
-                                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] sm:h-8 sm:w-8"
                                                                             title="Replace Photo"
                                                                         >
                                                                             <FileUp className="h-4 w-4" />
@@ -704,7 +758,7 @@ export default function BeneficiaryProfile({
                                                 </div>
 
                                                 {/* Back ID Card */}
-                                                <div className="group relative flex h-24 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                <div className="group relative flex h-32 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:h-24">
                                                     {profile.identity_documents?.back ? (
                                                         <>
                                                             <img
@@ -717,16 +771,44 @@ export default function BeneficiaryProfile({
                                                                 BACK
                                                             </div>
 
-                                                            <div className="absolute right-2 bottom-2 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+                                                            <div className="absolute right-2 bottom-2 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                                                                 <a
                                                                     href={profile.identity_documents.back}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] sm:h-8 sm:w-8"
                                                                     title="View Full Size"
                                                                 >
                                                                     <Eye className="h-4 w-4" />
                                                                 </a>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => rotateIdentityDocument('back', 'left')}
+                                                                    disabled={rotatingIdentityDocument !== null}
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] disabled:cursor-wait disabled:opacity-60 sm:h-8 sm:w-8"
+                                                                    title="Rotate left"
+                                                                    aria-label="Rotate back ID left"
+                                                                >
+                                                                    {rotatingIdentityDocument === 'back-left' ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <RotateCcw className="h-4 w-4" />
+                                                                    )}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => rotateIdentityDocument('back', 'right')}
+                                                                    disabled={rotatingIdentityDocument !== null}
+                                                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] disabled:cursor-wait disabled:opacity-60 sm:h-8 sm:w-8"
+                                                                    title="Rotate right"
+                                                                    aria-label="Rotate back ID right"
+                                                                >
+                                                                    {rotatingIdentityDocument === 'back-right' ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <RotateCw className="h-4 w-4" />
+                                                                    )}
+                                                                </button>
                                                                 <ReplaceIdentityDocumentDialog
                                                                     beneficiaryId={profile.id}
                                                                     side="back"
@@ -735,7 +817,7 @@ export default function BeneficiaryProfile({
                                                                     trigger={
                                                                         <button
                                                                             type="button"
-                                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088]"
+                                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-900 shadow-md transition hover:bg-slate-100 hover:text-[#005088] sm:h-8 sm:w-8"
                                                                             title="Replace Photo"
                                                                         >
                                                                             <FileUp className="h-4 w-4" />
@@ -812,7 +894,9 @@ export default function BeneficiaryProfile({
                     <LinkAccountDialog
                         beneficiaryId={profile.id}
                         beneficiaryName={profile.full_name}
+                        hasAccount={profile.has_account}
                         currentEmail={profile.account_email}
+                        currentPhone={profile.account_phone}
                         isOpen={linkOpen}
                         onClose={() => setLinkOpen(false)}
                     />

@@ -155,6 +155,7 @@ class BeneficiaryProfileResource extends JsonResource
             'beneficiaryId' => $this->id,
             'side' => $side,
             'v' => $media->updated_at?->timestamp,
+            'r' => (int) $media->getCustomProperty('display_rotation', 0),
         ]);
     }
 }

@@ -14,7 +14,7 @@ use App\External\Api\Request\ActionCenter\Beneficiary\LinkBeneficiaryAccountRequ
  * Three sources of data:
  *   • Route segment            → $beneficiaryId
  *   • Tenant + auth context    → $municipalId, $actingAdminId
- *   • Validated FormRequest    → $accountEmail, $reason
+ *   • Validated FormRequest    → $accountIdentifier, $reason
  *
  * $reason is optional for a FIRST link but the action requires it when CHANGING
  * an account that is already linked — moving a record to a different account is
@@ -26,10 +26,9 @@ readonly class LinkBeneficiaryAccountDto
         public string $beneficiaryId,
         public string $municipalId,
         public string $actingAdminId,
-        public string $accountEmail,
+        public string $accountIdentifier,
         public ?string $reason,
-    ) {
-    }
+    ) {}
 
     /**
      * Build from the validated FormRequest plus context resolved by the
@@ -47,7 +46,7 @@ readonly class LinkBeneficiaryAccountDto
             beneficiaryId: $beneficiaryId,
             municipalId: $municipalId,
             actingAdminId: $actingAdminId,
-            accountEmail: (string) $request->validated('account_email'),
+            accountIdentifier: trim((string) $request->validated('account_identifier')),
             reason: filled($reason) ? trim((string) $reason) : null,
         );
     }

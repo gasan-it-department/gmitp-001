@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 use App\Core\ActionCenter\Dto\Beneficiary\LinkBeneficiaryAccountDto;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\Users\Models\User;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -22,27 +23,31 @@ use Illuminate\Support\Facades\DB;
  *      earlier link was a mistake. "Changing" re-points user_id to the right
  *      account — and because it is sensitive, it REQUIRES a written reason.
  *
- * ── Invariant: one account ↔ one beneficiary ───────────────────────────────
- * ac_beneficiaries.user_id is UNIQUE (NULLs allowed for walk-ins). The DB is the
- * source of truth; this action surfaces the conflict as a friendly message and
- * points the admin at the other record (a conflict is itself a duplicate signal).
+ * ── Invariant: one account ↔ one beneficiary per municipality ──────────────
+ * The composite database constraint on user_id and municipal_id is the source
+ * of truth. This action surfaces a same-municipality conflict as a friendly
+ * duplicate signal.
  *
  * ── Lock-order contract ─────────────────────────────────────────────────────
  * Inside one transaction, lock in PK order:
  *   1. ac_beneficiaries (the target row, lockForUpdate)
  *   2. ac_beneficiaries (the conflicting row, if any — lockForUpdate)
  * `attempts: 3` retries the rare serialization conflict; the unique constraint
- * is the final backstop if two admins race the same email onto two records.
+ * is the final backstop if two admins race the same account onto two records.
  *
  * Hard gates (cheap → expensive):
  *   1. Tenant match    — beneficiary's household belongs to this municipality
- *   2. Account exists  — an account with that email exists IN this municipality
+ *   2. Account exists  — a global account has the supplied email or phone
  *   3. Not a no-op     — not already linked to that same account
  *   4. Reason present  — required when CHANGING an already-linked account
  *   5. Account free     — that account isn't already owned by another record
  */
 class LinkBeneficiaryToUserAction
 {
+    public function __construct(
+        private readonly PhoneFormatterService $phoneFormatter,
+    ) {}
+
     public function execute(LinkBeneficiaryAccountDto $dto): Beneficiary
     {
         return DB::transaction(function () use ($dto) {
@@ -55,9 +60,9 @@ class LinkBeneficiaryToUserAction
 
             $this->ensureTenantMatch($beneficiary, $dto->municipalId);
 
-            // Resolve the target account by email. Client accounts are global
-            // (no municipal_id), so resolution is system-wide; email is unique.
-            $user = $this->resolveAccount($dto->accountEmail);
+            // Client accounts are global (no municipal_id), so account
+            // resolution is system-wide. Email and phone are both unique.
+            $user = $this->resolveAccount($dto->accountIdentifier);
 
             if ($beneficiary->user_id === $user->id) {
                 throw new \DomainException('This beneficiary is already linked to that account.');
@@ -91,7 +96,7 @@ class LinkBeneficiaryToUserAction
 
             $this->recordAudit($beneficiary, $user, $previousUserId, $dto);
 
-            return $beneficiary->fresh(['household', 'user:id,email,first_name,last_name']);
+            return $beneficiary->fresh(['household', 'user:id,email,phone,first_name,last_name']);
         }, attempts: 3);
     }
 
@@ -109,21 +114,30 @@ class LinkBeneficiaryToUserAction
         }
     }
 
-    private function resolveAccount(string $email): User
+    private function resolveAccount(string $identifier): User
     {
-        // Citizen portal accounts are global (users.municipal_id is NULL), so we
-        // resolve by email across all accounts. Email is unique system-wide, so
-        // there is no cross-tenant ambiguity. (Filtering by municipal_id here
-        // would never match a citizen and was the reason linking silently failed
-        // for client accounts.)
-        $user = User::query()
-            ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])
-            ->first();
+        $identifier = trim($identifier);
 
-        if (!$user) {
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL) !== false) {
+            $user = User::query()
+                ->whereRaw('LOWER(email) = ?', [mb_strtolower($identifier)])
+                ->first();
+        } else {
+            $phone = $this->phoneFormatter->normalize($identifier);
+
+            if ($phone === null) {
+                throw new \DomainException('Enter a valid email address or Philippine mobile number.');
+            }
+
+            $user = User::query()
+                ->where('phone', $phone)
+                ->first();
+        }
+
+        if (! $user) {
             throw new \DomainException(
-                'No portal account with that email exists. '
-                . 'Ask the applicant to confirm the email they registered with.',
+                'No portal account with that email or phone number exists. '
+                .'Ask the applicant to confirm the account details they registered with.',
             );
         }
 
@@ -146,7 +160,7 @@ class LinkBeneficiaryToUserAction
         if ($existing) {
             throw new \DomainException(sprintf(
                 'That account is already linked to another beneficiary record (%s) in this municipality. '
-                . 'This is likely a duplicate — resolve it before re-linking.',
+                .'This is likely a duplicate — resolve it before re-linking.',
                 trim($existing->full_name) ?: $existing->id,
             ));
         }
@@ -177,6 +191,7 @@ class LinkBeneficiaryToUserAction
                 'from_user_id' => $previousUserId,
                 'to_user_id' => $user->id,
                 'to_account_email' => $user->email,
+                'to_account_phone' => $user->phone,
                 'reason' => $dto->reason,
             ])
             ->log($previousUserId
