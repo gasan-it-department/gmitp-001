@@ -2,7 +2,9 @@
 
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
+use App\Core\ActionCenter\UseCase\Beneficiary\GenerateBeneficiaryIdentityDocumentSheetAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ReplaceBeneficiaryIdentityDocumentAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\RotateBeneficiaryIdentityDocumentAction;
 use App\External\Api\Request\ActionCenter\Beneficiary\ReplaceBeneficiaryIdentityDocumentRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
@@ -150,7 +152,7 @@ it('replaces one identity document side without changing verification state', fu
     );
 
     expect($result->getMedia('identity_id_front'))->toHaveCount(1)
-        ->and($result->getFirstMedia('identity_id_front')?->file_name)->toBe('identity-id-front-' . $beneficiary->id . '.jpg')
+        ->and($result->getFirstMedia('identity_id_front')?->file_name)->toBe('identity-id-front-'.$beneficiary->id.'.jpg')
         ->and($result->identity_verified_at?->toIso8601String())->toBe($verifiedAt)
         ->and($result->identity_verified_by_user_id)->toBe($this->adminId)
         ->and($result->intake_rejected_at)->not->toBeNull()
@@ -167,6 +169,66 @@ it('tenant guards identity document replacement', function () {
         municipalId: $this->municipalId,
         actingAdminId: $this->adminId,
     ))->toThrow(AuthorizationException::class);
+});
+
+it('rotates only the identity display conversion and preserves the uploaded source', function () {
+    $beneficiary = replacementDocumentBeneficiary($this->municipalId);
+    $media = $beneficiary
+        ->addMedia(UploadedFile::fake()->image('front.jpg', 900, 560))
+        ->toMediaCollection('identity_id_front');
+    $sourceBeforeRotation = Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+
+    $result = app(RotateBeneficiaryIdentityDocumentAction::class)->execute(
+        beneficiaryId: $beneficiary->id,
+        side: 'front',
+        direction: 'right',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    );
+
+    $rotatedMedia = $result->getFirstMedia('identity_id_front');
+    [$displayWidth, $displayHeight] = getimagesize(
+        $rotatedMedia->getPath(Beneficiary::IDENTITY_DISPLAY_CONVERSION),
+    );
+    $sheet = app(GenerateBeneficiaryIdentityDocumentSheetAction::class)->execute(
+        beneficiaryId: $beneficiary->id,
+        municipalId: $this->municipalId,
+        municipalityName: 'Gasan',
+        generatedByUserName: 'Admin Reviewer',
+    );
+
+    expect($rotatedMedia?->getCustomProperty('display_rotation'))->toBe(90)
+        ->and($rotatedMedia?->hasGeneratedConversion(Beneficiary::IDENTITY_DISPLAY_CONVERSION))->toBeTrue()
+        ->and($displayWidth)->toBe(560)
+        ->and($displayHeight)->toBe(900)
+        ->and($sheet->frontDocument->dataUri)->toStartWith('data:image/webp;base64,')
+        ->and(Storage::disk($media->disk)->get($media->getPathRelativeToRoot()))->toBe($sourceBeforeRotation);
+
+    $restored = app(RotateBeneficiaryIdentityDocumentAction::class)->execute(
+        beneficiaryId: $beneficiary->id,
+        side: 'front',
+        direction: 'left',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    );
+
+    expect($restored->getFirstMedia('identity_id_front')?->getCustomProperty('display_rotation'))->toBe(0);
+});
+
+it('does not rotate PDF identity documents', function () {
+    $beneficiary = replacementDocumentBeneficiary($this->municipalId);
+    $media = $beneficiary
+        ->addMedia(UploadedFile::fake()->image('front.jpg'))
+        ->toMediaCollection('identity_id_front');
+    $media->forceFill(['mime_type' => 'application/pdf'])->save();
+
+    expect(fn () => app(RotateBeneficiaryIdentityDocumentAction::class)->execute(
+        beneficiaryId: $beneficiary->id,
+        side: 'front',
+        direction: 'right',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    ))->toThrow(DomainException::class, 'PDF identity documents cannot be rotated here.');
 });
 
 it('requires a reason only when replacing a verified beneficiary document', function () {

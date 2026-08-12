@@ -1,7 +1,9 @@
+import { absoluteUrl, SeoSharedData, summarizeText } from '@/components/Seo/PublicSeo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import announcementRoute from '@/routes/announcement';
+import { Link, usePage } from '@inertiajs/react';
 import { AlertOctagon, AlertTriangle, ArrowLeft, Calendar, Construction, Megaphone, Zap } from 'lucide-react';
 import React from 'react';
 
@@ -14,6 +16,8 @@ interface AnnouncementDetail {
     type: EnumOption;
     is_published: boolean;
     created_at: string | null;
+    created_at_iso: string | null;
+    updated_at_iso: string | null;
     images: { url: string }[];
 }
 
@@ -58,20 +62,71 @@ const TYPE_STYLES: Record<string, TypeStyle> = {
 const styleFor = (type: string): TypeStyle => TYPE_STYLES[type] ?? TYPE_STYLES.general;
 
 export default function AnnouncementClientShow({ announcement }: Props) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
     const slug = currentMunicipality.slug;
     const style = styleFor(announcement.type.value);
     const Icon = style.icon;
+    const canonicalUrl = absoluteUrl(announcementRoute.show.url({ municipality: slug, announcement: announcement.id }), seo.site_url);
+    const description = summarizeText(announcement.content);
 
     return (
-        <PublicLayout title="" description="">
-            <Head title={announcement.title} />
-
+        <PublicLayout
+            title={announcement.title}
+            description={description}
+            canonicalUrl={canonicalUrl}
+            imageUrl={announcement.images[0]?.url}
+            type="article"
+            structuredData={[
+                {
+                    '@context': 'https://schema.org',
+                    '@type': 'Article',
+                    headline: announcement.title,
+                    description,
+                    image: [absoluteUrl(announcement.images[0]?.url || seo.default_image, seo.site_url)],
+                    datePublished: announcement.created_at_iso,
+                    dateModified: announcement.updated_at_iso,
+                    mainEntityOfPage: canonicalUrl,
+                    author: {
+                        '@type': 'GovernmentOrganization',
+                        name: `Municipality of ${currentMunicipality.name}`,
+                        url: absoluteUrl(`/${slug}/home`, seo.site_url),
+                    },
+                    publisher: {
+                        '@type': 'GovernmentOrganization',
+                        name: `Municipality of ${currentMunicipality.name}`,
+                        url: absoluteUrl(`/${slug}/home`, seo.site_url),
+                        logo: {
+                            '@type': 'ImageObject',
+                            url: seo.default_image,
+                        },
+                    },
+                },
+                {
+                    '@context': 'https://schema.org',
+                    '@type': 'BreadcrumbList',
+                    itemListElement: [
+                        {
+                            '@type': 'ListItem',
+                            position: 1,
+                            name: 'Home',
+                            item: absoluteUrl(`/${slug}/home`, seo.site_url),
+                        },
+                        {
+                            '@type': 'ListItem',
+                            position: 2,
+                            name: 'Announcements',
+                            item: absoluteUrl(`/${slug}/announcement`, seo.site_url),
+                        },
+                        { '@type': 'ListItem', position: 3, name: announcement.title, item: canonicalUrl },
+                    ],
+                },
+            ]}
+        >
             <div className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
                 {/* Back Button */}
                 <div className="mb-6">
                     <Link href={`/${slug}/announcement`}>
-                        <button className="flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors">
+                        <button className="flex items-center text-sm font-bold text-slate-500 transition-colors hover:text-primary">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Bumalik sa mga Anunsyo
                         </button>
@@ -87,7 +142,9 @@ export default function AnnouncementClientShow({ announcement }: Props) {
                                 <Icon className="h-5 w-5" />
                             </div>
                             <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
-                                <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${style.chip}`}>
+                                <span
+                                    className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black tracking-widest uppercase ${style.chip}`}
+                                >
                                     {announcement.type.label}
                                 </span>
                                 {announcement.created_at && (
@@ -102,9 +159,7 @@ export default function AnnouncementClientShow({ announcement }: Props) {
                         <CardContent className="p-6 sm:p-10">
                             <div className="space-y-8">
                                 {/* Title */}
-                                <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl">
-                                    {announcement.title}
-                                </h1>
+                                <h1 className="text-2xl leading-tight font-black tracking-tight text-slate-900 sm:text-4xl">{announcement.title}</h1>
 
                                 {/* Gallery */}
                                 {announcement.images.length > 0 && (
@@ -117,10 +172,10 @@ export default function AnnouncementClientShow({ announcement }: Props) {
                                                 rel="noreferrer"
                                                 className="group relative aspect-video overflow-hidden rounded-2xl border-2 border-slate-50 bg-slate-100 transition-all hover:border-primary/20"
                                             >
-                                                <img 
-                                                    src={img.url} 
-                                                    alt={`${announcement.title} — larawan ${i + 1}`} 
-                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                                <img
+                                                    src={img.url}
+                                                    alt={`${announcement.title} — larawan ${i + 1}`}
+                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                                             </a>
@@ -139,8 +194,8 @@ export default function AnnouncementClientShow({ announcement }: Props) {
                     </Card>
 
                     {/* Brand Footer */}
-                    <div className="text-center pt-4">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+                    <div className="pt-4 text-center">
+                        <p className="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">
                             Ligtas at Mabilis na Serbisyo • {currentMunicipality.name}
                         </p>
                     </div>
@@ -149,4 +204,3 @@ export default function AnnouncementClientShow({ announcement }: Props) {
         </PublicLayout>
     );
 }
-

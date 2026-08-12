@@ -4,16 +4,20 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
+use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\Core\Users\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
- * Creates an ADMIN-encoded walk-in beneficiary in one atomic transaction.
+ * Creates an ADMIN-encoded walk-in beneficiary using a pending-first flow.
  *
  * This is the in-office sibling of CreateBeneficiaryProfileAction. It is a
  * SEPARATE action — not a branch of the online one — because the two workflows
@@ -27,12 +31,14 @@ use Illuminate\Support\Facades\DB;
  *     override, we abort with the matches so the UI can ask "different person?".
  *   • The actor is the admin, recorded via the activity log's causer.
  *
- * Everything downstream of the beneficiary row (head-of-household self row +
- * member fan-out) reuses StoreHouseholdMemberAction exactly like the online
- * flow, so that logic stays shared, not duplicated.
+ * The household, beneficiary, and roster are committed atomically as pending.
+ * Identity media is stored next, and an immediate verification request is
+ * finalized in a second locked transaction only after the front ID exists.
+ * This prevents an object-storage failure from leaving a verified identity
+ * without its required evidence.
  *
- * `attempts: 3` retries transient serialization failures; the soft-duplicate
- * abort is a \DomainException and does not retry.
+ * Both database transactions retry transient serialization failures; the
+ * soft-duplicate abort is a \DomainException and does not retry.
  */
 class CreateWalkInBeneficiaryAction
 {
@@ -95,8 +101,10 @@ class CreateWalkInBeneficiaryAction
                 'contact_phone' => $dto->contactPhone,
                 'terms_consented_at' => $dto->termsConsentedAt,
                 'terms_version' => $dto->termsVersion,
-                'identity_verified_at' => $dto->verifyNow ? now() : null,
-                'identity_verified_by_user_id' => $dto->verifyNow ? $dto->encodedByUserId : null,
+                // Verification happens only after required identity evidence is
+                // successfully stored outside this database transaction.
+                'identity_verified_at' => null,
+                'identity_verified_by_user_id' => null,
             ]);
 
             // Self-referencing "Head of Household" row (same as online).
@@ -118,7 +126,7 @@ class CreateWalkInBeneficiaryAction
                         $memberData['beneficiary_id'] ?? null,
                         $dto->municipalId,
                     ),
-                    isVerifiedDependent: $dto->verifyNow,
+                    isVerifiedDependent: false,
                 );
             }
 
@@ -141,6 +149,10 @@ class CreateWalkInBeneficiaryAction
         }, attempts: 3);
 
         $this->storeIdentityDocuments($beneficiary, $dto);
+
+        if ($dto->verifyNow) {
+            $beneficiary = $this->verifyAfterIdentityStored($beneficiary, $dto->encodedByUserId);
+        }
 
         return $beneficiary->fresh(['media']);
     }
@@ -168,24 +180,71 @@ class CreateWalkInBeneficiaryAction
     private function storeIdentityDocuments(Beneficiary $beneficiary, CreateWalkInBeneficiaryDto $dto): void
     {
         if ($dto->identityIdFront instanceof UploadedFile) {
-            $beneficiary
-                ->addMedia($dto->identityIdFront)
-                ->usingFileName($this->identityDocumentFileName($beneficiary, 'front', $dto->identityIdFront))
-                ->toMediaCollection('identity_id_front');
+            try {
+                $beneficiary
+                    ->addMedia($dto->identityIdFront)
+                    ->usingFileName($this->identityDocumentFileName($beneficiary, 'front', $dto->identityIdFront))
+                    ->toMediaCollection('identity_id_front');
+            } catch (Throwable $exception) {
+                report($exception);
+
+                if (! $beneficiary->fresh()->hasMedia('identity_id_front')) {
+                    throw WalkInBeneficiaryIdentityDocumentStorageException::frontUploadFailed($beneficiary->id);
+                }
+            }
+        }
+
+        if ($dto->verifyNow && ! $beneficiary->fresh()->hasMedia('identity_id_front')) {
+            throw WalkInBeneficiaryIdentityDocumentStorageException::frontUploadFailed($beneficiary->id);
         }
 
         if ($dto->identityIdBack instanceof UploadedFile) {
-            $beneficiary
-                ->addMedia($dto->identityIdBack)
-                ->usingFileName($this->identityDocumentFileName($beneficiary, 'back', $dto->identityIdBack))
-                ->toMediaCollection('identity_id_back');
+            try {
+                $beneficiary
+                    ->addMedia($dto->identityIdBack)
+                    ->usingFileName($this->identityDocumentFileName($beneficiary, 'back', $dto->identityIdBack))
+                    ->toMediaCollection('identity_id_back');
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }
+    }
+
+    private function verifyAfterIdentityStored(Beneficiary $beneficiary, string $actingAdminId): Beneficiary
+    {
+        return DB::transaction(function () use ($beneficiary, $actingAdminId) {
+            $lockedBeneficiary = Beneficiary::query()
+                ->whereKey($beneficiary->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $lockedBeneficiary->hasMedia('identity_id_front')) {
+                throw WalkInBeneficiaryIdentityDocumentStorageException::frontUploadFailed($lockedBeneficiary->id);
+            }
+
+            $lockedBeneficiary->update([
+                'identity_verified_at' => now(),
+                'identity_verified_by_user_id' => $actingAdminId,
+            ]);
+
+            HouseholdMember::query()
+                ->where('household_id', $lockedBeneficiary->household_id)
+                ->where('is_active', true)
+                ->where('relationship', '!=', Relationship::Head->value)
+                ->lockForUpdate()
+                ->get()
+                ->each(fn (HouseholdMember $member) => $member->update([
+                    'is_verified_dependent' => true,
+                ]));
+
+            return $lockedBeneficiary->fresh();
+        }, attempts: 3);
     }
 
     private function identityDocumentFileName(Beneficiary $beneficiary, string $side, UploadedFile $file): string
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
 
-        return 'identity-id-' . $side . '-' . $beneficiary->getKey() . '.' . $extension;
+        return 'identity-id-'.$side.'-'.$beneficiary->getKey().'.'.$extension;
     }
 }

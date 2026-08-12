@@ -84,8 +84,18 @@ class GenerateBeneficiaryIdentityDocumentSheetAction
             );
         }
 
+        $conversion = $media->hasGeneratedConversion(Beneficiary::IDENTITY_DISPLAY_CONVERSION)
+            ? Beneficiary::IDENTITY_DISPLAY_CONVERSION
+            : '';
+        $disk = $conversion !== ''
+            ? ($media->conversions_disk ?: $media->disk)
+            : $media->disk;
+        $mimeType = $conversion !== '' ? 'image/webp' : $media->mime_type;
+
         try {
-            $contents = Storage::disk($media->disk)->get($media->getPathRelativeToRoot());
+            $contents = Storage::disk($disk)->get(
+                $media->getPathRelativeToRoot($conversion),
+            );
         } catch (Throwable) {
             return new BeneficiaryIdentityDocumentEvidence(
                 side: $side,
@@ -103,9 +113,9 @@ class GenerateBeneficiaryIdentityDocumentSheetAction
             side: $side,
             label: $label,
             status: 'image',
-            dataUri: sprintf('data:%s;base64,%s', $media->mime_type, base64_encode($contents)),
+            dataUri: sprintf('data:%s;base64,%s', $mimeType, base64_encode($contents)),
             fileName: $media->file_name,
-            mimeType: $media->mime_type,
+            mimeType: $mimeType,
             size: $media->human_readable_size,
             message: null,
         );

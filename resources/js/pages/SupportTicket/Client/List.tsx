@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Calendar, ChevronRight, LifeBuoy, Plus, Tag } from 'lucide-react';
 
 type Option = { value: string; label: string };
@@ -57,9 +57,7 @@ export default function List({ tickets }: ListProps) {
     const slug = currentMunicipality.slug;
 
     return (
-        <PublicLayout description="" title="">
-            <Head title="My Support Tickets" />
-
+        <PublicLayout description="View and manage your private support requests." title="My Support Tickets" noIndex>
             <div className="mx-auto max-w-4xl px-4 py-6 sm:py-10">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1 text-center sm:text-left">
@@ -81,11 +79,14 @@ export default function List({ tickets }: ListProps) {
                                 <LifeBuoy className="h-10 w-10 text-slate-400" />
                             </div>
                             <h3 className="text-lg font-bold text-slate-900">No tickets yet</h3>
-                            <p className="mt-2 max-w-xs text-sm font-medium leading-relaxed text-slate-500">
+                            <p className="mt-2 max-w-xs text-sm leading-relaxed font-medium text-slate-500">
                                 When you submit a help request or bug report, it'll show up here so you can track progress.
                             </p>
                             <Link href={`/${slug}/support/create`} className="mt-6">
-                                <Button variant="outline" className="rounded-xl border-2 font-bold hover:border-primary hover:bg-primary hover:text-white">
+                                <Button
+                                    variant="outline"
+                                    className="rounded-xl border-2 font-bold hover:border-primary hover:bg-primary hover:text-white"
+                                >
                                     Open a Ticket
                                 </Button>
                             </Link>
@@ -100,11 +101,11 @@ export default function List({ tickets }: ListProps) {
                                         <div className="flex items-center p-4 sm:p-5">
                                             <div className="min-w-0 flex-1 space-y-3">
                                                 <div className="flex items-center justify-between gap-3">
-                                                    <span className="truncate text-xs font-extrabold uppercase tracking-wider text-primary/80">
+                                                    <span className="truncate text-xs font-extrabold tracking-wider text-primary/80 uppercase">
                                                         {ticket.reference_no} · {ticket.category.label}
                                                     </span>
                                                     <span
-                                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight ${statusBadgeClasses(
+                                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-tight uppercase ${statusBadgeClasses(
                                                             ticket.status.value,
                                                         )}`}
                                                     >
@@ -171,7 +172,7 @@ export default function List({ tickets }: ListProps) {
                                         );
                                     })}
                                 </div>
-                                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                <p className="text-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                                     Showing {tickets.from} to {tickets.to} of {tickets.total} tickets
                                 </p>
                             </div>

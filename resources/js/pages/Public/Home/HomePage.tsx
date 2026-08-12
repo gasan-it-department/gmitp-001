@@ -1,5 +1,6 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
+import { absoluteUrl, SeoSharedData } from '@/components/Seo/PublicSeo';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import { usePage } from '@inertiajs/react';
 import ActionCenterUi from './Components/ActionCenterForm/ActionCenterCard';
@@ -17,11 +18,32 @@ interface HomePageProps {
 }
 
 export default function HomePage({ announcements, events }: HomePageProps) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
+    const homeUrl = absoluteUrl(`/${currentMunicipality.slug}/home`, seo.site_url);
+    const organizationSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'GovernmentOrganization',
+        name: `Municipality of ${currentMunicipality.name}`,
+        url: homeUrl,
+        image: seo.default_image,
+        address: {
+            '@type': 'PostalAddress',
+            addressLocality: currentMunicipality.name,
+            addressRegion: 'Marinduque',
+            postalCode: currentMunicipality.zip_code,
+            addressCountry: 'PH',
+        },
+    };
 
     return (
-        <PublicLayout title="Home" description="">
+        <PublicLayout
+            title={`Municipality of ${currentMunicipality.name}`}
+            description={`Official citizen portal of the Municipality of ${currentMunicipality.name}, Marinduque. Access municipal services, announcements, events, and public information online.`}
+            canonicalUrl={homeUrl}
+            structuredData={organizationSchema}
+        >
             <div className="bg-background">
+                <h1 className="sr-only">Official Citizen Portal of the Municipality of {currentMunicipality.name}</h1>
                 {/* --- ALPHA TEST NOTICE --- */}
                 {/* <div className="relative z-20 bg-amber-500 px-4 py-3 text-white shadow-sm">
                     <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-3 text-center">

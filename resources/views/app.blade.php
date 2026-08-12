@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="google-site-verification" content="bV3o6QYQKQGhFbpg7Bxh13Yi1vmbAS78lmmh231fn-k">
 
     {{-- Detect system theme --}}
     <script>
@@ -61,8 +62,6 @@
             border-left-color: #f97316 !important;
         }
     </style>
-
-    <title inertia>{{ config('app.name', 'Marinduque Unified System') }}</title>
 
     {{-- ✅ FAVICONS --}}
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48x48.png') }}">

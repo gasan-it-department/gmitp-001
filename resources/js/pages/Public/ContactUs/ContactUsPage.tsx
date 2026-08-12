@@ -3,12 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
+import { usePage } from '@inertiajs/react';
 import { Clock, Mail, MapPin, Phone } from 'lucide-react';
 
 export default function ContactUsPage() {
+    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+
     return (
-        <PublicLayout title="Contact Us" description="">
+        <PublicLayout
+            title="Contact Us"
+            description={`Contact the Municipality of ${currentMunicipality.name} for questions, concerns, feedback, and assistance with municipal services.`}
+        >
             <main className="container mx-auto px-4 py-12">
                 <div className="mx-auto max-w-6xl">
                     {/* Page Title */}

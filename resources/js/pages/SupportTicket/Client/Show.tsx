@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, Circle, Paperclip, RotateCcw } from 'lucide-react';
 import { statusBadgeClasses } from './List';
 
@@ -55,9 +55,7 @@ export default function Show({ ticket, attachments, replies, timeline }: ShowPro
     };
 
     return (
-        <PublicLayout description="" title="">
-            <Head title={`Ticket ${ticket.reference_no}`} />
-
+        <PublicLayout description="View this private support ticket and its replies." title={`Ticket ${ticket.reference_no}`} noIndex>
             <div className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
                 <Link href={`/${slug}/support`} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary">
                     <ArrowLeft className="h-4 w-4" />

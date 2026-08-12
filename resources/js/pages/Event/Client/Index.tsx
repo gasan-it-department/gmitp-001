@@ -1,16 +1,16 @@
-import { Badge } from '@/components/ui/badge';
+import { absoluteUrl, SeoSharedData } from '@/components/Seo/PublicSeo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
+import eventRoute from '@/routes/event';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { format, isValid, parse } from 'date-fns';
 import { CalendarDays, ChevronRight, Landmark, MapPin, PartyPopper, Sparkles, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import eventRoute from '@/routes/event';
 
 type EnumOption = { value: string; label: string };
 
@@ -89,8 +89,9 @@ const parseEventDate = (formatted: string | null | undefined): Date | null => {
 const toDayKey = (date: Date): string => format(date, 'yyyy-MM-dd');
 
 export default function EventClientIndex({ events }: Props) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
     const slug = currentMunicipality.slug;
+    const eventsUrl = absoluteUrl(`/${slug}/event`, seo.site_url);
 
     const list = events?.data ?? [];
     const meta = events?.meta;
@@ -139,15 +140,27 @@ export default function EventClientIndex({ events }: Props) {
     const selectedDateLabel = selectedDate ? format(parse(selectedDate, 'yyyy-MM-dd', new Date()), 'EEEE, MMMM d, yyyy') : '';
 
     return (
-        <PublicLayout title="" description="">
-            <Head title="Mga Kaganapan at Aktibidad" />
-
+        <PublicLayout
+            title="Events and Activities"
+            description={`Discover upcoming festivals, government activities, and community events in ${currentMunicipality.name}, Marinduque.`}
+            structuredData={{
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                    {
+                        '@type': 'ListItem',
+                        position: 1,
+                        name: 'Home',
+                        item: absoluteUrl(`/${slug}/home`, seo.site_url),
+                    },
+                    { '@type': 'ListItem', position: 2, name: 'Events', item: eventsUrl },
+                ],
+            }}
+        >
             <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
                 {/* Header Section */}
                 <div className="mb-8 space-y-2 text-center sm:text-left">
-                    <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-                        Mga Kaganapan at Aktibidad
-                    </h1>
+                    <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Mga Kaganapan at Aktibidad</h1>
                     <p className="text-sm font-medium text-slate-500">
                         Mga piyesta, aktibidad ng pamahalaan, at pagtitipon sa komunidad ng {currentMunicipality.name}.
                     </p>
@@ -175,9 +188,7 @@ export default function EventClientIndex({ events }: Props) {
                 </section>
 
                 <div className="mb-6 flex items-center justify-between">
-                    <h2 className="text-lg font-black uppercase tracking-widest text-slate-400">
-                        Listahan ng mga Kaganapan
-                    </h2>
+                    <h2 className="text-lg font-black tracking-widest text-slate-400 uppercase">Listahan ng mga Kaganapan</h2>
                 </div>
 
                 {list.length === 0 ? (
@@ -187,7 +198,7 @@ export default function EventClientIndex({ events }: Props) {
                                 <CalendarDays className="h-10 w-10 text-slate-400" />
                             </div>
                             <h3 className="text-lg font-bold text-slate-900">Walang nakatakdang kaganapan</h3>
-                            <p className="mt-2 max-w-xs text-sm font-medium text-slate-500 leading-relaxed">
+                            <p className="mt-2 max-w-xs text-sm leading-relaxed font-medium text-slate-500">
                                 Abangan ang mga susunod na aktibidad at pagtitipon mula sa ating lokal na pamahalaan.
                             </p>
                         </CardContent>
@@ -223,7 +234,7 @@ export default function EventClientIndex({ events }: Props) {
                                                 <div className="flex flex-col gap-4 p-5">
                                                     <div className="flex items-center justify-between gap-2">
                                                         <span
-                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight ${style.chip}`}
+                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-tight uppercase ${style.chip}`}
                                                         >
                                                             <Icon className="h-3 w-3" />
                                                             {e.type.label}
@@ -235,7 +246,7 @@ export default function EventClientIndex({ events }: Props) {
                                                     </div>
 
                                                     <div className="space-y-2">
-                                                        <h3 className="line-clamp-2 text-base font-extrabold leading-tight text-slate-800 group-hover:text-primary transition-colors sm:text-lg">
+                                                        <h3 className="line-clamp-2 text-base leading-tight font-extrabold text-slate-800 transition-colors group-hover:text-primary sm:text-lg">
                                                             {e.title}
                                                         </h3>
 
@@ -244,7 +255,7 @@ export default function EventClientIndex({ events }: Props) {
                                                             <span className="line-clamp-1">{e.location_name}</span>
                                                         </div>
 
-                                                        <p className="line-clamp-2 text-xs font-medium leading-relaxed text-slate-500">
+                                                        <p className="line-clamp-2 text-xs leading-relaxed font-medium text-slate-500">
                                                             {e.description}
                                                         </p>
                                                     </div>
@@ -273,7 +284,7 @@ export default function EventClientIndex({ events }: Props) {
                                             .replace('&raquo;', '›')
                                             .replace('Previous', '')
                                             .replace('Next', '');
-                                        
+
                                         if (!link.url) {
                                             return (
                                                 <span
@@ -291,14 +302,14 @@ export default function EventClientIndex({ events }: Props) {
                                                 className={`flex h-10 min-w-[40px] items-center justify-center rounded-xl px-3 text-xs font-bold transition-all ${
                                                     link.active
                                                         ? 'bg-primary text-white shadow-md shadow-primary/20'
-                                                        : 'bg-white text-slate-600 border-2 border-slate-100 hover:border-primary/30 hover:text-primary'
+                                                        : 'border-2 border-slate-100 bg-white text-slate-600 hover:border-primary/30 hover:text-primary'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: label }}
                                             />
                                         );
                                     })}
                                 </div>
-                                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                <p className="text-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                                     Ipinapakita ang {meta.from} hanggang {meta.to} ng {meta.total} kaganapan
                                 </p>
                             </div>
@@ -308,7 +319,7 @@ export default function EventClientIndex({ events }: Props) {
 
                 {/* Brand Footer */}
                 <div className="mt-12 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">
                         Ligtas at Mabilis na Serbisyo • {currentMunicipality.name}
                     </p>
                 </div>
@@ -345,12 +356,14 @@ export default function EventClientIndex({ events }: Props) {
                                             className="group block"
                                         >
                                             <div className="flex items-start gap-4 rounded-2xl border-2 border-slate-50 bg-slate-50/50 p-4 transition-all hover:border-primary/20 hover:bg-white">
-                                                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border-2 sm:flex ${style.chip} ring-0 shadow-sm`}>
+                                                <div
+                                                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border-2 sm:flex ${style.chip} shadow-sm ring-0`}
+                                                >
                                                     <Icon className="h-5 w-5" />
                                                 </div>
                                                 <div className="min-w-0 flex-1 space-y-2">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <h3 className="truncate text-sm font-black uppercase tracking-tight text-slate-800 group-hover:text-primary transition-colors">
+                                                        <h3 className="truncate text-sm font-black tracking-tight text-slate-800 uppercase transition-colors group-hover:text-primary">
                                                             {e.title}
                                                         </h3>
                                                     </div>
@@ -365,7 +378,7 @@ export default function EventClientIndex({ events }: Props) {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <ChevronRight className="mt-1 h-4 w-4 flex-shrink-0 text-slate-300 group-hover:text-primary transition-colors" />
+                                                <ChevronRight className="mt-1 h-4 w-4 flex-shrink-0 text-slate-300 transition-colors group-hover:text-primary" />
                                             </div>
                                         </Link>
                                     </li>
@@ -378,4 +391,3 @@ export default function EventClientIndex({ events }: Props) {
         </PublicLayout>
     );
 }
-

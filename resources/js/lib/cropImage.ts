@@ -7,36 +7,54 @@ export const createImage = (url: string): Promise<HTMLImageElement> =>
         image.src = url;
     });
 
+const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
+
+const rotatedSize = (width: number, height: number, rotation: number): { width: number; height: number } => {
+    const radians = degreesToRadians(rotation);
+
+    return {
+        width: Math.abs(Math.cos(radians) * width) + Math.abs(Math.sin(radians) * height),
+        height: Math.abs(Math.sin(radians) * width) + Math.abs(Math.cos(radians) * height),
+    };
+};
+
 export async function getCroppedImg(
     imageSrc: string,
     pixelCrop: { x: number; y: number; width: number; height: number },
-    fileName: string = 'cropped-id.jpg'
-): Promise<File | null> {
+    fileName: string = 'cropped-id.jpg',
+    rotation: number = 0,
+): Promise<File> {
     const image = await createImage(imageSrc);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const rotationCanvas = document.createElement('canvas');
+    const rotationContext = rotationCanvas.getContext('2d');
 
-    if (!ctx) {
-        return null;
+    if (!rotationContext) {
+        throw new Error('Unable to prepare the ID image.');
     }
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    const bounds = rotatedSize(image.width, image.height, rotation);
+    rotationCanvas.width = Math.ceil(bounds.width);
+    rotationCanvas.height = Math.ceil(bounds.height);
 
-    ctx.drawImage(
-        image,
-        pixelCrop.x,
-        pixelCrop.y,
-        pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        pixelCrop.width,
-        pixelCrop.height
-    );
+    rotationContext.translate(rotationCanvas.width / 2, rotationCanvas.height / 2);
+    rotationContext.rotate(degreesToRadians(rotation));
+    rotationContext.translate(-image.width / 2, -image.height / 2);
+    rotationContext.drawImage(image, 0, 0);
+
+    const croppedCanvas = document.createElement('canvas');
+    const croppedContext = croppedCanvas.getContext('2d');
+
+    if (!croppedContext) {
+        throw new Error('Unable to crop the ID image.');
+    }
+
+    croppedCanvas.width = pixelCrop.width;
+    croppedCanvas.height = pixelCrop.height;
+
+    croppedContext.drawImage(rotationCanvas, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
 
     return new Promise((resolve, reject) => {
-        canvas.toBlob(
+        croppedCanvas.toBlob(
             (blob) => {
                 if (!blob) {
                     reject(new Error('Canvas is empty'));
@@ -46,7 +64,7 @@ export async function getCroppedImg(
                 resolve(file);
             },
             'image/jpeg',
-            0.95
+            0.92,
         );
     });
 }

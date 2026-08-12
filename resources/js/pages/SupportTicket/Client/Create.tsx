@@ -82,7 +82,11 @@ export default function Create({ categories, priorities, is_eligible, auth }: Cr
     };
 
     return (
-        <PublicLayout title="Help & Support" description="Humingi ng tulong, mag-report ng problema, o magpadala ng support request sa munisipyo.">
+        <PublicLayout
+            title="Help & Support"
+            description="Humingi ng tulong, mag-report ng problema, o magpadala ng support request sa munisipyo."
+            noIndex
+        >
             <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
                 <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
                     <header className="mb-8 max-w-2xl sm:mb-10">

@@ -101,23 +101,7 @@ export default function ProfileSetUpWizard({
         });
     };
 
-    // Client-side submit gate. Mirrors the required-field set on the server
-    // (StoreProfileSetupRequest) so the button accurately reflects what the
-    // backend will accept. Income may be 0 — only require SOMETHING in the
-    // field (empty string fails; "0" passes).
-    const frontIdSatisfied = data.identity_id_front instanceof File || (isCorrection && existingIdentityDocuments.front);
-
-    const canSubmit =
-        data.first_name.trim().length > 0 &&
-        data.last_name.trim().length > 0 &&
-        data.sex.length > 0 &&
-        data.birth_date.length > 0 &&
-        frontIdSatisfied &&
-        data.civil_status.length > 0 &&
-        data.contact_phone.trim().length > 0 &&
-        data.barangay.trim().length > 0 &&
-        data.terms_consent &&
-        !processing;
+    // Client-side submit gate removed per request so backend validation errors show.
 
     return (
         <PublicLayout
@@ -273,7 +257,7 @@ export default function ProfileSetUpWizard({
                         {/* Submit */}
                         <Button
                             type="submit"
-                            disabled={!canSubmit}
+                            disabled={processing}
                             className="h-16 w-full rounded-2xl bg-[#005088] text-lg font-black tracking-widest text-white uppercase shadow-xl shadow-blue-900/20 transition-all hover:bg-[#003d66] active:scale-[0.98] disabled:opacity-50"
                         >
                             {processing ? 'Sini-save...' : isCorrection ? 'I-submit ang Itinama' : 'I-save at Magpatuloy'}

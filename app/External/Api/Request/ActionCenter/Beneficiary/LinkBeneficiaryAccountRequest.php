@@ -9,13 +9,13 @@ use Illuminate\Foundation\Http\FormRequest;
  * account" action.
  *
  * Pure-shape only — no business rules, no model lookups. The action
- * (LinkBeneficiaryToUserAction) resolves the account by email within the
- * tenant, enforces the one-account-one-beneficiary invariant, and requires a
+ * (LinkBeneficiaryToUserAction) resolves the account by email or normalized
+ * Philippine mobile number, enforces the per-municipality account invariant,
+ * and requires a
  * reason when re-pointing an existing link.
  *
  * Fields:
- *   • account_email → the email the applicant registered their portal account
- *     with. Resolved case-insensitively and scoped to the municipality.
+ *   • account_identifier → the email or phone the applicant registered with.
  *   • reason        → optional for a first link; the action makes it mandatory
  *     when CHANGING an already-linked account (kept nullable here so the
  *     FormRequest stays pure-shape and needs no DB read).
@@ -30,17 +30,16 @@ class LinkBeneficiaryAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_email' => ['required', 'string', 'email', 'max:255'],
-            'reason'        => ['nullable', 'string', 'max:500'],
+            'account_identifier' => ['required', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'account_email.required' => 'Enter the email of the portal account to link.',
-            'account_email.email'    => 'Enter a valid email address.',
-            'reason.max'             => 'Keep the reason under 500 characters.',
+            'account_identifier.required' => 'Enter the email or phone number of the portal account to link.',
+            'reason.max' => 'Keep the reason under 500 characters.',
         ];
     }
 }

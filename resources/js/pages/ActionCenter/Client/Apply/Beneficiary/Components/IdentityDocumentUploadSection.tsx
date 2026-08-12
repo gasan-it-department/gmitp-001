@@ -1,17 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { FileText, Upload, X, Info, RotateCw } from 'lucide-react';
-import { useState, useCallback } from 'react';
-import Cropper from 'react-easy-crop';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getCroppedImg } from '@/lib/cropImage';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { FileText, Info, Ratio, RotateCcw, RotateCw, Upload, X } from 'lucide-react';
 import type { ChangeEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Cropper from 'react-easy-crop';
 import type { ProfileSetupFormData, SectionProps } from '../types';
 
 const ACCEPTED_ID_TYPES = '.jpg,.jpeg,.png,.pdf';
@@ -39,9 +32,7 @@ export function IdentityDocumentUploadSection({
                     <Info className="h-5 w-5 shrink-0 text-blue-600" />
                     <div>
                         <h4 className="text-sm font-bold text-blue-900">Accepted Valid IDs</h4>
-                        <p className="mt-1 text-xs text-blue-700">
-                            Please upload a clear photo of one of the following valid identification cards:
-                        </p>
+                        <p className="mt-1 text-xs text-blue-700">Please upload a clear photo of one of the following valid identification cards:</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                             {[
                                 'Senior Citizen ID',
@@ -51,9 +42,12 @@ export function IdentityDocumentUploadSection({
                                 'UMID',
                                 "Voter's ID",
                                 'Postal ID',
-                                'Passport'
+                                'Passport',
                             ].map((id) => (
-                                <span key={id} className="inline-flex items-center rounded-md bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-800">
+                                <span
+                                    key={id}
+                                    className="inline-flex items-center rounded-md bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-800"
+                                >
                                     {id}
                                 </span>
                             ))}
@@ -112,6 +106,7 @@ function DocumentUploadCard({
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [isCropping, setIsCropping] = useState(false);
     const [isVertical, setIsVertical] = useState(false);
+    const [rotation, setRotation] = useState(0);
 
     const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
@@ -126,6 +121,9 @@ function DocumentUploadCard({
 
             const reader = new FileReader();
             reader.addEventListener('load', () => {
+                setCrop({ x: 0, y: 0 });
+                setZoom(1);
+                setRotation(0);
                 setCropImageSrc(reader.result?.toString() ?? null);
             });
             reader.readAsDataURL(selectedFile);
@@ -141,7 +139,7 @@ function DocumentUploadCard({
 
         setIsCropping(true);
         try {
-            const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels, 'cropped-id.jpg');
+            const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels, 'cropped-id.jpg', rotation);
             onChange(croppedFile);
             setCropImageSrc(null);
         } catch (e) {
@@ -171,21 +169,28 @@ function DocumentUploadCard({
             <input id={id} type="file" accept={ACCEPTED_ID_TYPES} onChange={handleFileChange} className="sr-only" />
 
             {file ? (
-                <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-800">{file.name}</p>
-                        <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                <div className="mt-4 space-y-3">
+                    {file.type.startsWith('image/') && (
+                        <div className="aspect-[1.586/1] overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
+                            <SelectedImagePreview file={file} label={label} />
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-800">{file.name}</p>
+                            <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onChange(null)}
+                            className="h-8 w-8 shrink-0 text-slate-500 hover:text-red-600"
+                            aria-label={`Remove ${label}`}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
                     </div>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onChange(null)}
-                        className="h-8 w-8 shrink-0 text-slate-500 hover:text-red-600"
-                        aria-label={`Remove ${label}`}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
                 </div>
             ) : existingUploaded ? (
                 <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3">
@@ -219,7 +224,7 @@ function DocumentUploadCard({
                     <DialogHeader>
                         <DialogTitle>Crop ID Photo</DialogTitle>
                         <DialogDescription>
-                            Pinch or drag to align your ID within the frame. Ensure all text and corners are visible.
+                            Rotate the ID until the text is upright, then keep all text and corners inside the frame.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -229,6 +234,7 @@ function DocumentUploadCard({
                                 image={cropImageSrc}
                                 crop={crop}
                                 zoom={zoom}
+                                rotation={rotation}
                                 aspect={isVertical ? 53.98 / 85.6 : 85.6 / 53.98}
                                 onCropChange={setCrop}
                                 onCropComplete={onCropComplete}
@@ -237,9 +243,9 @@ function DocumentUploadCard({
                         )}
                     </div>
 
-                    <div className="flex flex-col gap-4 mt-2">
+                    <div className="mt-2 flex flex-col gap-4">
                         <div className="flex items-center gap-4">
-                            <span className="text-sm font-medium text-slate-700 w-12">Zoom</span>
+                            <span className="w-12 text-sm font-medium text-slate-700">Zoom</span>
                             <input
                                 type="range"
                                 value={zoom}
@@ -251,18 +257,39 @@ function DocumentUploadCard({
                             />
                         </div>
 
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setRotation((current) => (current + 270) % 360)}
+                                className="gap-2"
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                                Rotate left
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setRotation((current) => (current + 90) % 360)}
+                                className="gap-2"
+                            >
+                                <RotateCw className="h-4 w-4" />
+                                Rotate right
+                            </Button>
                             <Button
                                 type="button"
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => setIsVertical(!isVertical)}
-                                className="flex items-center gap-2"
+                                className="gap-2 sm:ml-auto"
                             >
-                                <RotateCw className="h-4 w-4" />
-                                {isVertical ? 'Switch to Horizontal' : 'Switch to Vertical'}
+                                <Ratio className="h-4 w-4" />
+                                {isVertical ? 'Horizontal frame' : 'Vertical frame'}
                             </Button>
                         </div>
+                        <p className="text-xs leading-relaxed text-slate-500">Siguraduhing tuwid at nababasa ang ID bago isumite.</p>
                     </div>
 
                     <DialogFooter className="mt-4">
@@ -277,6 +304,23 @@ function DocumentUploadCard({
             </Dialog>
         </div>
     );
+}
+
+function SelectedImagePreview({ file, label }: { file: File; label: string }) {
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [file]);
+
+    if (previewUrl === null) {
+        return null;
+    }
+
+    return <img src={previewUrl} alt={`${label} preview`} className="h-full w-full object-contain" />;
 }
 
 function formatFileSize(bytes: number): string {

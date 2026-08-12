@@ -1,39 +1,49 @@
-import { ReactNode } from 'react';
-import { Head } from '@inertiajs/react';
 import { Content } from '@/components/Content';
 import { LayoutHeader } from '@/components/LayoutHeader';
 import LayoutShell from '@/components/LayoutShell';
+import Footer from '@/components/Public/Footer';
+import PublicSeo, { StructuredData } from '@/components/Seo/PublicSeo';
 import { MunicipalityProvider } from '@/Core/Context/MunicipalityContext';
-
-import Footer from '@/components/Public/Footer'; 
+import { ReactNode } from 'react';
 
 interface PublicLayoutProps {
     children: ReactNode;
     title?: string;
     description?: string;
+    canonicalUrl?: string;
+    imageUrl?: string;
+    type?: 'website' | 'article';
+    noIndex?: boolean;
+    structuredData?: StructuredData | StructuredData[];
 }
 
-export default function PublicLayout({ 
-    children, 
-    title = 'Welcome', 
-    description = 'Default description for the application.' 
+export default function PublicLayout({
+    children,
+    title = 'Citizen Portal',
+    description,
+    canonicalUrl,
+    imageUrl,
+    type,
+    noIndex,
+    structuredData,
 }: PublicLayoutProps) {
     return (
         <MunicipalityProvider>
-            {/* Add Inertia Head for SEO using your props */}
-            <Head>
-                <title>{title}</title>
-                <meta name="description" content={description} />
-            </Head>
+            <PublicSeo
+                title={title}
+                description={description}
+                canonicalUrl={canonicalUrl}
+                imageUrl={imageUrl}
+                type={type}
+                noIndex={noIndex}
+                structuredData={structuredData}
+            />
 
             <LayoutShell variant="header">
                 <LayoutHeader />
-                
-                {/* Main content area */}
-                <Content>
-                    {children}
-                </Content>
-                
+
+                <Content>{children}</Content>
+
                 <Footer />
             </LayoutShell>
         </MunicipalityProvider>

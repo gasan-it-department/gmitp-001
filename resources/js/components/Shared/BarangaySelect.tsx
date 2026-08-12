@@ -18,6 +18,8 @@ interface BarangaySelectProps {
     showLabel?: boolean;
     useNameAsValue?: boolean;
     includeAny?: boolean;
+    error?: string;
+    required?: boolean;
 }
 
 export function BarangaySelect({
@@ -28,6 +30,8 @@ export function BarangaySelect({
     showLabel = true,
     useNameAsValue = false,
     includeAny = false,
+    error,
+    required = false,
 }: BarangaySelectProps) {
     const [barangays, setBarangays] = useState<PsgcBarangay[]>([]);
 
@@ -47,8 +51,9 @@ export function BarangaySelect({
     return (
         <div className="space-y-1">
             {showLabel && (
-                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">
+                <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold tracking-wide text-gray-600 uppercase">
                     Barangay
+                    {required && <span className="text-red-500">*</span>}
                 </label>
             )}
             <Select
@@ -75,6 +80,7 @@ export function BarangaySelect({
                     ))}
                 </SelectContent>
             </Select>
+            {error && <p className="mt-1 text-[11px] font-medium text-red-600">{error}</p>}
         </div>
     );
 }

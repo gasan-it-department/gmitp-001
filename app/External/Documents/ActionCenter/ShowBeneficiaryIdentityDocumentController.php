@@ -37,6 +37,9 @@ class ShowBeneficiaryIdentityDocumentController extends Controller
             abort(404);
         }
 
-        return $media->toInlineResponse($request);
+        return $media->toAvailableInlineResponse(
+            $request,
+            [Beneficiary::IDENTITY_DISPLAY_CONVERSION],
+        );
     }
 }

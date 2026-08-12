@@ -1,6 +1,18 @@
 import moment from 'moment';
 
 export default function Utility() {
+    const supportedDateFormats = [moment.ISO_8601, moment.RFC_2822, 'MMM D, YYYY h:mm A', 'YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD'];
+
+    function parseDateMoment(dateTime: string | number): moment.Moment {
+        if (!isNaN(Number(dateTime))) {
+            const epoch = Number(dateTime);
+
+            return epoch > 9999999999 ? moment(epoch) : moment.unix(epoch);
+        }
+
+        return moment(String(dateTime), supportedDateFormats, true);
+    }
+
     function generateUniqueId() {
         return Date.now().toString();
     }
@@ -13,54 +25,30 @@ export default function Utility() {
     // }
     function formatToReadableDate(dateTime: string | number | undefined): string {
         if (!dateTime) {
-            return "Unknown date";
+            return 'Unknown date';
         }
 
-        let dateMoment;
-
-        // Handle numeric epoch (either seconds or milliseconds)
-        if (!isNaN(Number(dateTime))) {
-            const epoch = Number(dateTime);
-            dateMoment = epoch > 9999999999
-                ? moment(epoch) // milliseconds
-                : moment.unix(epoch); // seconds
-        }
-        // Otherwise, assume ISO or readable date string
-        else {
-            dateMoment = moment(dateTime);
-        }
+        const dateMoment = parseDateMoment(dateTime);
 
         if (!dateMoment.isValid()) {
-            return "Invalid date format";
+            return 'Invalid date format';
         }
 
-        return dateMoment.format("MMM DD, YYYY hh:mm A");
+        return dateMoment.format('MMM DD, YYYY hh:mm A');
     }
 
     function formatToReadableDateNoTime(dateTime: string | number | undefined): string {
         if (!dateTime) {
-            return "Unknown date";
+            return 'Unknown date';
         }
 
-        let dateMoment;
-
-        // Handle numeric epoch (either seconds or milliseconds)
-        if (!isNaN(Number(dateTime))) {
-            const epoch = Number(dateTime);
-            dateMoment = epoch > 9999999999
-                ? moment(epoch) // milliseconds
-                : moment.unix(epoch); // seconds
-        }
-        // Otherwise, assume ISO or readable date string
-        else {
-            dateMoment = moment(dateTime);
-        }
+        const dateMoment = parseDateMoment(dateTime);
 
         if (!dateMoment.isValid()) {
-            return "Invalid date format";
+            return 'Invalid date format';
         }
 
-        return dateMoment.format("MMM DD, YYYY");
+        return dateMoment.format('MMM DD, YYYY');
     }
 
     // function formatAndAddDays(epochTime: string | undefined, additionalDays: number = 0) {
@@ -73,41 +61,37 @@ export default function Utility() {
     //         .format('MMM DD, YYYY hh:mm A');
     // }
     function formatAndAddDays(dateTimeString: string | undefined, additionalDays: number = 0): string {
-        if (!dateTimeString) return "Unknown date";
+        if (!dateTimeString) return 'Unknown date';
 
         let dateMoment: moment.Moment;
 
         if (!isNaN(Number(dateTimeString))) {
             const epoch = Number(dateTimeString);
-            dateMoment = epoch > 9999999999
-                ? moment(epoch)
-                : moment.unix(epoch);
+            dateMoment = epoch > 9999999999 ? moment(epoch) : moment.unix(epoch);
         } else {
             dateMoment = moment.parseZone(dateTimeString).local();
         }
 
         if (!dateMoment.isValid()) return `Invalid date: ${dateTimeString}`;
 
-        return dateMoment.add((additionalDays + 2), 'days').format("MMM DD, YYYY");
+        return dateMoment.add(additionalDays + 2, 'days').format('MMM DD, YYYY');
     }
 
     function formatAndAddDaysNoTime(dateTimeString: string | undefined, additionalDays: number = 0): string {
-        if (!dateTimeString) return "Unknown date";
+        if (!dateTimeString) return 'Unknown date';
 
         let dateMoment: moment.Moment;
 
         if (!isNaN(Number(dateTimeString))) {
             const epoch = Number(dateTimeString);
-            dateMoment = epoch > 9999999999
-                ? moment(epoch)
-                : moment.unix(epoch);
+            dateMoment = epoch > 9999999999 ? moment(epoch) : moment.unix(epoch);
         } else {
             dateMoment = moment.parseZone(dateTimeString).local();
         }
 
         if (!dateMoment.isValid()) return `Invalid date: ${dateTimeString}`;
 
-        return dateMoment.add((additionalDays + 2), 'days').format("MMM DD, YYYY");
+        return dateMoment.add(additionalDays + 2, 'days').format('MMM DD, YYYY');
     }
 
     function calculateTotalDays(dateApproved: string) {
@@ -121,60 +105,60 @@ export default function Utility() {
     function formatTimeAgo(time: string | number) {
         const now = new Date().getTime();
         let date: Date;
-        if (typeof time === "number") {
+        if (typeof time === 'number') {
             date = new Date(time);
         } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(time)) {
             // Parse "YYYY-MM-DD HH:mm:ss"
-            const [datePart, timePart] = time.split(" ");
-            const [year, month, day] = datePart.split("-").map(Number);
-            const [hour, min, sec] = timePart.split(":").map(Number);
+            const [datePart, timePart] = time.split(' ');
+            const [year, month, day] = datePart.split('-').map(Number);
+            const [hour, min, sec] = timePart.split(':').map(Number);
             date = new Date(year, month - 1, day, hour, min, sec);
         } else {
             date = new Date(time);
         }
-        if (isNaN(date.getTime())) return "Invalid date";
+        if (isNaN(date.getTime())) return 'Invalid date';
         const seconds = Math.floor((now - date.getTime()) / 1000);
-        if (seconds < 60) return "Just now";
+        if (seconds < 60) return 'Just now';
         if (seconds < 3600) {
             const mins = Math.floor(seconds / 60);
-            return mins === 1 ? "1 min ago" : `${mins} mins ago`;
+            return mins === 1 ? '1 min ago' : `${mins} mins ago`;
         }
         if (seconds < 86400) {
             const hours = Math.floor(seconds / 3600);
-            return hours === 1 ? "1 hr ago" : `${hours} hrs ago`;
+            return hours === 1 ? '1 hr ago' : `${hours} hrs ago`;
         }
         if (seconds < 2592000) {
             const days = Math.floor(seconds / 86400);
-            return days === 1 ? "1 day ago" : `${days} days ago`;
+            return days === 1 ? '1 day ago' : `${days} days ago`;
         }
         if (seconds < 31536000) {
             const months = Math.floor(seconds / 2592000);
-            return months === 1 ? "1 mon ago" : `${months} mons ago`;
+            return months === 1 ? '1 mon ago' : `${months} mons ago`;
         } else {
             const years = Math.floor(seconds / 31536000);
-            return years === 1 ? "1 year ago" : `${years} years ago`;
+            return years === 1 ? '1 year ago' : `${years} years ago`;
         }
     }
 
     function calculateArrivingDays(dateInput: string | number): string {
         let eventDate: moment.Moment;
 
-        if (typeof dateInput === "number" || /^\d+$/.test(dateInput)) {
+        if (typeof dateInput === 'number' || /^\d+$/.test(dateInput)) {
             // Numeric epoch (seconds or milliseconds)
             const epoch = Number(dateInput);
             eventDate = epoch > 9999999999 ? moment(epoch) : moment.unix(epoch); // ms vs s
         } else {
             // Parse date string
-            eventDate = moment(dateInput, "YYYY-MM-DD HH:mm:ss");
+            eventDate = moment(dateInput, 'YYYY-MM-DD HH:mm:ss');
         }
 
         const now = moment();
-        const diffDays = eventDate.startOf("day").diff(now.startOf("day"), "days");
+        const diffDays = eventDate.startOf('day').diff(now.startOf('day'), 'days');
 
         if (diffDays > 1) return `In ${diffDays} days`;
-        if (diffDays === 1) return "In 1 day";
-        if (diffDays === 0) return "Today";
-        if (diffDays === -1) return "Yesterday";
+        if (diffDays === 1) return 'In 1 day';
+        if (diffDays === 0) return 'Today';
+        if (diffDays === -1) return 'Yesterday';
         return `${Math.abs(diffDays)} days ago`;
     }
 
@@ -187,13 +171,13 @@ export default function Utility() {
 
     function formatCurrency(value: string | number | undefined | null): string {
         if (value === null || value === undefined) {
-            return "₱0.00";
+            return '₱0.00';
         }
 
         const numberValue = typeof value === 'string' ? parseFloat(value) : value;
 
         if (isNaN(numberValue)) {
-            return "₱0.00";
+            return '₱0.00';
         }
 
         return new Intl.NumberFormat('en-PH', {
@@ -210,18 +194,17 @@ export default function Utility() {
         const trimmed = mobile.trim();
 
         // 09XXXXXXXXX → +63XXXXXXXXX
-        if (trimmed.startsWith("09") && trimmed.length === 11) {
-            return "+63" + trimmed.slice(1);
+        if (trimmed.startsWith('09') && trimmed.length === 11) {
+            return '+63' + trimmed.slice(1);
         }
 
         return trimmed;
     }
 
-    function getCurrentWebsiteVersion(): string{
+    function getCurrentWebsiteVersion(): string {
         const version = import.meta.env.VITE_APP_VERSION;
-        return version ? version : "Version not set";
+        return version ? version : 'Version not set';
     }
-
 
     // Example of how to use it in your component structure:
     // <TableCell className="text-[12px]">{formatCurrency(req.amount)}</TableCell>
@@ -238,6 +221,6 @@ export default function Utility() {
         linkify,
         formatCurrency,
         formatPhoneNumber,
-        getCurrentWebsiteVersion
+        getCurrentWebsiteVersion,
     };
 }

@@ -235,6 +235,7 @@ export default function IntakeReviewPanel({
     const hasResolutionChoices = householdMatches.length > 0 || manualSelection !== null;
     const selectedMatch = manualSelection ?? householdMatches.find((match) => match.member_id === data.target_member_id) ?? null;
     const manualReasonRequired = manualSelection !== null && !manualSelection.is_exact_match;
+    const hasRequiredFrontId = identityDocuments.front !== null;
 
     return (
         <div className="space-y-5 rounded-lg border border-amber-200 bg-amber-50 p-4 sm:p-5">
@@ -254,6 +255,11 @@ export default function IntakeReviewPanel({
                     <IdentityDocumentLink label="ID front" href={identityDocuments.front} required />
                     <IdentityDocumentLink label="ID back" href={identityDocuments.back} />
                 </div>
+                {!hasRequiredFrontId && (
+                    <p className="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-900">
+                        Upload the beneficiary&apos;s front ID from the Documents section before completing verification.
+                    </p>
+                )}
             </div>
 
             <fieldset className="space-y-2">
@@ -396,7 +402,7 @@ export default function IntakeReviewPanel({
                 <Button
                     type="button"
                     onClick={submit}
-                    disabled={processing || rejecting}
+                    disabled={processing || rejecting || !hasRequiredFrontId}
                     className="w-full bg-slate-900 text-white hover:bg-slate-800"
                 >
                     {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}

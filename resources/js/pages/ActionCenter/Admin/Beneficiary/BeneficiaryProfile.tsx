@@ -1,7 +1,7 @@
-import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
-import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import EditBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/EditBeneficiaryProfileController';
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
+import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
+import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
@@ -44,6 +44,7 @@ interface BeneficiaryProfileData {
     household: { id: string; household_code: string | null; barangay: string | null; street: string | null } | null;
     has_account: boolean;
     account_email: string | null;
+    account_phone: string | null;
     terms_consented_at: string | null;
     registered_at: string | null;
 }
@@ -284,7 +285,9 @@ export default function BeneficiaryProfile({
                                         <Mail className="mt-0.5 h-4 w-4 text-slate-400" />
                                         <div>
                                             <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Account</p>
-                                            <p className="text-sm text-slate-800">{profile.account_email ?? 'Walk-in (no portal account)'}</p>
+                                            <p className="text-sm text-slate-800">
+                                                {profile.account_email || profile.account_phone || 'Walk-in (no portal account)'}
+                                            </p>
                                             <button
                                                 type="button"
                                                 onClick={() => setLinkOpen(true)}
@@ -326,7 +329,9 @@ export default function BeneficiaryProfile({
             <LinkAccountDialog
                 beneficiaryId={profile.id}
                 beneficiaryName={profile.full_name}
+                hasAccount={profile.has_account}
                 currentEmail={profile.account_email}
+                currentPhone={profile.account_phone}
                 isOpen={linkOpen}
                 onClose={() => setLinkOpen(false)}
             />

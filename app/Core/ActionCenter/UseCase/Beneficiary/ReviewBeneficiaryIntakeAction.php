@@ -41,6 +41,12 @@ class ReviewBeneficiaryIntakeAction
                 throw new \DomainException('This beneficiary intake has already been rejected.');
             }
 
+            if (! $beneficiary->hasMedia('identity_id_front')) {
+                throw new \DomainException(
+                    'Upload the beneficiary\'s front ID before completing intake verification.',
+                );
+            }
+
             $sourceHousehold = Household::query()
                 ->whereKey($beneficiary->household_id)
                 ->lockForUpdate()
