@@ -22,9 +22,12 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
         closing_date: procurement.closing_date ? procurement.closing_date.split('T')[0] : '',
         reference_number: procurement.reference_number || '',
     });
+    const actionError = (errors as Record<string, string>).procurement;
 
-    // 2. Hard Requirements Check (Must have documents to open bidding)
-    const hasDocuments = procurement.media && procurement.media.length > 0;
+    // Documents improve the public record but do not block a lifecycle transition.
+    const publicBidDocuments =
+        procurement.media?.filter((document) => ['invitation', 'bid_docs'].includes(document.collection || document.type || '')) ?? [];
+    const hasDocuments = publicBidDocuments.length > 0;
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -53,8 +56,8 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
                 {/* Header */}
                 <div className="flex items-center justify-between border-b px-6 py-4">
                     <div>
-                        <h2 className="text-lg font-bold text-slate-900">Open for Bidding</h2>
-                        <p className="text-sm text-slate-500">Pre-flight checklist for R.A. 9184 compliance</p>
+                        <h2 className="text-lg font-bold text-slate-900">Move to Open Bidding</h2>
+                        <p className="text-sm text-slate-500">Update the workflow while keeping the record private</p>
                     </div>
                     <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                         <X className="h-5 w-5" />
@@ -63,18 +66,32 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
 
                 <form onSubmit={submit} className="p-6">
                     <div className="space-y-5">
-                        {/* 1. Bidding Documents Check (Hard Blocker) */}
+                        {actionError && (
+                            <p
+                                role="alert"
+                                className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-medium text-destructive"
+                            >
+                                {actionError}
+                            </p>
+                        )}
+                        <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+                            This action does not publish the record. You can continue reviewing, editing, or deleting it until you choose Publish to
+                            Citizens.
+                        </div>
+                        {/* 1. Bidding Documents Check (Advisory) */}
                         <div className="rounded-lg border p-4">
-                            <h3 className="mb-2 text-sm font-semibold text-slate-700">1. Bidding Documents</h3>
+                            <h3 className="mb-2 text-sm font-semibold text-slate-700">1. Supporting Documents (Optional)</h3>
                             {hasDocuments ? (
                                 <div className="flex items-center gap-2 text-sm text-green-700">
                                     <CheckCircle2 className="h-5 w-5" />
-                                    <span>{procurement.media!.length} document(s) attached and ready.</span>
+                                    <span>{publicBidDocuments.length} public bid document(s) attached and ready.</span>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2 text-sm text-red-600">
+                                <div className="flex items-start gap-2 text-sm text-amber-700">
                                     <AlertCircle className="h-5 w-5" />
-                                    <span>Missing! You must attach Bidding Documents before opening.</span>
+                                    <span>
+                                        No Invitation to Bid or Bidding Document is attached yet. You may continue and upload supporting PDFs later.
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -176,10 +193,10 @@ export default function OpenBiddingDialog({ isOpen, onClose, procurement }: Prop
                         </button>
                         <button
                             type="submit"
-                            disabled={processing || !hasDocuments}
+                            disabled={processing}
                             className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
                         >
-                            Confirm & Open Bidding
+                            {processing ? 'Saving...' : 'Save as Open (Private)'}
                         </button>
                     </div>
                 </form>

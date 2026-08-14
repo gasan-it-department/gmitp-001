@@ -2,10 +2,12 @@ import ConfirmDialog from '@/components/Shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Department } from '@/Core/Types/Department/department';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { Category, FundingSource, ProcurementFormData } from '@/Core/Types/Procurement/procurement';
+import { Category, FundingSource, ProcurementFormData, ProcurementSelectOption } from '@/Core/Types/Procurement/procurement';
 import { AwardInformation } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/AwardInformation';
 import { BudgetAndSchedule } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/BudgetAndSchedule';
+import { HistoricalOutcome } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/HistoricalOutcome';
 import { ProjectDetails } from '@/pages/PublicInformation/Admin/Procurement/Create/Components/ProjectDetails';
 import procurement from '@/routes/procurement';
 import { router, useForm, usePage } from '@inertiajs/react';
@@ -19,11 +21,19 @@ interface SharedFormProps {
     procurementId?: string | number; // Only needed for edit
     fundingSources: FundingSource[];
     categories: Category[];
-    statuses: any;
-    departments: any;
+    statuses: ProcurementSelectOption[];
+    departments: Department[];
 }
 
-export default function SharedProcurementForm({ initialData, mode, procurementId, fundingSources, categories, statuses, departments }: SharedFormProps) {
+export default function SharedProcurementForm({
+    initialData,
+    mode,
+    procurementId,
+    fundingSources,
+    categories,
+    statuses,
+    departments,
+}: SharedFormProps) {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
@@ -60,7 +70,6 @@ export default function SharedProcurementForm({ initialData, mode, procurementId
     };
 
     const isAwarded = data.status?.toUpperCase() === 'AWARDED';
-    const isHistorical = data.is_historical;
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-slate-50/50">
@@ -189,30 +198,36 @@ export default function SharedProcurementForm({ initialData, mode, procurementId
                                         </p>
                                     </div>
                                 )}
+
+                                {['failed', 'cancelled'].includes(data.status) && (
+                                    <HistoricalOutcome data={data} setData={setData} errors={errors} processing={processing} />
+                                )}
                             </div>
 
                             {/* RIGHT COLUMN: SIDEBAR */}
                             <div className="lg:col-span-4">
                                 <div className="sticky top-28 space-y-6">
-                                    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                                        <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
-                                                <StickyNote className="h-4 w-4" />
+                                    {data.status === 'cancelled' && (
+                                        <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                                            <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
+                                                    <StickyNote className="h-4 w-4" />
+                                                </div>
+                                                <h3 className="font-bold text-slate-900">Public cancellation reason</h3>
                                             </div>
-                                            <h3 className="font-bold text-slate-900">
-                                                Notes <span className="text-red-500">/</span> Remarks
-                                            </h3>
-                                        </div>
-                                        <div className="p-6">
-                                            <Textarea
-                                                value={data.notes ?? ''}
-                                                onChange={(e) => setData('notes', e.target.value)}
-                                                placeholder="Add any additional notes, BAC resolutions, or remarks regarding this procurement here..."
-                                                className="min-h-[120px] resize-y"
-                                            />
-                                            {errors.notes && <span className="mt-2 block text-sm font-medium text-red-500">{errors.notes}</span>}
-                                        </div>
-                                    </section>
+                                            <div className="p-6">
+                                                <Textarea
+                                                    value={data.notes ?? ''}
+                                                    onChange={(event) => setData('notes', event.target.value)}
+                                                    placeholder="State the official cancellation reason in plain language for citizens."
+                                                    required
+                                                    maxLength={1000}
+                                                    className="min-h-[120px] resize-y"
+                                                />
+                                                {errors.notes && <span className="mt-2 block text-sm font-medium text-red-500">{errors.notes}</span>}
+                                            </div>
+                                        </section>
+                                    )}
 
                                     <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6">
                                         <div className="flex items-start gap-3 text-blue-700">

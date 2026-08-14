@@ -4,7 +4,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin\Beneficiary;
 
 use App\Core\ActionCenter\UseCase\Beneficiary\SearchBeneficiaryAction;
 use App\External\Api\Request\ActionCenter\Beneficiary\SearchBeneficiaryRequest;
-use App\External\Api\Resources\ActionCenter\Beneficiary\BeneficiaryListResource;
+use App\External\Api\Resources\ActionCenter\PeopleSearchResultResource;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,7 +50,7 @@ class ShowBeneficiarySearchController extends Controller
         return Inertia::render('ActionCenter/Admin/Beneficiary/BeneficiarySearch', [
             // Resource collection → { data, links, meta } (meta.links drives the
             // shared <Pagination /> on the page).
-            'results' => BeneficiaryListResource::collection($results),
+            'results' => PeopleSearchResultResource::collection($results),
 
             // Echoed back so the React inputs hydrate on reload / shared links.
             'filters' => $filters,

@@ -47,25 +47,30 @@ enum ProcurementDocumentType: string
         return match ($this) {
             self::INVITATION, self::BID_DOCS, self::BULLETIN => [
                 ProcurementStatus::DRAFT,
-                ProcurementStatus::OPEN
+                ProcurementStatus::OPEN,
             ],
             self::ABSTRACT_OF_BIDS, self::BAC_RESOLUTION => [
                 ProcurementStatus::EVALUATING,
-                ProcurementStatus::AWARDED
+                ProcurementStatus::AWARDED,
             ],
             self::NOTICE_OF_AWARD, self::CONTRACT, self::NOTICE_TO_PROCEED => [
-                ProcurementStatus::AWARDED
+                ProcurementStatus::AWARDED,
             ],
             self::OTHERS => ProcurementStatus::cases(),
         };
     }
 
+    public function isPublicBidDocument(): bool
+    {
+        return in_array($this, [self::INVITATION, self::BID_DOCS], true);
+    }
+
     public static function toOptionsArray(): array
     {
-        return array_map(fn($case) => [
+        return array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->label(),
-            'allowed_statuses' => array_map(fn($status) => $status->value, $case->allowedStatuses()),
+            'allowed_statuses' => array_map(fn ($status) => $status->value, $case->allowedStatuses()),
         ], self::cases());
     }
 }

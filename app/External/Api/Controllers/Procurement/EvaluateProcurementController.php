@@ -8,18 +8,16 @@ use Illuminate\Http\Request;
 
 class EvaluateProcurementController extends Controller
 {
-
     public function __construct(
         private EvaluateProcurementUseCase $evaluateProcurement
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request, string $procurementId)
     {
         $validated = $request->validate([
-            'remarks' => ['nullable', 'string', 'max:2000']
+            'remarks' => ['nullable', 'string', 'max:2000'],
         ]);
-        $this->evaluateProcurement->execute(app('municipal_id'), $procurementId, $validated['remarks']);
+        $this->evaluateProcurement->execute(app('municipal_id'), $procurementId, $validated['remarks'] ?? null);
 
         return redirect()->back()->with('success', 'Bidding closed. Project is now under evaluation.');
     }

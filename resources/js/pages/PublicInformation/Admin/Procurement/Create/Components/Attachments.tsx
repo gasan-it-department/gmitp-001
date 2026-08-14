@@ -26,13 +26,20 @@ interface Props {
 export const Attachments = ({ attachments, onFilesChange, error, disabled, documentTypes }: Props) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const maxFileSizeBytes = 25 * 1024 * 1024;
 
     const processFiles = (files: FileList | null) => {
         if (files && files.length > 0) {
-            const validFiles = Array.from(files).filter((file) => file.type === 'application/pdf');
+            const selectedFiles = Array.from(files);
+            const pdfFiles = selectedFiles.filter((file) => file.type === 'application/pdf');
+            const validFiles = pdfFiles.filter((file) => file.size <= maxFileSizeBytes);
 
-            if (validFiles.length !== files.length) {
+            if (pdfFiles.length !== selectedFiles.length) {
                 alert('Only PDF files are allowed. Other file types were ignored.');
+            }
+
+            if (validFiles.length !== pdfFiles.length) {
+                alert('Each PDF must be 25 MB or smaller. Oversized files were ignored.');
             }
 
             const newAttachments: AttachmentItem[] = validFiles.map((file) => ({

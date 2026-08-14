@@ -1,23 +1,19 @@
 import { FormInput } from '@/components/FormInputField';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ProcurementFormData } from '@/Core/Types/Procurement/procurement';
-
-interface SelectOption {
-    value: string;
-    label: string;
-    color?: string;
-}
+import { Textarea } from '@/components/ui/textarea';
+import { Department } from '@/Core/Types/Department/department';
+import { FundingSource, ProcurementFormData, ProcurementSelectOption } from '@/Core/Types/Procurement/procurement';
 
 interface ProjectDetailsProps {
     data: ProcurementFormData;
-    setData: (field: string, value: any) => void;
-    errors: any;
+    setData: <K extends keyof ProcurementFormData>(field: K, value: ProcurementFormData[K]) => void;
+    errors: Partial<Record<keyof ProcurementFormData, string>>;
     processing: boolean;
-    fundingSources: any;
-    statuses: SelectOption[];
-    categories: SelectOption[];
-    departments: any;
+    fundingSources: FundingSource[];
+    statuses: ProcurementSelectOption[];
+    categories: ProcurementSelectOption[];
+    departments: Department[];
     isHistorical: boolean;
 }
 
@@ -32,7 +28,7 @@ export const ProjectDetails = ({
     departments,
     isHistorical,
 }: ProjectDetailsProps) => {
-    const selectedFundingSource = fundingSources?.find((s: any) => s.id === data.funding_source_id);
+    const selectedFundingSource = fundingSources?.find((source) => source.id === data.funding_source_id);
     const isOthersFundingSource = selectedFundingSource?.code === 'OTHERS';
 
     return (
@@ -56,17 +52,25 @@ export const ProjectDetails = ({
                 <div className="flex flex-col gap-1.5">
                     <Label className="text-sm font-medium text-gray-700">Current Status</Label>
                     <div className="relative">
-                        <Select value={data.status} onValueChange={(val) => setData('status', val)}>
+                        <Select
+                            value={data.status}
+                            onValueChange={(value) => {
+                                setData('status', value);
+                                if (value !== 'cancelled') setData('notes', null);
+                            }}
+                        >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Status" />
                             </SelectTrigger>
                             <SelectContent>
                                 {statuses &&
-                                    statuses.map((status: SelectOption) => (
-                                        <SelectItem key={status.value} value={status.value}>
-                                            {status.label}
-                                        </SelectItem>
-                                    ))}
+                                    statuses
+                                        .filter((status) => status.value !== 'draft')
+                                        .map((status) => (
+                                            <SelectItem key={status.value} value={status.value}>
+                                                {status.label}
+                                            </SelectItem>
+                                        ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -86,6 +90,24 @@ export const ProjectDetails = ({
                     placeholder="e.g. Construction of Multi-Purpose Hall Phase II"
                 />
             </div>
+            <div className="md:col-span-2">
+                <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+                    Project description and public purpose
+                </Label>
+                <Textarea
+                    id="description"
+                    value={data.description || ''}
+                    onChange={(event) => setData('description', event.target.value)}
+                    disabled={processing}
+                    aria-invalid={Boolean(errors.description)}
+                    placeholder="Explain what will be purchased or built, who benefits, and where the project will be delivered."
+                    className={`mt-1.5 min-h-28 resize-y ${errors.description ? 'border-destructive' : ''}`}
+                />
+                <p className="mt-1.5 text-[0.8rem] text-muted-foreground">
+                    This summary is shown to citizens, so use plain language and include the intended location or beneficiaries when relevant.
+                </p>
+                {errors.description && <span className="mt-1 block text-sm text-red-500">{errors.description}</span>}
+            </div>
             {/* Category - Standard width */}
             <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-medium text-gray-700">Category</Label>
@@ -96,7 +118,7 @@ export const ProjectDetails = ({
                     </SelectTrigger>
                     <SelectContent>
                         {categories &&
-                            categories.map((cat: SelectOption) => (
+                            categories.map((cat) => (
                                 <SelectItem key={cat.value} value={cat.value}>
                                     {cat.label}
                                 </SelectItem>
@@ -114,7 +136,7 @@ export const ProjectDetails = ({
                     </SelectTrigger>
                     <SelectContent>
                         {departments &&
-                            departments.map((dept: any) => (
+                            departments.map((dept) => (
                                 <SelectItem key={dept.id} value={dept.id}>
                                     {dept.name}
                                 </SelectItem>
@@ -125,7 +147,9 @@ export const ProjectDetails = ({
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <label className="mb-1 block text-sm font-medium text-gray-700">Funding Source</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Funding Source <span className="text-red-500">*</span>
+                </label>
 
                 <Select value={data.funding_source_id || ''} onValueChange={(val) => setData('funding_source_id', val)}>
                     <SelectTrigger className={errors.funding_source_id ? 'border-destructive' : ''}>
@@ -133,11 +157,8 @@ export const ProjectDetails = ({
                     </SelectTrigger>
 
                     <SelectContent>
-                        {/* Optional: Add an item for the "None/Null" state */}
-                        <SelectItem value="none">None / To be determined</SelectItem>
-
                         {fundingSources &&
-                            fundingSources.map((source: any) => (
+                            fundingSources.map((source) => (
                                 <SelectItem key={source.id} value={source.id}>
                                     {source.label || `${source.code} - ${source.name}`}
                                 </SelectItem>
@@ -156,6 +177,7 @@ export const ProjectDetails = ({
                             disabled={processing}
                             error={errors.custom_funding_source}
                             placeholder="e.g. NGO Grant, Private Donation"
+                            required
                         />
                     </div>
                 )}

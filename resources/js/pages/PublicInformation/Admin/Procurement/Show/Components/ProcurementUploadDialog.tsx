@@ -11,8 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
 import api from '@/lib/axios';
-import { toast } from 'sonner';
 import procurement from '@/routes/procurement';
+import { toast } from 'sonner';
 
 interface SelectOption {
     value: string;
@@ -26,9 +26,10 @@ interface UploadDialogProps {
     procurementId: string | number;
     onSuccess: () => void;
     docTypes: SelectOption[];
+    isPublished?: boolean;
 }
 
-export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, onSuccess, docTypes }: UploadDialogProps) {
+export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, onSuccess, docTypes, isPublished = false }: UploadDialogProps) {
     const [file, setFile] = useState<File | null>(null);
     const [docType, setDocType] = useState<string>('');
     const [isUploading, setIsUploading] = useState(false);
@@ -136,6 +137,16 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
                         </div>
                     ) : (
                         <div className="grid gap-6 py-4">
+                            {isPublished && (
+                                <Alert className="border-amber-200 bg-amber-50 text-amber-950">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>Public and irreversible through this screen</AlertTitle>
+                                    <AlertDescription>
+                                        After upload, citizens can access this document immediately. Confirm that it contains no private information
+                                        and has the correct document category.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             {/* File Selection */}
                             <div className="grid gap-2">
                                 <Label htmlFor="file">Document File (PDF only)</Label>
@@ -221,9 +232,13 @@ export function ProcurementUploadDialog({ isOpen, onOpenChange, procurementId, o
                 onCancel={() => setIsAlertConfirmOpen(false)}
                 onConfirm={handleUpload}
                 // FIX 3: Contextual Copywriting
-                title="Confirm Upload"
-                message={`Are you sure you want to officially attach ${file?.name} as an ${getDocTypeLabel()}?`}
-                confirmText="Yes, Upload File"
+                title={isPublished ? 'Publish this document?' : 'Confirm Upload'}
+                message={
+                    isPublished
+                        ? `${file?.name} will be immediately visible to citizens as ${getDocTypeLabel()} and cannot be removed through the ordinary workflow.`
+                        : `Are you sure you want to officially attach ${file?.name} as ${getDocTypeLabel()}?`
+                }
+                confirmText={isPublished ? 'Publish Document' : 'Yes, Upload File'}
                 cancelText="Cancel"
                 // isProcessing is false because this dialog closes instantly when confirmed
                 isProcessing={false}

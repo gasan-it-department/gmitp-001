@@ -11,15 +11,14 @@ class AwardProcurementController extends Controller
 {
     public function __construct(
         private AwardProcurementUseCase $awardProcurementUseCase
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request, string $procurementId)
     {
         $validated = $request->validate([
             'winning_bidder_name' => ['required', 'string', 'max:255'],
-            'contract_amount' => ['required', 'numeric', 'min:0'],
-            'awarded_date' => ['required', 'date']
+            'contract_amount' => ['required', 'numeric', 'gt:0'],
+            'awarded_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
 
         $dto = AwardProcurementDto::fromRequest($validated, $procurementId);

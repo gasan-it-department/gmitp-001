@@ -25,6 +25,7 @@ export const FailureBiddingDialog = ({ isOpen, onClose, procurement }: Props) =>
         // Format today's date as YYYY-MM-DD for the DatePicker default
         failed_date: new Date().toISOString().split('T')[0],
     });
+    const actionError = (errors as Record<string, string>).procurement;
 
     // 🛡️ Client-Side UX Guards
     const isFutureDate = data.failed_date && new Date(data.failed_date) > new Date();
@@ -37,7 +38,7 @@ export const FailureBiddingDialog = ({ isOpen, onClose, procurement }: Props) =>
             setData('failure_reason', '');
             clearErrors();
         }
-    }, [isOpen]);
+    }, [clearErrors, isOpen, setData]);
 
     const handleClose = () => {
         clearErrors();
@@ -75,6 +76,14 @@ export const FailureBiddingDialog = ({ isOpen, onClose, procurement }: Props) =>
 
                     {/* MAIN FORM BODY */}
                     <div className="space-y-5 py-2">
+                        {actionError && (
+                            <p
+                                role="alert"
+                                className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-medium text-destructive"
+                            >
+                                {actionError}
+                            </p>
+                        )}
                         {/* 1. Date of Failure */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">

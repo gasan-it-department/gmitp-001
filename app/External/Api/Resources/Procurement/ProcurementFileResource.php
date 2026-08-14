@@ -10,18 +10,26 @@ class ProcurementFileResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $url = str_starts_with($this->disk, 's3')
-            ? $this->getTemporaryUrl(now()->addHour())
-            : $this->getUrl();
-
         $docType = ProcurementDocumentType::tryFrom($this->collection_name);
+        $municipality = app('current_municipality');
+        $isPublicRequest = $request->routeIs('transparency.*');
+        $routeName = $isPublicRequest
+            ? 'transparency.document'
+            : 'procurement.admin.document';
+        $url = route($routeName, [
+            'municipality' => $municipality->slug,
+            'procurementId' => $this->model_id,
+            'mediaId' => $this->id,
+        ]);
 
         return [
             'id' => $this->id,
             'name' => $this->file_name,
+            'file_name' => $this->file_name,
             'mime_type' => $this->mime_type,
-            'size' => $this->size,
+            'size' => (int) $this->size,
             'url' => $url,
+            'download_url' => $url,
             'type' => $this->collection_name,
             'type_label' => $docType ? $docType->label() : 'Document',
         ];

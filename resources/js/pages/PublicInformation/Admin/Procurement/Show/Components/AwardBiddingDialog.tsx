@@ -32,10 +32,11 @@ export const AwardBiddingDialog = ({ isOpen, onClose, procurement }: Props) => {
         contract_amount: '',
         awarded_date: '',
     });
+    const actionError = (errors as Record<string, string>).procurement;
 
     // 🛡️ Client-Side UX Warnings (Prevents unnecessary backend hits)
     const isOverBudget = Number(data.contract_amount) > procurement.abc_amount;
-    const isTimeTravel = data.awarded_date && new Date(data.awarded_date) < new Date(procurement.closing_date!);
+    const isTimeTravel = Boolean(data.awarded_date && new Date(data.awarded_date) < new Date(procurement.closing_date!));
 
     const handleClose = () => {
         clearErrors();
@@ -73,6 +74,14 @@ export const AwardBiddingDialog = ({ isOpen, onClose, procurement }: Props) => {
 
                     {/* MAIN FORM BODY */}
                     <div className="space-y-5 py-2">
+                        {actionError && (
+                            <p
+                                role="alert"
+                                className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-medium text-destructive"
+                            >
+                                {actionError}
+                            </p>
+                        )}
                         {/* 1. Winning Bidder Name */}
                         <div className="space-y-2">
                             <FormInput

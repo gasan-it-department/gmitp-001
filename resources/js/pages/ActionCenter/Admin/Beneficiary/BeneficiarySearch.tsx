@@ -2,6 +2,7 @@ import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
 import ShowCreateWalkInBeneficiaryController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Walkin/ShowCreateWalkInBeneficiaryController';
 import { Pagination } from '@/components/Shared/Pagination';
+import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
@@ -9,6 +10,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Loader2, SearchX, ShieldCheck, UserPlus, UserSearch } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import BeneficiaryResultCard from './Components/BeneficiaryResultCard';
+import RosterOnlyResultCard from './Components/RosterOnlyResultCard';
 import SearchFilters from './Components/SearchFilters';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,6 +38,8 @@ export interface BeneficiaryRow {
     street?: string | null;
     has_account: boolean;
     account_email?: string | null;
+    account_phone?: string | null;
+    contact_phone?: string | null;
     total_requests: number;
     released_count: number;
     last_released_at: string | null;
@@ -44,6 +48,61 @@ export interface BeneficiaryRow {
     identity_verified_at: string | null;
     intake_status: 'pending' | 'verified' | 'rejected';
 }
+
+export interface BeneficiaryMembershipRow {
+    id: string;
+    household_id: string;
+    household_code: string | null;
+    barangay: string | null;
+    street: string | null;
+    relationship: string | null;
+    is_active: boolean;
+    is_verified_dependent: boolean;
+    status: 'current_household' | 'other_active_household' | 'moved_out';
+    head_name: string | null;
+    head_beneficiary_id: string | null;
+}
+
+export interface BeneficiarySearchRow extends BeneficiaryRow {
+    record_type: 'beneficiary';
+    household_code: string | null;
+    memberships: BeneficiaryMembershipRow[];
+    membership_warning: {
+        has_warning: boolean;
+        missing_current_membership: boolean;
+        multiple_active_memberships: boolean;
+    };
+}
+
+export interface RosterOnlyRow {
+    record_type: 'roster_only';
+    id: string;
+    member_id: string;
+    full_name: string;
+    first_name: string;
+    middle_name: string | null;
+    last_name: string;
+    suffix: string | null;
+    birth_date: string | null;
+    age: number | null;
+    sex: string | null;
+    sex_label: string | null;
+    relationship: string | null;
+    is_active: boolean;
+    is_verified_dependent: boolean;
+    verification_status: 'pending' | 'verified';
+    household: {
+        id: string | null;
+        household_code: string | null;
+        barangay: string | null;
+        street: string | null;
+        head_name: string | null;
+        head_beneficiary_id: string | null;
+        is_on_hold: boolean;
+    };
+}
+
+type PeopleSearchRow = BeneficiarySearchRow | RosterOnlyRow;
 
 interface PaginatorLink {
     url: string | null;
@@ -61,7 +120,7 @@ interface Meta {
 }
 
 interface ResultsPaginator {
-    data: BeneficiaryRow[];
+    data: PeopleSearchRow[];
     meta?: Meta;
 }
 
@@ -71,6 +130,7 @@ interface Filters {
     barangay?: string | null;
     sex?: string | null;
     verification?: string | null;
+    record_type?: 'all' | 'beneficiary' | 'roster_only' | null;
 }
 
 interface Props {
@@ -105,6 +165,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
     const [barangay, setBarangay] = useState(filters.barangay ?? '');
     const [sex, setSex] = useState(filters.sex ?? '');
     const [verification, setVerification] = useState(filters.verification ?? '');
+    const [recordType, setRecordType] = useState<'all' | 'beneficiary' | 'roster_only'>(filters.record_type ?? 'all');
     const [searching, setSearching] = useState(false);
 
     const rows = useMemo(() => results.data ?? [], [results.data]);
@@ -132,6 +193,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
             barangay: firstDefined(overrides.barangay, barangay),
             sex: firstDefined(overrides.sex, sex),
             verification: firstDefined(overrides.verification, verification),
+            record_type: firstDefined(overrides.record_type, recordType),
         });
 
         router.get(baseUrl, next, {
@@ -149,6 +211,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
         setBarangay('');
         setSex('');
         setVerification('');
+        setRecordType('all');
         router.get(baseUrl, {}, { preserveState: false, preserveScroll: true, replace: true });
     };
 
@@ -156,10 +219,19 @@ export default function BeneficiarySearch({ results, filters }: Props) {
     const duplicateKeys = useMemo(() => {
         const counts = new Map<string, number>();
         for (const r of rows) {
-            counts.set(dupKey(r), (counts.get(dupKey(r)) ?? 0) + 1);
+            const key = dupKey(r);
+            if (key) {
+                counts.set(key, (counts.get(key) ?? 0) + 1);
+            }
         }
         return new Set([...counts.entries()].filter(([, c]) => c > 1).map(([k]) => k));
     }, [rows]);
+
+    const isPossibleSamePerson = (row: PeopleSearchRow): boolean => {
+        const key = dupKey(row);
+
+        return key !== null && duplicateKeys.has(key);
+    };
 
     return (
         <AdminLayout>
@@ -170,10 +242,9 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                         <UserSearch className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                        <h1 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">Find a Beneficiary</h1>
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">Beneficiary and Household Member Search</h1>
                         <p className="text-sm text-gray-500">
-                            Search the registry for {currentMunicipality.name} during the interview. Match every result against the applicant&rsquo;s
-                            uploaded government ID before approving.
+                            Search beneficiary profiles and household roster entries for {currentMunicipality.name} during the interview.
                         </p>
                     </div>
                 </div>
@@ -182,8 +253,35 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                 <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:px-4">
                     <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
-                        A new account does not mean a new person. Confirm identity against the uploaded ID — duplicates are caught here, by you.
+                        A beneficiary profile and a household roster entry are different records. Confirm identity before treating two matches as the
+                        same person.
                     </span>
+                </div>
+
+                <div className="inline-grid w-full grid-cols-3 rounded-md bg-slate-100 p-1 sm:w-auto">
+                    {(
+                        [
+                            ['all', 'All'],
+                            ['beneficiary', 'Beneficiary Profiles'],
+                            ['roster_only', 'Roster Only'],
+                        ] as const
+                    ).map(([value, label]) => (
+                        <Button
+                            key={value}
+                            type="button"
+                            variant="ghost"
+                            className={`min-h-10 px-2 text-xs sm:px-4 sm:text-sm ${
+                                recordType === value ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-800 hover:text-white' : 'text-slate-600'
+                            }`}
+                            onClick={() => {
+                                setRecordType(value);
+                                applyFilters({ record_type: value });
+                            }}
+                            aria-pressed={recordType === value}
+                        >
+                            {label}
+                        </Button>
+                    ))}
                 </div>
 
                 {/* ── Filters ── */}
@@ -237,7 +335,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                 {!hasCriteria && (
                     <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50/60 px-4 py-12 text-center md:px-6 md:py-16">
                         <UserSearch className="h-9 w-9 text-gray-400" />
-                        <p className="text-sm font-medium text-gray-700">Start typing to search the beneficiary registry.</p>
+                        <p className="text-sm font-medium text-gray-700">Start typing to search people records.</p>
                         <p className="max-w-md text-xs text-gray-500">
                             Try a last name, or narrow down with a birthdate — spelling can vary, but a birthdate rarely does.
                         </p>
@@ -248,7 +346,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                 {hasCriteria && !searching && rows.length === 0 && (
                     <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-gray-200 bg-gray-50/60 px-4 py-12 text-center md:px-6 md:py-16">
                         <SearchX className="h-9 w-9 text-gray-400" />
-                        <p className="text-sm font-medium text-gray-700">No beneficiary matches these details.</p>
+                        <p className="text-sm font-medium text-gray-700">No people records match these details.</p>
                         <p className="max-w-md text-xs text-gray-500">
                             Loosen the search (fewer words, drop the middle name) before concluding this is a first-time applicant.
                         </p>
@@ -267,17 +365,33 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                 {/* ── Results ── */}
                 {rows.length > 0 && (
                     <div className="grid grid-cols-1 gap-2 md:gap-3">
-                        {rows.map((row) => (
-                            <BeneficiaryResultCard
-                                key={row.id}
-                                row={row}
-                                isPossibleDuplicate={duplicateKeys.has(dupKey(row))}
-                                profileHref={ShowBeneficiaryProfileController.url({
-                                    municipality: currentMunicipality.slug,
-                                    beneficiaryId: row.id,
-                                })}
-                            />
-                        ))}
+                        {rows.map((row) =>
+                            row.record_type === 'beneficiary' ? (
+                                <BeneficiaryResultCard
+                                    key={`beneficiary-${row.id}`}
+                                    row={row}
+                                    isPossibleDuplicate={isPossibleSamePerson(row)}
+                                    profileHref={ShowBeneficiaryProfileController.url({
+                                        municipality: currentMunicipality.slug,
+                                        beneficiaryId: row.id,
+                                    })}
+                                />
+                            ) : (
+                                <RosterOnlyResultCard
+                                    key={`roster-${row.id}`}
+                                    row={row}
+                                    isPossibleMatch={isPossibleSamePerson(row)}
+                                    headProfileHref={
+                                        row.household.head_beneficiary_id
+                                            ? ShowBeneficiaryProfileController.url({
+                                                  municipality: currentMunicipality.slug,
+                                                  beneficiaryId: row.household.head_beneficiary_id,
+                                              })
+                                            : null
+                                    }
+                                />
+                            ),
+                        )}
                     </div>
                 )}
 
@@ -293,7 +407,11 @@ export default function BeneficiarySearch({ results, filters }: Props) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Identity key used to flag two results as a possible duplicate registration. */
-function dupKey(r: BeneficiaryRow): string {
+function dupKey(r: Pick<PeopleSearchRow, 'last_name' | 'first_name' | 'middle_name' | 'birth_date'>): string | null {
+    if (!r.birth_date) {
+        return null;
+    }
+
     return `${r.last_name}|${r.first_name}|${r.middle_name ?? ''}|${r.birth_date ?? ''}`.toLowerCase().trim();
 }
 

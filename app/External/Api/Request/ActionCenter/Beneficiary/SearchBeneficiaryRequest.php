@@ -40,7 +40,8 @@ class SearchBeneficiaryRequest extends FormRequest
             'sex' => ['nullable', Rule::in($this->sexValues())],
 
             'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
-            'verification' => ['nullable', Rule::in(['pending', 'verified'])],
+            'verification' => ['nullable', Rule::in(['pending', 'verified', 'rejected'])],
+            'record_type' => ['nullable', Rule::in(['all', 'beneficiary', 'roster_only'])],
         ];
     }
 
