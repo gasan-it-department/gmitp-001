@@ -113,6 +113,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], $e->status());
             }
             if ($request->hasHeader('X-Inertia')) {
+                if ($request->routeIs('procurement.*')) {
+                    return redirect()
+                        ->back()
+                        ->withErrors(['procurement' => $e->getMessage()]);
+                }
+
                 return redirect()
                     ->back()
                     ->with('error', $e->getMessage());

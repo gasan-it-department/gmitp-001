@@ -4,64 +4,59 @@ namespace App\Core\Procurement\UseCases;
 
 use App\Core\Procurement\Dto\OpenBiddingDto;
 use App\Core\Procurement\Enums\ProcurementStatus;
-use App\Core\Procurement\Exceptions\InvalidProcurementStateException;
 use App\Core\Procurement\Exceptions\ProcurementComplianceException;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
 use App\Core\Procurement\Services\ProcurementLegalRules;
-use App\Core\Procurement\Services\ProcurementTimelineValidator;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class OpenBiddingUseCase
 {
     public function __construct(
         private ProcurementsRepository $procurementRepo,
-        protected ProcurementLegalRules $rules,
-        protected ProcurementTimelineValidator $procurementTimeValidator,
-    ) {
-    }
+        private ProcurementLegalRules $rules,
+    ) {}
 
     public function execute(string $municipalId, string $procurementId, OpenBiddingDto $dto)
     {
-        $procurement = $this->procurementRepo->findByIdAndMunicipality($procurementId, $municipalId);
+        return DB::transaction(function () use ($municipalId, $procurementId, $dto) {
+            $procurement = $this->procurementRepo->lockByIdAndMunicipality($procurementId, $municipalId);
 
-        $this->ensureCanBeOpened($procurement);
+            if ($procurement->isPublished()) {
+                throw new ProcurementComplianceException('This procurement has already been published.');
+            }
 
-        // 1. Check if the Pre-bid requirement is satisfied
-        $hasDate = !is_null($dto->preBidDate);
-        if (!$this->rules->satisfiesPreBidRequirement($dto->abcAmount, $hasDate)) {
-            throw new ProcurementComplianceException(
-                "Legal Requirement: ABC of ₱" . number_format(ProcurementLegalRules::MANDATORY_PRE_BID_THRESHOLD) . " or more requires a Pre-bid date."
+            $closingDate = Carbon::parse($dto->closingDate);
+            if (! $closingDate->isFuture()) {
+                throw new ProcurementComplianceException('The bidding closing date must be in the future.');
+            }
+
+            if ($dto->preBidDate && ! $this->rules->isTimeCompliant($dto->preBidDate, $closingDate)) {
+                throw new ProcurementComplianceException(
+                    'The closing date must be at least '.ProcurementLegalRules::MIN_DAYS_BETWEEN_PREBID_AND_CLOSING.' calendar days after the pre-bid date.'
+                );
+            }
+
+            $procurement->fill([
+                'abc_amount' => $dto->abcAmount,
+                'pre_bid_date' => $dto->preBidDate,
+                'closing_date' => $dto->closingDate,
+                'reference_number' => trim($dto->referenceNumber),
+            ]);
+
+            $this->procurementRepo->transitionStatus(
+                $procurement,
+                ProcurementStatus::DRAFT,
+                ProcurementStatus::OPEN,
+                [
+                    'abc_amount' => $dto->abcAmount,
+                    'pre_bid_date' => $dto->preBidDate,
+                    'closing_date' => $dto->closingDate,
+                    'reference_number' => trim($dto->referenceNumber),
+                ],
             );
-        }
-        // 2. Check if the timeline is compliant (only if a pre-bid date exists)
-        $this->procurementTimeValidator->validateSequence($dto->preBidDate, $dto->closingDate);
-        // 4. Persistence
-        $procurement->update([
-            'abc_amount' => $dto->abcAmount,
-            'pre_bid_date' => $dto->preBidDate,
-            'closing_date' => $dto->closingDate,
-            'reference_number' => $dto->referenceNumber,
-            'status' => ProcurementStatus::OPEN,
-            'published_at' => $procurement->published_at ?? now(),
-        ]);
 
-        return $procurement;
-    }
-
-    protected function ensureCanBeOpened($procurement): void
-    {
-        if ($procurement->status === ProcurementStatus::OPEN) {
-            throw InvalidProcurementStateException::alreadyOpen();
-        }
-
-        $invalidStatuses = [
-            ProcurementStatus::EVALUATING,
-            ProcurementStatus::AWARDED,
-            ProcurementStatus::FAILED,
-            ProcurementStatus::CANCELLED,
-        ];
-
-        if (in_array($procurement->status, $invalidStatuses)) {
-            throw InvalidProcurementStateException::cannotOpen($procurement->status);
-        }
+            return $procurement;
+        }, attempts: 3);
     }
 }

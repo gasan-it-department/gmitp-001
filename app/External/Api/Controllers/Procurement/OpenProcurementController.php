@@ -10,8 +10,7 @@ class OpenProcurementController
 {
     public function __construct(
         private OpenBiddingUseCase $openBidding,
-    ) {
-    }
+    ) {}
 
     public function __invoke(OpenBiddingRequest $request, string $procurementId)
     {
@@ -20,8 +19,8 @@ class OpenProcurementController
         $procurement = $this->openBidding->execute(app('municipal_id'), $procurementId, $dto);
 
         return redirect()->back()->with([
-            'success' => 'Procurement is now open and published to the public.',
-            'data' => $procurement
+            'success' => 'Procurement moved to Open Bidding and remains private until you publish it.',
+            'data' => $procurement,
         ]);
     }
 }

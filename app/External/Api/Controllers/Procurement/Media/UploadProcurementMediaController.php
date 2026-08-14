@@ -7,22 +7,22 @@ use App\Core\Procurement\UseCases\Media\UploadProcurementMediaUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UploadProcurementMediaController extends Controller
 {
     public function __construct(
         private UploadProcurementMediaUseCase $uploadMediaUseCase
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request, string $procurementId): JsonResponse
     {
-        $request->validate([
-            'file' => 'required|file|mimes:pdf|max:10240', // FR-2.2 (10MB Max)
-            'type' => 'required|string',
+        $validated = $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf', 'max:25600'],
+            'type' => ['required', Rule::enum(ProcurementDocumentType::class)],
         ]);
 
-        $type = ProcurementDocumentType::from($request->type);
+        $type = ProcurementDocumentType::from($validated['type']);
 
         $this->uploadMediaUseCase->execute(
             $procurementId,

@@ -3,19 +3,22 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Department } from '@/Core/Types/Department/department';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
-import { ProcurementFormData } from '@/Core/Types/Procurement/procurement';
+import { Category, FundingSource, ProcurementFormData, ProcurementSelectOption } from '@/Core/Types/Procurement/procurement';
 import procurement from '@/routes/procurement';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, FilePlus2, Gavel, Info, StickyNote, Wallet } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { AwardInformation } from './Components/AwardInformation';
 import { BudgetAndSchedule } from './Components/BudgetAndSchedule';
+import { HistoricalOutcome } from './Components/HistoricalOutcome';
 import { ProjectDetails } from './Components/ProjectDetails';
 
 const initialValues: ProcurementFormData = {
     reference_number: '',
     title: '',
+    description: '',
     category: '',
     status: '',
     abc_amount: 0,
@@ -24,6 +27,8 @@ const initialValues: ProcurementFormData = {
     closing_date: null,
     awarded_date: null,
     winning_bidder: null,
+    failure_reason: null,
+    failed_date: null,
     documents: [],
     department_id: '',
     funding_source_id: '',
@@ -33,14 +38,13 @@ const initialValues: ProcurementFormData = {
 };
 
 interface Props {
-    fundingSources: any;
-    categories: any;
-    statuses: any;
-    documentTypes: any;
-    departments: any;
+    fundingSources: { data: FundingSource[] };
+    categories: Category[];
+    statuses: ProcurementSelectOption[];
+    departments: Department[];
 }
 
-export default function CreateProcurement({ fundingSources, categories, statuses, documentTypes, departments }: Props) {
+export default function CreateProcurement({ fundingSources, categories, statuses, departments }: Props) {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
 
@@ -221,30 +225,36 @@ export default function CreateProcurement({ fundingSources, categories, statuses
                                         </p>
                                     </div>
                                 )}
+
+                                {data.is_historical && ['failed', 'cancelled'].includes(data.status) && (
+                                    <HistoricalOutcome data={data} setData={setData} errors={errors} processing={processing} />
+                                )}
                             </div>
 
                             {/* RIGHT COLUMN: SIDEBAR */}
                             <div className="lg:col-span-4">
                                 <div className="sticky top-28 space-y-6">
-                                    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                                        <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
-                                                <StickyNote className="h-4 w-4" />
+                                    {data.is_historical && data.status === 'cancelled' && (
+                                        <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                                            <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white shadow-sm">
+                                                    <StickyNote className="h-4 w-4" />
+                                                </div>
+                                                <h3 className="font-bold text-slate-900">Public cancellation reason</h3>
                                             </div>
-                                            <h3 className="font-bold text-slate-900">
-                                                Notes <span className="text-red-500">/</span> Remarks
-                                            </h3>
-                                        </div>
-                                        <div className="p-6">
-                                            <Textarea
-                                                value={data.notes ?? ''}
-                                                onChange={(e) => setData('notes', e.target.value)}
-                                                placeholder="Add any additional notes, BAC resolutions, or remarks regarding this procurement here..."
-                                                className="min-h-[120px] resize-y"
-                                            />
-                                            {errors.notes && <span className="mt-2 block text-sm font-medium text-red-500">{errors.notes}</span>}
-                                        </div>
-                                    </section>
+                                            <div className="p-6">
+                                                <Textarea
+                                                    value={data.notes ?? ''}
+                                                    onChange={(event) => setData('notes', event.target.value)}
+                                                    placeholder="State the official cancellation reason in plain language for citizens."
+                                                    required
+                                                    maxLength={1000}
+                                                    className="min-h-[120px] resize-y"
+                                                />
+                                                {errors.notes && <span className="mt-2 block text-sm font-medium text-red-500">{errors.notes}</span>}
+                                            </div>
+                                        </section>
+                                    )}
 
                                     <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6">
                                         <div className="flex items-start gap-3 text-blue-700">

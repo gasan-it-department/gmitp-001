@@ -6,19 +6,22 @@ import AppLayout from '@/layouts/App/AppLayout';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import procurementRoute from '@/routes/procurement';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Building2, Calendar, CheckCircle2, MoveLeft, StickyNote, Tag, Trash2, Wallet } from 'lucide-react';
+import { Ban, Building2, Calendar, CheckCircle2, EyeOff, Globe2, LockKeyhole, MoveLeft, StickyNote, Tag, Trash2, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { AwardBiddingDialog } from './Components/AwardBiddingDialog';
+import { CancelProcurementDialog } from './Components/CancelProcurementDialog';
 import CloseBiddingDialog from './Components/CloseBiddingDialog';
 import { FailureBiddingDialog } from './Components/FailureBiddingDialog';
 import OpenBiddingDialog from './Components/OpenBiddingDialog';
-import ProcurementDocumentSection from './Components/ProcurementDocumentSection';
+import ProcurementDocumentSection, { ProcurementDocumentOption } from './Components/ProcurementDocumentSection';
+import { PublishProcurementDialog } from './Components/PublishProcurementDialog';
+import { UnpublishProcurementDialog } from './Components/UnpublishProcurementDialog';
 
 interface Props {
     procurement: {
         data: ProcurementDetail;
     };
-    documentTypes: any;
+    documentTypes: ProcurementDocumentOption[];
 }
 
 // --- HELPER FUNCTIONS ---
@@ -38,7 +41,6 @@ const formatDate = (dateString: string | null) => {
 };
 
 export default function ProcurementDetails({ procurement, documentTypes }: Props) {
-    console.log(procurement.data);
     // Extract the actual procurement object from the Laravel Resource wrapper
     const data = procurement.data;
     const [isOpenBiddingDialogOpen, setIsOpenBiddingDialogOpen] = useState(false);
@@ -47,8 +49,14 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
     const [isEvaluating, setIsEvaluating] = useState(false);
     const [isAwarding, setIsAwarding] = useState<boolean>(false);
     const [isFailedOpen, setIsFailedOpen] = useState<boolean>(false);
+    const [isCancelProcurementOpen, setIsCancelProcurementOpen] = useState(false);
+    const [isPublishOpen, setIsPublishOpen] = useState(false);
+    const [isUnpublishOpen, setIsUnpublishOpen] = useState(false);
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    console.log(procurement);
+    const isPublished = Boolean(data.published_at);
+    const canChangeWorkflow = !isPublished;
+    const canCancel = canChangeWorkflow && ['open', 'evaluating'].includes(data.status);
+    const canPublishRecord = !isPublished && data.status !== 'draft';
     // Status Badge Styling Helper
     const getStatusStyles = (status: string) => {
         switch (status) {
@@ -110,6 +118,18 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             <span className="flex items-center gap-1 text-sm font-medium text-slate-500">
                                 <Tag className="h-4 w-4" /> {data.category.label}
                             </span>
+                            <span
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                                    isPublished ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'
+                                }`}
+                            >
+                                {isPublished ? (
+                                    <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                ) : (
+                                    <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" />
+                                )}
+                                {isPublished ? 'Visible to citizens' : 'Private record'}
+                            </span>
                         </div>
                         <h1 className="text-3xl leading-tight font-bold text-slate-900">{data.title}</h1>
                         <p className="mt-2 font-mono text-sm text-slate-500">PhilGEPS Ref: {data.reference_number || 'Pending Publication'}</p>
@@ -130,7 +150,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                 />
                             </svg>
-                            <p>Prepared by: {data.prepared_by.full_name}</p>
+                            <p>Prepared by: {data.prepared_by?.full_name || 'Account unavailable'}</p>
                         </div>
                     </div>
                 </header>
@@ -142,15 +162,37 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
 
                     {/* 🌟 UX Fix 1: Make Edit an 'Outline' button so it doesn't fight the primary colors */}
 
-                    <Link
-                        className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                        href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
-                    >
-                        Edit Details
-                    </Link>
+                    {!isPublished ? (
+                        <Link
+                            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                            href={procurementRoute.admin.edit.url({ municipality: currentMunicipality.slug, id: data.id })}
+                        >
+                            Edit Details
+                        </Link>
+                    ) : (
+                        <span className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800">
+                            <LockKeyhole className="h-4 w-4" aria-hidden="true" /> Public record locked
+                        </span>
+                    )}
+
+                    {canPublishRecord && (
+                        <Button onClick={() => setIsPublishOpen(true)} className="gap-2 bg-sky-700 text-white hover:bg-sky-800">
+                            <Globe2 className="h-4 w-4" aria-hidden="true" /> Publish to Citizens
+                        </Button>
+                    )}
+
+                    {isPublished && (
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsUnpublishOpen(true)}
+                            className="gap-2 border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900"
+                        >
+                            <EyeOff className="h-4 w-4" aria-hidden="true" /> Unpublish for Correction
+                        </Button>
+                    )}
 
                     {/* --- DRAFT STATE --- */}
-                    {data.status === 'draft' && (
+                    {canChangeWorkflow && data.status === 'draft' && (
                         <>
                             {/* Primary Action (Solid Blue) */}
                             <Button
@@ -163,7 +205,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     )}
 
                     {/* --- OPEN STATE --- */}
-                    {data.status === 'open' && (
+                    {canChangeWorkflow && data.status === 'open' && (
                         <>
                             {/* Primary Action (Solid Amber) */}
                             <button
@@ -182,7 +224,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                     )}
 
                     {/* --- EVALUATING STATE --- */}
-                    {data.status === 'evaluating' && (
+                    {canChangeWorkflow && data.status === 'evaluating' && (
                         <>
                             {/* Primary Action (Solid Green) */}
                             <button
@@ -200,17 +242,32 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                         </>
                     )}
 
-                    {/* --- ALWAYS VISIBLE DELETE ACTION --- */}
-                    <button
-                        onClick={() => setIsDeleteOpen(true)}
-                        className="ml-auto flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Record
-                    </button>
+                    {canCancel && (
+                        <button
+                            onClick={() => setIsCancelProcurementOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+                        >
+                            <Ban className="h-4 w-4" aria-hidden="true" /> Cancel procurement
+                        </button>
+                    )}
+
+                    {/* Any private mistake can be discarded; public records are retained. */}
+                    {!isPublished && (
+                        <button
+                            onClick={() => setIsDeleteOpen(true)}
+                            className="ml-auto flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete unpublished record
+                        </button>
+                    )}
 
                     {/* --- AWARDED STATE --- */}
-                    {data.status === 'awarded' && <span className="text-sm text-slate-400 italic">Project Lifecycle Complete</span>}
+                    {data.status === 'awarded' && (
+                        <span className="text-sm text-slate-500 italic">
+                            {isPublished ? 'Project lifecycle complete' : 'Workflow complete — review before publishing'}
+                        </span>
+                    )}
                 </div>
 
                 {/* 3. MAIN GRID */}
@@ -240,7 +297,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                                     <p className="mb-1 text-sm text-slate-500">Requesting Department</p>
                                     <div className="flex items-center gap-2 font-medium text-slate-900">
                                         <Building2 className="h-4 w-4 text-slate-400" />
-                                        {data.department.name}
+                                        {data.department?.name || 'Department not assigned'}
                                     </div>
                                 </div>
                             </div>
@@ -269,7 +326,9 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
                                 <div className="flex items-center gap-3 border-b bg-slate-50/50 px-6 py-4">
                                     <StickyNote className="h-5 w-5 text-purple-600" />
-                                    <h3 className="font-bold text-slate-900">Remarks / BAC Notes</h3>
+                                    <h3 className="font-bold text-slate-900">
+                                        {data.status === 'cancelled' ? 'Public cancellation reason' : 'Remarks / BAC Notes'}
+                                    </h3>
                                 </div>
                                 <div className="p-6">
                                     <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{data.notes}</p>
@@ -306,6 +365,7 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                             documents={data.media || []}
                             status={data.status}
                             documentTypes={documentTypes}
+                            isPublished={isPublished}
                         />
                     </div>
                 </div>
@@ -314,16 +374,30 @@ export default function ProcurementDetails({ procurement, documentTypes }: Props
                 title="Delete Procurement?"
                 isOpen={isDeleteOpen}
                 onCancel={() => setIsDeleteOpen(false)}
-                confirmText="Yes, Delete Draft"
+                confirmText="Yes, Delete Record"
                 onConfirm={handleDelete}
                 isProcessing={isDeleting} // 🌟 Use the new state
                 variant="destructive" // 🌟 Make the confirm button Red!
-                message={'Are you sure you want to permanently delete this draft procurement? This action cannot be undone.'}
+                message={'Are you sure you want to permanently delete this unpublished procurement record? This action cannot be undone.'}
             />
             <OpenBiddingDialog isOpen={isOpenBiddingDialogOpen} onClose={() => setIsOpenBiddingDialogOpen(false)} procurement={data} />
             <CloseBiddingDialog isOpen={isEvaluating} onClose={() => setIsEvaluating(false)} procurement={data} />
             <AwardBiddingDialog isOpen={isAwarding} onClose={() => setIsAwarding(false)} procurement={data} />
             <FailureBiddingDialog isOpen={isFailedOpen} onClose={() => setIsFailedOpen(false)} procurement={data} />
+            <CancelProcurementDialog isOpen={isCancelProcurementOpen} onClose={() => setIsCancelProcurementOpen(false)} procurementId={data.id} />
+            <PublishProcurementDialog
+                isOpen={isPublishOpen}
+                onClose={() => setIsPublishOpen(false)}
+                procurementId={data.id}
+                title={data.title}
+                hasSupportingDocuments={Boolean(data.media?.length)}
+            />
+            <UnpublishProcurementDialog
+                isOpen={isUnpublishOpen}
+                onClose={() => setIsUnpublishOpen(false)}
+                procurementId={data.id}
+                title={data.title}
+            />
         </AppLayout>
     );
 }

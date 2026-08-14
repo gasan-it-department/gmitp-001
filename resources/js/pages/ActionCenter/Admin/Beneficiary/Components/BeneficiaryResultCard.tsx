@@ -1,10 +1,10 @@
 import { Link } from '@inertiajs/react';
-import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, Clock3, Home, Mail, OctagonX, UserCircle2, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, ChevronDown, Clock3, Home, Mail, OctagonX, UserCircle2, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { BeneficiaryRow } from '../BeneficiarySearch';
+import type { BeneficiaryMembershipRow, BeneficiarySearchRow } from '../BeneficiarySearch';
 
 interface Props {
-    row: BeneficiaryRow;
+    row: BeneficiarySearchRow;
     isPossibleDuplicate: boolean;
     profileHref: string;
 }
@@ -12,6 +12,8 @@ interface Props {
 export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profileHref }: Props) {
     const releasedRecently = isWithinDays(row.last_released_at, 90);
     const demographics = [row.sex_label, row.age !== null ? `${row.age} yrs` : null, row.civil_status_label].filter(Boolean).join(' / ');
+    const currentMembership = row.memberships.find((membership) => membership.status === 'current_household') ?? null;
+    const otherMemberships = row.memberships.filter((membership) => membership.id !== currentMembership?.id);
 
     return (
         <article
@@ -43,7 +45,7 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
             <div className="mt-3 flex flex-wrap gap-1.5">
                 {isPossibleDuplicate && (
                     <StatusChip tone="danger" icon={<AlertTriangle className="h-3 w-3" />}>
-                        Possible duplicate
+                        Possible same person
                     </StatusChip>
                 )}
 
@@ -67,6 +69,41 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
                     </StatusChip>
                 ) : (
                     <StatusChip tone="neutral">Walk-in</StatusChip>
+                )}
+            </div>
+
+            <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                {row.membership_warning.has_warning && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>
+                            {row.membership_warning.multiple_active_memberships
+                                ? 'This beneficiary has more than one active household membership. Review the household assignment.'
+                                : 'This active beneficiary has no active roster row in their primary household.'}
+                        </span>
+                    </div>
+                )}
+
+                {currentMembership ? (
+                    <MembershipSummary membership={currentMembership} />
+                ) : (
+                    <p className="text-xs text-slate-500">No current household membership is linked to this profile.</p>
+                )}
+
+                {otherMemberships.length > 0 && (
+                    <details className="group rounded-md border border-slate-200 bg-slate-50/60">
+                        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-semibold text-slate-700">
+                            <span>
+                                {otherMemberships.length} other household record{otherMemberships.length === 1 ? '' : 's'}
+                            </span>
+                            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="space-y-2 border-t border-slate-200 p-2">
+                            {otherMemberships.map((membership) => (
+                                <MembershipSummary key={membership.id} membership={membership} compact />
+                            ))}
+                        </div>
+                    </details>
                 )}
             </div>
 
@@ -107,6 +144,43 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
         </article>
     );
 }
+
+function MembershipSummary({ membership, compact = false }: { membership: BeneficiaryMembershipRow; compact?: boolean }) {
+    const status = MEMBERSHIP_STATUS[membership.status];
+    const address = [membership.street, membership.barangay].filter(Boolean).join(', ') || 'Address not recorded';
+
+    return (
+        <div className={`flex min-w-0 flex-col gap-1 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between ${status.container}`}>
+            <div className="min-w-0">
+                <p className={`font-semibold break-words text-slate-800 ${compact ? 'text-xs' : 'text-sm'}`}>
+                    {membership.household_code || 'Household code unavailable'}
+                </p>
+                <p className="text-xs break-words text-slate-500">
+                    {membership.relationship || 'Relationship not recorded'} / {address}
+                </p>
+            </div>
+            <span className={`inline-flex w-fit shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold ${status.badge}`}>{status.label}</span>
+        </div>
+    );
+}
+
+const MEMBERSHIP_STATUS: Record<BeneficiaryMembershipRow['status'], { label: string; container: string; badge: string }> = {
+    current_household: {
+        label: 'Current household',
+        container: 'border-emerald-200 bg-emerald-50/60',
+        badge: 'bg-emerald-100 text-emerald-700',
+    },
+    other_active_household: {
+        label: 'Other active household',
+        container: 'border-amber-200 bg-amber-50/60',
+        badge: 'bg-amber-100 text-amber-800',
+    },
+    moved_out: {
+        label: 'Moved out',
+        container: 'border-slate-200 bg-white',
+        badge: 'bg-slate-100 text-slate-600',
+    },
+};
 
 type ChipTone = 'danger' | 'success' | 'warning' | 'info' | 'neutral';
 

@@ -1,22 +1,26 @@
 <?php
 
 use App\External\Api\Controllers\Procurement\AwardProcurementController;
+use App\External\Api\Controllers\Procurement\CancelProcurementController;
 use App\External\Api\Controllers\Procurement\DeclareFailureProcurementController;
 use App\External\Api\Controllers\Procurement\DeleteProcurementController;
 use App\External\Api\Controllers\Procurement\EvaluateProcurementController;
 use App\External\Api\Controllers\Procurement\Media\DeleteProcurementMediaController;
 use App\External\Api\Controllers\Procurement\Media\UploadProcurementMediaController;
 use App\External\Api\Controllers\Procurement\OpenProcurementController;
+use App\External\Api\Controllers\Procurement\PublishProcurementController;
 use App\External\Api\Controllers\Procurement\StoreProcurementsController;
+use App\External\Api\Controllers\Procurement\UnpublishProcurementController;
 use App\External\Api\Controllers\Procurement\UpdateProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\CreateProcurementController;
+use App\External\Web\Controllers\Procurement\Admin\DownloadProcurementDocumentController;
 use App\External\Web\Controllers\Procurement\Admin\EditProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\ListProcurementController;
 use App\External\Web\Controllers\Procurement\Admin\ShowProcurementController;
+use App\External\Web\Controllers\Procurement\Public\DownloadPublicProcurementDocumentController;
 use App\External\Web\Controllers\Procurement\Public\ShowPublicProcurementController;
 use App\External\Web\Controllers\Procurement\Public\TransparencyPageController;
 use Illuminate\Support\Facades\Route;
-
 
 Route::prefix('{municipality}/procurements')
     ->middleware(['municipalityContext', 'admin'])
@@ -31,6 +35,10 @@ Route::prefix('{municipality}/procurements')
 
         Route::get('edit/{id}', EditProcurementController::class)->name('edit');
 
+        Route::get('documents/{procurementId}/{mediaId}', DownloadProcurementDocumentController::class)
+            ->whereNumber('mediaId')
+            ->name('document');
+
     });
 
 Route::prefix('{municipality}/transparency')
@@ -42,9 +50,13 @@ Route::prefix('{municipality}/transparency')
 
         Route::get('details/{procurementId}', ShowPublicProcurementController::class)->name('show');
 
+        Route::get('details/{procurementId}/documents/{mediaId}', DownloadPublicProcurementDocumentController::class)
+            ->whereNumber('mediaId')
+            ->name('document');
+
     });
 
-//api for procurement
+// api for procurement
 Route::prefix('api/procurement')
     ->middleware(['municipalityContext'])
     ->name('procurement.')
@@ -70,7 +82,12 @@ Route::prefix('api/procurement')
                 Route::put('award/{procurementId}', AwardProcurementController::class)->name('award');
 
                 Route::put('fail/{procurementId}', DeclareFailureProcurementController::class)->name('fail');
-            });
 
+                Route::patch('{procurementId}/cancel', CancelProcurementController::class)->name('cancel');
+
+                Route::patch('{procurementId}/publish', PublishProcurementController::class)->name('publish');
+
+                Route::patch('{procurementId}/unpublish', UnpublishProcurementController::class)->name('unpublish');
+            });
 
     });

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BiddingData } from '@/Core/Types/Procurement/procurement';
+import { ProcurementListItem } from '@/Core/Types/Procurement/procurement';
 import { FilterDialogData } from '@/Core/Types/Utility/FilterDialogTypes';
 import SortDialog from '@/pages/BulletinBoard/Admin/Components/FilterDialog';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
@@ -8,9 +8,7 @@ import { EyeIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export default function ProcurementTable1() {
-    const [selectedItems, setSelectedItems] = useState<string[]>([]);
-    const [isAddEditDialogVisible, setIsAddEditDialogVisible] = useState(false);
-    const [biddingList, setBiddingList] = useState<BiddingData[]>([]);
+    const [biddingList] = useState<ProcurementListItem[]>([]);
     const [isFilterDialogVisible, setIsFilterDialogVisible] = useState(false);
     const [currentFilter, setCurrentFilter] = useState<FilterDialogData | null>(null);
 
@@ -49,7 +47,7 @@ export default function ProcurementTable1() {
                         {biddingList.length === 0 ? (
                             <AdminEmptyListItem colSpan={7} title="No biddings yet" message="Biddings will appear here once you create one." />
                         ) : (
-                            biddingList.map((item, index) => (
+                            biddingList.map((item) => (
                                 <TableRow key={item.id} className="transition-colors hover:bg-gray-50">
                                     <TableCell className="flex justify-center gap-2">
                                         <Button

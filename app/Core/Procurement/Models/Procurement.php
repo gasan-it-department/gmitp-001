@@ -19,12 +19,13 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Procurement extends Model implements HasMedia
 {
-    use HasUlids, SoftDeletes, LogsActivity, InteractsWithMedia; // Automatically generates the ULID on creation
+    use HasUlids, InteractsWithMedia, LogsActivity, SoftDeletes; // Automatically generates the ULID on creation
 
     protected $table = 'procurements';
 
     // HasUlids trait usually handles these, but keeping them is fine
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     /**
@@ -51,7 +52,7 @@ class Procurement extends Model implements HasMedia
         'awarded_date',
         'winning_bidder_name',
         'failure_reason',
-        'failed_date'
+        'failed_date',
     ];
 
     /**
@@ -68,6 +69,7 @@ class Procurement extends Model implements HasMedia
         'pre_bid_date' => 'datetime',
         'closing_date' => 'datetime',
         'awarded_date' => 'datetime',
+        'failed_date' => 'date',
         'deleted_at' => 'datetime',
     ];
 
@@ -78,9 +80,10 @@ class Procurement extends Model implements HasMedia
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
+
     public function registerMediaCollections(): void
     {
-        $disk = config('filesystems.disks.procurement', config('filesystems.default'));
+        $disk = config('filesystems.default', 'local');
 
         foreach (ProcurementDocumentType::cases() as $type) {
             $this->addMediaCollection($type->value)
@@ -92,6 +95,11 @@ class Procurement extends Model implements HasMedia
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->published_at !== null;
     }
 
     public function fundingSource()

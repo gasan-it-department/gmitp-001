@@ -3,8 +3,11 @@
 namespace App\External\Api\Request\Procurement;
 
 use App\Core\Procurement\Enums\ProcurementCategory;
+use App\Core\Procurement\Enums\ProcurementDocumentType;
 use App\Core\Procurement\Enums\ProcurementStatus;
+use App\Core\Procurement\Models\ProcurementFundingSource;
 use App\External\Api\Rules\MaxTotalFileSize;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,8 +23,22 @@ class ProcurementRequest extends FormRequest
         return [
             'is_historical' => 'required|boolean',
             // --- RELATIONSHIPS ---
-            'department_id' => ['required', 'string', 'exists:departments,id'],
-            'funding_source_id' => ['required', 'string', 'exists:procurement_funding_sources,id'],
+            'department_id' => [
+                'required',
+                'string',
+                Rule::exists('departments', 'id')->where(
+                    fn (Builder $query) => $query
+                        ->where('municipal_id', app('municipal_id'))
+                        ->where('is_active', true)
+                        ->whereNull('deleted_at')
+                ),
+            ],
+            'funding_source_id' => [
+                'required',
+                'string',
+                Rule::exists('procurement_funding_sources', 'id')
+                    ->where(fn (Builder $query) => $query->where('is_active', true)),
+            ],
             'custom_funding_source' => ['nullable', 'string', 'max:255'],
 
             // --- CORE DETAILS ---
@@ -29,12 +46,18 @@ class ProcurementRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('procurements', 'reference_number')->ignore($this->procurement)
+                Rule::unique('procurements', 'reference_number')->ignore($this->procurement),
             ],
             'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
             'category' => ['required', Rule::enum(ProcurementCategory::class)],
             'status' => ['nullable', 'required_if:is_historical,true', Rule::enum(ProcurementStatus::class)],
-            'notes' => ['nullable', 'string', 'max:1000'],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:1000',
+                Rule::prohibitedIf(fn () => $this->input('status') !== ProcurementStatus::CANCELLED->value),
+            ],
 
             // --- FINANCIALS ---
             'abc_amount' => ['required', 'numeric', 'min:0', 'max:9999999999999.99'],
@@ -42,7 +65,7 @@ class ProcurementRequest extends FormRequest
                 'nullable',
                 'numeric',
                 'min:0',
-                'lte:abc_amount' // Format/Math check stays here
+                'lte:abc_amount', // Format/Math check stays here
             ],
 
             // --- WINNER INFO ---
@@ -58,15 +81,17 @@ class ProcurementRequest extends FormRequest
             'awarded_date' => [
                 'nullable',
                 'date',
-                'after:closing_date', // Chronology check stays here
+                'after:closing_date',
             ],
+            'failure_reason' => ['nullable', 'string', 'max:1000'],
+            'failed_date' => ['nullable', 'date', 'before_or_equal:today'],
 
             // --- FILE UPLOADS ---
             'documents' => ['nullable', 'array', 'max:10', new MaxTotalFileSize(100)],
             'documents.*.file' => ['required', 'file', 'mimes:pdf', 'max:25600'],
             'documents.*.type' => [
                 'required',
-                'string',
+                Rule::enum(ProcurementDocumentType::class),
             ],
         ];
     }
@@ -76,6 +101,23 @@ class ProcurementRequest extends FormRequest
         $validator->after(function ($validator) {
             $status = $this->input('status');
             $abc = (float) $this->input('abc_amount', 0);
+
+            if ($this->boolean('is_historical') && $status === ProcurementStatus::DRAFT->value) {
+                $validator->errors()->add('status', 'Historical records must use their actual lifecycle status, not Draft.');
+            }
+
+            $fundingSource = ProcurementFundingSource::query()
+                ->whereKey($this->input('funding_source_id'))
+                ->where('is_active', true)
+                ->first();
+
+            if ($fundingSource?->code === 'OTHERS' && blank($this->input('custom_funding_source'))) {
+                $validator->errors()->add('custom_funding_source', 'Please specify the funding source.');
+            }
+
+            if ($fundingSource?->code !== 'OTHERS' && filled($this->input('custom_funding_source'))) {
+                $validator->errors()->add('custom_funding_source', 'A custom funding source is only allowed when Others is selected.');
+            }
 
             // --- 1. THE "PUBLISHED" TIER ---
             // If it's anything OTHER than Draft or Cancelled, it needs the core project data.
@@ -113,7 +155,7 @@ class ProcurementRequest extends FormRequest
                 if (empty($this->input('winning_bidder'))) {
                     $validator->errors()->add('winning_bidder', 'You must specify the Winning Bidder.');
                 }
-                if (empty($this->input('contract_amount'))) {
+                if ((float) $this->input('contract_amount', 0) <= 0) {
                     $validator->errors()->add('contract_amount', 'The final Contract Amount is required.');
                 }
                 if (empty($this->input('awarded_date'))) {
@@ -121,10 +163,18 @@ class ProcurementRequest extends FormRequest
                 }
             }
 
-            // --- 3. THE "EXPLANATION" TIER (Failed/Cancelled) ---
-            if ($status === ProcurementStatus::FAILED->value || $status === ProcurementStatus::CANCELLED->value) {
-                if (empty($this->input('notes'))) {
-                    $validator->errors()->add('notes', 'Please provide a reason or BAC Resolution number in the notes for this status.');
+            if ($status === ProcurementStatus::FAILED->value) {
+                if (blank($this->input('failure_reason'))) {
+                    $validator->errors()->add('failure_reason', 'The reason for the failed bidding is required.');
+                }
+                if (blank($this->input('failed_date'))) {
+                    $validator->errors()->add('failed_date', 'The failed bidding date is required.');
+                }
+            }
+
+            if ($status === ProcurementStatus::CANCELLED->value) {
+                if (blank($this->input('notes'))) {
+                    $validator->errors()->add('notes', 'The cancellation reason is required.');
                 }
             }
         });

@@ -1,5 +1,4 @@
 import { router } from '@inertiajs/react';
-import axios from 'axios';
 import { AlertCircle, AlertTriangle, Download, FileText, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ProcurementUploadDialog } from './ProcurementUploadDialog';
@@ -8,48 +7,45 @@ import { ProcurementUploadDialog } from './ProcurementUploadDialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useMunicipality } from '@/Core/Context/MunicipalityContext';
+import { ProcurementFile } from '@/Core/Types/Procurement/procurement';
 import procurement from '@/routes/procurement';
+
+export interface ProcurementDocumentOption {
+    value: string;
+    label: string;
+    color?: string;
+    allowed_statuses?: string[];
+}
 
 // Define the exact props this section needs to survive
 interface Props {
     procurementId: string | number;
-    documents: any[]; // Replace 'any' with your actual Document type if you have it
+    documents: ProcurementFile[];
     status: string;
-    documentTypes: any[];
+    documentTypes: ProcurementDocumentOption[];
+    isPublished?: boolean;
 }
 
-export default function ProcurementDocumentSection({ procurementId, documents, status, documentTypes }: Props) {
-    console.log(documents, 'dfa');
+export default function ProcurementDocumentSection({ procurementId, documents, status, documentTypes, isPublished = false }: Props) {
     const MAX_DOCUMENTS = 15;
     const { currentMunicipality } = useMunicipality();
     // UI States
     const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
 
     // 🌟 1. State to track WHICH document is being deleted (null means dialog is closed)
-    const [documentToDelete, setDocumentToDelete] = useState<any | null>(null);
+    const [documentToDelete, setDocumentToDelete] = useState<ProcurementFile | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    // Define the allowed upload statuses based on the Procurement Lifecycle
-    const canUpload = ['draft', 'open', 'evaluating', 'awarded'].includes(status);
+    const uploadDocumentTypes = documentTypes.filter((type) => {
+        const isAllowedForCurrentStatus = type.allowed_statuses?.includes(status) ?? false;
+        const isBasePublicDocument = status !== 'draft' && ['invitation', 'bid_docs'].includes(type.value);
 
-    const downloadDocument = async (url: string, fileName: string) => {
-        try {
-            const response = await axios.get(url, { responseType: 'blob' });
-            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.setAttribute('download', fileName);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(blobUrl);
-        } catch (error) {
-            console.error('Download failed', error);
-        }
-    };
+        return isAllowedForCurrentStatus || isBasePublicDocument;
+    });
+    const canUpload = !isPublished && uploadDocumentTypes.length > 0;
 
-    const formatBytes = (bytes: number) => {
-        if (bytes === 0) return '0 Bytes';
+    const formatBytes = (bytes?: number) => {
+        if (!bytes) return 'Size unavailable';
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -112,9 +108,9 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                                     </p>
                                     <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                                         <span className="font-medium tracking-wide uppercase">
-                                            {(doc.collection || 'document').replace(/_/g, ' ')}
+                                            {doc.type_label || (doc.collection || doc.type || 'document').replace(/_/g, ' ')}
                                         </span>
-                                        <span>•</span>
+                                        <span aria-hidden="true">•</span>
                                         <span>{formatBytes(doc.size)}</span>
                                     </div>
                                 </div>
@@ -122,21 +118,24 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                                 {/* Action Buttons Container */}
                                 <div className="flex items-center gap-1">
                                     <a
-                                        href={doc.url}
+                                        href={doc.download_url || doc.url}
                                         target="_blank"
+                                        rel="noopener noreferrer"
                                         className="rounded-md p-2 text-slate-400 transition hover:bg-blue-100 hover:text-blue-600"
+                                        aria-label={`Open ${doc.file_name} in a new tab`}
                                     >
-                                        <Download className="h-4 w-4" />
+                                        <Download className="h-4 w-4" aria-hidden="true" />
                                     </a>
-                                    <button
-                                        // 🌟 3. Trigger the dialog by setting the state
-                                        onClick={() => setDocumentToDelete(doc)}
-                                        type="button"
-                                        className="rounded-md p-2 text-slate-400 transition hover:bg-red-100 hover:text-red-600"
-                                        title="Delete Document"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    {!isPublished && (
+                                        <button
+                                            onClick={() => setDocumentToDelete(doc)}
+                                            type="button"
+                                            className="rounded-md p-2 text-slate-400 transition hover:bg-red-100 hover:text-red-600"
+                                            aria-label={`Delete ${doc.file_name}`}
+                                        >
+                                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                        </button>
+                                    )}
                                 </div>
                             </li>
                         ))}
@@ -162,13 +161,21 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                 </div>
             )}
 
+            {isPublished && (
+                <div className="flex items-start gap-2 border-t border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <p>Unpublish for Correction before adding, deleting, or replacing documents.</p>
+                </div>
+            )}
+
             {/* --- DIALOGS --- */}
 
             {/* Upload Dialog */}
             <ProcurementUploadDialog
                 onSuccess={() => router.reload({ only: ['procurement'] })}
                 isOpen={isDocumentUploadOpen}
-                docTypes={documentTypes}
+                docTypes={uploadDocumentTypes}
+                isPublished={isPublished}
                 onOpenChange={setIsDocumentUploadOpen}
                 procurementId={procurementId}
             />
@@ -204,7 +211,9 @@ export default function ProcurementDocumentSection({ procurementId, documents, s
                                         {documentToDelete.file_name}
                                     </p>
                                     <p className="mt-1 text-xs font-medium tracking-wide text-slate-500 uppercase">
-                                        {(documentToDelete.collection || 'document').replace(/_/g, ' ')} • {formatBytes(documentToDelete.size)}
+                                        {documentToDelete.type_label ||
+                                            (documentToDelete.collection || documentToDelete.type || 'document').replace(/_/g, ' ')}{' '}
+                                        • {formatBytes(documentToDelete.size)}
                                     </p>
                                 </div>
                             </div>

@@ -134,7 +134,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     permission: 'action_center.beneficiaries.view',
                 },
                 {
-                    title: 'Search Beneficiary',
+                    title: 'Search People',
                     url: actionCenter.admin.beneficiary.search.url({ municipality: currentMunicipality.slug }),
                     icon: UserSearch,
                     permission: 'action_center.beneficiaries.view',

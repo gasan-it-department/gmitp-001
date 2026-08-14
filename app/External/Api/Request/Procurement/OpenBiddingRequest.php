@@ -3,6 +3,7 @@
 namespace App\External\Api\Request\Procurement;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class OpenBiddingRequest extends FormRequest
 {
@@ -16,8 +17,13 @@ class OpenBiddingRequest extends FormRequest
         return [
             'abc_amount' => ['required', 'numeric', 'min:1'],
             'pre_bid_date' => ['nullable', 'date'],
-            'closing_date' => ['required', 'date'],
-            'reference_number' => ['required', 'string'],
+            'closing_date' => ['required', 'date', 'after:now', 'after_or_equal:pre_bid_date'],
+            'reference_number' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('procurements', 'reference_number')->ignore($this->route('procurementId')),
+            ],
         ];
     }
 

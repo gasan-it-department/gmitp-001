@@ -26,10 +26,18 @@ class TransparencyPageController extends Controller
             'procurements' => ProcurementTransparencyResource::collection($procurements),
             'filterOptions' => [
                 'categories' => ProcurementCategory::toSelectOption(),
-                'statuses' => ProcurementStatus::toSelectOptions(),
+                'statuses' => collect(ProcurementStatus::cases())
+                    ->reject(fn (ProcurementStatus $status) => $status === ProcurementStatus::DRAFT)
+                    ->map(fn (ProcurementStatus $status) => [
+                        'value' => $status->value,
+                        'label' => $status->label(),
+                        'color' => $status->color(),
+                    ])
+                    ->values()
+                    ->all(),
             ],
 
-            'activeFilters' => $request->only(['search', 'category', 'status']),
+            'activeFilters' => $request->only(['search', 'category', 'status', 'department', 'funding']),
         ]);
 
     }

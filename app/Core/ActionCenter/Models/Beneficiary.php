@@ -235,6 +235,15 @@ class Beneficiary extends Model implements HasMedia
     }
 
     /**
+     * Every non-deleted household roster row linked to this identity.
+     * Active and moved-out rows are both retained for residence history.
+     */
+    public function householdMemberships(): HasMany
+    {
+        return $this->hasMany(HouseholdMember::class, 'beneficiary_id');
+    }
+
+    /**
      * Convenience: full name in display form.
      */
     public function getFullNameAttribute(): string

@@ -5,44 +5,47 @@ namespace App\Core\Procurement\UseCases;
 use App\Core\Procurement\Enums\ProcurementStatus;
 use App\Core\Procurement\Exceptions\ProcurementDomainException;
 use App\Core\Procurement\Repositories\ProcurementsRepository;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class EvaluateProcurementUseCase
 {
     public function __construct(
         protected ProcurementsRepository $procurementsRepo,
-    ) {
-    }
+    ) {}
 
     public function execute(string $municipalId, string $procurementId, ?string $remarks = null): void
     {
-        $procurement = $this->procurementsRepo->findByIdAndMunicipality($procurementId, $municipalId);
+        DB::transaction(function () use ($municipalId, $procurementId, $remarks) {
+            $procurement = $this->procurementsRepo->lockByIdAndMunicipality($procurementId, $municipalId);
 
-        if (!$procurement) {
-            throw new ProcurementDomainException("Procurement not found.");
-        }
+            if ($procurement->isPublished()) {
+                throw new ProcurementDomainException('Unpublish this procurement for correction before changing its lifecycle status.');
+            }
 
-        if ($procurement->status !== ProcurementStatus::OPEN) {
-            throw new ProcurementDomainException(
-                "Action Denied: Only 'Open' projects can be moved to the Evaluation phase."
+            if (! $procurement->closing_date) {
+                throw new ProcurementDomainException('The procurement has no official closing date.');
+            }
+
+            $closingDate = Carbon::parse($procurement->closing_date);
+            if (now()->isBefore($closingDate)) {
+                throw new ProcurementDomainException(
+                    "Action Denied: You cannot evaluate this project before {$closingDate->format('M d, Y g:i A')}."
+                );
+            }
+
+            $this->procurementsRepo->transitionStatus(
+                $procurement,
+                ProcurementStatus::OPEN,
+                ProcurementStatus::EVALUATING,
             );
-        }
 
-        $closingDate = Carbon::parse($procurement->closing_date);
-
-        if (now()->isBefore($closingDate)) {
-            throw new ProcurementDomainException(
-                "Action Denied: You cannot evaluate this project yet. The official closing date ({$closingDate->format('M d, Y')}) has not passed."
-            );
-        }
-
-        $appendedNotes = null;
-        if ($remarks) {
-            $timestamp = now()->format('Y-m-d h:i A');
-            $existingNotes = $procurement->notes ? $procurement->notes . "\n\n" : "";
-            $appendedNotes = $existingNotes . "--- BAC Evaluation [{$timestamp}] ---\n" . $remarks;
-        }
-
-        $this->procurementsRepo->transitionStatus($procurementId, ProcurementStatus::EVALUATING, $appendedNotes);
+            activity('procurement')
+                ->performedOn($procurement)
+                ->causedBy(auth()->user())
+                ->withProperties(['remarks' => filled($remarks) ? trim($remarks) : null])
+                ->event('evaluation_started')
+                ->log('Procurement moved to evaluation');
+        }, attempts: 3);
     }
 }

@@ -5,63 +5,91 @@ namespace App\Core\Procurement\UseCases;
 use App\Core\Procurement\Dto\UpdateProcurementDto;
 use App\Core\Procurement\Enums\ProcurementStatus;
 use App\Core\Procurement\Exceptions\ProcurementDomainException;
-use App\Core\Procurement\Models\Procurement;
+use App\Core\Procurement\Repositories\ProcurementsRepository;
 use App\Core\Procurement\Services\ProcurementTimelineValidator;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UpdateProcurementUseCase
 {
     public function __construct(
-        protected ProcurementTimelineValidator $procurementTimelineValidator
-    ) {
-    }
+        protected ProcurementTimelineValidator $procurementTimelineValidator,
+        protected ProcurementsRepository $procurementsRepository,
+    ) {}
 
     public function execute(UpdateProcurementDto $dto, string $procurementId)
     {
-        $procurement = Procurement::where('municipal_id', $dto->municipalId)
-            ->findOrFail($procurementId);
+        $this->procurementTimelineValidator->validateSequence($dto->preBidDate, $dto->closingDate);
 
-        if (!$procurement->status instanceof ProcurementStatus) {
-            throw new ProcurementDomainException("Action Denied: Invalid state or record.");
-        }
+        return DB::transaction(function () use ($dto, $procurementId) {
+            $procurement = $this->procurementsRepository->lockByIdAndMunicipality(
+                $procurementId,
+                $dto->municipalId,
+            );
 
-        if (in_array($procurement->status->value, ['evaluating', 'awarded'])) {
-
-            $newClosingDate = Carbon::parse($dto->closingDate);
-
-            // ...the new closing date CANNOT be in the future!
-            if ($newClosingDate->isFuture()) {
+            if ($procurement->isPublished()) {
                 throw new ProcurementDomainException(
-                    "Action Denied: This project is already in the '{$procurement->status->label()}' phase. You cannot change the closing date to a future date because the bidding has physically concluded."
+                    'Published procurement records are locked. Record a lifecycle outcome instead of rewriting public data.'
                 );
             }
 
-            // 🌟 Bonus Senior Check: If Awarded, closing date can't be AFTER the awarded date
-            if ($procurement->status->value === 'awarded' && $procurement->awarded_date) {
-                if ($newClosingDate->isAfter(Carbon::parse($procurement->awarded_date))) {
-                    throw new ProcurementDomainException(
-                        "Action Denied: The Closing Date cannot be set later than the Date Awarded."
-                    );
-                }
+            $targetStatus = $procurement->status === ProcurementStatus::DRAFT && ! $dto->isHistorical
+                ? ProcurementStatus::DRAFT
+                : $dto->status;
+
+            $this->validateOutcomeFields($dto, $targetStatus);
+
+            $procurement->update([
+                'reference_number' => $dto->referenceNumber,
+                'funding_source_id' => $dto->fundingSourceId,
+                'custom_funding_source' => $dto->customFundingSource,
+                'department_id' => $dto->departmentId,
+                'title' => $dto->title,
+                'description' => $dto->description,
+                'category' => $dto->category,
+                'status' => $targetStatus,
+                'abc_amount' => $dto->abcAmount,
+                'contract_amount' => $targetStatus === ProcurementStatus::AWARDED ? $dto->contractAmount : null,
+                'winning_bidder_name' => $targetStatus === ProcurementStatus::AWARDED ? $dto->winningBidder : null,
+                'pre_bid_date' => $dto->preBidDate,
+                'closing_date' => $dto->closingDate,
+                'awarded_date' => $targetStatus === ProcurementStatus::AWARDED ? $dto->awardDate : null,
+                'failure_reason' => $targetStatus === ProcurementStatus::FAILED ? $dto->failureReason : null,
+                'failed_date' => $targetStatus === ProcurementStatus::FAILED ? $dto->failedDate : null,
+                'notes' => $targetStatus === ProcurementStatus::CANCELLED ? $dto->notes : null,
+            ]);
+
+            return $procurement;
+        }, attempts: 3);
+    }
+
+    private function validateOutcomeFields(UpdateProcurementDto $dto, ProcurementStatus $status): void
+    {
+        if ($status === ProcurementStatus::AWARDED) {
+            if (blank($dto->winningBidder) || ! $dto->contractAmount || $dto->contractAmount <= 0) {
+                throw new ProcurementDomainException('Awarded procurements require a winning bidder and positive contract amount.');
             }
+
+            if ($dto->contractAmount > $dto->abcAmount) {
+                throw new ProcurementDomainException('The contract amount cannot exceed the ABC.');
+            }
+
+            if (! $dto->awardDate) {
+                throw new ProcurementDomainException('Awarded procurements require an award date.');
+            }
+
+            $this->procurementTimelineValidator->validateSequence(
+                $dto->preBidDate,
+                $dto->closingDate,
+                $dto->awardDate,
+            );
         }
 
-        $this->procurementTimelineValidator->validateSequence($dto->preBidDate, $dto->closingDate);
+        if ($status === ProcurementStatus::FAILED && (blank($dto->failureReason) || ! $dto->failedDate)) {
+            throw new ProcurementDomainException('Failed procurements require a reason and failed bidding date.');
+        }
 
-        $procurement->update([
-            'reference_number' => $dto->referenceNumber,
-            'funding_source_id' => $dto->fundingSourceId,
-            'custom_funding_source' => $dto->customFundingSource,
-            'department_id' => $dto->departmentId,
-            'title' => $dto->title,
-            'category' => $dto->category,
-            'abc_amount' => $dto->abcAmount,
-            'contract_amount' => $dto->contractAmount,
-            'winning_bidder_name' => $dto->winningBidder,
-            'pre_bid_date' => $dto->preBidDate,
-            'closing_date' => $dto->closingDate,
-            'awarded_date' => $dto->awardDate,
-            'notes' => $dto->notes,
-        ]);
+        if ($status === ProcurementStatus::CANCELLED && blank($dto->notes)) {
+            throw new ProcurementDomainException('Cancelled procurements require a cancellation reason.');
+        }
     }
 }

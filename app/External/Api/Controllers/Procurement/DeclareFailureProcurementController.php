@@ -11,14 +11,13 @@ class DeclareFailureProcurementController extends Controller
 {
     public function __construct(
         private DeclareFailureProcurementUseCase $declareFailureProcurementUseCase
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request, string $procurementId)
     {
         $validated = $request->validate([
             'failure_reason' => ['required', 'string', 'max:1000'],
-            'failed_date' => ['required', 'date']
+            'failed_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
 
         $dto = FailureProcurementDto::fromRequest($validated, $procurementId);
