@@ -2,7 +2,9 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Validates the citizen's submission on POST /apply/{assistanceType:slug}.
@@ -36,7 +38,7 @@ class StoreAssistanceRequest extends FormRequest
             // for cross-field rules (e.g. burial REQUIRES a representative + DOD)
             // and for verifying that the chosen household member belongs to the
             // filer's own household.
-            'relationship_to_beneficiary' => ['nullable', 'in:spouse,parent,child,sibling'],
+            'relationship_to_beneficiary' => ['nullable', Rule::in(Relationship::assistanceRepresentativeValues())],
             'on_behalf_household_member_id' => ['nullable', 'ulid', 'exists:ac_household_members,id'],
             'on_behalf_first_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_middle_name' => ['nullable', 'string', 'max:100'],

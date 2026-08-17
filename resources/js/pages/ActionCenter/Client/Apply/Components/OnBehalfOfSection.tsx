@@ -306,7 +306,9 @@ function FamilyMemberPicker({
                             className="flex flex-col items-start gap-0.5 rounded-xl border-2 border-slate-200 px-4 py-3 text-left transition-all hover:border-[#005088]/40 hover:bg-slate-50"
                         >
                             <span className="text-sm font-semibold text-slate-800">{formatMemberName(member)}</span>
-                            {member.relationship && <span className="text-[11px] font-normal text-slate-500 capitalize">{member.relationship}</span>}
+                            {member.relationship && (
+                                <span className="text-[11px] font-normal text-slate-500">{member.relationship_label || member.relationship}</span>
+                            )}
                         </button>
                     ))}
                 </div>

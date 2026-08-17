@@ -4,6 +4,7 @@
 
 namespace App\External\Api\Resources\ActionCenter\Household;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -36,6 +37,7 @@ class HouseholdMemberDetailsResource extends JsonResource
             'middle_name' => $this->middle_name,
             'suffix' => $this->suffix,
             'relationship' => $this->relationship,
+            'relationship_label' => Relationship::tryFrom($this->relationship)?->label(),
             'birth_date' => $this->birth_date?->toDateString(),
             'age' => $this->birth_date?->age,
             'sex' => $this->sex,

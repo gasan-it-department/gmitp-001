@@ -31,8 +31,7 @@ class ApplyAssistanceRequestController extends Controller
     public function __construct(
         private readonly ResolveApplicantProfileAction $resolveProfile,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         Request $request,
@@ -43,12 +42,12 @@ class ApplyAssistanceRequestController extends Controller
         // filters by app('municipal_id'), which SetMunicipalityContext binds
         // before SubstituteBindings runs (see bootstrap/app.php priority list).
         $assistanceType->load([
-            'documents' => fn($q) => $q->orderBy('ac_assistance_type_documents.sort_order'),
+            'documents' => fn ($q) => $q->orderBy('ac_assistance_type_documents.sort_order'),
         ]);
 
         $beneficiary = $this->resolveProfile->execute($request->user()->id, app('municipal_id'));
 
-        if (!$beneficiary || !$beneficiary->household) {
+        if (! $beneficiary || ! $beneficiary->household) {
             session()->put('url.intended', url()->current());
 
             return redirect()
@@ -62,18 +61,18 @@ class ApplyAssistanceRequestController extends Controller
                 ->with('error', 'Your beneficiary profile could not be verified by MSWD. Please visit the MSWD office.');
         }
 
-        if (!$beneficiary->isIdentityVerified()) {
+        if (! $beneficiary->isIdentityVerified()) {
             return redirect()
                 ->route('actionCenter.portal', ['municipality' => $municipality])
                 ->with('info', 'Your beneficiary profile is awaiting MSWD identity verification.');
         }
 
-        if (!$beneficiary->is_active || !$beneficiary->household->isVerified()) {
+        if (! $beneficiary->is_active || ! $beneficiary->household->isVerified()) {
             return redirect()
                 ->route('actionCenter.portal', ['municipality' => $municipality])
                 ->with(
                     'error',
-                    !$beneficiary->is_active
+                    ! $beneficiary->is_active
                     ? 'Your beneficiary record is inactive. Please visit the MSWD office.'
                     : 'Your household is on hold until MSWD assigns a verified head of household.',
                 );
@@ -85,10 +84,10 @@ class ApplyAssistanceRequestController extends Controller
         // gate depends on which deceased is chosen, so the form always loads and
         // the store enforces it.
 
-        if (!$assistanceType->is_independent) {
+        if (! $assistanceType->is_independent) {
             $eligibility = $this->checkEligibility->execute($beneficiary, $assistanceType);
 
-            if (!$eligibility->eligible) {
+            if (! $eligibility->eligible) {
                 return redirect()
                     ->route('actionCenter.portal', ['municipality' => $municipality])
                     ->with('error', $eligibility->message());
@@ -103,10 +102,9 @@ class ApplyAssistanceRequestController extends Controller
             ->orderBy('first_name')
             ->get();
 
-
         return Inertia::render('ActionCenter/Client/Apply/ApplyAssistance', [
             'assistanceType' => new AssistanceTypeDetailsResource($assistanceType),
-            'relationships' => Relationship::toOptions(),
+            'relationships' => Relationship::assistanceRepresentativeOptions(),
             'beneficiary' => new BeneficiaryDetailsResource($beneficiary),
             'household' => new HouseholdDetailsResource($beneficiary->household),
             'householdMembers' => HouseholdMemberOptionResource::collection($householdMembers),

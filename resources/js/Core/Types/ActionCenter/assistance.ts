@@ -107,6 +107,7 @@ export interface HouseholdMemberOption {
     last_name: string;
     suffix: string | null;
     relationship: string | null;
+    relationship_label: string | null;
     birth_date: string | null;
     is_verified_dependent: boolean;
 }

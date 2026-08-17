@@ -88,7 +88,7 @@ class CreateAssistanceRequestController extends Controller
             'beneficiary' => new BeneficiaryProfileResource($beneficiary),
             'assistanceTypes' => AssistanceTypeDetailsResource::collection($assistanceTypes),
             'eligibilityByType' => $eligibilityByType,
-            'relationships' => Relationship::toOptions(),
+            'relationships' => Relationship::assistanceRepresentativeOptions(),
             'householdMembers' => HouseholdMemberOptionResource::collection($householdMembers),
             'submitUrl' => route('actionCenter.assistance.admin-store'),
             'storeHouseholdMemberUrl' => route('actionCenter.household.members.admin-store', [

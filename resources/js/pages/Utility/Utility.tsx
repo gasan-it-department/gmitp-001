@@ -149,7 +149,7 @@ export default function Utility() {
             eventDate = epoch > 9999999999 ? moment(epoch) : moment.unix(epoch); // ms vs s
         } else {
             // Parse date string
-            eventDate = moment(dateInput, 'YYYY-MM-DD HH:mm:ss');
+            eventDate = moment(dateInput);
         }
 
         const now = moment();

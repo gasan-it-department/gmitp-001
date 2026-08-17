@@ -120,6 +120,7 @@ interface HouseholdMemberBlock {
     middle_name: string | null;
     suffix: string | null;
     relationship: string;
+    relationship_label: string | null;
     birth_date: string | null;
     age: number | null;
     sex: string | null;
@@ -586,8 +587,7 @@ export default function AssistanceRequestsDetails({
                                                                 <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
                                                                     <MobileDetail
                                                                         label="Relationship"
-                                                                        value={member.relationship.toLowerCase()}
-                                                                        capitalize
+                                                                        value={member.relationship_label || member.relationship}
                                                                     />
                                                                     <MobileDetail
                                                                         label="Age / Sex"
@@ -631,8 +631,8 @@ export default function AssistanceRequestsDetails({
                                                                             {member.middle_name ? `${member.middle_name[0]}. ` : ''}{' '}
                                                                             {member.last_name} {member.suffix}
                                                                         </TableCell>
-                                                                        <TableCell className="text-xs text-slate-600 capitalize">
-                                                                            {member.relationship.toLowerCase()}
+                                                                        <TableCell className="text-xs text-slate-600">
+                                                                            {member.relationship_label || member.relationship}
                                                                         </TableCell>
                                                                         <TableCell className="text-xs text-slate-600">
                                                                             {member.age ?? '—'} yrs / {member.sex || '—'}

@@ -9,6 +9,7 @@ export interface HouseholdMemberRow {
     middle_name: string | null;
     suffix: string | null;
     relationship: string;
+    relationship_label: string | null;
     birth_date: string | null;
     age: number | null;
     sex: string | null;
@@ -64,7 +65,7 @@ export default function HouseholdMembersTable({ members, totalIncome }: Props) {
                             <TableCell className="text-xs font-medium text-slate-900 capitalize">
                                 {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''} {member.last_name} {member.suffix}
                             </TableCell>
-                            <TableCell className="text-xs text-slate-600 capitalize">{member.relationship.toLowerCase()}</TableCell>
+                            <TableCell className="text-xs text-slate-600">{member.relationship_label || member.relationship}</TableCell>
                             <TableCell className="text-xs text-slate-600">
                                 {member.age ?? '—'} yrs / {member.sex || '—'}
                             </TableCell>

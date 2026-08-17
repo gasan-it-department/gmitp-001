@@ -370,7 +370,7 @@ export default function IntakeReviewPanel({
                                     <p className="font-medium text-slate-900">
                                         {member.first_name} {member.last_name}
                                     </p>
-                                    <p className="text-xs text-slate-500">{member.relationship}</p>
+                                    <p className="text-xs text-slate-500">{member.relationship_label || member.relationship}</p>
                                 </div>
                                 <div className="flex rounded-md border border-slate-200 p-0.5">
                                     <button

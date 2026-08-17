@@ -156,7 +156,7 @@ function MembershipSummary({ membership, compact = false }: { membership: Benefi
                     {membership.household_code || 'Household code unavailable'}
                 </p>
                 <p className="text-xs break-words text-slate-500">
-                    {membership.relationship || 'Relationship not recorded'} / {address}
+                    {membership.relationship_label || membership.relationship || 'Relationship not recorded'} / {address}
                 </p>
             </div>
             <span className={`inline-flex w-fit shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold ${status.badge}`}>{status.label}</span>
