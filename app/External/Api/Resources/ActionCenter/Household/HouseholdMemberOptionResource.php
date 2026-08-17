@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\ActionCenter\Household;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,6 +22,7 @@ class HouseholdMemberOptionResource extends JsonResource
             'last_name' => $this->last_name,
             'suffix' => $this->suffix,
             'relationship' => $this->relationship,
+            'relationship_label' => Relationship::tryFrom($this->relationship)?->label(),
             'birth_date' => $this->birth_date?->toDateString(),
             'is_verified_dependent' => (bool) $this->is_verified_dependent,
         ];

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\ActionCenter;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Enums\Sex;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
@@ -75,6 +76,7 @@ class PeopleSearchResultResource extends JsonResource
             'sex' => $member->sex,
             'sex_label' => $member->sex ? Sex::tryFrom($member->sex)?->label() : null,
             'relationship' => $member->relationship,
+            'relationship_label' => Relationship::tryFrom($member->relationship)?->label(),
             'is_active' => (bool) $member->is_active,
             'is_verified_dependent' => (bool) $member->is_verified_dependent,
             'verification_status' => $member->is_verified_dependent ? 'verified' : 'pending',
@@ -106,6 +108,7 @@ class PeopleSearchResultResource extends JsonResource
             'barangay' => $member->household?->barangay,
             'street' => $member->household?->street,
             'relationship' => $member->relationship,
+            'relationship_label' => Relationship::tryFrom($member->relationship)?->label(),
             'is_active' => (bool) $member->is_active,
             'is_verified_dependent' => (bool) $member->is_verified_dependent,
             'status' => $status,

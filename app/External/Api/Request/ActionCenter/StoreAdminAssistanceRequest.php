@@ -2,9 +2,11 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\AssistanceType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Validates an ADMIN-encoded assistance request (the walk-in counter, or filing
@@ -52,7 +54,7 @@ class StoreAdminAssistanceRequest extends FormRequest
             'relationship_to_beneficiary' => [
                 'nullable',
                 'required_with:on_behalf_household_member_id',
-                'in:spouse,parent,child,sibling',
+                Rule::in(Relationship::assistanceRepresentativeValues()),
             ],
             'on_behalf_household_member_id' => [
                 'nullable',

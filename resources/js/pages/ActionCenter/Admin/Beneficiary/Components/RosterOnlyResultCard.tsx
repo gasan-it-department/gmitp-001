@@ -57,7 +57,7 @@ export default function RosterOnlyResultCard({ row, isPossibleMatch, headProfile
 
             <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 border-t border-gray-100 pt-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
                 <Detail icon={<CalendarClock className="h-4 w-4" />} label="Birthdate" value={formatDate(row.birth_date)} />
-                <Detail label="Relationship" value={row.relationship || 'Not recorded'} />
+                <Detail label="Relationship" value={row.relationship_label || row.relationship || 'Not recorded'} />
                 <Detail icon={<Home className="h-4 w-4" />} label="Household address" value={address} />
                 <Detail label="Household head" value={row.household.head_name || 'No active head recorded'} />
             </dl>

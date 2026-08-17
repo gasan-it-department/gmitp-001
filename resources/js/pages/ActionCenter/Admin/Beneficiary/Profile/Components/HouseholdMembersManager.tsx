@@ -291,7 +291,7 @@ export default function HouseholdMembersManager({
                         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
                             <div>
                                 <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Relationship</p>
-                                <p className="mt-0.5 text-xs text-slate-700 capitalize">{member.relationship.toLowerCase()}</p>
+                                <p className="mt-0.5 text-xs text-slate-700">{member.relationship_label || member.relationship}</p>
                             </div>
                             <div>
                                 <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Age / Sex</p>
@@ -340,7 +340,7 @@ export default function HouseholdMembersManager({
                                             </p>
                                         </div>
                                         <p className="mt-1 text-xs text-slate-500 capitalize">
-                                            {member.relationship.toLowerCase()} · {member.age ?? '—'} yrs / {member.sex || '—'}
+                                            {member.relationship_label || member.relationship} · {member.age ?? '—'} yrs / {member.sex || '—'}
                                         </p>
                                     </div>
                                     {renderMobileMemberMenu(member, true)}
@@ -406,7 +406,7 @@ export default function HouseholdMembersManager({
                                         )}
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-xs text-slate-600 capitalize">{member.relationship.toLowerCase()}</TableCell>
+                                <TableCell className="text-xs text-slate-600">{member.relationship_label || member.relationship}</TableCell>
                                 <TableCell className="text-xs text-slate-600">
                                     {member.age ?? '—'} yrs / {member.sex || '—'}
                                 </TableCell>
@@ -526,7 +526,7 @@ export default function HouseholdMembersManager({
                                                 </span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-xs text-slate-500 capitalize">{member.relationship.toLowerCase()}</TableCell>
+                                        <TableCell className="text-xs text-slate-500">{member.relationship_label || member.relationship}</TableCell>
                                         <TableCell className="text-xs text-slate-500">
                                             {member.age ?? '—'} yrs / {member.sex || '—'}
                                         </TableCell>

@@ -1,18 +1,18 @@
+import { BarangaySelect } from '@/components/Shared/BarangaySelect';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { router, usePage } from '@inertiajs/react';
-import { AlertTriangle, Loader2, Wrench, Home, DoorOpen } from 'lucide-react';
-import { useState, useMemo, FormEvent } from 'react';
-import type { HouseholdMemberRow } from './HouseholdMembersTable';
-import type { HouseholdHeadState } from './ChangeHouseholdHeadDialog';
-import { BarangaySelect } from '@/components/Shared/BarangaySelect';
 import axios from 'axios';
+import { AlertTriangle, DoorOpen, Home, Loader2, Wrench } from 'lucide-react';
+import { FormEvent, useMemo, useState } from 'react';
+import type { HouseholdHeadState } from './ChangeHouseholdHeadDialog';
+import type { HouseholdMemberRow } from './HouseholdMembersTable';
 
 type Operation = 'correction' | 'transfer' | 'move_out';
 type DestinationType = 'join' | 'create';
@@ -53,7 +53,7 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
     const [error, setError] = useState<string | null>(null);
 
     const isCurrentHead = useMemo(() => {
-        return members.find(m => m.beneficiary_id === beneficiaryId && m.is_active)?.relationship === 'head';
+        return members.find((m) => m.beneficiary_id === beneficiaryId && m.is_active)?.relationship === 'head';
     }, [members, beneficiaryId]);
 
     const currentHeadMemberId = headState.current_head_member_id;
@@ -98,7 +98,7 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                     value: m.member_id,
                     label: m.member_name,
                     ...m,
-                }))
+                })),
             );
         } catch {
             setSearchResults([]);
@@ -159,18 +159,14 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
             }
         }
 
-        router.post(
-            `/api/action-center/beneficiary/${beneficiaryId}/reassign-household`,
-            data,
-            {
-                headers: { 'X-Municipality-Slug': currentMunicipality.slug },
-                preserveScroll: true,
-                onStart: () => setProcessing(true),
-                onError: (errors) => setError(String(errors.beneficiary ?? 'Unable to process reassignment.')),
-                onSuccess: resetAndClose,
-                onFinish: () => setProcessing(false),
-            },
-        );
+        router.post(`/api/action-center/beneficiary/${beneficiaryId}/reassign-household`, data, {
+            headers: { 'X-Municipality-Slug': currentMunicipality.slug },
+            preserveScroll: true,
+            onStart: () => setProcessing(true),
+            onError: (errors) => setError(String(errors.beneficiary ?? 'Unable to process reassignment.')),
+            onSuccess: resetAndClose,
+            onFinish: () => setProcessing(false),
+        });
     };
 
     return (
@@ -199,33 +195,33 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                                 <RadioGroupItem value="correction" id="op-correction" className="peer sr-only" />
                                 <Label
                                     htmlFor="op-correction"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 [&:has([data-state=checked])]:border-slate-900 cursor-pointer"
+                                    className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 [&:has([data-state=checked])]:border-slate-900"
                                 >
                                     <Wrench className="mb-3 h-6 w-6" />
-                                    <span className="font-semibold text-center text-sm">Correction</span>
-                                    <span className="text-xs text-slate-500 mt-1 text-center font-normal">Fixes an administrative mistake</span>
+                                    <span className="text-center text-sm font-semibold">Correction</span>
+                                    <span className="mt-1 text-center text-xs font-normal text-slate-500">Fixes an administrative mistake</span>
                                 </Label>
                             </div>
                             <div>
                                 <RadioGroupItem value="transfer" id="op-transfer" className="peer sr-only" />
                                 <Label
                                     htmlFor="op-transfer"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 [&:has([data-state=checked])]:border-slate-900 cursor-pointer"
+                                    className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 [&:has([data-state=checked])]:border-slate-900"
                                 >
                                     <Home className="mb-3 h-6 w-6" />
-                                    <span className="font-semibold text-center text-sm">Transfer</span>
-                                    <span className="text-xs text-slate-500 mt-1 text-center font-normal">Legitimate residence change</span>
+                                    <span className="text-center text-sm font-semibold">Transfer</span>
+                                    <span className="mt-1 text-center text-xs font-normal text-slate-500">Legitimate residence change</span>
                                 </Label>
                             </div>
                             <div>
                                 <RadioGroupItem value="move_out" id="op-moveout" className="peer sr-only" />
                                 <Label
                                     htmlFor="op-moveout"
-                                    className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 [&:has([data-state=checked])]:border-slate-900 cursor-pointer"
+                                    className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 [&:has([data-state=checked])]:border-slate-900"
                                 >
                                     <DoorOpen className="mb-3 h-6 w-6" />
-                                    <span className="font-semibold text-center text-sm">Move Out</span>
-                                    <span className="text-xs text-slate-500 mt-1 text-center font-normal">Left without new household</span>
+                                    <span className="text-center text-sm font-semibold">Move Out</span>
+                                    <span className="mt-1 text-center text-xs font-normal text-slate-500">Left without new household</span>
                                 </Label>
                             </div>
                         </RadioGroup>
@@ -233,15 +229,15 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
 
                     {isCurrentHead && (
                         <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                            <h3 className="font-semibold text-amber-900 text-sm flex items-center gap-2">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-amber-900">
                                 <AlertTriangle className="h-4 w-4" />
                                 Source Household Head Successor
                             </h3>
                             <p className="text-xs text-amber-800">
                                 This beneficiary is currently the head of household. You must appoint a successor or place the household on hold.
                             </p>
-                            
-                            <div className="space-y-3 mt-3">
+
+                            <div className="mt-3 space-y-3">
                                 {eligibleSuccessors.length > 0 && (
                                     <div className="space-y-2">
                                         <Label className="text-amber-900">Appoint new head:</Label>
@@ -265,35 +261,36 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                                                         </span>
                                                     </div>
                                                     <span className="text-xs text-slate-500 capitalize">
-                                                        {m.relationship}
+                                                        {m.relationship_label || m.relationship}
                                                     </span>
                                                 </Label>
                                             ))}
                                         </RadioGroup>
                                     </div>
                                 )}
-                                
+
                                 {ineligibleSuccessors.length > 0 && (
-                                    <div className="mt-2 text-xs text-slate-500 space-y-1">
+                                    <div className="mt-2 space-y-1 text-xs text-slate-500">
                                         <span className="font-medium">Ineligible members:</span>
                                         <ul className="list-inside list-disc">
                                             {ineligibleSuccessors.map((m) => (
                                                 <li key={m.id} className="capitalize">
-                                                    {m.first_name} {m.last_name} - <span className="lowercase">{headState.candidate_reasons[m.id]}</span>
+                                                    {m.first_name} {m.last_name} -{' '}
+                                                    <span className="lowercase">{headState.candidate_reasons[m.id]}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
 
-                                <div className="pt-2 border-t border-amber-200/50">
-                                    <Label className="flex items-center gap-2 cursor-pointer text-amber-900">
-                                        <Checkbox 
-                                            checked={placeOnHold} 
+                                <div className="border-t border-amber-200/50 pt-2">
+                                    <Label className="flex cursor-pointer items-center gap-2 text-amber-900">
+                                        <Checkbox
+                                            checked={placeOnHold}
                                             onCheckedChange={(c) => {
                                                 setPlaceOnHold(!!c);
                                                 if (c) setSuccessorId(null);
-                                            }} 
+                                            }}
                                         />
                                         Place the source household on hold (no eligible successor available)
                                     </Label>
@@ -305,8 +302,8 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                     {/* Destination Section */}
                     {operation !== 'move_out' && (
                         <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                            <h3 className="font-semibold text-slate-900 text-sm">Destination Household</h3>
-                            
+                            <h3 className="text-sm font-semibold text-slate-900">Destination Household</h3>
+
                             <RadioGroup
                                 value={destinationType}
                                 onValueChange={(val) => setDestinationType(val as DestinationType)}
@@ -314,26 +311,26 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                             >
                                 <div>
                                     <RadioGroupItem value="join" id="dest-join" className="peer sr-only" />
-                                    <Label 
-                                        htmlFor="dest-join" 
-                                        className="flex flex-col items-center justify-center rounded-md border-2 border-slate-200 bg-white p-3 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 [&:has([data-state=checked])]:border-slate-900 cursor-pointer h-full text-center"
+                                    <Label
+                                        htmlFor="dest-join"
+                                        className="flex h-full cursor-pointer flex-col items-center justify-center rounded-md border-2 border-slate-200 bg-white p-3 text-center peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 [&:has([data-state=checked])]:border-slate-900"
                                     >
-                                        <span className="font-semibold text-sm">Join existing household</span>
+                                        <span className="text-sm font-semibold">Join existing household</span>
                                     </Label>
                                 </div>
                                 <div>
                                     <RadioGroupItem value="create" id="dest-create" className="peer sr-only" />
-                                    <Label 
-                                        htmlFor="dest-create" 
-                                        className="flex flex-col items-center justify-center rounded-md border-2 border-slate-200 bg-white p-3 hover:bg-slate-50 hover:text-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 [&:has([data-state=checked])]:border-slate-900 cursor-pointer h-full text-center"
+                                    <Label
+                                        htmlFor="dest-create"
+                                        className="flex h-full cursor-pointer flex-col items-center justify-center rounded-md border-2 border-slate-200 bg-white p-3 text-center peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:bg-slate-50 hover:bg-slate-50 hover:text-slate-900 [&:has([data-state=checked])]:border-slate-900"
                                     >
-                                        <span className="font-semibold text-sm">Create provisional household</span>
+                                        <span className="text-sm font-semibold">Create provisional household</span>
                                     </Label>
                                 </div>
                             </RadioGroup>
 
                             {destinationType === 'join' && (
-                                <div className="space-y-4 mt-4">
+                                <div className="mt-4 space-y-4">
                                     <Label>Search for household member to join</Label>
                                     <div className="flex gap-2">
                                         <Input
@@ -341,9 +338,14 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
                                             placeholder="Type Household Code or Beneficiary Number"
-                                            className="text-sm flex-1"
+                                            className="flex-1 text-sm"
                                         />
-                                        <Button type="button" variant="secondary" onClick={handleSearch} disabled={searching || searchQuery.length < 3}>
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            onClick={handleSearch}
+                                            disabled={searching || searchQuery.length < 3}
+                                        >
                                             {searching ? 'Searching...' : 'Search'}
                                         </Button>
                                     </div>
@@ -352,7 +354,7 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                                     </p>
 
                                     {searchResults.length > 0 && (
-                                        <div className="mt-4 space-y-2 max-h-[200px] overflow-y-auto rounded-md border border-slate-200 bg-white p-2">
+                                        <div className="mt-4 max-h-[200px] space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white p-2">
                                             {searchResults.map((opt) => (
                                                 <label
                                                     key={opt.value}
@@ -380,9 +382,11 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                             )}
 
                             {destinationType === 'create' && (
-                                <div className="grid gap-4 sm:grid-cols-2 mt-4">
+                                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="new-barangay">Barangay <span className="text-red-500">*</span></Label>
+                                        <Label htmlFor="new-barangay">
+                                            Barangay <span className="text-red-500">*</span>
+                                        </Label>
                                         <BarangaySelect
                                             municipalityId={currentMunicipality.id}
                                             value={newBarangay}
@@ -404,8 +408,8 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                             )}
 
                             <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox 
-                                    id="verify-dest" 
+                                <Checkbox
+                                    id="verify-dest"
                                     checked={verifyAtDestination}
                                     onCheckedChange={(c) => setVerifyAtDestination(c as boolean)}
                                 />
@@ -418,7 +422,9 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
 
                     {/* Reason */}
                     <div className="space-y-2">
-                        <Label htmlFor="reassign-reason">Reason <span className="text-red-500">*</span></Label>
+                        <Label htmlFor="reassign-reason">
+                            Reason <span className="text-red-500">*</span>
+                        </Label>
                         <Textarea
                             id="reassign-reason"
                             value={reason}
@@ -432,8 +438,10 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                     {operation && (
                         <div className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                            {operation === 'correction' && "This will correct the household assignment. Historical assistance records will not be modified."}
-                            {operation === 'transfer' && "This will transfer the beneficiary to the selected household. This counts as a residence event."}
+                            {operation === 'correction' &&
+                                'This will correct the household assignment. Historical assistance records will not be modified.'}
+                            {operation === 'transfer' &&
+                                'This will transfer the beneficiary to the selected household. This counts as a residence event.'}
                             {operation === 'move_out' && "This will deactivate the beneficiary's household membership without creating a new one."}
                         </div>
                     )}
@@ -445,11 +453,7 @@ export default function ReassignHouseholdDialog({ open, onClose, beneficiaryId, 
                     <Button type="button" variant="outline" onClick={resetAndClose} disabled={processing}>
                         Cancel
                     </Button>
-                    <Button 
-                        type="button" 
-                        onClick={submit} 
-                        disabled={processing || (isCurrentHead && operation === 'move_out')}
-                    >
+                    <Button type="button" onClick={submit} disabled={processing || (isCurrentHead && operation === 'move_out')}>
                         {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirm Action
                     </Button>

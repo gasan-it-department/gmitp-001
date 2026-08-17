@@ -56,6 +56,7 @@ export interface BeneficiaryMembershipRow {
     barangay: string | null;
     street: string | null;
     relationship: string | null;
+    relationship_label: string | null;
     is_active: boolean;
     is_verified_dependent: boolean;
     status: 'current_household' | 'other_active_household' | 'moved_out';
@@ -88,6 +89,7 @@ export interface RosterOnlyRow {
     sex: string | null;
     sex_label: string | null;
     relationship: string | null;
+    relationship_label: string | null;
     is_active: boolean;
     is_verified_dependent: boolean;
     verification_status: 'pending' | 'verified';
