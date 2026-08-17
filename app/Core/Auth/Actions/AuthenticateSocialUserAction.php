@@ -8,25 +8,21 @@ use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Models\User;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthenticateSocialUserAction
 {
     public function __construct(
         private IdGeneratorInterface $idGenerator,
-    ) {
-    }
+    ) {}
 
     /**
      * Finds or creates a local user based on social provider data.
      *
-     * @param  SocialUserDto  $dto
-     * @param  string|null    $authenticatedUserId  Pass auth()->id() when called from the
-     *                                               profile "Link Account" flow so the action
-     *                                               attaches to the existing user instead of
-     *                                               trying to match by email (which would fail
-     *                                               for phone-only registrants whose email is null).
+     * @param  string|null  $authenticatedUserId  Pass auth()->id() when called from the
+     *                                            profile "Link Account" flow so the action
+     *                                            attaches to the existing user instead of
+     *                                            trying to match by email (which would fail
+     *                                            for phone-only registrants whose email is null).
      */
     public function execute(SocialUserDto $dto, ?string $authenticatedUserId = null): User
     {
@@ -36,18 +32,22 @@ class AuthenticateSocialUserAction
             $socialAccount = UserSocialAccount::query()
                 ->where('provider_name', $dto->providerName)
                 ->where('provider_id', $dto->providerId)
+                ->lockForUpdate()
                 ->first();
 
             if ($socialAccount) {
                 if ($dto->avatarUrl && $socialAccount->avatar_url !== $dto->avatarUrl) {
                     $socialAccount->update(['avatar_url' => $dto->avatarUrl]);
                 }
+
                 return $socialAccount->user;
             }
 
             // 2. Profile linking flow — authenticated user is connecting their Google account
             if ($authenticatedUserId) {
-                $user = User::findOrFail($authenticatedUserId);
+                $user = User::query()
+                    ->lockForUpdate()
+                    ->findOrFail($authenticatedUserId);
 
                 // Write Google's pre-verified email back onto the user record
                 $user->update([
@@ -56,9 +56,12 @@ class AuthenticateSocialUserAction
                 ]);
             } else {
                 // 3. Login/signup flow — try to match an existing account by email
-                $user = User::query()->where('email', $dto->email)->first();
+                $user = User::query()
+                    ->where('email', $dto->email)
+                    ->lockForUpdate()
+                    ->first();
 
-                if (!$user) {
+                if (! $user) {
                     // 4. First-time Google user — create a new account
                     $user = User::create([
                         'id' => $this->idGenerator->generate(),
@@ -71,14 +74,30 @@ class AuthenticateSocialUserAction
                 }
             }
 
-            // 5. Create the social link (same for all paths)
-            UserSocialAccount::create([
-                'id' => $this->idGenerator->generate(),
-                'user_id' => $user->id,
-                'provider_name' => $dto->providerName,
-                'provider_id' => $dto->providerId,
-                'avatar_url' => $dto->avatarUrl,
-            ]);
+            // 5. Link this provider to the user. A user may already have a link for
+            //    the same provider with an older provider ID (for example, after a
+            //    Supabase account was recreated). Update that row rather than
+            //    violating the unique (user_id, provider_name) constraint.
+            $existingProviderLink = UserSocialAccount::query()
+                ->where('user_id', $user->id)
+                ->where('provider_name', $dto->providerName)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingProviderLink) {
+                $existingProviderLink->update([
+                    'provider_id' => $dto->providerId,
+                    'avatar_url' => $dto->avatarUrl,
+                ]);
+            } else {
+                UserSocialAccount::create([
+                    'id' => $this->idGenerator->generate(),
+                    'user_id' => $user->id,
+                    'provider_name' => $dto->providerName,
+                    'provider_id' => $dto->providerId,
+                    'avatar_url' => $dto->avatarUrl,
+                ]);
+            }
 
             // 6. Guarantee a role. New Google users and any role-less match get
             //    'client' (municipal_id stays null — clients are municipality-less).
