@@ -12,6 +12,7 @@
         "php": "^8.4",
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "cloudinary/cloudinary_php": "*",
+        "dompdf/dompdf": "^3.1",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
         "laravel/passport": "^13.0",

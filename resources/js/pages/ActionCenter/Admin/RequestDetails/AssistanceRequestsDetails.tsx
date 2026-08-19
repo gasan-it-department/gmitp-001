@@ -2,6 +2,7 @@ import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import DownloadAcknowledgementReceiptController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAcknowledgementReceiptController';
 import DownloadAssistanceRequestIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAssistanceRequestIntakeSheetController';
 import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
+import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
@@ -27,6 +28,7 @@ import {
     Circle,
     ClockArrowUp,
     Download,
+    FilePenLine,
     FileText,
     Home,
     Info,
@@ -257,6 +259,7 @@ export default function AssistanceRequestsDetails({
     const canEditRequest = requestIsEditable && canProcessRequests;
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
+    const canGenerateObligationRequest = canPrintAcknowledgementReceipt && detail.amount_approved !== null && canProcessRequests;
     const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
         municipality: currentMunicipality.slug,
         assistanceRequestId: detail.id,
@@ -803,6 +806,18 @@ export default function AssistanceRequestsDetails({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2 px-4 pb-4 sm:px-6 sm:pb-6">
+                                    {canGenerateObligationRequest && (
+                                        <Link
+                                            href={ShowObligationRequestGeneratorController.url({
+                                                municipality: currentMunicipality.slug,
+                                                assistanceRequestId: detail.id,
+                                            })}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                                        >
+                                            <FilePenLine className="h-4 w-4" />
+                                            Generate Obligation Request
+                                        </Link>
+                                    )}
                                     {canPrintAcknowledgementReceipt && (
                                         <a
                                             href={acknowledgementReceiptUrl}
@@ -841,8 +856,8 @@ export default function AssistanceRequestsDetails({
                                         </a>
                                     )}
                                     <p className="text-[11px] leading-snug text-slate-400">
-                                        Receipt proves release. Request sheet records this transaction. Beneficiary sheet records the claimant
-                                        identity file.
+                                        Obligation Request values are entered for each print and are not saved. Receipt proves release. Intake sheets
+                                        preserve the request and claimant files.
                                     </p>
                                 </CardContent>
                             </Card>

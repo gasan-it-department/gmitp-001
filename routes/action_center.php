@@ -42,6 +42,8 @@ use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAcknowledge
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAssistanceRequestIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIdentityDocumentSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIntakeSheetController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateObligationRequestController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowObligationRequestGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
@@ -186,6 +188,18 @@ Route::prefix('{municipality}/action-center')
                 DownloadAcknowledgementReceiptController::class,
             )->middleware('permission:action_center.requests.view')
                 ->name('assistance-request.acknowledgement-receipt');
+
+            Route::get(
+                'profile/assistance-request/{assistanceRequestId}/obligation-request',
+                ShowObligationRequestGeneratorController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.obligation-request.create');
+
+            Route::post(
+                'profile/assistance-request/{assistanceRequestId}/obligation-request',
+                GenerateObligationRequestController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.obligation-request.generate');
 
             // Admin-only "correct an in-flight request" form — display only.
             // The controller redirects back to the detail page if the request

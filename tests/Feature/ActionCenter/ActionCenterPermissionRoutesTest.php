@@ -24,6 +24,8 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.admin.show.assistance-request.profile' => 'action_center.requests.view',
         'actionCenter.admin.assistance-request.intake-sheet' => 'action_center.requests.view',
         'actionCenter.admin.assistance-request.acknowledgement-receipt' => 'action_center.requests.view',
+        'actionCenter.admin.assistance-request.obligation-request.create' => 'action_center.requests.process',
+        'actionCenter.admin.assistance-request.obligation-request.generate' => 'action_center.requests.process',
         'actionCenter.admin.assistance.edit' => 'action_center.requests.process',
         'actionCenter.admin.beneficiary.intake-sheet' => 'action_center.beneficiaries.view',
         'actionCenter.admin.beneficiary.identity-document-sheet' => 'action_center.beneficiaries.verify',
