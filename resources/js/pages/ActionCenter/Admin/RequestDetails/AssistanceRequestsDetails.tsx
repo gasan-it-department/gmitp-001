@@ -1,7 +1,8 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import DownloadAcknowledgementReceiptController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAcknowledgementReceiptController';
 import DownloadAssistanceRequestIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAssistanceRequestIntakeSheetController';
-import DownloadBeneficiaryIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIntakeSheetController';
+import ShowCertificateOfEligibilityGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowCertificateOfEligibilityGeneratorController';
+import ShowDisbursementVoucherGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowDisbursementVoucherGeneratorController';
 import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
@@ -24,6 +25,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowLeft,
+    BadgeCheck,
     CheckCircle2,
     Circle,
     ClockArrowUp,
@@ -36,6 +38,7 @@ import {
     MessageSquare,
     Pencil,
     Printer,
+    ReceiptText,
     Send,
     ShieldCheck,
     Upload,
@@ -140,6 +143,7 @@ interface AssistanceRequestDetail {
     description: string | null;
     remarks: string | null;
     submitted_at: string | null;
+    reviewed_at: string | null;
     approved_at: string | null;
     released_at: string | null;
     is_walkin: boolean;
@@ -260,6 +264,11 @@ export default function AssistanceRequestsDetails({
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
     const canGenerateObligationRequest = canPrintAcknowledgementReceipt && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateDisbursementVoucher = canPrintAcknowledgementReceipt && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateCertificateOfEligibility =
+        canProcessRequests &&
+        ['under_review', 'approved', 'released'].includes(detail.status) &&
+        (detail.status !== 'under_review' || detail.reviewed_at !== null);
     const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
         municipality: currentMunicipality.slug,
         assistanceRequestId: detail.id,
@@ -818,6 +827,30 @@ export default function AssistanceRequestsDetails({
                                             Generate Obligation Request
                                         </Link>
                                     )}
+                                    {canGenerateDisbursementVoucher && (
+                                        <Link
+                                            href={ShowDisbursementVoucherGeneratorController.url({
+                                                municipality: currentMunicipality.slug,
+                                                assistanceRequestId: detail.id,
+                                            })}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-700 bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                                        >
+                                            <ReceiptText className="h-4 w-4" />
+                                            Generate Disbursement Voucher
+                                        </Link>
+                                    )}
+                                    {canGenerateCertificateOfEligibility && (
+                                        <Link
+                                            href={ShowCertificateOfEligibilityGeneratorController.url({
+                                                municipality: currentMunicipality.slug,
+                                                assistanceRequestId: detail.id,
+                                            })}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-emerald-700 bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                                        >
+                                            <BadgeCheck className="h-4 w-4" />
+                                            Generate Certificate of Eligibility
+                                        </Link>
+                                    )}
                                     {canPrintAcknowledgementReceipt && (
                                         <a
                                             href={acknowledgementReceiptUrl}
@@ -841,6 +874,7 @@ export default function AssistanceRequestsDetails({
                                         <Download className="h-4 w-4" />
                                         Download Request Intake Sheet (PDF)
                                     </a>
+                                    {/* Temporarily disabled
                                     {canViewBeneficiaries && (
                                         <a
                                             href={DownloadBeneficiaryIntakeSheetController.url({
@@ -855,9 +889,10 @@ export default function AssistanceRequestsDetails({
                                             Download Beneficiary Intake Sheet (PDF)
                                         </a>
                                     )}
+                                    */}
                                     <p className="text-[11px] leading-snug text-slate-400">
-                                        Obligation Request values are entered for each print and are not saved. Receipt proves release. Intake sheets
-                                        preserve the request and claimant files.
+                                        Obligation Request and Disbursement Voucher values are entered for each print and are not saved. Generating a
+                                        processing document does not mark the assistance as released.
                                     </p>
                                 </CardContent>
                             </Card>

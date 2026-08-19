@@ -283,6 +283,11 @@ class AssistanceRequest extends Model implements HasMedia
         return $value ? CarbonImmutable::parse($value) : null;
     }
 
+    public function getOnBehalfCivilStatusAttribute(): ?string
+    {
+        return data_get($this->metadata, 'on_behalf_civil_status');
+    }
+
     public function getRecipientIdExceptionAttribute(): ?string
     {
         return data_get($this->metadata, 'recipient_id_exception');

@@ -42,7 +42,11 @@ use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAcknowledge
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAssistanceRequestIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIdentityDocumentSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIntakeSheetController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateCertificateOfEligibilityController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateDisbursementVoucherController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateObligationRequestController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowCertificateOfEligibilityGeneratorController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowDisbursementVoucherGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowObligationRequestGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
@@ -200,6 +204,30 @@ Route::prefix('{municipality}/action-center')
                 GenerateObligationRequestController::class,
             )->middleware('permission:action_center.requests.process')
                 ->name('assistance-request.obligation-request.generate');
+
+            Route::get(
+                'profile/assistance-request/{assistanceRequestId}/disbursement-voucher',
+                ShowDisbursementVoucherGeneratorController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.disbursement-voucher.create');
+
+            Route::post(
+                'profile/assistance-request/{assistanceRequestId}/disbursement-voucher',
+                GenerateDisbursementVoucherController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.disbursement-voucher.generate');
+
+            Route::get(
+                'profile/assistance-request/{assistanceRequestId}/certificate-of-eligibility',
+                ShowCertificateOfEligibilityGeneratorController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.certificate-of-eligibility.create');
+
+            Route::post(
+                'profile/assistance-request/{assistanceRequestId}/certificate-of-eligibility',
+                GenerateCertificateOfEligibilityController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.certificate-of-eligibility.generate');
 
             // Admin-only "correct an in-flight request" form — display only.
             // The controller redirects back to the detail page if the request

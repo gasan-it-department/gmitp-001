@@ -634,6 +634,7 @@ export default function BeneficiaryProfile({
                                     <div className="space-y-3">
                                         <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">System Generated</p>
                                         <div className="grid grid-cols-2 gap-3">
+                                            {/* Temporarily disabled
                                             <a
                                                 href={DownloadBeneficiaryIntakeSheetController.url({
                                                     municipality: currentMunicipality.slug,
@@ -646,6 +647,7 @@ export default function BeneficiaryProfile({
                                                 <Download className="h-5 w-5" />
                                                 <span className="text-center text-xs">Intake Sheet</span>
                                             </a>
+                                            */}
                                             {canVerifyBeneficiaries && (
                                                 <a
                                                     href={DownloadBeneficiaryIdentityDocumentSheetController.url({

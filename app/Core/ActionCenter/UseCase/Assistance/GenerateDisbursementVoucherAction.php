@@ -3,48 +3,50 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
-use App\Core\ActionCenter\Dto\Assistance\GenerateObligationRequestDto;
-use App\Core\ActionCenter\Dto\Assistance\ObligationRequestData;
-use App\Core\ActionCenter\Dto\Assistance\ObligationRequestFormData;
+use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherData;
+use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherFormData;
+use App\Core\ActionCenter\Dto\Assistance\GenerateDisbursementVoucherDto;
+use App\Core\ActionCenter\Services\PhilippinePesoInWordsFormatter;
 
-class GenerateObligationRequestAction
+class GenerateDisbursementVoucherAction
 {
     public function __construct(
         private readonly BuildAssistanceFinancialDocumentContextAction $context,
+        private readonly PhilippinePesoInWordsFormatter $pesoInWords,
     ) {}
 
     public function formData(
         string $assistanceRequestId,
         string $municipalId,
-    ): ObligationRequestFormData {
+    ): DisbursementVoucherFormData {
         $context = $this->context->execute(
             $assistanceRequestId,
             $municipalId,
-            'obligation request',
+            'disbursement voucher',
         );
 
-        return new ObligationRequestFormData(
+        return new DisbursementVoucherFormData(
             assistanceRequestId: $context->assistanceRequestId,
             transactionNumber: $context->transactionNumber,
             payee: $context->payee,
             address: $context->address,
             assistanceType: $context->assistanceType,
             approvedAmount: $context->approvedAmount,
-            suggestedParticulars: $this->suggestedParticulars($context),
+            suggestedExplanation: $this->suggestedExplanation($context),
         );
     }
 
     public function execute(
-        GenerateObligationRequestDto $dto,
+        GenerateDisbursementVoucherDto $dto,
         string $generatedByUserName,
-    ): ObligationRequestData {
+    ): DisbursementVoucherData {
         $context = $this->context->execute(
             $dto->assistanceRequestId,
             $dto->municipalId,
-            'obligation request',
+            'disbursement voucher',
         );
 
-        return new ObligationRequestData(
+        return new DisbursementVoucherData(
             transactionNumber: $context->transactionNumber,
             municipalityName: $context->municipalityName,
             municipalityLogoDataUri: $context->municipalityLogoDataUri,
@@ -52,22 +54,25 @@ class GenerateObligationRequestAction
             address: $context->address,
             assistanceType: $context->assistanceType,
             approvedAmount: $context->approvedAmount,
+            disbursementVoucherNumber: $dto->disbursementVoucherNumber,
+            modeOfPayment: $dto->modeOfPayment,
+            tinEmployeeNumber: $dto->tinEmployeeNumber,
             obligationRequestNumber: $dto->obligationRequestNumber,
-            responsibilityCenter: $dto->responsibilityCenter,
-            accountCode: $dto->accountCode,
-            particulars: $dto->particulars,
-            mswdoPrintedName: $dto->mswdoPrintedName,
-            mswdoPosition: $dto->mswdoPosition,
-            budgetOfficerPrintedName: $dto->budgetOfficerPrintedName,
-            budgetOfficerPosition: $dto->budgetOfficerPosition,
-            office: $dto->office,
-            fpp: $dto->fpp,
+            responsibilityCenterOffice: $dto->responsibilityCenterOffice,
+            responsibilityCenterCode: $dto->responsibilityCenterCode,
+            explanation: $dto->explanation,
+            accountantPrintedName: $dto->accountantPrintedName,
+            accountantPosition: $dto->accountantPosition,
+            treasurerPrintedName: $dto->treasurerPrintedName,
+            treasurerPosition: $dto->treasurerPosition,
+            mayorPrintedName: $dto->mayorPrintedName,
+            mayorPosition: $dto->mayorPosition,
             generatedByUserName: $generatedByUserName,
             generatedAt: now(),
         );
     }
 
-    private function suggestedParticulars(
+    private function suggestedExplanation(
         AssistanceFinancialDocumentContext $context,
     ): string {
         $lines = [
@@ -78,8 +83,11 @@ class GenerateObligationRequestAction
             $lines[] = 'For: '.$context->assistedPerson;
         }
 
-        $lines[] = 'RE: Aid/Assistance to Individual in Crisis';
-        $lines[] = sprintf('Situation (AICS) CY %d', $context->approvedYear);
+        $lines[] = sprintf(
+            'RE: Aid/Assistance to Individual in Crisis Situation (AICS) CY %d, as per supporting papers hereto attached amounting to',
+            $context->approvedYear,
+        );
+        $lines[] = $this->pesoInWords->format($context->approvedAmount);
 
         return implode("\n", $lines);
     }
