@@ -120,6 +120,7 @@ class StoreAssistanceRequestAction
                 'on_behalf_last_name' => $onBehalfLastName,
                 'on_behalf_suffix' => $onBehalfSuffix,
                 'on_behalf_birth_date' => $member?->birth_date?->toDateString(),
+                'on_behalf_civil_status' => $member?->getRawOriginal('civil_status'),
                 'on_behalf_date_of_death' => $dto->onBehalfDateOfDeath,
                 'recipient_id_exception' => $recipientIdException,
                 'recipient_id_exception_reason' => $recipientIdException === 'no_government_id'
