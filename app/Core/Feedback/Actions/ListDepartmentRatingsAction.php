@@ -6,6 +6,7 @@ use App\Core\Department\Models\Department;
 use App\Core\Feedback\Models\FeedbackSubmission;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class ListDepartmentRatingsAction
 {
@@ -31,6 +32,7 @@ class ListDepartmentRatingsAction
             ->groupBy('department_id');
 
         $departments = Department::query()
+            ->with(['media' => fn ($query) => $query->where('collection_name', 'department_logo')])
             ->leftJoinSub($ratings, 'ratings', function ($join) {
                 $join->on('departments.id', '=', 'ratings.department_id');
             })
@@ -62,7 +64,7 @@ class ListDepartmentRatingsAction
         ];
     }
 
-    private function formatDepartmentRating(object $department): array
+    private function formatDepartmentRating(Department $department): array
     {
         $feedbackCount = (int) $department->feedback_count;
         $isPublic = $feedbackCount >= self::MINIMUM_PUBLIC_FEEDBACK_COUNT;
@@ -73,6 +75,7 @@ class ListDepartmentRatingsAction
             'name' => $department->name,
             'code' => $department->code,
             'description' => $department->description,
+            'logo_url' => $this->departmentLogoUrl($department),
             'feedback_count' => $feedbackCount,
             'average_rating' => $isPublic ? $averageRating : null,
             'rating_label' => $isPublic && $averageRating !== null ? $this->ratingLabel($averageRating) : 'Not enough feedback yet',
@@ -92,6 +95,20 @@ class ListDepartmentRatingsAction
             ],
             'is_public' => $isPublic,
         ];
+    }
+
+    private function departmentLogoUrl(Department $department): ?string
+    {
+        /** @var Media|null $logo */
+        $logo = $department->getFirstMedia('department_logo');
+
+        if ($logo === null) {
+            return null;
+        }
+
+        return $logo->disk === 's3'
+            ? $logo->getTemporaryUrl(now()->addMinutes(15))
+            : $logo->getUrl();
     }
 
     private function buildSummary(Collection $departments): array

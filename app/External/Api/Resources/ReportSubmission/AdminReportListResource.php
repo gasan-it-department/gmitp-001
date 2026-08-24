@@ -31,6 +31,8 @@ class AdminReportListResource extends JsonResource
                 'id'        => $this->user->id,
                 'full_name' => $this->user->full_name,
             ] : null),
+            'is_archived'   => $this->trashed(),
+            'archived_at'   => $this->deleted_at?->format('M d, Y g:i A'),
             'created_at'    => $this->created_at?->format('M d, Y g:i A'),
         ];
     }

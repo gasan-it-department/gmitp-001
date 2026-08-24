@@ -21,7 +21,7 @@ interface EventListItem {
     is_published: boolean;
     start_datetime: string | null;
     end_datetime: string | null;
-    location_name: string;
+    location_name: string | null;
     banner_url: string | null;
     created_at: string | null;
     updated_at: string | null;
@@ -332,9 +332,13 @@ export default function EventAdminIndex({ events, filters, type_options, schedul
                                         </TableCell>
                                         <TableCell className="text-xs text-muted-foreground">
                                             <div>{event.start_datetime ?? '—'}</div>
-                                            <div className="opacity-70">to {event.end_datetime ?? '—'}</div>
+                                            <div className="opacity-70">
+                                                {event.end_datetime ? `to ${event.end_datetime}` : 'No end time specified'}
+                                            </div>
                                         </TableCell>
-                                        <TableCell className="text-sm text-slate-600">{event.location_name}</TableCell>
+                                        <TableCell className="text-sm text-slate-600">
+                                            {event.location_name ?? <span className="text-slate-400">No venue specified</span>}
+                                        </TableCell>
                                         <TableCell>
                                             {event.is_published ? (
                                                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Published</Badge>

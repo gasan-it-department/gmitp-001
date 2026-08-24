@@ -29,10 +29,9 @@ class GetAdminEventsAction
                 'is_published',
                 $publication === AdminEventFiltersDto::PUBLICATION_PUBLISHED,
             ))
-            ->when($filters->dateFrom, fn (Builder $query, string $date) => $query->where(
-                'end_datetime',
-                '>=',
-                CarbonImmutable::parse($date, config('app.timezone'))->startOfDay(),
+            ->when($filters->dateFrom, fn (Builder $query, string $date) => $query->whereRaw(
+                'COALESCE(end_datetime, start_datetime) >= ?',
+                [CarbonImmutable::parse($date, config('app.timezone'))->startOfDay()],
             ))
             ->when($filters->dateTo, fn (Builder $query, string $date) => $query->where(
                 'start_datetime',
@@ -56,7 +55,15 @@ class GetAdminEventsAction
                 ->where('start_datetime', '<=', $now)
                 ->where('end_datetime', '>=', $now),
             AdminEventFiltersDto::SCHEDULE_UPCOMING => $query->where('start_datetime', '>', $now),
-            AdminEventFiltersDto::SCHEDULE_PAST => $query->where('end_datetime', '<', $now),
+            AdminEventFiltersDto::SCHEDULE_PAST => $query->where(function (Builder $query) use ($now): void {
+                $query
+                    ->where('end_datetime', '<', $now)
+                    ->orWhere(function (Builder $query) use ($now): void {
+                        $query
+                            ->whereNull('end_datetime')
+                            ->where('start_datetime', '<=', $now);
+                    });
+            }),
             default => null,
         };
     }
@@ -83,6 +90,9 @@ class GetAdminEventsAction
                 [$now, $now],
             )
             ->orderByRaw('CASE WHEN start_datetime > ? THEN start_datetime END ASC', [$now])
-            ->orderByRaw('CASE WHEN end_datetime < ? THEN end_datetime END DESC', [$now]);
+            ->orderByRaw(
+                'CASE WHEN start_datetime <= ? AND (end_datetime < ? OR end_datetime IS NULL) THEN COALESCE(end_datetime, start_datetime) END DESC',
+                [$now, $now],
+            );
     }
 }

@@ -12,6 +12,8 @@ readonly class ObligationRequestFormData
         public string $assistanceType,
         public float $approvedAmount,
         public string $suggestedParticulars,
+        /** @var array<string, string> */
+        public array $recommendedDefaults,
     ) {}
 
     /** @return array<string, mixed> */
@@ -25,6 +27,7 @@ readonly class ObligationRequestFormData
             'assistance_type' => $this->assistanceType,
             'approved_amount' => $this->approvedAmount,
             'suggested_particulars' => $this->suggestedParticulars,
+            'recommended_defaults' => $this->recommendedDefaults,
         ];
     }
 }

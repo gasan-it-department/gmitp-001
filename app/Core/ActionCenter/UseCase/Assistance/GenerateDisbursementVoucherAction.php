@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\FinancialDocumentDefaultsProvider;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
 use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherData;
 use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherFormData;
@@ -13,6 +14,7 @@ class GenerateDisbursementVoucherAction
     public function __construct(
         private readonly BuildAssistanceFinancialDocumentContextAction $context,
         private readonly PhilippinePesoInWordsFormatter $pesoInWords,
+        private readonly FinancialDocumentDefaultsProvider $defaults,
     ) {}
 
     public function formData(
@@ -33,6 +35,9 @@ class GenerateDisbursementVoucherAction
             assistanceType: $context->assistanceType,
             approvedAmount: $context->approvedAmount,
             suggestedExplanation: $this->suggestedExplanation($context),
+            recommendedDefaults: $this->defaults
+                ->for($context->municipalCode, $context->assistanceTypeSlug)
+                ->disbursementVoucher(),
         );
     }
 

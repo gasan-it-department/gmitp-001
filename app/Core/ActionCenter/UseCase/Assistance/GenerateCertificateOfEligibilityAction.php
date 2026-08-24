@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\FinancialDocumentDefaultsProvider;
 use App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityData;
 use App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateCertificateOfEligibilityDto;
@@ -20,6 +21,10 @@ use Throwable;
 
 class GenerateCertificateOfEligibilityAction
 {
+    public function __construct(
+        private readonly FinancialDocumentDefaultsProvider $defaults,
+    ) {}
+
     public function formData(
         string $assistanceRequestId,
         string $municipalId,
@@ -38,6 +43,9 @@ class GenerateCertificateOfEligibilityAction
             subjectCivilStatus: $subject['civil_status'],
             address: $this->address($request, $municipality, $provinceName),
             assistanceType: $request->assistanceType?->name ?? 'Assistance',
+            recommendedDefaults: $this->defaults
+                ->for($municipality?->municipal_code, $request->assistanceType?->slug)
+                ->certificateOfEligibility(),
         );
     }
 

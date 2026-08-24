@@ -20,6 +20,16 @@ interface DisbursementVoucherContext {
     assistance_type: string;
     approved_amount: number;
     suggested_explanation: string;
+    recommended_defaults: {
+        responsibility_center_office: string;
+        responsibility_center_code: string;
+        accountant_printed_name: string;
+        accountant_position: string;
+        treasurer_printed_name: string;
+        treasurer_position: string;
+        mayor_printed_name: string;
+        mayor_position: string;
+    };
 }
 
 interface Props {
@@ -68,15 +78,15 @@ export default function DisbursementVoucherGenerator({ disbursementVoucher }: Pr
         mode_of_payment: '',
         tin_employee_number: '',
         obligation_request_number: '',
-        responsibility_center_office: '',
-        responsibility_center_code: '',
+        responsibility_center_office: disbursementVoucher.recommended_defaults.responsibility_center_office,
+        responsibility_center_code: disbursementVoucher.recommended_defaults.responsibility_center_code,
         explanation: disbursementVoucher.suggested_explanation,
-        accountant_printed_name: '',
-        accountant_position: 'Municipal Accountant',
-        treasurer_printed_name: '',
-        treasurer_position: 'Municipal Treasurer',
-        mayor_printed_name: '',
-        mayor_position: 'Municipal Mayor',
+        accountant_printed_name: disbursementVoucher.recommended_defaults.accountant_printed_name,
+        accountant_position: disbursementVoucher.recommended_defaults.accountant_position,
+        treasurer_printed_name: disbursementVoucher.recommended_defaults.treasurer_printed_name,
+        treasurer_position: disbursementVoucher.recommended_defaults.treasurer_position,
+        mayor_printed_name: disbursementVoucher.recommended_defaults.mayor_printed_name,
+        mayor_position: disbursementVoucher.recommended_defaults.mayor_position,
     });
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState<string | null>(null);
@@ -232,6 +242,9 @@ export default function DisbursementVoucherGenerator({ disbursementVoucher }: Pr
                             <div className="mb-5">
                                 <h2 className="text-base font-semibold text-slate-950">Voucher details</h2>
                                 <p className="mt-1 text-sm text-slate-500">Enter the values supplied by Accounting, Budget, or Treasury.</p>
+                                <p className="mt-1 text-xs font-medium text-amber-700">
+                                    Recommended values are prefilled. Verify them before printing.
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

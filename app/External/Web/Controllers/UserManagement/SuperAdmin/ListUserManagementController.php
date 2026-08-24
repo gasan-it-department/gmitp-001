@@ -16,8 +16,6 @@ class ListUserManagementController
             UserQueryDto::fromRequest($request)
         );
 
-        $users->load(['roles', 'permissions', 'municipality']);
-
         return Inertia::render('UserManagement/SuperAdmin/List/UserManagement', [
             'users' => UserResource::collection($users),
             'filters' => $request->only(['filter']),

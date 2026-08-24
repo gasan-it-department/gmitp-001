@@ -17,6 +17,7 @@ type DepartmentRating = {
     name: string;
     code: string;
     description: string | null;
+    logo_url: string | null;
     feedback_count: number;
     average_rating: number | null;
     rating_label: string;
@@ -156,8 +157,18 @@ export default function DepartmentRatingsPage({ departments, summary, minimum_fe
                                     <CardContent className="p-5 sm:p-6">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex min-w-0 items-start gap-3">
-                                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                                                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-slate-700">
                                                     <Building2 className="h-5 w-5" />
+                                                    {department.logo_url && (
+                                                        <img
+                                                            src={department.logo_url}
+                                                            alt={`${department.name} logo`}
+                                                            className="absolute inset-0 h-full w-full bg-white object-contain p-1.5"
+                                                            onError={(event) => {
+                                                                event.currentTarget.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    )}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-xs font-bold tracking-widest text-primary uppercase">{department.code}</p>

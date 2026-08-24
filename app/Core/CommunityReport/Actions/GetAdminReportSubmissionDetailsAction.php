@@ -14,7 +14,7 @@ class GetAdminReportSubmissionDetailsAction
      */
     public function execute(string $municipalId, string $reportId): ReportSubmission
     {
-        return ReportSubmission::query()
+        return ReportSubmission::withTrashed()
             ->with([
                 'user:id,first_name,last_name',
                 'media',

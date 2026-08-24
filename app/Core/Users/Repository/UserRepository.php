@@ -43,15 +43,23 @@ class UserRepository
 
     public function getAll(UserQueryDto $dto)
     {
+        $query = User::query()->with([
+            'roles.permissions',
+            'permissions',
+            'municipality',
+        ]);
 
-        $query = User::query();
+        $searchTerms = preg_split('/\s+/', trim((string) $dto->search), -1, PREG_SPLIT_NO_EMPTY);
 
-        if ($dto->search) {
-            $query->where(function (Builder $q) use ($dto) {
-                $q->where('first_name', 'like', "%{$dto->search}%")
-                    ->orWhere('last_name', 'like', "%{$dto->search}%")
-                    ->orWhere('email', 'like', "%{$dto->search}%")
-                    ->orWhere('phone', 'like', "%{$dto->search}%");
+        foreach ($searchTerms as $term) {
+            $query->where(function (Builder $q) use ($term) {
+                $pattern = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%';
+
+                $q->where('first_name', 'ilike', $pattern)
+                    ->orWhere('middle_name', 'ilike', $pattern)
+                    ->orWhere('last_name', 'ilike', $pattern)
+                    ->orWhere('email', 'ilike', $pattern)
+                    ->orWhere('phone', 'ilike', $pattern);
             });
         }
 
@@ -68,6 +76,10 @@ class UserRepository
             });
         }
 
-        return $query->paginate(20)->withQueryString();
+        return $query
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->paginate(20)
+            ->withQueryString();
     }
 }

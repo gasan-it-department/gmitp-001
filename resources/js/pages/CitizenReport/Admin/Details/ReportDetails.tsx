@@ -8,7 +8,20 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AppLayout from '@/layouts/App/AppLayout';
 import communityReport from '@/routes/api/communityReport';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Archive, ArrowLeft, CheckCircle2, Circle, Clock, EyeOff, MapPin, PlayCircle, ShieldCheck, User as UserIcon, XCircle } from 'lucide-react';
+import {
+    Archive,
+    ArrowLeft,
+    CheckCircle2,
+    Circle,
+    Clock,
+    EyeOff,
+    MapPin,
+    PlayCircle,
+    RotateCcw,
+    ShieldCheck,
+    User as UserIcon,
+    XCircle,
+} from 'lucide-react';
 import React, { useState } from 'react';
 
 type EnumOption = { value: string; label: string };
@@ -41,12 +54,14 @@ interface AdminReportDetailsShape {
     longitude: number | string | null;
     description: string;
     is_anonymous: boolean;
+    is_archived: boolean;
     reporter: ReporterShape;
     created_at: string | null;
     acknowledged_at: string | null;
     in_progress_at: string | null;
     resolved_at: string | null;
     rejected_at: string | null;
+    archived_at: string | null;
     evidence_photos: EvidencePhoto[];
     audit_log: AuditEntry[];
 }
@@ -122,6 +137,16 @@ const buildTimeline = (r: AdminReportDetailsShape): TimelineStep[] => {
         });
     }
 
+    if (r.archived_at !== null) {
+        steps.push({
+            key: 'archived',
+            label: 'Archived',
+            description: 'Report moved out of the active queue.',
+            at: r.archived_at,
+            reached: true,
+        });
+    }
+
     return steps;
 };
 
@@ -139,6 +164,8 @@ const stepIcon = (key: string, reached: boolean) => {
             return <CheckCircle2 className={`${baseClass} ${size}`} />;
         case 'rejected':
             return <XCircle className={`${baseClass} ${size}`} />;
+        case 'archived':
+            return <Archive className={`${baseClass} ${size}`} />;
         default:
             return <Circle className={`${baseClass} ${size}`} />;
     }
@@ -147,6 +174,7 @@ const stepIcon = (key: string, reached: boolean) => {
 const stepBubbleBg = (key: string, reached: boolean): string => {
     if (!reached) return 'bg-slate-200';
     if (key === 'rejected') return 'bg-red-500';
+    if (key === 'archived') return 'bg-slate-600';
     if (key === 'resolved') return 'bg-green-500';
     if (key === 'in_progress') return 'bg-blue-500';
     if (key === 'acknowledged') return 'bg-indigo-500';
@@ -157,17 +185,17 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
 
-    const [activeModal, setActiveModal] = useState<'acknowledge' | 'start' | 'resolve' | 'reject' | 'archive' | null>(null);
+    const [activeModal, setActiveModal] = useState<'acknowledge' | 'start' | 'resolve' | 'reject' | 'archive' | 'restore' | null>(null);
 
     const hasCoordinates = report.latitude !== null && report.longitude !== null;
     const timeline = buildTimeline(report);
 
     const isTerminal = report.status.value === 'resolved' || report.status.value === 'rejected';
-    const canAcknowledge = report.status.value === 'pending';
-    const canStart = report.status.value === 'pending' || report.status.value === 'acknowledged';
-    const canResolve = report.status.value === 'in_progress';
-    const canReject = !isTerminal;
-    const canArchive = isTerminal;
+    const canAcknowledge = !report.is_archived && report.status.value === 'pending';
+    const canStart = !report.is_archived && (report.status.value === 'pending' || report.status.value === 'acknowledged');
+    const canResolve = !report.is_archived && report.status.value === 'in_progress';
+    const canReject = !report.is_archived && !isTerminal;
+    const canArchive = !report.is_archived && isTerminal;
 
     // --- FORMS ---
 
@@ -188,6 +216,7 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
     });
 
     const archiveForm = useForm({});
+    const restoreForm = useForm({});
 
     const handleAcknowledge = (e: React.FormEvent) => {
         e.preventDefault();
@@ -250,6 +279,17 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
         });
     };
 
+    const handleRestore = (e: React.FormEvent) => {
+        e.preventDefault();
+        restoreForm.post(communityReport.restore.url(report.id), {
+            headers: {
+                'X-Municipality-Slug': currentMunicipality.slug,
+            },
+            preserveScroll: true,
+            onSuccess: () => setActiveModal(null),
+        });
+    };
+
     return (
         <AppLayout>
             <Head title={`Report — ${report.category.label}`} />
@@ -257,18 +297,26 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
             <div className="mx-auto min-h-screen w-full bg-slate-50/50 p-8">
                 {/* Top bar */}
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                    <Link href={`/${slug}/admin/community-reports`}>
+                    <Link href={`/${slug}/admin/community-reports${report.is_archived ? '?archive_status=archived' : ''}`}>
                         <Button variant="ghost" size="sm">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Reports
                         </Button>
                     </Link>
 
-                    <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClasses(report.status.value)}`}
-                    >
-                        {report.status.label}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClasses(report.status.value)}`}
+                        >
+                            {report.status.label}
+                        </span>
+                        {report.is_archived && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
+                                <Archive className="h-3.5 w-3.5" />
+                                Archived {report.archived_at ? `on ${report.archived_at}` : ''}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -392,9 +440,24 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                         <Card className="shadow-sm">
                             <CardHeader>
                                 <CardTitle className="text-base font-semibold">Admin Controls</CardTitle>
-                                <p className="text-xs text-slate-500">Update the lifecycle status of this report.</p>
+                                <p className="text-xs text-slate-500">
+                                    {report.is_archived
+                                        ? 'Restore this report before making lifecycle changes.'
+                                        : 'Update the lifecycle status of this report.'}
+                                </p>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-2">
+                                {report.is_archived && (
+                                    <>
+                                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                                            This archived report is read-only and is not included in the active queue.
+                                        </div>
+                                        <Button type="button" variant="outline" className="justify-start" onClick={() => setActiveModal('restore')}>
+                                            <RotateCcw className="mr-2 h-4 w-4 text-slate-600" />
+                                            Restore Report
+                                        </Button>
+                                    </>
+                                )}
                                 {canAcknowledge && (
                                     <Button type="button" variant="outline" className="justify-start" onClick={() => setActiveModal('acknowledge')}>
                                         <ShieldCheck className="mr-2 h-4 w-4 text-indigo-500" />
@@ -425,7 +488,7 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                                         Archive Report
                                     </Button>
                                 )}
-                                {isTerminal && (
+                                {isTerminal && !report.is_archived && (
                                     <p className="text-center text-xs text-slate-500">
                                         This report is in a terminal state. No further status changes are available.
                                     </p>
@@ -626,6 +689,30 @@ export default function ReportDetails({ report }: ReportDetailsProps) {
                             </Button>
                             <Button type="submit" variant="destructive" disabled={archiveForm.processing}>
                                 Archive Report
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Restore Dialog */}
+            <Dialog open={activeModal === 'restore'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Restore Report</DialogTitle>
+                        <DialogDescription>Return this report to the active reports list?</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleRestore} className="space-y-4 py-4">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                            Its {report.status.label.toLowerCase()} status and existing history will be preserved.
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="ghost" onClick={() => setActiveModal(null)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={restoreForm.processing}>
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Restore Report
                             </Button>
                         </DialogFooter>
                     </form>

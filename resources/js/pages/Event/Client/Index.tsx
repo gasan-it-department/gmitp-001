@@ -24,7 +24,7 @@ interface EventCard {
     is_published: boolean;
     start_datetime: string | null;
     end_datetime: string | null;
-    location_name: string;
+    location_name: string | null;
     banner_url: string | null;
     created_at: string | null;
 }
@@ -93,7 +93,7 @@ export default function EventClientIndex({ events }: Props) {
     const slug = currentMunicipality.slug;
     const eventsUrl = absoluteUrl(`/${slug}/event`, seo.site_url);
 
-    const list = events?.data ?? [];
+    const list = useMemo(() => events?.data ?? [], [events?.data]);
     const meta = events?.meta;
 
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -252,7 +252,7 @@ export default function EventClientIndex({ events }: Props) {
 
                                                         <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
                                                             <MapPin className="h-3.5 w-3.5" />
-                                                            <span className="line-clamp-1">{e.location_name}</span>
+                                                            <span className="line-clamp-1">{e.location_name ?? 'Walang itinakdang lugar'}</span>
                                                         </div>
 
                                                         <p className="line-clamp-2 text-xs leading-relaxed font-medium text-slate-500">
@@ -374,7 +374,7 @@ export default function EventClientIndex({ events }: Props) {
                                                         </p>
                                                         <p className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
                                                             <MapPin className="h-3 w-3" />
-                                                            <span className="truncate">{e.location_name}</span>
+                                                            <span className="truncate">{e.location_name ?? 'Walang itinakdang lugar'}</span>
                                                         </p>
                                                     </div>
                                                 </div>

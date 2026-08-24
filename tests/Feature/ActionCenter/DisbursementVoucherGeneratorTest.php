@@ -88,6 +88,9 @@ afterEach(function () {
 
 it('builds trusted voucher form data and spells the approved amount', function () {
     $context = seedDisbursementVoucherContext(amount: 1000.50);
+    DB::table('municipalities')
+        ->where('id', $context['municipal_id'])
+        ->update(['municipal_code' => '174003000']);
 
     $data = app(GenerateDisbursementVoucherAction::class)->formData(
         $context['request_id'],
@@ -99,7 +102,9 @@ it('builds trusted voucher form data and spells the approved amount', function (
         ->and($data->approvedAmount)->toBe(1000.50)
         ->and($data->suggestedExplanation)->toContain('Payment for Medical Assistance')
         ->and($data->suggestedExplanation)->toContain('AICS) CY 2026')
-        ->and($data->suggestedExplanation)->toContain('ONE THOUSAND PESOS AND 50/100 ONLY');
+        ->and($data->suggestedExplanation)->toContain('ONE THOUSAND PESOS AND 50/100 ONLY')
+        ->and($data->recommendedDefaults['responsibility_center_code'])->toBe('7611')
+        ->and($data->recommendedDefaults['accountant_position'])->toBe('Municipal Accountant');
 });
 
 it('keeps the claimant as payee and mentions the assisted person', function () {
@@ -222,9 +227,10 @@ it('renders the official voucher labels through dompdf without remote assets', f
     );
 
     $html = view('documents.action_center.disbursement_voucher', compact('data'))->render();
+    $normalizedHtml = preg_replace('/\s+/', ' ', $html) ?? $html;
     $response = app(DisbursementVoucherPdf::class)->response($data);
 
-    expect($html)->toContain(
+    expect($normalizedHtml)->toContain(
         'DISBURSEMENT VOUCHER',
         'Mode of',
         'Obligation Request No.',

@@ -18,6 +18,12 @@ interface CertificateOfEligibilityContext {
     subject_civil_status: string | null;
     address: string;
     assistance_type: string;
+    recommended_defaults: {
+        certified_by_name: string;
+        certified_by_position: string;
+        approved_by_name: string;
+        approved_by_position: string;
+    };
 }
 
 interface Props {
@@ -43,10 +49,10 @@ export default function CertificateOfEligibilityGenerator({ certificateOfEligibi
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [data, setData] = useState<FormData>({
         intake_date: '',
-        certified_by_name: '',
-        certified_by_position: '',
-        approved_by_name: '',
-        approved_by_position: '',
+        certified_by_name: certificateOfEligibility.recommended_defaults.certified_by_name,
+        certified_by_position: certificateOfEligibility.recommended_defaults.certified_by_position,
+        approved_by_name: certificateOfEligibility.recommended_defaults.approved_by_name,
+        approved_by_position: certificateOfEligibility.recommended_defaults.approved_by_position,
     });
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState<string | null>(null);
@@ -156,7 +162,7 @@ export default function CertificateOfEligibilityGenerator({ certificateOfEligibi
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">Generate Certificate of Eligibility</h1>
-                            <p className="mt-1 break-words text-sm text-slate-500">Transaction {certificateOfEligibility.transaction_number}</p>
+                            <p className="mt-1 text-sm break-words text-slate-500">Transaction {certificateOfEligibility.transaction_number}</p>
                         </div>
                     </div>
 
@@ -206,6 +212,9 @@ export default function CertificateOfEligibilityGenerator({ certificateOfEligibi
                             <div className="mb-5">
                                 <h2 className="text-base font-semibold text-slate-950">Certificate details</h2>
                                 <p className="mt-1 text-sm text-slate-500">Enter the date recorded on the intake and the printed signatories.</p>
+                                <p className="mt-1 text-xs font-medium text-amber-700">
+                                    Recommended values are prefilled. Verify them before printing.
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -272,7 +281,11 @@ export default function CertificateOfEligibilityGenerator({ certificateOfEligibi
                             <Button asChild type="button" variant="outline" className="min-h-11 sm:min-w-32">
                                 <Link href={detailUrl}>Cancel</Link>
                             </Button>
-                            <Button type="submit" disabled={processing} className="min-h-11 bg-emerald-700 text-white hover:bg-emerald-800 sm:min-w-56">
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="min-h-11 bg-emerald-700 text-white hover:bg-emerald-800 sm:min-w-56"
+                            >
                                 {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                                 {processing ? 'Generating...' : 'Generate PDF'}
                             </Button>

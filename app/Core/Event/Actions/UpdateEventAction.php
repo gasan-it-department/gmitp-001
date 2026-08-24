@@ -19,26 +19,34 @@ class UpdateEventAction
                 ->firstOrFail();
 
             $payload = array_filter([
-                'title'          => $dto->title,
-                'description'    => $dto->description,
-                'type'           => $dto->type,
+                'title' => $dto->title,
+                'description' => $dto->description,
+                'type' => $dto->type,
                 'start_datetime' => $dto->startDatetime,
-                'end_datetime'   => $dto->endDatetime,
-                'location_name'  => $dto->locationName,
-                'is_published'   => $dto->isPublished,
+                'is_published' => $dto->isPublished,
             ], fn ($v) => ! is_null($v));
+
+            if ($dto->endDatetimeProvided) {
+                $payload['end_datetime'] = $dto->endDatetime;
+            }
+
+            if ($dto->locationNameProvided) {
+                $payload['location_name'] = $dto->locationName;
+            }
 
             // Guard against partial updates that would invert the time window.
             // The FormRequest's before/after rules only fire when both fields
             // are present in the payload; a lone end_datetime update could
             // otherwise slip past validation.
             $effectiveStart = $dto->startDatetime ?? $event->start_datetime;
-            $effectiveEnd   = $dto->endDatetime ?? $event->end_datetime;
+            $effectiveEnd = $dto->endDatetimeProvided
+                ? $dto->endDatetime
+                : $event->end_datetime;
 
             if ($effectiveStart && $effectiveEnd && $effectiveStart->greaterThanOrEqualTo($effectiveEnd)) {
                 throw ValidationException::withMessages([
                     'start_datetime' => 'The start date must be before the end date.',
-                    'end_datetime'   => 'The end date must be after the start date.',
+                    'end_datetime' => 'The end date must be after the start date.',
                 ]);
             }
 
