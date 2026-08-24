@@ -2,11 +2,13 @@ import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PaginatedResponse } from '@/Core/Types/Utility/pagination';
 import AppLayout from '@/layouts/App/AppLayout';
+import communityReportApi from '@/routes/api/communityReport';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Eye, EyeOff, FileText, Inbox, Search, X } from 'lucide-react';
+import { Archive, Eye, EyeOff, FileText, Inbox, RotateCcw, Search, X } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 
 type EnumOption = { value: string; label: string };
@@ -21,6 +23,7 @@ type AdminReportFilters = {
     date_from: string | null;
     date_to: string | null;
     sort: string;
+    archive_status: string;
     per_page: number;
 };
 
@@ -31,6 +34,8 @@ type AdminReportListItem = {
     location_text: string;
     is_anonymous: boolean;
     reporter: ReporterShape;
+    is_archived: boolean;
+    archived_at: string | null;
     created_at: string | null;
 };
 
@@ -41,6 +46,7 @@ interface CommunityReportPageProps {
     category_options: EnumOption[];
     visibility_options: EnumOption[];
     sort_options: EnumOption[];
+    archive_status_options: EnumOption[];
     per_page_options: number[];
 }
 
@@ -66,21 +72,19 @@ export default function CommunityReportsPage({
     category_options,
     visibility_options,
     sort_options,
+    archive_status_options,
     per_page_options,
 }: CommunityReportPageProps) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const slug = currentMunicipality.slug;
     const [searchValue, setSearchValue] = useState(filters.search ?? '');
+    const [restoringId, setRestoringId] = useState<string | null>(null);
     const path = `/${slug}/admin/community-reports`;
+    const hasNarrowingFilters = Boolean(
+        filters.search || filters.status || filters.category || filters.visibility || filters.date_from || filters.date_to,
+    );
     const hasActiveFilters = Boolean(
-        filters.search ||
-            filters.status ||
-            filters.category ||
-            filters.visibility ||
-            filters.date_from ||
-            filters.date_to ||
-            filters.sort !== 'newest' ||
-            filters.per_page !== 20,
+        hasNarrowingFilters || filters.sort !== 'newest' || filters.archive_status !== 'active' || filters.per_page !== 20,
     );
 
     useEffect(() => {
@@ -103,6 +107,7 @@ export default function CommunityReportsPage({
                 date_from: nextFilters.date_from,
                 date_to: nextFilters.date_to,
                 sort: nextFilters.sort === 'newest' ? null : nextFilters.sort,
+                archive_status: nextFilters.archive_status === 'active' ? null : nextFilters.archive_status,
                 per_page: nextFilters.per_page === 20 ? null : nextFilters.per_page,
                 page: 1,
             }),
@@ -119,6 +124,26 @@ export default function CommunityReportsPage({
         setSearchValue('');
         router.get(path, {}, { preserveState: true, preserveScroll: true, replace: true });
     };
+
+    const restoreReport = (reportId: string) => {
+        setRestoringId(reportId);
+        router.post(
+            communityReportApi.restore.url(reportId),
+            {},
+            {
+                headers: { 'X-Municipality-Slug': slug },
+                preserveScroll: true,
+                onFinish: () => setRestoringId(null),
+            },
+        );
+    };
+
+    const emptyTitle =
+        filters.archive_status === 'archived' && !hasNarrowingFilters
+            ? 'No archived reports.'
+            : hasNarrowingFilters
+              ? 'No reports match the current filters.'
+              : 'No community reports yet.';
 
     return (
         <AppLayout>
@@ -138,6 +163,17 @@ export default function CommunityReportsPage({
                         {reports.meta.total} total {reports.meta.total === 1 ? 'report' : 'reports'}
                     </div>
                 </div>
+
+                <Tabs value={filters.archive_status} onValueChange={(archiveStatus) => applyFilters({ archive_status: archiveStatus })}>
+                    <TabsList className="mb-4 h-10 border border-slate-200 bg-white p-1">
+                        {archive_status_options.map((option) => (
+                            <TabsTrigger key={option.value} value={option.value} className="gap-2 px-4">
+                                {option.value === 'archived' && <Archive className="h-4 w-4" />}
+                                {option.label}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
 
                 <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                     <form onSubmit={submitSearch} className="grid gap-2 lg:grid-cols-[minmax(220px,1fr)_auto]">
@@ -211,13 +247,13 @@ export default function CommunityReportsPage({
                     {reports.data.length === 0 ? (
                         <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
                             <Inbox className="mb-3 h-10 w-10 text-slate-400" />
-                            <p className="text-base font-semibold text-slate-900">
-                                {hasActiveFilters ? 'No reports match the current filters.' : 'No community reports yet.'}
-                            </p>
+                            <p className="text-base font-semibold text-slate-900">{emptyTitle}</p>
                             <p className="mt-1 text-sm text-slate-500">
-                                {hasActiveFilters
+                                {hasNarrowingFilters
                                     ? 'Adjust or clear the filters to see more community reports.'
-                                    : `When citizens file reports for ${currentMunicipality.name}, they'll appear here.`}
+                                    : filters.archive_status === 'archived'
+                                      ? 'Resolved or rejected reports will appear here after they are archived.'
+                                      : `When citizens file reports for ${currentMunicipality.name}, they'll appear here.`}
                             </p>
                         </div>
                     ) : (
@@ -235,8 +271,16 @@ export default function CommunityReportsPage({
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 bg-white">
                                     {reports.data.map((report) => (
-                                        <tr key={report.id} className="transition-colors hover:bg-slate-50/60">
-                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-slate-700">{report.created_at ?? '—'}</td>
+                                        <tr
+                                            key={report.id}
+                                            className={`transition-colors hover:bg-slate-50/60 ${report.is_archived ? 'bg-slate-50/50' : ''}`}
+                                        >
+                                            <td className="px-4 py-3 text-sm whitespace-nowrap text-slate-700">
+                                                <div>{report.created_at ?? '—'}</div>
+                                                {report.archived_at && (
+                                                    <div className="mt-1 text-xs text-slate-400">Archived {report.archived_at}</div>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium text-slate-900">{report.reporter?.full_name ?? 'Unknown'}</span>
@@ -256,21 +300,43 @@ export default function CommunityReportsPage({
                                                 <span className="line-clamp-1 max-w-xs">{report.location_text}</span>
                                             </td>
                                             <td className="px-4 py-3 text-sm">
-                                                <span
-                                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClasses(
-                                                        report.status.value,
-                                                    )}`}
-                                                >
-                                                    {report.status.label}
-                                                </span>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    <span
+                                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClasses(
+                                                            report.status.value,
+                                                        )}`}
+                                                    >
+                                                        {report.status.label}
+                                                    </span>
+                                                    {report.is_archived && (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                                                            <Archive className="h-3 w-3" />
+                                                            Archived
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                <Link href={`/${slug}/admin/community-reports/${report.id}`}>
-                                                    <Button variant="outline" size="sm">
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View Details
-                                                    </Button>
-                                                </Link>
+                                                <div className="flex justify-end gap-2">
+                                                    {report.is_archived && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            disabled={restoringId === report.id}
+                                                            onClick={() => restoreReport(report.id)}
+                                                        >
+                                                            <RotateCcw className="mr-2 h-4 w-4" />
+                                                            Restore
+                                                        </Button>
+                                                    )}
+                                                    <Link href={`/${slug}/admin/community-reports/${report.id}`}>
+                                                        <Button variant="outline" size="sm">
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            View Details
+                                                        </Button>
+                                                    </Link>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

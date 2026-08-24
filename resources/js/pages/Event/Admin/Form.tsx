@@ -26,7 +26,7 @@ interface EventDetail {
     is_published: boolean;
     start_datetime_input: string | null;
     end_datetime_input: string | null;
-    location_name: string;
+    location_name: string | null;
     banner: ExistingBanner | null;
 }
 
@@ -199,7 +199,7 @@ export default function EventForm({ event, types }: Props) {
                                         <Calendar className="h-5 w-5 text-muted-foreground" />
                                         Schedule & Location
                                     </CardTitle>
-                                    <CardDescription>Set when and where the event will take place.</CardDescription>
+                                    <CardDescription>Add an end time and physical venue only when they apply to the event.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div className="grid gap-6 sm:grid-cols-2">
@@ -215,34 +215,43 @@ export default function EventForm({ event, types }: Props) {
                                             required
                                             error={errors.start_datetime}
                                         />
-                                        <FormInput
-                                            label="End Date & Time"
-                                            id="end_datetime"
-                                            type="datetime-local"
-                                            value={data.end_datetime}
-                                            onChange={(e) => {
-                                                setData('end_datetime', e.target.value);
-                                                clearErrors('end_datetime');
-                                            }}
-                                            required
-                                            error={errors.end_datetime}
-                                        />
+                                        <div className="space-y-1.5">
+                                            <FormInput
+                                                label="End Date & Time (Optional)"
+                                                id="end_datetime"
+                                                type="datetime-local"
+                                                value={data.end_datetime}
+                                                min={data.start_datetime || undefined}
+                                                onChange={(e) => {
+                                                    setData('end_datetime', e.target.value);
+                                                    clearErrors('end_datetime');
+                                                }}
+                                                error={errors.end_datetime}
+                                            />
+                                            <p className="text-xs leading-5 text-muted-foreground">
+                                                Leave blank when no ending time has been announced.
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <div className="relative">
-                                        <FormInput
-                                            label="Location Name"
-                                            id="location_name"
-                                            value={data.location_name}
-                                            onChange={(e) => {
-                                                setData('location_name', e.target.value);
-                                                clearErrors('location_name');
-                                            }}
-                                            placeholder="e.g., Municipal Plaza, Town Hall"
-                                            required
-                                            error={errors.location_name}
-                                        />
-                                        <MapPin className="pointer-events-none absolute top-[38px] right-3 h-4 w-4 text-muted-foreground opacity-50" />
+                                    <div className="space-y-1.5">
+                                        <div className="relative">
+                                            <FormInput
+                                                label="Location (Optional)"
+                                                id="location_name"
+                                                value={data.location_name}
+                                                onChange={(e) => {
+                                                    setData('location_name', e.target.value);
+                                                    clearErrors('location_name');
+                                                }}
+                                                placeholder="e.g., Municipal Plaza, Town Hall"
+                                                error={errors.location_name}
+                                            />
+                                            <MapPin className="pointer-events-none absolute top-[38px] right-3 h-4 w-4 text-muted-foreground opacity-50" />
+                                        </div>
+                                        <p className="text-xs leading-5 text-muted-foreground">
+                                            Leave blank for online, municipality-wide, or venue-free events.
+                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>

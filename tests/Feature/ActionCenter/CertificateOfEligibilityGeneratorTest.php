@@ -116,6 +116,9 @@ afterEach(function () {
 
 it('uses the frozen claimant snapshot and trusted municipality data', function () {
     $context = seedCertificateOfEligibilityContext(status: 'under_review', reviewed: true);
+    DB::table('municipalities')
+        ->where('id', $context['municipal_id'])
+        ->update(['municipal_code' => '174003000']);
 
     $data = app(GenerateCertificateOfEligibilityAction::class)->formData(
         $context['request_id'],
@@ -125,7 +128,9 @@ it('uses the frozen claimant snapshot and trusted municipality data', function (
     expect($data->subjectName)->toBe('Share Mae Rejano')
         ->and($data->subjectCivilStatus)->toBe('Single')
         ->and($data->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque')
-        ->and($data->assistanceType)->toBe('Medical Assistance');
+        ->and($data->assistanceType)->toBe('Medical Assistance')
+        ->and($data->recommendedDefaults['certified_by_position'])->toBe('Social Welfare Officer III')
+        ->and($data->recommendedDefaults['approved_by_position'])->toBe('Municipal Mayor');
 });
 
 it('uses the frozen assisted person for on-behalf certificates', function () {

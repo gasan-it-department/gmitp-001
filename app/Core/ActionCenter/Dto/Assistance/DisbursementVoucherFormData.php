@@ -12,6 +12,8 @@ readonly class DisbursementVoucherFormData
         public string $assistanceType,
         public float $approvedAmount,
         public string $suggestedExplanation,
+        /** @var array<string, string> */
+        public array $recommendedDefaults,
     ) {}
 
     /** @return array<string, mixed> */
@@ -25,6 +27,7 @@ readonly class DisbursementVoucherFormData
             'assistance_type' => $this->assistanceType,
             'approved_amount' => $this->approvedAmount,
             'suggested_explanation' => $this->suggestedExplanation,
+            'recommended_defaults' => $this->recommendedDefaults,
         ];
     }
 }

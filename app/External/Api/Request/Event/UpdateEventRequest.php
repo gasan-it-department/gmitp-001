@@ -16,14 +16,22 @@ class UpdateEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'          => ['sometimes', 'required', 'string', 'max:255'],
-            'description'    => ['sometimes', 'required', 'string', 'max:10000'],
-            'type'           => ['sometimes', 'required', 'string', Rule::enum(EventType::class)],
-            'start_datetime' => ['sometimes', 'required', 'date', 'before:end_datetime'],
-            'end_datetime'   => ['sometimes', 'required', 'date', 'after_or_equal:start_datetime'],
-            'location_name'  => ['sometimes', 'required', 'string', 'max:255'],
-            'is_published'   => ['sometimes', 'boolean'],
-            'event_banner'   => [
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['sometimes', 'required', 'string', 'max:10000'],
+            'type' => ['sometimes', 'required', 'string', Rule::enum(EventType::class)],
+            'start_datetime' => ['sometimes', 'required', 'date'],
+            'end_datetime' => [
+                'sometimes',
+                'nullable',
+                'date',
+                Rule::when(
+                    $this->filled('start_datetime') && $this->filled('end_datetime'),
+                    ['after:start_datetime'],
+                ),
+            ],
+            'location_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'is_published' => ['sometimes', 'boolean'],
+            'event_banner' => [
                 'nullable',
                 'file',
                 'mimetypes:image/jpeg,image/png,image/webp',
@@ -35,9 +43,8 @@ class UpdateEventRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'start_datetime.before'       => 'The start date must be before the end date.',
-            'end_datetime.after_or_equal' => 'The end date must be on or after the start date.',
-            'event_banner.max'            => 'The banner image must be 10MB or smaller.',
+            'end_datetime.after' => 'The end date must be after the start date.',
+            'event_banner.max' => 'The banner image must be 10MB or smaller.',
         ];
     }
 }

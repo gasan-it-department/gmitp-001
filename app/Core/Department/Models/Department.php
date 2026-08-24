@@ -54,7 +54,6 @@ class Department extends Model implements HasMedia
     {
         $this->addMediaCollection('department_logo')
             ->singleFile()
-            ->useDisk('s3')
             ->acceptsMimeTypes([
                 'image/jpeg',
                 'image/png',

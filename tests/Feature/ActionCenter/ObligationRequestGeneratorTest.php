@@ -86,6 +86,9 @@ afterEach(function () {
 
 it('builds trusted form data from the frozen request snapshot', function () {
     $context = seedObligationRequestContext();
+    DB::table('municipalities')
+        ->where('id', $context['municipal_id'])
+        ->update(['municipal_code' => '174003000']);
 
     $data = app(GenerateObligationRequestAction::class)->formData(
         $context['request_id'],
@@ -96,7 +99,9 @@ it('builds trusted form data from the frozen request snapshot', function () {
         ->and($data->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque')
         ->and($data->approvedAmount)->toBe(1000.0)
         ->and($data->suggestedParticulars)->toContain('Payment for Medical Assistance')
-        ->and($data->suggestedParticulars)->toContain('Situation (AICS) CY 2026');
+        ->and($data->suggestedParticulars)->toContain('Situation (AICS) CY 2026')
+        ->and($data->recommendedDefaults['responsibility_center'])->toBe('7611')
+        ->and($data->recommendedDefaults['account_code'])->toBe('5-02-99-080');
 });
 
 it('keeps the claimant as payee and mentions the assisted person for on-behalf requests', function () {

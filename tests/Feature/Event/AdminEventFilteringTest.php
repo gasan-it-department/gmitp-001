@@ -1,8 +1,13 @@
 <?php
 
 use App\Core\Event\Actions\GetAdminEventsAction;
+use App\Core\Event\Actions\UpdateEventAction;
 use App\Core\Event\Dto\AdminEventFiltersDto;
+use App\Core\Event\Dto\StoreEventDto;
+use App\Core\Event\Dto\UpdateEventDto;
 use App\External\Api\Request\Event\IndexEventRequest;
+use App\External\Api\Request\Event\StoreEventRequest;
+use App\External\Api\Request\Event\UpdateEventRequest;
 use App\External\Web\Controllers\Event\Admin\IndexEventController;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
@@ -21,8 +26,8 @@ beforeEach(function () {
         $table->text('description');
         $table->string('type', 32);
         $table->timestamp('start_datetime');
-        $table->timestamp('end_datetime');
-        $table->string('location_name');
+        $table->timestamp('end_datetime')->nullable();
+        $table->string('location_name')->nullable();
         $table->boolean('is_published')->default(false);
         $table->timestamps();
         $table->softDeletes();
@@ -39,9 +44,11 @@ beforeEach(function () {
     $this->gasan = (string) Str::ulid();
     $this->boac = (string) Str::ulid();
     CarbonImmutable::setTestNow('2026-08-11 12:00:00');
+    activity()->disableLogging();
 });
 
 afterEach(function () {
+    activity()->enableLogging();
     CarbonImmutable::setTestNow();
     Schema::dropIfExists('media');
     Schema::dropIfExists('events');
@@ -95,6 +102,23 @@ it('filters schedule states at their exact current-time boundaries', function ()
         ->and(eventIds($action->execute($this->gasan, AdminEventFiltersDto::fromArray(['schedule' => 'past']))))->toBe([$past]);
 });
 
+it('treats events without end times as upcoming until their start and past afterward', function () {
+    $pastWithoutEnd = adminEvent($this->gasan, [
+        'start_datetime' => '2026-08-11 12:00:00',
+        'end_datetime' => null,
+    ]);
+    $upcomingWithoutEnd = adminEvent($this->gasan, [
+        'start_datetime' => '2026-08-11 12:00:01',
+        'end_datetime' => null,
+    ]);
+
+    $action = new GetAdminEventsAction;
+
+    expect(eventIds($action->execute($this->gasan, AdminEventFiltersDto::fromArray(['schedule' => 'ongoing']))))->toBe([])
+        ->and(eventIds($action->execute($this->gasan, AdminEventFiltersDto::fromArray(['schedule' => 'upcoming']))))->toBe([$upcomingWithoutEnd])
+        ->and(eventIds($action->execute($this->gasan, AdminEventFiltersDto::fromArray(['schedule' => 'past']))))->toBe([$pastWithoutEnd]);
+});
+
 it('orders ongoing then upcoming then past events by operational relevance', function () {
     $pastOld = adminEvent($this->gasan, [
         'start_datetime' => '2026-08-01 08:00:00',
@@ -146,6 +170,10 @@ it('uses event overlap semantics for the selected date range', function () {
         'start_datetime' => '2026-08-15 20:00:00',
         'end_datetime' => '2026-08-18 10:00:00',
     ]);
+    $withoutEnd = adminEvent($this->gasan, [
+        'start_datetime' => '2026-08-13 12:00:00',
+        'end_datetime' => null,
+    ]);
     adminEvent($this->gasan, [
         'start_datetime' => '2026-08-16 00:00:00',
         'end_datetime' => '2026-08-16 10:00:00',
@@ -157,7 +185,81 @@ it('uses event overlap semantics for the selected date range', function () {
         'sort' => 'start_asc',
     ]));
 
-    expect(eventIds($events))->toBe([$crossesStart, $inside, $crossesEnd]);
+    expect(eventIds($events))->toBe([$crossesStart, $withoutEnd, $inside, $crossesEnd]);
+});
+
+it('accepts events without an end time or location', function () {
+    $rules = (new StoreEventRequest)->rules();
+
+    $payload = [
+        'title' => 'Municipality-wide observance',
+        'description' => 'A venue-free public observance.',
+        'type' => 'holiday',
+        'start_datetime' => '2026-08-20 08:00:00',
+        'end_datetime' => null,
+        'location_name' => '   ',
+        'is_published' => true,
+    ];
+
+    expect(Validator::make($payload, $rules)->passes())->toBeTrue();
+
+    $request = StoreEventRequest::create('/api/event', 'POST', $payload);
+    $request->setContainer(app())->setRedirector(app('redirect'));
+    $request->validateResolved();
+    $dto = StoreEventDto::fromRequest($request, $this->gasan);
+
+    expect($dto->endDatetime)->toBeNull()
+        ->and($dto->locationName)->toBeNull();
+});
+
+it('clears existing end time and location when empty values are submitted', function () {
+    $eventId = adminEvent($this->gasan, [
+        'end_datetime' => '2026-08-12 10:00:00',
+        'location_name' => 'Town Plaza',
+    ]);
+
+    $request = UpdateEventRequest::create("/api/event/{$eventId}", 'PUT', [
+        'start_datetime' => '2026-08-12 08:00:00',
+        'end_datetime' => '',
+        'location_name' => '',
+    ]);
+    $request->setContainer(app())->setRedirector(app('redirect'));
+    $request->validateResolved();
+    $dto = UpdateEventDto::fromRequest($request, $this->gasan);
+
+    expect($dto->endDatetimeProvided)->toBeTrue()
+        ->and($dto->locationNameProvided)->toBeTrue()
+        ->and($dto->endDatetime)->toBeNull()
+        ->and($dto->locationName)->toBeNull();
+
+    $event = (new UpdateEventAction)->execute($eventId, $dto);
+
+    expect($event->end_datetime)->toBeNull()
+        ->and($event->location_name)->toBeNull();
+});
+
+it('preserves optional event details when partial updates omit those fields', function () {
+    $eventId = adminEvent($this->gasan, [
+        'title' => 'Original title',
+        'end_datetime' => '2026-08-12 10:00:00',
+        'location_name' => 'Town Plaza',
+    ]);
+
+    $request = UpdateEventRequest::create("/api/event/{$eventId}", 'PUT', [
+        'title' => 'Updated title',
+    ]);
+    $request->setContainer(app())->setRedirector(app('redirect'));
+    $request->validateResolved();
+    $dto = UpdateEventDto::fromRequest($request, $this->gasan);
+
+    expect($dto->endDatetimeProvided)->toBeFalse()
+        ->and($dto->locationNameProvided)->toBeFalse();
+
+    $event = (new UpdateEventAction)->execute($eventId, $dto);
+
+    expect($event->title)->toBe('Updated title')
+        ->and($event->end_datetime?->format('Y-m-d H:i:s'))->toBe('2026-08-12 10:00:00')
+        ->and($event->location_name)->toBe('Town Plaza');
 });
 
 it('supports explicit sorts and deterministic id tie breaking', function () {

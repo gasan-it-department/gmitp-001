@@ -12,6 +12,8 @@ readonly class CertificateOfEligibilityFormData
         public ?string $subjectCivilStatus,
         public string $address,
         public string $assistanceType,
+        /** @var array<string, string> */
+        public array $recommendedDefaults,
     ) {}
 
     /** @return array<string, mixed> */
@@ -25,6 +27,7 @@ readonly class CertificateOfEligibilityFormData
             'subject_civil_status' => $this->subjectCivilStatus,
             'address' => $this->address,
             'assistance_type' => $this->assistanceType,
+            'recommended_defaults' => $this->recommendedDefaults,
         ];
     }
 }

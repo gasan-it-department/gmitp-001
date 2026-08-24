@@ -20,7 +20,7 @@ interface EventDetail {
     end_datetime: string | null;
     start_datetime_iso: string | null;
     end_datetime_iso: string | null;
-    location_name: string;
+    location_name: string | null;
     created_at: string | null;
     banner_url: string | null;
 }
@@ -87,20 +87,24 @@ export default function EventClientShow({ event }: Props) {
                     description,
                     image: [absoluteUrl(event.banner_url || seo.default_image, seo.site_url)],
                     startDate: event.start_datetime_iso,
-                    endDate: event.end_datetime_iso,
+                    ...(event.end_datetime_iso ? { endDate: event.end_datetime_iso } : {}),
                     eventStatus: 'https://schema.org/EventScheduled',
-                    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
                     url: canonicalUrl,
-                    location: {
-                        '@type': 'Place',
-                        name: event.location_name,
-                        address: {
-                            '@type': 'PostalAddress',
-                            addressLocality: currentMunicipality.name,
-                            addressRegion: 'Marinduque',
-                            addressCountry: 'PH',
-                        },
-                    },
+                    ...(event.location_name
+                        ? {
+                              eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+                              location: {
+                                  '@type': 'Place',
+                                  name: event.location_name,
+                                  address: {
+                                      '@type': 'PostalAddress',
+                                      addressLocality: currentMunicipality.name,
+                                      addressRegion: 'Marinduque',
+                                      addressCountry: 'PH',
+                                  },
+                              },
+                          }
+                        : {}),
                     organizer: {
                         '@type': 'GovernmentOrganization',
                         name: `Municipality of ${currentMunicipality.name}`,
@@ -187,6 +191,9 @@ export default function EventClientShow({ event }: Props) {
                                                 {event.end_datetime && event.end_datetime !== event.start_datetime && (
                                                     <p className="text-xs text-slate-500">hanggang {event.end_datetime}</p>
                                                 )}
+                                                {!event.end_datetime && (
+                                                    <p className="text-xs text-slate-500">Walang itinakdang oras ng pagtatapos</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -197,7 +204,9 @@ export default function EventClientShow({ event }: Props) {
                                         </div>
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Saan</p>
-                                            <p className="text-sm leading-tight font-bold text-slate-700">{event.location_name}</p>
+                                            <p className="text-sm leading-tight font-bold text-slate-700">
+                                                {event.location_name ?? 'Walang itinakdang pisikal na lugar'}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

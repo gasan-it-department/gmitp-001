@@ -74,7 +74,10 @@ class AdminTicketDetailsResource extends JsonResource
                     : $m->getUrl(),
             ])->values(),
 
-            'replies' => TicketReplyResource::collection($this->whenLoaded('replies')),
+            'replies' => $this->whenLoaded(
+                'replies',
+                fn () => TicketReplyResource::collection($this->replies)->resolve($request),
+            ),
 
             'audit_log' => $this->whenLoaded('activities', fn () => $this->activities->map(fn ($a) => [
                 'id'          => $a->id,

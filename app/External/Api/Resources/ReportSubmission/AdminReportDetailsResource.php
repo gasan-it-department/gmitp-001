@@ -33,6 +33,7 @@ class AdminReportDetailsResource extends JsonResource
             'longitude'     => $this->longitude,
             'description'   => $this->description,
             'is_anonymous'  => (bool) $this->is_anonymous,
+            'is_archived'   => $this->trashed(),
             'reporter'      => $this->whenLoaded('user', fn () => $this->user ? [
                 'id'        => $this->user->id,
                 'full_name' => $this->user->full_name,
@@ -43,6 +44,7 @@ class AdminReportDetailsResource extends JsonResource
             'in_progress_at'  => $this->in_progress_at?->format('M d, Y g:i A'),
             'resolved_at'     => $this->resolved_at?->format('M d, Y g:i A'),
             'rejected_at'     => $this->rejected_at?->format('M d, Y g:i A'),
+            'archived_at'     => $this->deleted_at?->format('M d, Y g:i A'),
 
             'evidence_photos' => $this->getMedia('report_submission_evidence')->map(fn ($m) => [
                 'id'        => $m->id,

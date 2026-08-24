@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\FinancialDocumentDefaultsProvider;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
 use App\Core\ActionCenter\Dto\Assistance\GenerateObligationRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\ObligationRequestData;
@@ -11,6 +12,7 @@ class GenerateObligationRequestAction
 {
     public function __construct(
         private readonly BuildAssistanceFinancialDocumentContextAction $context,
+        private readonly FinancialDocumentDefaultsProvider $defaults,
     ) {}
 
     public function formData(
@@ -31,6 +33,9 @@ class GenerateObligationRequestAction
             assistanceType: $context->assistanceType,
             approvedAmount: $context->approvedAmount,
             suggestedParticulars: $this->suggestedParticulars($context),
+            recommendedDefaults: $this->defaults
+                ->for($context->municipalCode, $context->assistanceTypeSlug)
+                ->obligationRequest(),
         );
     }
 

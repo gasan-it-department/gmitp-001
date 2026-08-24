@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\CommunityReport\Actions\ArchiveReportAction;
+use App\Core\CommunityReport\Actions\GetAdminReportSubmissionDetailsAction;
 use App\Core\CommunityReport\Actions\GetAdminReportSubmissionsAction;
 use App\Core\CommunityReport\Actions\RestoreReportAction;
 use App\Core\CommunityReport\Dto\AdminReportFiltersDto;
@@ -9,7 +10,11 @@ use App\Core\CommunityReport\Dto\RestoreReportDto;
 use App\Core\CommunityReport\Exceptions\InvalidStateTransitionException;
 use App\Core\CommunityReport\Models\ReportSubmission;
 use App\External\Api\Request\CommunityReport\Admin\IndexReportRequest;
+use App\External\Api\Resources\ReportSubmission\AdminReportDetailsResource;
+use App\External\Api\Resources\ReportSubmission\AdminReportListResource;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -62,12 +67,20 @@ beforeEach(function () {
         $table->timestamps();
     });
 
+    Schema::create('media', function (Blueprint $table) {
+        $table->id();
+        $table->string('model_type');
+        $table->ulid('model_id');
+        $table->unsignedInteger('order_column')->nullable();
+    });
+
     $this->gasan = (string) Str::ulid();
     $this->boac = (string) Str::ulid();
     $this->reporter = communityReportUser('Grace', 'Santos');
 });
 
 afterEach(function () {
+    Schema::dropIfExists('media');
     Schema::dropIfExists('activity_log');
     Schema::dropIfExists('report_submissions');
     Schema::dropIfExists('users');
@@ -235,12 +248,39 @@ it('filters admin reports by archive status', function () {
 
     $action = new GetAdminReportSubmissionsAction;
 
+    $archivedReports = $action->execute($this->gasan, AdminReportFiltersDto::fromArray(['archive_status' => 'archived']));
+    $archivedPayload = (new AdminReportListResource($archivedReports->items()[0]))->resolve(Request::create('/'));
+
     expect(collect($action->execute($this->gasan, AdminReportFiltersDto::fromArray([]))->items())->pluck('id')->all())
         ->toBe([$active])
-        ->and(collect($action->execute($this->gasan, AdminReportFiltersDto::fromArray(['archive_status' => 'archived']))->items())->pluck('id')->all())
+        ->and(collect($archivedReports->items())->pluck('id')->all())
         ->toBe([$archived])
         ->and(collect($action->execute($this->gasan, AdminReportFiltersDto::fromArray(['archive_status' => 'all']))->items())->pluck('id')->all())
-        ->toBe([$archived, $active]);
+        ->toBe([$archived, $active])
+        ->and($archivedPayload['is_archived'])->toBeTrue()
+        ->and($archivedPayload['archived_at'])->not->toBeNull();
+});
+
+it('loads archived report details only within the current municipality', function () {
+    $archived = communityReport($this->gasan, $this->reporter, [
+        'status' => 'resolved',
+        'resolved_at' => '2026-05-11 08:00:00',
+        'deleted_at' => '2026-05-12 08:00:00',
+    ]);
+    $otherMunicipalityReport = communityReport($this->boac, $this->reporter, [
+        'status' => 'resolved',
+        'deleted_at' => '2026-05-12 08:00:00',
+    ]);
+
+    $action = new GetAdminReportSubmissionDetailsAction;
+    $report = $action->execute($this->gasan, $archived);
+    $payload = (new AdminReportDetailsResource($report))->resolve(Request::create('/'));
+
+    expect($report->trashed())->toBeTrue()
+        ->and($payload['is_archived'])->toBeTrue()
+        ->and($payload['archived_at'])->not->toBeNull()
+        ->and(fn () => $action->execute($this->gasan, $otherMunicipalityReport))
+        ->toThrow(ModelNotFoundException::class);
 });
 
 it('validates admin report filter query values', function () {

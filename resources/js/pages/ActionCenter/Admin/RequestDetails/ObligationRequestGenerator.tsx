@@ -19,6 +19,16 @@ interface ObligationRequestContext {
     assistance_type: string;
     approved_amount: number;
     suggested_particulars: string;
+    recommended_defaults: {
+        responsibility_center: string;
+        account_code: string;
+        office: string;
+        fpp: string;
+        mswdo_printed_name: string;
+        mswdo_position: string;
+        budget_officer_printed_name: string;
+        budget_officer_position: string;
+    };
 }
 
 interface Props {
@@ -55,15 +65,15 @@ export default function ObligationRequestGenerator({ obligationRequest }: Props)
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [data, setData] = useState<FormData>({
         obligation_request_number: '',
-        responsibility_center: '',
-        account_code: '',
+        responsibility_center: obligationRequest.recommended_defaults.responsibility_center,
+        account_code: obligationRequest.recommended_defaults.account_code,
         particulars: obligationRequest.suggested_particulars,
-        office: '',
-        fpp: '',
-        mswdo_printed_name: '',
-        mswdo_position: 'Municipal Social Welfare and Development Officer',
-        budget_officer_printed_name: '',
-        budget_officer_position: 'Municipal Budget Officer',
+        office: obligationRequest.recommended_defaults.office,
+        fpp: obligationRequest.recommended_defaults.fpp,
+        mswdo_printed_name: obligationRequest.recommended_defaults.mswdo_printed_name,
+        mswdo_position: obligationRequest.recommended_defaults.mswdo_position,
+        budget_officer_printed_name: obligationRequest.recommended_defaults.budget_officer_printed_name,
+        budget_officer_position: obligationRequest.recommended_defaults.budget_officer_position,
     });
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState<string | null>(null);
@@ -211,6 +221,7 @@ export default function ObligationRequestGenerator({ obligationRequest }: Props)
                         <div className="mb-5">
                             <h2 className="text-base font-semibold text-slate-950">Accounting details</h2>
                             <p className="mt-1 text-sm text-slate-500">Enter the values supplied by the responsible municipal offices.</p>
+                            <p className="mt-1 text-xs font-medium text-amber-700">Recommended values are prefilled. Verify them before printing.</p>
                         </div>
 
                         {(generalError || errors.request) && (
