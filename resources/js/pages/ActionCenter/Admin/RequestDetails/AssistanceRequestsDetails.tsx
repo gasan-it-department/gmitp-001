@@ -1,6 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
-import DownloadAcknowledgementReceiptController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAcknowledgementReceiptController';
 import DownloadAssistanceRequestIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAssistanceRequestIntakeSheetController';
+import ShowAcknowledgementReceiptGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowAcknowledgementReceiptGeneratorController';
 import ShowCertificateOfEligibilityGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowCertificateOfEligibilityGeneratorController';
 import ShowDisbursementVoucherGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowDisbursementVoucherGeneratorController';
 import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
@@ -262,14 +262,15 @@ export default function AssistanceRequestsDetails({
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
     const canEditRequest = requestIsEditable && canProcessRequests;
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
-    const canPrintAcknowledgementReceipt = detail.status === 'approved' || detail.status === 'released';
-    const canGenerateObligationRequest = canPrintAcknowledgementReceipt && detail.amount_approved !== null && canProcessRequests;
-    const canGenerateDisbursementVoucher = canPrintAcknowledgementReceipt && detail.amount_approved !== null && canProcessRequests;
+    const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
+    const canGenerateAcknowledgementReceipt = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateObligationRequest = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateDisbursementVoucher = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
     const canGenerateCertificateOfEligibility =
         canProcessRequests &&
         ['under_review', 'approved', 'released'].includes(detail.status) &&
         (detail.status !== 'under_review' || detail.reviewed_at !== null);
-    const acknowledgementReceiptUrl = DownloadAcknowledgementReceiptController.url({
+    const acknowledgementReceiptUrl = ShowAcknowledgementReceiptGeneratorController.url({
         municipality: currentMunicipality.slug,
         assistanceRequestId: detail.id,
     });
@@ -851,16 +852,14 @@ export default function AssistanceRequestsDetails({
                                             Generate Certificate of Eligibility
                                         </Link>
                                     )}
-                                    {canPrintAcknowledgementReceipt && (
-                                        <a
+                                    {canGenerateAcknowledgementReceipt && (
+                                        <Link
                                             href={acknowledgementReceiptUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
                                             className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 hover:text-blue-900"
                                         >
                                             <Printer className="h-4 w-4" />
-                                            Print Acknowledgement Receipt
-                                        </a>
+                                            Generate Acknowledgement Receipt
+                                        </Link>
                                     )}
                                     <a
                                         href={DownloadAssistanceRequestIntakeSheetController.url({
@@ -1269,25 +1268,27 @@ function ActionButtons({
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
                         </Button>
                     )}
-                    <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
-                        <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
-                            <Printer className="mr-2 h-4 w-4" />
-                            <span className="sm:hidden">Print receipt</span>
-                            <span className="hidden sm:inline">Print Acknowledgement Receipt</span>
-                        </a>
-                    </Button>
+                    {canProcess && (
+                        <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
+                            <Link href={acknowledgementReceiptUrl}>
+                                <Printer className="mr-2 h-4 w-4" />
+                                <span className="sm:hidden">Receipt</span>
+                                <span className="hidden sm:inline">Generate Acknowledgement Receipt</span>
+                            </Link>
+                        </Button>
+                    )}
                 </>
             );
         case 'released':
-            return (
+            return canProcess ? (
                 <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
-                    <a href={acknowledgementReceiptUrl} target="_blank" rel="noopener noreferrer">
+                    <Link href={acknowledgementReceiptUrl}>
                         <Printer className="mr-2 h-4 w-4" />
-                        <span className="sm:hidden">Print receipt</span>
-                        <span className="hidden sm:inline">Print Acknowledgement Receipt</span>
-                    </a>
+                        <span className="sm:hidden">Receipt</span>
+                        <span className="hidden sm:inline">Generate Acknowledgement Receipt</span>
+                    </Link>
                 </Button>
-            );
+            ) : null;
         case 'rejected':
             return canDecide ? (
                 <Button variant="outline" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reopen')}>
