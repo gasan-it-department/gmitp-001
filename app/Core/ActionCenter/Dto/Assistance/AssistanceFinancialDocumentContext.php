@@ -12,10 +12,13 @@ readonly class AssistanceFinancialDocumentContext
         public ?string $municipalityLogoDataUri,
         public string $payee,
         public string $address,
+        public string $barangay,
         public string $assistanceType,
         public ?string $assistanceTypeSlug,
         public float $approvedAmount,
         public int $approvedYear,
         public ?string $assistedPerson,
+        public \DateTimeInterface $submittedAt,
+        public ?\DateTimeInterface $releasedAt,
     ) {}
 }

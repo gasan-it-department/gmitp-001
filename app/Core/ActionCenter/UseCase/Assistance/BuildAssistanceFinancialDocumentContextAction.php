@@ -43,11 +43,14 @@ class BuildAssistanceFinancialDocumentContextAction
             ),
             payee: $this->payee($request),
             address: $this->address($request, $municipality?->name),
+            barangay: $request->snapshot?->barangay ?? '',
             assistanceType: $request->assistanceType?->name ?? 'Assistance',
             assistanceTypeSlug: $request->assistanceType?->slug,
             approvedAmount: (float) $request->amount_approved,
             approvedYear: $request->approved_at?->year ?? now()->year,
             assistedPerson: $this->assistedPerson($request),
+            submittedAt: $request->created_at,
+            releasedAt: $request->released_at,
         );
     }
 

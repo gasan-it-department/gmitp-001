@@ -1,135 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Acknowledgement Receipt - {{ $data->request->transaction_number }}</title>
-    @vite('resources/css/app.css')
+    <title>Acknowledgement Receipt - {{ $data->transactionNumber }}</title>
     <style>
-        html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { font-family: Georgia, 'Times New Roman', serif; font-size: 12pt; color: #0f172a; }
-        .line { border-bottom: 1px solid #0f172a; display: inline-block; min-height: 1.1em; padding: 0 6px; }
-        .label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: #475569; }
+        @page {
+            margin: 30mm 30mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            color: #000;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .header-logo-cell {
+            width: 24%;
+            height: 36mm;
+            padding: 0;
+            text-align: right;
+            vertical-align: middle;
+        }
+
+        .header-logo {
+            width: 27mm;
+            height: 27mm;
+            margin-right: 7mm;
+            object-fit: contain;
+        }
+
+        .header-text-cell {
+            width: 76%;
+            padding: 0 24% 0 0;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .republic {
+            margin: 0;
+            font-size: 13pt;
+            line-height: 1.15;
+        }
+
+        .province {
+            margin: 1mm 0 0;
+            font-size: 15pt;
+            font-weight: bold;
+            line-height: 1.1;
+            text-transform: uppercase;
+        }
+
+        .municipality {
+            margin: 1mm 0 0;
+            font-size: 18pt;
+            line-height: 1.1;
+        }
+
+        .office {
+            margin: 3mm 0 0;
+            text-align: center;
+            font-size: 17pt;
+            font-weight: bold;
+            font-style: italic;
+            line-height: 1.1;
+            text-decoration: underline;
+        }
+
+        .document-date {
+            width: 45mm;
+            min-height: 6mm;
+            margin: 13mm 10mm 0 auto;
+            border-bottom: 1px solid #000;
+            padding: 0 2mm 1mm;
+            text-align: center;
+            font-size: 11pt;
+        }
+
+        h1 {
+            margin: 24mm 0 18mm;
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .receipt-copy {
+            margin: 0 20mm;
+            text-align: justify;
+            font-size: 11pt;
+            line-height: 1.75;
+        }
+
+        .line {
+            display: inline-block;
+            min-height: 5mm;
+            border-bottom: 1px solid #000;
+            padding: 0 2mm;
+            text-align: center;
+            line-height: 1.35;
+            vertical-align: baseline;
+        }
+
+        .name-line {
+            width: 58mm;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .barangay-line {
+            width: 34mm;
+        }
+
+        .amount-line {
+            width: 31mm;
+            font-weight: bold;
+        }
+
+        .purpose-row {
+            margin: 13mm 20mm 0 20mm;
+            font-size: 11pt;
+            line-height: 1.8;
+        }
+
+        .purpose-line {
+            min-width: 43mm;
+            font-weight: bold;
+        }
+
+        .provided-line {
+            min-width: 42mm;
+        }
+
+        .signature-block {
+            width: 85mm;
+            margin: 23mm 20mm 0 20mm;
+        }
+
+        .signature-heading {
+            margin: 0 0 14mm;
+            font-weight: bold;
+        }
+
+        .signature-line {
+            min-height: 7mm;
+            border-bottom: 1px solid #000;
+            padding: 0 2mm 1mm;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .signature-label {
+            margin: 1.5mm 20mm 0 20mm;
+            text-align: center;
+            font-size: 10pt;
+            white-space: nowrap;
+        }
     </style>
 </head>
-<body class="bg-white">
-    @php
-        $request = $data->request;
-        $snapshot = $request->snapshot;
-        $assistanceType = $request->assistanceType;
-        $receiptDate = $request->released_at ?? $data->generatedAt;
-        $isDraft = $request->released_at === null;
-        $fullName = trim(implode(' ', array_filter([
-            $snapshot?->first_name,
-            $snapshot?->middle_name,
-            $snapshot?->last_name,
-            $snapshot?->suffix,
-        ])));
-        $onBehalfName = trim(implode(' ', array_filter([
-            $request->on_behalf_first_name,
-            $request->on_behalf_middle_name,
-            $request->on_behalf_last_name,
-            $request->on_behalf_suffix,
-        ])));
-        $member = $request->onBehalfHouseholdMember;
-        $memberName = $member ? trim(implode(' ', array_filter([
-            $member->first_name,
-            $member->middle_name,
-            $member->last_name,
-            $member->suffix,
-        ]))) : null;
-        $subjectName = $request->relationship_to_beneficiary === null
-            ? null
-            : ($onBehalfName ?: $memberName);
-        $amount = $request->amount_approved !== null
-            ? 'Php ' . number_format((float) $request->amount_approved, 2)
-            : 'Php 0.00';
-        $programName = $assistanceType?->name ?? 'AICS';
-        $purpose = trim((string) ($request->description ?: $programName));
-        $barangay = $snapshot?->barangay ?: '________________';
-        $municipalityName = $data->municipalityName ?: '________________';
-    @endphp
 
-    <header class="mb-20 text-center">
-        <p class="text-[12pt] leading-tight">Republic of the Philippines</p>
-        <p class="text-[13pt] font-bold leading-tight tracking-wide uppercase">Province of Marinduque</p>
-        <p class="text-[16pt] leading-tight">Municipality of {{ $municipalityName }}</p>
-        <p class="mt-2 text-[15pt] font-bold underline">Municipal Social Welfare and Development Office</p>
-    </header>
+<body>
+    <table class="header-table">
+        <tr>
+            <td class="header-logo-cell">
+                @if($data->municipalityLogoDataUri)
+                    <img class="header-logo" src="{{ $data->municipalityLogoDataUri }}" alt="Municipal seal">
+                @endif
+            </td>
+            <td class="header-text-cell">
+                <p class="republic">Republic of the Philippines</p>
+                <p class="province">Province of Marinduque</p>
+                <p class="municipality">Municipality of {{ $data->municipalityName }}</p>
+            </td>
+        </tr>
+    </table>
 
-    <div class="mb-14 flex items-center justify-between">
-        <div>
-            @if($isDraft)
-                <p class="inline-block rounded border border-amber-300 bg-amber-50 px-3 py-1 font-sans text-[9pt] font-bold tracking-widest text-amber-800 uppercase">
-                    Draft for signature
-                </p>
-            @endif
-        </div>
-        <div class="w-56 border-b border-slate-900 text-center text-[10pt]">
-            {{ $request->release_reference_number ?: 'Reference pending' }}
-        </div>
+    <p class="office">Municipal Social Welfare and Development Office</p>
+
+    <div class="document-date">{{ $data->submittedAt->format('F j, Y') }}</div>
+
+    <h1>ACKNOWLEDGEMENT RECEIPT</h1>
+
+    <p class="receipt-copy">
+        I,
+        <span class="line name-line">{{ $data->recipientName }}</span>,
+        residing at Brgy.
+        <span class="line barangay-line">{{ $data->barangay ?: '________________' }}</span>,
+        {{ $data->municipalityName }}, Marinduque hereby acknowledge the receipt of the amount of
+        <span class="line amount-line">Php {{ number_format($data->approvedAmount, 2) }}</span>
+        as {{ $data->assistanceType }} under the ASSISTANCE TO INDIVIDUALS IN CRISIS SITUATIONS
+        (AICS) program, granted by the Municipal Social Welfare and Development Office (MSWDO)
+        of the Municipality of {{ $data->municipalityName }}, Marinduque.
+    </p>
+
+    <p class="purpose-row">
+        This assistance is for the purpose of
+        <span class="line purpose-line">{{ $data->assistanceType }}</span>,
+        provided on
+        <span class="line provided-line">{{ $data->providedAt?->format('F j, Y') ?? '' }}</span>.
+    </p>
+
+    <div class="signature-block">
+        <p class="signature-heading">Received by:</p>
+        <div class="signature-line">{{ $data->recipientName }}</div>
+        <p class="signature-label">Name and Signature of Beneficiary</p>
     </div>
-
-    <main>
-        <h1 class="mb-14 text-center text-[16pt] font-bold underline">ACKNOWLEDGEMENT RECEIPT</h1>
-
-        <p class="text-justify leading-8">
-            I,
-            <span class="line min-w-[330px] text-center font-bold">{{ $fullName ?: '____________________________' }}</span>,
-            residing at Brgy.
-            <span class="line min-w-[220px] text-center">{{ $barangay }}</span>,
-            {{ $municipalityName }}, Marinduque hereby acknowledge the receipt of the amount of
-            <span class="line min-w-[180px] text-center font-bold">{{ $amount }}</span>
-            as {{ $programName }} Assistance under the ASSISTANCE TO INDIVIDUALS IN CRISIS SITUATIONS
-            (AICS) program, granted by the Municipal Social Welfare and Development Office (MSWDO)
-            of the Municipality of {{ $municipalityName }}, Marinduque.
-        </p>
-
-        @if($subjectName)
-            <p class="mt-5 rounded border border-slate-200 bg-slate-50 p-3 font-sans text-[10pt] leading-relaxed text-slate-700">
-                This request was filed on behalf of
-                <span class="font-bold text-slate-900">{{ $subjectName }}</span>
-                as {{ $request->relationship_to_beneficiary?->label() ?? 'related beneficiary' }}.
-            </p>
-        @endif
-
-        <p class="mt-10 leading-8">
-            This assistance is for the purpose of
-            <span class="line min-w-[260px] text-center">{{ $purpose }}</span>
-            Assistance, provided on
-            <span class="line min-w-[220px] text-center">{{ $receiptDate->format('F j, Y') }}</span>.
-        </p>
-
-        <div class="mt-20 grid grid-cols-2 gap-16">
-            <div>
-                <p class="mb-12 font-bold">Received by:</p>
-                <div class="border-b border-slate-900 text-center font-bold uppercase">
-                    {{ $fullName ?: '' }}
-                </div>
-                <p class="label mt-2 text-center">Name and Signature of Beneficiary / Recipient</p>
-            </div>
-
-            <div>
-                <p class="mb-12 font-bold">Released by:</p>
-                <div class="border-b border-slate-900 text-center">
-                    {{ $request->releasedBy?->full_name ?? $data->generatedByUserName }}
-                </div>
-                <p class="label mt-2 text-center">Authorized MSWDO / Cashier</p>
-            </div>
-        </div>
-    </main>
-
-    <footer class="mt-20 border-t border-slate-300 pt-3 font-sans text-[8pt] text-slate-500">
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <p class="font-bold tracking-widest uppercase text-slate-700">System Record</p>
-                <p class="mt-1">Transaction: {{ $request->transaction_number }}</p>
-                <p>Status: {{ $request->status?->label() ?? strtoupper((string) $request->status) }}</p>
-            </div>
-            <div class="text-right">
-                <p>Generated {{ $data->generatedAt->format('M j, Y g:i A') }}</p>
-                <p>By {{ $data->generatedByUserName }}</p>
-            </div>
-        </div>
-    </footer>
 </body>
+
 </html>

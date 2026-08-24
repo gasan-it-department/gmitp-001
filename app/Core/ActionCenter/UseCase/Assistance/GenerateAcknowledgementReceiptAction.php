@@ -3,56 +3,57 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\AcknowledgementReceiptData;
-use App\Core\ActionCenter\Enums\AssistanceStatus;
-use App\Core\ActionCenter\Models\AssistanceRequest;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Core\ActionCenter\Dto\Assistance\AcknowledgementReceiptFormData;
 
 class GenerateAcknowledgementReceiptAction
 {
-    public function execute(
+    public function __construct(
+        private readonly BuildAssistanceFinancialDocumentContextAction $context,
+    ) {}
+
+    public function formData(
         string $assistanceRequestId,
         string $municipalId,
-        ?string $municipalityName,
-        string $generatedByUserName,
-    ): AcknowledgementReceiptData {
-        $request = AssistanceRequest::query()
-            ->with([
-                'assistanceType',
-                'beneficiary',
-                'releasedBy',
-                'snapshot',
-                'onBehalfHouseholdMember',
-            ])
-            ->whereKey($assistanceRequestId)
-            ->firstOr(function () {
-                throw new ModelNotFoundException('Assistance request not found.');
-            });
+    ): AcknowledgementReceiptFormData {
+        $context = $this->context->execute(
+            $assistanceRequestId,
+            $municipalId,
+            'acknowledgement receipt',
+        );
 
-        if ($request->municipal_id !== $municipalId) {
-            throw new AuthorizationException(
-                'You may only generate acknowledgement receipts for assistance requests in your own municipality.',
-            );
-        }
-
-        $this->ensureReceiptAllowed($request);
-
-        return new AcknowledgementReceiptData(
-            request: $request,
-            municipalityName: $municipalityName,
-            generatedByUserName: $generatedByUserName,
-            generatedAt: now(),
+        return new AcknowledgementReceiptFormData(
+            assistanceRequestId: $context->assistanceRequestId,
+            transactionNumber: $context->transactionNumber,
+            recipientName: $context->payee,
+            barangay: $context->barangay,
+            approvedAmount: $context->approvedAmount,
+            assistanceType: $context->assistanceType,
+            submittedDate: $context->submittedAt->format('Y-m-d'),
+            providedDate: $context->releasedAt?->format('Y-m-d'),
         );
     }
 
-    private function ensureReceiptAllowed(AssistanceRequest $request): void
-    {
-        if (in_array($request->status, [AssistanceStatus::Approved, AssistanceStatus::Released], true)) {
-            return;
-        }
+    public function execute(
+        string $assistanceRequestId,
+        string $municipalId,
+    ): AcknowledgementReceiptData {
+        $context = $this->context->execute(
+            $assistanceRequestId,
+            $municipalId,
+            'acknowledgement receipt',
+        );
 
-        throw new \DomainException(
-            'Acknowledgement receipts can only be generated for approved or released assistance requests.',
+        return new AcknowledgementReceiptData(
+            transactionNumber: $context->transactionNumber,
+            municipalityName: $context->municipalityName,
+            municipalityLogoDataUri: $context->municipalityLogoDataUri,
+            recipientName: $context->payee,
+            barangay: $context->barangay,
+            approvedAmount: $context->approvedAmount,
+            assistanceType: $context->assistanceType,
+            submittedAt: $context->submittedAt,
+            providedAt: $context->releasedAt,
+            generatedAt: now(),
         );
     }
 }
