@@ -3,23 +3,82 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetData;
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetFormData;
+use App\Core\ActionCenter\Dto\Assistance\GenerateAssistanceRequestIntakeSheetDto;
+use App\Core\ActionCenter\Enums\AssistanceIntakeProblem;
+use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Municipality\Models\Municipality;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Throwable;
 
 class GenerateAssistanceRequestIntakeSheetAction
 {
-    public function execute(
+    public function formData(
         string $assistanceRequestId,
         string $municipalId,
+    ): AssistanceRequestIntakeSheetFormData {
+        [$request] = $this->loadContext($assistanceRequestId, $municipalId);
+        $snapshot = $request->snapshot;
+
+        return new AssistanceRequestIntakeSheetFormData(
+            assistanceRequestId: $request->id,
+            transactionNumber: $request->transaction_number,
+            claimantName: $this->claimantName($request),
+            ageAtFiling: $snapshot?->birth_date && $request->created_at
+                ? (int) $snapshot->birth_date->diffInYears($request->created_at)
+                : null,
+            civilStatus: $this->civilStatusLabel($snapshot?->civil_status),
+            barangay: $snapshot?->barangay,
+            assistanceType: $request->assistanceType?->name ?? 'Assistance',
+            filingSubject: $this->filingSubject($request),
+            problemOptions: AssistanceIntakeProblem::options(),
+            recommendedDefaults: [
+                'problem_presented' => $this->recommendedProblems($request),
+                'source_of_income' => $snapshot?->occupation,
+                'monthly_income' => $this->snapshotMonthlyIncome($request),
+                'recommendation' => $request->assistanceType?->name ?? 'Assistance',
+            ],
+        );
+    }
+
+    public function execute(
+        GenerateAssistanceRequestIntakeSheetDto $dto,
         string $generatedByUserName,
     ): AssistanceRequestIntakeSheetData {
+        [$request, $municipality, $householdMembers] = $this->loadContext(
+            $dto->assistanceRequestId,
+            $dto->municipalId,
+        );
+
+        return new AssistanceRequestIntakeSheetData(
+            request: $request,
+            householdMembers: $householdMembers,
+            municipalityName: $municipality?->name,
+            municipalityLogoDataUri: $this->municipalityLogoDataUri(
+                $municipality?->getFirstMedia('logo'),
+            ),
+            problemPresented: $dto->problemPresented,
+            sourceOfIncome: $dto->sourceOfIncome,
+            monthlyIncome: $dto->monthlyIncome,
+            recommendation: $dto->recommendation,
+            generatedByUserName: $generatedByUserName,
+            generatedAt: CarbonImmutable::now(),
+        );
+    }
+
+    /** @return array{0: AssistanceRequest, 1: ?Municipality, 2: Collection<int, HouseholdMember>} */
+    private function loadContext(
+        string $assistanceRequestId,
+        string $municipalId,
+    ): array {
         $request = AssistanceRequest::query()
             ->with([
                 'assistanceType',
@@ -38,20 +97,97 @@ class GenerateAssistanceRequestIntakeSheetAction
             );
         }
 
+        if ($request->snapshot === null) {
+            throw new \DomainException(
+                'The request snapshot is missing and the intake sheet cannot be generated safely.',
+            );
+        }
+
         $municipality = Municipality::query()
             ->with('media')
             ->find($municipalId);
 
-        return new AssistanceRequestIntakeSheetData(
-            request: $request,
-            householdMembers: $this->loadCurrentHouseholdMembers($request->household_id),
-            municipalityName: $municipality?->name,
-            municipalityLogoDataUri: $this->municipalityLogoDataUri(
-                $municipality?->getFirstMedia('logo'),
-            ),
-            generatedByUserName: $generatedByUserName,
-            generatedAt: now(),
-        );
+        return [
+            $request,
+            $municipality,
+            $this->loadCurrentHouseholdMembers($request->household_id),
+        ];
+    }
+
+    private function claimantName(AssistanceRequest $request): string
+    {
+        $snapshot = $request->snapshot;
+        $name = trim(implode(' ', array_filter([
+            $snapshot?->first_name,
+            $snapshot?->middle_name,
+            $snapshot?->last_name,
+            $snapshot?->suffix,
+        ])));
+
+        if ($name === '') {
+            throw new \DomainException(
+                'The claimant snapshot is incomplete and the intake sheet cannot be generated safely.',
+            );
+        }
+
+        return $name;
+    }
+
+    private function filingSubject(AssistanceRequest $request): string
+    {
+        if ($request->relationship_to_beneficiary === null) {
+            return 'self';
+        }
+
+        $name = trim(implode(' ', array_filter([
+            $request->on_behalf_first_name,
+            $request->on_behalf_middle_name,
+            $request->on_behalf_last_name,
+            $request->on_behalf_suffix,
+        ])));
+
+        return trim(strtolower($request->relationship_to_beneficiary->label()).($name ? ' '.$name : ''));
+    }
+
+    /** @return list<string> */
+    private function recommendedProblems(AssistanceRequest $request): array
+    {
+        $assistance = strtolower(trim(implode(' ', array_filter([
+            $request->assistanceType?->name,
+            $request->assistanceType?->slug,
+        ]))));
+
+        if (str_contains($assistance, 'burial') || str_contains($assistance, 'funeral')) {
+            return [AssistanceIntakeProblem::HelplessToBuryDead->value];
+        }
+
+        if (str_contains($assistance, 'medical')) {
+            return [AssistanceIntakeProblem::SeekingMedicalAssistance->value];
+        }
+
+        return [];
+    }
+
+    private function snapshotMonthlyIncome(AssistanceRequest $request): ?float
+    {
+        $value = $request->snapshot?->household_total_income
+            ?? $request->snapshot?->monthly_income;
+
+        return $value === null ? null : (float) $value;
+    }
+
+    private function civilStatusLabel(mixed $value): ?string
+    {
+        if ($value instanceof CivilStatus) {
+            return $value->label();
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return CivilStatus::tryFrom(strtolower(trim($value)))?->label()
+            ?? Str::headline($value);
     }
 
     /**

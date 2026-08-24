@@ -74,6 +74,7 @@ it('lists active municipality pages and only published public content', function
         ->assertSee(route('home', ['municipality' => 'gasan-4905']), false)
         ->assertSee(route('government.roster', ['municipality' => 'gasan-4905']), false)
         ->assertSee(route('transparency.index', ['municipality' => 'gasan-4905']), false)
+        ->assertSee(route('feedback.create', ['municipality' => 'gasan-4905']), false)
         ->assertSee(route('announcement.show', ['municipality' => 'gasan-4905', 'announcement' => $publishedAnnouncementId]), false)
         ->assertSee(route('event.show', ['municipality' => 'gasan-4905', 'event' => $publishedEventId]), false)
         ->assertDontSee('inactive-0000', false)

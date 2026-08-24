@@ -23,6 +23,7 @@ class SitemapController extends Controller
         'transparency.index',
         'announcement.index',
         'event.index',
+        'feedback.create',
     ];
 
     public function __invoke(): Response
