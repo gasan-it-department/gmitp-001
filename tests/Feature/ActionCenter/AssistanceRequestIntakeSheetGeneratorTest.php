@@ -144,7 +144,7 @@ it('prefills trusted snapshot values and medical assessment defaults', function 
         ->and($data->recommendedDefaults)->toMatchArray([
             'problem_presented' => [AssistanceIntakeProblem::SeekingMedicalAssistance->value],
             'source_of_income' => 'Fishing',
-            'monthly_income' => 4500.0,
+            'monthly_income' => 3000.0,
             'recommendation' => 'Medical Assistance',
         ]);
 });
@@ -175,14 +175,16 @@ it('validates assessment inputs and rejects unsupported problem values', functio
     $request = new GenerateAssistanceRequestIntakeSheetRequest;
     $valid = [
         'problem_presented' => ['sick'],
-        'source_of_income' => null,
-        'monthly_income' => null,
+        'source_of_income' => 'Fishing',
+        'monthly_income' => 0,
         'recommendation' => 'Medical Assistance',
     ];
 
     expect(Validator::make($valid, $request->rules())->passes())->toBeTrue()
         ->and(Validator::make([...$valid, 'problem_presented' => []], $request->rules())->fails())->toBeTrue()
         ->and(Validator::make([...$valid, 'problem_presented' => ['unsupported']], $request->rules())->fails())->toBeTrue()
+        ->and(Validator::make([...$valid, 'source_of_income' => null], $request->rules())->fails())->toBeTrue()
+        ->and(Validator::make([...$valid, 'monthly_income' => null], $request->rules())->fails())->toBeTrue()
         ->and(Validator::make([...$valid, 'monthly_income' => -1], $request->rules())->fails())->toBeTrue()
         ->and(Validator::make([...$valid, 'recommendation' => ''], $request->rules())->fails())->toBeTrue();
 });
@@ -200,6 +202,10 @@ it('uses edited assessment values without writing records and returns a dompdf d
     $context = seedAssistanceRequestIntakeSheetContext();
     $beforeRequests = DB::table('ac_assistance_requests')->count();
     $beforeMedia = DB::table('media')->count();
+    $beforeSnapshot = DB::table('ac_assistance_request_snapshots')
+        ->where('assistance_request_id', $context['request_id'])
+        ->first(['occupation', 'monthly_income']);
+    $beforeMember = DB::table('ac_household_members')->first(['occupation', 'monthly_income']);
 
     $dto = new GenerateAssistanceRequestIntakeSheetDto(
         assistanceRequestId: $context['request_id'],
@@ -214,6 +220,11 @@ it('uses edited assessment values without writing records and returns a dompdf d
     $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
     $response = app(AssistanceRequestIntakeSheetPdf::class)->response($data);
 
+    $afterSnapshot = DB::table('ac_assistance_request_snapshots')
+        ->where('assistance_request_id', $context['request_id'])
+        ->first(['occupation', 'monthly_income']);
+    $afterMember = DB::table('ac_household_members')->first(['occupation', 'monthly_income']);
+
     expect($html)->toContain(
         'III. Problem Presented:',
         'IV. Findings and Evaluation:',
@@ -221,13 +232,46 @@ it('uses edited assessment values without writing records and returns a dompdf d
         'PHP 3,200.50',
         'Medical Assistance after assessment and completion of supporting documents',
         'Current Household Composition',
-    )->not->toContain('@vite', '<script', 'http://', 'https://', 'display: flex', 'display: grid')
+        'Fishing',
+    )->not->toContain('@vite', '<script', 'http://', 'https://', 'display: flex', 'display: grid', 'Roster Member ID')
+        ->and(substr_count($html, 'Seasonal farming'))->toBe(2)
+        ->and(substr_count($html, 'PHP 3,200.50'))->toBe(2)
         ->and(substr_count($html, '>X</span>'))->toBe(2)
         ->and($response->getStatusCode())->toBe(200)
         ->and($response->headers->get('content-type'))->toBe('application/pdf')
         ->and($response->getContent())->toStartWith('%PDF')
         ->and(DB::table('ac_assistance_requests')->count())->toBe($beforeRequests)
-        ->and(DB::table('media')->count())->toBe($beforeMedia);
+        ->and(DB::table('media')->count())->toBe($beforeMedia)
+        ->and($afterSnapshot)->toEqual($beforeSnapshot)
+        ->and($afterMember)->toEqual($beforeMember);
+});
+
+it('omits the internal roster member id from an on-behalf filing subject', function () {
+    $context = seedAssistanceRequestIntakeSheetContext(metadata: [
+        'relationship_to_beneficiary' => 'parent',
+        'on_behalf_first_name' => 'Juan',
+        'on_behalf_last_name' => 'Mawac',
+    ]);
+    $rosterMemberId = (string) Str::ulid();
+    DB::table('ac_assistance_requests')
+        ->where('id', $context['request_id'])
+        ->update(['on_behalf_household_member_id' => $rosterMemberId]);
+
+    $data = app(GenerateAssistanceRequestIntakeSheetAction::class)->execute(
+        new GenerateAssistanceRequestIntakeSheetDto(
+            assistanceRequestId: $context['request_id'],
+            municipalId: $context['municipal_id'],
+            problemPresented: ['sick'],
+            sourceOfIncome: 'Fishing',
+            monthlyIncome: 3000,
+            recommendation: 'Medical Assistance',
+        ),
+        'Test Admin',
+    );
+    $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
+
+    expect($html)->toContain('Relationship', 'Subject Name', 'Juan Mawac')
+        ->not->toContain('Roster Member ID', $rosterMemberId);
 });
 
 /** @return array{municipal_id: string, request_id: string} */

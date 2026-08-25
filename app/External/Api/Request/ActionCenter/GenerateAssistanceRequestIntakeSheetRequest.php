@@ -41,8 +41,8 @@ class GenerateAssistanceRequestIntakeSheetRequest extends FormRequest
                 'distinct',
                 Rule::enum(AssistanceIntakeProblem::class),
             ],
-            'source_of_income' => ['nullable', 'string', 'max:255'],
-            'monthly_income' => ['nullable', 'numeric', 'min:0'],
+            'source_of_income' => ['required', 'string', 'max:255'],
+            'monthly_income' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'recommendation' => ['required', 'string', 'max:1000'],
         ];
     }
@@ -53,6 +53,9 @@ class GenerateAssistanceRequestIntakeSheetRequest extends FormRequest
         return [
             'problem_presented.required' => 'Select at least one problem presented.',
             'problem_presented.min' => 'Select at least one problem presented.',
+            'source_of_income.required' => 'Enter the claimant\'s occupation or basic source of income.',
+            'monthly_income.required' => 'Enter the claimant\'s monthly income. Enter 0 if none.',
+            'monthly_income.min' => 'Monthly income cannot be negative.',
             'recommendation.required' => 'Enter the social worker recommendation.',
         ];
     }

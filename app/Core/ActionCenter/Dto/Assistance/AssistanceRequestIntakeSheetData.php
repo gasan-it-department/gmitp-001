@@ -15,8 +15,8 @@ readonly class AssistanceRequestIntakeSheetData
         public ?string $municipalityLogoDataUri,
         /** @var list<string> */
         public array $problemPresented,
-        public ?string $sourceOfIncome,
-        public ?float $monthlyIncome,
+        public string $sourceOfIncome,
+        public float $monthlyIncome,
         public string $recommendation,
         public string $generatedByUserName,
         public \DateTimeInterface $generatedAt,

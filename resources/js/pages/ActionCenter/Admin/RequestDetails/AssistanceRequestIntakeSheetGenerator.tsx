@@ -200,8 +200,8 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                     <div className="mb-6 flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <Info className="mt-0.5 h-5 w-5 shrink-0" />
                         <p>
-                            Assessment entries apply only to this printed intake sheet and are not saved to the beneficiary profile or assistance
-                            request.
+                            Occupation and monthly income are required and will appear in both Beneficiary Details and Findings and Evaluation.
+                            These document values are not saved to the beneficiary profile or assistance request.
                         </p>
                     </div>
 
@@ -274,19 +274,24 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
 
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                 <div>
-                                    <Label htmlFor="source_of_income">Basic source of income</Label>
+                                    <Label htmlFor="source_of_income">
+                                        Occupation / basic source of income <span className="text-red-600">*</span>
+                                    </Label>
                                     <Input
                                         id="source_of_income"
                                         value={data.source_of_income}
                                         onChange={(event) => update('source_of_income', event.target.value)}
                                         maxLength={255}
-                                        placeholder="Leave blank for a writing line"
+                                        placeholder="e.g. Farming, Fishing, Unemployed"
+                                        required
                                         className="mt-1.5"
                                     />
                                     <FieldError field="source_of_income" />
                                 </div>
                                 <div>
-                                    <Label htmlFor="monthly_income">Monthly income</Label>
+                                    <Label htmlFor="monthly_income">
+                                        Monthly income <span className="text-red-600">*</span>
+                                    </Label>
                                     <Input
                                         id="monthly_income"
                                         type="number"
@@ -294,7 +299,8 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                                         step="0.01"
                                         value={data.monthly_income}
                                         onChange={(event) => update('monthly_income', event.target.value)}
-                                        placeholder="Leave blank for a writing line"
+                                        placeholder="Enter 0 if none"
+                                        required
                                         className="mt-1.5"
                                     />
                                     <FieldError field="monthly_income" />

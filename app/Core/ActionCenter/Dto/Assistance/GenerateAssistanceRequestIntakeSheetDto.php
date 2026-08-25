@@ -11,8 +11,8 @@ readonly class GenerateAssistanceRequestIntakeSheetDto
         public string $assistanceRequestId,
         public string $municipalId,
         public array $problemPresented,
-        public ?string $sourceOfIncome,
-        public ?float $monthlyIncome,
+        public string $sourceOfIncome,
+        public float $monthlyIncome,
         public string $recommendation,
     ) {}
 
@@ -21,17 +21,12 @@ readonly class GenerateAssistanceRequestIntakeSheetDto
         string $assistanceRequestId,
         string $municipalId,
     ): self {
-        $sourceOfIncome = $request->validated('source_of_income');
-        $monthlyIncome = $request->validated('monthly_income');
-
         return new self(
             assistanceRequestId: $assistanceRequestId,
             municipalId: $municipalId,
             problemPresented: array_values($request->validated('problem_presented')),
-            sourceOfIncome: is_string($sourceOfIncome) && $sourceOfIncome !== ''
-                ? $sourceOfIncome
-                : null,
-            monthlyIncome: $monthlyIncome === null ? null : (float) $monthlyIncome,
+            sourceOfIncome: (string) $request->validated('source_of_income'),
+            monthlyIncome: (float) $request->validated('monthly_income'),
             recommendation: (string) $request->validated('recommendation'),
         );
     }

@@ -43,7 +43,9 @@ class GenerateAssistanceRequestIntakeSheetAction
             recommendedDefaults: [
                 'problem_presented' => $this->recommendedProblems($request),
                 'source_of_income' => $snapshot?->occupation,
-                'monthly_income' => $this->snapshotMonthlyIncome($request),
+                'monthly_income' => $snapshot?->monthly_income === null
+                    ? null
+                    : (float) $snapshot->monthly_income,
                 'recommendation' => $request->assistanceType?->name ?? 'Assistance',
             ],
         );
@@ -166,14 +168,6 @@ class GenerateAssistanceRequestIntakeSheetAction
         }
 
         return [];
-    }
-
-    private function snapshotMonthlyIncome(AssistanceRequest $request): ?float
-    {
-        $value = $request->snapshot?->household_total_income
-            ?? $request->snapshot?->monthly_income;
-
-        return $value === null ? null : (float) $value;
     }
 
     private function civilStatusLabel(mixed $value): ?string
