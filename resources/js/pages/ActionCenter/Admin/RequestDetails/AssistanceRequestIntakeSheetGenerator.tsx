@@ -9,11 +9,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import axios, { AxiosError } from 'axios';
-<<<<<<< HEAD
-import { AlertCircle, ArrowLeft, ClipboardCheck, FileDown, Info, Loader2 } from 'lucide-react';
-=======
 import { AlertCircle, ArrowLeft, ClipboardCheck, FileDown, History, Info, Loader2, TriangleAlert, UserRound } from 'lucide-react';
->>>>>>> harvey
 import { FormEvent, useMemo, useState } from 'react';
 
 interface ProblemOption {
@@ -21,14 +17,11 @@ interface ProblemOption {
     label: string;
 }
 
-<<<<<<< HEAD
-=======
 interface EconomicValues {
     source_of_income: string | null;
     monthly_income: number | null;
 }
 
->>>>>>> harvey
 interface IntakeSheetContext {
     assistance_request_id: string;
     transaction_number: string;
@@ -39,11 +32,8 @@ interface IntakeSheetContext {
     assistance_type: string;
     filing_subject: string;
     problem_options: ProblemOption[];
-<<<<<<< HEAD
-=======
     frozen_economic_values: EconomicValues;
     current_economic_values: EconomicValues;
->>>>>>> harvey
     recommended_defaults: {
         problem_presented: string[];
         source_of_income: string | null;
@@ -70,8 +60,6 @@ interface ErrorPayload {
     errors?: Record<string, string[] | string>;
 }
 
-<<<<<<< HEAD
-=======
 const formatIncome = (value: number | null) =>
     value === null
         ? 'Not recorded'
@@ -86,7 +74,6 @@ const hasCompleteEconomicValues = (values: EconomicValues) =>
 
 const normalizedOccupation = (value: string | null) => value?.trim().toLocaleLowerCase() ?? null;
 
->>>>>>> harvey
 export default function AssistanceRequestIntakeSheetGenerator({ assistanceRequestIntakeSheet }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [data, setData] = useState<FormData>({
@@ -101,14 +88,11 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
-<<<<<<< HEAD
-=======
     const frozenEconomicValues = assistanceRequestIntakeSheet.frozen_economic_values;
     const currentEconomicValues = assistanceRequestIntakeSheet.current_economic_values;
     const economicValuesDiffer =
         normalizedOccupation(frozenEconomicValues.source_of_income) !== normalizedOccupation(currentEconomicValues.source_of_income) ||
         frozenEconomicValues.monthly_income !== currentEconomicValues.monthly_income;
->>>>>>> harvey
 
     const detailUrl = ShowAssistanceRequestProfileController.url({
         municipality: currentMunicipality.slug,
@@ -130,8 +114,6 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
         setErrors((current) => ({ ...current, problem_presented: undefined }));
     };
 
-<<<<<<< HEAD
-=======
     const applyEconomicValues = (values: EconomicValues) => {
         setData((current) => ({
             ...current,
@@ -145,7 +127,6 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
         }));
     };
 
->>>>>>> harvey
     const findingsPreview = useMemo(() => {
         const income = data.monthly_income.trim() === '' ? '__________' : `PHP ${Number(data.monthly_income).toLocaleString('en-PH')}`;
         const source = data.source_of_income.trim() || '________________';
@@ -258,13 +239,8 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                     <div className="mb-6 flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <Info className="mt-0.5 h-5 w-5 shrink-0" />
                         <p>
-<<<<<<< HEAD
-                            Occupation and monthly income are required and will appear in both Beneficiary Details and Findings and Evaluation.
-                            These document values are not saved to the beneficiary profile or assistance request.
-=======
                             Occupation and monthly income are required and will appear in both Beneficiary Details and Findings and Evaluation. These
                             document values are not saved to the beneficiary profile or assistance request.
->>>>>>> harvey
                         </p>
                     </div>
 
@@ -298,8 +274,6 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                         </dl>
                     </section>
 
-<<<<<<< HEAD
-=======
                     <section className="mb-6 overflow-hidden rounded-md border border-slate-200 bg-white">
                         <div className="p-4 sm:p-6">
                             <h2 className="text-sm font-semibold text-slate-900">Occupation and income comparison</h2>
@@ -380,7 +354,6 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                         </div>
                     </section>
 
->>>>>>> harvey
                     <form onSubmit={submit} className="space-y-6">
                         {(generalError || errors.request) && (
                             <div className="flex gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
