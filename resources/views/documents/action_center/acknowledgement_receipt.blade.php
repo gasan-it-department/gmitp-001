@@ -233,7 +233,7 @@
                 <span class="line name-line">{{ $data->recipientName }}</span>,
                 residing at Brgy.
                 <span class="line barangay-line">{{ $data->barangay ?: '________________' }}</span>,
-                 {{ $data->municipalityName }}, Marinduque hereby acknowledge the receipt of the amount of
+                {{ $data->municipalityName }}, Marinduque hereby acknowledge the receipt of the amount of
                 <span class="line amount-line">Php {{ number_format($data->approvedAmount, 2) }}</span>
                 as {{ $data->assistanceType }} under the ASSISTANCE TO INDIVIDUALS IN CRISIS SITUATIONS
                 (AICS) program, granted by the Municipal Social Welfare and Development Office (MSWDO)

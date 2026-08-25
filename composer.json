@@ -11,6 +11,7 @@
     "require": {
         "ext-intl": "*",
         "php": "^8.4",
+        "ext-intl": "*",
         "cloudinary-labs/cloudinary-laravel": "^3.0",
         "cloudinary/cloudinary_php": "*",
         "dompdf/dompdf": "^3.1",
@@ -25,6 +26,8 @@
         "league/flysystem-aws-s3-v3": "3.0",
         "maatwebsite/excel": "*",
         "meilisearch/meilisearch-php": "^1.16",
+        "setasign/fpdf": "^1.9",
+        "setasign/fpdi": "^2.6",
         "spatie/browsershot": "^5.3",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-backup": "^9.3",

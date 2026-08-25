@@ -1,11 +1,14 @@
 import { AssistanceDocumentRequirement } from '@/Core/Types/ActionCenter/assistance';
-import { CheckCircle2, FileText, IdCard, Upload } from 'lucide-react';
+import type { DocumentPreparationNotice } from '@/hooks/use-optimized-assistance-documents';
+import { CheckCircle2, FileText, IdCard, Loader2, Upload } from 'lucide-react';
 
 interface Props {
     documents: AssistanceDocumentRequirement[];
     files: Record<string, File | null>;
     onFileChange: (documentKey: string, file: File | null) => void;
     errors: Record<string, string | undefined>;
+    preparingKeys?: ReadonlySet<string>;
+    preparationNotices?: Record<string, DocumentPreparationNotice | undefined>;
 }
 
 interface IdentityPairProps extends Props {
@@ -21,7 +24,7 @@ const RECIPIENT_ID_KEYS = ['recipient_valid_id_front', 'recipient_valid_id_back'
  * Required documents remain driven by ac_assistance_type_documents. Identity
  * sides are grouped visually while retaining their independent document keys.
  */
-export function DocumentUploadsGrid({ documents, files, onFileChange, errors }: Props) {
+export function DocumentUploadsGrid({ documents, files, onFileChange, errors, preparingKeys, preparationNotices }: Props) {
     if (documents.length === 0) {
         return null;
     }
@@ -47,6 +50,8 @@ export function DocumentUploadsGrid({ documents, files, onFileChange, errors }: 
                         files={files}
                         onFileChange={onFileChange}
                         errors={errors}
+                        preparingKeys={preparingKeys}
+                        preparationNotices={preparationNotices}
                     />
                 )}
 
@@ -58,6 +63,8 @@ export function DocumentUploadsGrid({ documents, files, onFileChange, errors }: 
                                 document={document}
                                 file={files[document.key]}
                                 error={errors[`documents.${document.key}`]}
+                                preparing={preparingKeys?.has(document.key)}
+                                preparationNotice={preparationNotices?.[document.key]}
                                 onFileChange={onFileChange}
                             />
                         ))}
@@ -68,7 +75,17 @@ export function DocumentUploadsGrid({ documents, files, onFileChange, errors }: 
     );
 }
 
-export function IdentityDocumentPair({ title, description, documents, files, onFileChange, errors, required }: IdentityPairProps) {
+export function IdentityDocumentPair({
+    title,
+    description,
+    documents,
+    files,
+    onFileChange,
+    errors,
+    required,
+    preparingKeys,
+    preparationNotices,
+}: IdentityPairProps) {
     return (
         <div className="border-t border-slate-200 pt-5 first:border-t-0 first:pt-0">
             <div className="mb-4 flex items-start gap-3">
@@ -87,6 +104,8 @@ export function IdentityDocumentPair({ title, description, documents, files, onF
                         file={files[document.key]}
                         error={errors[`documents.${document.key}`]}
                         required={required}
+                        preparing={preparingKeys?.has(document.key)}
+                        preparationNotice={preparationNotices?.[document.key]}
                         onFileChange={onFileChange}
                     />
                 ))}
@@ -100,12 +119,16 @@ function DocumentUploadCard({
     file,
     error,
     required,
+    preparing = false,
+    preparationNotice,
     onFileChange,
 }: {
     document: AssistanceDocumentRequirement;
     file: File | null | undefined;
     error?: string;
     required?: boolean;
+    preparing?: boolean;
+    preparationNotice?: DocumentPreparationNotice;
     onFileChange: (documentKey: string, file: File | null) => void;
 }) {
     const isRequired = required ?? document.is_required;
@@ -125,15 +148,29 @@ function DocumentUploadCard({
                     type="file"
                     aria-label={`Upload ${document.name}`}
                     accept=".jpg,.jpeg,.png,.pdf"
+                    disabled={preparing}
                     className="absolute inset-0 cursor-pointer opacity-0"
                     onChange={(event) => onFileChange(document.key, event.target.files?.[0] ?? null)}
                 />
 
-                {file && (
+                {preparing && (
+                    <div className="mt-3 flex items-center gap-1.5 text-blue-700">
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                        <span className="text-[11px] font-semibold">Preparing image...</span>
+                    </div>
+                )}
+
+                {!preparing && file && (
                     <div className="mt-3 flex max-w-full items-center gap-1 text-emerald-600">
                         <CheckCircle2 className="h-4 w-4 shrink-0" />
                         <span className="truncate text-[11px] font-semibold">{file.name}</span>
                     </div>
+                )}
+
+                {!preparing && preparationNotice && (
+                    <p className={`mt-2 text-[11px] font-medium ${preparationNotice.tone === 'warning' ? 'text-amber-700' : 'text-emerald-700'}`}>
+                        {preparationNotice.message}
+                    </p>
                 )}
 
                 {error && <p className="mt-3 text-xs font-medium text-red-500">{error}</p>}

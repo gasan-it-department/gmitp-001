@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
+import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { useOptimizedAssistanceDocuments } from '@/hooks/use-optimized-assistance-documents';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, CheckCircle2, FileText, Loader2, Paperclip } from 'lucide-react';
-import { FormEvent } from 'react';
+import { FormEvent, useCallback } from 'react';
 
 // ─── Types (mirror AssistanceRequestDetailsResource + RequiredDocumentResource) ──
 
@@ -87,9 +88,21 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
 
     const currentDocFor = (key: string): UploadedDoc | undefined => r.documents.find((d) => d.custom_properties?.document_key === key);
 
-    const handleFileChange = (key: string, file: File | null) => {
-        setData('documents', { ...data.documents, [key]: file });
-    };
+    const storePreparedDocument = useCallback(
+        (key: string, file: File | null) => {
+            setData((current) => ({
+                ...current,
+                documents: { ...current.documents, [key]: file },
+            }));
+        },
+        [setData],
+    );
+    const {
+        isPreparing: isPreparingDocuments,
+        notices: documentPreparationNotices,
+        prepareDocument: handleFileChange,
+        preparingKeys: preparingDocumentKeys,
+    } = useOptimizedAssistanceDocuments(storePreparedDocument);
 
     const detailUrl = ShowAssistanceRequestProfileController.url({
         municipality: currentMunicipality.slug,
@@ -98,6 +111,9 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
+
+        if (isPreparingDocuments) return;
+
         post(submitUrl, {
             forceFormData: true,
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
@@ -105,7 +121,7 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
         });
     };
 
-    const canSubmit = data.description.trim().length >= 10 && !processing;
+    const canSubmit = data.description.trim().length >= 10 && !isPreparingDocuments && !processing;
 
     return (
         <AdminLayout>
@@ -180,6 +196,12 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                                 <p className="mb-4 text-xs text-slate-500">
                                     Leave a slot empty to keep the current file. Choosing a file replaces that document.
                                 </p>
+                                {isPreparingDocuments && (
+                                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800">
+                                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                                        Preparing and reducing document images before upload...
+                                    </div>
+                                )}
                                 <div className="space-y-5">
                                     {slots.map((slot) => {
                                         const current = currentDocFor(slot.key);
@@ -211,11 +233,28 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                                                 <Input
                                                     type="file"
                                                     accept=".jpg,.jpeg,.png,.pdf"
+                                                    disabled={preparingDocumentKeys.has(slot.key)}
                                                     className="cursor-pointer bg-white file:font-medium file:text-blue-600"
-                                                    onChange={(e) => handleFileChange(slot.key, e.target.files?.[0] ?? null)}
+                                                    onChange={(e) => void handleFileChange(slot.key, e.target.files?.[0] ?? null)}
                                                 />
+                                                {preparingDocumentKeys.has(slot.key) && (
+                                                    <p className="flex items-center gap-1.5 text-xs font-medium text-blue-700">
+                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Preparing image...
+                                                    </p>
+                                                )}
                                                 {data.documents[slot.key] && (
                                                     <p className="text-[11px] text-blue-600">Will replace with: {data.documents[slot.key]?.name}</p>
+                                                )}
+                                                {!preparingDocumentKeys.has(slot.key) && documentPreparationNotices[slot.key] && (
+                                                    <p
+                                                        className={`text-xs font-medium ${
+                                                            documentPreparationNotices[slot.key]?.tone === 'warning'
+                                                                ? 'text-amber-700'
+                                                                : 'text-emerald-700'
+                                                        }`}
+                                                    >
+                                                        {documentPreparationNotices[slot.key]?.message}
+                                                    </p>
                                                 )}
                                                 {fieldErrors[`documents.${slot.key}`] && (
                                                     <p className="text-xs text-red-500">{fieldErrors[`documents.${slot.key}`]}</p>
@@ -240,7 +279,11 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                                 disabled={!canSubmit}
                                 className="h-12 rounded-2xl bg-slate-900 px-8 text-sm font-bold tracking-wide text-white uppercase shadow-lg transition-all hover:bg-slate-800 active:scale-[0.99] disabled:opacity-50"
                             >
-                                {processing ? (
+                                {isPreparingDocuments ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Preparing images…
+                                    </>
+                                ) : processing ? (
                                     <>
                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving…
                                     </>

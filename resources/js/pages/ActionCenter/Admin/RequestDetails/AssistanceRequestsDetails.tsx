@@ -3,6 +3,7 @@ import ShowAcknowledgementReceiptGeneratorController from '@/actions/App/Externa
 import ShowAssistanceRequestIntakeSheetGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowAssistanceRequestIntakeSheetGeneratorController';
 import ShowCertificateOfEligibilityGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowCertificateOfEligibilityGeneratorController';
 import ShowDisbursementVoucherGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowDisbursementVoucherGeneratorController';
+import ShowFinancialDocumentPacketGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowFinancialDocumentPacketGeneratorController';
 import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
@@ -32,6 +33,7 @@ import {
     ClockArrowUp,
     FilePenLine,
     FileText,
+    Files,
     Home,
     Info,
     MapPin,
@@ -266,6 +268,7 @@ export default function AssistanceRequestsDetails({
     const canGenerateAcknowledgementReceipt = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
     const canGenerateObligationRequest = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
     const canGenerateDisbursementVoucher = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateFinancialDocumentPacket = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
     const canGenerateCertificateOfEligibility =
         canProcessRequests &&
         ['under_review', 'approved', 'released'].includes(detail.status) &&
@@ -816,6 +819,18 @@ export default function AssistanceRequestsDetails({
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2 px-4 pb-4 sm:px-6 sm:pb-6">
+                                    {canGenerateFinancialDocumentPacket && (
+                                        <Link
+                                            href={ShowFinancialDocumentPacketGeneratorController.url({
+                                                municipality: currentMunicipality.slug,
+                                                assistanceRequestId: detail.id,
+                                            })}
+                                            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-slate-950 bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                                        >
+                                            <Files className="h-4 w-4" />
+                                            Generate All 3 Documents
+                                        </Link>
+                                    )}
                                     {canGenerateObligationRequest && (
                                         <Link
                                             href={ShowObligationRequestGeneratorController.url({

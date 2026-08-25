@@ -44,11 +44,13 @@ use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateAcknowledge
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateAssistanceRequestIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateCertificateOfEligibilityController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateDisbursementVoucherController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateFinancialDocumentPacketController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateObligationRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowAcknowledgementReceiptGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowAssistanceRequestIntakeSheetGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowCertificateOfEligibilityGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowDisbursementVoucherGeneratorController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowFinancialDocumentPacketGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowObligationRequestGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
@@ -242,6 +244,18 @@ Route::prefix('{municipality}/action-center')
                 GenerateCertificateOfEligibilityController::class,
             )->middleware('permission:action_center.requests.process')
                 ->name('assistance-request.certificate-of-eligibility.generate');
+
+            Route::get(
+                'profile/assistance-request/{assistanceRequestId}/financial-document-packet',
+                ShowFinancialDocumentPacketGeneratorController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.financial-document-packet.create');
+
+            Route::post(
+                'profile/assistance-request/{assistanceRequestId}/financial-document-packet',
+                GenerateFinancialDocumentPacketController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.financial-document-packet.generate');
 
             // Admin-only "correct an in-flight request" form — display only.
             // The controller redirects back to the detail page if the request

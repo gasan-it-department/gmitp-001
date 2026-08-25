@@ -26,12 +26,7 @@ class CertificateOfEligibilityPdf
 
     public function response(CertificateOfEligibilityData $data): Response
     {
-        $builder = $this->build($data);
-        $content = base64_decode($builder->base64(), true);
-
-        if ($content === false || $content === '') {
-            throw new RuntimeException('DOMPDF returned an empty Certificate of Eligibility document.');
-        }
+        $content = $this->content($data);
 
         return response($content, 200, [
             'Content-Type' => 'application/pdf',
@@ -39,6 +34,17 @@ class CertificateOfEligibilityPdf
             'Content-Length' => (string) strlen($content),
             'Cache-Control' => 'private, no-store, max-age=0',
         ]);
+    }
+
+    public function content(CertificateOfEligibilityData $data): string
+    {
+        $content = base64_decode($this->build($data)->base64(), true);
+
+        if ($content === false || $content === '') {
+            throw new RuntimeException('DOMPDF returned an empty Certificate of Eligibility document.');
+        }
+
+        return $content;
     }
 
     private function filename(CertificateOfEligibilityData $data): string

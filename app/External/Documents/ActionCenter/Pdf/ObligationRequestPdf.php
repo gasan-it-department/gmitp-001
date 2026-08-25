@@ -26,12 +26,7 @@ class ObligationRequestPdf
 
     public function response(ObligationRequestData $data): Response
     {
-        $builder = $this->build($data);
-        $content = base64_decode($builder->base64(), true);
-
-        if ($content === false || $content === '') {
-            throw new RuntimeException('DOMPDF returned an empty Obligation Request document.');
-        }
+        $content = $this->content($data);
 
         return response($content, 200, [
             'Content-Type' => 'application/pdf',
@@ -39,6 +34,17 @@ class ObligationRequestPdf
             'Content-Length' => (string) strlen($content),
             'Cache-Control' => 'private, no-store, max-age=0',
         ]);
+    }
+
+    public function content(ObligationRequestData $data): string
+    {
+        $content = base64_decode($this->build($data)->base64(), true);
+
+        if ($content === false || $content === '') {
+            throw new RuntimeException('DOMPDF returned an empty Obligation Request document.');
+        }
+
+        return $content;
     }
 
     private function filename(ObligationRequestData $data): string

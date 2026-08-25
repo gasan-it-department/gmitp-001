@@ -136,6 +136,10 @@
             font-weight: bold;
         }
 
+        .payee-value {
+            font-size: 12pt;
+        }
+
         .office-value {
             font-weight: normal;
         }
@@ -389,7 +393,7 @@
         </tr>
         <tr class="info-row">
             <td class="bordered info-label">Payee</td>
-            <td colspan="4" class="bordered info-value">{{ strtoupper($data->payee) }}</td>
+            <td colspan="4" class="bordered info-value payee-value">{{ strtoupper($data->payee) }}</td>
         </tr>
         <tr class="info-row">
             <td class="bordered info-label">Office</td>
