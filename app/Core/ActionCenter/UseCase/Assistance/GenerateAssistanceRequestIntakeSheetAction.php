@@ -27,25 +27,35 @@ class GenerateAssistanceRequestIntakeSheetAction
     ): AssistanceRequestIntakeSheetFormData {
         [$request] = $this->loadContext($assistanceRequestId, $municipalId);
         $snapshot = $request->snapshot;
+        $frozenEconomicValues = [
+            'source_of_income' => $this->presentOccupation($snapshot?->occupation),
+            'monthly_income' => $this->presentIncome($snapshot?->monthly_income),
+        ];
+        $currentEconomicValues = [
+            'source_of_income' => $this->presentOccupation($request->beneficiary?->occupation),
+            'monthly_income' => $this->presentIncome($request->beneficiary?->monthly_income),
+        ];
 
         return new AssistanceRequestIntakeSheetFormData(
             assistanceRequestId: $request->id,
             transactionNumber: $request->transaction_number,
             claimantName: $this->claimantName($request),
             ageAtFiling: $snapshot?->birth_date && $request->created_at
-                ? (int) $snapshot->birth_date->diffInYears($request->created_at)
-                : null,
+            ? (int) $snapshot->birth_date->diffInYears($request->created_at)
+            : null,
             civilStatus: $this->civilStatusLabel($snapshot?->civil_status),
             barangay: $snapshot?->barangay,
             assistanceType: $request->assistanceType?->name ?? 'Assistance',
             filingSubject: $this->filingSubject($request),
             problemOptions: AssistanceIntakeProblem::options(),
+            frozenEconomicValues: $frozenEconomicValues,
+            currentEconomicValues: $currentEconomicValues,
             recommendedDefaults: [
                 'problem_presented' => $this->recommendedProblems($request),
-                'source_of_income' => $snapshot?->occupation,
-                'monthly_income' => $snapshot?->monthly_income === null
-                    ? null
-                    : (float) $snapshot->monthly_income,
+                'source_of_income' => $frozenEconomicValues['source_of_income']
+                    ?? $currentEconomicValues['source_of_income'],
+                'monthly_income' => $frozenEconomicValues['monthly_income']
+                    ?? $currentEconomicValues['monthly_income'],
                 'recommendation' => $request->assistanceType?->name ?? 'Assistance',
             ],
         );
@@ -148,7 +158,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             $request->on_behalf_suffix,
         ])));
 
-        return trim(strtolower($request->relationship_to_beneficiary->label()).($name ? ' '.$name : ''));
+        return trim(strtolower($request->relationship_to_beneficiary->label()) . ($name ? ' ' . $name : ''));
     }
 
     /** @return list<string> */
@@ -176,12 +186,26 @@ class GenerateAssistanceRequestIntakeSheetAction
             return $value->label();
         }
 
-        if (! is_string($value) || trim($value) === '') {
+        if (!is_string($value) || trim($value) === '') {
             return null;
         }
 
         return CivilStatus::tryFrom(strtolower(trim($value)))?->label()
             ?? Str::headline($value);
+    }
+
+    private function presentOccupation(mixed $value): ?string
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return trim($value);
+    }
+
+    private function presentIncome(mixed $value): ?float
+    {
+        return $value === null ? null : (float) $value;
     }
 
     /**

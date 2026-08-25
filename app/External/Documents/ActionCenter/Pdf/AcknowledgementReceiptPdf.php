@@ -20,7 +20,7 @@ class AcknowledgementReceiptPdf
             ])
             ->driver('dompdf')
             ->format(Format::A4)
-            ->margins(top: 12, right: 30, bottom: 12, left: 30, unit: 'mm')
+            ->margins(top: 8, right: 15, bottom: 8, left: 15, unit: 'mm')
             ->name($this->filename($data));
     }
 

@@ -10,7 +10,8 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
 {
     public function __construct(
         private readonly ConfigRepository $config,
-    ) {}
+    ) {
+    }
 
     public function for(
         ?string $municipalCode,
@@ -22,7 +23,7 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
         $municipality = $municipalCode === null
             ? []
             : $this->arrayValue($this->config->get(
-                'action_center_financial_documents.municipalities.'.$municipalCode,
+                'action_center_financial_documents.municipalities.' . $municipalCode,
                 [],
             ));
         $assistanceTypes = $this->arrayValue($municipality['assistance_types'] ?? []);
@@ -35,6 +36,7 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
         $values = array_replace_recursive($defaults, $municipality, $assistanceType);
 
         return new FinancialDocumentDefaults(
+            obligationRequestNumberPrefix: $this->stringValue($values, 'obligation_request.number_prefix'),
             obligationRequestResponsibilityCenter: $this->stringValue($values, 'obligation_request.responsibility_center'),
             obligationRequestAccountCode: $this->stringValue($values, 'obligation_request.account_code'),
             obligationRequestOffice: $this->stringValue($values, 'obligation_request.office'),

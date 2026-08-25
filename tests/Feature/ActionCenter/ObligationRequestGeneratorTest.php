@@ -100,6 +100,7 @@ it('builds trusted form data from the frozen request snapshot', function () {
         ->and($data->approvedAmount)->toBe(1000.0)
         ->and($data->suggestedParticulars)->toContain('Payment for Medical Assistance')
         ->and($data->suggestedParticulars)->toContain('Situation (AICS) CY 2026')
+        ->and($data->recommendedDefaults['number_prefix'])->toBe('200-2026-08-')
         ->and($data->recommendedDefaults['responsibility_center'])->toBe('7611')
         ->and($data->recommendedDefaults['account_code'])->toBe('5-02-99-080');
 });
@@ -124,12 +125,12 @@ it('rejects ineligible status and cross-municipality generation', function () {
     $pending = seedObligationRequestContext(status: 'pending');
     $action = app(GenerateObligationRequestAction::class);
 
-    expect(fn () => $action->formData($pending['request_id'], $pending['municipal_id']))
+    expect(fn() => $action->formData($pending['request_id'], $pending['municipal_id']))
         ->toThrow(DomainException::class);
 
     $approved = seedObligationRequestContext();
 
-    expect(fn () => $action->formData($approved['request_id'], (string) Str::ulid()))
+    expect(fn() => $action->formData($approved['request_id'], (string) Str::ulid()))
         ->toThrow(AuthorizationException::class);
 });
 
@@ -201,8 +202,8 @@ function seedObligationRequestContext(
     DB::table('municipalities')->insert([
         'id' => $municipalId,
         'name' => 'Gasan',
-        'slug' => 'gasan-4905-'.Str::lower(Str::random(4)),
-        'municipal_code' => 'GAS-'.Str::upper(Str::random(4)),
+        'slug' => 'gasan-4905-' . Str::lower(Str::random(4)),
+        'municipal_code' => 'GAS-' . Str::upper(Str::random(4)),
         'is_active' => true,
         'created_at' => $now,
         'updated_at' => $now,
@@ -223,7 +224,7 @@ function seedObligationRequestContext(
         'beneficiary_id' => (string) Str::ulid(),
         'household_id' => (string) Str::ulid(),
         'assistance_type_id' => $assistanceTypeId,
-        'transaction_number' => 'REQ-2026-'.Str::upper(Str::random(5)),
+        'transaction_number' => 'REQ-2026-' . Str::upper(Str::random(5)),
         'status' => $status,
         'amount_approved' => 1000,
         'metadata' => $metadata ? json_encode($metadata, JSON_THROW_ON_ERROR) : null,

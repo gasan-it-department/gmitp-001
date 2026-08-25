@@ -101,6 +101,8 @@ export default function CreateWalkInBeneficiary({
         data.sex.length > 0 &&
         data.birth_date.length > 0 &&
         data.civil_status.length > 0 &&
+        data.occupation.trim().length > 0 &&
+        data.monthly_income.trim().length > 0 &&
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
         !processing;
@@ -134,7 +136,8 @@ export default function CreateWalkInBeneficiary({
                         <div>
                             <h1 className="text-xl font-bold tracking-tight text-slate-900">Magrehistro ng Walk-in na Benepisyaryo</h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                I-encode ang taong walang online account. Siguruhing naghanap muna sa registry — dapat lamang gumawa ng bagong record kung walang nahanap na kaparehong tao.
+                                I-encode ang taong walang online account. Siguruhing naghanap muna sa registry — dapat lamang gumawa ng bagong record
+                                kung walang nahanap na kaparehong tao.
                             </p>
                         </div>
                     </div>
@@ -173,7 +176,8 @@ export default function CreateWalkInBeneficiary({
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<IdCard className="h-4 w-4 text-[#005088]" />} title="Mga Dokumento ng Pagkakakilanlan" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                I-upload ang ebidensya ng ID ng aplikante. Kinakailangan ang harap ng ID kapag ise-save ang walk-in na ito bilang verified.
+                                I-upload ang ebidensya ng ID ng aplikante. Kinakailangan ang harap ng ID kapag ise-save ang walk-in na ito bilang
+                                verified.
                             </p>
                             <div className="mt-6">
                                 <IdentityDocumentUploadSection
@@ -211,7 +215,8 @@ export default function CreateWalkInBeneficiary({
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
                             <SectionHeader icon={<Users className="h-4 w-4 text-[#005088]" />} title="Sambahayan" />
                             <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                                Ilista ang iba pang miyembro ng pamilya na kasama sa bahay ng aplikante. Ang aplikante ay awtomatikong itinuturing na puno ng sambahayan (head of household).
+                                Ilista ang iba pang miyembro ng pamilya na kasama sa bahay ng aplikante. Ang aplikante ay awtomatikong itinuturing na
+                                puno ng sambahayan (head of household).
                             </p>
                             <div className="mt-6">
                                 <HouseholdMembersSection

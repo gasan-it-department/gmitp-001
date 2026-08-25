@@ -38,6 +38,7 @@ export function CivilStatusEmploymentSection({ data, setData, errors, civilStatu
                     onChange={(e) => setData('occupation', e.target.value)}
                     placeholder='e.g. Farmer, Driver, "None"'
                     error={errors.occupation}
+                    required
                 />
             </div>
 
@@ -52,12 +53,13 @@ export function CivilStatusEmploymentSection({ data, setData, errors, civilStatu
                     onChange={(e) => setData('monthly_income', e.target.value)}
                     placeholder="0.00"
                     error={errors.monthly_income}
+                    required
                 />
             </div>
 
             <p className="text-xs leading-relaxed text-slate-500">
-                Enter <strong>0</strong> if you currently have no income, or write <strong>"None"</strong> as your occupation if you are
-                unemployed. This information is used to evaluate your eligibility for MSWD assistance programs.
+                Enter <strong>0</strong> if you currently have no income, or write <strong>"None"</strong> as your occupation if you are unemployed.
+                This information is used to evaluate your eligibility for MSWD assistance programs.
             </p>
         </div>
     );

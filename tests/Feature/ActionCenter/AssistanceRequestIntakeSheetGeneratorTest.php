@@ -38,6 +38,8 @@ beforeEach(function () {
         $table->ulid('municipal_id');
         $table->ulid('household_id');
         $table->string('beneficiary_number');
+        $table->string('occupation')->nullable();
+        $table->decimal('monthly_income', 10, 2)->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -141,12 +143,46 @@ it('prefills trusted snapshot values and medical assessment defaults', function 
         ->and($data->barangay)->toBe('Bachao Ilaya')
         ->and($data->assistanceType)->toBe('Medical Assistance')
         ->and($data->filingSubject)->toBe('self')
+        ->and($data->frozenEconomicValues)->toBe([
+                'source_of_income' => 'Fishing',
+                'monthly_income' => 3000.0,
+            ])
+        ->and($data->currentEconomicValues)->toBe([
+                'source_of_income' => 'Seaweed farming',
+                'monthly_income' => 4250.0,
+            ])
         ->and($data->recommendedDefaults)->toMatchArray([
-            'problem_presented' => [AssistanceIntakeProblem::SeekingMedicalAssistance->value],
-            'source_of_income' => 'Fishing',
-            'monthly_income' => 3000.0,
-            'recommendation' => 'Medical Assistance',
+                'problem_presented' => [AssistanceIntakeProblem::SeekingMedicalAssistance->value],
+                'source_of_income' => 'Fishing',
+                'monthly_income' => 3000.0,
+                'recommendation' => 'Medical Assistance',
+            ]);
+});
+
+it('falls back to current profile economics when the frozen request values are missing', function () {
+    $context = seedAssistanceRequestIntakeSheetContext();
+    DB::table('ac_assistance_request_snapshots')
+        ->where('assistance_request_id', $context['request_id'])
+        ->update([
+            'occupation' => null,
+            'monthly_income' => null,
         ]);
+
+    $data = app(GenerateAssistanceRequestIntakeSheetAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    );
+
+    expect($data->frozenEconomicValues)->toBe([
+        'source_of_income' => null,
+        'monthly_income' => null,
+    ])->and($data->currentEconomicValues)->toBe([
+                'source_of_income' => 'Seaweed farming',
+                'monthly_income' => 4250.0,
+            ])->and($data->recommendedDefaults)->toMatchArray([
+                'source_of_income' => 'Seaweed farming',
+                'monthly_income' => 4250.0,
+            ]);
 });
 
 it('prefills burial and on-behalf context without trusting submitted identity', function () {
@@ -192,7 +228,7 @@ it('validates assessment inputs and rejects unsupported problem values', functio
 it('rejects an assistance request from another municipality', function () {
     $context = seedAssistanceRequestIntakeSheetContext();
 
-    expect(fn () => app(GenerateAssistanceRequestIntakeSheetAction::class)->formData(
+    expect(fn() => app(GenerateAssistanceRequestIntakeSheetAction::class)->formData(
         $context['request_id'],
         (string) Str::ulid(),
     ))->toThrow(AuthorizationException::class);
@@ -232,10 +268,11 @@ it('uses edited assessment values without writing records and returns a dompdf d
         'PHP 3,200.50',
         'Medical Assistance after assessment and completion of supporting documents',
         'Current Household Composition',
-        'Fishing',
-    )->not->toContain('@vite', '<script', 'http://', 'https://', 'display: flex', 'display: grid', 'Roster Member ID')
+        'No other active household members on record.',
+        'Total Monthly Household Income',
+    )->not->toContain('@vite', '<script', 'http://', 'https://', 'display: flex', 'display: grid', 'Roster Member ID', 'Fishing', 'Current Verified Household Income')
         ->and(substr_count($html, 'Seasonal farming'))->toBe(2)
-        ->and(substr_count($html, 'PHP 3,200.50'))->toBe(2)
+        ->and(substr_count($html, 'PHP 3,200.50'))->toBe(3)
         ->and(substr_count($html, '>X</span>'))->toBe(2)
         ->and($response->getStatusCode())->toBe(200)
         ->and($response->headers->get('content-type'))->toBe('application/pdf')
@@ -244,6 +281,54 @@ it('uses edited assessment values without writing records and returns a dompdf d
         ->and(DB::table('media')->count())->toBe($beforeMedia)
         ->and($afterSnapshot)->toEqual($beforeSnapshot)
         ->and($afterMember)->toEqual($beforeMember);
+});
+
+it('excludes the claimant roster row while retaining a different household head', function () {
+    $context = seedAssistanceRequestIntakeSheetContext();
+
+    DB::table('ac_household_members')
+        ->where('beneficiary_id', DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('beneficiary_id'))
+        ->update([
+            'relationship' => 'child',
+            'is_verified_dependent' => true,
+        ]);
+
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(),
+        'household_id' => DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('household_id'),
+        'beneficiary_id' => null,
+        'first_name' => 'Roberto',
+        'last_name' => 'Mawac',
+        'birth_date' => '1960-01-01',
+        'educational_attainment' => 'hs_grad',
+        'sex' => 'male',
+        'relationship' => 'head',
+        'occupation' => 'Farmer',
+        'monthly_income' => 2500,
+        'is_active' => true,
+        'is_verified_dependent' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $data = app(GenerateAssistanceRequestIntakeSheetAction::class)->execute(
+        new GenerateAssistanceRequestIntakeSheetDto(
+            assistanceRequestId: $context['request_id'],
+            municipalId: $context['municipal_id'],
+            problemPresented: ['sick'],
+            sourceOfIncome: 'Fishing',
+            monthlyIncome: 3000,
+            recommendation: 'Medical Assistance',
+        ),
+        'Test Admin',
+    );
+    $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
+    $sectionFive = Str::between($html, 'V. Current Household Composition', '<table class="privacy-table">');
+
+    expect($sectionFive)->toContain('1 Active Member(s)', 'Roberto Mawac', 'Farmer')
+        ->not->toContain('April Joy Mawac', 'Fishing')
+        ->and($html)->toContain('Total Monthly Household Income', 'PHP 5,500.00')
+        ->not->toContain('Current Verified Household Income', '> Household Income<');
 });
 
 it('omits the internal roster member id from an on-behalf filing subject', function () {
@@ -290,8 +375,8 @@ function seedAssistanceRequestIntakeSheetContext(
     DB::table('municipalities')->insert([
         'id' => $municipalId,
         'name' => 'Gasan',
-        'slug' => 'gasan-'.Str::lower(Str::random(5)),
-        'municipal_code' => 'GAS-'.Str::upper(Str::random(5)),
+        'slug' => 'gasan-' . Str::lower(Str::random(5)),
+        'municipal_code' => 'GAS-' . Str::upper(Str::random(5)),
         'is_active' => true,
         'created_at' => $now,
         'updated_at' => $now,
@@ -302,6 +387,8 @@ function seedAssistanceRequestIntakeSheetContext(
         'municipal_id' => $municipalId,
         'household_id' => $householdId,
         'beneficiary_number' => 'GAS-000001',
+        'occupation' => 'Seaweed farming',
+        'monthly_income' => 4250,
         'created_at' => $now,
         'updated_at' => $now,
     ]);

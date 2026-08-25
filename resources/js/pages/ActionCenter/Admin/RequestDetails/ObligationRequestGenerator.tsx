@@ -20,6 +20,10 @@ interface ObligationRequestContext {
     approved_amount: number;
     suggested_particulars: string;
     recommended_defaults: {
+<<<<<<< HEAD
+=======
+        number_prefix: string;
+>>>>>>> harvey
         responsibility_center: string;
         account_code: string;
         office: string;
@@ -64,7 +68,11 @@ const currency = new Intl.NumberFormat('en-PH', {
 export default function ObligationRequestGenerator({ obligationRequest }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [data, setData] = useState<FormData>({
+<<<<<<< HEAD
         obligation_request_number: '',
+=======
+        obligation_request_number: obligationRequest.recommended_defaults.number_prefix,
+>>>>>>> harvey
         responsibility_center: obligationRequest.recommended_defaults.responsibility_center,
         account_code: obligationRequest.recommended_defaults.account_code,
         particulars: obligationRequest.suggested_particulars,

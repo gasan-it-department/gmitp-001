@@ -13,7 +13,7 @@ function financialDocumentDefaultsProvider(array $config): ConfiguredFinancialDo
 it('returns safe blank defaults for an unknown municipality', function () {
     $provider = financialDocumentDefaultsProvider([
         'defaults' => [
-            'obligation_request' => ['responsibility_center' => ''],
+            'obligation_request' => ['number_prefix' => '', 'responsibility_center' => ''],
             'disbursement_voucher' => ['responsibility_center_code' => ''],
             'certificate_of_eligibility' => ['certified_by_position' => ''],
         ],
@@ -22,19 +22,21 @@ it('returns safe blank defaults for an unknown municipality', function () {
 
     $defaults = $provider->for('UNKNOWN');
 
-    expect($defaults->obligationRequestResponsibilityCenter)->toBe('')
+    expect($defaults->obligationRequestNumberPrefix)->toBe('')
+        ->and($defaults->obligationRequestResponsibilityCenter)->toBe('')
         ->and($defaults->disbursementVoucherResponsibilityCenterCode)->toBe('')
         ->and($defaults->certificateOfEligibilityCertifiedByPosition)->toBe('');
 });
 
 it('returns the configured Gasan recommendations', function () {
     $provider = financialDocumentDefaultsProvider(
-        require dirname(__DIR__, 3).'/config/action_center_financial_documents.php',
+        require dirname(__DIR__, 3) . '/config/action_center_financial_documents.php',
     );
 
     $defaults = $provider->for('174003000', 'medical-assistance');
 
-    expect($defaults->obligationRequestResponsibilityCenter)->toBe('7611')
+    expect($defaults->obligationRequestNumberPrefix)->toBe('200-2026-08-')
+        ->and($defaults->obligationRequestResponsibilityCenter)->toBe('7611')
         ->and($defaults->obligationRequestAccountCode)->toBe('5-02-99-080')
         ->and($defaults->disbursementVoucherResponsibilityCenterCode)->toBe('7611')
         ->and($defaults->certificateOfEligibilityCertifiedByPosition)->toBe('Social Welfare Officer III');

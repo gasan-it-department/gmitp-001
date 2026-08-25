@@ -50,8 +50,8 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
 
             // ── Civil status / employment / income ───────────────────────────
             'civil_status' => ['required', Rule::enum(CivilStatus::class)],
-            'occupation' => ['nullable', 'string', 'max:120'],
-            'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'occupation' => ['required', 'string', 'max:120'],
+            'monthly_income' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
 
             // ── Home address ─────────────────────────────────────────────────
             'barangay' => ['required', 'string', 'max:100'],
@@ -66,12 +66,12 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'verify_now' => ['nullable', 'boolean'],
 
             // ── Identity evidence. Required only when immediately verifying.
-            'identity_id_front' => [Rule::requiredIf(fn () => $this->boolean('verify_now')), 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'identity_id_front' => [Rule::requiredIf(fn() => $this->boolean('verify_now')), 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'identity_id_back' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'contact_phone' => ['nullable', 'string', 'max:30', $this->validPhoneNumber()],
 
             // ── Household composition (optional) ─────────────────────────────
-            'household_members' => ['nullable', 'array', 'max:'.StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
+            'household_members' => ['nullable', 'array', 'max:' . StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
             'household_members.*.first_name' => ['required_with:household_members.*', 'string', 'max:100'],
             'household_members.*.last_name' => ['required_with:household_members.*', 'string', 'max:100'],
             'household_members.*.middle_name' => ['nullable', 'string', 'max:100'],
@@ -101,6 +101,8 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             'religion_id.ulid' => 'Invalid religion selection.',
             'religion_id.exists' => 'The selected religion is no longer available.',
             'civil_status.required' => 'Please select the applicant\'s civil status.',
+            'occupation.required' => 'Describe the applicant\'s occupation. Enter "None" or "Unemployed" if applicable.',
+            'monthly_income.required' => 'Enter the applicant\'s monthly income. Enter 0 if none.',
             'monthly_income.min' => 'Monthly income cannot be negative.',
             'terms_consent.accepted' => 'Confirm the applicant gave consent and that you checked the registry for an existing record.',
             'identity_id_front.required' => 'Upload the front of the applicant\'s valid ID before saving as verified.',

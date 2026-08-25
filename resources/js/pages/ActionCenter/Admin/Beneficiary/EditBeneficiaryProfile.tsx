@@ -102,6 +102,8 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
         data.sex.length > 0 &&
         data.birth_date.length > 0 &&
         data.civil_status.length > 0 &&
+        data.occupation.trim().length > 0 &&
+        data.monthly_income.trim().length > 0 &&
         !processing;
 
     return (
@@ -123,12 +125,7 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
                 <div className="container mx-auto mt-8 max-w-3xl px-6">
                     {/* Header */}
                     <div className="mb-8 flex items-start gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <AvatarUploader
-                            beneficiaryId={b.id}
-                            avatarUrl={b.avatar_url}
-                            fullName={b.full_name}
-                            sizeClass="h-14 w-14"
-                        />
+                        <AvatarUploader beneficiaryId={b.id} avatarUrl={b.avatar_url} fullName={b.full_name} sizeClass="h-14 w-14" />
                         <div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <h1 className="text-xl font-bold tracking-tight text-slate-900">Edit Beneficiary Profile</h1>
@@ -140,8 +137,8 @@ export default function EditBeneficiaryProfile({ beneficiary, religions, educati
                                 )}
                             </div>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                Correct a mistake on <span className="font-semibold text-slate-700 capitalize">{b.full_name}</span>&rsquo;s
-                                record. Changes are logged and the household head entry is updated to match.
+                                Correct a mistake on <span className="font-semibold text-slate-700 capitalize">{b.full_name}</span>&rsquo;s record.
+                                Changes are logged and the household head entry is updated to match.
                             </p>
                         </div>
                     </div>

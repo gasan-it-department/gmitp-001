@@ -118,18 +118,22 @@ it('uses the actual release date only after physical release', function () {
 
     expect($data->submittedAt->format('Y-m-d'))->toBe('2026-08-14')
         ->and($data->providedAt?->format('Y-m-d'))->toBe('2026-08-17');
+
+    $html = view('documents.action_center.acknowledgement_receipt', compact('data'))->render();
+
+    expect(substr_count($html, 'August 17, 2026'))->toBe(2);
 });
 
 it('rejects ineligible, incomplete, and cross-municipality requests', function () {
     $action = app(GenerateAcknowledgementReceiptAction::class);
     $pending = seedAcknowledgementReceiptContext(status: 'pending');
 
-    expect(fn () => $action->formData($pending['request_id'], $pending['municipal_id']))
+    expect(fn() => $action->formData($pending['request_id'], $pending['municipal_id']))
         ->toThrow(DomainException::class);
 
     $approved = seedAcknowledgementReceiptContext();
 
-    expect(fn () => $action->formData($approved['request_id'], (string) Str::ulid()))
+    expect(fn() => $action->formData($approved['request_id'], (string) Str::ulid()))
         ->toThrow(AuthorizationException::class);
 
     $missingSnapshot = seedAcknowledgementReceiptContext();
@@ -137,12 +141,12 @@ it('rejects ineligible, incomplete, and cross-municipality requests', function (
         ->where('assistance_request_id', $missingSnapshot['request_id'])
         ->delete();
 
-    expect(fn () => $action->formData($missingSnapshot['request_id'], $missingSnapshot['municipal_id']))
+    expect(fn() => $action->formData($missingSnapshot['request_id'], $missingSnapshot['municipal_id']))
         ->toThrow(DomainException::class);
 
     $missingAmount = seedAcknowledgementReceiptContext(amountApproved: null);
 
-    expect(fn () => $action->formData($missingAmount['request_id'], $missingAmount['municipal_id']))
+    expect(fn() => $action->formData($missingAmount['request_id'], $missingAmount['municipal_id']))
         ->toThrow(DomainException::class);
 });
 
@@ -170,18 +174,28 @@ it('renders the official dompdf receipt without description or browser assets', 
         'Received by:',
         'Name and Signature of Beneficiary',
     )->not->toContain(
-        'Medical Assistance Assistance',
-        'Released by:',
-        'Draft for signature',
-        'Reference pending',
-        'This request was filed on behalf of',
-        'Nais ko po makahinge ng tulong medical financial',
-        'System Record',
-        '@vite',
-        '<script',
-        'http://',
-        'https://',
-    )->and($response->getStatusCode())->toBe(200)
+            'Medical Assistance Assistance',
+            'Released by:',
+            'Draft for signature',
+            'Reference pending',
+            'This request was filed on behalf of',
+            'Nais ko po makahinge ng tulong medical financial',
+            'System Record',
+            '@vite',
+            '<script',
+            'http://',
+            'https://',
+        )->and(substr_count($html, 'class="receipt-section"'))->toBe(2)
+        ->and(substr_count($html, 'ACKNOWLEDGEMENT RECEIPT'))->toBe(2)
+        ->and(substr_count($html, 'August 14, 2026'))->toBe(2)
+        ->and(substr_count($html, 'Share Mae Rejano'))->toBe(4)
+        ->and(substr_count($html, 'Php 1,000.00'))->toBe(2)
+        ->and(substr_count($html, 'Medical Assistance'))->toBe(4)
+        ->and(substr_count($html, 'Received by:'))->toBe(2)
+        ->and(substr_count($html, 'Name and Signature of Beneficiary'))->toBe(2)
+        ->and(substr_count($html, 'class="cut-line"'))->toBe(1)
+        ->and(substr_count($html, 'class="line provided-line"'))->toBe(2)
+        ->and($response->getStatusCode())->toBe(200)
         ->and($response->headers->get('content-type'))->toBe('application/pdf')
         ->and($response->getContent())->toStartWith('%PDF');
 });
@@ -215,8 +229,8 @@ function seedAcknowledgementReceiptContext(
     DB::table('municipalities')->insert([
         'id' => $municipalId,
         'name' => 'Gasan',
-        'slug' => 'gasan-4905-'.Str::lower(Str::random(4)),
-        'municipal_code' => 'GAS-'.Str::upper(Str::random(4)),
+        'slug' => 'gasan-4905-' . Str::lower(Str::random(4)),
+        'municipal_code' => 'GAS-' . Str::upper(Str::random(4)),
         'is_active' => true,
         'created_at' => $submittedAt,
         'updated_at' => $submittedAt,
@@ -237,7 +251,7 @@ function seedAcknowledgementReceiptContext(
         'beneficiary_id' => (string) Str::ulid(),
         'household_id' => (string) Str::ulid(),
         'assistance_type_id' => $assistanceTypeId,
-        'transaction_number' => 'REQ-2026-'.Str::upper(Str::random(5)),
+        'transaction_number' => 'REQ-2026-' . Str::upper(Str::random(5)),
         'status' => $status,
         'amount_approved' => $amountApproved,
         'metadata' => $metadata ? json_encode($metadata, JSON_THROW_ON_ERROR) : null,

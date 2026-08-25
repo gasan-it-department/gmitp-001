@@ -21,7 +21,7 @@ readonly class ResubmitBeneficiaryProfileCorrectionDto
         public ?string $educationalAttainment,
 
         public string $civilStatus,
-        public ?string $occupation,
+        public string $occupation,
         public float $monthlyIncome,
         public ?string $contactPhone,
 
@@ -34,8 +34,7 @@ readonly class ResubmitBeneficiaryProfileCorrectionDto
 
         public ?UploadedFile $identityIdFront = null,
         public ?UploadedFile $identityIdBack = null,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(
         array $data,
@@ -56,19 +55,19 @@ readonly class ResubmitBeneficiaryProfileCorrectionDto
             municipalId: $municipalId,
             firstName: mb_strtoupper($data['first_name']),
             lastName: mb_strtoupper($data['last_name']),
-            middleName: !empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
-            suffix: !empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
+            middleName: ! empty($data['middle_name']) ? mb_strtoupper($data['middle_name']) : null,
+            suffix: ! empty($data['suffix']) ? mb_strtoupper($data['suffix']) : null,
             sex: $data['sex'],
             birthDate: $data['birth_date'],
             religionId: $data['religion_id'] ?? null,
-            educationalAttainment: !empty($data['educational_attainment']) ? $data['educational_attainment'] : null,
+            educationalAttainment: ! empty($data['educational_attainment']) ? $data['educational_attainment'] : null,
             civilStatus: $data['civil_status'],
-            occupation: !empty($data['occupation']) ? mb_strtoupper($data['occupation']) : null,
-            monthlyIncome: isset($data['monthly_income']) ? (float) $data['monthly_income'] : 0.0,
+            occupation: mb_strtoupper($data['occupation']),
+            monthlyIncome: (float) $data['monthly_income'],
             contactPhone: $contactPhone,
             barangay: mb_strtoupper($data['barangay']),
             barangayCode: $data['barangay_code'] ?? null,
-            street: !empty($data['street']) ? mb_strtoupper($data['street']) : null,
+            street: ! empty($data['street']) ? mb_strtoupper($data['street']) : null,
             householdMembers: $data['household_members'] ?? [],
             identityIdFront: $identityIdFront,
             identityIdBack: $identityIdBack,

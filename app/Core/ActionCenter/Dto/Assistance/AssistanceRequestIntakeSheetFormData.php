@@ -15,9 +15,14 @@ readonly class AssistanceRequestIntakeSheetFormData
         public string $filingSubject,
         /** @var array<int, array{value: string, label: string}> */
         public array $problemOptions,
+        /** @var array{source_of_income: ?string, monthly_income: ?float} */
+        public array $frozenEconomicValues,
+        /** @var array{source_of_income: ?string, monthly_income: ?float} */
+        public array $currentEconomicValues,
         /** @var array{problem_presented: list<string>, source_of_income: ?string, monthly_income: ?float, recommendation: string} */
         public array $recommendedDefaults,
-    ) {}
+    ) {
+    }
 
     /** @return array<string, mixed> */
     public function toArray(): array
@@ -32,6 +37,8 @@ readonly class AssistanceRequestIntakeSheetFormData
             'assistance_type' => $this->assistanceType,
             'filing_subject' => $this->filingSubject,
             'problem_options' => $this->problemOptions,
+            'frozen_economic_values' => $this->frozenEconomicValues,
+            'current_economic_values' => $this->currentEconomicValues,
             'recommended_defaults' => $this->recommendedDefaults,
         ];
     }

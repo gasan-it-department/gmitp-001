@@ -8,32 +8,32 @@
         * { box-sizing: border-box; }
         body { margin: 0; color: #111827; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; line-height: 1.3; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        .page-one { page-break-after: always; }
+        .page-one { page-break-after: always; font-size: 9pt; }
         .document-header { border-bottom: 1.5pt solid #111827; margin-bottom: 4mm; padding-bottom: 2.5mm; }
         .header-table td { vertical-align: middle; }
         .logo-cell { width: 24mm; text-align: center; }
         .logo { width: 19mm; height: 19mm; object-fit: contain; }
         .heading-cell { text-align: center; }
-        .heading-kicker { font-size: 7.5pt; font-weight: bold; text-transform: uppercase; }
-        .heading-office { margin-top: 1mm; font-size: 8.5pt; font-weight: bold; text-transform: uppercase; }
+        .heading-kicker { font-size: 8pt; font-weight: bold; text-transform: uppercase; }
+        .heading-office { margin-top: 1mm; font-size: 9pt; font-weight: bold; text-transform: uppercase; }
         .heading-title { margin-top: 1.5mm; font-size: 15pt; font-weight: bold; text-transform: uppercase; }
-        .meta-cell { width: 48mm; text-align: right; vertical-align: top !important; font-size: 7.5pt; }
-        .meta-label, .field-label { color: #475569; font-size: 6.6pt; font-weight: bold; text-transform: uppercase; }
-        .transaction { margin-top: 1mm; font-family: DejaVu Sans Mono, monospace; font-size: 9pt; font-weight: bold; }
+        .meta-cell { width: 48mm; text-align: right; vertical-align: top !important; font-size: 8pt; }
+        .meta-label, .field-label { color: #475569; font-size: 7.2pt; font-weight: bold; text-transform: uppercase; }
+        .transaction { margin-top: 1mm; font-family: DejaVu Sans Mono, monospace; font-size: 9.5pt; font-weight: bold; }
         .section { margin-bottom: 3.2mm; page-break-inside: avoid; }
-        .section-title { border: 0.8pt solid #94a3b8; background: #e2e8f0; padding: 1.4mm 2mm; font-size: 8pt; font-weight: bold; text-transform: uppercase; }
+        .section-title { border: 0.8pt solid #94a3b8; background: #e2e8f0; padding: 1.4mm 2mm; font-size: 8.6pt; font-weight: bold; text-transform: uppercase; }
         .field-table td { border-right: 0.6pt solid #cbd5e1; border-bottom: 0.6pt solid #cbd5e1; padding: 1.4mm 2mm; vertical-align: top; }
         .field-table td:first-child { border-left: 0.6pt solid #cbd5e1; }
-        .field-value { margin-top: 0.5mm; min-height: 3.5mm; font-size: 8pt; font-weight: 600; word-wrap: break-word; }
+        .field-value { margin-top: 0.5mm; min-height: 3.5mm; font-size: 8.8pt; font-weight: 600; word-wrap: break-word; }
         .statement-box { border: 0.6pt solid #cbd5e1; padding: 1.8mm 2mm; }
         .statement-value { margin-top: 0.7mm; min-height: 4mm; white-space: pre-wrap; }
         .household-table th, .household-table td { border: 0.6pt solid #94a3b8; padding: 1.1mm 1.3mm; vertical-align: middle; word-wrap: break-word; }
-        .household-table th { background: #e2e8f0; font-size: 6.3pt; text-align: left; text-transform: uppercase; }
-        .household-table td { font-size: 7.1pt; }
+        .household-table th { background: #e2e8f0; font-size: 6.9pt; text-align: left; text-transform: uppercase; }
+        .household-table td { font-size: 7.8pt; }
         .number-cell { text-align: right; }
         .center-cell { text-align: center; }
         .privacy-table { margin-top: 4mm; border-top: 0.6pt solid #94a3b8; }
-        .privacy-table td { width: 50%; padding-top: 1.5mm; color: #475569; font-size: 6.5pt; vertical-align: top; }
+        .privacy-table td { width: 50%; padding-top: 1.5mm; color: #475569; font-size: 7pt; vertical-align: top; }
         .privacy-table td:last-child { text-align: right; }
         .assessment-page { font-family: "Times New Roman", Times, serif; font-size: 11pt; line-height: 1.65; }
         .assessment-section { margin-top: 24mm; }
@@ -72,9 +72,11 @@
         $education = \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom((string) $snapshot?->educational_attainment)?->label() ?? $human($snapshot?->educational_attainment);
         $selectedProblems = array_fill_keys($data->problemPresented, true);
         $monthlyIncome = 'PHP '.number_format($data->monthlyIncome, 2);
-        $verifiedHouseholdIncome = (float) $data->householdMembers
-            ->filter(fn ($member) => $member->relationship === 'head' || $member->is_verified_dependent)
-            ->sum(fn ($member) => (float) $member->monthly_income);
+        $compositionMembers = $data->householdMembers
+            ->reject(fn ($member) => (string) $member->beneficiary_id === (string) $request->beneficiary_id)
+            ->values();
+        $totalMonthlyHouseholdIncome = $data->monthlyIncome
+            + (float) $compositionMembers->sum(fn ($member) => (float) $member->monthly_income);
     @endphp
 
     <div class="page-one">
@@ -163,7 +165,7 @@
         </section>
 
         <section class="section">
-            <div class="section-title">V. Current Household Composition - {{ $data->householdMembers->count() }} Active Member(s)</div>
+            <div class="section-title">V. Current Household Composition - {{ $compositionMembers->count() }} Active Member(s)</div>
             <table class="household-table">
                 <thead>
                     <tr>
@@ -171,7 +173,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($data->householdMembers as $member)
+                    @forelse($compositionMembers as $member)
                         @php
                             $memberName = trim(implode(' ', array_filter([$member->first_name, $member->middle_name, $member->last_name, $member->suffix])));
                             $memberEducation = $member->educational_attainment?->label() ?? '---';
@@ -180,14 +182,13 @@
                             <td>{{ $memberName ?: '---' }}</td><td>{{ $human((string) $member->relationship) ?: '---' }}</td><td class="center-cell">{{ $member->birth_date?->age ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ number_format((float) $member->monthly_income, 2) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="center-cell">No active household members on record.</td></tr>
+                        <tr><td colspan="7" class="center-cell">No other active household members on record.</td></tr>
                     @endforelse
                 </tbody>
             </table>
             <table class="field-table">
                 <tr>
-                    <td><div class="field-label">Frozen Household Income</div><div class="field-value">{{ $formatMoney($snapshot?->household_total_income) }}</div></td>
-                    <td><div class="field-label">Current Verified Household Income</div><div class="field-value">{{ $formatMoney($verifiedHouseholdIncome) }}</div></td>
+                    <td><div class="field-label">Total Monthly Household Income</div><div class="field-value">{{ $formatMoney($totalMonthlyHouseholdIncome) }}</div></td>
                 </tr>
             </table>
         </section>
