@@ -71,7 +71,7 @@
         $filingSubject = $relationship ? trim(strtolower($relationship).($onBehalfName !== '' ? ' '.$onBehalfName : '')) : 'self';
         $education = \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom((string) $snapshot?->educational_attainment)?->label() ?? $human($snapshot?->educational_attainment);
         $selectedProblems = array_fill_keys($data->problemPresented, true);
-        $monthlyIncome = $data->monthlyIncome === null ? '' : 'PHP '.number_format($data->monthlyIncome, 2);
+        $monthlyIncome = 'PHP '.number_format($data->monthlyIncome, 2);
         $verifiedHouseholdIncome = (float) $data->householdMembers
             ->filter(fn ($member) => $member->relationship === 'head' || $member->is_verified_dependent)
             ->sum(fn ($member) => (float) $member->monthly_income);
@@ -131,8 +131,8 @@
                 </tr>
                 <tr>
                     <td colspan="2"><div class="field-label">Educational Attainment</div><div class="field-value">{{ $education ?: '---' }}</div></td>
-                    <td><div class="field-label">Occupation</div><div class="field-value">{{ $snapshot?->occupation ?: '---' }}</div></td>
-                    <td><div class="field-label">Monthly Income</div><div class="field-value">{{ $formatMoney($snapshot?->monthly_income) }}</div></td>
+                    <td><div class="field-label">Occupation</div><div class="field-value">{{ $data->sourceOfIncome }}</div></td>
+                    <td><div class="field-label">Monthly Income</div><div class="field-value">{{ $formatMoney($data->monthlyIncome) }}</div></td>
                 </tr>
             </table>
         </section>
@@ -153,9 +153,8 @@
             @if($relationship)
                 <table class="field-table">
                     <tr>
-                        <td><div class="field-label">Relationship</div><div class="field-value">{{ $relationship }}</div></td>
-                        <td colspan="2"><div class="field-label">Subject Name</div><div class="field-value">{{ $onBehalfName ?: '---' }}</div></td>
-                        <td><div class="field-label">Roster Member ID</div><div class="field-value">{{ $request->on_behalf_household_member_id ?? 'Not linked' }}</div></td>
+                        <td style="width: 30%;"><div class="field-label">Relationship</div><div class="field-value">{{ $relationship }}</div></td>
+                        <td style="width: 70%;"><div class="field-label">Subject Name</div><div class="field-value">{{ $onBehalfName ?: '---' }}</div></td>
                     </tr>
                 </table>
             @else
