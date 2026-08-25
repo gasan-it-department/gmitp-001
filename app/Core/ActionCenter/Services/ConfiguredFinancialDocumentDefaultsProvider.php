@@ -35,6 +35,7 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
         $values = array_replace_recursive($defaults, $municipality, $assistanceType);
 
         return new FinancialDocumentDefaults(
+            obligationRequestNumberPrefix: $this->stringValue($values, 'obligation_request.number_prefix'),
             obligationRequestResponsibilityCenter: $this->stringValue($values, 'obligation_request.responsibility_center'),
             obligationRequestAccountCode: $this->stringValue($values, 'obligation_request.account_code'),
             obligationRequestOffice: $this->stringValue($values, 'obligation_request.office'),

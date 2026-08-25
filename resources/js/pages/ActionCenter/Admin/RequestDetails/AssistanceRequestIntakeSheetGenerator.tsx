@@ -9,12 +9,17 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import axios, { AxiosError } from 'axios';
-import { AlertCircle, ArrowLeft, ClipboardCheck, FileDown, Info, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ClipboardCheck, FileDown, History, Info, Loader2, TriangleAlert, UserRound } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
 
 interface ProblemOption {
     value: string;
     label: string;
+}
+
+interface EconomicValues {
+    source_of_income: string | null;
+    monthly_income: number | null;
 }
 
 interface IntakeSheetContext {
@@ -27,6 +32,8 @@ interface IntakeSheetContext {
     assistance_type: string;
     filing_subject: string;
     problem_options: ProblemOption[];
+    frozen_economic_values: EconomicValues;
+    current_economic_values: EconomicValues;
     recommended_defaults: {
         problem_presented: string[];
         source_of_income: string | null;
@@ -53,6 +60,20 @@ interface ErrorPayload {
     errors?: Record<string, string[] | string>;
 }
 
+const formatIncome = (value: number | null) =>
+    value === null
+        ? 'Not recorded'
+        : new Intl.NumberFormat('en-PH', {
+              style: 'currency',
+              currency: 'PHP',
+              minimumFractionDigits: 2,
+          }).format(value);
+
+const hasCompleteEconomicValues = (values: EconomicValues) =>
+    typeof values.source_of_income === 'string' && values.source_of_income.trim() !== '' && values.monthly_income !== null;
+
+const normalizedOccupation = (value: string | null) => value?.trim().toLocaleLowerCase() ?? null;
+
 export default function AssistanceRequestIntakeSheetGenerator({ assistanceRequestIntakeSheet }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [data, setData] = useState<FormData>({
@@ -67,6 +88,11 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
     const [errors, setErrors] = useState<FieldErrors>({});
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+    const frozenEconomicValues = assistanceRequestIntakeSheet.frozen_economic_values;
+    const currentEconomicValues = assistanceRequestIntakeSheet.current_economic_values;
+    const economicValuesDiffer =
+        normalizedOccupation(frozenEconomicValues.source_of_income) !== normalizedOccupation(currentEconomicValues.source_of_income) ||
+        frozenEconomicValues.monthly_income !== currentEconomicValues.monthly_income;
 
     const detailUrl = ShowAssistanceRequestProfileController.url({
         municipality: currentMunicipality.slug,
@@ -86,6 +112,19 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                 : current.problem_presented.filter((problem) => problem !== value),
         }));
         setErrors((current) => ({ ...current, problem_presented: undefined }));
+    };
+
+    const applyEconomicValues = (values: EconomicValues) => {
+        setData((current) => ({
+            ...current,
+            source_of_income: values.source_of_income ?? '',
+            monthly_income: values.monthly_income === null ? '' : String(values.monthly_income),
+        }));
+        setErrors((current) => ({
+            ...current,
+            source_of_income: undefined,
+            monthly_income: undefined,
+        }));
     };
 
     const findingsPreview = useMemo(() => {
@@ -200,8 +239,8 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                     <div className="mb-6 flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                         <Info className="mt-0.5 h-5 w-5 shrink-0" />
                         <p>
-                            Occupation and monthly income are required and will appear in both Beneficiary Details and Findings and Evaluation.
-                            These document values are not saved to the beneficiary profile or assistance request.
+                            Occupation and monthly income are required and will appear in both Beneficiary Details and Findings and Evaluation. These
+                            document values are not saved to the beneficiary profile or assistance request.
                         </p>
                     </div>
 
@@ -233,6 +272,86 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                                 <dd className="mt-1 text-sm text-slate-800">{assistanceRequestIntakeSheet.filing_subject}</dd>
                             </div>
                         </dl>
+                    </section>
+
+                    <section className="mb-6 overflow-hidden rounded-md border border-slate-200 bg-white">
+                        <div className="p-4 sm:p-6">
+                            <h2 className="text-sm font-semibold text-slate-900">Occupation and income comparison</h2>
+                            <p className="mt-1 text-sm text-slate-500">
+                                The request snapshot remains unchanged. Select a complete set below or edit the document values before printing.
+                            </p>
+                        </div>
+
+                        {economicValuesDiffer && (
+                            <div className="flex gap-3 border-y border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:px-6">
+                                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                                <p>The saved beneficiary profile is different from the information frozen when this request was submitted.</p>
+                            </div>
+                        )}
+
+                        <div className="grid divide-y divide-slate-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="p-4 sm:p-6">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                    <History className="h-4 w-4 text-slate-500" />
+                                    Request snapshot
+                                </div>
+                                <p className="mt-1 text-xs text-slate-500">Frozen when the assistance request was submitted</p>
+                                <dl className="mt-4 space-y-3">
+                                    <div>
+                                        <dt className="text-xs font-medium text-slate-500">Occupation / source of income</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-slate-900">
+                                            {frozenEconomicValues.source_of_income ?? 'Not recorded'}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs font-medium text-slate-500">Monthly income</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-slate-900">
+                                            {formatIncome(frozenEconomicValues.monthly_income)}
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={!hasCompleteEconomicValues(frozenEconomicValues)}
+                                    onClick={() => applyEconomicValues(frozenEconomicValues)}
+                                    className="mt-4 min-h-10 w-full"
+                                >
+                                    Use request snapshot
+                                </Button>
+                            </div>
+
+                            <div className="p-4 sm:p-6">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                                    <UserRound className="h-4 w-4 text-slate-500" />
+                                    Current beneficiary profile
+                                </div>
+                                <p className="mt-1 text-xs text-slate-500">Latest values currently saved in the beneficiary record</p>
+                                <dl className="mt-4 space-y-3">
+                                    <div>
+                                        <dt className="text-xs font-medium text-slate-500">Occupation / source of income</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-slate-900">
+                                            {currentEconomicValues.source_of_income ?? 'Not recorded'}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs font-medium text-slate-500">Monthly income</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-slate-900">
+                                            {formatIncome(currentEconomicValues.monthly_income)}
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={!hasCompleteEconomicValues(currentEconomicValues)}
+                                    onClick={() => applyEconomicValues(currentEconomicValues)}
+                                    className="mt-4 min-h-10 w-full"
+                                >
+                                    Use current profile
+                                </Button>
+                            </div>
+                        </div>
                     </section>
 
                     <form onSubmit={submit} className="space-y-6">

@@ -118,6 +118,10 @@ it('uses the actual release date only after physical release', function () {
 
     expect($data->submittedAt->format('Y-m-d'))->toBe('2026-08-14')
         ->and($data->providedAt?->format('Y-m-d'))->toBe('2026-08-17');
+
+    $html = view('documents.action_center.acknowledgement_receipt', compact('data'))->render();
+
+    expect(substr_count($html, 'August 17, 2026'))->toBe(2);
 });
 
 it('rejects ineligible, incomplete, and cross-municipality requests', function () {
@@ -181,7 +185,17 @@ it('renders the official dompdf receipt without description or browser assets', 
         '<script',
         'http://',
         'https://',
-    )->and($response->getStatusCode())->toBe(200)
+    )->and(substr_count($html, 'class="receipt-section"'))->toBe(2)
+        ->and(substr_count($html, 'ACKNOWLEDGEMENT RECEIPT'))->toBe(2)
+        ->and(substr_count($html, 'August 14, 2026'))->toBe(2)
+        ->and(substr_count($html, 'Share Mae Rejano'))->toBe(4)
+        ->and(substr_count($html, 'Php 1,000.00'))->toBe(2)
+        ->and(substr_count($html, 'Medical Assistance'))->toBe(4)
+        ->and(substr_count($html, 'Received by:'))->toBe(2)
+        ->and(substr_count($html, 'Name and Signature of Beneficiary'))->toBe(2)
+        ->and(substr_count($html, 'class="cut-line"'))->toBe(1)
+        ->and(substr_count($html, 'class="line provided-line"'))->toBe(2)
+        ->and($response->getStatusCode())->toBe(200)
         ->and($response->headers->get('content-type'))->toBe('application/pdf')
         ->and($response->getContent())->toStartWith('%PDF');
 });

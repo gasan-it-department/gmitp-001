@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\Dto\Assistance;
 readonly class FinancialDocumentDefaults
 {
     public function __construct(
+        public string $obligationRequestNumberPrefix,
         public string $obligationRequestResponsibilityCenter,
         public string $obligationRequestAccountCode,
         public string $obligationRequestOffice,
@@ -31,6 +32,7 @@ readonly class FinancialDocumentDefaults
     public function obligationRequest(): array
     {
         return [
+            'number_prefix' => $this->obligationRequestNumberPrefix,
             'responsibility_center' => $this->obligationRequestResponsibilityCenter,
             'account_code' => $this->obligationRequestAccountCode,
             'office' => $this->obligationRequestOffice,

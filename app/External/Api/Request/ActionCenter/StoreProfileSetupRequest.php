@@ -38,9 +38,9 @@ class StoreProfileSetupRequest extends FormRequest
             // Required because these are the cornerstone of indigency
             // assessment on the MSWD paper intake form. Sourced from enum
             // values so additions there flow through automatically.
-            'civil_status'   => ['required', Rule::in($this->civilStatusValues())],
-            'occupation'     => ['nullable', 'string', 'max:120'],
-            'monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'civil_status' => ['required', Rule::in($this->civilStatusValues())],
+            'occupation' => ['required', 'string', 'max:120'],
+            'monthly_income' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
 
             // ── Home address ─────────────────────────────────────────────────
             'barangay' => ['required', 'string', 'max:100'],
@@ -58,19 +58,19 @@ class StoreProfileSetupRequest extends FormRequest
             // during interview if it's missing. When provided, each entry
             // is validated as a small inline form. Per-household-cap is
             // enforced server-side in StoreHouseholdMemberAction.
-            'household_members'                          => ['nullable', 'array', 'max:' . StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
-            'household_members.*.first_name'             => ['required_with:household_members.*', 'string', 'max:100'],
-            'household_members.*.last_name'              => ['required_with:household_members.*', 'string', 'max:100'],
-            'household_members.*.middle_name'            => ['nullable', 'string', 'max:100'],
-            'household_members.*.suffix'                 => ['nullable', 'string', 'max:20'],
-            'household_members.*.relationship'           => ['required_with:household_members.*', Rule::in($this->relationshipValues())],
-            'household_members.*.birth_date'             => ['nullable', 'date', 'before_or_equal:today'],
-            'household_members.*.sex'                    => ['nullable', Rule::in($this->sexValues())],
-            'household_members.*.civil_status'           => ['nullable', Rule::in($this->civilStatusValues())],
+            'household_members' => ['nullable', 'array', 'max:'.StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
+            'household_members.*.first_name' => ['required_with:household_members.*', 'string', 'max:100'],
+            'household_members.*.last_name' => ['required_with:household_members.*', 'string', 'max:100'],
+            'household_members.*.middle_name' => ['nullable', 'string', 'max:100'],
+            'household_members.*.suffix' => ['nullable', 'string', 'max:20'],
+            'household_members.*.relationship' => ['required_with:household_members.*', Rule::in($this->relationshipValues())],
+            'household_members.*.birth_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'household_members.*.sex' => ['nullable', Rule::in($this->sexValues())],
+            'household_members.*.civil_status' => ['nullable', Rule::in($this->civilStatusValues())],
             'household_members.*.educational_attainment' => ['nullable', Rule::in($this->educationalAttainmentValues())],
-            'household_members.*.occupation'             => ['nullable', 'string', 'max:120'],
-            'household_members.*.monthly_income'         => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
-            'household_members.*.religion_id'            => ['nullable', 'ulid', 'exists:ac_religions,id'],
+            'household_members.*.occupation' => ['nullable', 'string', 'max:120'],
+            'household_members.*.monthly_income' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'household_members.*.religion_id' => ['nullable', 'ulid', 'exists:ac_religions,id'],
         ];
     }
 

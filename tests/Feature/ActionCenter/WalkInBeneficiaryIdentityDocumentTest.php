@@ -319,19 +319,25 @@ it('retains a failed verified walk-in as pending with pending dependents', funct
         ->and($beneficiary->hasMedia('identity_id_front'))->toBeFalse();
 });
 
-it('defaults omitted optional walk-in employment values', function () {
-    $dto = CreateWalkInBeneficiaryDto::fromArray([
-        'first_name' => 'Juan',
-        'last_name' => 'Cruz',
-        'sex' => 'male',
-        'birth_date' => '1990-01-01',
-        'civil_status' => 'single',
-        'barangay' => 'Poblacion',
-        'terms_consent' => true,
-    ], $this->adminId, $this->municipalId);
+it('requires occupation and monthly income for portal and walk-in beneficiary profiles', function () {
+    $walkIn = walkInRequest([
+        'occupation' => '',
+        'monthly_income' => '',
+    ]);
+    $portal = portalProfileRequest([
+        'occupation' => '',
+        'monthly_income' => '',
+    ]);
 
-    expect($dto->occupation)->toBeNull()
-        ->and($dto->monthlyIncome)->toBe(0.0);
+    $walkInValidator = Validator::make($walkIn->all(), $walkIn->rules());
+    $portalValidator = Validator::make($portal->all(), $portal->rules());
+
+    expect($walkInValidator->errors()->has('occupation'))->toBeTrue()
+        ->and($walkInValidator->errors()->has('monthly_income'))->toBeTrue()
+        ->and($portalValidator->errors()->has('occupation'))->toBeTrue()
+        ->and($portalValidator->errors()->has('monthly_income'))->toBeTrue()
+        ->and(Validator::make(walkInRequest()->all(), walkInRequest()->rules())->passes())->toBeTrue()
+        ->and(Validator::make(portalProfileRequest()->all(), portalProfileRequest()->rules())->passes())->toBeTrue();
 });
 
 it('does not store identity documents when the duplicate guard blocks walk-in creation', function () {
