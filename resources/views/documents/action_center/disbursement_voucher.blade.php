@@ -199,7 +199,7 @@
         .payee-value {
             width: 35%;
             padding: 1mm 2mm;
-            font-size: 11pt;
+            font-size: 12.5pt;
             font-weight: bold;
         }
 

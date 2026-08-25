@@ -32,6 +32,8 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.admin.assistance-request.disbursement-voucher.generate' => 'action_center.requests.process',
         'actionCenter.admin.assistance-request.certificate-of-eligibility.create' => 'action_center.requests.process',
         'actionCenter.admin.assistance-request.certificate-of-eligibility.generate' => 'action_center.requests.process',
+        'actionCenter.admin.assistance-request.financial-document-packet.create' => 'action_center.requests.process',
+        'actionCenter.admin.assistance-request.financial-document-packet.generate' => 'action_center.requests.process',
         'actionCenter.admin.assistance.edit' => 'action_center.requests.process',
         'actionCenter.admin.beneficiary.intake-sheet' => 'action_center.beneficiaries.view',
         'actionCenter.admin.beneficiary.identity-document-sheet' => 'action_center.beneficiaries.verify',

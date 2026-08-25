@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { HouseholdMemberOption, PhysicalCopyRequirement, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { useOptimizedAssistanceDocuments } from '@/hooks/use-optimized-assistance-documents';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, AlertTriangle, ArrowLeft, FileText, HandCoins, Info, Loader2, Paperclip, User, UserCheck, Users } from 'lucide-react';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useState } from 'react';
 import { IdentityDocumentPair } from '../../../Client/Apply/Components/DocumentUploadsGrid';
 import { OnBehalfOfData, OnBehalfOfSection, RelationshipType } from '../../../Client/Apply/Components/OnBehalfOfSection';
 import { OnBehalfAffirmation } from './Components/OnBehalfAffirmation';
@@ -197,9 +198,21 @@ export default function CreateAssistanceRequest({
     const fieldErrors = errors as Record<string, string | undefined>;
     const requestError = fieldErrors.request;
 
-    const handleFileChange = (key: string, file: File | null) => {
-        setData('documents', { ...data.documents, [key]: file });
-    };
+    const storePreparedDocument = useCallback(
+        (key: string, file: File | null) => {
+            setData((current) => ({
+                ...current,
+                documents: { ...current.documents, [key]: file },
+            }));
+        },
+        [setData],
+    );
+    const {
+        isPreparing: isPreparingDocuments,
+        notices: documentPreparationNotices,
+        prepareDocument: handleFileChange,
+        preparingKeys: preparingDocumentKeys,
+    } = useOptimizedAssistanceDocuments(storePreparedDocument);
 
     const handleFilingForChange = (value: 'self' | 'family_member') => {
         setFilingFor(value);
@@ -292,6 +305,9 @@ export default function CreateAssistanceRequest({
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
+
+        if (isPreparingDocuments) return;
+
         post(submitUrl, {
             forceFormData: true,
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
@@ -313,6 +329,7 @@ export default function CreateAssistanceRequest({
         !legalAgeBlocked &&
         (!data.recipient_id_unavailable || data.recipient_id_unavailable_reason.trim().length >= 10) &&
         (!requiresVerificationOverride || data.verification_override_reason.trim().length >= 10) &&
+        !isPreparingDocuments &&
         !processing;
 
     const profileUrl = ShowBeneficiaryProfileController.url({
@@ -348,8 +365,8 @@ export default function CreateAssistanceRequest({
                         <div>
                             <h1 className="text-xl font-bold tracking-tight text-slate-900">Mag-file ng Request para sa Tulong</h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                                Nagtatala ng request na ito para sa benepisyaryo sa ibaba. Ang kanilang pagkakakilanlan ay kinuha mula sa verified registry record —
-                                tanging ang mga detalye ng request ang ilalagay dito.
+                                Nagtatala ng request na ito para sa benepisyaryo sa ibaba. Ang kanilang pagkakakilanlan ay kinuha mula sa verified
+                                registry record — tanging ang mga detalye ng request ang ilalagay dito.
                             </p>
                         </div>
                     </div>
@@ -484,8 +501,15 @@ export default function CreateAssistanceRequest({
                                         <Paperclip className="h-4 w-4" /> Mga sumusuportang dokumento
                                     </h4>
                                     <p className="mb-4 text-xs text-blue-800/80">
-                                        Opsyonal habang ine-encode ang request. Ilakip ngayon kung na-inspect na ng MSWD, o i-upload mamaya bago aprubahan ang request.
+                                        Opsyonal habang ine-encode ang request. Ilakip ngayon kung na-inspect na ng MSWD, o i-upload mamaya bago
+                                        aprubahan ang request.
                                     </p>
+                                    {isPreparingDocuments && (
+                                        <div className="mb-4 flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-medium text-blue-800">
+                                            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                                            Inihahanda at pinapaliit ang mga larawan bago i-upload...
+                                        </div>
+                                    )}
                                     <div className="space-y-4">
                                         {selectedFilerIdDocuments.length > 0 && (
                                             <IdentityDocumentPair
@@ -496,6 +520,8 @@ export default function CreateAssistanceRequest({
                                                 onFileChange={handleFileChange}
                                                 errors={fieldErrors}
                                                 required={false}
+                                                preparingKeys={preparingDocumentKeys}
+                                                preparationNotices={documentPreparationNotices}
                                             />
                                         )}
 
@@ -521,6 +547,8 @@ export default function CreateAssistanceRequest({
                                                                 onFileChange={handleFileChange}
                                                                 errors={fieldErrors}
                                                                 required={false}
+                                                                preparingKeys={preparingDocumentKeys}
+                                                                preparationNotices={documentPreparationNotices}
                                                             />
                                                         )}
 
@@ -585,7 +613,9 @@ export default function CreateAssistanceRequest({
                                                 <Label className="text-sm">
                                                     {doc.name}
                                                     {doc.is_required && (
-                                                        <span className="ml-1 text-[10px] font-medium text-amber-600">(Required before approval)</span>
+                                                        <span className="ml-1 text-[10px] font-medium text-amber-600">
+                                                            (Required before approval)
+                                                        </span>
                                                     )}
                                                 </Label>
                                                 {doc.description && <p className="text-xs text-slate-500">{doc.description}</p>}
@@ -597,9 +627,26 @@ export default function CreateAssistanceRequest({
                                                 <Input
                                                     type="file"
                                                     accept=".jpg,.jpeg,.png,.pdf"
+                                                    disabled={preparingDocumentKeys.has(doc.key)}
                                                     className="cursor-pointer bg-white file:font-medium file:text-blue-600"
-                                                    onChange={(e) => handleFileChange(doc.key, e.target.files?.[0] ?? null)}
+                                                    onChange={(e) => void handleFileChange(doc.key, e.target.files?.[0] ?? null)}
                                                 />
+                                                {preparingDocumentKeys.has(doc.key) && (
+                                                    <p className="flex items-center gap-1.5 text-xs font-medium text-blue-700">
+                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Preparing image...
+                                                    </p>
+                                                )}
+                                                {!preparingDocumentKeys.has(doc.key) && documentPreparationNotices[doc.key] && (
+                                                    <p
+                                                        className={`text-xs font-medium ${
+                                                            documentPreparationNotices[doc.key]?.tone === 'warning'
+                                                                ? 'text-amber-700'
+                                                                : 'text-emerald-700'
+                                                        }`}
+                                                    >
+                                                        {documentPreparationNotices[doc.key]?.message}
+                                                    </p>
+                                                )}
                                                 {fieldErrors[`documents.${doc.key}`] && (
                                                     <p className="text-xs text-red-500">{fieldErrors[`documents.${doc.key}`]}</p>
                                                 )}
@@ -627,7 +674,9 @@ export default function CreateAssistanceRequest({
                         )}
 
                         {effectiveFilingFor === 'family_member' && !representativeInfoComplete && (
-                            <p className="text-center text-xs text-slate-500">Piliin ang miyembro ng pamilya na makakatanggap ng tulong bago mag-submit.</p>
+                            <p className="text-center text-xs text-slate-500">
+                                Piliin ang miyembro ng pamilya na makakatanggap ng tulong bago mag-submit.
+                            </p>
                         )}
                         {legalAgeBlocked && (
                             <p className="text-center text-xs text-red-600">
@@ -641,7 +690,11 @@ export default function CreateAssistanceRequest({
                             disabled={!canSubmit}
                             className="h-14 w-full rounded-2xl bg-slate-900 text-base font-bold tracking-wide text-white uppercase shadow-lg transition-all hover:bg-slate-800 active:scale-[0.99] disabled:opacity-50"
                         >
-                            {processing ? (
+                            {isPreparingDocuments ? (
+                                <>
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Inihahanda ang mga larawan...
+                                </>
+                            ) : processing ? (
                                 <>
                                     <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Nagsa-submit…
                                 </>

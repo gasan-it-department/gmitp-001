@@ -26,12 +26,7 @@ class DisbursementVoucherPdf
 
     public function response(DisbursementVoucherData $data): Response
     {
-        $builder = $this->build($data);
-        $content = base64_decode($builder->base64(), true);
-
-        if ($content === false || $content === '') {
-            throw new RuntimeException('DOMPDF returned an empty Disbursement Voucher document.');
-        }
+        $content = $this->content($data);
 
         return response($content, 200, [
             'Content-Type' => 'application/pdf',
@@ -39,6 +34,17 @@ class DisbursementVoucherPdf
             'Content-Length' => (string) strlen($content),
             'Cache-Control' => 'private, no-store, max-age=0',
         ]);
+    }
+
+    public function content(DisbursementVoucherData $data): string
+    {
+        $content = base64_decode($this->build($data)->base64(), true);
+
+        if ($content === false || $content === '') {
+            throw new RuntimeException('DOMPDF returned an empty Disbursement Voucher document.');
+        }
+
+        return $content;
     }
 
     private function filename(DisbursementVoucherData $data): string
