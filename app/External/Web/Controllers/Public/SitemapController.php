@@ -23,6 +23,7 @@ class SitemapController extends Controller
         'transparency.index',
         'announcement.index',
         'event.index',
+        'feedback.create',
     ];
 
     public function __invoke(): Response
@@ -67,7 +68,7 @@ class SitemapController extends Controller
             ->each(function (Announcement $announcement) use ($urls, $slugByMunicipality): void {
                 $slug = $slugByMunicipality->get($announcement->municipal_id);
 
-                if (! $slug) {
+                if (!$slug) {
                     return;
                 }
 
@@ -97,7 +98,7 @@ class SitemapController extends Controller
             ->each(function (Event $event) use ($urls, $slugByMunicipality): void {
                 $slug = $slugByMunicipality->get($event->municipal_id);
 
-                if (! $slug) {
+                if (!$slug) {
                     return;
                 }
 

@@ -38,14 +38,15 @@ use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiaryP
 use App\External\Web\Controllers\ActionCenter\Admin\Beneficiary\ShowBeneficiarySearchController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\CreateAssistanceTypeController;
-use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadAssistanceRequestIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIdentityDocumentSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\DownloadBeneficiaryIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateAcknowledgementReceiptController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateAssistanceRequestIntakeSheetController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateCertificateOfEligibilityController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateDisbursementVoucherController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\GenerateObligationRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowAcknowledgementReceiptGeneratorController;
+use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowAssistanceRequestIntakeSheetGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowCertificateOfEligibilityGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowDisbursementVoucherGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowObligationRequestGeneratorController;
@@ -184,9 +185,15 @@ Route::prefix('{municipality}/action-center')
 
             Route::get(
                 'profile/assistance-request/{assistanceRequestId}/intake-sheet',
-                DownloadAssistanceRequestIntakeSheetController::class,
-            )->middleware('permission:action_center.requests.view')
-                ->name('assistance-request.intake-sheet');
+                ShowAssistanceRequestIntakeSheetGeneratorController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.intake-sheet.create');
+
+            Route::post(
+                'profile/assistance-request/{assistanceRequestId}/intake-sheet',
+                GenerateAssistanceRequestIntakeSheetController::class,
+            )->middleware('permission:action_center.requests.process')
+                ->name('assistance-request.intake-sheet.generate');
 
             Route::get(
                 'profile/assistance-request/{assistanceRequestId}/acknowledgement-receipt',

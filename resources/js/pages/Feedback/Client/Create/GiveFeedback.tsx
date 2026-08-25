@@ -1,7 +1,8 @@
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
+import { SeoSharedData, absoluteUrl } from '@/components/Seo/PublicSeo';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import ClassicDialog from '@/pages/Utility/ClassicDialog';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, HeartHandshake, MessageCircleHeart, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { DepartmentOption, FeedbackFormContent } from './Components/FeedbackFormContent';
@@ -13,8 +14,9 @@ interface GiveFeedbackProps {
 }
 
 export default function GiveFeedback({ departments, feedbackTypes, is_eligible }: GiveFeedbackProps) {
-    const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
+    const { currentMunicipality, seo } = usePage<{ currentMunicipality: Municipality; seo: SeoSharedData }>().props;
     const slug = currentMunicipality.slug;
+    const feedbackUrl = absoluteUrl(`/${slug}/feedback/client/create`, seo.site_url);
 
     const [classicDialogOpen, setClassicDialog] = useState({
         isOpen: false,
@@ -48,9 +50,11 @@ export default function GiveFeedback({ departments, feedbackTypes, is_eligible }
     };
 
     return (
-        <PublicLayout description="" title="Feedback">
-            <Head title="I-abot ang iyong Feedback" />
-
+        <PublicLayout
+            title={`${currentMunicipality.name} Feedback | Citizen Feedback Form`}
+            description={`Send feedback to the Municipality of ${currentMunicipality.name}. Share your experience, suggestions, concerns, or compliments to help improve local government services.`}
+            canonicalUrl={feedbackUrl}
+        >
             <div className="min-h-[calc(100vh-5rem)] bg-muted/20">
                 <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
                     <Link
@@ -69,9 +73,10 @@ export default function GiveFeedback({ departments, feedbackTypes, is_eligible }
 
                             <div className="mt-8">
                                 <p className="text-xs font-bold tracking-widest text-primary-foreground/70 uppercase">Boses ng Mamamayan</p>
-                                <h1 className="mt-3 text-3xl leading-tight font-black sm:text-4xl">Mahalaga ang iyong karanasan.</h1>
+                                <h1 className="mt-3 text-3xl leading-tight font-black sm:text-4xl">{currentMunicipality.name} Feedback</h1>
                                 <p className="mt-4 max-w-md text-sm leading-7 text-primary-foreground/80 sm:text-base">
-                                    Ibahagi ang iyong papuri, suhestiyon, o concern upang mas mapabuti pa ang serbisyo ng ating munisipyo.
+                                    Mahalaga ang iyong karanasan. Ibahagi ang iyong papuri, suhestiyon, o concern upang mas mapabuti pa ang serbisyo
+                                    ng ating munisipyo.
                                 </p>
                             </div>
 

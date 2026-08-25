@@ -13,8 +13,12 @@ readonly class AssistanceRequestIntakeSheetData
         public Collection $householdMembers,
         public ?string $municipalityName,
         public ?string $municipalityLogoDataUri,
+        /** @var list<string> */
+        public array $problemPresented,
+        public ?string $sourceOfIncome,
+        public ?float $monthlyIncome,
+        public string $recommendation,
         public string $generatedByUserName,
         public \DateTimeInterface $generatedAt,
-    ) {
-    }
+    ) {}
 }

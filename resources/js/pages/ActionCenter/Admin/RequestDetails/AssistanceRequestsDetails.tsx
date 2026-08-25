@@ -1,6 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
-import DownloadAssistanceRequestIntakeSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadAssistanceRequestIntakeSheetController';
 import ShowAcknowledgementReceiptGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowAcknowledgementReceiptGeneratorController';
+import ShowAssistanceRequestIntakeSheetGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowAssistanceRequestIntakeSheetGeneratorController';
 import ShowCertificateOfEligibilityGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowCertificateOfEligibilityGeneratorController';
 import ShowDisbursementVoucherGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowDisbursementVoucherGeneratorController';
 import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
@@ -28,8 +28,8 @@ import {
     BadgeCheck,
     CheckCircle2,
     Circle,
+    ClipboardCheck,
     ClockArrowUp,
-    Download,
     FilePenLine,
     FileText,
     Home,
@@ -861,18 +861,18 @@ export default function AssistanceRequestsDetails({
                                             Generate Acknowledgement Receipt
                                         </Link>
                                     )}
-                                    <a
-                                        href={DownloadAssistanceRequestIntakeSheetController.url({
-                                            municipality: currentMunicipality.slug,
-                                            assistanceRequestId: detail.id,
-                                        })}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        Download Request Intake Sheet (PDF)
-                                    </a>
+                                    {canProcessRequests && (
+                                        <Link
+                                            href={ShowAssistanceRequestIntakeSheetGeneratorController.url({
+                                                municipality: currentMunicipality.slug,
+                                                assistanceRequestId: detail.id,
+                                            })}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                                        >
+                                            <ClipboardCheck className="h-4 w-4" />
+                                            Prepare Request Intake Sheet
+                                        </Link>
+                                    )}
                                     {/* Temporarily disabled
                                     {canViewBeneficiaries && (
                                         <a
