@@ -154,8 +154,8 @@ export function OnBehalfOfSection({
                 <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                     <p className="text-xs leading-relaxed text-blue-800">
-                        Per the <strong>Gasan AICS Executive Order</strong>, only the{' '}
-                        <strong>spouse, parent, adult child (18+), or adult sibling (18+)</strong> of the deceased may file this request.
+                        Select the deceased household member and provide the relationship recorded in the household roster. The filing representative
+                        must be an eligible family relative; adult-child and adult-sibling filing requirements still apply where applicable.
                     </p>
                 </div>
             ) : (
@@ -169,8 +169,8 @@ export function OnBehalfOfSection({
                             </>
                         ) : (
                             <>
-                                As an <strong>authorized representative</strong>, you may file on behalf of a spouse, parent, child (18+), or sibling
-                                (18+). Your own verified identity will be recorded as the filing party.
+                                As an <strong>authorized representative</strong>, you may file on behalf of any recognized family relative in your
+                                household. Your own verified identity will be recorded as the filing party.
                             </>
                         )}
                     </p>
