@@ -84,6 +84,19 @@ class AssistanceRequestSmsNotifier
         );
     }
 
+    public function approvedRequestCancelled(AssistanceRequest $request): void
+    {
+        $this->notify(
+            $request,
+            'approved_request_cancelled',
+            fn (string $office, string $reference): string => sprintf(
+                '%s: Kinansela ang naaprubahang request mo (%s) bago ang release dahil may kailangang itama sa record. Makipag-ugnayan sa MSWD para sa corrected request.',
+                $office,
+                $reference,
+            ),
+        );
+    }
+
     /**
      * The beneficiary is the contact person for both self-filed and
      * on-behalf requests. SMS is advisory and must never alter workflow state.

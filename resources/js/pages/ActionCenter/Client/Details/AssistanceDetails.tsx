@@ -45,6 +45,7 @@ interface AssistanceRequestDetails {
     submitted_at: string;
     approved_at: string | null;
     released_at: string | null;
+    cancelled_at: string | null;
     filed_for_self: boolean;
     relationship: {
         value: string;
@@ -286,6 +287,7 @@ function buildTimeline(data: AssistanceRequestDetails): TimelineEntry[] {
             entries.push({
                 label: 'Request cancelled',
                 detail: 'This request is no longer being processed.',
+                date: data.cancelled_at,
                 state: 'closed',
             });
             break;
@@ -535,7 +537,9 @@ export default function AssistanceDetails({ request }: Props) {
                             <div className="border-t border-slate-200 pt-5 md:border-t-0 md:border-l md:pt-0 md:pl-6">
                                 <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                                     <Banknote className="h-4 w-4" aria-hidden="true" />
-                                    Approved assistance
+                                    {data.status === 'cancelled' && data.amount_approved !== null
+                                        ? 'Previously approved assistance'
+                                        : 'Approved assistance'}
                                 </p>
                                 <p
                                     className={`mt-2 font-bold break-words ${data.amount_approved === null ? 'text-base text-slate-700' : 'text-2xl text-emerald-700'}`}

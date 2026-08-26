@@ -626,6 +626,86 @@ it('blocks another claimant from targeting a household member with an open stand
         ->and($result->reason)->toBe(EligibilityResult::REASON_IN_FLIGHT);
 });
 
+it('rejects burial assistance filed for self at the core action boundary', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance',
+            'slug' => 'burial',
+            'is_independent' => true,
+        ]);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldNotReceive('requestReceived');
+    $eligibility = Mockery::mock(CheckElegibilityAction::class);
+    $eligibility->shouldNotReceive('execute');
+
+    $action = new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        $smsNotifier,
+        $eligibility,
+    );
+
+    expect(fn () => $action->execute(adultOnBehalfDto(
+        context: $context,
+        filedForSelf: true,
+    )))->toThrow(DomainException::class, 'must be filed on behalf of the deceased');
+
+    expect(DB::table('ac_assistance_requests')->count())->toBe(0);
+});
+
+it('does not treat a cancelled off-roster burial approval as an active cooldown', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance',
+            'slug' => 'burial',
+            'is_independent' => true,
+            'cooldown_months' => 12,
+        ]);
+
+    DB::table('ac_assistance_requests')->insert([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $context['municipal_id'],
+        'beneficiary_id' => $context['beneficiary_id'],
+        'household_id' => $context['household_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'metadata' => json_encode(['on_behalf_date_of_death' => '2026-08-01']),
+        'transaction_number' => 'REQ-2026-CANCELLED-BURIAL',
+        'status' => 'cancelled',
+        'description' => 'Cancelled burial request with an off-roster deceased person.',
+        'amount_approved' => 5000,
+        'approved_at' => now(),
+        'privacy_consented_at' => now(),
+        'privacy_notice_version' => 'v1.0',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $beneficiary = Beneficiary::query()
+        ->with('household')
+        ->findOrFail($context['beneficiary_id']);
+    $type = AssistanceType::query()->findOrFail($context['assistance_type_id']);
+    $resolver = Mockery::mock(ResolveBeneficiaryIdentityGroupAction::class);
+    $resolver->shouldReceive('execute')
+        ->once()
+        ->andReturn(new BeneficiaryIdentityGroup(
+            canonical: $beneficiary,
+            beneficiaryIds: [$beneficiary->id],
+            householdIds: [$context['household_id']],
+        ));
+
+    $result = (new CheckElegibilityAction($resolver))->execute(
+        beneficiary: $beneficiary,
+        type: $type,
+        onBehalfDateOfDeath: '2026-08-01',
+    );
+
+    expect($result->eligible)->toBeTrue();
+});
+
 it('throttles citizen assistance submissions as abuse protection', function () {
     $route = app('router')->getRoutes()->getByName('actionCenter.apply.assistance.store');
 
@@ -743,6 +823,7 @@ function adultOnBehalfDto(
     ?string $encodedByUserId = null,
     ?string $verificationOverrideReason = null,
     string $relationshipToBeneficiary = 'parent',
+    bool $filedForSelf = false,
 ): StoreAssistanceRequestDto {
     return new StoreAssistanceRequestDto(
         municipalId: $context['municipal_id'],
@@ -755,11 +836,11 @@ function adultOnBehalfDto(
         verificationOverrideReason: $verificationOverrideReason,
         privacyConsentedAt: CarbonImmutable::now(),
         privacyNoticeVersion: 'v1.0',
-        relationshipToBeneficiary: $relationshipToBeneficiary,
-        onBehalfHouseholdMemberId: $context['member_id'],
-        onBehalfFirstName: 'Pedro',
+        relationshipToBeneficiary: $filedForSelf ? null : $relationshipToBeneficiary,
+        onBehalfHouseholdMemberId: $filedForSelf ? null : $context['member_id'],
+        onBehalfFirstName: $filedForSelf ? null : 'Pedro',
         onBehalfMiddleName: null,
-        onBehalfLastName: 'Santos',
+        onBehalfLastName: $filedForSelf ? null : 'Santos',
         onBehalfSuffix: null,
         onBehalfDateOfDeath: null,
         recipientIdUnavailable: $recipientIdUnavailable,

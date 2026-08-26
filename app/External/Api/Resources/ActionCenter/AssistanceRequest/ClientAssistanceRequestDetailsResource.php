@@ -56,6 +56,7 @@ class ClientAssistanceRequestDetailsResource extends JsonResource
             'submitted_at' => $this->created_at?->toIso8601String(),
             'approved_at' => $this->approved_at?->toIso8601String(),
             'released_at' => $this->released_at?->toIso8601String(),
+            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
             'privacy_consented_at' => $this->privacy_consented_at?->toIso8601String(),
             'filed_for_self' => $this->relationship_to_beneficiary === null,
             'relationship' => $this->relationship_to_beneficiary

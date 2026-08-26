@@ -26,6 +26,7 @@ class GetAssistanceRequestProfileAction
             'encodedBy',
             'reviewedBy',
             'approvedBy',
+            'cancelledBy',
             'media',
             'snapshot',
             // Live beneficiary — powers the cross-LGU warning AND the

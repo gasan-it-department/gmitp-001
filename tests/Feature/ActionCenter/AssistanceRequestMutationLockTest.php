@@ -1,13 +1,16 @@
 <?php
 
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
+use App\Core\ActionCenter\Dto\Assistance\CancelApprovedAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Assistance\CancelApprovedAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\ReleaseAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
@@ -249,6 +252,102 @@ it('allows the dedicated release transition and rejects every later content edit
 
     expect($request->fresh()->description)->toBe('Original assistance request description.')
         ->and($request->fresh()->getMedia('documents'))->toHaveCount(0);
+});
+
+it('cancels an approved unreleased request and expires its approval cooldowns', function () {
+    $context = mutationLockContext();
+    $request = mutationLockRequest($context);
+    $approvedAt = now()->subDay();
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => $approvedAt,
+        'remarks' => '[APPROVED] Original approval retained for audit.',
+    ]);
+
+    $cooldown = BeneficiaryCooldown::query()->create([
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'assistance_request_id' => $request->id,
+        'household_id' => $context['household_id'],
+        'cooldown_starts_at' => $approvedAt,
+        'cooldown_expires_at' => null,
+    ]);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldReceive('approvedRequestCancelled')->once();
+
+    $cancelled = (new CancelApprovedAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $smsNotifier,
+    ))->execute(new CancelApprovedAssistanceRequestDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        cancelledByUserId: $context['admin_id'],
+        cancelledByUserName: 'Action Center Admin',
+        reason: 'Incorrectly encoded as filed for self instead of for the deceased household member.',
+    ));
+
+    expect($cancelled->status)->toBe(AssistanceStatus::Cancelled)
+        ->and($cancelled->amount_approved)->toBe('2500.00')
+        ->and($cancelled->approved_by_user_id)->toBe($context['admin_id'])
+        ->and($cancelled->approved_at?->toDateTimeString())->toBe($approvedAt->toDateTimeString())
+        ->and($cancelled->cancelled_by_user_id)->toBe($context['admin_id'])
+        ->and($cancelled->cancelled_at)->not->toBeNull()
+        ->and($cancelled->remarks)->toContain('APPROVED REQUEST CANCELLED')
+        ->and($cancelled->remarks)->toContain('Incorrectly encoded as filed for self');
+
+    $expiredCooldown = $cooldown->fresh();
+    expect($expiredCooldown->cooldown_expires_at)->not->toBeNull()
+        ->and($expiredCooldown->cooldown_expires_at->isFuture())->toBeFalse();
+
+    expect(fn () => $cancelled->update(['description' => 'Direct mutation after cancellation']))
+        ->toThrow(DomainException::class, 'Finalized assistance requests are immutable');
+});
+
+it('does not cancel released or non-approved assistance through the approved correction action', function () {
+    $context = mutationLockContext();
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldNotReceive('approvedRequestCancelled');
+    $action = new CancelApprovedAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $smsNotifier,
+    );
+
+    $pending = mutationLockRequest($context);
+    $pending->update(['status' => AssistanceStatus::Pending]);
+
+    expect(fn () => $action->execute(new CancelApprovedAssistanceRequestDto(
+        assistanceRequestId: $pending->id,
+        municipalId: $context['municipal_id'],
+        cancelledByUserId: $context['admin_id'],
+        cancelledByUserName: 'Action Center Admin',
+        reason: 'This is not an approved request and must use another workflow.',
+    )))->toThrow(DomainException::class, 'Only an approved request');
+
+    $released = mutationLockRequest($context);
+    $released->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 1500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+    $released->update([
+        'status' => AssistanceStatus::Released,
+        'released_by_user_id' => $context['admin_id'],
+        'released_at' => now(),
+        'release_reference_number' => 'REL-CANNOT-CANCEL',
+        'remarks' => 'Released in test.',
+    ]);
+
+    expect(fn () => $action->execute(new CancelApprovedAssistanceRequestDto(
+        assistanceRequestId: $released->id,
+        municipalId: $context['municipal_id'],
+        cancelledByUserId: $context['admin_id'],
+        cancelledByUserName: 'Action Center Admin',
+        reason: 'Attempted cancellation after physical release must be blocked.',
+    )))->toThrow(DomainException::class, 'Released assistance is immutable');
 });
 
 it('blocks approval until required documents are uploaded and ignores optional omissions', function () {
