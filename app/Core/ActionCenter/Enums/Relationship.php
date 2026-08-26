@@ -20,6 +20,8 @@ enum Relationship: string
     case Sibling = 'sibling';  // must be 18+
     case Grandparent = 'grandparent';
     case Grandchild = 'grandchild';
+    case StepParent = 'step_parent';
+    case StepChild = 'step_child';
     case ParentInLaw = 'parent_in_law';
     case ChildInLaw = 'child_in_law';
     case AuntUncle = 'aunt_uncle';
@@ -41,6 +43,8 @@ enum Relationship: string
             self::Sibling => 'Brother / Sister',
             self::Grandparent => 'Grandparent',
             self::Grandchild => 'Grandson / Granddaughter',
+            self::StepParent => 'Step-parent',
+            self::StepChild => 'Stepchild',
             self::ParentInLaw => 'Parent-in-law',
             self::ChildInLaw => 'Son / Daughter-in-law',
             self::AuntUncle => 'Aunt / Uncle',
@@ -93,9 +97,11 @@ enum Relationship: string
     }
 
     /**
-     * Relationships currently allowed to file for another person under the
-     * Action Center assistance rules. Household composition is intentionally
-     * broader than this list.
+     * Family relationships allowed when filing assistance for another
+     * household member. This follows the MSWD workflow: the filer may assist
+     * any recognized family relative, not only spouse, parent, child, or
+     * sibling. Guardian, ward, and non-relative records remain separate
+     * household relationships and are not treated as family representatives.
      *
      * @return array<int, self>
      */
@@ -103,9 +109,20 @@ enum Relationship: string
     {
         return [
             self::Spouse,
+            self::LiveInPartner,
             self::Parent,
             self::Child,
             self::Sibling,
+            self::Grandparent,
+            self::Grandchild,
+            self::StepParent,
+            self::StepChild,
+            self::ParentInLaw,
+            self::ChildInLaw,
+            self::AuntUncle,
+            self::NieceNephew,
+            self::Cousin,
+            self::OtherRelative,
         ];
     }
 
