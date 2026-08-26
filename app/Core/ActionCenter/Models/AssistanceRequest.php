@@ -134,6 +134,15 @@ class AssistanceRequest extends Model implements HasMedia
                 );
             }
 
+            if (in_array($originalStatus, [
+                AssistanceStatus::Rejected,
+                AssistanceStatus::Cancelled,
+            ], true)) {
+                throw new \DomainException(
+                    'Finalized assistance requests are immutable. Record a new request for any correction.',
+                );
+            }
+
             if ($originalStatus !== AssistanceStatus::Approved) {
                 return;
             }

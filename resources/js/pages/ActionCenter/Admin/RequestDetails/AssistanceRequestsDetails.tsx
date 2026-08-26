@@ -51,6 +51,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
+import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
 import RejectRequestDialog from './Components/RejectRequestDialog';
 import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
 
@@ -148,10 +149,12 @@ interface AssistanceRequestDetail {
     reviewed_at: string | null;
     approved_at: string | null;
     released_at: string | null;
+    cancelled_at: string | null;
     is_walkin: boolean;
     encoded_by?: ShortUser | null;
     reviewed_by?: ShortUser | null;
     approved_by?: ShortUser | null;
+    cancelled_by?: ShortUser | null;
     filed_for_self: boolean;
     relationship: { value: string; label: string } | null;
     on_behalf: OnBehalfBlock | null;
@@ -251,6 +254,7 @@ export default function AssistanceRequestsDetails({
     const canReleaseRequests = can('action_center.requests.release');
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
+    const [isCancelApprovedOpen, setIsCancelApprovedOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
 
@@ -289,6 +293,10 @@ export default function AssistanceRequestsDetails({
         }
         if (label === 'Reject') {
             setIsRejectOpen(true);
+            return;
+        }
+        if (label === 'Cancel Approved') {
+            setIsCancelApprovedOpen(true);
             return;
         }
         if (label === 'Mark Released') {
@@ -408,7 +416,9 @@ export default function AssistanceRequestsDetails({
 
                             {detail.amount_approved !== null && (
                                 <div className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-left sm:rounded-xl sm:px-5 lg:w-auto lg:text-right">
-                                    <p className="text-[10px] font-bold tracking-widest text-emerald-700 uppercase">Amount Approved</p>
+                                    <p className="text-[10px] font-bold tracking-widest text-emerald-700 uppercase">
+                                        {detail.status === 'cancelled' ? 'Previously Approved Amount' : 'Amount Approved'}
+                                    </p>
                                     <p className="mt-0.5 text-xl font-bold break-words text-emerald-900 sm:text-2xl">
                                         {utils.formatCurrency(detail.amount_approved)}
                                     </p>
@@ -731,6 +741,13 @@ export default function AssistanceRequestsDetails({
                                                 <AuditRow label="Approved" at={detail.approved_at} by={detail.approved_by?.name ?? 'unknown'} />
                                             )}
                                             {detail.released_at && <AuditRow label="Released" at={detail.released_at} />}
+                                            {detail.cancelled_at && (
+                                                <AuditRow
+                                                    label="Cancelled before release"
+                                                    at={detail.cancelled_at}
+                                                    by={detail.cancelled_by?.name ?? 'unknown'}
+                                                />
+                                            )}
                                             {detail.privacy_consented_at && (
                                                 <AuditRow
                                                     label={`Privacy consent (${detail.privacy_notice_version ?? 'v1.0'})`}
@@ -1031,6 +1048,14 @@ export default function AssistanceRequestsDetails({
                         maxAmount={detail.assistance_type?.max_amount}
                     />
 
+                    <CancelApprovedRequestDialog
+                        requestId={detail.id}
+                        transactionNumber={detail.transaction_number}
+                        amountApproved={detail.amount_approved}
+                        isOpen={isCancelApprovedOpen}
+                        onClose={() => setIsCancelApprovedOpen(false)}
+                    />
+
                     <RejectRequestDialog
                         requestId={detail.id}
                         applicantName={detail.identity_snapshot?.full_name || undefined}
@@ -1281,6 +1306,15 @@ function ActionButtons({
                     {canRelease && (
                         <Button className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
+                        </Button>
+                    )}
+                    {canDecide && (
+                        <Button
+                            variant="outline"
+                            className="min-h-10 w-full border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800 sm:w-auto"
+                            onClick={onAction('Cancel Approved')}
+                        >
+                            <XCircle className="mr-2 h-4 w-4" /> Cancel Approved Request
                         </Button>
                     )}
                     {canProcess && (

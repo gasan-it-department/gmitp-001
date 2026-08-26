@@ -1,6 +1,7 @@
 <?php
 
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
@@ -349,6 +350,12 @@ Route::prefix('/api/action-center')
                     ApproveAssistanceRequestController::class,
                 )->middleware('permission:action_center.requests.decide')
                     ->name('assistance.approve');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/cancel-approved',
+                    CancelApprovedAssistanceRequestController::class,
+                )->middleware('permission:action_center.requests.decide')
+                    ->name('assistance.cancel-approved');
 
                 // Reject a case — moves status to Rejected and appends the
                 // reviewer's reason to remarks. No cooldown is written

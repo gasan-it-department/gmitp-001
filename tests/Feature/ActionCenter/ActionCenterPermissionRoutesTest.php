@@ -42,6 +42,7 @@ it('assigns every admin action center route to one explicit capability', functio
                 'actionCenter.assistance.start-review' => 'action_center.requests.process',
                 'actionCenter.assistance.update' => 'action_center.requests.process',
                 'actionCenter.assistance.approve' => 'action_center.requests.decide',
+                'actionCenter.assistance.cancel-approved' => 'action_center.requests.decide',
                 'actionCenter.assistance.reject' => 'action_center.requests.decide',
                 'actionCenter.assistance.release' => 'action_center.requests.release',
                 'actionCenter.beneficiary.link-account' => 'action_center.beneficiaries.correct',

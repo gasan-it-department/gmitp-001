@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\BeneficiaryIdentityGroup;
 use App\Core\ActionCenter\Dto\Beneficiary\EligibilityResult;
+use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
@@ -372,6 +373,10 @@ class CheckElegibilityAction
         $request = AssistanceRequest::query()
             ->whereIn('household_id', $group->householdIds)
             ->where('assistance_type_id', $type->id)
+            ->whereIn('status', [
+                AssistanceStatus::Approved,
+                AssistanceStatus::Released,
+            ])
             ->whereNotNull('approved_at')
             ->whereDate('metadata->on_behalf_date_of_death', $dateOfDeath)
             ->orderByDesc('approved_at')

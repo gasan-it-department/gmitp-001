@@ -84,12 +84,14 @@ class AssistanceRequestDetailsResource extends JsonResource
             'reviewed_at' => $this->reviewed_at?->toIso8601String(),
             'approved_at' => $this->approved_at?->toIso8601String(),
             'released_at' => $this->released_at?->toIso8601String(),
+            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
 
             // ── Audit trail (who did what) ───────────────────────────────────
             'is_walkin' => $this->encoded_by_user_id !== null,
             'encoded_by' => $this->whenLoaded('encodedBy', fn() => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
             'reviewed_by' => $this->whenLoaded('reviewedBy', fn() => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
             'approved_by' => $this->whenLoaded('approvedBy', fn() => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
+            'cancelled_by' => $this->whenLoaded('cancelledBy', fn() => $this->cancelledBy ? $this->shortUser($this->cancelledBy) : null),
 
             // ── Representative — null when filed for self ────────────────────
             'filed_for_self' => $this->relationship_to_beneficiary === null,

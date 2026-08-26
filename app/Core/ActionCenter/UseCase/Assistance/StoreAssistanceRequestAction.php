@@ -86,6 +86,7 @@ class StoreAssistanceRequestAction
                 );
             }
 
+            $this->ensureAssistanceSubjectIsValid($dto, $assistanceType);
             $member = $this->resolveOnBehalfMember($dto, $beneficiary, lock: true);
             $this->ensureVerificationGate($beneficiary, $dto);
 
@@ -269,6 +270,23 @@ class StoreAssistanceRequestAction
         if (blank($dto->verificationOverrideReason)) {
             throw new \DomainException(
                 $message . ' Enter an override reason to continue as an administrator.',
+            );
+        }
+    }
+
+    private function ensureAssistanceSubjectIsValid(
+        StoreAssistanceRequestDto $dto,
+        AssistanceType $assistanceType,
+    ): void {
+        if ($assistanceType->slug !== 'burial') {
+            return;
+        }
+
+        if ($dto->onBehalfHouseholdMemberId === null
+            || blank($dto->relationshipToBeneficiary)
+            || blank($dto->onBehalfDateOfDeath)) {
+            throw new \DomainException(
+                'Burial assistance must be filed on behalf of the deceased household member. Select the deceased person, relationship, and date of death.',
             );
         }
     }
