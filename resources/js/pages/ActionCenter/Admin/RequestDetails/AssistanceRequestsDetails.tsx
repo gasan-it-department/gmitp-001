@@ -27,6 +27,7 @@ import {
     AlertTriangle,
     ArrowLeft,
     BadgeCheck,
+    CalendarPlus,
     CheckCircle2,
     Circle,
     ClipboardCheck,
@@ -52,6 +53,7 @@ import {
 import { useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
+import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
 import RejectRequestDialog from './Components/RejectRequestDialog';
 import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
 
@@ -194,6 +196,7 @@ interface ActivityEntry {
     description: string;
     changes: Record<string, unknown>;
     old: Record<string, unknown>;
+    reason?: string | null;
     by: string | null;
     at: string;
 }
@@ -256,11 +259,13 @@ export default function AssistanceRequestsDetails({
     const canProcessRequests = can('action_center.requests.process');
     const canDecideRequests = can('action_center.requests.decide');
     const canReleaseRequests = can('action_center.requests.release');
+    const canCorrectRequests = can('action_center.requests.correct');
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isCancelApprovedOpen, setIsCancelApprovedOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
+    const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
 
     // Every upload lives in the single spatie collection "documents"; the slot
     // it fills is in custom_properties.document_key — NOT collection_name. Match
@@ -279,6 +284,14 @@ export default function AssistanceRequestsDetails({
           : null;
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
     const canEditRequest = requestIsEditable && canProcessRequests;
+    const canCorrectMissingDateOfDeath =
+        canCorrectRequests &&
+        detail.status === 'approved' &&
+        detail.released_at === null &&
+        requiresDateOfDeath &&
+        detail.on_behalf !== null &&
+        !detail.filed_for_self &&
+        !detail.on_behalf.date_of_death;
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
     const canGenerateAcknowledgementReceipt = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
@@ -499,6 +512,31 @@ export default function AssistanceRequestsDetails({
                                     </Link>
                                 </Button>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {canCorrectMissingDateOfDeath && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+                        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-amber-950">Missing Date of Death</p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+                                        This approved burial request is missing the Date of Death. The controlled correction can add it once; it cannot
+                                        replace an existing date or change any other approved data.
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                onClick={() => setIsMissingDateCorrectionOpen(true)}
+                            >
+                                <CalendarPlus className="mr-2 h-4 w-4" /> Add Date of Death
+                            </Button>
                         </div>
                     </div>
                 )}
@@ -833,6 +871,11 @@ export default function AssistanceRequestsDetails({
                                                                     ))}
                                                                 </ul>
                                                             )}
+                                                            {entry.reason && (
+                                                                <p className="mt-2 rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+                                                                    <span className="font-semibold text-slate-700">Correction reason:</span> {entry.reason}
+                                                                </p>
+                                                            )}
                                                         </li>
                                                     ))}
                                                 </ol>
@@ -1110,6 +1153,14 @@ export default function AssistanceRequestsDetails({
                     amountApproved={detail.amount_approved}
                     isOpen={isReleaseOpen}
                     onClose={() => setIsReleaseOpen(false)}
+                />
+            )}
+            {canCorrectMissingDateOfDeath && (
+                <CorrectMissingBurialDateOfDeathDialog
+                    requestId={detail.id}
+                    transactionNumber={detail.transaction_number}
+                    isOpen={isMissingDateCorrectionOpen}
+                    onClose={() => setIsMissingDateCorrectionOpen(false)}
                 />
             )}
             <FlashHandler />

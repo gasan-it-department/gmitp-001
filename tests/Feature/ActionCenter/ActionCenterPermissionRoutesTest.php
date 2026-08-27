@@ -41,6 +41,7 @@ it('assigns every admin action center route to one explicit capability', functio
                 'actionCenter.assistance.type.update' => 'action_center.settings.manage',
                 'actionCenter.assistance.start-review' => 'action_center.requests.process',
                 'actionCenter.assistance.update' => 'action_center.requests.process',
+                'actionCenter.assistance.correct-missing-date-of-death' => 'action_center.requests.correct',
                 'actionCenter.assistance.approve' => 'action_center.requests.decide',
                 'actionCenter.assistance.cancel-approved' => 'action_center.requests.decide',
                 'actionCenter.assistance.reject' => 'action_center.requests.decide',

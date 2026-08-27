@@ -48,6 +48,13 @@ class AssistanceRequest extends Model implements HasMedia
         'updated_at',
     ];
 
+    /**
+     * Narrow escape hatch for the one approved-request correction that is
+     * explicitly allowed by a dedicated Core action. This is intentionally a
+     * transient model flag, not a persisted permission or status override.
+     */
+    private bool $allowMissingBurialDateOfDeathCorrection = false;
+
     protected $table = 'ac_assistance_requests';
 
     protected $keyType = 'string';
@@ -147,6 +154,11 @@ class AssistanceRequest extends Model implements HasMedia
                 return;
             }
 
+            if ($request->allowMissingBurialDateOfDeathCorrection
+                && array_diff($dirtyFields, ['metadata', 'updated_at']) === []) {
+                return;
+            }
+
             $allowedFields = match ($request->status) {
                 AssistanceStatus::Released => self::APPROVED_RELEASE_FIELDS,
                 AssistanceStatus::Cancelled => self::APPROVED_CANCELLATION_FIELDS,
@@ -159,6 +171,34 @@ class AssistanceRequest extends Model implements HasMedia
                 );
             }
         });
+    }
+
+    /**
+     * Add the missing Date of Death to an approved, unreleased burial request.
+     *
+     * The action performs the tenant, status, program, date, and one-time
+     * guards. Keeping the actual approved-row mutation here means no caller
+     * can accidentally weaken the normal terminal/content-lock rules by
+     * updating metadata directly.
+     */
+    public function addMissingBurialDateOfDeath(string $dateOfDeath): void
+    {
+        $metadata = $this->metadata ?? [];
+
+        if (filled(data_get($metadata, 'on_behalf_date_of_death'))) {
+            throw new \DomainException(
+                'This request already has a Date of Death and it cannot be replaced by this correction workflow.',
+            );
+        }
+
+        $metadata['on_behalf_date_of_death'] = $dateOfDeath;
+        $this->allowMissingBurialDateOfDeathCorrection = true;
+
+        try {
+            $this->update(['metadata' => $metadata]);
+        } finally {
+            $this->allowMissingBurialDateOfDeathCorrection = false;
+        }
     }
 
     protected static function newFactory()

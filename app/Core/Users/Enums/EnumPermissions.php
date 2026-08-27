@@ -29,6 +29,7 @@ enum EnumPermissions: string
     case ACTION_CENTER_REQUESTS_PROCESS = 'action_center.requests.process';
     case ACTION_CENTER_REQUESTS_DECIDE = 'action_center.requests.decide';
     case ACTION_CENTER_REQUESTS_RELEASE = 'action_center.requests.release';
+    case ACTION_CENTER_REQUESTS_CORRECT = 'action_center.requests.correct';
     case ACTION_CENTER_REPORTS_VIEW = 'action_center.reports.view';
     case ACTION_CENTER_SETTINGS_MANAGE = 'action_center.settings.manage';
 
@@ -95,6 +96,7 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_PROCESS => 'Action Center - Process Assistance Requests',
             self::ACTION_CENTER_REQUESTS_DECIDE => 'Action Center - Approve or Reject Requests',
             self::ACTION_CENTER_REQUESTS_RELEASE => 'Action Center - Release Assistance',
+            self::ACTION_CENTER_REQUESTS_CORRECT => 'Action Center - Correct Approved Request Data',
             self::ACTION_CENTER_REPORTS_VIEW => 'Action Center - View Reports',
             self::ACTION_CENTER_SETTINGS_MANAGE => 'Action Center - Manage Assistance Settings',
             self::BULLETIN_BOARD_ACCESS => 'Bulletin Board',
@@ -130,6 +132,7 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_PROCESS,
             self::ACTION_CENTER_REQUESTS_DECIDE,
             self::ACTION_CENTER_REQUESTS_RELEASE,
+            self::ACTION_CENTER_REQUESTS_CORRECT,
             self::ACTION_CENTER_REPORTS_VIEW,
             self::ACTION_CENTER_SETTINGS_MANAGE => EnumPermissionModule::ACTION_CENTER,
             self::BULLETIN_BOARD_ACCESS => EnumPermissionModule::BULLETIN_BOARD,
@@ -183,6 +186,10 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_PROCESS,
             self::ACTION_CENTER_REQUESTS_DECIDE,
             self::ACTION_CENTER_REQUESTS_RELEASE => [
+                self::ACTION_CENTER_ACCESS->value,
+                self::ACTION_CENTER_REQUESTS_VIEW->value,
+            ],
+            self::ACTION_CENTER_REQUESTS_CORRECT => [
                 self::ACTION_CENTER_ACCESS->value,
                 self::ACTION_CENTER_REQUESTS_VIEW->value,
             ],

@@ -3,6 +3,7 @@
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\CancelApprovedAssistanceRequestDto;
+use App\Core\ActionCenter\Dto\Assistance\CorrectMissingBurialDateOfDeathDto;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
@@ -12,6 +13,7 @@ use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\CancelApprovedAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Assistance\CorrectMissingBurialDateOfDeathAction;
 use App\Core\ActionCenter\UseCase\Assistance\ReleaseAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
@@ -141,12 +143,25 @@ beforeEach(function () {
         $table->unsignedInteger('order_column')->nullable()->index();
         $table->nullableTimestamps();
     });
+
+    Schema::create('activity_log', function (Blueprint $table) {
+        $table->id();
+        $table->string('log_name')->nullable()->index();
+        $table->text('description');
+        $table->nullableUlidMorphs('subject');
+        $table->string('event')->nullable();
+        $table->nullableUlidMorphs('causer');
+        $table->json('attribute_changes')->nullable();
+        $table->json('properties')->nullable();
+        $table->timestamps();
+    });
 });
 
 afterEach(function () {
     activity()->enableLogging();
 
     foreach ([
+        'activity_log',
         'media',
         'ac_beneficiary_cooldowns',
         'ac_assistance_requests',
@@ -472,6 +487,162 @@ it('blocks approval of an open configured burial request until date of death is 
     )))->toThrow(AssistanceApprovalException::class, 'date of death is missing');
 
     expect($request->fresh()->status)->toBe(AssistanceStatus::UnderReview);
+});
+
+it('adds a missing date of death once for an approved burial request and records the correction', function (string $slug) {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance',
+            'slug' => $slug,
+        ]);
+
+    $request = mutationLockRequest($context);
+    $request->created_at = now()->subDay();
+    $request->save();
+
+    $originalMetadata = [
+        'relationship_to_beneficiary' => 'child',
+        'on_behalf_first_name' => 'DECEASED',
+        'on_behalf_last_name' => 'PERSON',
+        'on_behalf_birth_date' => '1950-01-01',
+        'existing_key' => 'preserve-me',
+    ];
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+        'description' => 'Keep this description unchanged.',
+        'remarks' => 'Keep these remarks unchanged.',
+        'metadata' => $originalMetadata,
+        'on_behalf_household_member_id' => (string) Str::ulid(),
+    ]);
+
+    activity()->enableLogging();
+
+    $corrected = (new CorrectMissingBurialDateOfDeathAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    ))->execute(new CorrectMissingBurialDateOfDeathDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
+        correctedByUserId: $context['admin_id'],
+        dateOfDeath: '2026-08-20',
+        reason: 'Legacy approved burial request was missing the recorded date of death.',
+    ));
+
+    expect($corrected->status)->toBe(AssistanceStatus::Approved)
+        ->and($corrected->amount_approved)->toBe('2500.00')
+        ->and($corrected->description)->toBe('Keep this description unchanged.')
+        ->and($corrected->remarks)->toBe('Keep these remarks unchanged.')
+        ->and($corrected->metadata)->toMatchArray([
+            ...$originalMetadata,
+            'on_behalf_date_of_death' => '2026-08-20',
+        ]);
+
+    $log = DB::table('activity_log')
+        ->where('subject_id', $request->id)
+        ->latest('id')
+        ->first();
+    expect($log)->not->toBeNull();
+
+    $properties = json_decode($log->properties, true, flags: JSON_THROW_ON_ERROR);
+
+    expect($log->description)->toBe('Added missing burial Date of Death')
+        ->and($log->causer_id)->toBe($context['admin_id'])
+        ->and($properties['old']['on_behalf_date_of_death'])->toBeNull()
+        ->and($properties['attributes']['on_behalf_date_of_death'])->toBe('2026-08-20')
+        ->and($properties['corrected_by_user_id'])->toBe($context['admin_id'])
+        ->and($properties['correction_reason'])
+        ->toBe('Legacy approved burial request was missing the recorded date of death.')
+        ->and($properties['corrected_at'])->toBeString();
+
+    expect(fn () => (new CorrectMissingBurialDateOfDeathAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    ))->execute(new CorrectMissingBurialDateOfDeathDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
+        correctedByUserId: $context['admin_id'],
+        dateOfDeath: '2026-08-20',
+        reason: 'A second correction attempt must be rejected.',
+    )))->toThrow(DomainException::class, 'already has a Date of Death');
+})->with([
+    'regular burial' => 'burial',
+    'senior burial' => 'burial-assisstance-senior-citizen',
+]);
+
+it('rejects the approved burial correction for invalid filing, dates, and release artifacts', function () {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance',
+            'slug' => 'burial',
+        ]);
+
+    $selfRequest = mutationLockRequest($context);
+    $selfRequest->created_at = now()->subDay();
+    $selfRequest->save();
+    $selfRequest->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+
+    $action = new CorrectMissingBurialDateOfDeathAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
+    $dto = fn (string $date, AssistanceRequest $request): CorrectMissingBurialDateOfDeathDto => new CorrectMissingBurialDateOfDeathDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
+        correctedByUserId: $context['admin_id'],
+        dateOfDeath: $date,
+        reason: 'A valid administrative correction reason.',
+    );
+
+    expect(fn () => $action->execute($dto('2026-08-20', $selfRequest)))
+        ->toThrow(DomainException::class, 'not recorded as filed on behalf');
+
+    $request = mutationLockRequest($context);
+    $request->created_at = now()->subDay();
+    $request->save();
+    $request->update([
+        'on_behalf_household_member_id' => (string) Str::ulid(),
+        'metadata' => [
+            'relationship_to_beneficiary' => 'child',
+            'on_behalf_birth_date' => '1950-01-01',
+        ],
+    ]);
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+
+    expect(fn () => $action->execute($dto('1949-12-31', $request)))
+        ->toThrow(DomainException::class, 'earlier than the assisted person');
+
+    expect(fn () => $action->execute($dto('2026-08-27', $request)))
+        ->toThrow(DomainException::class, 'later than the assistance request submission');
+
+    $request->update([
+        'status' => AssistanceStatus::Released,
+        'released_by_user_id' => $context['admin_id'],
+        'released_at' => now(),
+        'release_reference_number' => 'REL-CANNOT-CORRECT',
+    ]);
+
+    expect(fn () => $action->execute($dto('2026-08-20', $request)))
+        ->toThrow(DomainException::class, 'Only an approved assistance request');
 });
 
 it('allows an admin to correct date of death on an editable configured burial request', function () {
