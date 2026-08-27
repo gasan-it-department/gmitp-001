@@ -481,6 +481,7 @@
 
         .received-top-row td {
             height: 7mm;
+            vertical-align: top;
             border-top: 1;
         }
 

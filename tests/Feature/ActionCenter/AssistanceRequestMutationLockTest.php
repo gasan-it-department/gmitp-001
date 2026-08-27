@@ -576,7 +576,7 @@ it('adds a missing date of death once for an approved burial request and records
     'senior burial' => 'burial-assisstance-senior-citizen',
 ]);
 
-it('rejects the approved burial correction for invalid filing, dates, and release artifacts', function () {
+it('rejects the burial correction for invalid filing and dates', function () {
     $context = mutationLockContext();
     DB::table('ac_assistance_types')
         ->where('id', $context['assistance_type_id'])
@@ -634,15 +634,72 @@ it('rejects the approved burial correction for invalid filing, dates, and releas
     expect(fn () => $action->execute($dto('2026-08-27', $request)))
         ->toThrow(DomainException::class, 'later than the assistance request submission');
 
+});
+
+it('rejects a missing date of death correction after the burial request is released', function () {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance',
+            'slug' => 'burial',
+        ]);
+
+    $request = mutationLockRequest($context);
+    $request->created_at = now()->subDay();
+    $request->save();
+    $request->update([
+        'on_behalf_household_member_id' => (string) Str::ulid(),
+        'metadata' => [
+            'relationship_to_beneficiary' => 'child',
+            'on_behalf_birth_date' => '1950-01-01',
+            'existing_key' => 'preserve-me',
+        ],
+    ]);
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+
+    $releasedAt = now()->subHour();
     $request->update([
         'status' => AssistanceStatus::Released,
         'released_by_user_id' => $context['admin_id'],
-        'released_at' => now(),
-        'release_reference_number' => 'REL-CANNOT-CORRECT',
+        'released_at' => $releasedAt,
+        'release_reference_number' => 'REL-PRESERVE-001',
+        'remarks' => 'Keep this release record unchanged.',
     ]);
 
-    expect(fn () => $action->execute($dto('2026-08-20', $request)))
-        ->toThrow(DomainException::class, 'Only an approved assistance request');
+    $action = new CorrectMissingBurialDateOfDeathAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
+
+    expect(fn () => $action->execute(new CorrectMissingBurialDateOfDeathDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
+        correctedByUserId: $context['admin_id'],
+        dateOfDeath: '2026-08-20',
+        reason: 'Verified from the Death Certificate submitted to MSWDO.',
+    )))->toThrow(DomainException::class, 'Only an approved, unreleased assistance request');
+
+    $unchanged = $request->fresh();
+
+    expect($unchanged->status)->toBe(AssistanceStatus::Released)
+        ->and($unchanged->amount_approved)->toBe('2500.00')
+        ->and($unchanged->released_by_user_id)->toBe($context['admin_id'])
+        ->and($unchanged->released_at?->toDateTimeString())->toBe($releasedAt->toDateTimeString())
+        ->and($unchanged->release_reference_number)->toBe('REL-PRESERVE-001')
+        ->and($unchanged->remarks)->toBe('Keep this release record unchanged.')
+        ->and($unchanged->metadata)->toMatchArray([
+            'relationship_to_beneficiary' => 'child',
+            'on_behalf_birth_date' => '1950-01-01',
+            'existing_key' => 'preserve-me',
+        ])
+        ->and(data_get($unchanged->metadata, 'on_behalf_date_of_death'))->toBeNull();
 });
 
 it('allows an admin to correct date of death on an editable configured burial request', function () {

@@ -135,6 +135,12 @@ class AssistanceRequest extends Model implements HasMedia
                 return;
             }
 
+            if ($request->allowMissingBurialDateOfDeathCorrection
+                && $originalStatus === AssistanceStatus::Approved
+                && array_diff($dirtyFields, ['metadata', 'updated_at']) === []) {
+                return;
+            }
+
             if ($originalStatus === AssistanceStatus::Released) {
                 throw new \DomainException(
                     'Released assistance requests are immutable. Record a separate correction entry instead.',
@@ -151,11 +157,6 @@ class AssistanceRequest extends Model implements HasMedia
             }
 
             if ($originalStatus !== AssistanceStatus::Approved) {
-                return;
-            }
-
-            if ($request->allowMissingBurialDateOfDeathCorrection
-                && array_diff($dirtyFields, ['metadata', 'updated_at']) === []) {
                 return;
             }
 
