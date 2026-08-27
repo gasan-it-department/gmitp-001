@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestFormDefinition;
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
@@ -13,6 +14,7 @@ use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -113,7 +115,12 @@ class StoreAssistanceRequestAction
             }
 
             $recipientIdException = $this->recipientIdException($dto, $formDefinition, $member);
-            $householdTotalIncome = $this->computeHouseholdTotalIncome($beneficiary);
+            $householdComposition = $this->captureHouseholdComposition(
+                $beneficiary,
+                CarbonImmutable::now(),
+            );
+            $householdTotalIncome = $householdComposition['household_total_income'];
+            $householdCompositionSnapshot = $householdComposition['snapshot'];
             $requestId = $this->idGenerator->generate();
 
             $onBehalfFirstName = $member?->first_name ?? $dto->onBehalfFirstName;
@@ -142,6 +149,7 @@ class StoreAssistanceRequestAction
                     && !$member->is_verified_dependent
                     ? true
                     : null,
+                'household_composition_snapshot' => $householdCompositionSnapshot,
             ], static fn($value) => $value !== null);
 
             $request = AssistanceRequest::create([
@@ -220,27 +228,57 @@ class StoreAssistanceRequestAction
     }
 
     /**
-     * Sum the monthly income across every ACTIVE row in ac_household_members
-     * for this beneficiary's household. The citizen themselves is one of
-     * those rows (the "Head of Household" self-row written at registration
-     * by CreateBeneficiaryProfileAction), so this SUM alone IS the total —
-     * no need to add the beneficiary's income separately.
+     * Freeze the active household roster used by the request-time assessment.
+     * The internal ids remain available for traceability but are never printed.
      *
-     * The request snapshot row holds this value
-     * immutably: even after the citizen's family composition or earnings
-     * change, COA can still see the household income that justified the
-     * original approval.
+     * @return array{
+     *     snapshot: array{
+     *         household_id: string,
+     *         household_code: ?string,
+     *         captured_at: string,
+     *         members: list<array<string, mixed>>
+     *     },
+     *     household_total_income: float
+     * }
      */
-    private function computeHouseholdTotalIncome(Beneficiary $beneficiary): float
-    {
-        return (float) HouseholdMember::query()
+    private function captureHouseholdComposition(
+        Beneficiary $beneficiary,
+        CarbonImmutable $capturedAt,
+    ): array {
+        $members = HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
             ->where('is_active', true)
-            ->where(function ($query) {
-                $query->where('relationship', 'head')
-                    ->orWhere('is_verified_dependent', true);
-            })
-            ->sum('monthly_income');
+            ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
+            ->orderBy('created_at')
+            ->lockForUpdate()
+            ->get();
+        $householdTotalIncome = (float) $members
+            ->filter(
+                fn (HouseholdMember $member): bool => $member->relationship === 'head'
+                    || $member->is_verified_dependent,
+            )
+            ->sum(fn (HouseholdMember $member): float => (float) $member->monthly_income);
+        $snapshotMembers = $members
+            ->map(
+                fn (HouseholdMember $member): array => AssistanceRequestHouseholdMemberData::fromModel(
+                    $member,
+                    $capturedAt,
+                )->toArray(),
+            )
+            ->values()
+            ->all();
+
+        return [
+            'snapshot' => [
+                'household_id' => (string) $beneficiary->household_id,
+                'household_code' => filled($beneficiary->household?->household_code)
+                    ? (string) $beneficiary->household->household_code
+                    : null,
+                'captured_at' => $capturedAt->toIso8601String(),
+                'members' => $snapshotMembers,
+            ],
+            'household_total_income' => $householdTotalIncome,
+        ];
     }
 
     private function ensureVerificationGate(

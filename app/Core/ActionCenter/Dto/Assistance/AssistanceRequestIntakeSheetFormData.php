@@ -19,6 +19,8 @@ readonly class AssistanceRequestIntakeSheetFormData
         public array $frozenEconomicValues,
         /** @var array{source_of_income: ?string, monthly_income: ?float} */
         public array $currentEconomicValues,
+        /** @var array{source: 'request_snapshot'|'current_household_fallback', captured_at: ?string, member_count: int, warning: ?string} */
+        public array $householdComposition,
         /** @var array{problem_presented: list<string>, source_of_income: ?string, monthly_income: ?float, recommendation: string} */
         public array $recommendedDefaults,
     ) {}
@@ -38,6 +40,7 @@ readonly class AssistanceRequestIntakeSheetFormData
             'problem_options' => $this->problemOptions,
             'frozen_economic_values' => $this->frozenEconomicValues,
             'current_economic_values' => $this->currentEconomicValues,
+            'household_composition' => $this->householdComposition,
             'recommended_defaults' => $this->recommendedDefaults,
         ];
     }

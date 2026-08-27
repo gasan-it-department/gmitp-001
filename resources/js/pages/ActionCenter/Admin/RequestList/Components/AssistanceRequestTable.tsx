@@ -3,7 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import Utility from '@/pages/Utility/Utility';
-import { Eye } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ChevronRight } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror AssistanceRequestListResource exactly. Re-export so the
@@ -64,9 +65,10 @@ export interface AssistanceRequestPaginator {
 
 interface Props {
     paginator: AssistanceRequestPaginator;
-    /** Callback when the admin clicks the row's View action.
-     *  The page wires this to navigate to the request detail route. */
+    /** Callback used by the clickable row and keyboard navigation. */
     onView?: (row: AssistanceRequestListItem) => void;
+    /** Real URL retained for standard link behavior in the action column. */
+    getViewUrl?: (row: AssistanceRequestListItem) => string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +110,7 @@ export function humanizeStatus(status: string): string {
  * The component is presentation-only. Filters, pagination, and routing live
  * in the parent page so this table is reusable.
  */
-export function AssistanceRequestTable({ paginator, onView }: Props) {
+export function AssistanceRequestTable({ paginator, onView, getViewUrl }: Props) {
     const rows = paginator?.data ?? [];
     const meta = paginator?.meta;
 
@@ -145,7 +147,32 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
                                 const rowNumber = meta ? (meta.current_page - 1) * meta.per_page + (index + 1) : index + 1;
 
                                 return (
-                                    <TableRow key={row.id} className="group transition-colors hover:bg-gray-50">
+                                    <TableRow
+                                        key={row.id}
+                                        role={onView ? 'link' : undefined}
+                                        tabIndex={onView ? 0 : undefined}
+                                        aria-label={onView ? `View assistance request ${row.transaction_number}` : undefined}
+                                        className={
+                                            onView
+                                                ? 'group cursor-pointer transition-colors hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none focus-visible:ring-inset'
+                                                : 'group transition-colors hover:bg-gray-50'
+                                        }
+                                        onClick={(event) => {
+                                            if (!onView || isInteractiveTarget(event.target)) {
+                                                return;
+                                            }
+
+                                            onView(row);
+                                        }}
+                                        onKeyDown={(event) => {
+                                            if (!onView || isInteractiveTarget(event.target) || (event.key !== 'Enter' && event.key !== ' ')) {
+                                                return;
+                                            }
+
+                                            event.preventDefault();
+                                            onView(row);
+                                        }}
+                                    >
                                         {/* # */}
                                         <TableCell className="pl-4 text-xs text-gray-500">{rowNumber}</TableCell>
 
@@ -214,15 +241,25 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
                                         {/* Actions */}
                                         <TableCell>
                                             <div className="flex justify-center">
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 text-blue-600 hover:bg-blue-50"
-                                                    onClick={() => onView?.(row)}
-                                                    aria-label={`View ${row.transaction_number}`}
-                                                >
-                                                    <Eye size={16} />
-                                                </Button>
+                                                {getViewUrl ? (
+                                                    <Link
+                                                        href={getViewUrl(row)}
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
+                                                        aria-label={`View ${row.transaction_number}`}
+                                                    >
+                                                        <ChevronRight size={17} />
+                                                    </Link>
+                                                ) : (
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+                                                        onClick={() => onView?.(row)}
+                                                        aria-label={`View ${row.transaction_number}`}
+                                                    >
+                                                        <ChevronRight size={17} />
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -241,6 +278,10 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
             )}
         </div>
     );
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && Boolean(target.closest('a, button, input, select, textarea, [role="button"]'));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
