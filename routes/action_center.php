@@ -3,6 +3,7 @@
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
@@ -341,6 +342,15 @@ Route::prefix('/api/action-center')
                     UpdateAssistanceRequestController::class,
                 )->middleware('permission:action_center.requests.process')
                     ->name('assistance.update');
+
+                // One-time repair for legacy approved burial requests that
+                // were encoded without a Date of Death. The Core action locks
+                // the request and permits no other approved-request mutation.
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/correct-missing-date-of-death',
+                    CorrectMissingBurialDateOfDeathController::class,
+                )->middleware('permission:action_center.requests.correct')
+                    ->name('assistance.correct-missing-date-of-death');
 
                 // Approve a case — commits the amount and writes cooldown rows.
                 // Sibling to start-review; both follow the same thin-controller

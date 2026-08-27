@@ -41,6 +41,7 @@ class ActivityLogResource extends JsonResource
             'changes' => $this->humanize($diff['attributes'] ?? []),
 
             'old' => $this->humanize($diff['old'] ?? []),
+            'reason' => $this->correctionReason(),
             'by' => $this->resolveCauserName(),
             'at' => $this->created_at?->toIso8601String(),
         ];
@@ -117,6 +118,19 @@ class ActivityLogResource extends JsonResource
         $name = trim("{$this->causer->first_name} {$this->causer->last_name}");
 
         return $name !== '' ? $name : ($this->causer->user_name ?? 'System');
+    }
+
+    private function correctionReason(): ?string
+    {
+        $properties = $this->properties;
+
+        if ($properties instanceof \Illuminate\Support\Collection) {
+            $properties = $properties->toArray();
+        }
+
+        $reason = is_array($properties) ? ($properties['correction_reason'] ?? null) : null;
+
+        return is_string($reason) && $reason !== '' ? $reason : null;
     }
 
     /**
