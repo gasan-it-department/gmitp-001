@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  *
  * This is intentionally narrower than ordinary request editing: the request
  * row is locked, the date can only be added while the metadata slot is blank,
- * and the model exposes only this named mutation for the approved state.
+ * and the model exposes only this named mutation for the locked states.
  */
 class CorrectMissingBurialDateOfDeathAction
 {
@@ -35,7 +35,7 @@ class CorrectMissingBurialDateOfDeathAction
                 with: ['assistanceType'],
             );
 
-            $this->ensureApprovedAndUnreleased($request);
+            $this->ensureEligibleStatus($request);
 
             $definition = $this->formDefinitions->for(
                 $dto->municipalCode,
@@ -91,11 +91,11 @@ class CorrectMissingBurialDateOfDeathAction
         }, attempts: 3);
     }
 
-    private function ensureApprovedAndUnreleased(AssistanceRequest $request): void
+    private function ensureEligibleStatus(AssistanceRequest $request): void
     {
         if ($request->status !== AssistanceStatus::Approved) {
             throw new \DomainException(
-                'Only an approved assistance request can use this correction workflow.',
+                'Only an approved, unreleased assistance request can use this correction workflow.',
             );
         }
 
@@ -103,7 +103,7 @@ class CorrectMissingBurialDateOfDeathAction
             || $request->released_by_user_id !== null
             || $request->release_reference_number !== null) {
             throw new \DomainException(
-                'Released assistance requests are immutable and cannot use this correction workflow.',
+                'This approved request already contains release data and cannot use the correction workflow until its status is reconciled.',
             );
         }
     }

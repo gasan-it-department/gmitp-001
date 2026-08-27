@@ -287,7 +287,6 @@ export default function AssistanceRequestsDetails({
     const canCorrectMissingDateOfDeath =
         canCorrectRequests &&
         detail.status === 'approved' &&
-        detail.released_at === null &&
         requiresDateOfDeath &&
         detail.on_behalf !== null &&
         !detail.filed_for_self &&
@@ -524,8 +523,8 @@ export default function AssistanceRequestsDetails({
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-amber-950">Missing Date of Death</p>
                                     <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
-                                        This approved burial request is missing the Date of Death. The controlled correction can add it once; it cannot
-                                        replace an existing date or change any other approved data.
+                                        This legacy burial request is missing the Date of Death. The controlled correction can add it once from the
+                                        verified source document; it cannot replace an existing date or change any other request data.
                                     </p>
                                 </div>
                             </div>
@@ -873,7 +872,8 @@ export default function AssistanceRequestsDetails({
                                                             )}
                                                             {entry.reason && (
                                                                 <p className="mt-2 rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
-                                                                    <span className="font-semibold text-slate-700">Correction reason:</span> {entry.reason}
+                                                                    <span className="font-semibold text-slate-700">Correction reason:</span>{' '}
+                                                                    {entry.reason}
                                                                 </p>
                                                             )}
                                                         </li>

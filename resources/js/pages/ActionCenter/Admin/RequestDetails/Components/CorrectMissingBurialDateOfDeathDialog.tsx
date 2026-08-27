@@ -29,7 +29,7 @@ function todayDateInputValue(): string {
  * One-time repair dialog for legacy approved burial requests.
  *
  * This intentionally posts a dedicated action instead of reusing the normal
- * request editor. The backend will reject any request that is not approved,
+ * request editor. The backend will reject any request that is not approved and
  * unreleased, configured for a deceased subject, and still missing the date.
  */
 export default function CorrectMissingBurialDateOfDeathDialog({ requestId, transactionNumber, isOpen, onClose }: Props) {
@@ -68,14 +68,14 @@ export default function CorrectMissingBurialDateOfDeathDialog({ requestId, trans
                     </div>
                     <DialogTitle className="text-xl text-slate-900">Add Date of Death</DialogTitle>
                     <DialogDescription className="text-slate-500">
-                        This is a one-time correction for an approved burial request that is still missing the deceased person&apos;s Date of Death.
-                        It cannot replace an existing date or edit any other request information.
+                        This is a one-time correction for an approved, unreleased burial request that is still missing the deceased person&apos;s Date
+                        of Death. It cannot replace an existing date or edit any other request information.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-5 pt-2 sm:space-y-6 sm:pt-4">
                     <div className="rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3">
-                        <p className="text-[10px] font-bold tracking-widest text-amber-800 uppercase">Approved Request</p>
+                        <p className="text-[10px] font-bold tracking-widest text-amber-800 uppercase">Legacy Burial Request</p>
                         <p className="mt-1 font-mono text-sm font-semibold break-all text-amber-950">{transactionNumber}</p>
                     </div>
 
@@ -98,19 +98,20 @@ export default function CorrectMissingBurialDateOfDeathDialog({ requestId, trans
 
                     <div className="space-y-2">
                         <Label htmlFor="missing_date_correction_reason" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
-                            Administrative Correction Reason
+                            Correction Reason / Source Document
                         </Label>
                         <Textarea
                             id="missing_date_correction_reason"
                             value={data.reason}
                             onChange={(event) => setData('reason', event.target.value)}
-                            placeholder="e.g. Legacy approved burial request was encoded before Date of Death became required."
+                            placeholder="e.g. Verified from the Death Certificate submitted to MSWDO."
                             rows={4}
                             className="resize-none"
                         />
                         {fieldErrors.reason && <p className="text-xs font-medium text-red-600">{fieldErrors.reason}</p>}
                         <p className="text-[11px] leading-4 text-slate-500">
-                            This reason, the old blank value, the new date, and your account will be recorded in Audit Trails.
+                            State where the date was verified. The source/reason, old blank value, new date, and your account will be recorded in
+                            Audit Trails.
                         </p>
                     </div>
 
