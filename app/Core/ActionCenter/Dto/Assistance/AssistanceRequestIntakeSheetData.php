@@ -9,8 +9,10 @@ readonly class AssistanceRequestIntakeSheetData
 {
     public function __construct(
         public AssistanceRequest $request,
-        /** @var Collection<int, \App\Core\ActionCenter\Models\HouseholdMember> */
+        /** @var Collection<int, AssistanceRequestHouseholdMemberData> */
         public Collection $householdMembers,
+        public ?\DateTimeInterface $householdCompositionCapturedAt,
+        public bool $usesCurrentHouseholdFallback,
         public ?string $municipalityName,
         public ?string $municipalityLogoDataUri,
         /** @var list<string> */

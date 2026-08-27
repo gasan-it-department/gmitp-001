@@ -108,13 +108,14 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
     const advancedFilterCount = [!isMine && status !== ALL, assistanceTypeId !== ALL, Boolean(dateFrom), Boolean(dateTo)].filter(Boolean).length;
 
     const handleView = (row: AssistanceRequestListItem) => {
-        router.get(
-            ShowAssistanceRequestProfileController.url({
-                municipality: currentMunicipality.slug,
-                assistanceRequest: row.id,
-            }),
-        );
+        router.get(requestUrl(row));
     };
+
+    const requestUrl = (row: AssistanceRequestListItem) =>
+        ShowAssistanceRequestProfileController.url({
+            municipality: currentMunicipality.slug,
+            assistanceRequest: row.id,
+        });
 
     return (
         <AdminLayout>
@@ -300,12 +301,12 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
                     <>
                         <div className="grid grid-cols-1 gap-2 md:gap-3 lg:grid-cols-2 xl:hidden">
                             {rows.map((row) => (
-                                <AssistanceRequestRegistryItem key={row.id} row={row} onView={handleView} />
+                                <AssistanceRequestRegistryItem key={row.id} row={row} viewUrl={requestUrl(row)} />
                             ))}
                         </div>
 
                         <div className="hidden xl:block">
-                            <AssistanceRequestTable paginator={requests} onView={handleView} />
+                            <AssistanceRequestTable paginator={requests} onView={handleView} getViewUrl={requestUrl} />
                         </div>
                         <Pagination links={requests.meta?.links ?? []} />
                     </>

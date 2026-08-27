@@ -34,6 +34,12 @@ interface IntakeSheetContext {
     problem_options: ProblemOption[];
     frozen_economic_values: EconomicValues;
     current_economic_values: EconomicValues;
+    household_composition: {
+        source: 'request_snapshot' | 'current_household_fallback';
+        captured_at: string | null;
+        member_count: number;
+        warning: string | null;
+    };
     recommended_defaults: {
         problem_presented: string[];
         source_of_income: string | null;
@@ -244,6 +250,16 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                         </p>
                     </div>
 
+                    {assistanceRequestIntakeSheet.household_composition.warning && (
+                        <div className="mb-6 flex gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p className="font-semibold">Historical household composition is unavailable</p>
+                                <p className="mt-1 leading-5">{assistanceRequestIntakeSheet.household_composition.warning}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <section className="mb-6 rounded-md border border-slate-200 bg-white p-4 sm:p-6">
                         <h2 className="mb-4 text-sm font-semibold text-slate-900">Trusted request information</h2>
                         <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -270,6 +286,22 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                             <div>
                                 <dt className="text-xs font-medium text-slate-500">Filed for</dt>
                                 <dd className="mt-1 text-sm text-slate-800">{assistanceRequestIntakeSheet.filing_subject}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-xs font-medium text-slate-500">Household composition</dt>
+                                <dd className="mt-1 text-sm text-slate-800">
+                                    {assistanceRequestIntakeSheet.household_composition.member_count}{' '}
+                                    {assistanceRequestIntakeSheet.household_composition.member_count === 1 ? 'member' : 'members'} in Section V
+                                </dd>
+                                {assistanceRequestIntakeSheet.household_composition.captured_at && (
+                                    <dd className="mt-1 text-xs text-slate-500">
+                                        Frozen at request filing on{' '}
+                                        {new Intl.DateTimeFormat('en-PH', {
+                                            dateStyle: 'medium',
+                                            timeStyle: 'short',
+                                        }).format(new Date(assistanceRequestIntakeSheet.household_composition.captured_at))}
+                                    </dd>
+                                )}
                             </div>
                         </dl>
                     </section>

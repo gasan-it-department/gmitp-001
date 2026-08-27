@@ -38,6 +38,7 @@ beforeEach(function () {
     Schema::create('ac_households', function (Blueprint $table) {
         $table->ulid('id')->primary();
         $table->ulid('municipal_id');
+        $table->string('household_code')->nullable();
         $table->string('barangay');
         $table->string('barangay_psgc_code')->nullable();
         $table->string('street')->nullable();
@@ -78,6 +79,9 @@ beforeEach(function () {
         $table->string('suffix')->nullable();
         $table->string('relationship')->nullable();
         $table->date('birth_date')->nullable();
+        $table->string('educational_attainment')->nullable();
+        $table->string('sex')->nullable();
+        $table->string('occupation')->nullable();
         $table->decimal('monthly_income', 10, 2)->default(0);
         $table->boolean('is_active')->default(true);
         $table->boolean('is_verified_dependent')->default(false);
@@ -271,6 +275,7 @@ it('stores snapshots and permits one newly declared pending member', function ()
     DB::table('ac_households')->insert([
         'id' => $householdId,
         'municipal_id' => $municipalId,
+        'household_code' => 'HH-GAS-0001',
         'barangay' => 'Barangay Uno',
         'barangay_psgc_code' => '1234567890',
         'street' => 'Rizal Street',
@@ -312,7 +317,12 @@ it('stores snapshots and permits one newly declared pending member', function ()
         'beneficiary_id' => $beneficiaryId,
         'first_name' => 'Juan',
         'last_name' => 'Dela Cruz',
+        'birth_date' => '1990-01-01',
+        'educational_attainment' => 'hs_grad',
+        'sex' => 'male',
         'relationship' => 'head',
+        'occupation' => 'Farmer',
+        'monthly_income' => 2500,
         'is_active' => true,
         'is_verified_dependent' => false,
         'created_at' => $now,
@@ -325,7 +335,12 @@ it('stores snapshots and permits one newly declared pending member', function ()
         'beneficiary_id' => null,
         'first_name' => 'Pedro',
         'last_name' => 'Dela Cruz',
+        'birth_date' => '1980-02-03',
+        'educational_attainment' => 'college_grad',
+        'sex' => 'male',
         'relationship' => 'parent',
+        'occupation' => 'Carpenter',
+        'monthly_income' => 1500,
         'is_active' => true,
         'is_verified_dependent' => false,
         'created_at' => $now,
@@ -383,6 +398,9 @@ it('stores snapshots and permits one newly declared pending member', function ()
     );
 
     $payload = (new AssistanceRequestDetailsResource($created))->resolve();
+    $householdSnapshot = data_get($created->metadata, 'household_composition_snapshot');
+    $snapshottedMembers = collect($householdSnapshot['members'] ?? []);
+    $snapshottedParent = $snapshottedMembers->firstWhere('household_member_id', $memberId);
 
     expect(DB::table('ac_assistance_requests')->count())->toBe(1)
         ->and(DB::table('ac_assistance_request_snapshots')->count())->toBe(1)
@@ -395,6 +413,25 @@ it('stores snapshots and permits one newly declared pending member', function ()
             'recipient_id_exception' => 'deceased',
             'on_behalf_verification_pending' => true,
         ])
+        ->and($householdSnapshot)->toMatchArray([
+            'household_id' => $householdId,
+            'household_code' => 'HH-GAS-0001',
+        ])
+        ->and($householdSnapshot['captured_at'] ?? null)->not->toBeNull()
+        ->and($snapshottedMembers)->toHaveCount(2)
+        ->and($snapshottedParent)->toMatchArray([
+            'household_member_id' => $memberId,
+            'beneficiary_id' => null,
+            'full_name' => 'Pedro Dela Cruz',
+            'relationship' => 'parent',
+            'birth_date' => '1980-02-03',
+            'sex' => 'male',
+            'educational_attainment' => 'college_grad',
+            'occupation' => 'Carpenter',
+            'monthly_income' => 1500.0,
+            'is_household_head' => false,
+        ])
+        ->and($snapshottedParent['age_at_filing'])->toBeInt()
         ->and($created->snapshot->first_name)->toBe('Juan')
         ->and($created->snapshot_first_name)->toBe('Juan')
         ->and($created->on_behalf_first_name)->toBe('Pedro')

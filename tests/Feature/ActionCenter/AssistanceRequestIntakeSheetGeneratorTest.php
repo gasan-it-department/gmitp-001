@@ -151,6 +151,12 @@ it('prefills trusted snapshot values and medical assessment defaults', function 
                 'source_of_income' => 'Seaweed farming',
                 'monthly_income' => 4250.0,
             ])
+        ->and($data->householdComposition)->toMatchArray([
+                'source' => 'current_household_fallback',
+                'captured_at' => null,
+                'member_count' => 0,
+            ])
+        ->and($data->householdComposition['warning'])->not->toBeNull()
         ->and($data->recommendedDefaults)->toMatchArray([
                 'problem_presented' => [AssistanceIntakeProblem::SeekingMedicalAssistance->value],
                 'source_of_income' => 'Fishing',
@@ -329,6 +335,95 @@ it('excludes the claimant roster row while retaining a different household head'
         ->not->toContain('April Joy Mawac', 'Fishing')
         ->and($html)->toContain('Total Monthly Household Income', 'PHP 5,500.00')
         ->not->toContain('Current Verified Household Income', '> Household Income<');
+});
+
+it('renders the request-time household snapshot after the live roster changes', function () {
+    $context = seedAssistanceRequestIntakeSheetContext();
+    $request = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->first();
+    $historicalMemberId = (string) Str::ulid();
+
+    DB::table('ac_assistance_requests')
+        ->where('id', $context['request_id'])
+        ->update([
+            'metadata' => json_encode([
+                'household_composition_snapshot' => [
+                    'household_id' => $request->household_id,
+                    'household_code' => 'HH-GAS-0001',
+                    'captured_at' => '2026-08-20T09:30:00+08:00',
+                    'members' => [
+                        [
+                            'household_member_id' => (string) Str::ulid(),
+                            'beneficiary_id' => $request->beneficiary_id,
+                            'full_name' => 'April Joy Mawac',
+                            'relationship' => 'head',
+                            'birth_date' => '1990-06-14',
+                            'age_at_filing' => 36,
+                            'sex' => 'female',
+                            'educational_attainment' => 'college_grad',
+                            'occupation' => 'Fishing',
+                            'monthly_income' => 3000,
+                            'is_household_head' => true,
+                        ],
+                        [
+                            'household_member_id' => $historicalMemberId,
+                            'beneficiary_id' => null,
+                            'full_name' => 'Ana Mawac',
+                            'relationship' => 'child',
+                            'birth_date' => '2014-01-10',
+                            'age_at_filing' => 12,
+                            'sex' => 'female',
+                            'educational_attainment' => 'elem_undergrad',
+                            'occupation' => null,
+                            'monthly_income' => 500,
+                            'is_household_head' => false,
+                        ],
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(),
+        'household_id' => $request->household_id,
+        'beneficiary_id' => null,
+        'first_name' => 'Current Only',
+        'last_name' => 'Member',
+        'birth_date' => '2000-01-01',
+        'educational_attainment' => 'college_grad',
+        'sex' => 'male',
+        'relationship' => 'sibling',
+        'occupation' => 'Driver',
+        'monthly_income' => 9000,
+        'is_active' => true,
+        'is_verified_dependent' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
+    $formData = $action->formData($context['request_id'], $context['municipal_id']);
+    $data = $action->execute(
+        new GenerateAssistanceRequestIntakeSheetDto(
+            assistanceRequestId: $context['request_id'],
+            municipalId: $context['municipal_id'],
+            problemPresented: ['sick'],
+            sourceOfIncome: 'Fishing',
+            monthlyIncome: 3000,
+            recommendation: 'Medical Assistance',
+        ),
+        'Test Admin',
+    );
+    $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
+    $sectionFive = Str::between($html, 'V. Household Composition at Filing', '<table class="privacy-table">');
+
+    expect($formData->householdComposition)->toMatchArray([
+        'source' => 'request_snapshot',
+        'member_count' => 1,
+        'warning' => null,
+    ])->and($formData->householdComposition['captured_at'])->not->toBeNull()
+        ->and($sectionFive)->toContain('Ana Mawac', '12', 'PHP 3,500.00')
+        ->not->toContain('April Joy Mawac', 'Current Only Member', 'Driver', '9,000.00')
+        ->and($html)->not->toContain('Request-time household snapshot unavailable');
 });
 
 it('omits the internal roster member id from an on-behalf filing subject', function () {

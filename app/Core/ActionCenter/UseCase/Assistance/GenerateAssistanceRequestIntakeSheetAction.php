@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetData;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateAssistanceRequestIntakeSheetDto;
@@ -25,7 +26,10 @@ class GenerateAssistanceRequestIntakeSheetAction
         string $assistanceRequestId,
         string $municipalId,
     ): AssistanceRequestIntakeSheetFormData {
-        [$request] = $this->loadContext($assistanceRequestId, $municipalId);
+        [$request, , $householdComposition] = $this->loadContext(
+            $assistanceRequestId,
+            $municipalId,
+        );
         $snapshot = $request->snapshot;
         $frozenEconomicValues = [
             'source_of_income' => $this->presentOccupation($snapshot?->occupation),
@@ -50,6 +54,19 @@ class GenerateAssistanceRequestIntakeSheetAction
             problemOptions: AssistanceIntakeProblem::options(),
             frozenEconomicValues: $frozenEconomicValues,
             currentEconomicValues: $currentEconomicValues,
+            householdComposition: [
+                'source' => $householdComposition['uses_current_fallback']
+                    ? 'current_household_fallback'
+                    : 'request_snapshot',
+                'captured_at' => $householdComposition['captured_at']?->toIso8601String(),
+                'member_count' => $this->printableHouseholdMembers(
+                    $householdComposition['members'],
+                    $request,
+                )->count(),
+                'warning' => $householdComposition['uses_current_fallback']
+                    ? 'This legacy request has no request-time household snapshot. Section V will use the household members currently recorded in the beneficiary profile.'
+                    : null,
+            ],
             recommendedDefaults: [
                 'problem_presented' => $this->recommendedProblems($request),
                 'source_of_income' => $frozenEconomicValues['source_of_income']
@@ -65,14 +82,16 @@ class GenerateAssistanceRequestIntakeSheetAction
         GenerateAssistanceRequestIntakeSheetDto $dto,
         string $generatedByUserName,
     ): AssistanceRequestIntakeSheetData {
-        [$request, $municipality, $householdMembers] = $this->loadContext(
+        [$request, $municipality, $householdComposition] = $this->loadContext(
             $dto->assistanceRequestId,
             $dto->municipalId,
         );
 
         return new AssistanceRequestIntakeSheetData(
             request: $request,
-            householdMembers: $householdMembers,
+            householdMembers: $householdComposition['members'],
+            householdCompositionCapturedAt: $householdComposition['captured_at'],
+            usesCurrentHouseholdFallback: $householdComposition['uses_current_fallback'],
             municipalityName: $municipality?->name,
             municipalityLogoDataUri: $this->municipalityLogoDataUri(
                 $municipality?->getFirstMedia('logo'),
@@ -86,7 +105,17 @@ class GenerateAssistanceRequestIntakeSheetAction
         );
     }
 
-    /** @return array{0: AssistanceRequest, 1: ?Municipality, 2: Collection<int, HouseholdMember>} */
+    /**
+     * @return array{
+     *     0: AssistanceRequest,
+     *     1: ?Municipality,
+     *     2: array{
+     *         members: Collection<int, AssistanceRequestHouseholdMemberData>,
+     *         captured_at: ?CarbonImmutable,
+     *         uses_current_fallback: bool
+     *     }
+     * }
+     */
     private function loadContext(
         string $assistanceRequestId,
         string $municipalId,
@@ -122,7 +151,7 @@ class GenerateAssistanceRequestIntakeSheetAction
         return [
             $request,
             $municipality,
-            $this->loadCurrentHouseholdMembers($request->household_id),
+            $this->resolveHouseholdComposition($request),
         ];
     }
 
@@ -209,20 +238,88 @@ class GenerateAssistanceRequestIntakeSheetAction
     }
 
     /**
-     * The request's claimant/address fields are frozen in the snapshot table.
-     * Household composition is intentionally read live because member rows are
-     * not snapshotted per request yet.
+     * New requests use the request-time metadata snapshot. Legacy requests
+     * fall back to the current active roster and are explicitly identified to
+     * the admin and in the generated Section V heading.
      *
-     * @return Collection<int, HouseholdMember>
+     * @return array{
+     *     members: Collection<int, AssistanceRequestHouseholdMemberData>,
+     *     captured_at: ?CarbonImmutable,
+     *     uses_current_fallback: bool
+     * }
      */
-    private function loadCurrentHouseholdMembers(string $householdId): Collection
+    private function resolveHouseholdComposition(AssistanceRequest $request): array
     {
-        return HouseholdMember::query()
-            ->where('household_id', $householdId)
+        $snapshot = data_get($request->metadata, 'household_composition_snapshot');
+
+        if (is_array($snapshot)
+            && array_key_exists('members', $snapshot)
+            && is_array($snapshot['members'])) {
+            $members = collect($snapshot['members'])
+                ->filter(fn (mixed $member): bool => is_array($member))
+                ->map(
+                    fn (array $member): AssistanceRequestHouseholdMemberData => AssistanceRequestHouseholdMemberData::fromSnapshot(
+                        $member,
+                    ),
+                )
+                ->filter(
+                    fn (AssistanceRequestHouseholdMemberData $member): bool => $member->fullName !== '',
+                )
+                ->values();
+
+            return [
+                'members' => $members,
+                'captured_at' => $this->parseCapturedAt($snapshot['captured_at'] ?? null),
+                'uses_current_fallback' => false,
+            ];
+        }
+
+        $capturedAt = CarbonImmutable::now();
+        $members = HouseholdMember::query()
+            ->where('household_id', $request->household_id)
             ->where('is_active', true)
             ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
             ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->map(
+                fn (HouseholdMember $member): AssistanceRequestHouseholdMemberData => AssistanceRequestHouseholdMemberData::fromModel(
+                    $member,
+                    $capturedAt,
+                ),
+            )
+            ->values();
+
+        return [
+            'members' => $members,
+            'captured_at' => null,
+            'uses_current_fallback' => true,
+        ];
+    }
+
+    /** @param Collection<int, AssistanceRequestHouseholdMemberData> $members */
+    private function printableHouseholdMembers(
+        Collection $members,
+        AssistanceRequest $request,
+    ): Collection {
+        return $members
+            ->reject(
+                fn (AssistanceRequestHouseholdMemberData $member): bool => $member->beneficiaryId !== null
+                    && $member->beneficiaryId === (string) $request->beneficiary_id,
+            )
+            ->values();
+    }
+
+    private function parseCapturedAt(mixed $value): ?CarbonImmutable
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function municipalityLogoDataUri(?Media $media): ?string

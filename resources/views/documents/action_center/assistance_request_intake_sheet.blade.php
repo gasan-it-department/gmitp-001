@@ -32,6 +32,7 @@
         .household-table td { font-size: 7.8pt; }
         .number-cell { text-align: right; }
         .center-cell { text-align: center; }
+        .section-note { margin: 1mm 0 2mm; color: #475569; font-size: 6.8pt; }
         .privacy-table { margin-top: 4mm; border-top: 0.6pt solid #94a3b8; }
         .privacy-table td { width: 50%; padding-top: 1.5mm; color: #475569; font-size: 7pt; vertical-align: top; }
         .privacy-table td:last-child { text-align: right; }
@@ -73,10 +74,10 @@
         $selectedProblems = array_fill_keys($data->problemPresented, true);
         $monthlyIncome = 'PHP '.number_format($data->monthlyIncome, 2);
         $compositionMembers = $data->householdMembers
-            ->reject(fn ($member) => (string) $member->beneficiary_id === (string) $request->beneficiary_id)
+            ->reject(fn ($member) => $member->beneficiaryId !== null && $member->beneficiaryId === (string) $request->beneficiary_id)
             ->values();
         $totalMonthlyHouseholdIncome = $data->monthlyIncome
-            + (float) $compositionMembers->sum(fn ($member) => (float) $member->monthly_income);
+            + (float) $compositionMembers->sum(fn ($member) => (float) $member->monthlyIncome);
     @endphp
 
     <div class="page-one">
@@ -165,7 +166,15 @@
         </section>
 
         <section class="section">
-            <div class="section-title">V. Current Household Composition - {{ $compositionMembers->count() }} Active Member(s)</div>
+            <div class="section-title">
+                V. {{ $data->usesCurrentHouseholdFallback ? 'Current Household Composition (Legacy Request)' : 'Household Composition at Filing' }}
+                - {{ $compositionMembers->count() }} {{ $data->usesCurrentHouseholdFallback ? 'Active Member(s)' : 'Member(s)' }}
+            </div>
+            @if($data->usesCurrentHouseholdFallback)
+                <div class="section-note">Request-time household snapshot unavailable; this section reflects the current active household roster.</div>
+            @elseif($data->householdCompositionCapturedAt)
+                <div class="section-note">Household roster captured {{ $data->householdCompositionCapturedAt->format('F j, Y - g:i A') }}.</div>
+            @endif
             <table class="household-table">
                 <thead>
                     <tr>
@@ -175,11 +184,11 @@
                 <tbody>
                     @forelse($compositionMembers as $member)
                         @php
-                            $memberName = trim(implode(' ', array_filter([$member->first_name, $member->middle_name, $member->last_name, $member->suffix])));
-                            $memberEducation = $member->educational_attainment?->label() ?? '---';
+                            $memberEducation = \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom((string) $member->educationalAttainment)?->label()
+                                ?? ($human($member->educationalAttainment) ?: '---');
                         @endphp
                         <tr>
-                            <td>{{ $memberName ?: '---' }}</td><td>{{ $human((string) $member->relationship) ?: '---' }}</td><td class="center-cell">{{ $member->birth_date?->age ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ number_format((float) $member->monthly_income, 2) }}</td>
+                            <td>{{ $member->fullName ?: '---' }}</td><td>{{ $human($member->relationship) ?: '---' }}</td><td class="center-cell">{{ $member->ageAtFiling ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ $member->monthlyIncome === null ? '---' : number_format($member->monthlyIncome, 2) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="center-cell">No other active household members on record.</td></tr>
