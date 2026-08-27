@@ -7,10 +7,11 @@ use Illuminate\Http\UploadedFile;
 
 /**
  * Pure-primitives DTO for an ADMIN correction to an in-flight assistance
- * request. Carries ONLY the two content fields an admin may fix after filing:
+ * request. Carries only the content fields an admin may fix after filing:
  *
  *   • description — the stated reason / situation (free text, not uppercased)
  *   • documents   — replacement/added scans, keyed by ac_document_types.key
+ *   • date of death — only for configured deceased-subject programs
  *
  * It deliberately does NOT carry — and the action never writes — the frozen
  * snapshot_* identity/income/address, amount_approved, transaction_number,
@@ -25,8 +26,10 @@ readonly class UpdateAssistanceRequestDto
     public function __construct(
         public string $assistanceRequestId,
         public string $municipalId,
+        public ?string $municipalCode,
         public string $actingAdminId,
         public string $description,
+        public ?string $onBehalfDateOfDeath,
         public array $documents = [],
     ) {
     }
@@ -35,6 +38,7 @@ readonly class UpdateAssistanceRequestDto
         UpdateAssistanceRequestRequest $request,
         string $assistanceRequestId,
         string $municipalId,
+        ?string $municipalCode,
         string $actingAdminId,
     ): self {
         // Keep only real uploads, keyed by their document slot key.
@@ -46,8 +50,10 @@ readonly class UpdateAssistanceRequestDto
         return new self(
             assistanceRequestId: $assistanceRequestId,
             municipalId: $municipalId,
+            municipalCode: $municipalCode,
             actingAdminId: $actingAdminId,
             description: trim($request->string('description')->toString()),
+            onBehalfDateOfDeath: $request->input('on_behalf_date_of_death') ?: null,
             documents: $documents,
         );
     }

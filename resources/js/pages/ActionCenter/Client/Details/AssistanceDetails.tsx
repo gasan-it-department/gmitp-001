@@ -1,4 +1,4 @@
-import { AssistanceDocumentRequirement } from '@/Core/Types/ActionCenter/assistance';
+import { AssistanceDocumentRequirement, AssistanceRequestFormDefinition } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import PublicLayout from '@/layouts/Public/PublicLayout';
 import actionCenter from '@/routes/actionCenter';
@@ -37,6 +37,7 @@ interface AssistanceRequestDetails {
         name: string;
         slug: string;
         description: string;
+        request_form: AssistanceRequestFormDefinition;
         documents: AssistanceDocumentRequirement[];
     } | null;
     amount_approved: number | null;
@@ -198,6 +199,20 @@ function formatDateTime(value: string | null): string {
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
+    }).format(date);
+}
+
+function formatDate(value: string): string {
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return 'Not available';
+    }
+
+    return new Intl.DateTimeFormat('en-PH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
     }).format(date);
 }
 
@@ -468,7 +483,8 @@ export default function AssistanceDetails({ request }: Props) {
     const recordedDocumentKeys = data.documents
         .map((document) => document.custom_properties?.document_key)
         .filter((key): key is string => Boolean(key));
-    const requireRecipientIdentity = data.on_behalf !== null && data.assistance_type?.slug !== 'burial' && !data.on_behalf.recipient_id_exception;
+    const requireRecipientIdentity =
+        data.on_behalf !== null && data.assistance_type?.request_form.subject_type !== 'deceased' && !data.on_behalf.recipient_id_exception;
     const recipientName = data.filed_for_self ? data.identity_snapshot.full_name : data.on_behalf?.full_name || 'Recipient not available';
     const timeline = buildTimeline(data);
 
@@ -587,6 +603,12 @@ export default function AssistanceDetails({ request }: Props) {
                                     {!data.filed_for_self && (
                                         <DetailRow icon={UserRound} label="Filed by">
                                             {data.identity_snapshot.full_name}
+                                        </DetailRow>
+                                    )}
+
+                                    {data.on_behalf?.date_of_death && (
+                                        <DetailRow icon={CalendarDays} label="Date of Death">
+                                            {formatDate(data.on_behalf.date_of_death)}
                                         </DetailRow>
                                     )}
 

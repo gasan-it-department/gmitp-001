@@ -29,6 +29,7 @@ export interface AssistanceRequestListItem {
 
     filed_for_self: boolean;
     relationship: { value: string; label: string } | null;
+    filer_full_name: string;
     subject_full_name: string;
     is_walkin: boolean;
 
@@ -151,11 +152,17 @@ export function AssistanceRequestTable({ paginator, onView }: Props) {
                                         {/* Ref No. */}
                                         <TableCell className="font-mono text-xs font-semibold text-gray-800">{row.transaction_number}</TableCell>
 
-                                        {/* Subject — full name + filing-context hint */}
+                                        {/* Subject and filer — historical names from the request snapshot */}
                                         <TableCell className="text-xs">
+                                            {!row.filed_for_self && (
+                                                <div className="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Assistance for:</div>
+                                            )}
                                             <div className="font-medium text-gray-900 capitalize">
                                                 {row.subject_full_name || <span className="text-gray-400 italic">No name</span>}
                                             </div>
+                                            {!row.filed_for_self && row.filer_full_name && (
+                                                <div className="mt-0.5 text-[10px] font-medium text-gray-500">Filed by: {row.filer_full_name}</div>
+                                            )}
                                             {!row.filed_for_self && row.relationship && (
                                                 <div className="mt-0.5 text-[10px] font-medium tracking-wide text-blue-700 uppercase">
                                                     via {row.relationship.label}

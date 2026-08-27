@@ -2,6 +2,8 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestFormDefinition;
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
@@ -34,6 +36,7 @@ class StoreAssistanceRequestAction
         private IdGeneratorInterface $idGenerator,
         private AssistanceRequestSmsNotifier $smsNotifier,
         private CheckElegibilityAction $checkEligibility,
+        private AssistanceRequestFormDefinitionProvider $formDefinitions,
     ) {
     }
 
@@ -47,9 +50,14 @@ class StoreAssistanceRequestAction
             );
         }
 
+        $formDefinition = $this->formDefinitions->for(
+            $dto->municipalCode,
+            $assistanceType->slug,
+        );
+
         // Media uploads remain outside this transaction. The claimant/member
         // locks protect the eligibility check and request insert only.
-        $request = DB::transaction(function () use ($dto, $assistanceType, ) {
+        $request = DB::transaction(function () use ($dto, $assistanceType, $formDefinition) {
             // Submission lock order is always claimant first, then the
             // selected recipient. Every citizen/admin store path shares this
             // action, so competing submissions cannot reverse that order.
@@ -86,7 +94,7 @@ class StoreAssistanceRequestAction
                 );
             }
 
-            $this->ensureAssistanceSubjectIsValid($dto, $assistanceType);
+            $this->ensureAssistanceSubjectIsValid($dto, $formDefinition);
             $member = $this->resolveOnBehalfMember($dto, $beneficiary, lock: true);
             $this->ensureVerificationGate($beneficiary, $dto);
 
@@ -96,7 +104,7 @@ class StoreAssistanceRequestAction
                 $beneficiary,
                 $assistanceType,
                 $member?->id,
-                $dto->onBehalfDateOfDeath,
+                $formDefinition->requiresDateOfDeath() ? $dto->onBehalfDateOfDeath : null,
                 allowPendingDependent: $dto->encodedByUserId === null,
             );
 
@@ -104,7 +112,7 @@ class StoreAssistanceRequestAction
                 throw AssistanceEligibilityException::from($eligibility);
             }
 
-            $recipientIdException = $this->recipientIdException($dto, $assistanceType, $member);
+            $recipientIdException = $this->recipientIdException($dto, $formDefinition, $member);
             $householdTotalIncome = $this->computeHouseholdTotalIncome($beneficiary);
             $requestId = $this->idGenerator->generate();
 
@@ -122,7 +130,9 @@ class StoreAssistanceRequestAction
                 'on_behalf_suffix' => $onBehalfSuffix,
                 'on_behalf_birth_date' => $member?->birth_date?->toDateString(),
                 'on_behalf_civil_status' => $member?->getRawOriginal('civil_status'),
-                'on_behalf_date_of_death' => $dto->onBehalfDateOfDeath,
+                'on_behalf_date_of_death' => $formDefinition->requiresDateOfDeath()
+                    ? $dto->onBehalfDateOfDeath
+                    : null,
                 'recipient_id_exception' => $recipientIdException,
                 'recipient_id_exception_reason' => $recipientIdException === 'no_government_id'
                     ? $dto->recipientIdUnavailableReason
@@ -276,24 +286,27 @@ class StoreAssistanceRequestAction
 
     private function ensureAssistanceSubjectIsValid(
         StoreAssistanceRequestDto $dto,
-        AssistanceType $assistanceType,
+        AssistanceRequestFormDefinition $definition,
     ): void {
-        if ($assistanceType->slug !== 'burial') {
+        if (! $definition->isOnBehalfOnly() && ! $definition->requiresDateOfDeath()) {
             return;
         }
 
-        if ($dto->onBehalfHouseholdMemberId === null
-            || blank($dto->relationshipToBeneficiary)
-            || blank($dto->onBehalfDateOfDeath)) {
+        if ($definition->isOnBehalfOnly()
+            && ($dto->onBehalfHouseholdMemberId === null || blank($dto->relationshipToBeneficiary))) {
             throw new \DomainException(
-                'Burial assistance must be filed on behalf of the deceased household member. Select the deceased person, relationship, and date of death.',
+                'This assistance program must be filed on behalf of the deceased household member. Select the deceased person and relationship.',
             );
+        }
+
+        if ($definition->requiresDateOfDeath() && blank($dto->onBehalfDateOfDeath)) {
+            throw new \DomainException('Enter the deceased person\'s date of death.');
         }
     }
 
     private function recipientIdException(
         StoreAssistanceRequestDto $dto,
-        AssistanceType $assistanceType,
+        AssistanceRequestFormDefinition $definition,
         ?HouseholdMember $member,
     ): ?string {
         $isOnBehalf = $member !== null || filled($dto->onBehalfFirstName);
@@ -302,7 +315,7 @@ class StoreAssistanceRequestAction
             return null;
         }
 
-        if ($assistanceType->slug === 'burial' || filled($dto->onBehalfDateOfDeath)) {
+        if ($definition->isDeceasedRequest()) {
             return 'deceased';
         }
 

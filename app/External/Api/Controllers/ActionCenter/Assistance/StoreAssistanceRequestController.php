@@ -72,7 +72,12 @@ class StoreAssistanceRequestController extends Controller
             throw AssistanceEligibilityException::from($eligibility);
         }
 
-        $dto = StoreAssistanceRequestDto::fromRequest($request, $assistanceType, $beneficiary);
+        $dto = StoreAssistanceRequestDto::fromRequest(
+            $request,
+            $assistanceType,
+            $beneficiary,
+            app('current_municipality')->municipal_code,
+        );
 
         $created = $this->storeAssistanceRequest->execute($dto);
 

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\ActionCenter\AssistanceType;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,6 +27,7 @@ class AssistanceTypeDetailsResource extends JsonResource
             'cooldown_months' => (int) $this->cooldown_months,
             'cooldown_type' => $this->cooldown_type,
             'cooldown_scope' => $this->cooldown_scope,
+            'request_form' => $this->requestFormDefinition(),
 
             // Required + optional documents for the public checklist and the
             // admin-controlled document intake flow.
@@ -52,5 +54,16 @@ class AssistanceTypeDetailsResource extends JsonResource
                     });
             }, []),
         ];
+    }
+
+    private function requestFormDefinition(): array
+    {
+        $municipalCode = app()->bound('current_municipality')
+            ? app('current_municipality')->municipal_code
+            : null;
+
+        return app(AssistanceRequestFormDefinitionProvider::class)
+            ->for($municipalCode, $this->slug)
+            ->toArray();
     }
 }

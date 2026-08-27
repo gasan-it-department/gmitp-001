@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
@@ -24,33 +25,56 @@ class UpdateAssistanceRequestAction
 {
     public function __construct(
         private readonly LockAssistanceRequestAction $lockRequest,
+        private readonly AssistanceRequestFormDefinitionProvider $formDefinitions,
     ) {}
 
     public function execute(UpdateAssistanceRequestDto $dto): AssistanceRequest
     {
-        [$request, $descriptionChanged, $replacedKeys] = DB::transaction(
+        [$request, $descriptionChanged, $dateOfDeathChanged, $replacedKeys] = DB::transaction(
             function () use ($dto): array {
                 $request = $this->lockRequest->execute(
                     id: $dto->assistanceRequestId,
                     municipalId: $dto->municipalId,
-                    with: ['media'],
+                    with: ['media', 'assistanceType'],
                 );
 
                 // A concurrent approval/release that committed first is visible
                 // here, after this action has acquired the same request-row lock.
                 $this->ensureEditable($request);
 
+                $definition = $this->formDefinitions->for(
+                    $dto->municipalCode,
+                    $request->assistanceType?->slug,
+                );
+
+                if ($definition->requiresDateOfDeath() && blank($dto->onBehalfDateOfDeath)) {
+                    throw new \DomainException('Enter the deceased person\'s date of death.');
+                }
+
                 $descriptionChanged = $request->description !== $dto->description;
-                $request->update(['description' => $dto->description]);
+                $metadata = $request->metadata ?? [];
+                $dateOfDeathChanged = false;
+
+                if ($definition->requiresDateOfDeath()) {
+                    $dateOfDeathChanged = data_get($metadata, 'on_behalf_date_of_death') !== $dto->onBehalfDateOfDeath;
+                    $metadata['on_behalf_date_of_death'] = $dto->onBehalfDateOfDeath;
+                    $metadata['recipient_id_exception'] = 'deceased';
+                    unset($metadata['recipient_id_exception_reason']);
+                }
+
+                $request->update([
+                    'description' => $dto->description,
+                    'metadata' => $metadata !== [] ? $metadata : null,
+                ]);
 
                 // Storage I/O intentionally stays inside the lock window.
                 $replacedKeys = $this->replaceDocuments($request, $dto->documents);
 
-                return [$request, $descriptionChanged, $replacedKeys];
+                return [$request, $descriptionChanged, $dateOfDeathChanged, $replacedKeys];
             },
         );
 
-        $this->recordAudit($request, $dto, $descriptionChanged, $replacedKeys);
+        $this->recordAudit($request, $dto, $descriptionChanged, $dateOfDeathChanged, $replacedKeys);
 
         return $request->fresh(['media']);
     }
@@ -112,12 +136,17 @@ class UpdateAssistanceRequestAction
         AssistanceRequest $request,
         UpdateAssistanceRequestDto $dto,
         bool $descriptionChanged,
+        bool $dateOfDeathChanged,
         array $replacedKeys,
     ): void {
         $changed = [];
 
         if ($descriptionChanged) {
             $changed[] = 'description';
+        }
+
+        if ($dateOfDeathChanged) {
+            $changed[] = 'date_of_death';
         }
 
         if ($replacedKeys !== []) {

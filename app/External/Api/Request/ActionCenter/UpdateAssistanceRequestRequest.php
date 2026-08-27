@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
@@ -28,15 +29,25 @@ class UpdateAssistanceRequestRequest extends FormRequest
 
     public function rules(): array
     {
+        $assistanceRequest = AssistanceRequest::with('assistanceType')
+            ->find($this->route('assistanceRequestId'));
+        $definition = app(AssistanceRequestFormDefinitionProvider::class)->for(
+            $this->municipalCode(),
+            $assistanceRequest?->assistanceType?->slug,
+        );
+
         $rules = [
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'documents'   => ['nullable', 'array'],
+            'on_behalf_date_of_death' => [
+                $definition->requiresDateOfDeath() ? 'required' : 'prohibited',
+                'date',
+                'before_or_equal:today',
+            ],
         ];
 
         // Resolve the request's assistance type from the route id and append a
         // per-slot rule for each required-document key. Nullable: replace-only.
-        $assistanceRequest = AssistanceRequest::find($this->route('assistanceRequestId'));
-
         if ($assistanceRequest) {
             $requirements = DB::table('ac_assistance_type_documents as atd')
                 ->join('ac_document_types as dt', 'dt.id', '=', 'atd.document_type_id')
@@ -57,11 +68,20 @@ class UpdateAssistanceRequestRequest extends FormRequest
         return $rules;
     }
 
+    private function municipalCode(): ?string
+    {
+        return app()->bound('current_municipality')
+            ? app('current_municipality')->municipal_code
+            : null;
+    }
+
     public function messages(): array
     {
         return [
             'description.required' => 'Please explain the request / situation.',
             'description.min'      => 'Please give at least a few words about the situation.',
+            'on_behalf_date_of_death.required' => 'Enter the deceased person\'s date of death.',
+            'on_behalf_date_of_death.prohibited' => 'Date of Death is not used by this assistance program.',
             'documents.*.mimes'    => 'Allowed file types: JPG, PNG, PDF.',
             'documents.*.max'      => 'Each file must be 5 MB or smaller.',
         ];

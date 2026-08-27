@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\RejectAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Beneficiary\BeneficiaryIdentityGroup;
@@ -343,9 +344,11 @@ it('stores snapshots and permits one newly declared pending member', function ()
         $idGenerator,
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute(
         new StoreAssistanceRequestDto(
             municipalId: $municipalId,
+            municipalCode: '174003000',
             beneficiaryId: $beneficiaryId,
             householdId: $householdId,
             assistanceTypeId: $assistanceTypeId,
@@ -408,6 +411,7 @@ it('allows an adult portal on-behalf request without recipient id uploads', func
         snapshotTestIdGenerator(),
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))
         ->execute(adultOnBehalfDto($context));
     $details = (new ShowClientAssistanceRequestAction)->execute(
@@ -434,6 +438,7 @@ it('keeps internal rejection remarks and staff data out of the citizen request p
         snapshotTestIdGenerator(),
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))
         ->execute(adultOnBehalfDto($context));
 
@@ -482,6 +487,7 @@ it('stores a documented no-id exception for an adult assisted person', function 
         snapshotTestIdGenerator(),
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute(
         adultOnBehalfDto(
             $context,
@@ -497,6 +503,23 @@ it('stores a documented no-id exception for an adult assisted person', function 
     ]);
 });
 
+it('does not apply deceased metadata or id exemptions to an unconfigured program', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
+    ))->execute(adultOnBehalfDto(
+        context: $context,
+        onBehalfDateOfDeath: '2026-08-20',
+    ));
+
+    expect($created->recipient_id_exception)->toBeNull()
+        ->and(data_get($created->metadata, 'on_behalf_date_of_death'))->toBeNull();
+});
+
 it('allows an admin to file for a pending household member with an override and trusts the roster relationship', function () {
     $context = seedAdultOnBehalfIdentityContext();
 
@@ -504,6 +527,7 @@ it('allows an admin to file for a pending household member with an override and 
         snapshotTestIdGenerator(),
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute(
         adultOnBehalfDto(
             $context,
@@ -532,6 +556,7 @@ it('rechecks citizen eligibility after acquiring submission locks', function () 
         snapshotTestIdGenerator(),
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute($dto);
 
     // This represents the second HTTP request after it waited for the first
@@ -553,6 +578,7 @@ it('rechecks citizen eligibility after acquiring submission locks', function () 
         snapshotTestIdGenerator(),
         $smsNotifier,
         $eligibility,
+        app(AssistanceRequestFormDefinitionProvider::class),
     );
 
     expect(fn () => $secondSubmission->execute($dto))
@@ -569,6 +595,7 @@ it('blocks another claimant from targeting a household member with an open stand
         snapshotTestIdGenerator(),
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute(adultOnBehalfDto($context));
 
     $secondBeneficiaryId = (string) Str::ulid();
@@ -645,6 +672,7 @@ it('rejects burial assistance filed for self at the core action boundary', funct
         snapshotTestIdGenerator(),
         $smsNotifier,
         $eligibility,
+        app(AssistanceRequestFormDefinitionProvider::class),
     );
 
     expect(fn () => $action->execute(adultOnBehalfDto(
@@ -824,9 +852,11 @@ function adultOnBehalfDto(
     ?string $verificationOverrideReason = null,
     string $relationshipToBeneficiary = 'parent',
     bool $filedForSelf = false,
+    ?string $onBehalfDateOfDeath = null,
 ): StoreAssistanceRequestDto {
     return new StoreAssistanceRequestDto(
         municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
         beneficiaryId: $context['beneficiary_id'],
         householdId: $context['household_id'],
         assistanceTypeId: $context['assistance_type_id'],
@@ -842,7 +872,7 @@ function adultOnBehalfDto(
         onBehalfMiddleName: null,
         onBehalfLastName: $filedForSelf ? null : 'Santos',
         onBehalfSuffix: null,
-        onBehalfDateOfDeath: null,
+        onBehalfDateOfDeath: $onBehalfDateOfDeath,
         recipientIdUnavailable: $recipientIdUnavailable,
         recipientIdUnavailableReason: $recipientIdUnavailableReason,
         snapshotFirstName: 'Maria',

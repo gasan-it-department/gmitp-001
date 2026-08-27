@@ -107,6 +107,10 @@ enum Relationship: string
      */
     public static function assistanceRepresentativeCases(): array
     {
+        // return array_values(array_filter(
+        //     self::cases(),
+        //     fn(self $case) => $case !== self::Head,
+        // ));
         return [
             self::Spouse,
             self::LiveInPartner,

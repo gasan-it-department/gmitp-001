@@ -28,6 +28,7 @@ readonly class StoreAssistanceRequestDto
      */
     public function __construct(
         public string $municipalId,
+        public ?string $municipalCode,
         public string $beneficiaryId,
         public string $householdId,
         public string $assistanceTypeId,
@@ -55,7 +56,7 @@ readonly class StoreAssistanceRequestDto
         public ?string $onBehalfMiddleName,
         public ?string $onBehalfLastName,
         public ?string $onBehalfSuffix,
-        public ?string $onBehalfDateOfDeath,   // burial only
+        public ?string $onBehalfDateOfDeath,
         public bool $recipientIdUnavailable,
         public ?string $recipientIdUnavailableReason,
 
@@ -90,6 +91,7 @@ readonly class StoreAssistanceRequestDto
         StoreAssistanceRequest $request,
         AssistanceType $assistanceType,
         Beneficiary $beneficiary,
+        ?string $municipalCode,
     ): self {
         $household = $beneficiary->household;
 
@@ -100,6 +102,7 @@ readonly class StoreAssistanceRequestDto
 
         return new self(
             municipalId: $assistanceType->municipal_id,
+            municipalCode: $municipalCode,
             beneficiaryId: $beneficiary->id,
             householdId: $household->id,
             assistanceTypeId: $assistanceType->id,
@@ -164,6 +167,7 @@ readonly class StoreAssistanceRequestDto
         AssistanceType $assistanceType,
         Beneficiary $beneficiary,
         string $adminUserId,
+        ?string $municipalCode,
     ): self {
         $documents = [];
 
@@ -181,6 +185,7 @@ readonly class StoreAssistanceRequestDto
 
         return new self(
             municipalId: $assistanceType->municipal_id,
+            municipalCode: $municipalCode,
             beneficiaryId: $beneficiary->id,
             householdId: $household->id,
             assistanceTypeId: $assistanceType->id,
@@ -224,4 +229,5 @@ readonly class StoreAssistanceRequestDto
             snapshotStreet: $household->street,
         );
     }
+
 }

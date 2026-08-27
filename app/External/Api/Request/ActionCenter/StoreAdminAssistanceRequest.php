@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\AssistanceType;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,6 +38,12 @@ class StoreAdminAssistanceRequest extends FormRequest
 
     public function rules(): array
     {
+        $assistanceType = AssistanceType::find($this->input('assistance_type_id'));
+        $definition = app(AssistanceRequestFormDefinitionProvider::class)->for(
+            $this->municipalCode(),
+            $assistanceType?->slug,
+        );
+
         $rules = [
             'beneficiary_id' => ['required', 'ulid', 'exists:ac_beneficiaries,id'],
             'assistance_type_id' => ['required', 'ulid', 'exists:ac_assistance_types,id'],
@@ -66,7 +73,9 @@ class StoreAdminAssistanceRequest extends FormRequest
             'on_behalf_middle_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_last_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_suffix' => ['nullable', 'string', 'max:20'],
-            'on_behalf_date_of_death' => ['nullable', 'date', 'before_or_equal:today'],
+            'on_behalf_date_of_death' => $definition->requiresDateOfDeath()
+                ? ['required', 'date', 'before_or_equal:today']
+                : ['prohibited'],
             'recipient_id_unavailable' => ['nullable', 'boolean'],
             'recipient_id_unavailable_reason' => [
                 'nullable',
@@ -80,8 +89,6 @@ class StoreAdminAssistanceRequest extends FormRequest
         // Per-document slot rules for the SELECTED assistance type — resolved
         // from the submitted id (not a route binding). Each slot is nullable
         // (optional) but, when a file is sent, must be a valid type/size.
-        $assistanceType = AssistanceType::find($this->input('assistance_type_id'));
-
         if ($assistanceType instanceof AssistanceType) {
             $requirements = DB::table('ac_assistance_type_documents as atd')
                 ->join('ac_document_types as dt', 'dt.id', '=', 'atd.document_type_id')
@@ -102,6 +109,13 @@ class StoreAdminAssistanceRequest extends FormRequest
         return $rules;
     }
 
+    private function municipalCode(): ?string
+    {
+        return app()->bound('current_municipality')
+            ? app('current_municipality')->municipal_code
+            : null;
+    }
+
     public function messages(): array
     {
         return [
@@ -114,6 +128,8 @@ class StoreAdminAssistanceRequest extends FormRequest
             'documents.*.max' => 'Each file must be 5 MB or smaller.',
             'relationship_to_beneficiary.required_with' => 'Choose the assisted person\'s relationship to the beneficiary.',
             'on_behalf_household_member_id.required_with' => 'Select the household member receiving assistance.',
+            'on_behalf_date_of_death.required' => 'Enter the deceased person\'s date of death.',
+            'on_behalf_date_of_death.prohibited' => 'Date of Death is not used by this assistance program.',
             'recipient_id_unavailable_reason.required_if' => 'Explain why the assisted adult cannot provide a government ID.',
         ];
     }

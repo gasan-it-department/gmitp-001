@@ -83,6 +83,7 @@ class AssistanceRequestListResource extends JsonResource
             // identity snapshot OR the on_behalf_* fields — never from the
             // live beneficiary record, so historical rows stay accurate even
             // if the beneficiary later edits their profile.
+            'filer_full_name' => $this->resolveFilerFullName(),
             'subject_full_name' => $this->resolveSubjectFullName(),
 
             // Useful for admin filters: "show online submissions only" /
@@ -154,5 +155,17 @@ class AssistanceRequestListResource extends JsonResource
             ];
 
         return trim(implode(' ', array_filter($parts)));
+    }
+
+    private function resolveFilerFullName(): string
+    {
+        $snapshot = $this->resource->snapshot;
+
+        return trim(implode(' ', array_filter([
+            $snapshot?->first_name,
+            $snapshot?->middle_name,
+            $snapshot?->last_name,
+            $snapshot?->suffix,
+        ])));
     }
 }

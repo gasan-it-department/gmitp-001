@@ -23,7 +23,7 @@ export interface OnBehalfOfData {
     middle_name: string;
     last_name: string;
     suffix: string;
-    date_of_death: string; // only used when isBurial = true
+    date_of_death: string; // only used for deceased-subject request forms
     relationship: RelationshipType;
 }
 
@@ -35,9 +35,10 @@ interface Props {
      *  the enum copy. The `requires_legal_age` flag drives the "Must be 18+"
      *  pill rendered under the option. */
     relationships: RelationshipOption[];
-    /** True when the assistance type is burial — reveals the Date of Death field
-     *  and adjusts copy to say "Deceased" instead of "Family Member". */
-    isBurial: boolean;
+    /** Enables deceased-person language and behavior for configured programs. */
+    isDeceasedRequest: boolean;
+    /** Reveals the configured Date of Death request field. */
+    requiresDateOfDeath: boolean;
     /** Used to enforce the "legal age" rule for child/sibling relationships. */
     applicantBirthDate: string | null;
     /** Existing household roster the filer can pick from. */
@@ -83,7 +84,8 @@ export function OnBehalfOfSection({
     data,
     onChange,
     relationships,
-    isBurial,
+    isDeceasedRequest,
+    requiresDateOfDeath,
     applicantBirthDate,
     householdMembers,
     storeHouseholdMemberUrl,
@@ -99,8 +101,8 @@ export function OnBehalfOfSection({
 
     const today = new Date().toISOString().split('T')[0];
 
-    const heading = isBurial ? "Deceased Person's Information" : 'Person Being Assisted';
-    const subheading = isBurial
+    const heading = isDeceasedRequest ? "Deceased Person's Information" : 'Person Being Assisted';
+    const subheading = isDeceasedRequest
         ? 'Burial assistance is filed by an authorized family representative, not the deceased.'
         : audience === 'admin'
           ? 'Record the household member receiving assistance and keep the selected beneficiary as the filer.'
@@ -137,11 +139,11 @@ export function OnBehalfOfSection({
     };
 
     return (
-        <div className={`space-y-6 rounded-2xl border bg-white p-6 shadow-sm ${isBurial ? 'border-rose-100' : 'border-blue-100'}`}>
+        <div className={`space-y-6 rounded-2xl border bg-white p-6 shadow-sm ${isDeceasedRequest ? 'border-rose-100' : 'border-blue-100'}`}>
             {/* ── Header ── */}
             <div className="flex items-center gap-3">
-                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isBurial ? 'bg-rose-50' : 'bg-blue-50'}`}>
-                    <Users className={`h-5 w-5 ${isBurial ? 'text-rose-600' : 'text-blue-600'}`} />
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isDeceasedRequest ? 'bg-rose-50' : 'bg-blue-50'}`}>
+                    <Users className={`h-5 w-5 ${isDeceasedRequest ? 'text-rose-600' : 'text-blue-600'}`} />
                 </div>
                 <div>
                     <h3 className="text-base font-bold text-slate-900">{heading}</h3>
@@ -150,7 +152,7 @@ export function OnBehalfOfSection({
             </div>
 
             {/* ── Notice ── */}
-            {isBurial ? (
+            {isDeceasedRequest ? (
                 <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                     <p className="text-xs leading-relaxed text-blue-800">
@@ -183,7 +185,7 @@ export function OnBehalfOfSection({
             ) : (
                 <FamilyMemberPicker
                     members={householdMembers}
-                    isBurial={isBurial}
+                    isDeceasedRequest={isDeceasedRequest}
                     onPick={handlePickMember}
                     onStartAdding={() => setIsAdding(true)}
                     error={errors['on_behalf_household_member_id'] ?? errors['on_behalf_first_name']}
@@ -204,8 +206,8 @@ export function OnBehalfOfSection({
                 />
             )}
 
-            {/* ── Date of Death (burial only) ── */}
-            {isBurial && (
+            {/* ── Date of Death (when configured for this assistance type) ── */}
+            {requiresDateOfDeath && (
                 <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-slate-700">
                         Date of Death <span className="text-rose-500">*</span>
@@ -279,13 +281,13 @@ function SelectedMemberCard({
 
 function FamilyMemberPicker({
     members,
-    isBurial,
+    isDeceasedRequest,
     onPick,
     onStartAdding,
     error,
 }: {
     members: HouseholdMemberOption[];
-    isBurial: boolean;
+    isDeceasedRequest: boolean;
     onPick: (memberId: string) => void;
     onStartAdding: () => void;
     error?: string;
@@ -293,7 +295,7 @@ function FamilyMemberPicker({
     return (
         <div className="space-y-3">
             <Label className="text-xs font-semibold text-slate-700">
-                {isBurial ? 'Pick the deceased' : 'Pick a family member'} <span className="text-rose-500">*</span>
+                {isDeceasedRequest ? 'Pick the deceased' : 'Pick a family member'} <span className="text-rose-500">*</span>
             </Label>
 
             {members.length > 0 ? (
