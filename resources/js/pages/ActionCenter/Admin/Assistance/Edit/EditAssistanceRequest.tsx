@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
+import { AssistanceRequestFormDefinition, PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useOptimizedAssistanceDocuments } from '@/hooks/use-optimized-assistance-documents';
 import AdminLayout from '@/layouts/App/AppLayout';
@@ -26,10 +26,10 @@ interface RequestData {
     transaction_number: string;
     status: string;
     description: string | null;
-    assistance_type: { name: string } | null;
+    assistance_type: { name: string; slug: string; request_form: AssistanceRequestFormDefinition } | null;
     identity_snapshot: { full_name: string } | null;
     beneficiary_number: string | null;
-    on_behalf: { recipient_id_exception?: string | null } | null;
+    on_behalf: { date_of_death?: string | null; recipient_id_exception?: string | null } | null;
     documents: UploadedDoc[];
 }
 
@@ -52,6 +52,7 @@ interface Props {
 /** Explicit type so `documents` widens to a File map (not the literal {}). */
 type EditFormData = {
     description: string;
+    on_behalf_date_of_death: string;
     documents: Record<string, File | null>;
 };
 
@@ -73,13 +74,17 @@ function formatBytes(bytes: number): string {
 export default function EditAssistanceRequest({ request, requiredDocuments, submitUrl }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const r: RequestData = 'data' in request ? request.data : request;
-    const recipientIdIsRequired = r.on_behalf !== null && !r.on_behalf.recipient_id_exception;
+    const requiresDateOfDeath =
+        r.assistance_type?.request_form.fields.some((field) => field.key === 'on_behalf_date_of_death' && field.required) ?? false;
+    const isDeceasedRequest = r.assistance_type?.request_form.subject_type === 'deceased';
+    const recipientIdIsRequired = r.on_behalf !== null && !isDeceasedRequest && !r.on_behalf.recipient_id_exception;
     const slots = requiredDocuments.data
         .filter((slot) => !slot.key.startsWith('recipient_valid_id_') || r.on_behalf !== null)
         .map((slot) => (slot.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...slot, is_required: true } : slot));
 
     const { data, setData, post, processing, errors } = useForm<EditFormData>({
         description: r.description ?? '',
+        on_behalf_date_of_death: r.on_behalf?.date_of_death ?? '',
         documents: {},
     });
 
@@ -121,7 +126,8 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
         });
     };
 
-    const canSubmit = data.description.trim().length >= 10 && !isPreparingDocuments && !processing;
+    const canSubmit =
+        data.description.trim().length >= 10 && (!requiresDateOfDeath || data.on_behalf_date_of_death !== '') && !isPreparingDocuments && !processing;
 
     return (
         <AdminLayout>
@@ -186,6 +192,25 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
                             />
                             {errors.description && <p className="text-xs text-red-500">{errors.description}</p>}
                         </section>
+
+                        {requiresDateOfDeath && (
+                            <section className="space-y-3 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                                <Label htmlFor="on_behalf_date_of_death">
+                                    Date of Death <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                    id="on_behalf_date_of_death"
+                                    type="date"
+                                    max={new Date().toISOString().split('T')[0]}
+                                    value={data.on_behalf_date_of_death}
+                                    onChange={(event) => setData('on_behalf_date_of_death', event.target.value)}
+                                />
+                                <p className="text-xs leading-relaxed text-slate-500">
+                                    Correct this value before approval. The change is recorded in the request audit trail.
+                                </p>
+                                {fieldErrors.on_behalf_date_of_death && <p className="text-xs text-red-500">{fieldErrors.on_behalf_date_of_death}</p>}
+                            </section>
+                        )}
 
                         {/* Document slots */}
                         {slots.length > 0 && (

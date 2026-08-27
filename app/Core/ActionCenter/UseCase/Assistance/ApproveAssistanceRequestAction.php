@@ -2,6 +2,8 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestFormDefinition;
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
@@ -46,6 +48,7 @@ class ApproveAssistanceRequestAction
     public function __construct(
         protected LockAssistanceRequestAction $lockRequest,
         private readonly AssistanceRequestSmsNotifier $smsNotifier,
+        private readonly AssistanceRequestFormDefinitionProvider $formDefinitions,
     ) {}
 
     public function execute(ApproveAssistanceRequestDto $dto): AssistanceRequest
@@ -65,9 +68,14 @@ class ApproveAssistanceRequestAction
             // the transaction without writing anything.
             $this->ensureTransitionAllowed($request);
             $this->ensureReviewerAssigned($request);
+            $formDefinition = $this->formDefinitions->for(
+                $dto->municipalCode,
+                $request->assistanceType?->slug,
+            );
+            $this->ensureConfiguredRequestFieldsReady($request, $formDefinition);
             $this->ensureOnBehalfMemberVerified($request);
             $this->ensureAmountWithinLimits($request, $dto->amountApproved);
-            $this->ensureRequiredDocumentsReady($request);
+            $this->ensureRequiredDocumentsReady($request, $formDefinition);
 
             // Commit the approval to the request row. Activity log captures
             // status / amount_approved / approved_by_user_id changes
@@ -124,6 +132,16 @@ class ApproveAssistanceRequestAction
         }
     }
 
+    private function ensureConfiguredRequestFieldsReady(
+        AssistanceRequest $request,
+        AssistanceRequestFormDefinition $definition,
+    ): void {
+        if ($definition->requiresDateOfDeath()
+            && blank(data_get($request->metadata, 'on_behalf_date_of_death'))) {
+            throw AssistanceApprovalException::missingDateOfDeath();
+        }
+    }
+
     private function ensureAmountWithinLimits(AssistanceRequest $request, float $amount): void
     {
         $type = $request->assistanceType;
@@ -155,7 +173,10 @@ class ApproveAssistanceRequestAction
      * Today's "uploaded" check still applies — the verification check just
      * stacks on top. No other Approve code changes needed when that's added.
      */
-    private function ensureRequiredDocumentsReady(AssistanceRequest $request): void
+    private function ensureRequiredDocumentsReady(
+        AssistanceRequest $request,
+        AssistanceRequestFormDefinition $definition,
+    ): void
     {
         $requiredDocs = $request->assistanceType->documents
             ->filter(fn ($doc) => (bool) $doc->pivot->is_required);
@@ -184,11 +205,12 @@ class ApproveAssistanceRequestAction
             throw AssistanceApprovalException::missingRequiredDocuments($missing);
         }
 
-        $this->ensureRecipientIdentityDocumentsReady($request, $requiredDocs, $uploadedKeys);
+        $this->ensureRecipientIdentityDocumentsReady($request, $definition, $requiredDocs, $uploadedKeys);
     }
 
     private function ensureRecipientIdentityDocumentsReady(
         AssistanceRequest $request,
+        AssistanceRequestFormDefinition $definition,
         Collection $requiredDocs,
         Collection $uploadedKeys,
     ): void {
@@ -209,7 +231,7 @@ class ApproveAssistanceRequestAction
             && filled($request->recipient_id_exception_reason)
             && mb_strlen(trim($request->recipient_id_exception_reason)) >= 10;
 
-        if ($request->assistanceType->slug === 'burial'
+        if ($definition->isDeceasedRequest()
             || in_array($exception, ['minor', 'deceased'], true)
             || $hasValidUnavailableReason) {
             return;

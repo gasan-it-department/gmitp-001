@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Resources\ActionCenter\AssistanceRequest;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -48,6 +49,7 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'cooldown_months' => (int) $this->assistanceType->cooldown_months,
                 'cooldown_type' => $this->assistanceType->cooldown_type,
                 'cooldown_scope' => $this->assistanceType->cooldown_scope,
+                'request_form' => $this->requestFormDefinition($this->assistanceType->slug),
                 'documents' => $this->assistanceType->relationLoaded('documents')
                     ? $this->assistanceType->documents
                         ->sortBy(fn($document) => $document->pivot->sort_order ?? 0)
@@ -251,5 +253,16 @@ class AssistanceRequestDetailsResource extends JsonResource
         }
 
         return $birthDate->diffInYears($this->created_at);
+    }
+
+    private function requestFormDefinition(?string $assistanceTypeSlug): array
+    {
+        $municipalCode = app()->bound('current_municipality')
+            ? app('current_municipality')->municipal_code
+            : null;
+
+        return app(AssistanceRequestFormDefinitionProvider::class)
+            ->for($municipalCode, $assistanceTypeSlug)
+            ->toArray();
     }
 }

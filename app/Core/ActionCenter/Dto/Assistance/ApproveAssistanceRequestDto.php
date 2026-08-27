@@ -21,6 +21,7 @@ readonly class ApproveAssistanceRequestDto
     public function __construct(
         public string $assistanceRequestId,
         public string $municipalId,
+        public ?string $municipalCode,
         public string $approverId,
         public float $amountApproved,
         public string $approvalNotes,
@@ -35,11 +36,13 @@ readonly class ApproveAssistanceRequestDto
         ApproveAssistanceRequestRequest $request,
         string $assistanceRequestId,
         string $municipalId,
+        ?string $municipalCode,
         string $approverId,
     ): self {
         return new self(
             assistanceRequestId: $assistanceRequestId,
             municipalId: $municipalId,
+            municipalCode: $municipalCode,
             approverId: $approverId,
             amountApproved: (float) $request->validated('amount_approved'),
             approvalNotes: (string) $request->validated('approval_notes'),

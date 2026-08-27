@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
-import { PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
+import { AssistanceRequestFormDefinition, PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
@@ -74,6 +74,7 @@ interface AssistanceTypeBlock {
     cooldown_months: number;
     cooldown_type: string;
     cooldown_scope: string;
+    request_form: AssistanceRequestFormDefinition;
 }
 
 interface DocumentBlock {
@@ -239,7 +240,10 @@ export default function AssistanceRequestsDetails({
         (document) => ['valid_id_front', 'valid_id_back'].includes(document.key) && document.is_required,
     );
     const recipientIdIsRequired =
-        detail.on_behalf !== null && filerIdIsRequired && detail.assistance_type?.slug !== 'burial' && !detail.on_behalf.recipient_id_exception;
+        detail.on_behalf !== null &&
+        filerIdIsRequired &&
+        detail.assistance_type?.request_form.subject_type !== 'deceased' &&
+        !detail.on_behalf.recipient_id_exception;
     const requiredDocumentsData = requiredDocuments.data
         .filter((document) => !document.key.startsWith('recipient_valid_id_') || detail.on_behalf !== null)
         .map((document) => (document.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...document, is_required: true } : document));
@@ -265,6 +269,14 @@ export default function AssistanceRequestsDetails({
     const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
     const missingRequiredDocuments = requiredDocumentsData.filter((document) => document.is_required && !uploadedByKey.has(document.key));
     const hasMissingRequiredDocuments = missingRequiredDocuments.length > 0;
+    const requiresDateOfDeath =
+        detail.assistance_type?.request_form.fields.some((field) => field.key === 'on_behalf_date_of_death' && field.required) ?? false;
+    const hasMissingDateOfDeath = requiresDateOfDeath && !detail.on_behalf?.date_of_death;
+    const approvalBlockReason = hasMissingDateOfDeath
+        ? 'Enter the Date of Death in Edit Request before approval.'
+        : hasMissingRequiredDocuments
+          ? 'Upload all required documents before approval.'
+          : null;
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
     const canEditRequest = requestIsEditable && canProcessRequests;
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
@@ -378,7 +390,7 @@ export default function AssistanceRequestsDetails({
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
                                         acknowledgementReceiptUrl={acknowledgementReceiptUrl}
-                                        hasMissingRequiredDocuments={hasMissingRequiredDocuments}
+                                        approvalBlockReason={approvalBlockReason}
                                         canProcess={canProcessRequests}
                                         canDecide={canDecideRequests}
                                         canRelease={canReleaseRequests}
@@ -457,6 +469,33 @@ export default function AssistanceRequestsDetails({
                                 >
                                     <Link href={editRequestUrl}>
                                         <Upload className="mr-2 h-4 w-4" /> Upload documents
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {requestIsEditable && hasMissingDateOfDeath && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+                        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-amber-950">Date of Death required before approval</p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+                                        This burial request cannot be approved until MSWD records the deceased person&apos;s date of death.
+                                    </p>
+                                </div>
+                            </div>
+                            {canProcessRequests && (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                >
+                                    <Link href={editRequestUrl}>
+                                        <Pencil className="mr-2 h-4 w-4" /> Edit Request
                                     </Link>
                                 </Button>
                             )}
@@ -1240,7 +1279,7 @@ function ActionButtons({
     isMine,
     reviewerName,
     acknowledgementReceiptUrl,
-    hasMissingRequiredDocuments,
+    approvalBlockReason,
     canProcess,
     canDecide,
     canRelease,
@@ -1251,7 +1290,7 @@ function ActionButtons({
     isMine: boolean;
     reviewerName: string | null;
     acknowledgementReceiptUrl: string;
-    hasMissingRequiredDocuments: boolean;
+    approvalBlockReason: string | null;
     canProcess: boolean;
     canDecide: boolean;
     canRelease: boolean;
@@ -1279,8 +1318,8 @@ function ActionButtons({
                             <Button
                                 className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
                                 onClick={onAction('Approve')}
-                                disabled={hasMissingRequiredDocuments}
-                                title={hasMissingRequiredDocuments ? 'Upload all required documents before approval.' : undefined}
+                                disabled={approvalBlockReason !== null}
+                                title={approvalBlockReason ?? undefined}
                             >
                                 <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                             </Button>

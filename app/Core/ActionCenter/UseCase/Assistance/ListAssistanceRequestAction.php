@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ListAssistanceRequestAction
@@ -79,23 +80,76 @@ class ListAssistanceRequestAction
         // ── Free-text search ──────────────────────────────────────────────────
         // Covers transaction number, the filer's frozen identity snapshot, and
         // the on-behalf name columns so admins can find a record by any name.
-        if (! empty($filters['search'])) {
-            $term = '%'.$filters['search'].'%';
+        $search = $this->normalizeSearch($filters['search'] ?? null);
 
-            $query->where(function ($q) use ($term) {
-                $q->where('transaction_number', 'like', $term)
-                    ->orWhereHas('snapshot', function ($snapshotQuery) use ($term) {
-                        $snapshotQuery
-                            ->where('first_name', 'like', $term)
-                            ->orWhere('last_name', 'like', $term);
+        if ($search !== null) {
+            $tokens = array_values(preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+
+            $query->where(function (Builder $requestQuery) use ($search, $tokens): void {
+                $requestQuery->where('transaction_number', 'like', "%{$search}%")
+                    ->orWhereHas('snapshot', function (Builder $snapshotQuery) use ($tokens): void {
+                        $this->whereEveryNameTokenMatchesAField(
+                            $snapshotQuery,
+                            $tokens,
+                            ['first_name', 'middle_name', 'last_name', 'suffix'],
+                        );
                     })
-                    ->orWhere('metadata->on_behalf_first_name', 'like', $term)
-                    ->orWhere('metadata->on_behalf_last_name', 'like', $term);
+                    ->orWhere(function (Builder $metadataQuery) use ($tokens): void {
+                        $this->whereEveryNameTokenMatchesAField(
+                            $metadataQuery,
+                            $tokens,
+                            [
+                                'metadata->on_behalf_first_name',
+                                'metadata->on_behalf_middle_name',
+                                'metadata->on_behalf_last_name',
+                                'metadata->on_behalf_suffix',
+                            ],
+                        );
+                    });
             });
         }
 
         $perPage = min((int) ($filters['per_page'] ?? 15), 100);
 
         return $query->paginate($perPage)->withQueryString();
+    }
+
+    private function normalizeSearch(mixed $value): ?string
+    {
+        $search = preg_replace('/\s+/u', ' ', trim((string) $value));
+
+        if (! is_string($search) || $search === '') {
+            return null;
+        }
+
+        return mb_strtoupper($search);
+    }
+
+    /**
+     * Require every search word to occur in one of the fields belonging to
+     * this identity. This prevents a filer word and an assisted-person word
+     * from combining into a false match.
+     *
+     * @param  array<int, string>  $tokens
+     * @param  array<int, string>  $fields
+     */
+    private function whereEveryNameTokenMatchesAField(
+        Builder $query,
+        array $tokens,
+        array $fields,
+    ): void {
+        foreach ($tokens as $token) {
+            $term = "%{$token}%";
+
+            $query->where(function (Builder $tokenQuery) use ($term, $fields): void {
+                foreach ($fields as $index => $field) {
+                    if ($index === 0) {
+                        $tokenQuery->where($field, 'like', $term);
+                    } else {
+                        $tokenQuery->orWhere($field, 'like', $term);
+                    }
+                }
+            });
+        }
     }
 }

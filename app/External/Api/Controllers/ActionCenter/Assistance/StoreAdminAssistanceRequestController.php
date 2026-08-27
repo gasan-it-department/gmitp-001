@@ -81,6 +81,7 @@ class StoreAdminAssistanceRequestController extends Controller
                 $assistanceType,
                 $beneficiary,
                 Auth::id(),
+                app('current_municipality')->municipal_code,
             );
 
             $created = $this->storeAssistanceRequest->execute($dto);

@@ -2,7 +2,9 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Enums\Relationship;
+use App\Core\ActionCenter\Models\AssistanceType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,6 +28,12 @@ class StoreAssistanceRequest extends FormRequest
 
     public function rules(): array
     {
+        $assistanceType = $this->route('assistanceType');
+        $definition = app(AssistanceRequestFormDefinitionProvider::class)->for(
+            $this->municipalCode(),
+            $assistanceType instanceof AssistanceType ? $assistanceType->slug : null,
+        );
+
         $rules = [
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'privacy_consent' => ['required', 'accepted'],
@@ -44,7 +52,9 @@ class StoreAssistanceRequest extends FormRequest
             'on_behalf_middle_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_last_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_suffix' => ['nullable', 'string', 'max:20'],
-            'on_behalf_date_of_death' => ['nullable', 'date', 'before_or_equal:today'],
+            'on_behalf_date_of_death' => $definition->requiresDateOfDeath()
+                ? ['required', 'date', 'before_or_equal:today']
+                : ['prohibited'],
             'recipient_id_unavailable' => ['nullable', 'boolean'],
             'recipient_id_unavailable_reason' => [
                 'nullable',
@@ -58,6 +68,13 @@ class StoreAssistanceRequest extends FormRequest
         return $rules;
     }
 
+    private function municipalCode(): ?string
+    {
+        return app()->bound('current_municipality')
+            ? app('current_municipality')->municipal_code
+            : null;
+    }
+
     public function messages(): array
     {
         return [
@@ -65,6 +82,8 @@ class StoreAssistanceRequest extends FormRequest
             'description.min' => 'Please give at least a few words about your situation.',
             'privacy_consent.accepted' => 'You must agree to the Data Privacy notice to submit.',
             'documents.prohibited' => 'Supporting documents are recorded by MSWD after the physical originals are inspected.',
+            'on_behalf_date_of_death.required' => 'Enter the deceased person\'s date of death.',
+            'on_behalf_date_of_death.prohibited' => 'Date of Death is not used by this assistance program.',
             'recipient_id_unavailable_reason.required_if' => 'Explain why the assisted adult cannot provide a government ID.',
             'recipient_id_unavailable_reason.min' => 'Please provide a little more detail about why the assisted adult has no government ID.',
         ];

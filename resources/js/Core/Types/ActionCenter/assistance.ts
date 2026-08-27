@@ -6,6 +6,22 @@
 export type CooldownType = 'per_request' | 'one_time';
 export type CooldownScope = 'per_beneficiary' | 'per_household';
 export type PhysicalCopyRequirement = 'unspecified' | 'original' | 'certified_true_copy' | 'original_or_certified_true_copy' | 'photocopy';
+export type AssistanceRequestFilingMode = 'self_or_on_behalf' | 'on_behalf_only';
+export type AssistanceRequestSubjectType = 'person' | 'deceased';
+
+export interface AssistanceRequestFormFieldDefinition {
+    key: 'on_behalf_date_of_death';
+    label: string;
+    type: 'date';
+    required: boolean;
+    admin_only: boolean;
+}
+
+export interface AssistanceRequestFormDefinition {
+    filing_mode: AssistanceRequestFilingMode;
+    subject_type: AssistanceRequestSubjectType;
+    fields: AssistanceRequestFormFieldDefinition[];
+}
 
 export const PHYSICAL_COPY_REQUIREMENT_OPTIONS: { value: PhysicalCopyRequirement; label: string }[] = [
     { value: 'unspecified', label: 'Not specified' },
@@ -51,6 +67,7 @@ export interface AssistanceTypeDetails {
     cooldown_months: number;
     cooldown_type: CooldownType;
     cooldown_scope: CooldownScope;
+    request_form: AssistanceRequestFormDefinition;
     documents: AssistanceDocumentRequirement[];
 }
 

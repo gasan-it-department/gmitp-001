@@ -72,6 +72,13 @@ class AssistanceApprovalException extends DomainException
         );
     }
 
+    public static function missingDateOfDeath(): self
+    {
+        return new self(
+            'Cannot approve this burial request because the date of death is missing. Open Edit Request and enter it first.',
+        );
+    }
+
     public function status(): int
     {
         return 422;

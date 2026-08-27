@@ -5,7 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { HouseholdMemberOption, PhysicalCopyRequirement, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
+import {
+    AssistanceRequestFormDefinition,
+    HouseholdMemberOption,
+    PhysicalCopyRequirement,
+    RelationshipOption,
+} from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useOptimizedAssistanceDocuments } from '@/hooks/use-optimized-assistance-documents';
 import AdminLayout from '@/layouts/App/AppLayout';
@@ -36,6 +41,7 @@ interface AssistanceTypeOption {
     description: string;
     min_amount: number | null;
     max_amount: number | null;
+    request_form: AssistanceRequestFormDefinition;
     documents: DocumentSlot[];
 }
 
@@ -142,8 +148,10 @@ export default function CreateAssistanceRequest({
     });
 
     const selectedType = data.assistance_type_id ? (types.find((t) => t.id === data.assistance_type_id) ?? null) : null;
-    const isBurial = selectedType?.slug === 'burial';
-    const effectiveFilingFor = isBurial ? 'family_member' : filingFor;
+    const isOnBehalfOnly = selectedType?.request_form.filing_mode === 'on_behalf_only';
+    const isDeceasedRequest = selectedType?.request_form.subject_type === 'deceased';
+    const requiresDateOfDeath = selectedType?.request_form.fields.some((field) => field.key === 'on_behalf_date_of_death' && field.required) ?? false;
+    const effectiveFilingFor = isOnBehalfOnly ? 'family_member' : filingFor;
     const selectedFilerIdDocuments = selectedType?.documents.filter((document) => ['valid_id_front', 'valid_id_back'].includes(document.key)) ?? [];
     const selectedRecipientIdDocuments =
         selectedType?.documents.filter((document) => ['recipient_valid_id_front', 'recipient_valid_id_back'].includes(document.key)) ?? [];
@@ -171,7 +179,7 @@ export default function CreateAssistanceRequest({
         ? Math.floor((Date.now() - new Date(selectedMember.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : null;
     const filerIdRequired = selectedFilerIdDocuments.some((document) => document.is_required);
-    const recipientIdAutomaticallyExempt = isBurial || (recipientAge !== null && recipientAge < 18);
+    const recipientIdAutomaticallyExempt = isDeceasedRequest || (recipientAge !== null && recipientAge < 18);
 
     const onBehalfOfData: OnBehalfOfData = useMemo(
         () => ({
@@ -316,7 +324,9 @@ export default function CreateAssistanceRequest({
 
     const representativeInfoComplete =
         effectiveFilingFor === 'self' ||
-        (data.on_behalf_household_member_id !== '' && data.relationship_to_beneficiary !== '' && (!isBurial || data.on_behalf_date_of_death !== ''));
+        (data.on_behalf_household_member_id !== '' &&
+            data.relationship_to_beneficiary !== '' &&
+            (!requiresDateOfDeath || data.on_behalf_date_of_death !== ''));
     const selectedRelationship = relationships.find((relationship) => relationship.value === data.relationship_to_beneficiary);
     const applicantIsUnderAge = profile.age !== null && profile.age < 18;
     const legalAgeBlocked = effectiveFilingFor === 'family_member' && Boolean(selectedRelationship?.requires_legal_age) && applicantIsUnderAge;
@@ -397,7 +407,12 @@ export default function CreateAssistanceRequest({
                             <input type="hidden" name="beneficiary_id" value={data.beneficiary_id} />
                         </section>
 
-                        <AdminWhoIsThisForSection isBurial={isBurial} value={effectiveFilingFor} onChange={handleFilingForChange} />
+                        <AdminWhoIsThisForSection
+                            isOnBehalfOnly={isOnBehalfOnly}
+                            isDeceasedRequest={isDeceasedRequest}
+                            value={effectiveFilingFor}
+                            onChange={handleFilingForChange}
+                        />
 
                         {effectiveFilingFor === 'family_member' && (
                             <>
@@ -410,7 +425,8 @@ export default function CreateAssistanceRequest({
                                     data={onBehalfOfData}
                                     onChange={handleBehalfChange}
                                     relationships={relationships}
-                                    isBurial={isBurial}
+                                    isDeceasedRequest={isDeceasedRequest}
+                                    requiresDateOfDeath={requiresDateOfDeath}
                                     applicantBirthDate={profile.birth_date}
                                     householdMembers={householdRoster}
                                     storeHouseholdMemberUrl={storeHouseholdMemberUrl}
@@ -531,7 +547,7 @@ export default function CreateAssistanceRequest({
                                                     <div className="flex items-start gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
                                                         <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                                                         <p className="text-sm leading-relaxed text-blue-800">
-                                                            {isBurial
+                                                            {isDeceasedRequest
                                                                 ? "The deceased person's ID is not required."
                                                                 : 'The assisted person is under 18, so their government ID is not required.'}
                                                         </p>
@@ -710,11 +726,13 @@ export default function CreateAssistanceRequest({
 }
 
 function AdminWhoIsThisForSection({
-    isBurial,
+    isOnBehalfOnly,
+    isDeceasedRequest,
     value,
     onChange,
 }: {
-    isBurial: boolean;
+    isOnBehalfOnly: boolean;
+    isDeceasedRequest: boolean;
     value: 'self' | 'family_member';
     onChange: (value: 'self' | 'family_member') => void;
 }) {
@@ -724,10 +742,10 @@ function AdminWhoIsThisForSection({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                     type="button"
-                    disabled={isBurial}
-                    onClick={() => !isBurial && onChange('self')}
+                    disabled={isOnBehalfOnly}
+                    onClick={() => !isOnBehalfOnly && onChange('self')}
                     className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors ${
-                        isBurial
+                        isOnBehalfOnly
                             ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-50'
                             : value === 'self'
                               ? 'border-[#005088] bg-[#005088]/5'
@@ -736,7 +754,7 @@ function AdminWhoIsThisForSection({
                 >
                     <span
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                            value === 'self' && !isBurial ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'
+                            value === 'self' && !isOnBehalfOnly ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'
                         }`}
                     >
                         <UserCheck className="h-5 w-5" />
@@ -748,7 +766,7 @@ function AdminWhoIsThisForSection({
                     <span
                         aria-hidden="true"
                         className={`ml-auto h-4 w-4 shrink-0 rounded-full border-2 ${
-                            value === 'self' && !isBurial ? 'border-[#005088] bg-[#005088]' : 'border-slate-300 bg-white'
+                            value === 'self' && !isOnBehalfOnly ? 'border-[#005088] bg-[#005088]' : 'border-slate-300 bg-white'
                         }`}
                     />
                 </button>
@@ -770,7 +788,7 @@ function AdminWhoIsThisForSection({
                     <span>
                         <span className="block text-sm font-bold text-slate-800">Miyembro ng pamilya</span>
                         <span className="block text-xs text-slate-500">
-                            {isBurial ? 'Kailangan para sa namatay na tao' : 'Ang benepisyaryo ay nagpa-file bilang kinatawan'}
+                            {isDeceasedRequest ? 'Kailangan para sa namatay na tao' : 'Ang benepisyaryo ay nagpa-file bilang kinatawan'}
                         </span>
                     </span>
                     <span

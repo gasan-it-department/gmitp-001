@@ -15,10 +15,12 @@ export default function AssistanceRequestRegistryItem({ row, onView }: Props) {
         <article className="flex h-full min-w-0 flex-col rounded-md border border-slate-200 bg-white p-3 shadow-sm md:p-4">
             <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
+                    {!row.filed_for_self && <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Assistance for:</p>}
                     <p className="font-mono text-xs font-semibold break-all text-slate-500">{row.transaction_number}</p>
                     <h2 className="mt-1 text-sm font-semibold break-words text-slate-900 md:text-base">
                         {row.subject_full_name || 'No recipient recorded'}
                     </h2>
+                    {!row.filed_for_self && row.filer_full_name && <p className="mt-1 text-xs text-slate-500">Filed by: {row.filer_full_name}</p>}
                 </div>
                 <span
                     className={`inline-flex shrink-0 rounded-full px-2 py-1 text-[10px] font-bold tracking-wide uppercase ${statusClass(row.status)}`}

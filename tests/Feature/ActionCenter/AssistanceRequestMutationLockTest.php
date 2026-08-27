@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\CancelApprovedAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
@@ -162,7 +163,10 @@ afterEach(function () {
 it('serializes edits with approval and rejects an edit that acquires the lock later', function () {
     $context = mutationLockContext();
     $request = mutationLockRequest($context);
-    $updateAction = new UpdateAssistanceRequestAction(new LockAssistanceRequestAction);
+    $updateAction = new UpdateAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
 
     $edited = $updateAction->execute(mutationUpdateDto(
         context: $context,
@@ -182,9 +186,11 @@ it('serializes edits with approval and rejects an edit that acquires the lock la
     $approved = (new ApproveAssistanceRequestAction(
         new LockAssistanceRequestAction,
         $smsNotifier,
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute(new ApproveAssistanceRequestDto(
         assistanceRequestId: $request->id,
         municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
         approverId: $context['admin_id'],
         amountApproved: 2000,
         approvalNotes: 'Approved after document review.',
@@ -238,7 +244,10 @@ it('allows the dedicated release transition and rejects every later content edit
     expect($released->status)->toBe(AssistanceStatus::Released)
         ->and($released->release_reference_number)->toBe('REL-2026-0001');
 
-    $updateAction = new UpdateAssistanceRequestAction(new LockAssistanceRequestAction);
+    $updateAction = new UpdateAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
 
     expect(fn () => $updateAction->execute(mutationUpdateDto(
         context: $context,
@@ -361,10 +370,12 @@ it('blocks approval until required documents are uploaded and ignores optional o
     $action = new ApproveAssistanceRequestAction(
         new LockAssistanceRequestAction,
         $smsNotifier,
+        app(AssistanceRequestFormDefinitionProvider::class),
     );
     $dto = new ApproveAssistanceRequestDto(
         assistanceRequestId: $request->id,
         municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
         approverId: $context['admin_id'],
         amountApproved: 2000,
         approvalNotes: 'Approved after MSWD inspected the required document.',
@@ -419,15 +430,76 @@ it('does not require assisted-person id uploads when a recorded exception applie
     $approved = (new ApproveAssistanceRequestAction(
         new LockAssistanceRequestAction,
         $smsNotifier,
+        app(AssistanceRequestFormDefinitionProvider::class),
     ))->execute(new ApproveAssistanceRequestDto(
         assistanceRequestId: $request->id,
         municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
         approverId: $context['admin_id'],
         amountApproved: 2000,
         approvalNotes: 'Approved after reviewing the minor recipient exception.',
     ));
 
     expect($approved->status)->toBe(AssistanceStatus::Approved);
+});
+
+it('blocks approval of an open configured burial request until date of death is recorded', function () {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance for Senior Citizen',
+            'slug' => 'burial-assisstance-senior-citizen',
+        ]);
+    $request = mutationLockRequest($context);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldNotReceive('requestApproved');
+
+    $action = new ApproveAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $smsNotifier,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
+
+    expect(fn () => $action->execute(new ApproveAssistanceRequestDto(
+        assistanceRequestId: $request->id,
+        municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
+        approverId: $context['admin_id'],
+        amountApproved: 2000,
+        approvalNotes: 'Should remain blocked until the burial data is complete.',
+    )))->toThrow(AssistanceApprovalException::class, 'date of death is missing');
+
+    expect($request->fresh()->status)->toBe(AssistanceStatus::UnderReview);
+});
+
+it('allows an admin to correct date of death on an editable configured burial request', function () {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update([
+            'name' => 'Burial Assistance',
+            'slug' => 'burial',
+        ]);
+    $request = mutationLockRequest($context);
+    $action = new UpdateAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
+
+    $updated = $action->execute(mutationUpdateDto(
+        context: $context,
+        request: $request,
+        description: 'Burial assistance request with corrected death information.',
+        fileName: 'death-certificate.png',
+        onBehalfDateOfDeath: '2026-08-20',
+    ));
+
+    expect($updated->metadata)->toMatchArray([
+        'on_behalf_date_of_death' => '2026-08-20',
+        'recipient_id_exception' => 'deceased',
+    ]);
 });
 
 function mutationLockContext(): array
@@ -521,12 +593,15 @@ function mutationUpdateDto(
     AssistanceRequest $request,
     string $description,
     string $fileName,
+    ?string $onBehalfDateOfDeath = null,
 ): UpdateAssistanceRequestDto {
     return new UpdateAssistanceRequestDto(
         assistanceRequestId: $request->id,
         municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
         actingAdminId: $context['admin_id'],
         description: $description,
+        onBehalfDateOfDeath: $onBehalfDateOfDeath,
         documents: [
             'medical_certificate' => UploadedFile::fake()->image($fileName, 100, 100),
         ],

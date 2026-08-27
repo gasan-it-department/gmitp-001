@@ -53,7 +53,7 @@ type FormData = {
     on_behalf_middle_name: string;
     on_behalf_last_name: string;
     on_behalf_suffix: string;
-    on_behalf_date_of_death: string; // burial only
+    on_behalf_date_of_death: string;
     recipient_id_unavailable: boolean;
     recipient_id_unavailable_reason: string;
 };
@@ -86,12 +86,14 @@ export default function ApplyAssistance({
     const [pendingMemberMessage, setPendingMemberMessage] = useState<string | null>(null);
 
     const { props } = usePage<{ currentMunicipality: Municipality; ziggy?: { url?: string } }>();
-    const isBurial = program.slug === 'burial';
+    const isOnBehalfOnly = program.request_form.filing_mode === 'on_behalf_only';
+    const isDeceasedRequest = program.request_form.subject_type === 'deceased';
+    const requiresDateOfDeath = program.request_form.fields.some((field) => field.key === 'on_behalf_date_of_death' && field.required);
 
     // ── "Who is this for?" — separate UI state (not persisted in form data) ──
-    // Burial ALWAYS files for a family member; all other programs default to self.
+    // Configured programs may require an assisted household member.
     const [filingFor, setFilingFor] = useState<'self' | 'family_member'>('self');
-    const effectiveFilingFor = isBurial ? 'family_member' : filingFor;
+    const effectiveFilingFor = isOnBehalfOnly ? 'family_member' : filingFor;
 
     // Clear representative fields when switching back to "myself"
     const handleFilingForChange = (value: 'self' | 'family_member') => {
@@ -204,7 +206,7 @@ export default function ApplyAssistance({
         ? Math.floor((Date.now() - new Date(selectedRecipient.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : null;
     const filerIdRequired = program.documents.some((document) => ['valid_id_front', 'valid_id_back'].includes(document.key) && document.is_required);
-    const recipientIdAutomaticallyExempt = isBurial || (recipientAge !== null && recipientAge < 18);
+    const recipientIdAutomaticallyExempt = isDeceasedRequest || (recipientAge !== null && recipientAge < 18);
     const recipientIdDeclarationComplete = !data.recipient_id_unavailable || data.recipient_id_unavailable_reason.trim().length >= 10;
 
     // Representative info is only required when not filing for self
@@ -213,8 +215,7 @@ export default function ApplyAssistance({
         (data.on_behalf_first_name.trim().length > 0 &&
             data.on_behalf_last_name.trim().length > 0 &&
             data.relationship_to_beneficiary !== '' &&
-            // Date of death is burial-specific
-            (!isBurial || data.on_behalf_date_of_death.length > 0));
+            (!requiresDateOfDeath || data.on_behalf_date_of_death.length > 0));
 
     const applicantAge = beneficiaryData.birth_date
         ? Math.floor((Date.now() - new Date(beneficiaryData.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -279,7 +280,12 @@ export default function ApplyAssistance({
                         <div className="lg:col-span-8">
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* ── 1. Who is this for? ── */}
-                                <WhoIsThisForSection isBurial={isBurial} value={effectiveFilingFor} onChange={handleFilingForChange} />
+                                <WhoIsThisForSection
+                                    isOnBehalfOnly={isOnBehalfOnly}
+                                    isDeceasedRequest={isDeceasedRequest}
+                                    value={effectiveFilingFor}
+                                    onChange={handleFilingForChange}
+                                />
 
                                 {/* ── 2. Representative info (when not self) ── */}
                                 {effectiveFilingFor === 'family_member' && (
@@ -293,7 +299,8 @@ export default function ApplyAssistance({
                                             data={onBehalfOfData}
                                             onChange={handleBehalfChange}
                                             relationships={relationships}
-                                            isBurial={isBurial}
+                                            isDeceasedRequest={isDeceasedRequest}
+                                            requiresDateOfDeath={requiresDateOfDeath}
                                             applicantBirthDate={beneficiaryData.birth_date}
                                             householdMembers={householdRoster}
                                             storeHouseholdMemberUrl={storeHouseholdMemberUrl}
@@ -320,7 +327,7 @@ export default function ApplyAssistance({
                                             <div className="flex items-start gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
                                                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                                                 <p className="text-sm leading-relaxed text-blue-800">
-                                                    {isBurial
+                                                    {isDeceasedRequest
                                                         ? "The deceased person's ID is not required. Bring the adult filer's ID and the required burial documents to MSWD."
                                                         : "The assisted person is under 18, so their government ID is not required. Bring the adult filer's ID and the required program documents to MSWD."}
                                                 </p>
@@ -402,8 +409,8 @@ export default function ApplyAssistance({
                                 )}
                                 {effectiveFilingFor === 'family_member' && !representativeInfoComplete && (
                                     <p className="text-center text-xs text-slate-500">
-                                        Please fill in the{isBurial ? " deceased person's" : " family member's"} information and your relationship to
-                                        enable submission.
+                                        Please fill in the{isDeceasedRequest ? " deceased person's" : " family member's"} information and your
+                                        relationship to enable submission.
                                     </p>
                                 )}
                             </form>
@@ -420,12 +427,13 @@ export default function ApplyAssistance({
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface WhoIsThisForProps {
-    isBurial: boolean;
+    isOnBehalfOnly: boolean;
+    isDeceasedRequest: boolean;
     value: 'self' | 'family_member';
     onChange: (value: 'self' | 'family_member') => void;
 }
 
-function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
+function WhoIsThisForSection({ isOnBehalfOnly, isDeceasedRequest, value, onChange }: WhoIsThisForProps) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="mb-4 text-sm font-bold tracking-widest text-slate-800 uppercase">Para kanino ang request na ito?</h3>
@@ -434,10 +442,10 @@ function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
                 {/* Option: Myself */}
                 <button
                     type="button"
-                    disabled={isBurial}
-                    onClick={() => !isBurial && onChange('self')}
+                    disabled={isOnBehalfOnly}
+                    onClick={() => !isOnBehalfOnly && onChange('self')}
                     className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${
-                        isBurial
+                        isOnBehalfOnly
                             ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-50'
                             : value === 'self'
                               ? 'border-[#005088] bg-[#005088]/5 shadow-sm'
@@ -445,18 +453,20 @@ function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
                     }`}
                 >
                     <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${value === 'self' && !isBurial ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'}`}
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${value === 'self' && !isOnBehalfOnly ? 'bg-[#005088]/10 text-[#005088]' : 'bg-slate-100 text-slate-400'}`}
                     >
                         <UserCheck className="h-5 w-5" />
                     </div>
                     <div>
-                        <p className={`text-sm font-bold ${value === 'self' && !isBurial ? 'text-[#005088]' : 'text-slate-700'}`}>Myself</p>
-                        <p className="text-xs text-slate-500">{isBurial ? 'Not applicable for burial' : 'I need assistance for myself'}</p>
+                        <p className={`text-sm font-bold ${value === 'self' && !isOnBehalfOnly ? 'text-[#005088]' : 'text-slate-700'}`}>Myself</p>
+                        <p className="text-xs text-slate-500">
+                            {isDeceasedRequest ? 'Not applicable for a deceased-person request' : 'I need assistance for myself'}
+                        </p>
                     </div>
                     {/* Radio indicator */}
                     <div
                         className={`ml-auto h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
-                            !isBurial && value === 'self' ? 'border-[#005088] bg-[#005088]' : 'border-slate-300 bg-white'
+                            !isOnBehalfOnly && value === 'self' ? 'border-[#005088] bg-[#005088]' : 'border-slate-300 bg-white'
                         }`}
                     />
                 </button>
@@ -478,7 +488,9 @@ function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
                     </div>
                     <div>
                         <p className={`text-sm font-bold ${value === 'family_member' ? 'text-[#005088]' : 'text-slate-700'}`}>A family member</p>
-                        <p className="text-xs text-slate-500">{isBurial ? 'Filing for a deceased member' : "I'm an authorized representative"}</p>
+                        <p className="text-xs text-slate-500">
+                            {isDeceasedRequest ? 'Filing for a deceased member' : "I'm an authorized representative"}
+                        </p>
                     </div>
                     {/* Radio indicator */}
                     <div
@@ -489,7 +501,7 @@ function WhoIsThisForSection({ isBurial, value, onChange }: WhoIsThisForProps) {
                 </button>
             </div>
 
-            {isBurial && (
+            {isOnBehalfOnly && (
                 <p className="mt-3 text-xs text-slate-500">
                     Burial assistance is always filed by an authorized family representative on behalf of the deceased.
                 </p>

@@ -163,7 +163,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
                                 <Input
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Reference or recipient name"
+                                    placeholder="Transaction, filer, or assisted person"
                                     className="h-10 pl-9"
                                 />
                             </div>

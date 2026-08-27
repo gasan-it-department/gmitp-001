@@ -34,6 +34,7 @@ class UpdateAssistanceRequestController extends Controller
                 request: $request,
                 assistanceRequestId: $assistanceRequestId,
                 municipalId: app('municipal_id'),
+                municipalCode: app('current_municipality')->municipal_code,
                 actingAdminId: Auth::id(),
             );
 
