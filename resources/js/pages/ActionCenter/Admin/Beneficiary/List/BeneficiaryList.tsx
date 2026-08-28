@@ -194,7 +194,28 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
                                             : false;
 
                                         return (
-                                            <TableRow key={row.id} className="hover:bg-slate-50/50">
+                                            <TableRow
+                                                key={row.id}
+                                                role="link"
+                                                tabIndex={0}
+                                                aria-label={`View beneficiary profile for ${row.full_name}`}
+                                                className="group cursor-pointer transition-colors hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none focus-visible:ring-inset"
+                                                onClick={(event) => {
+                                                    if (isInteractiveTarget(event.target)) {
+                                                        return;
+                                                    }
+
+                                                    router.visit(profileHref);
+                                                }}
+                                                onKeyDown={(event) => {
+                                                    if (isInteractiveTarget(event.target) || (event.key !== 'Enter' && event.key !== ' ')) {
+                                                        return;
+                                                    }
+
+                                                    event.preventDefault();
+                                                    router.visit(profileHref);
+                                                }}
+                                            >
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
                                                         {row.avatar_url ? (
@@ -302,4 +323,8 @@ export default function BeneficiaryList({ beneficiaries, filters }: Props) {
 
 function stripEmpty(values: Record<string, string | null | undefined>): Record<string, string> {
     return Object.fromEntries(Object.entries(values).filter((entry): entry is [string, string] => Boolean(entry[1]?.trim())));
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && Boolean(target.closest('a, button, input, select, textarea, [role="button"]'));
 }
