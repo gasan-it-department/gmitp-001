@@ -92,9 +92,7 @@ export default function MemberFormDialog({
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>(
-        memberToFormData(member),
-    );
+    const { data, setData, post, put, processing, errors, reset, clearErrors, transform } = useForm<MemberFormData>(memberToFormData(member));
 
     // Re-seed form state when the dialog opens (or the target member changes).
     // useForm only captures initial values on mount — the dialog stays mounted
@@ -142,10 +140,7 @@ export default function MemberFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent 
-                className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
-                onInteractOutside={(e) => e.preventDefault()}
-            >
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle className="text-xl text-slate-900">{mode === 'add' ? 'Add household member' : 'Edit household member'}</DialogTitle>
                     <DialogDescription className="text-slate-500">

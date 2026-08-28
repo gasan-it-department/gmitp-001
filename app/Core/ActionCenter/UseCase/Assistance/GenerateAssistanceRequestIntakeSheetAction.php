@@ -55,9 +55,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             frozenEconomicValues: $frozenEconomicValues,
             currentEconomicValues: $currentEconomicValues,
             householdComposition: [
-                'source' => $householdComposition['uses_current_fallback']
-                    ? 'current_household_fallback'
-                    : 'request_snapshot',
+                'source' => $householdComposition['source'],
                 'captured_at' => $householdComposition['captured_at']?->toIso8601String(),
                 'member_count' => $this->printableHouseholdMembers(
                     $householdComposition['members'],
@@ -91,6 +89,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             request: $request,
             householdMembers: $householdComposition['members'],
             householdCompositionCapturedAt: $householdComposition['captured_at'],
+            householdCompositionSource: $householdComposition['source'],
             usesCurrentHouseholdFallback: $householdComposition['uses_current_fallback'],
             municipalityName: $municipality?->name,
             municipalityLogoDataUri: $this->municipalityLogoDataUri(
@@ -112,6 +111,7 @@ class GenerateAssistanceRequestIntakeSheetAction
      *     2: array{
      *         members: Collection<int, AssistanceRequestHouseholdMemberData>,
      *         captured_at: ?CarbonImmutable,
+     *         source: 'interview_assessment'|'request_snapshot'|'current_household_fallback',
      *         uses_current_fallback: bool
      *     }
      * }
@@ -245,33 +245,25 @@ class GenerateAssistanceRequestIntakeSheetAction
      * @return array{
      *     members: Collection<int, AssistanceRequestHouseholdMemberData>,
      *     captured_at: ?CarbonImmutable,
+     *     source: 'interview_assessment'|'request_snapshot'|'current_household_fallback',
      *     uses_current_fallback: bool
      * }
      */
     private function resolveHouseholdComposition(AssistanceRequest $request): array
     {
+        $assessmentSnapshot = data_get($request->metadata, 'household_assessment_snapshot');
+
+        if ($this->hasHouseholdMembers($assessmentSnapshot)) {
+            return $this->householdSnapshotData(
+                $assessmentSnapshot,
+                'interview_assessment',
+            );
+        }
+
         $snapshot = data_get($request->metadata, 'household_composition_snapshot');
 
-        if (is_array($snapshot)
-            && array_key_exists('members', $snapshot)
-            && is_array($snapshot['members'])) {
-            $members = collect($snapshot['members'])
-                ->filter(fn (mixed $member): bool => is_array($member))
-                ->map(
-                    fn (array $member): AssistanceRequestHouseholdMemberData => AssistanceRequestHouseholdMemberData::fromSnapshot(
-                        $member,
-                    ),
-                )
-                ->filter(
-                    fn (AssistanceRequestHouseholdMemberData $member): bool => $member->fullName !== '',
-                )
-                ->values();
-
-            return [
-                'members' => $members,
-                'captured_at' => $this->parseCapturedAt($snapshot['captured_at'] ?? null),
-                'uses_current_fallback' => false,
-            ];
+        if ($this->hasHouseholdMembers($snapshot)) {
+            return $this->householdSnapshotData($snapshot, 'request_snapshot');
         }
 
         $capturedAt = CarbonImmutable::now();
@@ -292,7 +284,47 @@ class GenerateAssistanceRequestIntakeSheetAction
         return [
             'members' => $members,
             'captured_at' => null,
+            'source' => 'current_household_fallback',
             'uses_current_fallback' => true,
+        ];
+    }
+
+    private function hasHouseholdMembers(mixed $snapshot): bool
+    {
+        return is_array($snapshot)
+            && array_key_exists('members', $snapshot)
+            && is_array($snapshot['members']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @param  'interview_assessment'|'request_snapshot'  $source
+     * @return array{
+     *     members: Collection<int, AssistanceRequestHouseholdMemberData>,
+     *     captured_at: ?CarbonImmutable,
+     *     source: 'interview_assessment'|'request_snapshot',
+     *     uses_current_fallback: false
+     * }
+     */
+    private function householdSnapshotData(array $snapshot, string $source): array
+    {
+        $members = collect($snapshot['members'])
+            ->filter(fn (mixed $member): bool => is_array($member))
+            ->map(
+                fn (array $member): AssistanceRequestHouseholdMemberData => AssistanceRequestHouseholdMemberData::fromSnapshot(
+                    $member,
+                ),
+            )
+            ->filter(
+                fn (AssistanceRequestHouseholdMemberData $member): bool => $member->fullName !== '',
+            )
+            ->values();
+
+        return [
+            'members' => $members,
+            'captured_at' => $this->parseCapturedAt($snapshot['captured_at'] ?? null),
+            'source' => $source,
+            'uses_current_fallback' => false,
         ];
     }
 
