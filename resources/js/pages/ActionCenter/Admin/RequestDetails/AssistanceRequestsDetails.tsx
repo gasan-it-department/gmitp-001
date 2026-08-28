@@ -1,3 +1,4 @@
+import RefreshAssistanceHouseholdAssessmentController from '@/actions/App/External/Api/Controllers/ActionCenter/Assistance/RefreshAssistanceHouseholdAssessmentController';
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import ShowAcknowledgementReceiptGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowAcknowledgementReceiptGeneratorController';
 import ShowAssistanceRequestIntakeSheetGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowAssistanceRequestIntakeSheetGeneratorController';
@@ -42,6 +43,7 @@ import {
     Pencil,
     Printer,
     ReceiptText,
+    RefreshCw,
     Send,
     ShieldCheck,
     Upload,
@@ -167,6 +169,11 @@ interface AssistanceRequestDetail {
     privacy_notice_version: string | null;
     beneficiary_id: string;
     household_id: string;
+    household_assessment: {
+        captured_at: string | null;
+        member_count: number;
+        source: string;
+    } | null;
     documents?: DocumentBlock[];
     created_at: string | null;
     updated_at: string | null;
@@ -256,6 +263,7 @@ export default function AssistanceRequestsDetails({
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const isMine = detail.reviewed_by?.id === auth.user?.id;
     const canViewBeneficiaries = can('action_center.beneficiaries.view');
+    const canManageBeneficiaries = can('action_center.beneficiaries.manage');
     const canProcessRequests = can('action_center.requests.process');
     const canDecideRequests = can('action_center.requests.decide');
     const canReleaseRequests = can('action_center.requests.release');
@@ -266,6 +274,7 @@ export default function AssistanceRequestsDetails({
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
+    const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
 
     // Every upload lives in the single spatie collection "documents"; the slot
     // it fills is in custom_properties.document_key — NOT collection_name. Match
@@ -284,6 +293,8 @@ export default function AssistanceRequestsDetails({
           : null;
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
     const canEditRequest = requestIsEditable && canProcessRequests;
+    const canRefreshHouseholdAssessment = detail.status === 'under_review' && isMine && canProcessRequests;
+    const canManageInterviewHousehold = canRefreshHouseholdAssessment && canManageBeneficiaries;
     const canCorrectMissingDateOfDeath =
         canCorrectRequests &&
         detail.status === 'approved' &&
@@ -308,6 +319,10 @@ export default function AssistanceRequestsDetails({
     const editRequestUrl = EditAssistanceRequestController.url({
         municipality: currentMunicipality.slug,
         assistanceRequest: detail.id,
+    });
+    const manageInterviewHouseholdUrl = ShowBeneficiaryProfileController.url({
+        municipality: currentMunicipality.slug,
+        beneficiaryId: detail.beneficiary_id,
     });
 
     const handleAction = (label: string) => () => {
@@ -343,6 +358,19 @@ export default function AssistanceRequestsDetails({
             {
                 headers: { 'X-Municipality-Slug': currentMunicipality.slug },
                 preserveScroll: true,
+            },
+        );
+    };
+
+    const refreshHouseholdAssessment = () => {
+        router.post(
+            RefreshAssistanceHouseholdAssessmentController.url({ assistanceRequestId: detail.id }),
+            {},
+            {
+                headers: { 'X-Municipality-Slug': currentMunicipality.slug },
+                preserveScroll: true,
+                onStart: () => setIsRefreshingHouseholdAssessment(true),
+                onFinish: () => setIsRefreshingHouseholdAssessment(false),
             },
         );
     };
@@ -667,14 +695,65 @@ export default function AssistanceRequestsDetails({
                                             <CardTitle className="flex items-center gap-2 text-base">
                                                 <Users className="h-4 w-4 text-slate-600" /> Family Composition
                                             </CardTitle>
-                                            <div className="text-right">
-                                                <span className="block text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                                                    Est. Monthly Income
-                                                </span>
-                                                <span className="text-sm font-bold text-slate-700">{utils.formatCurrency(totalHouseholdIncome)}</span>
+                                            <div className="flex w-full flex-col items-start gap-3 sm:w-auto sm:items-end">
+                                                <div className="text-left sm:text-right">
+                                                    <span className="block text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                                                        Est. Monthly Income
+                                                    </span>
+                                                    <span className="text-sm font-bold text-slate-700">
+                                                        {utils.formatCurrency(totalHouseholdIncome)}
+                                                    </span>
+                                                </div>
+                                                {(canManageInterviewHousehold || canRefreshHouseholdAssessment) && (
+                                                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                                                        {canManageInterviewHousehold && (
+                                                            <Button asChild size="sm" variant="outline" className="min-h-10 w-full sm:w-auto">
+                                                                <Link href={manageInterviewHouseholdUrl}>
+                                                                    <Users className="mr-2 h-4 w-4" /> Manage household
+                                                                </Link>
+                                                            </Button>
+                                                        )}
+                                                        {canRefreshHouseholdAssessment && (
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                className="min-h-10 w-full bg-slate-900 text-white hover:bg-slate-800 sm:w-auto"
+                                                                disabled={isRefreshingHouseholdAssessment}
+                                                                onClick={refreshHouseholdAssessment}
+                                                            >
+                                                                <RefreshCw
+                                                                    className={`mr-2 h-4 w-4 ${isRefreshingHouseholdAssessment ? 'animate-spin' : ''}`}
+                                                                />
+                                                                {detail.household_assessment
+                                                                    ? 'Update household assessment'
+                                                                    : 'Capture household assessment'}
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </CardHeader>
                                         <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+                                            {detail.household_assessment && (
+                                                <div className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                                                    <span className="font-semibold">MSWD interview assessment:</span>{' '}
+                                                    {detail.household_assessment.member_count} active household members captured
+                                                    {detail.household_assessment.captured_at
+                                                        ? ` on ${utils.formatToReadableDate(detail.household_assessment.captured_at)}`
+                                                        : ''}
+                                                    . The original filing snapshot remains unchanged.
+                                                </div>
+                                            )}
+                                            {!detail.household_assessment && canRefreshHouseholdAssessment && (
+                                                <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                                                    <p>
+                                                        No MSWD interview household has been captured yet. Review the live household, then use{' '}
+                                                        <span className="font-semibold">Capture household assessment</span> before preparing the
+                                                        intake sheet.
+                                                    </p>
+                                                </div>
+                                            )}
                                             {householdMembersData.length === 0 ? (
                                                 <p className="py-4 text-center text-sm text-slate-400 italic">No family profiles declared.</p>
                                             ) : (

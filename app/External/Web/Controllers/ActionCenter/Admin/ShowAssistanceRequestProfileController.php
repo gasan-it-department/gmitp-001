@@ -30,8 +30,7 @@ class ShowAssistanceRequestProfileController extends Controller
 {
     public function __construct(
         private readonly GetAssistanceRequestProfileAction $getAssistance,
-    ) {
-    }
+    ) {}
 
     private const ACTIVITY_LOG_LIMIT = 50;
 
@@ -45,7 +44,7 @@ class ShowAssistanceRequestProfileController extends Controller
             'request' => new AssistanceRequestDetailsResource($data['request']),
 
             'requiredDocuments' => RequiredDocumentResource::collection(
-                $data['request']->assistanceType->documents->sortBy(fn($doc) => $doc->pivot->sort_order ?? 0)
+                $data['request']->assistanceType->documents->sortBy(fn ($doc) => $doc->pivot->sort_order ?? 0)
             ),
 
             'recentHistory' => RecentAssistanceRequestResource::collection($data['recentHistory']),

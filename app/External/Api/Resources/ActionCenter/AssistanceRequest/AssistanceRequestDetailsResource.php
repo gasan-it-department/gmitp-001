@@ -31,6 +31,7 @@ class AssistanceRequestDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
         $snapshot = $this->resource->snapshot;
+        $householdAssessment = data_get($this->metadata, 'household_assessment_snapshot');
 
         return [
             // ── Identification ───────────────────────────────────────────────
@@ -39,7 +40,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             'status' => $this->status,
 
             // ── Program ──────────────────────────────────────────────────────
-            'assistance_type' => $this->whenLoaded('assistanceType', fn() => [
+            'assistance_type' => $this->whenLoaded('assistanceType', fn () => [
                 'id' => $this->assistanceType->id,
                 'name' => $this->assistanceType->name,
                 'slug' => $this->assistanceType->slug,
@@ -52,7 +53,7 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'request_form' => $this->requestFormDefinition($this->assistanceType->slug),
                 'documents' => $this->assistanceType->relationLoaded('documents')
                     ? $this->assistanceType->documents
-                        ->sortBy(fn($document) => $document->pivot->sort_order ?? 0)
+                        ->sortBy(fn ($document) => $document->pivot->sort_order ?? 0)
                         ->values()
                         ->map(function ($document) {
                             $physicalCopyRequirement = PhysicalCopyRequirement::tryFrom(
@@ -90,10 +91,10 @@ class AssistanceRequestDetailsResource extends JsonResource
 
             // ── Audit trail (who did what) ───────────────────────────────────
             'is_walkin' => $this->encoded_by_user_id !== null,
-            'encoded_by' => $this->whenLoaded('encodedBy', fn() => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
-            'reviewed_by' => $this->whenLoaded('reviewedBy', fn() => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
-            'approved_by' => $this->whenLoaded('approvedBy', fn() => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
-            'cancelled_by' => $this->whenLoaded('cancelledBy', fn() => $this->cancelledBy ? $this->shortUser($this->cancelledBy) : null),
+            'encoded_by' => $this->whenLoaded('encodedBy', fn () => $this->encodedBy ? $this->shortUser($this->encodedBy) : null),
+            'reviewed_by' => $this->whenLoaded('reviewedBy', fn () => $this->reviewedBy ? $this->shortUser($this->reviewedBy) : null),
+            'approved_by' => $this->whenLoaded('approvedBy', fn () => $this->approvedBy ? $this->shortUser($this->approvedBy) : null),
+            'cancelled_by' => $this->whenLoaded('cancelledBy', fn () => $this->cancelledBy ? $this->shortUser($this->cancelledBy) : null),
 
             // ── Representative — null when filed for self ────────────────────
             'filed_for_self' => $this->relationship_to_beneficiary === null,
@@ -149,8 +150,17 @@ class AssistanceRequestDetailsResource extends JsonResource
             'beneficiary_id' => $this->beneficiary_id,
             // Live human-friendly ID of the beneficiary (e.g. GAS-000123).
             // Present when the beneficiary relation is eager-loaded.
-            'beneficiary_number' => $this->whenLoaded('beneficiary', fn() => $this->beneficiary?->beneficiary_number),
+            'beneficiary_number' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->beneficiary_number),
             'household_id' => $this->household_id,
+            'household_assessment' => is_array($householdAssessment)
+                ? [
+                    'captured_at' => $householdAssessment['captured_at'] ?? null,
+                    'member_count' => is_array($householdAssessment['members'] ?? null)
+                        ? count($householdAssessment['members'])
+                        : 0,
+                    'source' => $householdAssessment['source'] ?? 'mswd_interview',
+                ]
+                : null,
 
             // ── Uploaded documents (via spatie media) ────────────────────────
             // All uploads share the single spatie collection "documents"; the
@@ -161,8 +171,8 @@ class AssistanceRequestDetailsResource extends JsonResource
             // build a signed download URL when that route exists.
             'documents' => $this->whenLoaded(
                 'media',
-                fn() => $this->media
-                    ->map(fn($m) => [
+                fn () => $this->media
+                    ->map(fn ($m) => [
                         'id' => $m->id,
                         'uuid' => $m->uuid,
                         'collection_name' => $m->collection_name,
@@ -248,7 +258,7 @@ class AssistanceRequestDetailsResource extends JsonResource
     {
         $birthDate = $this->resource->snapshot?->birth_date;
 
-        if (!$birthDate || !$this->created_at) {
+        if (! $birthDate || ! $this->created_at) {
             return null;
         }
 

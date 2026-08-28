@@ -12,6 +12,7 @@ readonly class AssistanceRequestIntakeSheetData
         /** @var Collection<int, AssistanceRequestHouseholdMemberData> */
         public Collection $householdMembers,
         public ?\DateTimeInterface $householdCompositionCapturedAt,
+        public string $householdCompositionSource,
         public bool $usesCurrentHouseholdFallback,
         public ?string $municipalityName,
         public ?string $municipalityLogoDataUri,

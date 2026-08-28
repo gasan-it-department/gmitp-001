@@ -426,6 +426,87 @@ it('renders the request-time household snapshot after the live roster changes', 
         ->and($html)->not->toContain('Request-time household snapshot unavailable');
 });
 
+it('prefers the MSWD interview assessment without replacing the filing snapshot', function () {
+    $context = seedAssistanceRequestIntakeSheetContext();
+    $request = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->first();
+    $filingSnapshot = [
+        'household_id' => $request->household_id,
+        'captured_at' => '2026-08-20T09:30:00+08:00',
+        'members' => [[
+            'household_member_id' => (string) Str::ulid(),
+            'beneficiary_id' => null,
+            'full_name' => 'Filing Snapshot Member',
+            'relationship' => 'child',
+            'birth_date' => '2014-01-10',
+            'age_at_filing' => 12,
+            'sex' => 'female',
+            'educational_attainment' => 'elem_undergrad',
+            'occupation' => null,
+            'monthly_income' => 0,
+            'is_household_head' => false,
+        ]],
+    ];
+    $assessmentSnapshot = [
+        'household_id' => $request->household_id,
+        'captured_at' => '2026-08-28T10:15:00+08:00',
+        'captured_by_user_id' => (string) Str::ulid(),
+        'source' => 'mswd_interview',
+        'members' => [[
+            'household_member_id' => (string) Str::ulid(),
+            'beneficiary_id' => null,
+            'full_name' => 'Interview Confirmed Member',
+            'relationship' => 'parent',
+            'birth_date' => '1960-04-05',
+            'age_at_filing' => 66,
+            'sex' => 'male',
+            'educational_attainment' => 'hs_grad',
+            'occupation' => 'Farmer',
+            'monthly_income' => 2000,
+            'is_household_head' => false,
+        ]],
+    ];
+
+    DB::table('ac_assistance_requests')
+        ->where('id', $context['request_id'])
+        ->update(['metadata' => json_encode([
+            'household_composition_snapshot' => $filingSnapshot,
+            'household_assessment_snapshot' => $assessmentSnapshot,
+        ], JSON_THROW_ON_ERROR)]);
+
+    $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
+    $formData = $action->formData($context['request_id'], $context['municipal_id']);
+    $data = $action->execute(
+        new GenerateAssistanceRequestIntakeSheetDto(
+            assistanceRequestId: $context['request_id'],
+            municipalId: $context['municipal_id'],
+            problemPresented: ['sick'],
+            sourceOfIncome: 'Fishing',
+            monthlyIncome: 3000,
+            recommendation: 'Medical Assistance',
+        ),
+        'Test Admin',
+    );
+    $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
+
+    expect($formData->householdComposition)->toMatchArray([
+        'source' => 'interview_assessment',
+        'member_count' => 1,
+        'warning' => null,
+    ])->and($html)->toContain(
+        'Household Composition at MSWD Interview',
+        'Interview Confirmed Member',
+        'Farmer',
+    )->not->toContain('Filing Snapshot Member');
+
+    $storedMetadata = json_decode(
+        DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('metadata'),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+
+    expect($storedMetadata['household_composition_snapshot'])->toBe($filingSnapshot);
+});
+
 it('omits the internal roster member id from an on-behalf filing subject', function () {
     $context = seedAssistanceRequestIntakeSheetContext(metadata: [
         'relationship_to_beneficiary' => 'parent',

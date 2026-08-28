@@ -4,6 +4,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceReques
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
+use App\External\Api\Controllers\ActionCenter\Assistance\RefreshAssistanceHouseholdAssessmentController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
@@ -342,6 +343,12 @@ Route::prefix('/api/action-center')
                     UpdateAssistanceRequestController::class,
                 )->middleware('permission:action_center.requests.process')
                     ->name('assistance.update');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/household-assessment/refresh',
+                    RefreshAssistanceHouseholdAssessmentController::class,
+                )->middleware('permission:action_center.requests.process')
+                    ->name('assistance.household-assessment.refresh');
 
                 // One-time repair for legacy approved burial requests that
                 // were encoded without a Date of Death. The Core action locks

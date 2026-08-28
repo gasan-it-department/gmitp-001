@@ -167,7 +167,11 @@
 
         <section class="section">
             <div class="section-title">
-                V. {{ $data->usesCurrentHouseholdFallback ? 'Current Household Composition (Legacy Request)' : 'Household Composition at Filing' }}
+                V. {{ match ($data->householdCompositionSource) {
+                    'interview_assessment' => 'Household Composition at MSWD Interview',
+                    'current_household_fallback' => 'Current Household Composition (Legacy Request)',
+                    default => 'Household Composition at Filing',
+                } }}
                 - {{ $compositionMembers->count() }} {{ $data->usesCurrentHouseholdFallback ? 'Active Member(s)' : 'Member(s)' }}
             </div>
             @if($data->usesCurrentHouseholdFallback)
