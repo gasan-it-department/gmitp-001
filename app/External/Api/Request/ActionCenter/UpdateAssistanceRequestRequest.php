@@ -39,11 +39,9 @@ class UpdateAssistanceRequestRequest extends FormRequest
         $rules = [
             'description' => ['required', 'string', 'min:10', 'max:1000'],
             'documents'   => ['nullable', 'array'],
-            'on_behalf_date_of_death' => [
-                $definition->requiresDateOfDeath() ? 'required' : 'prohibited',
-                'date',
-                'before_or_equal:today',
-            ],
+            'on_behalf_date_of_death' => $definition->requiresDateOfDeath()
+                ? ['required', 'date_format:Y-m-d', 'before_or_equal:today']
+                : ['prohibited'],
         ];
 
         // Resolve the request's assistance type from the route id and append a
@@ -81,6 +79,7 @@ class UpdateAssistanceRequestRequest extends FormRequest
             'description.required' => 'Please explain the request / situation.',
             'description.min'      => 'Please give at least a few words about the situation.',
             'on_behalf_date_of_death.required' => 'Enter the deceased person\'s date of death.',
+            'on_behalf_date_of_death.date_format' => 'The Date of Death must be a valid date.',
             'on_behalf_date_of_death.prohibited' => 'Date of Death is not used by this assistance program.',
             'documents.*.mimes'    => 'Allowed file types: JPG, PNG, PDF.',
             'documents.*.max'      => 'Each file must be 5 MB or smaller.',

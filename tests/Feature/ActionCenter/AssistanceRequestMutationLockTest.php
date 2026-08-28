@@ -17,6 +17,7 @@ use App\Core\ActionCenter\UseCase\Assistance\CorrectMissingBurialDateOfDeathActi
 use App\Core\ActionCenter\UseCase\Assistance\ReleaseAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
+use App\External\Api\Request\ActionCenter\UpdateAssistanceRequestRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
@@ -229,6 +230,29 @@ it('serializes edits with approval and rejects an edit that acquires the lock la
 
     expect(fn () => $fresh->update(['description' => 'Direct content mutation']))
         ->toThrow(DomainException::class, 'content-locked');
+});
+
+it('does not apply date of death validation when editing a medical request', function () {
+    $context = mutationLockContext();
+    $request = mutationLockRequest($context);
+    app()->instance('current_municipality', (object) ['municipal_code' => '174003000']);
+
+    $formRequest = UpdateAssistanceRequestRequest::create('/', 'POST', [
+        'description' => 'Uploading the reviewed medical assistance documents.',
+        'on_behalf_date_of_death' => '',
+    ]);
+    $formRequest->setContainer(app());
+
+    $route = Mockery::mock();
+    $route->shouldReceive('parameter')
+        ->with('assistanceRequestId', null)
+        ->andReturn($request->id);
+    $formRequest->setRouteResolver(fn () => $route);
+
+    $validator = validator($formRequest->all(), $formRequest->rules(), $formRequest->messages());
+
+    expect($validator->passes())->toBeTrue()
+        ->and($validator->errors()->has('on_behalf_date_of_death'))->toBeFalse();
 });
 
 it('allows the dedicated release transition and rejects every later content edit', function () {
@@ -631,7 +655,9 @@ it('rejects the burial correction for invalid filing and dates', function () {
     expect(fn () => $action->execute($dto('1949-12-31', $request)))
         ->toThrow(DomainException::class, 'earlier than the assisted person');
 
-    expect(fn () => $action->execute($dto('2026-08-27', $request)))
+    $dayAfterSubmission = $request->created_at->copy()->addDay()->toDateString();
+
+    expect(fn () => $action->execute($dto($dayAfterSubmission, $request)))
         ->toThrow(DomainException::class, 'later than the assistance request submission');
 
 });
