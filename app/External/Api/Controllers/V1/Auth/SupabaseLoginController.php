@@ -2,8 +2,8 @@
 
 namespace App\External\Api\Controllers\V1\Auth;
 
-use App\Core\Auth\Actions\AuthenticateSocialUserAction;
-use App\Core\Auth\Dto\SocialUserDto;
+use App\Core\Auth\Actions\AuthenticateSupabaseUserAction;
+use App\Core\Auth\Dto\SupabaseUserDto;
 use App\Core\Auth\Exceptions\AccountDeactivatedException;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Client\ConnectionException;
@@ -11,14 +11,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class SupabaseLoginController extends Controller
 {
     public function __construct(
-        private AuthenticateSocialUserAction $authenticateSocialUser,
-    ) {
-    }
+        private AuthenticateSupabaseUserAction $authenticateSupabaseUser,
+    ) {}
 
     /**
      * Exchanges a Supabase Auth access token for a Laravel Sanctum token.
@@ -35,23 +34,23 @@ class SupabaseLoginController extends Controller
 
         $supabaseUser = $this->verifySupabaseToken($validated['access_token']);
 
-        $email = Arr::get($supabaseUser, 'email');
+        $providerId = Arr::get($supabaseUser, 'id');
 
-        if (!is_string($email) || $email === '') {
-            throw ValidationException::withMessages([
-                'access_token' => ['The Supabase account does not contain an email address.'],
-            ]);
+        if (! is_string($providerId) || ! Str::isUuid($providerId)) {
+            abort(502, 'Supabase authentication returned an invalid user identifier.');
         }
 
         $metadata = Arr::get($supabaseUser, 'user_metadata', []);
+        $metadata = is_array($metadata) ? $metadata : [];
         $fullName = Arr::get($metadata, 'full_name') ?? Arr::get($metadata, 'name');
         [$firstName, $lastName] = $this->splitName($fullName);
 
-        $user = $this->authenticateSocialUser->execute(
-            new SocialUserDto(
-                providerName: 'supabase',
-                providerId: (string) Arr::get($supabaseUser, 'id'),
-                email: $email,
+        $user = $this->authenticateSupabaseUser->execute(
+            new SupabaseUserDto(
+                providerId: $providerId,
+                email: $this->nullableString(Arr::get($supabaseUser, 'email')),
+                phone: $this->nullableString(Arr::get($supabaseUser, 'phone')),
+                phoneConfirmed: $this->nullableString(Arr::get($supabaseUser, 'phone_confirmed_at')) !== null,
                 firstName: Arr::get($metadata, 'first_name') ?? $firstName,
                 lastName: Arr::get($metadata, 'last_name') ?? $lastName,
                 avatarUrl: Arr::get($metadata, 'avatar_url') ?? Arr::get($metadata, 'picture'),
@@ -59,7 +58,7 @@ class SupabaseLoginController extends Controller
         );
 
         if ($user->isDeactivated()) {
-            throw new AccountDeactivatedException();
+            throw new AccountDeactivatedException;
         }
 
         $token = $user->createToken(
@@ -76,6 +75,7 @@ class SupabaseLoginController extends Controller
                     'last_name' => $user->last_name,
                     'full_name' => $user->full_name,
                     'email' => $user->email,
+                    'phone' => $user->phone,
                 ],
             ],
         ]);
@@ -89,7 +89,7 @@ class SupabaseLoginController extends Controller
         $supabaseUrl = config('services.supabase.url');
         $supabaseAnonKey = config('services.supabase.anon_key');
 
-        if (!$supabaseUrl || !$supabaseAnonKey) {
+        if (! $supabaseUrl || ! $supabaseAnonKey) {
             abort(500, 'Supabase authentication is not configured.');
         }
 
@@ -99,7 +99,7 @@ class SupabaseLoginController extends Controller
                     'apikey' => $supabaseAnonKey,
                     'Accept' => 'application/json',
                 ])
-                ->get(rtrim($supabaseUrl, '/') . '/auth/v1/user');
+                ->get(rtrim($supabaseUrl, '/').'/auth/v1/user');
         } catch (ConnectionException) {
             abort(503, 'Unable to connect to Supabase authentication service.');
         }
@@ -108,7 +108,7 @@ class SupabaseLoginController extends Controller
             abort(401, 'Invalid Supabase access token.');
         }
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             abort(502, 'Supabase authentication service rejected the request.');
         }
 
@@ -120,7 +120,7 @@ class SupabaseLoginController extends Controller
      */
     private function splitName(?string $fullName): array
     {
-        if (!$fullName) {
+        if (! $fullName) {
             return [null, null];
         }
 
@@ -130,5 +130,14 @@ class SupabaseLoginController extends Controller
             $parts[0] ?? null,
             $parts[1] ?? null,
         ];
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return trim($value);
     }
 }
