@@ -16,13 +16,13 @@ use App\Core\Auth\Services\LoginRedirectionService;
 use App\Core\Auth\Services\VerificationSenderService;
 use App\Core\Users\Repository\UserRepository;
 use App\Core\Users\ValueObjects\Phone;
-use Illuminate\Validation\ValidationException;
 
 class LoginUser
 {
-
     private const LOCKOUT_MINUTES = 5;
+
     private const RATE_LIMIT_ATTEMPTS = 20;
+
     private const RATE_LIMIT_MINUTES = 5;
 
     public function __construct(
@@ -33,14 +33,14 @@ class LoginUser
         private CookieSessionInterface $cookieSessionService,
         private LoginRedirectionService $loginRedirectionService,
         private VerificationSenderService $verificationSenderService
-    ) {
-    }
+    ) {}
+
     public function execute(LoginRequestDto $dto, $slug): LoginResponseDto
     {
         // Create a unique key for the rate limiter based on IP and identifier
         $identifierKey = hash('sha256', $dto->identifier);
 
-        $rateLimitKey = "login:ip:" . request()->ip() . ':' . $identifierKey;
+        $rateLimitKey = 'login:ip:'.request()->ip().':'.$identifierKey;
 
         if ($this->rateLimiter->tooManyAttempts($rateLimitKey, self::RATE_LIMIT_ATTEMPTS)) {
             $remainingSeconds = $this->rateLimiter->availableIn($rateLimitKey);
@@ -51,7 +51,7 @@ class LoginUser
         $isEmail = filter_var($dto->identifier, FILTER_VALIDATE_EMAIL);
         $identifier = $dto->identifier;
 
-        if (!$isEmail) {
+        if (! $isEmail) {
             try {
                 $identifier = (new Phone($dto->identifier))->toString();
             } catch (\InvalidArgumentException $e) {
@@ -65,40 +65,39 @@ class LoginUser
         // 3. THE FIX: Intercept users with null passwords
         if ($users && is_null($users->password)) {
             throw new InvalidCredentialsExceptions(
-                'It looks like you signed up using Google. Please click "Sign in with Google" below, or use the "Forgot Password" link to create a local password.'
+                'This account does not have a local password. Please use Phone OTP or Google below, or use the "Forgot Password" link to create a local password.'
             );
         }
 
-        if (!$users) {
+        if (! $users) {
             $this->rateLimiter->hit($rateLimitKey, self::RATE_LIMIT_MINUTES);
-            throw new InvalidCredentialsExceptions();
+            throw new InvalidCredentialsExceptions;
         }
 
-        //check the password
-        if (!$this->passwordHasher->verify($dto->password, $users->password)) {
+        // check the password
+        if (! $this->passwordHasher->verify($dto->password, $users->password)) {
             $this->rateLimiter->hit($rateLimitKey, self::RATE_LIMIT_MINUTES);
-            throw new InvalidPasswordException();
+            throw new InvalidPasswordException;
         }
 
-        //clear the ratelimiter after success
+        // clear the ratelimiter after success
         $this->rateLimiter->clear($rateLimitKey);
 
         // Offboarded accounts cannot log in, even with valid credentials.
         if ($users->isDeactivated()) {
-            throw new AccountDeactivatedException();
+            throw new AccountDeactivatedException;
         }
 
-        //give token to logged the user
+        // give token to logged the user
         $sessionData = $this->cookieSessionService->createAuthenticatedSession($users->id, $dto->rememberMe);
 
         $redirectUrl = $this->loginRedirectionService->redirectUser($users, $slug);
 
-        if (!is_null($users->phone) && is_null($users->phone_verified_at)) {
+        if (! is_null($users->phone) && is_null($users->phone_verified_at)) {
 
             $this->verificationSenderService->send($users->phone);
 
         }
-
 
         return new LoginResponseDto(
             'login successful',

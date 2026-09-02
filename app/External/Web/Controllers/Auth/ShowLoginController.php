@@ -10,7 +10,12 @@ class ShowLoginController extends Controller
     public function __invoke()
     {
 
-        return Inertia::render('Auth/Login/LoginPage');
+        return Inertia::render('Auth/Login/LoginPage', [
+            'supabaseAuth' => [
+                'url' => config('services.supabase.url'),
+                'anonKey' => config('services.supabase.anon_key'),
+            ],
+        ]);
 
     }
 }

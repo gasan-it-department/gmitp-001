@@ -3,19 +3,16 @@
 namespace App\External\Api\Controllers\V1\Auth;
 
 use App\Core\Auth\Actions\AuthenticateSupabaseUserAction;
-use App\Core\Auth\Dto\SupabaseUserDto;
 use App\Core\Auth\Exceptions\AccountDeactivatedException;
+use App\Core\Auth\Services\SupabaseAccessTokenVerifier;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class SupabaseLoginController extends Controller
 {
     public function __construct(
+        private SupabaseAccessTokenVerifier $supabaseAccessTokenVerifier,
         private AuthenticateSupabaseUserAction $authenticateSupabaseUser,
     ) {}
 
@@ -32,29 +29,8 @@ class SupabaseLoginController extends Controller
             'device_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $supabaseUser = $this->verifySupabaseToken($validated['access_token']);
-
-        $providerId = Arr::get($supabaseUser, 'id');
-
-        if (! is_string($providerId) || ! Str::isUuid($providerId)) {
-            abort(502, 'Supabase authentication returned an invalid user identifier.');
-        }
-
-        $metadata = Arr::get($supabaseUser, 'user_metadata', []);
-        $metadata = is_array($metadata) ? $metadata : [];
-        $fullName = Arr::get($metadata, 'full_name') ?? Arr::get($metadata, 'name');
-        [$firstName, $lastName] = $this->splitName($fullName);
-
         $user = $this->authenticateSupabaseUser->execute(
-            new SupabaseUserDto(
-                providerId: $providerId,
-                email: $this->nullableString(Arr::get($supabaseUser, 'email')),
-                phone: $this->nullableString(Arr::get($supabaseUser, 'phone')),
-                phoneConfirmed: $this->nullableString(Arr::get($supabaseUser, 'phone_confirmed_at')) !== null,
-                firstName: Arr::get($metadata, 'first_name') ?? $firstName,
-                lastName: Arr::get($metadata, 'last_name') ?? $lastName,
-                avatarUrl: Arr::get($metadata, 'avatar_url') ?? Arr::get($metadata, 'picture'),
-            )
+            $this->supabaseAccessTokenVerifier->verify($validated['access_token'])
         );
 
         if ($user->isDeactivated()) {
@@ -79,65 +55,5 @@ class SupabaseLoginController extends Controller
                 ],
             ],
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function verifySupabaseToken(string $accessToken): array
-    {
-        $supabaseUrl = config('services.supabase.url');
-        $supabaseAnonKey = config('services.supabase.anon_key');
-
-        if (! $supabaseUrl || ! $supabaseAnonKey) {
-            abort(500, 'Supabase authentication is not configured.');
-        }
-
-        try {
-            $response = Http::withToken($accessToken)
-                ->withHeaders([
-                    'apikey' => $supabaseAnonKey,
-                    'Accept' => 'application/json',
-                ])
-                ->get(rtrim($supabaseUrl, '/').'/auth/v1/user');
-        } catch (ConnectionException) {
-            abort(503, 'Unable to connect to Supabase authentication service.');
-        }
-
-        if ($response->unauthorized() || $response->forbidden()) {
-            abort(401, 'Invalid Supabase access token.');
-        }
-
-        if (! $response->successful()) {
-            abort(502, 'Supabase authentication service rejected the request.');
-        }
-
-        return $response->json();
-    }
-
-    /**
-     * @return array{0: string|null, 1: string|null}
-     */
-    private function splitName(?string $fullName): array
-    {
-        if (! $fullName) {
-            return [null, null];
-        }
-
-        $parts = explode(' ', trim($fullName), 2);
-
-        return [
-            $parts[0] ?? null,
-            $parts[1] ?? null,
-        ];
-    }
-
-    private function nullableString(mixed $value): ?string
-    {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        return trim($value);
     }
 }

@@ -4,10 +4,8 @@ namespace App\Core\Users\Exceptions;
 
 use Exception;
 
-
 final class UserAlreadyExistExceptions extends Exception
 {
-
     public readonly string $field;
 
     public function __construct(string $message, string $field)
@@ -26,7 +24,7 @@ final class UserAlreadyExistExceptions extends Exception
     public static function withPhone(string $phone): self
     {
 
-        return new self('This phone number is already registered.', 'phone');
+        return new self('This phone number is already registered. Please sign in using Phone OTP or your existing password.', 'phone');
 
     }
 
