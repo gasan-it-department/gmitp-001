@@ -46,6 +46,7 @@ class User extends Authenticatable
         'municipal_id',
         'password',
         'phone_verified_at',
+        'email_verified_at',
         'deactivated_at',
 
     ];
@@ -69,6 +70,7 @@ class User extends Authenticatable
     {
         return [
             'phone_verified_at' => 'datetime',
+            'email_verified_at' => 'datetime',
             'phone' => 'string',
             'deactivated_at' => 'datetime',
         ];

@@ -5,12 +5,13 @@ namespace App\Core\Auth\Dto;
 readonly class SocialUserDto
 {
     public function __construct(
-        public string  $providerName,
-        public string  $providerId,
-        public string  $email,
+        public string $providerName,
+        public string $providerId,
+        public ?string $email,
         public ?string $firstName = null,
         public ?string $lastName = null,
         public ?string $avatarUrl = null,
+        public ?string $phone = null,
     ) {
     }
 

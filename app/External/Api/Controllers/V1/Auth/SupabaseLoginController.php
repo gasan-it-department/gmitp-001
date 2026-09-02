@@ -6,6 +6,7 @@ use App\Core\Auth\Actions\AuthenticateSocialUserAction;
 use App\Core\Auth\Dto\SocialUserDto;
 use App\Core\Auth\Exceptions\AccountDeactivatedException;
 use App\Http\Controllers\Controller;
+use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class SupabaseLoginController extends Controller
 {
     public function __construct(
         private AuthenticateSocialUserAction $authenticateSocialUser,
+        private PhoneFormatterService $phoneFormatter,
     ) {
     }
 
@@ -36,10 +38,15 @@ class SupabaseLoginController extends Controller
         $supabaseUser = $this->verifySupabaseToken($validated['access_token']);
 
         $email = Arr::get($supabaseUser, 'email');
+        $phone = Arr::get($supabaseUser, 'phone');
 
-        if (!is_string($email) || $email === '') {
+        $email = is_string($email) && $email !== '' ? $email : null;
+        $phone = is_string($phone) && $phone !== ''
+            ? $this->phoneFormatter->normalize($phone)
+            : null;
+        if ($email === null && $phone === null) {
             throw ValidationException::withMessages([
-                'access_token' => ['The Supabase account does not contain an email address.'],
+                'access_token' => ['The Supabase account does not contain a verified email address or mobile number.'],
             ]);
         }
 
@@ -55,6 +62,7 @@ class SupabaseLoginController extends Controller
                 firstName: Arr::get($metadata, 'first_name') ?? $firstName,
                 lastName: Arr::get($metadata, 'last_name') ?? $lastName,
                 avatarUrl: Arr::get($metadata, 'avatar_url') ?? Arr::get($metadata, 'picture'),
+                phone: $phone,
             )
         );
 
@@ -76,6 +84,7 @@ class SupabaseLoginController extends Controller
                     'last_name' => $user->last_name,
                     'full_name' => $user->full_name,
                     'email' => $user->email,
+                    'phone' => $user->phone,
                 ],
             ],
         ]);

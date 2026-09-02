@@ -62,3 +62,36 @@ it('updates an existing provider link instead of creating a duplicate', function
         'provider_id' => 'old-supabase-user-id',
     ]);
 });
+
+it('relinks a recreated phone-only Supabase identity', function () {
+    $user = User::factory()->create([
+        'email' => null,
+        'phone' => '639171234567',
+    ]);
+
+    $socialAccount = UserSocialAccount::query()->create([
+        'id' => (string) Str::ulid(),
+        'user_id' => $user->id,
+        'provider_name' => 'supabase',
+        'provider_id' => 'deleted-supabase-user-id',
+    ]);
+
+    $dto = new SocialUserDto(
+        providerName: 'supabase',
+        providerId: 'recreated-supabase-user-id',
+        email: null,
+        firstName: 'Mobile',
+        lastName: 'Citizen',
+        phone: '639171234567',
+    );
+
+    $authenticatedUser = app(AuthenticateSocialUserAction::class)->execute($dto);
+
+    expect($authenticatedUser->is($user))->toBeTrue();
+    $this->assertDatabaseHas('user_social_accounts', [
+        'id' => $socialAccount->id,
+        'user_id' => $user->id,
+        'provider_name' => 'supabase',
+        'provider_id' => 'recreated-supabase-user-id',
+    ]);
+});

@@ -49,26 +49,62 @@ class AuthenticateSocialUserAction
                     ->lockForUpdate()
                     ->findOrFail($authenticatedUserId);
 
-                // Write Google's pre-verified email back onto the user record
-                $user->update([
-                    'email' => $dto->email,
-                    'email_verified_at' => now(),
-                ]);
+                // Write verified provider identifiers onto an otherwise empty
+                // local field without replacing established contact details.
+                $verifiedIdentifiers = [];
+                if ($dto->email && ! $user->email) {
+                    $verifiedIdentifiers['email'] = $dto->email;
+                    $verifiedIdentifiers['email_verified_at'] = now();
+                }
+                if ($dto->phone && ! $user->phone) {
+                    $verifiedIdentifiers['phone'] = $dto->phone;
+                    $verifiedIdentifiers['phone_verified_at'] = now();
+                }
+                if ($verifiedIdentifiers !== []) {
+                    $user->update($verifiedIdentifiers);
+                }
             } else {
-                // 3. Login/signup flow — try to match an existing account by email
-                $user = User::query()
-                    ->where('email', $dto->email)
-                    ->lockForUpdate()
-                    ->first();
+                // 3. Login/signup flow — match the verified Supabase email or
+                // phone. This lets an account recreated in Supabase reclaim
+                // its Laravel user while the provider link is updated below.
+                $user = null;
+                if ($dto->email) {
+                    $user = User::query()
+                        ->where('email', $dto->email)
+                        ->lockForUpdate()
+                        ->first();
+                }
+                if (! $user && $dto->phone) {
+                    $phoneVariants = array_values(array_unique([
+                        $dto->phone,
+                        '+'.$dto->phone,
+                        str_starts_with($dto->phone, '63')
+                            ? '0'.substr($dto->phone, 2)
+                            : $dto->phone,
+                    ]));
+                    $user = User::query()
+                        ->whereIn('phone', $phoneVariants)
+                        ->lockForUpdate()
+                        ->first();
+                    if ($user && $user->phone !== $dto->phone) {
+                        $user->update([
+                            'phone' => $dto->phone,
+                            'phone_verified_at' => now(),
+                        ]);
+                    }
+                }
 
                 if (! $user) {
-                    // 4. First-time Google user — create a new account
+                    // 4. First-time Supabase user — create a local account
+                    // from the identity fields already verified by Supabase.
                     $user = User::create([
                         'id' => $this->idGenerator->generate(),
                         'email' => $dto->email,
+                        'phone' => $dto->phone,
                         'first_name' => $dto->firstName ?? 'User',
                         'last_name' => $dto->lastName ?? 'Social',
-                        'email_verified_at' => now(),
+                        'email_verified_at' => $dto->email ? now() : null,
+                        'phone_verified_at' => $dto->phone ? now() : null,
                         'password' => null,
                     ]);
                 }
