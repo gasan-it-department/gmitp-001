@@ -49,6 +49,7 @@ beforeEach(function () {
         $table->ulid('municipal_id');
         $table->string('name');
         $table->string('slug');
+        $table->json('enabled_generated_documents')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -238,6 +239,26 @@ it('rejects an assistance request from another municipality', function () {
         $context['request_id'],
         (string) Str::ulid(),
     ))->toThrow(AuthorizationException::class);
+});
+
+it('blocks both intake-sheet form loading and generation when it is disabled', function () {
+    $context = seedAssistanceRequestIntakeSheetContext(enabledGeneratedDocuments: []);
+    $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
+
+    expect(fn () => $action->formData($context['request_id'], $context['municipal_id']))
+        ->toThrow(DomainException::class, 'Request Intake Sheet generation is not enabled');
+
+    $dto = new GenerateAssistanceRequestIntakeSheetDto(
+        assistanceRequestId: $context['request_id'],
+        municipalId: $context['municipal_id'],
+        problemPresented: ['sick'],
+        sourceOfIncome: 'Fishing',
+        monthlyIncome: 3000,
+        recommendation: 'Medical Assistance',
+    );
+
+    expect(fn () => $action->execute($dto, 'Test Admin'))
+        ->toThrow(DomainException::class, 'Request Intake Sheet generation is not enabled');
 });
 
 it('uses edited assessment values without writing records and returns a dompdf document', function () {
@@ -540,6 +561,7 @@ function seedAssistanceRequestIntakeSheetContext(
     string $assistanceName = 'Medical Assistance',
     string $assistanceSlug = 'medical-assistance',
     ?array $metadata = null,
+    ?array $enabledGeneratedDocuments = null,
 ): array {
     $municipalId = (string) Str::ulid();
     $householdId = (string) Str::ulid();
@@ -574,6 +596,9 @@ function seedAssistanceRequestIntakeSheetContext(
         'municipal_id' => $municipalId,
         'name' => $assistanceName,
         'slug' => $assistanceSlug,
+        'enabled_generated_documents' => $enabledGeneratedDocuments === null
+            ? null
+            : json_encode($enabledGeneratedDocuments, JSON_THROW_ON_ERROR),
         'created_at' => $now,
         'updated_at' => $now,
     ]);

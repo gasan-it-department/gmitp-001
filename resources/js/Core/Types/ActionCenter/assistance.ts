@@ -8,6 +8,18 @@ export type CooldownScope = 'per_beneficiary' | 'per_household';
 export type PhysicalCopyRequirement = 'unspecified' | 'original' | 'certified_true_copy' | 'original_or_certified_true_copy' | 'photocopy';
 export type AssistanceRequestFilingMode = 'self_or_on_behalf' | 'on_behalf_only';
 export type AssistanceRequestSubjectType = 'person' | 'deceased';
+export type AssistanceGeneratedDocument =
+    | 'request_intake_sheet'
+    | 'certificate_of_eligibility'
+    | 'obligation_request'
+    | 'disbursement_voucher'
+    | 'acknowledgement_receipt';
+
+export interface AssistanceGeneratedDocumentOption {
+    value: AssistanceGeneratedDocument;
+    label: string;
+    description: string;
+}
 
 export interface AssistanceRequestFormFieldDefinition {
     key: 'on_behalf_date_of_death';
@@ -68,6 +80,7 @@ export interface AssistanceTypeDetails {
     cooldown_type: CooldownType;
     cooldown_scope: CooldownScope;
     request_form: AssistanceRequestFormDefinition;
+    enabled_generated_documents: AssistanceGeneratedDocument[];
     documents: AssistanceDocumentRequirement[];
 }
 
@@ -140,7 +153,7 @@ export interface ApplyAssistanceFormData {
 }
 
 /** Admin form for creating/updating an assistance type. */
-export interface AssistanceTypeFormData {
+export type AssistanceTypeFormData = {
     name: string;
     slug?: string;
     description?: string;
@@ -150,6 +163,7 @@ export interface AssistanceTypeFormData {
     cooldown_months: number;
     cooldown_type?: CooldownType;
     cooldown_scope?: CooldownScope;
+    enabled_generated_documents: AssistanceGeneratedDocument[];
     documents: {
         id: string;
         key?: string;
@@ -158,7 +172,7 @@ export interface AssistanceTypeFormData {
         physical_copy_requirement: PhysicalCopyRequirement;
         physical_copy_requirement_label?: string;
     }[];
-}
+};
 
 /** Legacy alias still used by admin edit screens. */
 export interface AssistanceType {
@@ -170,6 +184,7 @@ export interface AssistanceType {
     cooldown_months: number;
     description: string | null;
     is_active: boolean;
+    enabled_generated_documents?: AssistanceGeneratedDocument[];
     documents?: AssistanceDocumentRequirement[];
     created_at: string;
 }

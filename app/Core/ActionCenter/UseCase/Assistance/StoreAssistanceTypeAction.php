@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceTypeDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Exceptions\AssistanceTypeException;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -15,8 +16,9 @@ class StoreAssistanceTypeAction
     public function __construct(
         protected IdGeneratorInterface $idGeneratorInterface,
         private NormalizeAssistanceTypeDocumentSlotsAction $normalizeDocumentSlots,
-    ) {
-    }
+        private NormalizeAssistanceGeneratedDocumentsAction $normalizeGeneratedDocuments,
+    ) {}
+
     public function execute(StoreAssistanceTypeDto $dto, string $municipalId)
     {
         return DB::transaction(function () use ($dto, $municipalId) {
@@ -45,6 +47,10 @@ class StoreAssistanceTypeAction
                     'cooldown_months' => $dto->cooldownMonths,
                     'description' => $dto->description,
                     'is_active' => $dto->isActive,
+                    'enabled_generated_documents' => $this->normalizeGeneratedDocuments->execute(
+                        $dto->enabledGeneratedDocuments
+                            ?? AssistanceGeneratedDocument::defaultsForNewAssistanceType(),
+                    ),
                 ]);
             } catch (QueryException $exception) {
                 if ($this->isSlugUniqueViolation($exception)) {
@@ -56,7 +62,7 @@ class StoreAssistanceTypeAction
 
             $documents = $this->normalizeDocumentSlots->execute($dto->documents, $municipalId);
 
-            if (!empty($documents)) {
+            if (! empty($documents)) {
                 $syncData = [];
 
                 foreach ($documents as $doc) {
@@ -77,7 +83,7 @@ class StoreAssistanceTypeAction
     {
         $sqlState = (string) $exception->getCode();
 
-        if (!in_array($sqlState, ['23000', '23505'], true)) {
+        if (! in_array($sqlState, ['23000', '23505'], true)) {
             return false;
         }
 

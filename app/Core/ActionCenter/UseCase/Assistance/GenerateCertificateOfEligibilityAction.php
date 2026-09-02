@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Contracts\FinancialDocumentDefaultsProvider;
 use App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityData;
 use App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateCertificateOfEligibilityDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
@@ -23,6 +24,7 @@ class GenerateCertificateOfEligibilityAction
 {
     public function __construct(
         private readonly FinancialDocumentDefaultsProvider $defaults,
+        private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
     ) {}
 
     public function formData(
@@ -99,6 +101,11 @@ class GenerateCertificateOfEligibilityAction
                 'You may only generate certificates for assistance requests in your own municipality.',
             );
         }
+
+        $this->ensureDocumentEnabled->execute(
+            $request,
+            AssistanceGeneratedDocument::CertificateOfEligibility,
+        );
 
         $underReview = $request->status === AssistanceStatus::UnderReview
             && $request->reviewed_at !== null;

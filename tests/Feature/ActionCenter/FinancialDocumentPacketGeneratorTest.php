@@ -5,6 +5,7 @@ use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherData;
 use App\Core\ActionCenter\Dto\Assistance\FinancialDocumentPacketData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateFinancialDocumentPacketDto;
 use App\Core\ActionCenter\Dto\Assistance\ObligationRequestData;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\External\Api\Request\ActionCenter\GenerateFinancialDocumentPacketRequest;
 use App\External\Documents\ActionCenter\Pdf\FinancialDocumentPacketPdf;
 use Carbon\CarbonImmutable;
@@ -13,8 +14,12 @@ use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\StreamReader;
 
 it('requires the shared and document-specific packet fields', function () {
-    $request = new GenerateFinancialDocumentPacketRequest;
-    $validator = Validator::make([], $request->rules());
+    $validator = Validator::make(
+        [],
+        GenerateFinancialDocumentPacketRequest::rulesForDocuments(
+            AssistanceGeneratedDocument::financialPacketCases(),
+        ),
+    );
 
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->keys())->toContain(
@@ -31,6 +36,32 @@ it('requires the shared and document-specific packet fields', function () {
             'treasurer_printed_name',
             'mayor_printed_name',
         );
+});
+
+it('requires only fields used by the included processing documents', function () {
+    $validator = Validator::make(
+        [],
+        GenerateFinancialDocumentPacketRequest::rulesForDocuments([
+            AssistanceGeneratedDocument::CertificateOfEligibility,
+            AssistanceGeneratedDocument::ObligationRequest,
+        ]),
+    );
+
+    expect($validator->errors()->keys())->toContain(
+        'intake_date',
+        'obligation_request_number',
+        'responsibility_center',
+        'account_code',
+        'particulars',
+        'mswdo_printed_name',
+        'budget_officer_printed_name',
+        'mayor_printed_name',
+    )->not->toContain(
+        'mode_of_payment',
+        'explanation',
+        'accountant_printed_name',
+        'treasurer_printed_name',
+    );
 });
 
 it('maps each shared input to every document that uses it', function () {
@@ -75,71 +106,74 @@ it('merges certificate obligation request and disbursement voucher into one thre
     $transactionNumber = 'REQ-2026-00001';
     $obligationRequestNumber = '200-2026-08-0001';
 
+    $certificate = new CertificateOfEligibilityData(
+        transactionNumber: $transactionNumber,
+        municipalityName: 'Gasan',
+        provinceName: 'Marinduque',
+        trunklinePhone: '(042) 342-1572',
+        municipalityLogoDataUri: null,
+        subjectName: 'Share Mae Rejano',
+        subjectAgePhrase: 'of legal age',
+        subjectCivilStatus: 'Single',
+        address: 'Brgy. Bognuyan, Gasan, Marinduque',
+        assistanceType: 'Medical Assistance',
+        intakeDate: CarbonImmutable::parse('2026-08-24'),
+        certifiedByName: 'Rebecca S. Bisnar',
+        certifiedByPosition: 'Social Welfare Officer III',
+        approvedByName: 'Hon. Juan Dela Cruz',
+        approvedByPosition: 'Municipal Mayor',
+        generatedByUserName: 'Test Admin',
+        generatedAt: $generatedAt,
+    );
+    $obligationRequest = new ObligationRequestData(
+        transactionNumber: $transactionNumber,
+        municipalityName: 'Gasan',
+        municipalityLogoDataUri: null,
+        payee: 'Share Mae Rejano',
+        address: 'Brgy. Bognuyan, Gasan, Marinduque',
+        assistanceType: 'Medical Assistance',
+        approvedAmount: 1000,
+        obligationRequestNumber: $obligationRequestNumber,
+        responsibilityCenter: '7611',
+        accountCode: '5-02-99-080',
+        particulars: "Payment for Medical Assistance\nRE: Aid/Assistance to Individual in Crisis\nSituation (AICS) CY 2026",
+        mswdoPrintedName: 'Rebecca S. Bisnar',
+        mswdoPosition: 'Social Welfare Officer III',
+        budgetOfficerPrintedName: 'Edden M. Sager',
+        budgetOfficerPosition: 'Municipal Budget Officer',
+        office: 'MSWDO',
+        fpp: null,
+        generatedByUserName: 'Test Admin',
+        generatedAt: $generatedAt,
+    );
+    $disbursementVoucher = new DisbursementVoucherData(
+        transactionNumber: $transactionNumber,
+        municipalityName: 'Gasan',
+        municipalityLogoDataUri: null,
+        payee: 'Share Mae Rejano',
+        address: 'Brgy. Bognuyan, Gasan, Marinduque',
+        assistanceType: 'Medical Assistance',
+        approvedAmount: 1000,
+        disbursementVoucherNumber: null,
+        modeOfPayment: 'cash',
+        tinEmployeeNumber: null,
+        obligationRequestNumber: $obligationRequestNumber,
+        responsibilityCenterOffice: 'MSWDO',
+        responsibilityCenterCode: '7611',
+        explanation: "Payment for Medical Assistance\nRE: AICS CY 2026\nONE THOUSAND PESOS ONLY",
+        accountantPrintedName: 'Jhea Mae R. Malapote',
+        accountantPosition: 'Municipal Accountant',
+        treasurerPrintedName: 'Maria Jesusa M. Ghosh',
+        treasurerPosition: 'Municipal Treasurer',
+        mayorPrintedName: 'Hon. Juan Dela Cruz',
+        mayorPosition: 'Municipal Mayor',
+        generatedByUserName: 'Test Admin',
+        generatedAt: $generatedAt,
+    );
     $data = new FinancialDocumentPacketData(
-        certificateOfEligibility: new CertificateOfEligibilityData(
-            transactionNumber: $transactionNumber,
-            municipalityName: 'Gasan',
-            provinceName: 'Marinduque',
-            trunklinePhone: '(042) 342-1572',
-            municipalityLogoDataUri: null,
-            subjectName: 'Share Mae Rejano',
-            subjectAgePhrase: 'of legal age',
-            subjectCivilStatus: 'Single',
-            address: 'Brgy. Bognuyan, Gasan, Marinduque',
-            assistanceType: 'Medical Assistance',
-            intakeDate: CarbonImmutable::parse('2026-08-24'),
-            certifiedByName: 'Rebecca S. Bisnar',
-            certifiedByPosition: 'Social Welfare Officer III',
-            approvedByName: 'Hon. Juan Dela Cruz',
-            approvedByPosition: 'Municipal Mayor',
-            generatedByUserName: 'Test Admin',
-            generatedAt: $generatedAt,
-        ),
-        obligationRequest: new ObligationRequestData(
-            transactionNumber: $transactionNumber,
-            municipalityName: 'Gasan',
-            municipalityLogoDataUri: null,
-            payee: 'Share Mae Rejano',
-            address: 'Brgy. Bognuyan, Gasan, Marinduque',
-            assistanceType: 'Medical Assistance',
-            approvedAmount: 1000,
-            obligationRequestNumber: $obligationRequestNumber,
-            responsibilityCenter: '7611',
-            accountCode: '5-02-99-080',
-            particulars: "Payment for Medical Assistance\nRE: Aid/Assistance to Individual in Crisis\nSituation (AICS) CY 2026",
-            mswdoPrintedName: 'Rebecca S. Bisnar',
-            mswdoPosition: 'Social Welfare Officer III',
-            budgetOfficerPrintedName: 'Edden M. Sager',
-            budgetOfficerPosition: 'Municipal Budget Officer',
-            office: 'MSWDO',
-            fpp: null,
-            generatedByUserName: 'Test Admin',
-            generatedAt: $generatedAt,
-        ),
-        disbursementVoucher: new DisbursementVoucherData(
-            transactionNumber: $transactionNumber,
-            municipalityName: 'Gasan',
-            municipalityLogoDataUri: null,
-            payee: 'Share Mae Rejano',
-            address: 'Brgy. Bognuyan, Gasan, Marinduque',
-            assistanceType: 'Medical Assistance',
-            approvedAmount: 1000,
-            disbursementVoucherNumber: null,
-            modeOfPayment: 'cash',
-            tinEmployeeNumber: null,
-            obligationRequestNumber: $obligationRequestNumber,
-            responsibilityCenterOffice: 'MSWDO',
-            responsibilityCenterCode: '7611',
-            explanation: "Payment for Medical Assistance\nRE: AICS CY 2026\nONE THOUSAND PESOS ONLY",
-            accountantPrintedName: 'Jhea Mae R. Malapote',
-            accountantPosition: 'Municipal Accountant',
-            treasurerPrintedName: 'Maria Jesusa M. Ghosh',
-            treasurerPosition: 'Municipal Treasurer',
-            mayorPrintedName: 'Hon. Juan Dela Cruz',
-            mayorPosition: 'Municipal Mayor',
-            generatedByUserName: 'Test Admin',
-            generatedAt: $generatedAt,
-        ),
+        certificateOfEligibility: $certificate,
+        obligationRequest: $obligationRequest,
+        disbursementVoucher: $disbursementVoucher,
     );
 
     $response = app(FinancialDocumentPacketPdf::class)->response($data);
@@ -153,4 +187,15 @@ it('merges certificate obligation request and disbursement voucher into one thre
         ->and($response->headers->get('content-disposition'))->toContain('financial-document-packet_REQ-2026-00001_2026-08-25.pdf')
         ->and($response->getContent())->toStartWith('%PDF')
         ->and($pageCount)->toBe(3);
+
+    $partialResponse = app(FinancialDocumentPacketPdf::class)->response(new FinancialDocumentPacketData(
+        certificateOfEligibility: $certificate,
+        obligationRequest: $obligationRequest,
+        disbursementVoucher: null,
+    ));
+    $partialPageCount = (new Fpdi)->setSourceFile(
+        StreamReader::createByString($partialResponse->getContent()),
+    );
+
+    expect($partialPageCount)->toBe(2);
 });

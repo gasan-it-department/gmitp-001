@@ -5,13 +5,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
+    AssistanceGeneratedDocument,
+    AssistanceGeneratedDocumentOption,
     AssistanceTypeFormData,
     PHYSICAL_COPY_REQUIREMENT_OPTIONS,
     PhysicalCopyRequirement,
 } from '@/Core/Types/ActionCenter/assistance';
 import actionCenter from '@/routes/actionCenter';
 import { useForm } from '@inertiajs/react';
-import { FileText, ShieldAlert, Trash2 } from 'lucide-react';
+import { FileCog, FileText, ShieldAlert, Trash2 } from 'lucide-react';
 
 interface SharedFormProps {
     mode: 'create' | 'edit';
@@ -19,10 +21,19 @@ interface SharedFormProps {
     assistanceTypeId?: string; // Only needed if editing
     initialData: AssistanceTypeFormData;
     documentTypes: { id: string; name: string }[];
+    generatedDocumentOptions: AssistanceGeneratedDocumentOption[];
     onCancel: () => void; // 🎯 Let the parent wrapper decide how to "go back"
 }
 
-export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceTypeId, initialData, documentTypes, onCancel }: SharedFormProps) {
+export default function AssistanceTypeForm({
+    mode,
+    municipalitySlug,
+    assistanceTypeId,
+    initialData,
+    documentTypes,
+    generatedDocumentOptions,
+    onCancel,
+}: SharedFormProps) {
     // 1. Initialize form with whatever data the wrapper passed in
     const { data, setData, post, put, processing, errors } = useForm<AssistanceTypeFormData>(initialData);
     const configurableDocuments = data.documents.filter((document) => !document.key?.startsWith('recipient_valid_id_'));
@@ -85,6 +96,12 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
             'documents',
             data.documents.map((doc) => (doc.id === idToUpdate ? { ...doc, physical_copy_requirement: requirement } : doc)),
         );
+    };
+
+    const toggleGeneratedDocument = (document: AssistanceGeneratedDocument, enabled: boolean) => {
+        const selected = data.enabled_generated_documents;
+
+        setData('enabled_generated_documents', enabled ? [...selected, document] : selected.filter((value) => value !== document));
     };
 
     return (
@@ -213,7 +230,7 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                 </div>
 
                 {/* --- RIGHT COLUMN: The Requirement Builder --- */}
-                <div className="lg:col-span-7">
+                <div className="space-y-6 lg:col-span-7">
                     <div className="rounded-xl border border-orange-100 bg-white p-6 shadow-sm">
                         <div className="mb-6 flex items-start justify-between border-b border-gray-100 pb-4">
                             <div>
@@ -257,7 +274,10 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 </div>
                             ) : (
                                 configurableDocuments.map((doc) => (
-                                    <div key={doc.id} className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-orange-300 hover:shadow-md">
+                                    <div
+                                        key={doc.id}
+                                        className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-orange-300 hover:shadow-md"
+                                    >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0 flex-1">
                                                 <h4 className="font-semibold text-gray-800">{doc.name}</h4>
@@ -267,9 +287,7 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                                         onCheckedChange={(c) => toggleRequirement(doc.id, c)}
                                                         className="data-[state=checked]:bg-red-500"
                                                     />
-                                                    <span
-                                                        className={`text-sm font-medium ${doc.is_required ? 'text-red-600' : 'text-gray-500'}`}
-                                                    >
+                                                    <span className={`text-sm font-medium ${doc.is_required ? 'text-red-600' : 'text-gray-500'}`}>
                                                         {doc.is_required ? 'Required Before Approval' : 'If Applicable'}
                                                     </span>
                                                 </div>
@@ -292,9 +310,7 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                             </Label>
                                             <Select
                                                 value={doc.physical_copy_requirement}
-                                                onValueChange={(value) =>
-                                                    updatePhysicalCopyRequirement(doc.id, value as PhysicalCopyRequirement)
-                                                }
+                                                onValueChange={(value) => updatePhysicalCopyRequirement(doc.id, value as PhysicalCopyRequirement)}
                                             >
                                                 <SelectTrigger id={`physical-copy-${doc.id}`} className="w-full bg-gray-50 sm:max-w-sm">
                                                     <SelectValue />
@@ -312,6 +328,52 @@ export default function AssistanceTypeForm({ mode, municipalitySlug, assistanceT
                                 ))
                             )}
                         </div>
+                    </div>
+
+                    <div className="rounded-xl border border-blue-100 bg-white p-6 shadow-sm">
+                        <div className="mb-5 flex items-start justify-between border-b border-gray-100 pb-4">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-800">Generated Documents</h2>
+                                <p className="text-sm text-gray-500">
+                                    Choose which official forms MSWDO may prepare for requests under this assistance type.
+                                </p>
+                            </div>
+                            <FileCog className="h-6 w-6 shrink-0 text-blue-500" />
+                        </div>
+
+                        <div className="space-y-3">
+                            {generatedDocumentOptions.map((option) => {
+                                const enabled = data.enabled_generated_documents.includes(option.value);
+
+                                return (
+                                    <div
+                                        key={option.value}
+                                        className="flex min-h-16 items-start justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/70 p-4"
+                                    >
+                                        <div className="min-w-0">
+                                            <Label htmlFor={`generated-document-${option.value}`} className="font-semibold text-gray-800">
+                                                {option.label}
+                                            </Label>
+                                            <p className="mt-1 text-xs leading-relaxed text-gray-500">{option.description}</p>
+                                        </div>
+                                        <Switch
+                                            id={`generated-document-${option.value}`}
+                                            checked={enabled}
+                                            onCheckedChange={(checked) => toggleGeneratedDocument(option.value, checked)}
+                                            className="mt-1 shrink-0 data-[state=checked]:bg-blue-600"
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {errors.enabled_generated_documents && (
+                            <p className="mt-3 text-xs font-medium text-red-600">{errors.enabled_generated_documents}</p>
+                        )}
+                        <p className="mt-4 text-xs leading-relaxed text-gray-500">
+                            Availability still follows each document's status, amount, and permission rules. A processing packet is available when at
+                            least two of Certificate of Eligibility, Obligation Request, and Disbursement Voucher are enabled.
+                        </p>
                     </div>
                 </div>
             </div>

@@ -12,8 +12,9 @@ class UpdateAssistanceTypeAction
     public function __construct(
         private IdGeneratorInterface $idGenerator,
         private NormalizeAssistanceTypeDocumentSlotsAction $normalizeDocumentSlots,
-    ) {
-    }
+        private NormalizeAssistanceGeneratedDocumentsAction $normalizeGeneratedDocuments,
+    ) {}
+
     public function execute(UpdateAssistanceTypeDto $dto, string $typeId, string $municipalId)
     {
         return DB::transaction(function () use ($dto, $typeId, $municipalId) {
@@ -21,14 +22,22 @@ class UpdateAssistanceTypeAction
                 ->where('municipal_id', $municipalId)
                 ->findOrFail($typeId);
 
-            $assistanceType->update([
+            $updates = [
                 'name' => $dto->name,
                 'description' => $dto->description,
                 'min_amount' => $dto->minAmount,
                 'max_amount' => $dto->maxAmount,
                 'cooldown_months' => $dto->cooldownMonths,
                 'is_active' => $dto->isActive,
-            ]);
+            ];
+
+            if ($dto->enabledGeneratedDocuments !== null) {
+                $updates['enabled_generated_documents'] = $this->normalizeGeneratedDocuments->execute(
+                    $dto->enabledGeneratedDocuments,
+                );
+            }
+
+            $assistanceType->update($updates);
 
             $syncData = [];
             foreach ($this->normalizeDocumentSlots->execute($dto->documents, $municipalId) as $doc) {

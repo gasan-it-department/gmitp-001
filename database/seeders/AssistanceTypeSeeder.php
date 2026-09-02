@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\DocumentType;
@@ -29,8 +30,9 @@ class AssistanceTypeSeeder extends Seeder
     {
         $municipality = Municipality::where('name', 'GASAN')->first();
 
-        if (!$municipality) {
+        if (! $municipality) {
             $this->command->warn('Municipality "GASAN" not found. Run MunicipalitySeeder first.');
+
             return;
         }
 
@@ -42,16 +44,17 @@ class AssistanceTypeSeeder extends Seeder
 
         // Guard: every document key referenced below must already exist.
         $allDocKeys = collect($this->programs())
-            ->flatMap(fn(array $p) => collect($p['documents'])->pluck('key'))
+            ->flatMap(fn (array $p) => collect($p['documents'])->pluck('key'))
             ->unique();
 
-        $missing = $allDocKeys->filter(fn(string $k) => !$docTypes->has($k));
+        $missing = $allDocKeys->filter(fn (string $k) => ! $docTypes->has($k));
 
         if ($missing->isNotEmpty()) {
             $this->command->error(
-                'Missing document types: ' . $missing->join(', ') .
+                'Missing document types: '.$missing->join(', ').
                 '. Run AssistanceDocumentTypeSeeder first.'
             );
+
             return;
         }
 
@@ -72,6 +75,12 @@ class AssistanceTypeSeeder extends Seeder
                     'is_active' => true,
                 ])
             );
+
+            if ($type->wasRecentlyCreated && $type->enabled_generated_documents === null) {
+                $type->update([
+                    'enabled_generated_documents' => AssistanceGeneratedDocument::values(),
+                ]);
+            }
 
             // Retire the old one-file ID requirement for this seeded program.
             // Existing request media remains untouched and readable.

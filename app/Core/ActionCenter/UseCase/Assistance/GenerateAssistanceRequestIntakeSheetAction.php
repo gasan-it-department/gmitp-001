@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetData;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateAssistanceRequestIntakeSheetDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceIntakeProblem;
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
@@ -22,6 +23,10 @@ use Throwable;
 
 class GenerateAssistanceRequestIntakeSheetAction
 {
+    public function __construct(
+        private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
+    ) {}
+
     public function formData(
         string $assistanceRequestId,
         string $municipalId,
@@ -137,6 +142,11 @@ class GenerateAssistanceRequestIntakeSheetAction
                 'You may only generate intake sheets for assistance requests in your own municipality.',
             );
         }
+
+        $this->ensureDocumentEnabled->execute(
+            $request,
+            AssistanceGeneratedDocument::RequestIntakeSheet,
+        );
 
         if ($request->snapshot === null) {
             throw new \DomainException(

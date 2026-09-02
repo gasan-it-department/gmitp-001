@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { AssistanceGeneratedDocument } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -16,12 +17,16 @@ interface FinancialDocumentPacketContext {
     assistance_request_id: string;
     transaction_number: string;
     payee: string;
-    certificate_subject: string;
+    certificate_subject: string | null;
     address: string;
     assistance_type: string;
     approved_amount: number;
     suggested_particulars: string;
     suggested_explanation: string;
+    included_documents: {
+        key: AssistanceGeneratedDocument;
+        label: string;
+    }[];
     recommended_defaults: {
         obligation_request_number: string;
         responsibility_center: string;
@@ -91,6 +96,10 @@ const paymentModes = [
 export default function FinancialDocumentPacketGenerator({ financialDocumentPacket }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const defaults = financialDocumentPacket.recommended_defaults;
+    const includedDocumentKeys = new Set(financialDocumentPacket.included_documents.map((document) => document.key));
+    const hasCertificate = includedDocumentKeys.has('certificate_of_eligibility');
+    const hasObligationRequest = includedDocumentKeys.has('obligation_request');
+    const hasDisbursementVoucher = includedDocumentKeys.has('disbursement_voucher');
     const [data, setData] = useState<FormData>({
         intake_date: '',
         obligation_request_number: defaults.obligation_request_number,
@@ -202,10 +211,25 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
         errors[field] ? <p className="mt-1 text-sm text-red-600">{errors[field]}</p> : null;
 
     const RecommendedHint = () => <p className="mt-1 text-xs text-slate-500">Recommended value - verify before printing.</p>;
+    const signatories = (
+        [
+            ['mswdo', 'MSWDO / Certified By', data.mswdo_printed_name, data.mswdo_position],
+            ['budget_officer', 'Budget Officer', data.budget_officer_printed_name, data.budget_officer_position],
+            ['accountant', 'Municipal Accountant', data.accountant_printed_name, data.accountant_position],
+            ['treasurer', 'Municipal Treasurer', data.treasurer_printed_name, data.treasurer_position],
+            ['mayor', 'Mayor / Approved By', data.mayor_printed_name, data.mayor_position],
+        ] as const
+    ).filter(([key]) => {
+        if (key === 'mswdo') return hasCertificate || hasObligationRequest;
+        if (key === 'budget_officer') return hasObligationRequest;
+        if (key === 'accountant' || key === 'treasurer') return hasDisbursementVoucher;
+
+        return hasCertificate || hasDisbursementVoucher;
+    });
 
     return (
         <AdminLayout>
-            <Head title={`Generate Document Packet - ${financialDocumentPacket.transaction_number}`} />
+            <Head title={`Generate Processing Document Packet - ${financialDocumentPacket.transaction_number}`} />
 
             <div className="min-h-screen bg-slate-50 pb-20">
                 <div className="border-b border-slate-200 bg-white">
@@ -223,16 +247,18 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
                             <Files className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                            <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">Generate Complete Document Packet</h1>
-                            <p className="mt-1 text-sm text-slate-500">Certificate of Eligibility, Obligation Request, and Disbursement Voucher</p>
+                            <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">Generate Processing Document Packet</h1>
+                            <p className="mt-1 text-sm text-slate-500">
+                                {financialDocumentPacket.included_documents.map((document) => document.label).join(', ')}
+                            </p>
                         </div>
                     </div>
 
                     <div className="mb-6 flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
                         <Info className="mt-0.5 h-5 w-5 shrink-0" />
                         <p>
-                            Shared values are applied consistently across all three documents. The entered values and generated packet are not saved;
-                            verify everything before printing.
+                            Only the enabled processing documents listed above will be generated. Shared values are applied consistently across the
+                            included documents. The entered values and generated packet are not saved; verify everything before printing.
                         </p>
                     </div>
 
@@ -247,10 +273,12 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
                                 <dt className="text-xs font-medium text-slate-500">Payee</dt>
                                 <dd className="mt-1 text-sm font-semibold text-slate-900">{financialDocumentPacket.payee}</dd>
                             </div>
-                            <div>
-                                <dt className="text-xs font-medium text-slate-500">Certificate subject</dt>
-                                <dd className="mt-1 text-sm font-semibold text-slate-900">{financialDocumentPacket.certificate_subject}</dd>
-                            </div>
+                            {hasCertificate && (
+                                <div>
+                                    <dt className="text-xs font-medium text-slate-500">Certificate subject</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-slate-900">{financialDocumentPacket.certificate_subject}</dd>
+                                </div>
+                            )}
                             <div className="sm:col-span-2">
                                 <dt className="text-xs font-medium text-slate-500">Address</dt>
                                 <dd className="mt-1 text-sm text-slate-800">{financialDocumentPacket.address}</dd>
@@ -282,18 +310,20 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
                             </div>
 
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                <div>
-                                    <Label htmlFor="intake_date">Intake date</Label>
-                                    <Input
-                                        id="intake_date"
-                                        type="date"
-                                        value={data.intake_date}
-                                        onChange={(e) => update('intake_date', e.target.value)}
-                                        required
-                                        className="mt-1.5"
-                                    />
-                                    <FieldError field="intake_date" />
-                                </div>
+                                {hasCertificate && (
+                                    <div>
+                                        <Label htmlFor="intake_date">Intake date</Label>
+                                        <Input
+                                            id="intake_date"
+                                            type="date"
+                                            value={data.intake_date}
+                                            onChange={(e) => update('intake_date', e.target.value)}
+                                            required
+                                            className="mt-1.5"
+                                        />
+                                        <FieldError field="intake_date" />
+                                    </div>
+                                )}
                                 <div>
                                     <Label htmlFor="obligation_request_number">Obligation Request No.</Label>
                                     <Input
@@ -334,121 +364,125 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
                             </div>
                         </section>
 
-                        <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
-                            <div className="mb-5 flex items-start gap-3">
-                                <Landmark className="mt-0.5 h-5 w-5 text-slate-700" />
-                                <div>
-                                    <h2 className="font-semibold text-slate-950">Obligation Request details</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Values used only by Annex B.</p>
+                        {hasObligationRequest && (
+                            <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
+                                <div className="mb-5 flex items-start gap-3">
+                                    <Landmark className="mt-0.5 h-5 w-5 text-slate-700" />
+                                    <div>
+                                        <h2 className="font-semibold text-slate-950">Obligation Request details</h2>
+                                        <p className="mt-1 text-sm text-slate-500">Values used only by Annex B.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                <div>
-                                    <Label htmlFor="account_code">Account Code</Label>
-                                    <Input
-                                        id="account_code"
-                                        value={data.account_code}
-                                        onChange={(e) => update('account_code', e.target.value)}
-                                        maxLength={80}
-                                        required
-                                        className="mt-1.5"
-                                    />
-                                    <RecommendedHint />
-                                    <FieldError field="account_code" />
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                    <div>
+                                        <Label htmlFor="account_code">Account Code</Label>
+                                        <Input
+                                            id="account_code"
+                                            value={data.account_code}
+                                            onChange={(e) => update('account_code', e.target.value)}
+                                            maxLength={80}
+                                            required
+                                            className="mt-1.5"
+                                        />
+                                        <RecommendedHint />
+                                        <FieldError field="account_code" />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="fpp">F.P.P. (optional)</Label>
+                                        <Input
+                                            id="fpp"
+                                            value={data.fpp}
+                                            onChange={(e) => update('fpp', e.target.value)}
+                                            maxLength={80}
+                                            className="mt-1.5"
+                                        />
+                                        <FieldError field="fpp" />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <Label htmlFor="particulars">Particulars</Label>
+                                        <Textarea
+                                            id="particulars"
+                                            value={data.particulars}
+                                            onChange={(e) => update('particulars', e.target.value)}
+                                            maxLength={1000}
+                                            rows={5}
+                                            required
+                                            className="mt-1.5 resize-y"
+                                        />
+                                        <FieldError field="particulars" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label htmlFor="fpp">F.P.P. (optional)</Label>
-                                    <Input
-                                        id="fpp"
-                                        value={data.fpp}
-                                        onChange={(e) => update('fpp', e.target.value)}
-                                        maxLength={80}
-                                        className="mt-1.5"
-                                    />
-                                    <FieldError field="fpp" />
-                                </div>
-                                <div className="sm:col-span-2">
-                                    <Label htmlFor="particulars">Particulars</Label>
-                                    <Textarea
-                                        id="particulars"
-                                        value={data.particulars}
-                                        onChange={(e) => update('particulars', e.target.value)}
-                                        maxLength={1000}
-                                        rows={5}
-                                        required
-                                        className="mt-1.5 resize-y"
-                                    />
-                                    <FieldError field="particulars" />
-                                </div>
-                            </div>
-                        </section>
+                            </section>
+                        )}
 
-                        <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
-                            <div className="mb-5 flex items-start gap-3">
-                                <ReceiptText className="mt-0.5 h-5 w-5 text-blue-700" />
-                                <div>
-                                    <h2 className="font-semibold text-slate-950">Disbursement Voucher details</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Values used only by Annex A.</p>
+                        {hasDisbursementVoucher && (
+                            <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
+                                <div className="mb-5 flex items-start gap-3">
+                                    <ReceiptText className="mt-0.5 h-5 w-5 text-blue-700" />
+                                    <div>
+                                        <h2 className="font-semibold text-slate-950">Disbursement Voucher details</h2>
+                                        <p className="mt-1 text-sm text-slate-500">Values used only by Annex A.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                <div>
-                                    <Label htmlFor="disbursement_voucher_number">DV No. (optional)</Label>
-                                    <Input
-                                        id="disbursement_voucher_number"
-                                        value={data.disbursement_voucher_number}
-                                        onChange={(e) => update('disbursement_voucher_number', e.target.value)}
-                                        maxLength={60}
-                                        className="mt-1.5"
-                                    />
-                                    <FieldError field="disbursement_voucher_number" />
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                    <div>
+                                        <Label htmlFor="disbursement_voucher_number">DV No. (optional)</Label>
+                                        <Input
+                                            id="disbursement_voucher_number"
+                                            value={data.disbursement_voucher_number}
+                                            onChange={(e) => update('disbursement_voucher_number', e.target.value)}
+                                            maxLength={60}
+                                            className="mt-1.5"
+                                        />
+                                        <FieldError field="disbursement_voucher_number" />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="tin_employee_number">TIN / Employee No. (optional)</Label>
+                                        <Input
+                                            id="tin_employee_number"
+                                            value={data.tin_employee_number}
+                                            onChange={(e) => update('tin_employee_number', e.target.value)}
+                                            maxLength={50}
+                                            className="mt-1.5"
+                                        />
+                                        <FieldError field="tin_employee_number" />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <Label>Mode of payment</Label>
+                                        <RadioGroup
+                                            value={data.mode_of_payment}
+                                            onValueChange={(value) => update('mode_of_payment', value)}
+                                            className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3"
+                                        >
+                                            {paymentModes.map((mode) => (
+                                                <label
+                                                    key={mode.value}
+                                                    htmlFor={`packet_mode_${mode.value}`}
+                                                    className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-sm font-medium transition ${data.mode_of_payment === mode.value ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                                                >
+                                                    <RadioGroupItem id={`packet_mode_${mode.value}`} value={mode.value} />
+                                                    {mode.label}
+                                                </label>
+                                            ))}
+                                        </RadioGroup>
+                                        <FieldError field="mode_of_payment" />
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <Label htmlFor="explanation">Explanation</Label>
+                                        <Textarea
+                                            id="explanation"
+                                            value={data.explanation}
+                                            onChange={(e) => update('explanation', e.target.value)}
+                                            maxLength={1000}
+                                            rows={6}
+                                            required
+                                            className="mt-1.5 resize-y"
+                                        />
+                                        <FieldError field="explanation" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label htmlFor="tin_employee_number">TIN / Employee No. (optional)</Label>
-                                    <Input
-                                        id="tin_employee_number"
-                                        value={data.tin_employee_number}
-                                        onChange={(e) => update('tin_employee_number', e.target.value)}
-                                        maxLength={50}
-                                        className="mt-1.5"
-                                    />
-                                    <FieldError field="tin_employee_number" />
-                                </div>
-                                <div className="sm:col-span-2">
-                                    <Label>Mode of payment</Label>
-                                    <RadioGroup
-                                        value={data.mode_of_payment}
-                                        onValueChange={(value) => update('mode_of_payment', value)}
-                                        className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3"
-                                    >
-                                        {paymentModes.map((mode) => (
-                                            <label
-                                                key={mode.value}
-                                                htmlFor={`packet_mode_${mode.value}`}
-                                                className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-sm font-medium transition ${data.mode_of_payment === mode.value ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
-                                            >
-                                                <RadioGroupItem id={`packet_mode_${mode.value}`} value={mode.value} />
-                                                {mode.label}
-                                            </label>
-                                        ))}
-                                    </RadioGroup>
-                                    <FieldError field="mode_of_payment" />
-                                </div>
-                                <div className="sm:col-span-2">
-                                    <Label htmlFor="explanation">Explanation</Label>
-                                    <Textarea
-                                        id="explanation"
-                                        value={data.explanation}
-                                        onChange={(e) => update('explanation', e.target.value)}
-                                        maxLength={1000}
-                                        rows={6}
-                                        required
-                                        className="mt-1.5 resize-y"
-                                    />
-                                    <FieldError field="explanation" />
-                                </div>
-                            </div>
-                        </section>
+                            </section>
+                        )}
 
                         <section className="rounded-md border border-slate-200 bg-white p-4 sm:p-6">
                             <div className="mb-5 flex items-start gap-3">
@@ -461,15 +495,7 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                {(
-                                    [
-                                        ['mswdo', 'MSWDO / Certified By', data.mswdo_printed_name, data.mswdo_position],
-                                        ['budget_officer', 'Budget Officer', data.budget_officer_printed_name, data.budget_officer_position],
-                                        ['accountant', 'Municipal Accountant', data.accountant_printed_name, data.accountant_position],
-                                        ['treasurer', 'Municipal Treasurer', data.treasurer_printed_name, data.treasurer_position],
-                                        ['mayor', 'Mayor / Approved By', data.mayor_printed_name, data.mayor_position],
-                                    ] as const
-                                ).map(([key, title, name, position]) => (
+                                {signatories.map(([key, title, name, position]) => (
                                     <div
                                         key={key}
                                         className="border-t border-slate-200 pt-4 first:border-t-0 first:pt-0 sm:first:border-t sm:first:pt-4"
@@ -513,7 +539,9 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
                             </Button>
                             <Button type="submit" disabled={processing} className="min-h-11 bg-slate-900 text-white hover:bg-slate-800 sm:min-w-64">
                                 {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-                                {processing ? 'Generating packet...' : 'Generate 3-page PDF packet'}
+                                {processing
+                                    ? 'Generating packet...'
+                                    : `Generate ${financialDocumentPacket.included_documents.length}-document PDF packet`}
                             </Button>
                         </div>
                     </form>

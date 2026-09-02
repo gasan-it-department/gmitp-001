@@ -2,7 +2,9 @@
 
 use App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateCertificateOfEligibilityDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\UseCase\Assistance\GenerateCertificateOfEligibilityAction;
+use App\Core\ActionCenter\UseCase\Assistance\GenerateFinancialDocumentPacketAction;
 use App\External\Api\Request\ActionCenter\GenerateCertificateOfEligibilityRequest;
 use App\External\Documents\ActionCenter\Pdf\CertificateOfEligibilityPdf;
 use Carbon\CarbonImmutable;
@@ -58,6 +60,7 @@ beforeEach(function () {
         $table->ulid('municipal_id');
         $table->string('name');
         $table->string('slug');
+        $table->json('enabled_generated_documents')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -188,6 +191,34 @@ it('rejects a request from another municipality', function () {
     ))->toThrow(AuthorizationException::class);
 });
 
+it('blocks the certificate when it is disabled for the assistance type', function () {
+    $context = seedCertificateOfEligibilityContext(enabledGeneratedDocuments: []);
+
+    expect(fn () => app(GenerateCertificateOfEligibilityAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    ))->toThrow(DomainException::class, 'Certificate of Eligibility generation is not enabled');
+});
+
+it('builds a processing packet form from only the enabled component generators', function () {
+    $context = seedCertificateOfEligibilityContext(enabledGeneratedDocuments: [
+        AssistanceGeneratedDocument::CertificateOfEligibility->value,
+        AssistanceGeneratedDocument::ObligationRequest->value,
+    ]);
+
+    $data = app(GenerateFinancialDocumentPacketAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    )->toArray();
+
+    expect(array_column($data['included_documents'], 'key'))->toBe([
+        AssistanceGeneratedDocument::CertificateOfEligibility->value,
+        AssistanceGeneratedDocument::ObligationRequest->value,
+    ])->and($data['certificate_subject'])->toBe('Share Mae Rejano')
+        ->and($data['suggested_particulars'])->toContain('Payment for Medical Assistance')
+        ->and($data['suggested_explanation'])->toBe('');
+});
+
 it('validates the manual certificate fields', function () {
     $request = new GenerateCertificateOfEligibilityRequest;
     $valid = [
@@ -242,6 +273,7 @@ function seedCertificateOfEligibilityContext(
     ?array $metadata = null,
     string $status = 'approved',
     bool $reviewed = true,
+    ?array $enabledGeneratedDocuments = null,
 ): array {
     $municipalId = (string) Str::ulid();
     $assistanceTypeId = (string) Str::ulid();
@@ -281,6 +313,9 @@ function seedCertificateOfEligibilityContext(
         'municipal_id' => $municipalId,
         'name' => 'Medical Assistance',
         'slug' => 'medical-assistance',
+        'enabled_generated_documents' => $enabledGeneratedDocuments === null
+            ? null
+            : json_encode($enabledGeneratedDocuments, JSON_THROW_ON_ERROR),
         'created_at' => $now,
         'updated_at' => $now,
     ]);

@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
 use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherData;
 use App\Core\ActionCenter\Dto\Assistance\DisbursementVoucherFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateDisbursementVoucherDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Services\PhilippinePesoInWordsFormatter;
 
 class GenerateDisbursementVoucherAction
@@ -24,7 +25,7 @@ class GenerateDisbursementVoucherAction
         $context = $this->context->execute(
             $assistanceRequestId,
             $municipalId,
-            'disbursement voucher',
+            AssistanceGeneratedDocument::DisbursementVoucher,
         );
 
         return new DisbursementVoucherFormData(
@@ -48,7 +49,7 @@ class GenerateDisbursementVoucherAction
         $context = $this->context->execute(
             $dto->assistanceRequestId,
             $dto->municipalId,
-            'disbursement voucher',
+            AssistanceGeneratedDocument::DisbursementVoucher,
         );
 
         return new DisbursementVoucherData(

@@ -10,7 +10,7 @@ readonly class GenerateFinancialDocumentPacketDto
     public function __construct(
         public string $assistanceRequestId,
         public string $municipalId,
-        public CarbonImmutable $intakeDate,
+        public ?CarbonImmutable $intakeDate,
         public string $obligationRequestNumber,
         public string $responsibilityCenter,
         public string $accountCode,
@@ -41,10 +41,7 @@ readonly class GenerateFinancialDocumentPacketDto
         return new self(
             assistanceRequestId: $assistanceRequestId,
             municipalId: $municipalId,
-            intakeDate: CarbonImmutable::createFromFormat(
-                '!Y-m-d',
-                (string) $request->validated('intake_date'),
-            ),
+            intakeDate: self::nullableDate($request->validated('intake_date')),
             obligationRequestNumber: trim((string) $request->validated('obligation_request_number')),
             responsibilityCenter: trim((string) $request->validated('responsibility_center')),
             accountCode: trim((string) $request->validated('account_code')),
@@ -109,6 +106,10 @@ readonly class GenerateFinancialDocumentPacketDto
 
     public function certificateOfEligibility(): GenerateCertificateOfEligibilityDto
     {
+        if ($this->intakeDate === null) {
+            throw new \LogicException('An intake date is required to generate the Certificate of Eligibility.');
+        }
+
         return new GenerateCertificateOfEligibilityDto(
             assistanceRequestId: $this->assistanceRequestId,
             municipalId: $this->municipalId,
@@ -127,5 +128,14 @@ readonly class GenerateFinancialDocumentPacketDto
         }
 
         return trim($value);
+    }
+
+    private static function nullableDate(mixed $value): ?CarbonImmutable
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return CarbonImmutable::createFromFormat('!Y-m-d', $value);
     }
 }
