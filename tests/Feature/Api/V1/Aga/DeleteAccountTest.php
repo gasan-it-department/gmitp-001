@@ -12,6 +12,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -92,6 +93,54 @@ it('requires the configured AGA edge secret', function () {
     $this->withHeader('x-laravel-secret', 'wrong-secret')
         ->deleteJson('/api/v1/integrations/aga/account', [
             'supabase_user_id' => $supabaseUserId,
+        ])
+        ->assertUnauthorized();
+
+    $this->assertDatabaseHas('users', ['id' => $user->id]);
+});
+
+it('accepts a verified Supabase bearer token only for the same user ID', function () {
+    config()->set('services.supabase.edge_secret', null);
+    config()->set('services.supabase.url', 'https://supabase.example.test');
+    config()->set('services.supabase.anon_key', 'test-anon-key');
+
+    $user = agaDeletionUser(EnumRoles::CLIENT);
+    $supabaseUserId = (string) Str::uuid();
+    agaDeletionSocialAccount($user, $supabaseUserId);
+
+    Http::fake([
+        'https://supabase.example.test/auth/v1/user' => Http::response([
+            'id' => $supabaseUserId,
+        ]),
+    ]);
+
+    $this->withToken('fresh-supabase-access-token')
+        ->deleteJson('/api/v1/integrations/aga/account', [
+            'supabase_user_id' => $supabaseUserId,
+        ])
+        ->assertOk();
+
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+});
+
+it('rejects a Supabase bearer token for a different user ID', function () {
+    config()->set('services.supabase.edge_secret', null);
+    config()->set('services.supabase.url', 'https://supabase.example.test');
+    config()->set('services.supabase.anon_key', 'test-anon-key');
+
+    $user = agaDeletionUser(EnumRoles::CLIENT);
+    $linkedSupabaseUserId = (string) Str::uuid();
+    agaDeletionSocialAccount($user, $linkedSupabaseUserId);
+
+    Http::fake([
+        'https://supabase.example.test/auth/v1/user' => Http::response([
+            'id' => (string) Str::uuid(),
+        ]),
+    ]);
+
+    $this->withToken('another-users-access-token')
+        ->deleteJson('/api/v1/integrations/aga/account', [
+            'supabase_user_id' => $linkedSupabaseUserId,
         ])
         ->assertUnauthorized();
 
