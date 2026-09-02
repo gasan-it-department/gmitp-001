@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
-import { AssistanceRequestFormDefinition, PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
+import { AssistanceGeneratedDocument, AssistanceRequestFormDefinition, PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
@@ -78,6 +78,7 @@ interface AssistanceTypeBlock {
     cooldown_months: number;
     cooldown_type: string;
     cooldown_scope: string;
+    enabled_generated_documents: AssistanceGeneratedDocument[];
     request_form: AssistanceRequestFormDefinition;
 }
 
@@ -304,14 +305,25 @@ export default function AssistanceRequestsDetails({
         !detail.on_behalf.date_of_death;
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
-    const canGenerateAcknowledgementReceipt = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
-    const canGenerateObligationRequest = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
-    const canGenerateDisbursementVoucher = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
-    const canGenerateFinancialDocumentPacket = receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const enabledGeneratedDocuments = new Set(detail.assistance_type?.enabled_generated_documents ?? []);
+    const generatorIsEnabled = (document: AssistanceGeneratedDocument) => enabledGeneratedDocuments.has(document);
+    const canGenerateAcknowledgementReceipt =
+        generatorIsEnabled('acknowledgement_receipt') && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateObligationRequest =
+        generatorIsEnabled('obligation_request') && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const canGenerateDisbursementVoucher =
+        generatorIsEnabled('disbursement_voucher') && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+    const processingPacketDocumentCount = ['certificate_of_eligibility', 'obligation_request', 'disbursement_voucher'].filter((document) =>
+        generatorIsEnabled(document as AssistanceGeneratedDocument),
+    ).length;
+    const canGenerateFinancialDocumentPacket =
+        processingPacketDocumentCount >= 2 && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
     const canGenerateCertificateOfEligibility =
+        generatorIsEnabled('certificate_of_eligibility') &&
         canProcessRequests &&
         ['under_review', 'approved', 'released'].includes(detail.status) &&
         (detail.status !== 'under_review' || detail.reviewed_at !== null);
+    const canGenerateRequestIntakeSheet = generatorIsEnabled('request_intake_sheet') && canProcessRequests;
     const acknowledgementReceiptUrl = ShowAcknowledgementReceiptGeneratorController.url({
         municipality: currentMunicipality.slug,
         assistanceRequestId: detail.id,
@@ -434,6 +446,7 @@ export default function AssistanceRequestsDetails({
                                         canProcess={canProcessRequests}
                                         canDecide={canDecideRequests}
                                         canRelease={canReleaseRequests}
+                                        canGenerateAcknowledgementReceipt={canGenerateAcknowledgementReceipt}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
@@ -1006,7 +1019,7 @@ export default function AssistanceRequestsDetails({
                                             className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-slate-950 bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                                         >
                                             <Files className="h-4 w-4" />
-                                            Generate All 3 Documents
+                                            Generate Processing Document Packet
                                         </Link>
                                     )}
                                     {canGenerateObligationRequest && (
@@ -1054,7 +1067,7 @@ export default function AssistanceRequestsDetails({
                                             Generate Acknowledgement Receipt
                                         </Link>
                                     )}
-                                    {canProcessRequests && (
+                                    {canGenerateRequestIntakeSheet && (
                                         <Link
                                             href={ShowAssistanceRequestIntakeSheetGeneratorController.url({
                                                 municipality: currentMunicipality.slug,
@@ -1413,6 +1426,7 @@ function ActionButtons({
     canProcess,
     canDecide,
     canRelease,
+    canGenerateAcknowledgementReceipt,
 }: {
     status: string;
     onAction: (label: string) => () => void;
@@ -1424,6 +1438,7 @@ function ActionButtons({
     canProcess: boolean;
     canDecide: boolean;
     canRelease: boolean;
+    canGenerateAcknowledgementReceipt: boolean;
 }) {
     switch (status) {
         case 'pending':
@@ -1486,7 +1501,7 @@ function ActionButtons({
                             <XCircle className="mr-2 h-4 w-4" /> Cancel Approved Request
                         </Button>
                     )}
-                    {canProcess && (
+                    {canGenerateAcknowledgementReceipt && (
                         <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
                             <Link href={acknowledgementReceiptUrl}>
                                 <Printer className="mr-2 h-4 w-4" />
@@ -1498,7 +1513,7 @@ function ActionButtons({
                 </>
             );
         case 'released':
-            return canProcess ? (
+            return canGenerateAcknowledgementReceipt ? (
                 <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
                     <Link href={acknowledgementReceiptUrl}>
                         <Printer className="mr-2 h-4 w-4" />

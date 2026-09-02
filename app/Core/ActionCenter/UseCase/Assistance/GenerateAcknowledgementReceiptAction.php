@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\AcknowledgementReceiptData;
 use App\Core\ActionCenter\Dto\Assistance\AcknowledgementReceiptFormData;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 
 class GenerateAcknowledgementReceiptAction
 {
@@ -18,7 +19,7 @@ class GenerateAcknowledgementReceiptAction
         $context = $this->context->execute(
             $assistanceRequestId,
             $municipalId,
-            'acknowledgement receipt',
+            AssistanceGeneratedDocument::AcknowledgementReceipt,
         );
 
         return new AcknowledgementReceiptFormData(
@@ -40,7 +41,7 @@ class GenerateAcknowledgementReceiptAction
         $context = $this->context->execute(
             $assistanceRequestId,
             $municipalId,
-            'acknowledgement receipt',
+            AssistanceGeneratedDocument::AcknowledgementReceipt,
         );
 
         return new AcknowledgementReceiptData(

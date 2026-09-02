@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Models;
 
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,9 @@ class AssistanceType extends Model
     use HasUlids, SoftDeletes;
 
     protected $table = 'ac_assistance_types';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -29,6 +32,7 @@ class AssistanceType extends Model
         'min_amount',
         'max_amount',
         'sort_order',
+        'enabled_generated_documents',
     ];
 
     protected $casts = [
@@ -38,6 +42,7 @@ class AssistanceType extends Model
         'min_amount' => 'decimal:2',
         'max_amount' => 'decimal:2',
         'sort_order' => 'integer',
+        'enabled_generated_documents' => 'array',
     ];
 
     /**
@@ -75,5 +80,23 @@ class AssistanceType extends Model
         )
             ->withPivot(['is_required', 'physical_copy_requirement', 'sort_order'])
             ->withTimestamps();
+    }
+
+    /** @return array<int, string> */
+    public function generatedDocumentValues(): array
+    {
+        if ($this->enabled_generated_documents === null) {
+            return AssistanceGeneratedDocument::values();
+        }
+
+        return array_values(array_intersect(
+            AssistanceGeneratedDocument::values(),
+            $this->enabled_generated_documents,
+        ));
+    }
+
+    public function supportsGeneratedDocument(AssistanceGeneratedDocument $document): bool
+    {
+        return in_array($document->value, $this->generatedDocumentValues(), true);
     }
 }

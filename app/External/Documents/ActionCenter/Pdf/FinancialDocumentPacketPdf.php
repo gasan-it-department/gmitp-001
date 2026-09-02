@@ -20,11 +20,21 @@ class FinancialDocumentPacketPdf
     {
         $pdf = new Fpdi;
 
-        foreach ([
-            $this->certificateOfEligibility->content($data->certificateOfEligibility),
-            $this->obligationRequest->content($data->obligationRequest),
-            $this->disbursementVoucher->content($data->disbursementVoucher),
-        ] as $document) {
+        $documents = [];
+
+        if ($data->certificateOfEligibility !== null) {
+            $documents[] = $this->certificateOfEligibility->content($data->certificateOfEligibility);
+        }
+
+        if ($data->obligationRequest !== null) {
+            $documents[] = $this->obligationRequest->content($data->obligationRequest);
+        }
+
+        if ($data->disbursementVoucher !== null) {
+            $documents[] = $this->disbursementVoucher->content($data->disbursementVoucher);
+        }
+
+        foreach ($documents as $document) {
             $this->append($pdf, $document);
         }
 

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
+import { AssistanceGeneratedDocumentOption, AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import actionCenter from '@/routes/actionCenter';
 import { router, usePage } from '@inertiajs/react';
@@ -9,9 +9,10 @@ import AssistanceTypeForm from './Components/AssistanceTypeForm';
 
 interface Props {
     documentTypes: { id: string; name: string }[];
+    generatedDocumentOptions: AssistanceGeneratedDocumentOption[];
 }
 
-export default function CreateAssistanceType({ documentTypes }: Props) {
+export default function CreateAssistanceType({ documentTypes, generatedDocumentOptions }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     const emptyInitialData: AssistanceTypeFormData = {
@@ -21,6 +22,7 @@ export default function CreateAssistanceType({ documentTypes }: Props) {
         min_amount: null,
         cooldown_months: 0,
         is_active: true,
+        enabled_generated_documents: ['request_intake_sheet'],
         documents: [],
     };
     const handleCancel = () => {
@@ -48,6 +50,7 @@ export default function CreateAssistanceType({ documentTypes }: Props) {
                     municipalitySlug={currentMunicipality.slug}
                     initialData={emptyInitialData}
                     documentTypes={documentTypes}
+                    generatedDocumentOptions={generatedDocumentOptions}
                     onCancel={handleCancel}
                 />
             </main>

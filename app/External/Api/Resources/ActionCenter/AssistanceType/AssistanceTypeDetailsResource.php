@@ -28,13 +28,14 @@ class AssistanceTypeDetailsResource extends JsonResource
             'cooldown_type' => $this->cooldown_type,
             'cooldown_scope' => $this->cooldown_scope,
             'request_form' => $this->requestFormDefinition(),
+            'enabled_generated_documents' => $this->generatedDocumentValues(),
 
             // Required + optional documents for the public checklist and the
             // admin-controlled document intake flow.
             // Eager-load `documents` in the action to avoid N+1.
             'documents' => $this->whenLoaded('documents', function () {
                 return $this->documents
-                    ->sortBy(fn($doc) => $doc->pivot->sort_order ?? 0)
+                    ->sortBy(fn ($doc) => $doc->pivot->sort_order ?? 0)
                     ->values()
                     ->map(function ($doc) {
                         $physicalCopyRequirement = PhysicalCopyRequirement::tryFrom(

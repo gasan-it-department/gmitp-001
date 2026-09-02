@@ -2,9 +2,11 @@
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceTypeDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceTypeDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Exceptions\AssistanceTypeException;
 use App\Core\ActionCenter\UseCase\Assistance\GetActiveAssistanceTypeBySlugAction;
 use App\Core\ActionCenter\UseCase\Assistance\GetActiveDocumentTypesForDropdown;
+use App\Core\ActionCenter\UseCase\Assistance\NormalizeAssistanceGeneratedDocumentsAction;
 use App\Core\ActionCenter\UseCase\Assistance\NormalizeAssistanceTypeDocumentSlotsAction;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceTypeAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceTypeAction;
@@ -34,6 +36,7 @@ beforeEach(function () {
         $table->decimal('min_amount', 10, 2)->default(0);
         $table->decimal('max_amount', 10, 2)->nullable();
         $table->unsignedInteger('sort_order')->default(0);
+        $table->json('enabled_generated_documents')->nullable();
         $table->softDeletes();
         $table->timestamps();
         $table->unique(['municipal_id', 'slug']);
@@ -68,8 +71,9 @@ beforeEach(function () {
     };
 
     $normalizeDocumentSlots = new NormalizeAssistanceTypeDocumentSlotsAction;
-    $this->storeAction = new StoreAssistanceTypeAction($idGenerator, $normalizeDocumentSlots);
-    $this->updateAction = new UpdateAssistanceTypeAction($idGenerator, $normalizeDocumentSlots);
+    $normalizeGeneratedDocuments = new NormalizeAssistanceGeneratedDocumentsAction;
+    $this->storeAction = new StoreAssistanceTypeAction($idGenerator, $normalizeDocumentSlots, $normalizeGeneratedDocuments);
+    $this->updateAction = new UpdateAssistanceTypeAction($idGenerator, $normalizeDocumentSlots, $normalizeGeneratedDocuments);
 });
 
 afterEach(function () {
@@ -93,6 +97,118 @@ it('stores a zero minimum when the field is left blank', function () {
 
     expect($assistanceType->min_amount)->toBe('0.00')
         ->and($assistanceType->max_amount)->toBeNull();
+});
+
+it('defaults omitted generated documents to the request intake sheet', function () {
+    $assistanceType = $this->storeAction->execute(storeDto('Default Generator Test'), 'municipality-a');
+
+    expect($assistanceType->fresh()->generatedDocumentValues())->toBe([
+        AssistanceGeneratedDocument::RequestIntakeSheet->value,
+    ]);
+});
+
+it('stores an explicit empty generated document selection', function () {
+    $dto = storeDto('No Generator Test');
+    $dto = new StoreAssistanceTypeDto(
+        name: $dto->name,
+        description: $dto->description,
+        minAmount: $dto->minAmount,
+        maxAmount: $dto->maxAmount,
+        cooldownMonths: $dto->cooldownMonths,
+        isActive: $dto->isActive,
+        documents: [],
+        enabledGeneratedDocuments: [],
+    );
+
+    $assistanceType = $this->storeAction->execute($dto, 'municipality-a');
+
+    expect($assistanceType->fresh()->enabled_generated_documents)->toBe([])
+        ->and($assistanceType->fresh()->generatedDocumentValues())->toBe([]);
+});
+
+it('serializes backward-compatible null settings as all generators', function () {
+    $assistanceType = $this->storeAction->execute(storeDto('Legacy Generator Test'), 'municipality-a');
+    $assistanceType->update(['enabled_generated_documents' => null]);
+
+    $resource = (new AssistanceTypeDetailsResource($assistanceType->fresh()))->resolve();
+
+    expect($resource['enabled_generated_documents'])
+        ->toBe(AssistanceGeneratedDocument::values());
+});
+
+it('updates generated documents and preserves them when a later payload omits the field', function () {
+    $assistanceType = $this->storeAction->execute(storeDto('Generator Update Test'), 'municipality-a');
+
+    $this->updateAction->execute(new UpdateAssistanceTypeDto(
+        name: 'Generator Update Test',
+        description: 'Updated description',
+        minAmount: 0,
+        maxAmount: 5000,
+        cooldownMonths: 3,
+        isActive: true,
+        documents: [],
+        enabledGeneratedDocuments: [
+            AssistanceGeneratedDocument::CertificateOfEligibility->value,
+            AssistanceGeneratedDocument::ObligationRequest->value,
+        ],
+    ), $assistanceType->id, 'municipality-a');
+
+    $this->updateAction->execute(new UpdateAssistanceTypeDto(
+        name: 'Generator Update Test',
+        description: 'Updated again',
+        minAmount: 0,
+        maxAmount: 5000,
+        cooldownMonths: 3,
+        isActive: true,
+        documents: [],
+    ), $assistanceType->id, 'municipality-a');
+
+    expect($assistanceType->fresh()->generatedDocumentValues())->toBe([
+        AssistanceGeneratedDocument::CertificateOfEligibility->value,
+        AssistanceGeneratedDocument::ObligationRequest->value,
+    ]);
+});
+
+it('rejects unsupported or duplicate generated document keys', function () {
+    $normalizer = new NormalizeAssistanceGeneratedDocumentsAction;
+
+    expect(fn () => $normalizer->execute(['unknown_document']))
+        ->toThrow(ValidationException::class)
+        ->and(fn () => $normalizer->execute([
+            AssistanceGeneratedDocument::RequestIntakeSheet->value,
+            AssistanceGeneratedDocument::RequestIntakeSheet->value,
+        ]))->toThrow(ValidationException::class);
+});
+
+it('validates generated document selections at the request boundary', function () {
+    app()->instance('municipal_id', 'municipality-a');
+
+    $request = new StoreAssistanceTypeRequest;
+    $payload = [
+        'name' => 'Validation Test',
+        'description' => null,
+        'min_amount' => 0,
+        'max_amount' => 5000,
+        'cooldown_months' => 3,
+        'is_active' => true,
+        'documents' => [],
+    ];
+
+    expect(Validator::make([
+        ...$payload,
+        'enabled_generated_documents' => [],
+    ], $request->rules())->passes())->toBeTrue()
+        ->and(Validator::make([
+            ...$payload,
+            'enabled_generated_documents' => ['unsupported_document'],
+        ], $request->rules())->fails())->toBeTrue()
+        ->and(Validator::make([
+            ...$payload,
+            'enabled_generated_documents' => [
+                AssistanceGeneratedDocument::RequestIntakeSheet->value,
+                AssistanceGeneratedDocument::RequestIntakeSheet->value,
+            ],
+        ], $request->rules())->fails())->toBeTrue();
 });
 
 it('blocks a duplicate slug within the same municipality', function () {

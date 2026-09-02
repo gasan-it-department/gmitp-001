@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\Municipality\Models\Municipality;
@@ -15,10 +16,14 @@ use Throwable;
 
 class BuildAssistanceFinancialDocumentContextAction
 {
+    public function __construct(
+        private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
+    ) {}
+
     public function execute(
         string $assistanceRequestId,
         string $municipalId,
-        string $documentName,
+        AssistanceGeneratedDocument $document,
     ): AssistanceFinancialDocumentContext {
         $request = AssistanceRequest::query()
             ->with(['assistanceType', 'snapshot'])
@@ -27,7 +32,7 @@ class BuildAssistanceFinancialDocumentContextAction
                 throw new ModelNotFoundException('Assistance request not found.');
             });
 
-        $this->assertEligible($request, $municipalId, $documentName);
+        $this->assertEligible($request, $municipalId, $document);
 
         $municipality = Municipality::query()
             ->with('media')
@@ -57,14 +62,18 @@ class BuildAssistanceFinancialDocumentContextAction
     private function assertEligible(
         AssistanceRequest $request,
         string $municipalId,
-        string $documentName,
+        AssistanceGeneratedDocument $document,
     ): void {
+        $documentName = strtolower($document->label());
+
         if ($request->municipal_id !== $municipalId) {
             throw new AuthorizationException(sprintf(
                 'You may only generate %s for your own municipality.',
                 Str::plural($documentName),
             ));
         }
+
+        $this->ensureDocumentEnabled->execute($request, $document);
 
         if (! in_array($request->status, [AssistanceStatus::Approved, AssistanceStatus::Released], true)) {
             throw new \DomainException(sprintf(

@@ -14,8 +14,8 @@ readonly class StoreAssistanceTypeDto
         public int $cooldownMonths,
         public bool $isActive,
         public array $documents = [],
-    ) {
-    }
+        public ?array $enabledGeneratedDocuments = null,
+    ) {}
 
     public static function fromRequest(StoreAssistanceTypeRequest $request)
     {
@@ -29,6 +29,9 @@ readonly class StoreAssistanceTypeDto
             cooldownMonths: $validated['cooldown_months'],
             isActive: (bool) $validated['is_active'],
             documents: $validated['documents'] ?? [],
+            enabledGeneratedDocuments: array_key_exists('enabled_generated_documents', $validated)
+                ? $validated['enabled_generated_documents']
+                : null,
         );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
@@ -38,7 +39,7 @@ class UpdateAssistanceTypeRequest extends FormRequest
             'description' => [
                 'required',
                 'string',
-                'max:1000'
+                'max:1000',
             ],
 
             'min_amount' => [
@@ -52,7 +53,7 @@ class UpdateAssistanceTypeRequest extends FormRequest
                 'nullable',
                 'numeric',
                 'min:0',
-                'max:50000'
+                'max:50000',
             ],
             'cooldown_months' => [
                 'required',
@@ -63,7 +64,15 @@ class UpdateAssistanceTypeRequest extends FormRequest
             // 3. Ensure it's a strict boolean true/false from the React Switch
             'is_active' => [
                 'nullable',
-                'boolean'
+                'boolean',
+            ],
+
+            'enabled_generated_documents' => ['sometimes', 'array'],
+            'enabled_generated_documents.*' => [
+                'required',
+                'string',
+                'distinct',
+                Rule::enum(AssistanceGeneratedDocument::class),
             ],
 
             // 4. MUST be an array if it is provided

@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\ActionCenter\Dto\Assistance\GenerateObligationRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\ObligationRequestData;
 use App\Core\ActionCenter\UseCase\Assistance\GenerateObligationRequestAction;
 use App\External\Documents\ActionCenter\Pdf\ObligationRequestPdf;
@@ -38,6 +39,7 @@ beforeEach(function () {
         $table->ulid('municipal_id');
         $table->string('name');
         $table->string('slug');
+        $table->json('enabled_generated_documents')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -134,6 +136,41 @@ it('rejects ineligible status and cross-municipality generation', function () {
         ->toThrow(AuthorizationException::class);
 });
 
+it('blocks both form loading and generation when the obligation request is disabled', function () {
+    $context = seedObligationRequestContext(enabledGeneratedDocuments: []);
+    $action = app(GenerateObligationRequestAction::class);
+
+    expect(fn () => $action->formData($context['request_id'], $context['municipal_id']))
+        ->toThrow(DomainException::class, 'Obligation Request generation is not enabled');
+
+    $dto = new GenerateObligationRequestDto(
+        assistanceRequestId: $context['request_id'],
+        municipalId: $context['municipal_id'],
+        obligationRequestNumber: '200-2026-08-001',
+        responsibilityCenter: '7611',
+        accountCode: '5-02-99-080',
+        particulars: 'Payment for Medical Assistance',
+        mswdoPrintedName: 'Rebecca S. Bisnar',
+        mswdoPosition: 'Social Welfare Officer III',
+        budgetOfficerPrintedName: 'Edden M. Sager',
+        budgetOfficerPosition: 'Municipal Budget Officer',
+        office: null,
+        fpp: null,
+    );
+
+    expect(fn () => $action->execute($dto, 'Test Admin'))
+        ->toThrow(DomainException::class, 'Obligation Request generation is not enabled');
+});
+
+it('keeps null generated-document settings backward compatible', function () {
+    $context = seedObligationRequestContext(enabledGeneratedDocuments: null);
+
+    expect(app(GenerateObligationRequestAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    ))->toBeInstanceOf(\App\Core\ActionCenter\Dto\Assistance\ObligationRequestFormData::class);
+});
+
 it('validates only the manual obligation request fields', function () {
     $request = new App\External\Api\Request\ActionCenter\GenerateObligationRequestRequest;
     $validator = Validator::make([], $request->rules());
@@ -193,6 +230,7 @@ it('renders a DOMPDF document with the official labels and no remote assets', fu
 function seedObligationRequestContext(
     ?array $metadata = null,
     string $status = 'approved',
+    ?array $enabledGeneratedDocuments = null,
 ): array {
     $municipalId = (string) Str::ulid();
     $assistanceTypeId = (string) Str::ulid();
@@ -214,6 +252,9 @@ function seedObligationRequestContext(
         'municipal_id' => $municipalId,
         'name' => 'Medical Assistance',
         'slug' => 'medical-assistance',
+        'enabled_generated_documents' => $enabledGeneratedDocuments === null
+            ? null
+            : json_encode($enabledGeneratedDocuments, JSON_THROW_ON_ERROR),
         'created_at' => $now,
         'updated_at' => $now,
     ]);

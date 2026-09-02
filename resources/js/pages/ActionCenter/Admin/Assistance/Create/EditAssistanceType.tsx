@@ -1,6 +1,6 @@
 import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Button } from '@/components/ui/button';
-import { AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
+import { AssistanceGeneratedDocumentOption, AssistanceTypeFormData } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import actionCenter from '@/routes/actionCenter';
@@ -15,9 +15,10 @@ interface Props {
     // because the Edit mode needs the ID to build the update URL!
     existingAssistance: { data: AssistanceTypeFormData & { id: string } };
     documentTypes: { id: string; name: string }[];
+    generatedDocumentOptions: AssistanceGeneratedDocumentOption[];
 }
 
-export default function EditAssistanceType({ existingAssistance, documentTypes }: Props) {
+export default function EditAssistanceType({ existingAssistance, documentTypes, generatedDocumentOptions }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
 
     // --- Navigation Handlers ---
@@ -53,6 +54,7 @@ export default function EditAssistanceType({ existingAssistance, documentTypes }
                     assistanceTypeId={existingAssistance.data.id} // Required for the PUT request
                     initialData={existingAssistance.data} // 🎯 This instantly fills the form!
                     documentTypes={documentTypes}
+                    generatedDocumentOptions={generatedDocumentOptions}
                     onCancel={handleCancel} // Tells the cancel button where to go
                 />
             </main>

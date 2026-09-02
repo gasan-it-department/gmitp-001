@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Dto\Assistance\FinancialDocumentPacketData;
 use App\Core\ActionCenter\Dto\Assistance\FinancialDocumentPacketFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateFinancialDocumentPacketDto;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 
 class GenerateFinancialDocumentPacketAction
 {
@@ -12,68 +13,84 @@ class GenerateFinancialDocumentPacketAction
         private readonly GenerateObligationRequestAction $obligationRequest,
         private readonly GenerateDisbursementVoucherAction $disbursementVoucher,
         private readonly GenerateCertificateOfEligibilityAction $certificateOfEligibility,
+        private readonly ResolveFinancialDocumentPacketDocumentsAction $resolveDocuments,
     ) {}
 
     public function formData(
         string $assistanceRequestId,
         string $municipalId,
     ): FinancialDocumentPacketFormData {
-        $obligationRequest = $this->obligationRequest->formData(
-            $assistanceRequestId,
-            $municipalId,
-        );
-        $disbursementVoucher = $this->disbursementVoucher->formData(
-            $assistanceRequestId,
-            $municipalId,
-        );
-        $certificate = $this->certificateOfEligibility->formData(
-            $assistanceRequestId,
-            $municipalId,
-        );
+        $documents = $this->resolveDocuments->execute($assistanceRequestId, $municipalId);
+        $has = fn (AssistanceGeneratedDocument $document): bool => in_array($document, $documents, true);
+
+        $obligationRequest = $has(AssistanceGeneratedDocument::ObligationRequest)
+            ? $this->obligationRequest->formData($assistanceRequestId, $municipalId)
+            : null;
+        $disbursementVoucher = $has(AssistanceGeneratedDocument::DisbursementVoucher)
+            ? $this->disbursementVoucher->formData($assistanceRequestId, $municipalId)
+            : null;
+        $certificate = $has(AssistanceGeneratedDocument::CertificateOfEligibility)
+            ? $this->certificateOfEligibility->formData($assistanceRequestId, $municipalId)
+            : null;
+
+        $payee = $obligationRequest?->payee ?? $disbursementVoucher?->payee;
+        $address = $obligationRequest?->address ?? $disbursementVoucher?->address;
+        $assistanceType = $obligationRequest?->assistanceType ?? $disbursementVoucher?->assistanceType;
+        $approvedAmount = $obligationRequest?->approvedAmount ?? $disbursementVoucher?->approvedAmount;
+        $transactionNumber = $obligationRequest?->transactionNumber ?? $disbursementVoucher?->transactionNumber;
+
+        if ($payee === null || $address === null || $assistanceType === null || $approvedAmount === null || $transactionNumber === null) {
+            throw new \LogicException('A processing document packet requires at least one approved financial document.');
+        }
+
+        $obligationDefaults = $obligationRequest?->recommendedDefaults ?? [];
+        $voucherDefaults = $disbursementVoucher?->recommendedDefaults ?? [];
+        $certificateDefaults = $certificate?->recommendedDefaults ?? [];
 
         return new FinancialDocumentPacketFormData(
-            assistanceRequestId: $obligationRequest->assistanceRequestId,
-            transactionNumber: $obligationRequest->transactionNumber,
-            payee: $obligationRequest->payee,
-            certificateSubject: $certificate->subjectName,
-            address: $obligationRequest->address,
-            assistanceType: $obligationRequest->assistanceType,
-            approvedAmount: $obligationRequest->approvedAmount,
-            suggestedParticulars: $obligationRequest->suggestedParticulars,
-            suggestedExplanation: $disbursementVoucher->suggestedExplanation,
+            assistanceRequestId: $assistanceRequestId,
+            transactionNumber: $transactionNumber,
+            payee: $payee,
+            certificateSubject: $certificate?->subjectName,
+            address: $address,
+            assistanceType: $assistanceType,
+            approvedAmount: $approvedAmount,
+            suggestedParticulars: $obligationRequest?->suggestedParticulars ?? '',
+            suggestedExplanation: $disbursementVoucher?->suggestedExplanation ?? '',
+            includedDocuments: $documents,
             recommendedDefaults: [
-                'obligation_request_number' => $obligationRequest->recommendedDefaults['number_prefix'] ?? '',
+                'obligation_request_number' => $obligationDefaults['number_prefix'] ?? '',
                 'responsibility_center' => $this->firstValue(
-                    $obligationRequest->recommendedDefaults['responsibility_center'] ?? '',
-                    $disbursementVoucher->recommendedDefaults['responsibility_center_code'] ?? '',
+                    $obligationDefaults['responsibility_center'] ?? '',
+                    $voucherDefaults['responsibility_center_code'] ?? '',
                 ),
-                'account_code' => $obligationRequest->recommendedDefaults['account_code'] ?? '',
+                'account_code' => $obligationDefaults['account_code'] ?? '',
                 'office' => $this->firstValue(
-                    $obligationRequest->recommendedDefaults['office'] ?? '',
-                    $disbursementVoucher->recommendedDefaults['responsibility_center_office'] ?? '',
+                    $obligationDefaults['office'] ?? '',
+                    $voucherDefaults['responsibility_center_office'] ?? '',
                 ),
-                'fpp' => $obligationRequest->recommendedDefaults['fpp'] ?? '',
+                'fpp' => $obligationDefaults['fpp'] ?? '',
                 'mswdo_printed_name' => $this->firstValue(
-                    $obligationRequest->recommendedDefaults['mswdo_printed_name'] ?? '',
-                    $certificate->recommendedDefaults['certified_by_name'] ?? '',
+                    $obligationDefaults['mswdo_printed_name'] ?? '',
+                    $certificateDefaults['certified_by_name'] ?? '',
                 ),
                 'mswdo_position' => $this->firstValue(
-                    $obligationRequest->recommendedDefaults['mswdo_position'] ?? '',
-                    $certificate->recommendedDefaults['certified_by_position'] ?? '',
+                    $obligationDefaults['mswdo_position'] ?? '',
+                    $certificateDefaults['certified_by_position'] ?? '',
                 ),
-                'budget_officer_printed_name' => $obligationRequest->recommendedDefaults['budget_officer_printed_name'] ?? '',
-                'budget_officer_position' => $obligationRequest->recommendedDefaults['budget_officer_position'] ?? '',
-                'accountant_printed_name' => $disbursementVoucher->recommendedDefaults['accountant_printed_name'] ?? '',
-                'accountant_position' => $disbursementVoucher->recommendedDefaults['accountant_position'] ?? '',
-                'treasurer_printed_name' => $disbursementVoucher->recommendedDefaults['treasurer_printed_name'] ?? '',
-                'treasurer_position' => $disbursementVoucher->recommendedDefaults['treasurer_position'] ?? '',
+                'budget_officer_printed_name' => $obligationDefaults['budget_officer_printed_name'] ?? '',
+                'budget_officer_position' => $obligationDefaults['budget_officer_position'] ?? '',
+                'accountant_printed_name' => $voucherDefaults['accountant_printed_name'] ?? '',
+                'accountant_position' => $voucherDefaults['accountant_position'] ?? '',
+                'treasurer_printed_name' => $voucherDefaults['treasurer_printed_name'] ?? '',
+                'treasurer_position' => $voucherDefaults['treasurer_position'] ?? '',
                 'mayor_printed_name' => $this->firstValue(
-                    $disbursementVoucher->recommendedDefaults['mayor_printed_name'] ?? '',
-                    $certificate->recommendedDefaults['approved_by_name'] ?? '',
+                    $voucherDefaults['mayor_printed_name'] ?? '',
+                    $certificateDefaults['approved_by_name'] ?? '',
                 ),
                 'mayor_position' => $this->firstValue(
-                    $disbursementVoucher->recommendedDefaults['mayor_position'] ?? '',
-                    $certificate->recommendedDefaults['approved_by_position'] ?? '',
+                    $voucherDefaults['mayor_position'] ?? '',
+                    $certificateDefaults['approved_by_position'] ?? '',
                 ),
             ],
         );
@@ -83,19 +100,31 @@ class GenerateFinancialDocumentPacketAction
         GenerateFinancialDocumentPacketDto $dto,
         string $generatedByUserName,
     ): FinancialDocumentPacketData {
+        $documents = $this->resolveDocuments->execute(
+            $dto->assistanceRequestId,
+            $dto->municipalId,
+        );
+        $has = fn (AssistanceGeneratedDocument $document): bool => in_array($document, $documents, true);
+
         return new FinancialDocumentPacketData(
-            certificateOfEligibility: $this->certificateOfEligibility->execute(
-                $dto->certificateOfEligibility(),
-                $generatedByUserName,
-            ),
-            obligationRequest: $this->obligationRequest->execute(
-                $dto->obligationRequest(),
-                $generatedByUserName,
-            ),
-            disbursementVoucher: $this->disbursementVoucher->execute(
-                $dto->disbursementVoucher(),
-                $generatedByUserName,
-            ),
+            certificateOfEligibility: $has(AssistanceGeneratedDocument::CertificateOfEligibility)
+                ? $this->certificateOfEligibility->execute(
+                    $dto->certificateOfEligibility(),
+                    $generatedByUserName,
+                )
+                : null,
+            obligationRequest: $has(AssistanceGeneratedDocument::ObligationRequest)
+                ? $this->obligationRequest->execute(
+                    $dto->obligationRequest(),
+                    $generatedByUserName,
+                )
+                : null,
+            disbursementVoucher: $has(AssistanceGeneratedDocument::DisbursementVoucher)
+                ? $this->disbursementVoucher->execute(
+                    $dto->disbursementVoucher(),
+                    $generatedByUserName,
+                )
+                : null,
         );
     }
 

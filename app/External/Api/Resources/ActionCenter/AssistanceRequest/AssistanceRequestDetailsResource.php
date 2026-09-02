@@ -50,6 +50,7 @@ class AssistanceRequestDetailsResource extends JsonResource
                 'cooldown_months' => (int) $this->assistanceType->cooldown_months,
                 'cooldown_type' => $this->assistanceType->cooldown_type,
                 'cooldown_scope' => $this->assistanceType->cooldown_scope,
+                'enabled_generated_documents' => $this->assistanceType->generatedDocumentValues(),
                 'request_form' => $this->requestFormDefinition($this->assistanceType->slug),
                 'documents' => $this->assistanceType->relationLoaded('documents')
                     ? $this->assistanceType->documents

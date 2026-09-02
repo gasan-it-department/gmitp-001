@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
 use App\Core\ActionCenter\Dto\Assistance\GenerateObligationRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\ObligationRequestData;
 use App\Core\ActionCenter\Dto\Assistance\ObligationRequestFormData;
+use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 
 class GenerateObligationRequestAction
 {
@@ -22,7 +23,7 @@ class GenerateObligationRequestAction
         $context = $this->context->execute(
             $assistanceRequestId,
             $municipalId,
-            'obligation request',
+            AssistanceGeneratedDocument::ObligationRequest,
         );
 
         return new ObligationRequestFormData(
@@ -46,7 +47,7 @@ class GenerateObligationRequestAction
         $context = $this->context->execute(
             $dto->assistanceRequestId,
             $dto->municipalId,
-            'obligation request',
+            AssistanceGeneratedDocument::ObligationRequest,
         );
 
         return new ObligationRequestData(
