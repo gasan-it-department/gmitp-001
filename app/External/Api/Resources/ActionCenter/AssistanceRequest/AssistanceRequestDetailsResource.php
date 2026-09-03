@@ -152,6 +152,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             // Live human-friendly ID of the beneficiary (e.g. GAS-000123).
             // Present when the beneficiary relation is eager-loaded.
             'beneficiary_number' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->beneficiary_number),
+            'contact_phone' => $this->whenLoaded('beneficiary', fn () => $this->beneficiary?->contact_phone),
             'household_id' => $this->household_id,
             'household_assessment' => is_array($householdAssessment)
                 ? [
