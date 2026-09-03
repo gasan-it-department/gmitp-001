@@ -136,7 +136,7 @@ it('uses the frozen claimant snapshot and trusted municipality data', function (
         ->and($data->recommendedDefaults['approved_by_position'])->toBe('Municipal Mayor');
 });
 
-it('uses the frozen assisted person for on-behalf certificates', function () {
+it('uses the frozen filer for on-behalf certificates', function () {
     $context = seedCertificateOfEligibilityContext(metadata: [
         'relationship_to_beneficiary' => 'parent',
         'on_behalf_first_name' => 'Juan',
@@ -145,14 +145,30 @@ it('uses the frozen assisted person for on-behalf certificates', function () {
         'on_behalf_civil_status' => 'married',
     ]);
 
-    $data = app(GenerateCertificateOfEligibilityAction::class)->formData(
+    $action = app(GenerateCertificateOfEligibilityAction::class);
+    $data = $action->formData(
         $context['request_id'],
         $context['municipal_id'],
     );
 
-    expect($data->subjectName)->toBe('Juan Rejano')
-        ->and($data->subjectCivilStatus)->toBe('Married')
-        ->and($data->subjectName)->not->toBe('Share Mae Rejano');
+    $pdfData = $action->execute(new GenerateCertificateOfEligibilityDto(
+        assistanceRequestId: $context['request_id'],
+        municipalId: $context['municipal_id'],
+        intakeDate: CarbonImmutable::parse('2026-08-14'),
+        certifiedByName: 'Rebecca S. Bisnar',
+        certifiedByPosition: 'Social Welfare Officer III',
+        approvedByName: 'Hon. Lidany A. Baldo',
+        approvedByPosition: 'Acting Municipal Mayor',
+    ), 'Test Admin');
+
+    expect($data->subjectName)->toBe('Share Mae Rejano')
+        ->and($data->subjectBirthDate)->toBe('1990-01-01')
+        ->and($data->subjectCivilStatus)->toBe('Single')
+        ->and($data->subjectName)->not->toBe('Juan Rejano')
+        ->and($pdfData->subjectName)->toBe('Share Mae Rejano')
+        ->and($pdfData->subjectAgePhrase)->toBe('of legal age')
+        ->and($pdfData->subjectCivilStatus)->toBe('Single')
+        ->and($pdfData->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque');
 });
 
 it('requires a started review and rejects terminal or pending requests', function () {
