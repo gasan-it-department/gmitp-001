@@ -299,13 +299,13 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 gap-2 md:gap-3 lg:grid-cols-2 xl:hidden">
+                        <div className="grid grid-cols-1 gap-2 md:gap-3 lg:grid-cols-2 2xl:hidden">
                             {rows.map((row) => (
                                 <AssistanceRequestRegistryItem key={row.id} row={row} viewUrl={requestUrl(row)} />
                             ))}
                         </div>
 
-                        <div className="hidden xl:block">
+                        <div className="hidden 2xl:block">
                             <AssistanceRequestTable paginator={requests} onView={handleView} getViewUrl={requestUrl} />
                         </div>
                         <Pagination links={requests.meta?.links ?? []} />
