@@ -8,6 +8,7 @@ import ShowFinancialDocumentPacketGeneratorController from '@/actions/App/Extern
 import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
+import { ContactPhoneActions } from '@/components/ActionCenter/ContactPhoneActions';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { FlashHandler } from '@/components/Shared/FlashHandler';
 import { Badge } from '@/components/ui/badge';
@@ -169,6 +170,7 @@ interface AssistanceRequestDetail {
     privacy_consented_at: string | null;
     privacy_notice_version: string | null;
     beneficiary_id: string;
+    contact_phone: string | null;
     household_id: string;
     household_assessment: {
         captured_at: string | null;
@@ -645,6 +647,11 @@ export default function AssistanceRequestsDetails({
                                                     )}
                                                 </div>
                                             )}
+
+                                            <div className="border-t border-slate-100 pt-4">
+                                                <p className="mb-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">Filer contact</p>
+                                                <ContactPhoneActions phone={detail.contact_phone} />
+                                            </div>
 
                                             <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
                                                 <Field label="Full name" value={detail.identity_snapshot.full_name || '—'} capitalize />

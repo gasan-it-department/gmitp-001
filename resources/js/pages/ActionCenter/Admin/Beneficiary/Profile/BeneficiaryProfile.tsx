@@ -3,6 +3,7 @@ import EditBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
 import DownloadBeneficiaryIdentityDocumentSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIdentityDocumentSheetController';
+import { ContactPhoneActions } from '@/components/ActionCenter/ContactPhoneActions';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -594,9 +595,9 @@ export default function BeneficiaryProfile({
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <Phone className="mt-0.5 h-4 w-4 text-slate-400" />
-                                        <div>
+                                        <div className="min-w-0 flex-1">
                                             <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Communication</p>
-                                            <p className="text-sm text-slate-800">{profile.contact_phone || 'No contact phone encoded'}</p>
+                                            <ContactPhoneActions phone={profile.contact_phone} className="mt-2" />
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
