@@ -35,14 +35,14 @@ class GenerateCertificateOfEligibilityAction
             $assistanceRequestId,
             $municipalId,
         );
-        $subject = $this->subject($request);
+        $filer = $this->filer($request);
 
         return new CertificateOfEligibilityFormData(
             assistanceRequestId: $request->id,
             transactionNumber: $request->transaction_number,
-            subjectName: $subject['name'],
-            subjectBirthDate: $subject['birth_date']?->toDateString(),
-            subjectCivilStatus: $subject['civil_status'],
+            subjectName: $filer['name'],
+            subjectBirthDate: $filer['birth_date']?->toDateString(),
+            subjectCivilStatus: $filer['civil_status'],
             address: $this->address($request, $municipality, $provinceName),
             assistanceType: $request->assistanceType?->name ?? 'Assistance',
             recommendedDefaults: $this->defaults
@@ -59,7 +59,7 @@ class GenerateCertificateOfEligibilityAction
             $dto->assistanceRequestId,
             $dto->municipalId,
         );
-        $subject = $this->subject($request);
+        $filer = $this->filer($request);
 
         return new CertificateOfEligibilityData(
             transactionNumber: $request->transaction_number,
@@ -69,9 +69,9 @@ class GenerateCertificateOfEligibilityAction
             municipalityLogoDataUri: $this->municipalityLogoDataUri(
                 $municipality?->getFirstMedia('logo'),
             ),
-            subjectName: $subject['name'],
-            subjectAgePhrase: $this->agePhrase($subject['birth_date'], $dto->intakeDate),
-            subjectCivilStatus: $subject['civil_status'],
+            subjectName: $filer['name'],
+            subjectAgePhrase: $this->agePhrase($filer['birth_date'], $dto->intakeDate),
+            subjectCivilStatus: $filer['civil_status'],
             address: $this->address($request, $municipality, $provinceName),
             assistanceType: $request->assistanceType?->name ?? 'Assistance',
             intakeDate: $dto->intakeDate,
@@ -139,31 +139,8 @@ class GenerateCertificateOfEligibilityAction
     }
 
     /** @return array{name: string, birth_date: ?CarbonImmutable, civil_status: ?string} */
-    private function subject(AssistanceRequest $request): array
+    private function filer(AssistanceRequest $request): array
     {
-        if ($request->relationship_to_beneficiary !== null) {
-            $name = trim(implode(' ', array_filter([
-                $request->on_behalf_first_name,
-                $request->on_behalf_middle_name,
-                $request->on_behalf_last_name,
-                $request->on_behalf_suffix,
-            ])));
-
-            if ($name === '') {
-                throw new \DomainException(
-                    'The assisted person snapshot is incomplete and the certificate cannot be generated safely.',
-                );
-            }
-
-            return [
-                'name' => $name,
-                'birth_date' => $request->on_behalf_birth_date,
-                'civil_status' => $this->civilStatusLabel(
-                    data_get($request->metadata, 'on_behalf_civil_status'),
-                ),
-            ];
-        }
-
         $snapshot = $request->snapshot;
         $name = trim(implode(' ', array_filter([
             $snapshot->first_name,
@@ -174,7 +151,7 @@ class GenerateCertificateOfEligibilityAction
 
         if ($name === '') {
             throw new \DomainException(
-                'The claimant snapshot is incomplete and the certificate cannot be generated safely.',
+                'The filer snapshot is incomplete and the certificate cannot be generated safely.',
             );
         }
 
