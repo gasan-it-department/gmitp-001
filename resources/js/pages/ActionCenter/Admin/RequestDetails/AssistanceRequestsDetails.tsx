@@ -59,6 +59,7 @@ import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialo
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
 import RejectRequestDialog from './Components/RejectRequestDialog';
 import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
+import SyncApprovedHouseholdDialog, { type HouseholdAssessmentPreview } from './Components/SyncApprovedHouseholdDialog';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Types
@@ -156,6 +157,7 @@ interface AssistanceRequestDetail {
     reviewed_at: string | null;
     approved_at: string | null;
     released_at: string | null;
+    has_release_artifacts: boolean;
     cancelled_at: string | null;
     is_walkin: boolean;
     encoded_by?: ShortUser | null;
@@ -217,6 +219,7 @@ interface Props {
     recentHistory: { data: RecentHistoryRow[] };
     activityLog: { data: ActivityEntry[] };
     householdMembers: { data: HouseholdMemberBlock[] }; // 🚀 Injected family structure
+    householdAssessmentPreview: HouseholdAssessmentPreview;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
 }
 
@@ -242,6 +245,7 @@ export default function AssistanceRequestsDetails({
     recentHistory,
     activityLog,
     householdMembers,
+    householdAssessmentPreview,
     crossMunicipalityMatches,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
@@ -278,6 +282,7 @@ export default function AssistanceRequestsDetails({
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
     const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
+    const [isApprovedHouseholdSyncOpen, setIsApprovedHouseholdSyncOpen] = useState(false);
 
     // Every upload lives in the single spatie collection "documents"; the slot
     // it fills is in custom_properties.document_key — NOT collection_name. Match
@@ -296,8 +301,10 @@ export default function AssistanceRequestsDetails({
           : null;
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
     const canEditRequest = requestIsEditable && canProcessRequests;
-    const canRefreshHouseholdAssessment = detail.status === 'under_review' && isMine && canProcessRequests;
-    const canManageInterviewHousehold = canRefreshHouseholdAssessment && canManageBeneficiaries;
+    const canRefreshUnderReviewHousehold = detail.status === 'under_review' && isMine && canProcessRequests;
+    const canCorrectApprovedHousehold = detail.status === 'approved' && !detail.has_release_artifacts && canCorrectRequests;
+    const canRefreshHouseholdAssessment = canRefreshUnderReviewHousehold || canCorrectApprovedHousehold;
+    const canManageInterviewHousehold = canRefreshUnderReviewHousehold && canManageBeneficiaries;
     const canCorrectMissingDateOfDeath =
         canCorrectRequests &&
         detail.status === 'approved' &&
@@ -377,9 +384,13 @@ export default function AssistanceRequestsDetails({
     };
 
     const refreshHouseholdAssessment = () => {
+        if (detail.status === 'approved') {
+            setIsApprovedHouseholdSyncOpen(true);
+            return;
+        }
         router.post(
             RefreshAssistanceHouseholdAssessmentController.url({ assistanceRequestId: detail.id }),
-            {},
+            { assessment_fingerprint: householdAssessmentPreview.fingerprint },
             {
                 headers: { 'X-Municipality-Slug': currentMunicipality.slug },
                 preserveScroll: true,
@@ -744,9 +755,11 @@ export default function AssistanceRequestsDetails({
                                                                 <RefreshCw
                                                                     className={`mr-2 h-4 w-4 ${isRefreshingHouseholdAssessment ? 'animate-spin' : ''}`}
                                                                 />
-                                                                {detail.household_assessment
-                                                                    ? 'Update household assessment'
-                                                                    : 'Capture household assessment'}
+                                                                {detail.status === 'approved'
+                                                                    ? 'Review household correction'
+                                                                    : detail.household_assessment
+                                                                      ? 'Update household assessment'
+                                                                      : 'Capture household assessment'}
                                                             </Button>
                                                         )}
                                                     </div>
@@ -945,6 +958,7 @@ export default function AssistanceRequestsDetails({
                                                     {activityLogData.map((entry) => (
                                                         <li key={entry.id} className="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
                                                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                                                                <p className="text-xs font-semibold text-slate-800">{entry.description}</p>
                                                                 <p className="text-xs font-semibold text-slate-700">{entry.by ?? 'System'}</p>
                                                                 <p className="text-[11px] text-slate-400 sm:text-right">
                                                                     {entry.at ? new Date(entry.at).toLocaleString() : '—'}
@@ -958,13 +972,9 @@ export default function AssistanceRequestsDetails({
                                                                                 {field.replace(/_/g, ' ')}
                                                                             </span>
                                                                             {': '}
-                                                                            <span className="text-slate-400 line-through">
-                                                                                {String(entry.old[field] ?? '—')}
-                                                                            </span>
+                                                                            <AuditValue value={entry.old[field] ?? '—'} muted />
                                                                             {' → '}
-                                                                            <span className="font-medium text-slate-800">
-                                                                                {String(newVal ?? '—')}
-                                                                            </span>
+                                                                            <AuditValue value={newVal ?? '—'} />
                                                                         </li>
                                                                     ))}
                                                                 </ul>
@@ -1262,6 +1272,15 @@ export default function AssistanceRequestsDetails({
                     onClose={() => setIsMissingDateCorrectionOpen(false)}
                 />
             )}
+            {canCorrectApprovedHousehold && (
+                <SyncApprovedHouseholdDialog
+                    requestId={detail.id}
+                    transactionNumber={detail.transaction_number}
+                    preview={householdAssessmentPreview}
+                    isOpen={isApprovedHouseholdSyncOpen}
+                    onClose={() => setIsApprovedHouseholdSyncOpen(false)}
+                />
+            )}
             <FlashHandler />
             <ToastProvider position="top-right" />
         </>
@@ -1299,6 +1318,19 @@ function MobileDetail({
             <p className={`mt-0.5 text-xs break-words text-slate-700 ${capitalize ? 'capitalize' : ''} ${strong ? 'font-semibold' : ''}`}>{value}</p>
         </div>
     );
+}
+
+function AuditValue({ value, muted = false }: { value: unknown; muted?: boolean }) {
+    if (typeof value === 'object' && value !== null) {
+        return (
+            <details className="inline-block align-top">
+                <summary className={`cursor-pointer ${muted ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>View household data</summary>
+                <pre className="mt-1 max-h-48 overflow-auto rounded bg-slate-950 p-2 text-[10px] text-slate-100">{JSON.stringify(value, null, 2)}</pre>
+            </details>
+        );
+    }
+
+    return <span className={muted ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}>{String(value)}</span>;
 }
 
 function InfoLine({ icon, children, variant = 'neutral' }: { icon: React.ReactNode; children: React.ReactNode; variant?: 'neutral' | 'info' }) {

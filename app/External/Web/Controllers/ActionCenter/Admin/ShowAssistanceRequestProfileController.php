@@ -53,6 +53,8 @@ class ShowAssistanceRequestProfileController extends Controller
 
             'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
 
+            'householdAssessmentPreview' => $data['householdAssessmentPreview'],
+
             'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
 
         ]);

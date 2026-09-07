@@ -1,10 +1,15 @@
 <?php
 
+use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Assistance\RefreshAssistanceHouseholdAssessmentAction;
+use App\External\Api\Resources\ActionCenter\ActivityLogResource;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\Models\Activity;
 
 beforeEach(function () {
     Schema::create('users', function (Blueprint $table) {
@@ -63,8 +68,11 @@ beforeEach(function () {
         $table->ulid('beneficiary_id');
         $table->ulid('household_id');
         $table->ulid('reviewed_by_user_id')->nullable();
+        $table->ulid('released_by_user_id')->nullable();
+        $table->string('release_reference_number')->nullable();
         $table->string('status');
         $table->json('metadata')->nullable();
+        $table->timestamp('released_at')->nullable();
         $table->softDeletes();
         $table->timestamps();
     });
@@ -188,7 +196,7 @@ it('captures the current roster after profile edits while preserving the filing 
         'updated_at' => now(),
     ]);
 
-    app(RefreshAssistanceHouseholdAssessmentAction::class)->execute(
+    refreshHouseholdAssessment(
         assistanceRequestId: $this->requestId,
         municipalId: $this->municipalId,
         actingUserId: $this->reviewerId,
@@ -217,27 +225,212 @@ it('captures the current roster after profile edits while preserving the filing 
             ->exists())->toBeTrue();
 });
 
-it('blocks assessment refresh outside review or by an unassigned worker', function () {
-    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
-        'status' => 'approved',
-    ]);
-
-    expect(fn () => app(RefreshAssistanceHouseholdAssessmentAction::class)->execute(
+it('does not report a changed income when JSON only changes its numeric representation', function () {
+    refreshHouseholdAssessment(
         assistanceRequestId: $this->requestId,
         municipalId: $this->municipalId,
         actingUserId: $this->reviewerId,
-    ))->toThrow(DomainException::class, 'only be updated')
-        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+    );
 
+    $preview = householdAssessmentPreview($this->requestId);
+
+    expect($preview['added'])->toBe([])
+        ->and($preview['removed'])->toBe([])
+        ->and($preview['changed'])->toBe([]);
+});
+
+it('rejects synchronization for every unsupported request status', function (string $status) {
     DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
-        'status' => 'under_review',
+        'status' => $status,
     ]);
 
-    expect(fn () => app(RefreshAssistanceHouseholdAssessmentAction::class)->execute(
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+    ))->toThrow(DomainException::class, 'under review or approved')
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+})->with(['pending', 'released', 'rejected', 'cancelled']);
+
+it('preserves under-review processing and assigned-reviewer restrictions', function () {
+    expect(fn () => refreshHouseholdAssessment(
         assistanceRequestId: $this->requestId,
         municipalId: $this->municipalId,
         actingUserId: (string) Str::ulid(),
     ))->toThrow(DomainException::class, 'assigned to this case')
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+        canProcessRequests: false,
+    ))->toThrow(AuthorizationException::class, 'not authorized')
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+});
+
+it('lets a correction-authorized administrator refresh an approved unreleased household without changing the filing snapshot', function () {
+    $correctorId = (string) Str::ulid();
+    DB::table('users')->insert([
+        'id' => $correctorId,
+        'first_name' => 'Correction',
+        'last_name' => 'Administrator',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'status' => 'approved',
+        'updated_at' => now(),
+    ]);
+    DB::table('ac_household_members')->where('id', $this->headMemberId)->update([
+        'monthly_income' => 5500,
+        'updated_at' => now(),
+    ]);
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(),
+        'household_id' => $this->householdId,
+        'first_name' => 'MIGUEL',
+        'last_name' => 'MAWAC',
+        'relationship' => 'child',
+        'birth_date' => '2014-09-12',
+        'sex' => 'male',
+        'monthly_income' => 0,
+        'is_active' => true,
+        'is_verified_dependent' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $updated = refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $correctorId,
+        canProcessRequests: false,
+        canCorrectRequests: true,
+        correctionReason: 'MSWD interview confirmed the current household roster and income details.',
+    );
+
+    $metadata = requestMetadata($this->requestId);
+    $audit = json_decode(
+        DB::table('activity_log')
+            ->where('description', 'Corrected household assessment after approval')
+            ->value('properties'),
+        true,
+        flags: JSON_THROW_ON_ERROR,
+    );
+    $auditPayload = (new ActivityLogResource(
+        Activity::query()
+            ->where('description', 'Corrected household assessment after approval')
+            ->with('causer')
+            ->firstOrFail(),
+    ))->resolve();
+
+    expect($updated->status->value)->toBe('approved')
+        ->and($metadata['household_composition_snapshot'])->toBe($this->filingSnapshot)
+        ->and($metadata['household_assessment_snapshot'])->toMatchArray([
+            'household_id' => $this->householdId,
+            'captured_by_user_id' => $correctorId,
+            'source' => 'approved_correction',
+        ])
+        ->and($metadata['household_assessment_snapshot']['members'])->toHaveCount(2)
+        ->and((float) $metadata['household_assessment_snapshot']['members'][0]['monthly_income'])->toBe(5500.0)
+        ->and(data_get($audit, 'old.household_assessment_snapshot'))->toBe($this->filingSnapshot)
+        ->and(data_get($audit, 'attributes.household_assessment_snapshot.source'))->toBe('approved_correction')
+        ->and(data_get($audit, 'correction_reason'))->toBe('MSWD interview confirmed the current household roster and income details.')
+        ->and(data_get($auditPayload, 'changes.household_assessment_snapshot.source'))->toBe('approved_correction')
+        ->and($auditPayload['reason'])->toBe('MSWD interview confirmed the current household roster and income details.');
+
+    DB::table('ac_household_members')->where('id', $this->headMemberId)->update([
+        'monthly_income' => 6000,
+        'updated_at' => now(),
+    ]);
+
+    refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $correctorId,
+        canProcessRequests: false,
+        canCorrectRequests: true,
+        correctionReason: 'MSWD interview corrected the household head monthly income after approval.',
+    );
+
+    expect(DB::table('activity_log')
+        ->where('description', 'Corrected household assessment after approval')
+        ->count())->toBe(2);
+});
+
+it('blocks approved synchronization without correction permission or a valid reason', function () {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'status' => 'approved',
+        'updated_at' => now(),
+    ]);
+
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+        canProcessRequests: true,
+        canCorrectRequests: false,
+    ))->toThrow(AuthorizationException::class, 'not authorized')
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+        canProcessRequests: false,
+        canCorrectRequests: true,
+        correctionReason: 'Too short',
+    ))->toThrow(DomainException::class, '10 to 1,000 characters');
+
+});
+
+it('blocks approved synchronization when any release artifact already exists', function (string $column, mixed $value) {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'status' => 'approved',
+        $column => $value,
+        'updated_at' => now(),
+    ]);
+
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+        canProcessRequests: false,
+        canCorrectRequests: true,
+        correctionReason: 'MSWD attempted a correction after release details were entered.',
+    ))->toThrow(DomainException::class, 'release data')
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+})->with([
+    'release timestamp' => ['released_at', now()],
+    'releasing user' => ['released_by_user_id', (string) Str::ulid()],
+    'release reference' => ['release_reference_number', 'DV-2026-001'],
+]);
+
+it('rejects a stale household preview before it writes an assessment', function () {
+    $fingerprint = householdAssessmentFingerprint($this->requestId);
+
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(),
+        'household_id' => $this->householdId,
+        'first_name' => 'LIZA',
+        'last_name' => 'MAWAC',
+        'relationship' => 'child',
+        'birth_date' => '2010-01-08',
+        'sex' => 'female',
+        'monthly_income' => 0,
+        'is_active' => true,
+        'is_verified_dependent' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+        expectedFingerprint: $fingerprint,
+    ))->toThrow(DomainException::class, 'changed while you were reviewing')
         ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
 });
 
@@ -248,5 +441,45 @@ function requestMetadata(string $requestId): array
         DB::table('ac_assistance_requests')->where('id', $requestId)->value('metadata'),
         true,
         flags: JSON_THROW_ON_ERROR,
+    );
+}
+
+function householdAssessmentFingerprint(string $requestId): string
+{
+    return householdAssessmentPreview($requestId)['fingerprint'];
+}
+
+/** @return array{fingerprint: string, previous_source: string, added: list<array<string, mixed>>, removed: list<array<string, mixed>>, changed: list<array<string, mixed>>, current_member_count: int} */
+function householdAssessmentPreview(string $requestId): array
+{
+    $request = AssistanceRequest::query()->findOrFail($requestId);
+    $members = HouseholdMember::query()
+        ->where('household_id', $request->household_id)
+        ->where('is_active', true)
+        ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
+        ->orderBy('created_at')
+        ->get();
+
+    return app(RefreshAssistanceHouseholdAssessmentAction::class)
+        ->preview($request, $members);
+}
+
+function refreshHouseholdAssessment(
+    string $assistanceRequestId,
+    string $municipalId,
+    string $actingUserId,
+    bool $canProcessRequests = true,
+    bool $canCorrectRequests = false,
+    ?string $correctionReason = null,
+    ?string $expectedFingerprint = null,
+): AssistanceRequest {
+    return app(RefreshAssistanceHouseholdAssessmentAction::class)->execute(
+        assistanceRequestId: $assistanceRequestId,
+        municipalId: $municipalId,
+        actingUserId: $actingUserId,
+        canProcessRequests: $canProcessRequests,
+        canCorrectRequests: $canCorrectRequests,
+        correctionReason: $correctionReason,
+        expectedFingerprint: $expectedFingerprint ?? householdAssessmentFingerprint($assistanceRequestId),
     );
 }

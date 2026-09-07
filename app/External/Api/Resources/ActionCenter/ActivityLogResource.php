@@ -76,14 +76,14 @@ class ActivityLogResource extends JsonResource
         }
 
         // Path 1B: Laravel already cast it to an Array
-        if (is_array($changes)) {
+        if (is_array($changes) && (! empty($changes['attributes']) || ! empty($changes['old']))) {
             return $changes;
         }
 
         // Path 1C: It is still a raw JSON string from the database
         if (is_string($changes) && $changes !== '') {
             $decoded = json_decode($changes, true);
-            if (is_array($decoded)) {
+            if (is_array($decoded) && (! empty($decoded['attributes']) || ! empty($decoded['old']))) {
                 return $decoded;
             }
         }

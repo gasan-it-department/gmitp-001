@@ -55,6 +55,9 @@ class AssistanceRequest extends Model implements HasMedia
      */
     private bool $allowMissingBurialDateOfDeathCorrection = false;
 
+    /** Allows the dedicated pre-release household-assessment correction only. */
+    private bool $allowHouseholdAssessmentRefresh = false;
+
     protected $table = 'ac_assistance_requests';
 
     protected $keyType = 'string';
@@ -135,7 +138,7 @@ class AssistanceRequest extends Model implements HasMedia
                 return;
             }
 
-            if ($request->allowMissingBurialDateOfDeathCorrection
+            if (($request->allowMissingBurialDateOfDeathCorrection || $request->allowHouseholdAssessmentRefresh)
                 && $originalStatus === AssistanceStatus::Approved
                 && array_diff($dirtyFields, ['metadata', 'updated_at']) === []) {
                 return;
@@ -199,6 +202,26 @@ class AssistanceRequest extends Model implements HasMedia
             $this->update(['metadata' => $metadata]);
         } finally {
             $this->allowMissingBurialDateOfDeathCorrection = false;
+        }
+    }
+
+    /**
+     * Replace only the MSWD assessment snapshot. The Core action owns all
+     * status, tenant, release, and authorization checks before calling this.
+     *
+     * @param array<string, mixed> $assessment
+     */
+    public function replaceHouseholdAssessment(array $assessment): void
+    {
+        $metadata = $this->metadata ?? [];
+        $metadata['household_assessment_snapshot'] = $assessment;
+
+        $this->allowHouseholdAssessmentRefresh = true;
+
+        try {
+            $this->update(['metadata' => $metadata]);
+        } finally {
+            $this->allowHouseholdAssessmentRefresh = false;
         }
     }
 

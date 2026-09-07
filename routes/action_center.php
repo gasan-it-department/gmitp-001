@@ -347,7 +347,7 @@ Route::prefix('/api/action-center')
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/household-assessment/refresh',
                     RefreshAssistanceHouseholdAssessmentController::class,
-                )->middleware('permission:action_center.requests.process')
+                )->middleware('permission:action_center.requests.process|action_center.requests.correct')
                     ->name('assistance.household-assessment.refresh');
 
                 // One-time repair for legacy approved burial requests that

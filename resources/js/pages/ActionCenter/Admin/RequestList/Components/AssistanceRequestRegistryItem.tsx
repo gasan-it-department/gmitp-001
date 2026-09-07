@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ArrowRight, CalendarDays, MapPin } from 'lucide-react';
+import { ArrowRight, CalendarDays, FilePenLine, MapPin, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AssistanceRequestListItem, humanizeStatus, statusClass } from './AssistanceRequestTable';
 
@@ -19,19 +19,38 @@ export default function AssistanceRequestRegistryItem({ row, viewUrl }: Props) {
         >
             <article className="flex h-full min-w-0 flex-col">
                 <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        {!row.filed_for_self && <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Assistance for:</p>}
-                        <p className="font-mono text-xs font-semibold break-all text-slate-500">{row.transaction_number}</p>
-                        <h2 className="mt-1 text-sm font-semibold break-words text-slate-900 md:text-base">
-                            {row.subject_full_name || 'No recipient recorded'}
-                        </h2>
-                        {!row.filed_for_self && row.filer_full_name && <p className="mt-1 text-xs text-slate-500">Filed by: {row.filer_full_name}</p>}
-                    </div>
+                    <p className="min-w-0 font-mono text-xs font-semibold break-all text-slate-500">{row.transaction_number}</p>
                     <span
                         className={`inline-flex shrink-0 rounded-full px-2 py-1 text-[10px] font-bold tracking-wide uppercase ${statusClass(row.status)}`}
                     >
                         {humanizeStatus(row.status)}
                     </span>
+                </div>
+
+                <div className="mt-3 min-w-0">
+                    <div className="flex items-start gap-2">
+                        <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Assistance for</p>
+                            <h2 className="mt-0.5 text-base font-semibold break-words text-slate-950 md:text-lg">
+                                {row.subject_full_name || 'No recipient recorded'}
+                            </h2>
+                        </div>
+                    </div>
+
+                    {!row.filed_for_self && row.filer_full_name ? (
+                        <div className="mt-3 flex min-w-0 items-start gap-2">
+                            <FilePenLine className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">Filed by</p>
+                                <p className="mt-0.5 text-base font-semibold break-words text-slate-950 md:text-lg">{row.filer_full_name}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                            <FilePenLine className="h-3.5 w-3.5" aria-hidden="true" /> Filed for self
+                        </p>
+                    )}
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">

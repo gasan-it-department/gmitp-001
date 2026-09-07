@@ -12,6 +12,7 @@ class GetAssistanceRequestProfileAction
 {
     public function __construct(
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
+        private readonly RefreshAssistanceHouseholdAssessmentAction $refreshAssessment,
     ) {}
 
     public function execute(string $municipalId, string $assistanceRequestId)
@@ -82,6 +83,7 @@ class GetAssistanceRequestProfileAction
             'recentHistory' => $recentHistory,
             'activityLog' => $activityLog,
             'householdMembers' => $householdMembers,
+            'householdAssessmentPreview' => $this->refreshAssessment->preview($assistanceRequest, $householdMembers),
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
         ];
     }

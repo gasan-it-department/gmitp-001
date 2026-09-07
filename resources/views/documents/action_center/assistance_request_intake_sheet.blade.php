@@ -176,8 +176,6 @@
             </div>
             @if($data->usesCurrentHouseholdFallback)
                 <div class="section-note">Request-time household snapshot unavailable; this section reflects the current active household roster.</div>
-            @elseif($data->householdCompositionCapturedAt)
-                <div class="section-note">Household roster captured {{ $data->householdCompositionCapturedAt->format('F j, Y - g:i A') }}.</div>
             @endif
             <table class="household-table">
                 <thead>

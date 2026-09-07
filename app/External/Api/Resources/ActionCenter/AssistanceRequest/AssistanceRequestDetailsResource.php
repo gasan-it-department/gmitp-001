@@ -88,6 +88,9 @@ class AssistanceRequestDetailsResource extends JsonResource
             'reviewed_at' => $this->reviewed_at?->toIso8601String(),
             'approved_at' => $this->approved_at?->toIso8601String(),
             'released_at' => $this->released_at?->toIso8601String(),
+            'has_release_artifacts' => $this->released_at !== null
+                || $this->released_by_user_id !== null
+                || filled($this->release_reference_number),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
 
             // ── Audit trail (who did what) ───────────────────────────────────
