@@ -21,6 +21,7 @@ interface FinancialDocumentPacketContext {
     address: string;
     assistance_type: string;
     approved_amount: number;
+    intake_date: string;
     suggested_particulars: string;
     suggested_explanation: string;
     included_documents: {
@@ -101,7 +102,7 @@ export default function FinancialDocumentPacketGenerator({ financialDocumentPack
     const hasObligationRequest = includedDocumentKeys.has('obligation_request');
     const hasDisbursementVoucher = includedDocumentKeys.has('disbursement_voucher');
     const [data, setData] = useState<FormData>({
-        intake_date: '',
+        intake_date: financialDocumentPacket.intake_date,
         obligation_request_number: defaults.obligation_request_number,
         responsibility_center: defaults.responsibility_center,
         account_code: defaults.account_code,

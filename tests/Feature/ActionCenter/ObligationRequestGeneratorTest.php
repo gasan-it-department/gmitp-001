@@ -102,7 +102,9 @@ it('builds trusted form data from the frozen request snapshot', function () {
         ->and($data->approvedAmount)->toBe(1000.0)
         ->and($data->suggestedParticulars)->toContain('Payment for Medical Assistance')
         ->and($data->suggestedParticulars)->toContain('Situation (AICS) CY 2026')
-        ->and($data->recommendedDefaults['number_prefix'])->toBe('200-2026-08-')
+        ->and($data->recommendedDefaults['number_prefix'])->toBe(
+            sprintf('200-%s-%s-', now()->format('Y'), now()->format('m')),
+        )
         ->and($data->recommendedDefaults['responsibility_center'])->toBe('7611')
         ->and($data->recommendedDefaults['account_code'])->toBe('5-02-99-080');
 });

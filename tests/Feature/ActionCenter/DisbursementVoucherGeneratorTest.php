@@ -103,6 +103,9 @@ it('builds trusted voucher form data and spells the approved amount', function (
         ->and($data->suggestedExplanation)->toContain('Payment for Medical Assistance')
         ->and($data->suggestedExplanation)->toContain('AICS) CY 2026')
         ->and($data->suggestedExplanation)->toContain('ONE THOUSAND PESOS AND 50/100 ONLY')
+        ->and($data->recommendedDefaults['obligation_request_number'])->toBe(
+            sprintf('200-%s-%s-', now()->format('Y'), now()->format('m')),
+        )
         ->and($data->recommendedDefaults['responsibility_center_code'])->toBe('7611')
         ->and($data->recommendedDefaults['accountant_position'])->toBe('Municipal Accountant');
 });

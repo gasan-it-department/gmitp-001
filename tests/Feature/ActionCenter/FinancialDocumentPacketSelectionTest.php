@@ -45,8 +45,8 @@ it('resolves only enabled processing documents in their official packet order', 
     );
 
     expect($documents)->toBe([
-        AssistanceGeneratedDocument::CertificateOfEligibility,
         AssistanceGeneratedDocument::DisbursementVoucher,
+        AssistanceGeneratedDocument::CertificateOfEligibility,
     ]);
 });
 

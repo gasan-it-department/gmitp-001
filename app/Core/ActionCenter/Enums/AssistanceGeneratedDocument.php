@@ -48,9 +48,9 @@ enum AssistanceGeneratedDocument: string
     public static function financialPacketCases(): array
     {
         return [
-            self::CertificateOfEligibility,
             self::ObligationRequest,
             self::DisbursementVoucher,
+            self::CertificateOfEligibility,
         ];
     }
 

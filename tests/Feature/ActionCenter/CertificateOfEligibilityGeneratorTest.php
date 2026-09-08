@@ -132,6 +132,7 @@ it('uses the frozen claimant snapshot and trusted municipality data', function (
         ->and($data->subjectCivilStatus)->toBe('Single')
         ->and($data->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque')
         ->and($data->assistanceType)->toBe('Medical Assistance')
+        ->and($data->intakeDate)->toBe('2026-08-13')
         ->and($data->recommendedDefaults['certified_by_position'])->toBe('Social Welfare Officer III')
         ->and($data->recommendedDefaults['approved_by_position'])->toBe('Municipal Mayor');
 });
@@ -169,6 +170,20 @@ it('uses the frozen filer for on-behalf certificates', function () {
         ->and($pdfData->subjectAgePhrase)->toBe('of legal age')
         ->and($pdfData->subjectCivilStatus)->toBe('Single')
         ->and($pdfData->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque');
+});
+
+it('falls back to the request submission date when review has no recorded date', function () {
+    $context = seedCertificateOfEligibilityContext(status: 'approved', reviewed: false);
+    DB::table('ac_assistance_requests')
+        ->where('id', $context['request_id'])
+        ->update(['created_at' => '2026-08-12 09:30:00']);
+
+    $data = app(GenerateCertificateOfEligibilityAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    );
+
+    expect($data->intakeDate)->toBe('2026-08-12');
 });
 
 it('requires a started review and rejects terminal or pending requests', function () {
@@ -228,9 +243,10 @@ it('builds a processing packet form from only the enabled component generators',
     )->toArray();
 
     expect(array_column($data['included_documents'], 'key'))->toBe([
-        AssistanceGeneratedDocument::CertificateOfEligibility->value,
         AssistanceGeneratedDocument::ObligationRequest->value,
+        AssistanceGeneratedDocument::CertificateOfEligibility->value,
     ])->and($data['certificate_subject'])->toBe('Share Mae Rejano')
+        ->and($data['intake_date'])->toBe('2026-08-13')
         ->and($data['suggested_particulars'])->toContain('Payment for Medical Assistance')
         ->and($data['suggested_explanation'])->toBe('');
 });

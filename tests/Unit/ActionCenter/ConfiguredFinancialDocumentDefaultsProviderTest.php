@@ -1,7 +1,12 @@
 <?php
 
 use App\Core\ActionCenter\Services\ConfiguredFinancialDocumentDefaultsProvider;
+use Illuminate\Support\Carbon;
 use Illuminate\Config\Repository;
+
+afterEach(function () {
+    Carbon::setTestNow();
+});
 
 function financialDocumentDefaultsProvider(array $config): ConfiguredFinancialDocumentDefaultsProvider
 {
@@ -29,17 +34,20 @@ it('returns safe blank defaults for an unknown municipality', function () {
 });
 
 it('returns the configured Gasan recommendations', function () {
+    Carbon::setTestNow('2026-09-08 10:00:00');
+
     $provider = financialDocumentDefaultsProvider(
         require dirname(__DIR__, 3) . '/config/action_center_financial_documents.php',
     );
 
     $defaults = $provider->for('174003000', 'medical-assistance');
 
-    expect($defaults->obligationRequestNumberPrefix)->toBe('200-2026-08-')
+    expect($defaults->obligationRequestNumberPrefix)->toBe('200-2026-09-')
         ->and($defaults->obligationRequestResponsibilityCenter)->toBe('7611')
         ->and($defaults->obligationRequestAccountCode)->toBe('5-02-99-080')
         ->and($defaults->disbursementVoucherResponsibilityCenterCode)->toBe('7611')
         ->and($defaults->certificateOfEligibilityCertifiedByPosition)->toBe('Social Welfare Officer III');
+
 });
 
 it('gives assistance-type overrides precedence over municipality values', function () {
