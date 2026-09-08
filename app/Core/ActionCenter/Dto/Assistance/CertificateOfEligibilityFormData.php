@@ -12,6 +12,7 @@ readonly class CertificateOfEligibilityFormData
         public ?string $subjectCivilStatus,
         public string $address,
         public string $assistanceType,
+        public string $intakeDate,
         /** @var array<string, string> */
         public array $recommendedDefaults,
     ) {}
@@ -27,6 +28,7 @@ readonly class CertificateOfEligibilityFormData
             'subject_civil_status' => $this->subjectCivilStatus,
             'address' => $this->address,
             'assistance_type' => $this->assistanceType,
+            'intake_date' => $this->intakeDate,
             'recommended_defaults' => $this->recommendedDefaults,
         ];
     }

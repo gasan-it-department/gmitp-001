@@ -12,6 +12,7 @@ readonly class FinancialDocumentPacketFormData
         public string $address,
         public string $assistanceType,
         public float $approvedAmount,
+        public string $intakeDate,
         public string $suggestedParticulars,
         public string $suggestedExplanation,
         /** @var array<int, \App\Core\ActionCenter\Enums\AssistanceGeneratedDocument> */
@@ -31,6 +32,7 @@ readonly class FinancialDocumentPacketFormData
             'address' => $this->address,
             'assistance_type' => $this->assistanceType,
             'approved_amount' => $this->approvedAmount,
+            'intake_date' => $this->intakeDate,
             'suggested_particulars' => $this->suggestedParticulars,
             'suggested_explanation' => $this->suggestedExplanation,
             'included_documents' => array_map(

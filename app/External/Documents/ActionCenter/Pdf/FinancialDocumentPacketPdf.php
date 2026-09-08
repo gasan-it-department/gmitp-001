@@ -22,16 +22,16 @@ class FinancialDocumentPacketPdf
 
         $documents = [];
 
-        if ($data->certificateOfEligibility !== null) {
-            $documents[] = $this->certificateOfEligibility->content($data->certificateOfEligibility);
-        }
-
         if ($data->obligationRequest !== null) {
             $documents[] = $this->obligationRequest->content($data->obligationRequest);
         }
 
         if ($data->disbursementVoucher !== null) {
             $documents[] = $this->disbursementVoucher->content($data->disbursementVoucher);
+        }
+
+        if ($data->certificateOfEligibility !== null) {
+            $documents[] = $this->certificateOfEligibility->content($data->certificateOfEligibility);
         }
 
         foreach ($documents as $document) {

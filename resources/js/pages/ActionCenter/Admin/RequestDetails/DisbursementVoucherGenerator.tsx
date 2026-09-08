@@ -21,6 +21,7 @@ interface DisbursementVoucherContext {
     approved_amount: number;
     suggested_explanation: string;
     recommended_defaults: {
+        obligation_request_number: string;
         responsibility_center_office: string;
         responsibility_center_code: string;
         accountant_printed_name: string;
@@ -77,7 +78,7 @@ export default function DisbursementVoucherGenerator({ disbursementVoucher }: Pr
         disbursement_voucher_number: '',
         mode_of_payment: '',
         tin_employee_number: '',
-        obligation_request_number: '',
+        obligation_request_number: disbursementVoucher.recommended_defaults.obligation_request_number,
         responsibility_center_office: disbursementVoucher.recommended_defaults.responsibility_center_office,
         responsibility_center_code: disbursementVoucher.recommended_defaults.responsibility_center_code,
         explanation: disbursementVoucher.suggested_explanation,

@@ -36,7 +36,9 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
         $values = array_replace_recursive($defaults, $municipality, $assistanceType);
 
         return new FinancialDocumentDefaults(
-            obligationRequestNumberPrefix: $this->stringValue($values, 'obligation_request.number_prefix'),
+            obligationRequestNumberPrefix: $this->resolveDateTokens(
+                $this->stringValue($values, 'obligation_request.number_prefix'),
+            ),
             obligationRequestResponsibilityCenter: $this->stringValue($values, 'obligation_request.responsibility_center'),
             obligationRequestAccountCode: $this->stringValue($values, 'obligation_request.account_code'),
             obligationRequestOffice: $this->stringValue($values, 'obligation_request.office'),
@@ -72,5 +74,15 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
         $value = data_get($values, $key);
 
         return is_string($value) ? trim($value) : '';
+    }
+
+    private function resolveDateTokens(string $value): string
+    {
+        $today = now();
+
+        return strtr($value, [
+            '{year}' => $today->format('Y'),
+            '{month}' => $today->format('m'),
+        ]);
     }
 }

@@ -55,6 +55,7 @@ class GenerateFinancialDocumentPacketAction
             address: $address,
             assistanceType: $assistanceType,
             approvedAmount: $approvedAmount,
+            intakeDate: $certificate?->intakeDate ?? '',
             suggestedParticulars: $obligationRequest?->suggestedParticulars ?? '',
             suggestedExplanation: $disbursementVoucher?->suggestedExplanation ?? '',
             includedDocuments: $documents,

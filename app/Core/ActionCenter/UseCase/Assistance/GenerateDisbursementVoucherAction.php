@@ -27,6 +27,10 @@ class GenerateDisbursementVoucherAction
             $municipalId,
             AssistanceGeneratedDocument::DisbursementVoucher,
         );
+        $defaults = $this->defaults->for(
+            $context->municipalCode,
+            $context->assistanceTypeSlug,
+        );
 
         return new DisbursementVoucherFormData(
             assistanceRequestId: $context->assistanceRequestId,
@@ -36,9 +40,10 @@ class GenerateDisbursementVoucherAction
             assistanceType: $context->assistanceType,
             approvedAmount: $context->approvedAmount,
             suggestedExplanation: $this->suggestedExplanation($context),
-            recommendedDefaults: $this->defaults
-                ->for($context->municipalCode, $context->assistanceTypeSlug)
-                ->disbursementVoucher(),
+            recommendedDefaults: [
+                'obligation_request_number' => $defaults->obligationRequestNumberPrefix,
+                ...$defaults->disbursementVoucher(),
+            ],
         );
     }
 

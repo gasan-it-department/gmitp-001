@@ -45,6 +45,7 @@ class GenerateCertificateOfEligibilityAction
             subjectCivilStatus: $filer['civil_status'],
             address: $this->address($request, $municipality, $provinceName),
             assistanceType: $request->assistanceType?->name ?? 'Assistance',
+            intakeDate: ($request->reviewed_at ?? $request->created_at)->toDateString(),
             recommendedDefaults: $this->defaults
                 ->for($municipality?->municipal_code, $request->assistanceType?->slug)
                 ->certificateOfEligibility(),

@@ -18,6 +18,7 @@ interface CertificateOfEligibilityContext {
     subject_civil_status: string | null;
     address: string;
     assistance_type: string;
+    intake_date: string;
     recommended_defaults: {
         certified_by_name: string;
         certified_by_position: string;
@@ -48,7 +49,7 @@ interface ErrorPayload {
 export default function CertificateOfEligibilityGenerator({ certificateOfEligibility }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [data, setData] = useState<FormData>({
-        intake_date: '',
+        intake_date: certificateOfEligibility.intake_date,
         certified_by_name: certificateOfEligibility.recommended_defaults.certified_by_name,
         certified_by_position: certificateOfEligibility.recommended_defaults.certified_by_position,
         approved_by_name: certificateOfEligibility.recommended_defaults.approved_by_name,

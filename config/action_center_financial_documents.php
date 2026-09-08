@@ -3,7 +3,8 @@
 return [
     'defaults' => [
         'obligation_request' => [
-            'number_prefix' => '200-2026-08-',
+            // Date tokens are resolved when the generator form is opened.
+            'number_prefix' => '200-{year}-{month}-',
             'responsibility_center' => '7611',
             'account_code' => '5-02-99-080',
             'office' => '',
@@ -34,7 +35,7 @@ return [
     'municipalities' => [
         '174003000' => [
             'obligation_request' => [
-                'number_prefix' => '200-2026-08-',
+                'number_prefix' => '200-{year}-{month}-',
                 'responsibility_center' => '7611',
                 'account_code' => '5-02-99-080',
                 'office' => '',
