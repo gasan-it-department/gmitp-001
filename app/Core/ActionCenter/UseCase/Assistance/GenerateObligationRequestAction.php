@@ -25,6 +25,10 @@ class GenerateObligationRequestAction
             $municipalId,
             AssistanceGeneratedDocument::ObligationRequest,
         );
+        $defaults = $this->defaults->for(
+            $context->municipalCode,
+            $context->assistanceTypeSlug,
+        );
 
         return new ObligationRequestFormData(
             assistanceRequestId: $context->assistanceRequestId,
@@ -33,10 +37,10 @@ class GenerateObligationRequestAction
             address: $context->address,
             assistanceType: $context->assistanceType,
             approvedAmount: $context->approvedAmount,
-            suggestedParticulars: $this->suggestedParticulars($context),
-            recommendedDefaults: $this->defaults
-                ->for($context->municipalCode, $context->assistanceTypeSlug)
-                ->obligationRequest(),
+            suggestedParticulars: $defaults->obligationRequestParticulars !== ''
+                ? $defaults->obligationRequestParticulars
+                : $this->suggestedParticulars($context),
+            recommendedDefaults: $defaults->obligationRequest(),
         );
     }
 

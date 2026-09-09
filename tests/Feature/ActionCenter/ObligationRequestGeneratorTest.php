@@ -125,6 +125,25 @@ it('keeps the claimant as payee and mentions the assisted person for on-behalf r
         ->and($data->suggestedParticulars)->toContain('For: Juan Rejano');
 });
 
+it('prefills the configured senior burial responsibility center and particulars', function () {
+    $context = seedObligationRequestContext(
+        assistanceTypeName: 'Burial Assistance for Senior Citizen',
+        assistanceTypeSlug: 'burial-assisstance-senior-citizen',
+    );
+    DB::table('municipalities')
+        ->where('id', $context['municipal_id'])
+        ->update(['municipal_code' => '174003000']);
+
+    $data = app(GenerateObligationRequestAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    );
+
+    expect($data->recommendedDefaults['responsibility_center'])->toBe('7999-2A')
+        ->and($data->suggestedParticulars)
+        ->toBe('Reimbursement of Burial Expenses (Burial Assistance to the Family of Deceased Senior Citizen)');
+});
+
 it('rejects ineligible status and cross-municipality generation', function () {
     $pending = seedObligationRequestContext(status: 'pending');
     $action = app(GenerateObligationRequestAction::class);
@@ -233,6 +252,8 @@ function seedObligationRequestContext(
     ?array $metadata = null,
     string $status = 'approved',
     ?array $enabledGeneratedDocuments = null,
+    string $assistanceTypeName = 'Medical Assistance',
+    string $assistanceTypeSlug = 'medical-assistance',
 ): array {
     $municipalId = (string) Str::ulid();
     $assistanceTypeId = (string) Str::ulid();
@@ -252,8 +273,8 @@ function seedObligationRequestContext(
     DB::table('ac_assistance_types')->insert([
         'id' => $assistanceTypeId,
         'municipal_id' => $municipalId,
-        'name' => 'Medical Assistance',
-        'slug' => 'medical-assistance',
+        'name' => $assistanceTypeName,
+        'slug' => $assistanceTypeSlug,
         'enabled_generated_documents' => $enabledGeneratedDocuments === null
             ? null
             : json_encode($enabledGeneratedDocuments, JSON_THROW_ON_ERROR),

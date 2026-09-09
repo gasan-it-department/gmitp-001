@@ -1,11 +1,54 @@
 <?php
 
+$gasanFinancialDocumentDefaults = [
+    'obligation_request' => [
+        'number_prefix' => '200-{year}-{month}-',
+        'responsibility_center' => '7611',
+        'particulars' => '',
+        'account_code' => '5-02-99-080',
+        'office' => '',
+        'fpp' => '',
+        'mswdo_printed_name' => '',
+        'mswdo_position' => 'Municipal Social Welfare and Development Officer',
+        'budget_officer_printed_name' => '',
+        'budget_officer_position' => 'Municipal Budget Officer',
+    ],
+    'disbursement_voucher' => [
+        'responsibility_center_office' => '',
+        'responsibility_center_code' => '7611',
+        'accountant_printed_name' => '',
+        'accountant_position' => 'Municipal Accountant',
+        'treasurer_printed_name' => '',
+        'treasurer_position' => 'Municipal Treasurer',
+        'mayor_printed_name' => '',
+        'mayor_position' => 'Municipal Mayor',
+    ],
+    'certificate_of_eligibility' => [
+        'certified_by_name' => '',
+        'certified_by_position' => 'Social Welfare Officer III',
+        'approved_by_name' => '',
+        'approved_by_position' => 'Municipal Mayor',
+    ],
+
+    // Add assistance-type slug overrides here when a program uses
+    // different accounting or signatory recommendations.
+    'assistance_types' => [
+        'burial-assisstance-senior-citizen' => [
+            'obligation_request' => [
+                'responsibility_center' => '7999-2A',
+                'particulars' => 'Reimbursement of Burial Expenses (Burial Assistance to the Family of Deceased Senior Citizen)',
+            ],
+        ],
+    ],
+];
+
 return [
     'defaults' => [
         'obligation_request' => [
             // Date tokens are resolved when the generator form is opened.
             'number_prefix' => '200-{year}-{month}-',
             'responsibility_center' => '7611',
+            'particulars' => '',
             'account_code' => '5-02-99-080',
             'office' => '',
             'fpp' => '',
@@ -33,38 +76,8 @@ return [
     ],
 
     'municipalities' => [
-        '174003000' => [
-            'obligation_request' => [
-                'number_prefix' => '200-{year}-{month}-',
-                'responsibility_center' => '7611',
-                'account_code' => '5-02-99-080',
-                'office' => '',
-                'fpp' => '',
-                'mswdo_printed_name' => '',
-                'mswdo_position' => 'Municipal Social Welfare and Development Officer',
-                'budget_officer_printed_name' => '',
-                'budget_officer_position' => 'Municipal Budget Officer',
-            ],
-            'disbursement_voucher' => [
-                'responsibility_center_office' => '',
-                'responsibility_center_code' => '7611',
-                'accountant_printed_name' => '',
-                'accountant_position' => 'Municipal Accountant',
-                'treasurer_printed_name' => '',
-                'treasurer_position' => 'Municipal Treasurer',
-                'mayor_printed_name' => '',
-                'mayor_position' => 'Municipal Mayor',
-            ],
-            'certificate_of_eligibility' => [
-                'certified_by_name' => '',
-                'certified_by_position' => 'Social Welfare Officer III',
-                'approved_by_name' => '',
-                'approved_by_position' => 'Municipal Mayor',
-            ],
-
-            // Add assistance-type slug overrides here when a program uses
-            // different accounting or signatory recommendations.
-            'assistance_types' => [],
-        ],
+        // Current and legacy Gasan municipal codes resolve identically.
+        '1704003000' => $gasanFinancialDocumentDefaults,
+        '174003000' => $gasanFinancialDocumentDefaults,
     ],
 ];

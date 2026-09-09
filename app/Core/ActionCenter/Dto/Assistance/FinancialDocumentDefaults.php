@@ -7,6 +7,7 @@ readonly class FinancialDocumentDefaults
     public function __construct(
         public string $obligationRequestNumberPrefix,
         public string $obligationRequestResponsibilityCenter,
+        public string $obligationRequestParticulars,
         public string $obligationRequestAccountCode,
         public string $obligationRequestOffice,
         public string $obligationRequestFpp,

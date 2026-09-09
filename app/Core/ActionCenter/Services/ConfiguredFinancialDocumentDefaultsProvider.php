@@ -40,6 +40,7 @@ class ConfiguredFinancialDocumentDefaultsProvider implements FinancialDocumentDe
                 $this->stringValue($values, 'obligation_request.number_prefix'),
             ),
             obligationRequestResponsibilityCenter: $this->stringValue($values, 'obligation_request.responsibility_center'),
+            obligationRequestParticulars: $this->stringValue($values, 'obligation_request.particulars'),
             obligationRequestAccountCode: $this->stringValue($values, 'obligation_request.account_code'),
             obligationRequestOffice: $this->stringValue($values, 'obligation_request.office'),
             obligationRequestFpp: $this->stringValue($values, 'obligation_request.fpp'),
