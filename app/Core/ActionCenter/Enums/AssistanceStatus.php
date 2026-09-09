@@ -47,12 +47,12 @@ enum AssistanceStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending     => 'Pending',
+            self::Pending => 'Pending',
             self::UnderReview => 'Under Review',
-            self::Approved    => 'Approved',
-            self::Released    => 'Released',
-            self::Rejected    => 'Rejected',
-            self::Cancelled   => 'Cancelled',
+            self::Approved => 'Amount Approved',
+            self::Released => 'Released',
+            self::Rejected => 'Rejected',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -60,12 +60,12 @@ enum AssistanceStatus: string
     public function color(): string
     {
         return match ($this) {
-            self::Pending     => 'bg-amber-100 text-amber-800 ring-1 ring-amber-200',
+            self::Pending => 'bg-amber-100 text-amber-800 ring-1 ring-amber-200',
             self::UnderReview => 'bg-sky-100 text-sky-800 ring-1 ring-sky-200',
-            self::Approved    => 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
-            self::Released    => 'bg-blue-100 text-blue-800 ring-1 ring-blue-200',
-            self::Rejected    => 'bg-rose-100 text-rose-800 ring-1 ring-rose-200',
-            self::Cancelled   => 'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
+            self::Approved => 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
+            self::Released => 'bg-blue-100 text-blue-800 ring-1 ring-blue-200',
+            self::Rejected => 'bg-rose-100 text-rose-800 ring-1 ring-rose-200',
+            self::Cancelled => 'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
         };
     }
 
@@ -132,6 +132,7 @@ enum AssistanceStatus: string
         return match ($this) {
             self::Pending => in_array($next, [
                 self::UnderReview,
+                self::Approved,
                 self::Rejected,
                 self::Cancelled,
             ], true),

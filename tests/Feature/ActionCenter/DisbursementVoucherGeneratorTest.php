@@ -87,7 +87,7 @@ afterEach(function () {
 });
 
 it('builds trusted voucher form data and spells the approved amount', function () {
-    $context = seedDisbursementVoucherContext(amount: 1000.50);
+    $context = seedDisbursementVoucherContext(status: 'released', amount: 1000.50);
     DB::table('municipalities')
         ->where('id', $context['municipal_id'])
         ->update(['municipal_code' => '174003000']);
@@ -118,7 +118,7 @@ it('keeps the claimant as payee and mentions the assisted person', function () {
         'relationship_to_beneficiary' => 'parent',
         'on_behalf_first_name' => 'Juan',
         'on_behalf_last_name' => 'Rejano',
-    ]);
+    ], status: 'released');
 
     $data = app(GenerateDisbursementVoucherAction::class)->formData(
         $context['request_id'],
@@ -147,6 +147,11 @@ it('rejects ineligible status tenant mismatch and missing snapshots', function (
 
     expect(fn () => $action->formData($approved['request_id'], $approved['municipal_id']))
         ->toThrow(DomainException::class);
+
+    $unverifiedApproved = seedDisbursementVoucherContext();
+
+    expect(fn () => $action->formData($unverifiedApproved['request_id'], $unverifiedApproved['municipal_id']))
+        ->toThrow(DomainException::class, 'MSWD verification must be completed');
 });
 
 it('accepts optional voucher number and tin while validating manual fields', function () {
@@ -169,7 +174,7 @@ it('accepts optional voucher number and tin while validating manual fields', fun
 });
 
 it('uses trusted values and performs no database writes when preparing the voucher', function () {
-    $context = seedDisbursementVoucherContext();
+    $context = seedDisbursementVoucherContext(status: 'released');
     $beforeRequests = DB::table('ac_assistance_requests')->count();
     $beforeMedia = DB::table('media')->count();
     $dto = new GenerateDisbursementVoucherDto(

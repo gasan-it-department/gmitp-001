@@ -26,7 +26,9 @@ enum EnumPermissions: string
     case ACTION_CENTER_BENEFICIARIES_VERIFY = 'action_center.beneficiaries.verify';
     case ACTION_CENTER_BENEFICIARIES_CORRECT = 'action_center.beneficiaries.correct';
     case ACTION_CENTER_REQUESTS_VIEW = 'action_center.requests.view';
+    case ACTION_CENTER_REQUESTS_INTAKE = 'action_center.requests.intake';
     case ACTION_CENTER_REQUESTS_PROCESS = 'action_center.requests.process';
+    case ACTION_CENTER_REQUESTS_VERIFY = 'action_center.requests.verify';
     case ACTION_CENTER_REQUESTS_DECIDE = 'action_center.requests.decide';
     case ACTION_CENTER_REQUESTS_RELEASE = 'action_center.requests.release';
     case ACTION_CENTER_REQUESTS_CORRECT = 'action_center.requests.correct';
@@ -93,7 +95,9 @@ enum EnumPermissions: string
             self::ACTION_CENTER_BENEFICIARIES_VERIFY => 'Action Center - Verify Beneficiaries',
             self::ACTION_CENTER_BENEFICIARIES_CORRECT => 'Action Center - Correct Beneficiary Records',
             self::ACTION_CENTER_REQUESTS_VIEW => 'Action Center - View Assistance Requests',
-            self::ACTION_CENTER_REQUESTS_PROCESS => 'Action Center - Process Assistance Requests',
+            self::ACTION_CENTER_REQUESTS_INTAKE => 'Action Center - Intake Assistance Requests',
+            self::ACTION_CENTER_REQUESTS_PROCESS => 'Action Center - MSWD Assessment / Document Preparation',
+            self::ACTION_CENTER_REQUESTS_VERIFY => 'Action Center - Verify Assistance Requests',
             self::ACTION_CENTER_REQUESTS_DECIDE => 'Action Center - Approve or Reject Requests',
             self::ACTION_CENTER_REQUESTS_RELEASE => 'Action Center - Release Assistance',
             self::ACTION_CENTER_REQUESTS_CORRECT => 'Action Center - Correct Approved Request Data',
@@ -129,7 +133,9 @@ enum EnumPermissions: string
             self::ACTION_CENTER_BENEFICIARIES_VERIFY,
             self::ACTION_CENTER_BENEFICIARIES_CORRECT,
             self::ACTION_CENTER_REQUESTS_VIEW,
+            self::ACTION_CENTER_REQUESTS_INTAKE,
             self::ACTION_CENTER_REQUESTS_PROCESS,
+            self::ACTION_CENTER_REQUESTS_VERIFY,
             self::ACTION_CENTER_REQUESTS_DECIDE,
             self::ACTION_CENTER_REQUESTS_RELEASE,
             self::ACTION_CENTER_REQUESTS_CORRECT,
@@ -183,6 +189,7 @@ enum EnumPermissions: string
             self::ACTION_CENTER_SETTINGS_MANAGE => [
                 self::ACTION_CENTER_ACCESS->value,
             ],
+            self::ACTION_CENTER_REQUESTS_INTAKE,
             self::ACTION_CENTER_REQUESTS_PROCESS,
             self::ACTION_CENTER_REQUESTS_DECIDE,
             self::ACTION_CENTER_REQUESTS_RELEASE => [
@@ -192,6 +199,11 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_CORRECT => [
                 self::ACTION_CENTER_ACCESS->value,
                 self::ACTION_CENTER_REQUESTS_VIEW->value,
+            ],
+            self::ACTION_CENTER_REQUESTS_VERIFY => [
+                self::ACTION_CENTER_ACCESS->value,
+                self::ACTION_CENTER_REQUESTS_VIEW->value,
+                self::ACTION_CENTER_REQUESTS_PROCESS->value,
             ],
             default => [],
         };

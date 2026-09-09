@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Dto\Beneficiary\EligibilityResult;
 use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\RejectAssistanceRequestAction;
@@ -360,6 +361,7 @@ it('stores snapshots and permits one newly declared pending member', function ()
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))->execute(
         new StoreAssistanceRequestDto(
             municipalId: $municipalId,
@@ -449,6 +451,7 @@ it('allows an adult portal on-behalf request without recipient id uploads', func
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))
         ->execute(adultOnBehalfDto($context));
     $details = (new ShowClientAssistanceRequestAction)->execute(
@@ -476,6 +479,7 @@ it('keeps internal rejection remarks and staff data out of the citizen request p
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))
         ->execute(adultOnBehalfDto($context));
 
@@ -525,6 +529,7 @@ it('stores a documented no-id exception for an adult assisted person', function 
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))->execute(
         adultOnBehalfDto(
             $context,
@@ -548,6 +553,7 @@ it('does not apply deceased metadata or id exemptions to an unconfigured program
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))->execute(adultOnBehalfDto(
         context: $context,
         onBehalfDateOfDeath: '2026-08-20',
@@ -565,6 +571,7 @@ it('allows an admin to file for a pending household member with an override and 
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))->execute(
         adultOnBehalfDto(
             $context,
@@ -594,6 +601,7 @@ it('rechecks citizen eligibility after acquiring submission locks', function () 
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))->execute($dto);
 
     // This represents the second HTTP request after it waited for the first
@@ -616,6 +624,7 @@ it('rechecks citizen eligibility after acquiring submission locks', function () 
         $smsNotifier,
         $eligibility,
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     );
 
     expect(fn () => $secondSubmission->execute($dto))
@@ -633,6 +642,7 @@ it('blocks another claimant from targeting a household member with an open stand
         snapshotTestSmsNotifier(),
         snapshotTestEligibility(),
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     ))->execute(adultOnBehalfDto($context));
 
     $secondBeneficiaryId = (string) Str::ulid();
@@ -710,6 +720,7 @@ it('rejects burial assistance filed for self at the core action boundary', funct
         $smsNotifier,
         $eligibility,
         app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
     );
 
     expect(fn () => $action->execute(adultOnBehalfDto(
@@ -944,6 +955,14 @@ function snapshotTestSmsNotifier(): AssistanceRequestSmsNotifier
     $notifier->shouldReceive('requestReceived')->once();
 
     return $notifier;
+}
+
+function snapshotTestMswdVerification(): AssistanceMswdVerificationService
+{
+    $verification = Mockery::mock(AssistanceMswdVerificationService::class);
+    $verification->shouldReceive('captureRequirements')->zeroOrMoreTimes();
+
+    return $verification;
 }
 
 function snapshotTestEligibility(): CheckElegibilityAction

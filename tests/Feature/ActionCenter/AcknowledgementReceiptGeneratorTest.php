@@ -90,7 +90,7 @@ it('builds trusted receipt form data from the frozen claimant snapshot', functio
         'relationship_to_beneficiary' => 'parent',
         'on_behalf_first_name' => 'Juan',
         'on_behalf_last_name' => 'Rejano',
-    ]);
+    ], status: 'released', releasedAt: '2026-08-17 00:00:00');
 
     $data = app(GenerateAcknowledgementReceiptAction::class)->formData(
         $context['request_id'],
@@ -102,7 +102,7 @@ it('builds trusted receipt form data from the frozen claimant snapshot', functio
         ->and($data->assistanceType)->toBe('Medical Assistance')
         ->and($data->approvedAmount)->toBe(1000.0)
         ->and($data->submittedDate)->toBe('2026-08-14')
-        ->and($data->providedDate)->toBeNull();
+        ->and($data->providedDate)->toBe('2026-08-17');
 });
 
 it('uses the actual release date only after physical release', function () {
@@ -148,6 +148,11 @@ it('rejects ineligible, incomplete, and cross-municipality requests', function (
 
     expect(fn() => $action->formData($missingAmount['request_id'], $missingAmount['municipal_id']))
         ->toThrow(DomainException::class);
+
+    $unverifiedApproved = seedAcknowledgementReceiptContext();
+
+    expect(fn () => $action->formData($unverifiedApproved['request_id'], $unverifiedApproved['municipal_id']))
+        ->toThrow(DomainException::class, 'MSWD verification must be completed');
 });
 
 it('renders the official dompdf receipt without description or browser assets', function () {
@@ -201,7 +206,10 @@ it('renders the official dompdf receipt without description or browser assets', 
 });
 
 it('does not write request or media records while generating', function () {
-    $context = seedAcknowledgementReceiptContext();
+    $context = seedAcknowledgementReceiptContext(
+        status: 'released',
+        releasedAt: '2026-08-17 00:00:00',
+    );
     $beforeRequests = DB::table('ac_assistance_requests')->count();
     $beforeMedia = DB::table('media')->count();
 

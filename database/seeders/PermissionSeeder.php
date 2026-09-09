@@ -17,6 +17,8 @@ class PermissionSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Historical split only. New intake/verification capabilities are
+        // catalogued below, but must be explicitly assigned by an administrator.
         $actionCenterPermissions = [
             EnumPermissions::ACTION_CENTER_BENEFICIARIES_VIEW->value,
             EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value,

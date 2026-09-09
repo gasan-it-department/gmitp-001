@@ -10,6 +10,7 @@ use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\CancelApprovedAssistanceRequestAction;
@@ -99,6 +100,12 @@ beforeEach(function () {
         $table->decimal('amount_approved', 10, 2)->nullable();
         $table->string('transaction_number')->unique();
         $table->string('status');
+        $table->string('mswd_verification_status')->nullable();
+        $table->ulid('mswd_verified_by_user_id')->nullable();
+        $table->timestamp('mswd_verified_at')->nullable();
+        $table->text('mswd_verification_notes')->nullable();
+        $table->string('mswd_verification_fingerprint')->nullable();
+        $table->timestamp('document_requirements_captured_at')->nullable();
         $table->text('description')->nullable();
         $table->text('remarks')->nullable();
         $table->json('metadata')->nullable();
@@ -112,6 +119,28 @@ beforeEach(function () {
         $table->timestamps();
         $table->softDeletes();
         $table->unique(['municipal_id', 'release_reference_number']);
+    });
+
+    Schema::create('ac_assistance_request_document_checks', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('assistance_request_id');
+        $table->string('document_key');
+        $table->string('label');
+        $table->text('description')->nullable();
+        $table->boolean('is_required')->default(true);
+        $table->string('physical_copy_requirement')->default('unspecified');
+        $table->unsignedInteger('sort_order')->default(0);
+        $table->boolean('is_applicable')->default(true);
+        $table->string('exemption_reason')->nullable();
+        $table->string('verification_status')->default('pending');
+        $table->unsignedBigInteger('inspected_media_id')->nullable();
+        $table->string('inspected_media_version')->nullable();
+        $table->string('presented_copy_type')->nullable();
+        $table->text('remarks')->nullable();
+        $table->ulid('checked_by_user_id')->nullable();
+        $table->timestamp('checked_at')->nullable();
+        $table->timestamps();
+        $table->unique(['assistance_request_id', 'document_key']);
     });
 
     Schema::create('ac_beneficiary_cooldowns', function (Blueprint $table) {
@@ -165,6 +194,7 @@ afterEach(function () {
         'activity_log',
         'media',
         'ac_beneficiary_cooldowns',
+        'ac_assistance_request_document_checks',
         'ac_assistance_requests',
         'ac_assistance_type_documents',
         'ac_document_types',
@@ -178,10 +208,12 @@ afterEach(function () {
 
 it('serializes edits with approval and rejects an edit that acquires the lock later', function () {
     $context = mutationLockContext();
+    mutationDocumentRequirement($context, 'medical_certificate', 'Medical Certificate', true, 10);
     $request = mutationLockRequest($context);
     $updateAction = new UpdateAssistanceRequestAction(
         new LockAssistanceRequestAction,
         app(AssistanceRequestFormDefinitionProvider::class),
+        app(AssistanceMswdVerificationService::class),
     );
 
     $edited = $updateAction->execute(mutationUpdateDto(
@@ -219,7 +251,7 @@ it('serializes edits with approval and rejects an edit that acquires the lock la
         request: $request,
         description: 'A stale edit that must not be committed.',
         fileName: 'medical-certificate-v2.png',
-    )))->toThrow(DomainException::class, 'already been Approved');
+    )))->toThrow(DomainException::class, 'Amount Approved');
 
     $fresh = $request->fresh(['media']);
 
@@ -268,7 +300,10 @@ it('allows the dedicated release transition and rejects every later content edit
     $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
     $smsNotifier->shouldReceive('requestReleased')->once();
 
-    $released = (new ReleaseAssistanceRequestAction($smsNotifier))->execute(
+    $verification = Mockery::mock(AssistanceMswdVerificationService::class);
+    $verification->shouldReceive('assertCurrent')->once();
+
+    $released = (new ReleaseAssistanceRequestAction($smsNotifier, $verification))->execute(
         new ReleaseAssistanceRequestDto(
             assistanceRequestId: $request->id,
             municipalId: $context['municipal_id'],
@@ -286,6 +321,7 @@ it('allows the dedicated release transition and rejects every later content edit
     $updateAction = new UpdateAssistanceRequestAction(
         new LockAssistanceRequestAction,
         app(AssistanceRequestFormDefinitionProvider::class),
+        app(AssistanceMswdVerificationService::class),
     );
 
     expect(fn () => $updateAction->execute(mutationUpdateDto(
@@ -398,7 +434,7 @@ it('does not cancel released or non-approved assistance through the approved cor
     )))->toThrow(DomainException::class, 'Released assistance is immutable');
 });
 
-it('blocks approval until required documents are uploaded and ignores optional omissions', function () {
+it('records the authorized amount while required documents await MSWD verification', function () {
     $context = mutationLockContext();
     $request = mutationLockRequest($context);
     mutationDocumentRequirement($context, 'medical_certificate', 'Medical Certificate', true, 10);
@@ -420,18 +456,10 @@ it('blocks approval until required documents are uploaded and ignores optional o
         approvalNotes: 'Approved after MSWD inspected the required document.',
     );
 
-    expect(fn () => $action->execute($dto))
-        ->toThrow(AssistanceApprovalException::class, 'Medical Certificate');
-
-    $request
-        ->addMedia(UploadedFile::fake()->image('medical-certificate.jpg'))
-        ->withCustomProperties(['document_key' => 'medical_certificate'])
-        ->toMediaCollection('documents');
-
     $approved = $action->execute($dto);
 
     expect($approved->status)->toBe(AssistanceStatus::Approved)
-        ->and($approved->getMedia('documents'))->toHaveCount(1);
+        ->and($approved->getMedia('documents'))->toHaveCount(0);
 });
 
 it('does not require assisted-person id uploads when a recorded exception applies', function () {
@@ -737,9 +765,11 @@ it('allows an admin to correct date of death on an editable configured burial re
             'slug' => 'burial',
         ]);
     $request = mutationLockRequest($context);
+    mutationDocumentRequirement($context, 'medical_certificate', 'Medical Certificate', true, 10);
     $action = new UpdateAssistanceRequestAction(
         new LockAssistanceRequestAction,
         app(AssistanceRequestFormDefinitionProvider::class),
+        app(AssistanceMswdVerificationService::class),
     );
 
     $updated = $action->execute(mutationUpdateDto(

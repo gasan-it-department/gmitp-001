@@ -22,8 +22,9 @@ class RefreshAssistanceHouseholdAssessmentRequest extends FormRequest
     {
         return [
             'assessment_fingerprint' => ['required', 'string', 'size:64'],
-            // Under-review sync omits this field. Approved requests require it
-            // in the locked Core action, where the status is authoritative.
+            // An unfinished assessment omits this field. A completed
+            // verification requires it in the locked Core action, where the
+            // lifecycle state is authoritative.
             'correction_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
         ];
     }

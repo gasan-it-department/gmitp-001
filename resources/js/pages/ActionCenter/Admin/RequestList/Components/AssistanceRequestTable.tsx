@@ -15,6 +15,7 @@ export interface AssistanceRequestListItem {
     id: string;
     transaction_number: string;
     status: string;
+    mswd_verification_status: 'pending' | 'under_review' | 'needs_correction' | 'verified' | null;
 
     assistance_type_id: string;
     assistance_type?: {
@@ -89,7 +90,11 @@ export function statusClass(status: string): string {
 }
 
 export function humanizeStatus(status: string): string {
-    return status.replace(/_/g, ' ');
+    return status === 'approved' ? 'Amount Approved' : status.replace(/_/g, ' ');
+}
+
+function mswdStatusLabel(status: AssistanceRequestListItem['mswd_verification_status']): string {
+    return status ? `MSWD ${status.replace(/_/g, ' ')}` : 'MSWD not recorded';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,11 +217,16 @@ export function AssistanceRequestTable({ paginator, onView, getViewUrl }: Props)
 
                                         {/* Status */}
                                         <TableCell>
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${statusClass(row.status)}`}
-                                            >
-                                                {humanizeStatus(row.status)}
-                                            </span>
+                                            <div className="flex min-w-[104px] flex-col items-start gap-1">
+                                                <span
+                                                    className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase ${statusClass(row.status)}`}
+                                                >
+                                                    {humanizeStatus(row.status)}
+                                                </span>
+                                                <span className={`text-[10px] font-semibold ${row.mswd_verification_status === 'verified' ? 'text-emerald-700' : row.mswd_verification_status === 'needs_correction' ? 'text-rose-700' : 'text-amber-800'}`}>
+                                                    {mswdStatusLabel(row.mswd_verification_status)}
+                                                </span>
+                                            </div>
                                         </TableCell>
 
                                         {/* Submitted */}

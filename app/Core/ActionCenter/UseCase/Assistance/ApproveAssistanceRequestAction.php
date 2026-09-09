@@ -3,8 +3,8 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
-use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestFormDefinition;
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestFormDefinition;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Exceptions\AssistanceApprovalException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
@@ -12,11 +12,10 @@ use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Approve a request that's under_review, commit the amount, and write the
+ * Record the Mayor-authorized amount, then write the
  * cooldown rows that block future applications from this beneficiary /
  * household per the AssistanceType's scope rules.
  *
@@ -35,13 +34,13 @@ use Illuminate\Support\Facades\DB;
  *
  * ── Hard gates evaluated in order (cheap → expensive) ──────────────────
  *   1. Tenant match               — request belongs to current municipality
- *   2. Transition rule            — enum's canTransitionTo() says under_review → approved
- *   3. Reviewer assigned          — reviewed_by_user_id must NOT be null
+ *   2. Transition rule            — pending/under_review → amount approved
+ *   3. Program-specific structural data (for example, Date of Death)
  *   4. Amount within type limits  — min_amount ≤ amount ≤ max_amount
- *   5. Required documents ready   — every is_required document type has an upload
  *
- * Future doc verification (when added) becomes ONE method extension on
- * ensureRequiredDocumentsReady() — see the inline comment there.
+ * MSWD reviewer assignment, document checks, and household assessment are
+ * intentionally independent. They are enforced at MSWD completion, PDF
+ * generation, and physical release rather than at amount authorization.
  */
 class ApproveAssistanceRequestAction
 {
@@ -64,18 +63,15 @@ class ApproveAssistanceRequestAction
                 with: ['assistanceType.documents', 'media', 'onBehalfHouseholdMember'],
             );
 
-            // Run all hard gates (cheap to expensive). Any failure aborts
-            // the transaction without writing anything.
+            // Amount authorization is intentionally independent from the
+            // MSWD review lifecycle. Any failure aborts without writes.
             $this->ensureTransitionAllowed($request);
-            $this->ensureReviewerAssigned($request);
             $formDefinition = $this->formDefinitions->for(
                 $dto->municipalCode,
                 $request->assistanceType?->slug,
             );
             $this->ensureConfiguredRequestFieldsReady($request, $formDefinition);
-            $this->ensureOnBehalfMemberVerified($request);
             $this->ensureAmountWithinLimits($request, $dto->amountApproved);
-            $this->ensureRequiredDocumentsReady($request, $formDefinition);
 
             // Commit the approval to the request row. Activity log captures
             // status / amount_approved / approved_by_user_id changes
@@ -114,24 +110,6 @@ class ApproveAssistanceRequestAction
         }
     }
 
-    private function ensureReviewerAssigned(AssistanceRequest $request): void
-    {
-        if ($request->reviewed_by_user_id === null) {
-            throw AssistanceApprovalException::noReviewerAssigned();
-        }
-    }
-
-    private function ensureOnBehalfMemberVerified(AssistanceRequest $request): void
-    {
-        $member = $request->onBehalfHouseholdMember;
-
-        if ($member !== null
-            && $member->relationship !== 'head'
-            && ! $member->is_verified_dependent) {
-            throw AssistanceApprovalException::dependentNotVerified();
-        }
-    }
-
     private function ensureConfiguredRequestFieldsReady(
         AssistanceRequest $request,
         AssistanceRequestFormDefinition $definition,
@@ -152,100 +130,6 @@ class ApproveAssistanceRequestAction
 
         if ($type->max_amount !== null && $amount > (float) $type->max_amount) {
             throw AssistanceApprovalException::amountAboveMaximum((float) $type->max_amount);
-        }
-    }
-
-    /**
-     * Verify every is_required document type for this AssistanceType has at
-     * least one upload on the request's Spatie media collection.
-     *
-     * ── Future extension: per-document verification ───────────────────────
-     * When the admin-side "mark document verified" workflow is added, this
-     * method gains a second check after the uploaded-presence check:
-     *
-     *   foreach ($request->media as $media) {
-     *       if ($requiredKeys->contains($media->getCustomProperty('document_key'))
-     *           && empty($media->custom_properties['verified_at'])) {
-     *           throw AssistanceApprovalException::documentNotVerified(...);
-     *       }
-     *   }
-     *
-     * Today's "uploaded" check still applies — the verification check just
-     * stacks on top. No other Approve code changes needed when that's added.
-     */
-    private function ensureRequiredDocumentsReady(
-        AssistanceRequest $request,
-        AssistanceRequestFormDefinition $definition,
-    ): void
-    {
-        $requiredDocs = $request->assistanceType->documents
-            ->filter(fn ($doc) => (bool) $doc->pivot->is_required);
-
-        if ($requiredDocs->isEmpty()) {
-            return;
-        }
-
-        // Every upload lives in the single "documents" media collection — the
-        // slot it satisfies is stored in the `document_key` custom property,
-        // NOT the collection name (which is always literally "documents").
-        // Plucking collection_name made every required slot look unmet, so
-        // EVERY approval was blocked even when all scans were attached. Read
-        // the slot keys back from the custom property instead.
-        $uploadedKeys = $request->media
-            ->map(fn ($media) => $media->getCustomProperty('document_key'))
-            ->filter()
-            ->unique();
-
-        // Report the human-readable labels ("Valid ID"), not the raw keys.
-        $missing = $requiredDocs
-            ->reject(fn ($doc) => $uploadedKeys->contains($doc->key))
-            ->pluck('label');
-
-        if ($missing->isNotEmpty()) {
-            throw AssistanceApprovalException::missingRequiredDocuments($missing);
-        }
-
-        $this->ensureRecipientIdentityDocumentsReady($request, $definition, $requiredDocs, $uploadedKeys);
-    }
-
-    private function ensureRecipientIdentityDocumentsReady(
-        AssistanceRequest $request,
-        AssistanceRequestFormDefinition $definition,
-        Collection $requiredDocs,
-        Collection $uploadedKeys,
-    ): void {
-        if ($request->on_behalf_household_member_id === null) {
-            return;
-        }
-
-        $requiresFilerId = $requiredDocs->contains(
-            fn ($document) => in_array($document->key, ['valid_id_front', 'valid_id_back'], true),
-        );
-
-        if (! $requiresFilerId) {
-            return;
-        }
-
-        $exception = $request->recipient_id_exception;
-        $hasValidUnavailableReason = $exception === 'no_government_id'
-            && filled($request->recipient_id_exception_reason)
-            && mb_strlen(trim($request->recipient_id_exception_reason)) >= 10;
-
-        if ($definition->isDeceasedRequest()
-            || in_array($exception, ['minor', 'deceased'], true)
-            || $hasValidUnavailableReason) {
-            return;
-        }
-
-        $missing = collect([
-            'recipient_valid_id_front' => 'Assisted Person Valid Government ID - Front',
-            'recipient_valid_id_back' => 'Assisted Person Valid Government ID - Back',
-        ])
-            ->reject(fn ($label, $key) => $uploadedKeys->contains($key))
-            ->values();
-
-        if ($missing->isNotEmpty()) {
-            throw AssistanceApprovalException::missingRequiredDocuments($missing);
         }
     }
 

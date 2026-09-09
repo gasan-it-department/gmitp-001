@@ -72,6 +72,10 @@ it('grants the action center split once without restoring later revocations', fu
     expect(Permission::query()->where('name', EnumPermissions::ACTION_CENTER_REQUESTS_CORRECT->value)->exists())
         ->toBeTrue()
         ->and($admin->hasPermissionTo(EnumPermissions::ACTION_CENTER_REQUESTS_CORRECT->value))
+        ->toBeFalse()
+        ->and($admin->hasPermissionTo(EnumPermissions::ACTION_CENTER_REQUESTS_INTAKE->value))
+        ->toBeFalse()
+        ->and($admin->hasPermissionTo(EnumPermissions::ACTION_CENTER_REQUESTS_VERIFY->value))
         ->toBeFalse();
 
     $revokedPermission = EnumPermissions::ACTION_CENTER_REQUESTS_RELEASE->value;

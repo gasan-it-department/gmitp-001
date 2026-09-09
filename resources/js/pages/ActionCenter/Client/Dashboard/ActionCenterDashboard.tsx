@@ -85,7 +85,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
         text: 'text-green-700',
         border: 'border-green-200',
         icon: CheckCircle2,
-        label: 'Approved',
+        label: 'Amount Approved',
     },
     released: {
         bg: 'bg-blue-100',

@@ -53,17 +53,17 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
                         <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                     </div>
-                    <DialogTitle className="text-xl text-slate-900">Approve Request</DialogTitle>
+                    <DialogTitle className="text-xl text-slate-900">Record Authorized Amount</DialogTitle>
                     <DialogDescription className="text-slate-500">
-                        Specify the approved amount and provide COA-required approval notes. This action will lock the amount and start the
-                        applicant's cooldown period.
+                        Record the Mayor-authorized amount and provide the approval basis. This locks the amount and starts the applicant's
+                        cooldown period; MSWD verification and physical release remain separate steps.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-5 pt-2 sm:space-y-6 sm:pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="amount_approved" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
-                            Approved Amount (PHP)
+                            Authorized Amount (PHP)
                         </Label>
                         <div className="relative">
                             <span className="absolute top-2.5 left-3 font-semibold text-slate-400">₱</span>
@@ -112,9 +112,9 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                                 htmlFor="confirm"
                                 className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                             >
-                                I understand this is COA-immutable
+                                I understand this amount is locked after recording
                             </Label>
-                            <p className="text-xs text-slate-500">This will commit the funds and enforce a cooldown for this household.</p>
+                            <p className="text-xs text-slate-500">This records the amount decision and enforces the applicable cooldown. It does not complete MSWD verification or release funds.</p>
                             {errors.confirm && <p className="text-xs font-medium text-red-500">{errors.confirm}</p>}
                         </div>
                     </div>
@@ -130,7 +130,7 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                         </Button>
                         <Button type="submit" disabled={processing} className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
                             {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Confirm Approval
+                            Record Amount
                         </Button>
                     </DialogFooter>
                 </form>

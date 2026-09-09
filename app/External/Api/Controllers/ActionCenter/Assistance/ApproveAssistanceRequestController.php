@@ -6,7 +6,6 @@ use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
 use App\External\Api\Request\ActionCenter\ApproveAssistanceRequestRequest;
 use App\Http\Controllers\Controller;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,8 +27,7 @@ class ApproveAssistanceRequestController extends Controller
 {
     public function __construct(
         private readonly ApproveAssistanceRequestAction $approve,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         string $assistanceRequestId,
@@ -48,7 +46,7 @@ class ApproveAssistanceRequestController extends Controller
 
         return back()->with(
             'success',
-            'Request approved. Cooldown is now in effect against future applications.',
+            'Authorized amount recorded. MSWD verification must still be completed before financial documents or release.',
         );
 
     }

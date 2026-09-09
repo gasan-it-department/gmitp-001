@@ -1,4 +1,5 @@
 import { formatUploadSize, optimizeAssistanceDocument } from '@/lib/optimizeAssistanceDocument';
+import { rotateImageFile, type ImageRotationDirection } from '@/lib/rotateImageFile';
 import { useCallback, useRef, useState } from 'react';
 
 export interface DocumentPreparationNotice {
@@ -69,10 +70,57 @@ export function useOptimizedAssistanceDocuments(onFileReady: (documentKey: strin
         [onFileReady],
     );
 
+    const rotateDocument = useCallback(
+        async (documentKey: string, file: File, direction: ImageRotationDirection) => {
+            const version = (operationVersions.current[documentKey] ?? 0) + 1;
+            operationVersions.current[documentKey] = version;
+            setNotices((current) => ({ ...current, [documentKey]: undefined }));
+            setPreparingKeys((current) => new Set(current).add(documentKey));
+
+            try {
+                const rotated = await rotateImageFile(file, direction);
+                const optimized = await optimizeAssistanceDocument(rotated);
+
+                if (operationVersions.current[documentKey] !== version) return;
+
+                onFileReady(documentKey, optimized.file);
+                setNotices((current) => ({
+                    ...current,
+                    [documentKey]: {
+                        tone: 'success',
+                        message: optimized.wasCompressed
+                            ? `Rotated ${direction} and optimized to ${formatUploadSize(optimized.file.size)}.`
+                            : `Rotated ${direction}. Review the preview before uploading.`,
+                    },
+                }));
+            } catch {
+                if (operationVersions.current[documentKey] !== version) return;
+
+                setNotices((current) => ({
+                    ...current,
+                    [documentKey]: {
+                        tone: 'warning',
+                        message: 'Could not rotate this image. The current file was kept.',
+                    },
+                }));
+            } finally {
+                if (operationVersions.current[documentKey] === version) {
+                    setPreparingKeys((current) => {
+                        const next = new Set(current);
+                        next.delete(documentKey);
+                        return next;
+                    });
+                }
+            }
+        },
+        [onFileReady],
+    );
+
     return {
         isPreparing: preparingKeys.size > 0,
         notices,
         prepareDocument,
         preparingKeys,
+        rotateDocument,
     };
 }

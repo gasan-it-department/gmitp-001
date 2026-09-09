@@ -11,6 +11,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
@@ -39,8 +40,8 @@ class StoreAssistanceRequestAction
         private AssistanceRequestSmsNotifier $smsNotifier,
         private CheckElegibilityAction $checkEligibility,
         private AssistanceRequestFormDefinitionProvider $formDefinitions,
-    ) {
-    }
+        private AssistanceMswdVerificationService $mswdVerification,
+    ) {}
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
     {
@@ -78,7 +79,7 @@ class StoreAssistanceRequestAction
                 );
             }
 
-            if (!$beneficiary->is_active) {
+            if (! $beneficiary->is_active) {
                 throw new \DomainException(
                     'This beneficiary record is inactive. Resolve the beneficiary residence or status before filing assistance.',
                 );
@@ -90,7 +91,7 @@ class StoreAssistanceRequestAction
                 );
             }
 
-            if (!$beneficiary->household->isVerified()) {
+            if ($dto->encodedByUserId === null && ! $beneficiary->household->isVerified()) {
                 throw new \DomainException(
                     'This household is on hold until an active, identity-verified head is assigned.',
                 );
@@ -110,7 +111,7 @@ class StoreAssistanceRequestAction
                 allowPendingDependent: $dto->encodedByUserId === null,
             );
 
-            if (!$eligibility->eligible && $dto->encodedByUserId === null) {
+            if (! $eligibility->eligible && $dto->encodedByUserId === null) {
                 throw AssistanceEligibilityException::from($eligibility);
             }
 
@@ -146,11 +147,11 @@ class StoreAssistanceRequestAction
                     : null,
                 'on_behalf_verification_pending' => $member !== null
                     && $member->relationship !== 'head'
-                    && !$member->is_verified_dependent
+                    && ! $member->is_verified_dependent
                     ? true
                     : null,
                 'household_composition_snapshot' => $householdCompositionSnapshot,
-            ], static fn($value) => $value !== null);
+            ], static fn ($value) => $value !== null);
 
             $request = AssistanceRequest::create([
                 'id' => $requestId,
@@ -207,6 +208,11 @@ class StoreAssistanceRequestAction
                 'barangay_psgc_code' => $dto->snapshotBarangayPsgcCode,
                 'street' => $dto->snapshotStreet,
             ]);
+
+            // Freeze the requirement rows before the request commits. The
+            // later MSWD checklist therefore reflects the rules in force at
+            // filing, not an assistance-type edit made next week.
+            $this->mswdVerification->captureRequirements($request);
 
             return $request;
         }, attempts: 3);
@@ -285,9 +291,15 @@ class StoreAssistanceRequestAction
         Beneficiary $beneficiary,
         StoreAssistanceRequestDto $dto,
     ): void {
+        // Admin intake records pending people for later MSWD review. This does
+        // not verify the beneficiary, head, dependent, or the request itself.
+        if ($dto->encodedByUserId !== null) {
+            return;
+        }
+
         $message = null;
 
-        if (!$beneficiary->isIdentityVerified()) {
+        if (! $beneficiary->isIdentityVerified()) {
             $message = 'The claimant identity has not been verified by MSWD.';
         } elseif ($dto->onBehalfHouseholdMemberId !== null) {
             $member = HouseholdMember::query()
@@ -299,9 +311,9 @@ class StoreAssistanceRequestAction
             if (
                 $member !== null
                 && $member->relationship !== 'head'
-                && !$member->is_verified_dependent
+                && ! $member->is_verified_dependent
             ) {
-                if (!$this->isAllowedPendingCitizenMember($beneficiary, $member, $dto)) {
+                if (! $this->isAllowedPendingCitizenMember($beneficiary, $member, $dto)) {
                     $message = 'The selected household member has not been verified by MSWD.';
                 }
             }
@@ -311,15 +323,7 @@ class StoreAssistanceRequestAction
             return;
         }
 
-        if ($dto->encodedByUserId === null) {
-            throw new \DomainException($message);
-        }
-
-        if (blank($dto->verificationOverrideReason)) {
-            throw new \DomainException(
-                $message . ' Enter an override reason to continue as an administrator.',
-            );
-        }
+        throw new \DomainException($message);
     }
 
     private function ensureAssistanceSubjectIsValid(
@@ -349,7 +353,7 @@ class StoreAssistanceRequestAction
     ): ?string {
         $isOnBehalf = $member !== null || filled($dto->onBehalfFirstName);
 
-        if (!$isOnBehalf) {
+        if (! $isOnBehalf) {
             return null;
         }
 
@@ -390,7 +394,7 @@ class StoreAssistanceRequestAction
     {
         foreach ($documents as $documentKey => $file) {
 
-            if (!$file instanceof UploadedFile) {
+            if (! $file instanceof UploadedFile) {
                 continue;
             }
 
@@ -415,7 +419,7 @@ class StoreAssistanceRequestAction
         $base = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $slug = preg_replace('/[^A-Za-z0-9_-]+/', '_', $base) ?: 'document';
 
-        return $slug . ($extension ? ".{$extension}" : '');
+        return $slug.($extension ? ".{$extension}" : '');
     }
 
     /**
@@ -428,7 +432,7 @@ class StoreAssistanceRequestAction
         Beneficiary $beneficiary,
         bool $lock = false,
     ): ?HouseholdMember {
-        if (!$dto->onBehalfHouseholdMemberId) {
+        if (! $dto->onBehalfHouseholdMemberId) {
             return null;
         }
 
@@ -440,30 +444,29 @@ class StoreAssistanceRequestAction
 
         $member = $query->first();
 
-        if (!$member || $member->household_id !== $dto->householdId) {
+        if (! $member || $member->household_id !== $dto->householdId) {
             throw new AuthorizationException(
                 'The selected family member does not belong to your household.'
             );
         }
 
-        if (!$member->is_active) {
+        if (! $member->is_active) {
             throw new AuthorizationException('The selected household member is no longer active.');
         }
 
         if (
-            $member->relationship !== 'head'
-            && !$member->is_verified_dependent
-            && !$this->isAllowedPendingCitizenMember(
+            $dto->encodedByUserId === null
+            && $member->relationship !== 'head'
+            && ! $member->is_verified_dependent
+            && ! $this->isAllowedPendingCitizenMember(
                 $beneficiary,
                 $member,
                 $dto,
             )
         ) {
-            if ($dto->encodedByUserId === null || blank($dto->verificationOverrideReason)) {
-                throw new AuthorizationException(
-                    'The selected household member is awaiting MSWD verification.',
-                );
-            }
+            throw new AuthorizationException(
+                'The selected household member is awaiting MSWD verification.',
+            );
         }
 
         return $member;
@@ -478,7 +481,7 @@ class StoreAssistanceRequestAction
             $dto->encodedByUserId !== null
             || $beneficiary->user_id !== $dto->submitterUserId
             || $member->household_id !== $beneficiary->household_id
-            || !$member->is_active
+            || ! $member->is_active
             || $member->relationship === 'head'
             || $member->is_verified_dependent
         ) {

@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
+use App\Core\ActionCenter\Enums\MswdVerificationStatus;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\UseCase\Assistance\ListAssistanceRequestAction;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestListResource;
@@ -38,8 +39,7 @@ class ListAssistanceRequestController extends Controller
 
     public function __construct(
         private readonly ListAssistanceRequestAction $listAssistanceRequestAction,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request): Response
     {
@@ -49,12 +49,13 @@ class ListAssistanceRequestController extends Controller
         // falls back to "no filter" rather than 422 — admins shouldn't get a
         // page-level error from a stray query-string param.
         $filters = $request->validate([
-            'status'             => ['nullable', Rule::in(self::ALLOWED_STATUSES)],
+            'status' => ['nullable', Rule::in(self::ALLOWED_STATUSES)],
+            'mswd_verification_status' => ['nullable', Rule::in(MswdVerificationStatus::values())],
             'assistance_type_id' => ['nullable', 'ulid', Rule::exists('ac_assistance_types', 'id')->where('municipal_id', $municipalId)],
-            'search'             => ['nullable', 'string', 'max:100'],
-            'date_from'          => ['nullable', 'date'],
-            'date_to'            => ['nullable', 'date', 'after_or_equal:date_from'],
-            'per_page'           => ['nullable', 'integer', 'min:5', 'max:100'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
         $assistanceRequests = $this->listAssistanceRequestAction->execute($municipalId, $filters);
@@ -70,10 +71,10 @@ class ListAssistanceRequestController extends Controller
         return Inertia::render('ActionCenter/Admin/RequestList/ActionCenterRequestList', [
             // Resource collection wraps the LengthAwarePaginator → `{ data, links, meta }`.
             // The frontend reads `meta.links` for pagination and `data` for rows.
-            'requests'        => AssistanceRequestListResource::collection($assistanceRequests),
+            'requests' => AssistanceRequestListResource::collection($assistanceRequests),
 
             // Echoed back so React can hydrate the filter inputs on reload.
-            'filters'         => $filters,
+            'filters' => $filters,
 
             // Dropdown options for the filter bar.
             'assistanceTypes' => $assistanceTypes,
@@ -81,7 +82,7 @@ class ListAssistanceRequestController extends Controller
             // Tells the shared React page to render the All Cases heading
             // and show the Status filter dropdown. See the companion
             // ListMyAssistanceRequestController for the 'mine' variant.
-            'viewMode'        => 'all',
+            'viewMode' => 'all',
         ]);
     }
 }

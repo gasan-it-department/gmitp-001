@@ -42,7 +42,7 @@ it('publishes and normalizes action center permission dependencies', function ()
     $actionCenter = collect($options['modules'])->firstWhere('value', 'action_center');
     $permissions = collect($actionCenter['permissions'])->keyBy('value');
 
-        expect($permissions[EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value]['dependencies'])
+    expect($permissions[EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value]['dependencies'])
         ->toBe([
             EnumPermissions::ACTION_CENTER_ACCESS->value,
             EnumPermissions::ACTION_CENTER_BENEFICIARIES_VIEW->value,
@@ -51,6 +51,17 @@ it('publishes and normalizes action center permission dependencies', function ()
         ->toBe([
             EnumPermissions::ACTION_CENTER_ACCESS->value,
             EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
+        ])
+        ->and($permissions[EnumPermissions::ACTION_CENTER_REQUESTS_INTAKE->value]['dependencies'])
+        ->toBe([
+            EnumPermissions::ACTION_CENTER_ACCESS->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
+        ])
+        ->and($permissions[EnumPermissions::ACTION_CENTER_REQUESTS_VERIFY->value]['dependencies'])
+        ->toBe([
+            EnumPermissions::ACTION_CENTER_ACCESS->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_PROCESS->value,
         ])
         ->and($permissions[EnumPermissions::ACTION_CENTER_REQUESTS_CORRECT->value]['label'])
         ->toBe('Action Center - Correct Approved Request Data')

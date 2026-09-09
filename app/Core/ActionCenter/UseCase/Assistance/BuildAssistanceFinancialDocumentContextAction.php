@@ -6,9 +6,11 @@ use App\Core\ActionCenter\Dto\Assistance\AssistanceFinancialDocumentContext;
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
+use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\Core\Municipality\Models\Municipality;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -18,6 +20,8 @@ class BuildAssistanceFinancialDocumentContextAction
 {
     public function __construct(
         private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
+        private readonly AssistanceMswdVerificationService $mswdVerification,
+        private readonly LockAssistanceRequestAction $lockRequest,
     ) {}
 
     public function execute(
@@ -25,38 +29,46 @@ class BuildAssistanceFinancialDocumentContextAction
         string $municipalId,
         AssistanceGeneratedDocument $document,
     ): AssistanceFinancialDocumentContext {
-        $request = AssistanceRequest::query()
-            ->with(['assistanceType', 'snapshot'])
-            ->whereKey($assistanceRequestId)
-            ->firstOr(function () {
-                throw new ModelNotFoundException('Assistance request not found.');
-            });
+        return DB::transaction(function () use ($assistanceRequestId, $municipalId, $document): AssistanceFinancialDocumentContext {
+            // Read the verification fingerprint while holding the same request
+            // lock used by evidence uploads, MSWD completion, and release.
+            // The returned DTO is then a coherent, immutable print snapshot.
+            $request = $this->lockRequest->execute(
+                $assistanceRequestId,
+                $municipalId,
+                [
+                    'assistanceType',
+                    'snapshot',
+                ],
+            );
 
-        $this->assertEligible($request, $municipalId, $document);
+            $this->assertEligible($request, $municipalId, $document);
+            $this->mswdVerification->assertCurrent($request);
 
-        $municipality = Municipality::query()
-            ->with('media')
-            ->find($municipalId);
+            $municipality = Municipality::query()
+                ->with('media')
+                ->find($municipalId);
 
-        return new AssistanceFinancialDocumentContext(
-            assistanceRequestId: $request->id,
-            transactionNumber: $request->transaction_number,
-            municipalityName: $municipality?->name ?? 'Municipality',
-            municipalCode: $municipality?->municipal_code,
-            municipalityLogoDataUri: $this->municipalityLogoDataUri(
-                $municipality?->getFirstMedia('logo'),
-            ),
-            payee: $this->payee($request),
-            address: $this->address($request, $municipality?->name),
-            barangay: $request->snapshot?->barangay ?? '',
-            assistanceType: $request->assistanceType?->name ?? 'Assistance',
-            assistanceTypeSlug: $request->assistanceType?->slug,
-            approvedAmount: (float) $request->amount_approved,
-            approvedYear: $request->approved_at?->year ?? now()->year,
-            assistedPerson: $this->assistedPerson($request),
-            submittedAt: $request->created_at,
-            releasedAt: $request->released_at,
-        );
+            return new AssistanceFinancialDocumentContext(
+                assistanceRequestId: $request->id,
+                transactionNumber: $request->transaction_number,
+                municipalityName: $municipality?->name ?? 'Municipality',
+                municipalCode: $municipality?->municipal_code,
+                municipalityLogoDataUri: $this->municipalityLogoDataUri(
+                    $municipality?->getFirstMedia('logo'),
+                ),
+                payee: $this->payee($request),
+                address: $this->address($request, $municipality?->name),
+                barangay: $request->snapshot?->barangay ?? '',
+                assistanceType: $request->assistanceType?->name ?? 'Assistance',
+                assistanceTypeSlug: $request->assistanceType?->slug,
+                approvedAmount: (float) $request->amount_approved,
+                approvedYear: $request->approved_at?->year ?? now()->year,
+                assistedPerson: $this->assistedPerson($request),
+                submittedAt: $request->created_at,
+                releasedAt: $request->released_at,
+            );
+        }, attempts: 3);
     }
 
     private function assertEligible(

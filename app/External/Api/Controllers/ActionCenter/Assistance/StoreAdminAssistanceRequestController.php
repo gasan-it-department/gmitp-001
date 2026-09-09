@@ -30,8 +30,7 @@ class StoreAdminAssistanceRequestController extends Controller
     public function __construct(
         private readonly StoreAssistanceRequestAction $storeAssistanceRequest,
         private readonly CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(StoreAdminAssistanceRequest $request): RedirectResponse
     {
@@ -43,7 +42,7 @@ class StoreAdminAssistanceRequestController extends Controller
         $beneficiary = Beneficiary::query()
             ->with(['household', 'religion'])
             ->whereKey($request->validated('beneficiary_id'))
-            ->whereHas('household', fn($q) => $q->where('municipal_id', $municipalId))
+            ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
             ->first();
 
         if ($beneficiary === null) {
@@ -64,10 +63,8 @@ class StoreAdminAssistanceRequestController extends Controller
                 ->withErrors(['assistance_type_id' => 'That assistance program is not available in your municipality.']);
         }
 
-        // Cooldown, in-flight, and verification eligibility is advisory for an
-        // admin and may be overridden with a reason. An inactive beneficiary or
-        // a household without a verified active Head remains a hard block in
-        // StoreAssistanceRequestAction because the household is not authoritative.
+        // Pending verification is normal admin intake. Other eligibility
+        // advisories remain audited; inactive/rejected records stay blocked.
         $eligibility = $this->checkEligibility->execute(
             $beneficiary,
             $assistanceType,
@@ -85,14 +82,16 @@ class StoreAdminAssistanceRequestController extends Controller
             );
 
             $created = $this->storeAssistanceRequest->execute($dto);
-        } catch (AuthorizationException | \DomainException $e) {
+        } catch (AuthorizationException|\DomainException $e) {
             return back()
                 ->withInput()
                 ->withErrors(['request' => $e->getMessage()]);
         }
 
-        // The officer filed despite a standing eligibility or verification gate.
-        if (!$eligibility->eligible) {
+        // Pending identity/dependent review is not an administrator override.
+        if (! $eligibility->eligible && ! in_array($eligibility->reason, [
+            'identity_unverified', 'dependent_unverified', 'household_unverified',
+        ], true)) {
             activity('assistance_request')
                 ->performedOn($created)
                 ->causedBy(Auth::user())

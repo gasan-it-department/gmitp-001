@@ -2,6 +2,7 @@
 
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
+use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
@@ -54,6 +55,14 @@ class ShowAssistanceRequestProfileController extends Controller
             'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
 
             'householdAssessmentPreview' => $data['householdAssessmentPreview'],
+
+            'mswdVerification' => $data['mswdVerification'],
+
+            'documentChecks' => $data['documentChecks'],
+
+            'presentedCopyOptions' => PhysicalCopyRequirement::presentedOptions(),
+
+            'mswdReviewerOptions' => $data['mswdReviewerOptions'],
 
             'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
 

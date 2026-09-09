@@ -19,6 +19,9 @@ class ListAssistanceRequestAction
      *  - per_page             : rows per page, capped at 100 (default 15)
      *  - reviewed_by_user_id  : ULID of the reviewer — narrows the list to cases
      *                           assigned to one admin. Used by the "My Cases" page
+     *  - mswd_verification_status : the independent MSWD verification state
+     *  - statuses / mswd_verification_statuses : server-owned multi-value
+     *                           scopes used by the personal MSWD worklist
      *                           to render the personal worklist.
      *
      * @param  array{
@@ -29,6 +32,9 @@ class ListAssistanceRequestAction
      *     date_to?:             string|null,
      *     per_page?:            int|string|null,
      *     reviewed_by_user_id?: string|null,
+     *     mswd_verification_status?: string|null,
+     *     statuses?: list<string>|null,
+     *     mswd_verification_statuses?: list<string>|null,
      * } $filters
      */
     public function execute(string $municipalId, array $filters = []): LengthAwarePaginator
@@ -53,6 +59,17 @@ class ListAssistanceRequestAction
         // ── Status ────────────────────────────────────────────────────────────
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+        if (! empty($filters['statuses']) && is_array($filters['statuses'])) {
+            $query->whereIn('status', $filters['statuses']);
+        }
+
+        // ── Independent MSWD verification state ────────────────────────────
+        if (! empty($filters['mswd_verification_status'])) {
+            $query->where('mswd_verification_status', $filters['mswd_verification_status']);
+        }
+        if (! empty($filters['mswd_verification_statuses']) && is_array($filters['mswd_verification_statuses'])) {
+            $query->whereIn('mswd_verification_status', $filters['mswd_verification_statuses']);
         }
 
         // ── Assistance type ───────────────────────────────────────────────────

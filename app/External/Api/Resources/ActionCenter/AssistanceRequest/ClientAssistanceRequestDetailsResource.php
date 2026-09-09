@@ -3,8 +3,8 @@
 namespace App\External\Api\Resources\ActionCenter\AssistanceRequest;
 
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
-use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use App\Core\ActionCenter\Enums\EducationalAttainment;
+use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,6 +22,7 @@ class ClientAssistanceRequestDetailsResource extends JsonResource
             'id' => $this->id,
             'transaction_number' => $this->transaction_number,
             'status' => $this->status,
+            'mswd_verification_status' => $this->mswd_verification_status?->value,
             'assistance_type' => $this->whenLoaded('assistanceType', fn () => [
                 'id' => $this->assistanceType->id,
                 'name' => $this->assistanceType->name,

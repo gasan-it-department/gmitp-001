@@ -40,6 +40,7 @@ class AssistanceRequestListResource extends JsonResource
             // Raw status string; frontend handles label/colour mapping for i18n.
             // Values: pending | under_review | approved | released | rejected | cancelled
             'status' => $this->status,
+            'mswd_verification_status' => $this->mswd_verification_status?->value,
 
             // ── Program ──────────────────────────────────────────────────────
             'assistance_type_id' => $this->assistance_type_id,

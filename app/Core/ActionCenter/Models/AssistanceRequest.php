@@ -3,6 +3,7 @@
 namespace App\Core\ActionCenter\Models;
 
 use App\Core\ActionCenter\Enums\AssistanceStatus;
+use App\Core\ActionCenter\Enums\MswdVerificationStatus;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\Users\Models\User;
 use Carbon\CarbonImmutable;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -58,6 +60,21 @@ class AssistanceRequest extends Model implements HasMedia
     /** Allows the dedicated pre-release household-assessment correction only. */
     private bool $allowHouseholdAssessmentRefresh = false;
 
+    /** Allows only the dedicated MSWD verification lifecycle fields. */
+    private bool $allowMswdVerificationMutation = false;
+
+    private const MSWD_VERIFICATION_FIELDS = [
+        'reviewed_by_user_id',
+        'reviewed_at',
+        'mswd_verification_status',
+        'mswd_verified_by_user_id',
+        'mswd_verified_at',
+        'mswd_verification_notes',
+        'mswd_verification_fingerprint',
+        'document_requirements_captured_at',
+        'updated_at',
+    ];
+
     protected $table = 'ac_assistance_requests';
 
     protected $keyType = 'string';
@@ -71,6 +88,7 @@ class AssistanceRequest extends Model implements HasMedia
         'household_id',
         'encoded_by_user_id',
         'reviewed_by_user_id',
+        'mswd_verified_by_user_id',
         'approved_by_user_id',
         'rejected_by_user_id',
         'cancelled_by_user_id',
@@ -82,9 +100,14 @@ class AssistanceRequest extends Model implements HasMedia
         'amount_approved',
         'transaction_number',
         'status',
+        'mswd_verification_status',
         'description',
         'remarks',
+        'mswd_verification_notes',
+        'mswd_verification_fingerprint',
         'reviewed_at',
+        'mswd_verified_at',
+        'document_requirements_captured_at',
         'approved_at',
         'released_at',
         'rejected_at',
@@ -95,8 +118,11 @@ class AssistanceRequest extends Model implements HasMedia
 
     protected $casts = [
         'status' => AssistanceStatus::class,
+        'mswd_verification_status' => MswdVerificationStatus::class,
         'amount_approved' => 'decimal:2',
         'reviewed_at' => 'datetime',
+        'mswd_verified_at' => 'datetime',
+        'document_requirements_captured_at' => 'datetime',
         'approved_at' => 'datetime',
         'released_at' => 'datetime',
         'rejected_at' => 'datetime',
@@ -114,6 +140,10 @@ class AssistanceRequest extends Model implements HasMedia
                 'remarks',
                 'reviewed_by_user_id',
                 'reviewed_at',
+                'mswd_verification_status',
+                'mswd_verified_by_user_id',
+                'mswd_verified_at',
+                'mswd_verification_notes',
                 'approved_by_user_id',
                 'rejected_by_user_id',
                 'cancelled_by_user_id',
@@ -135,6 +165,12 @@ class AssistanceRequest extends Model implements HasMedia
             $dirtyFields = array_keys($request->getDirty());
 
             if ($dirtyFields === []) {
+                return;
+            }
+
+            if ($request->allowMswdVerificationMutation
+                && ! $originalStatus?->isTerminal()
+                && array_diff($dirtyFields, self::MSWD_VERIFICATION_FIELDS) === []) {
                 return;
             }
 
@@ -209,7 +245,7 @@ class AssistanceRequest extends Model implements HasMedia
      * Replace only the MSWD assessment snapshot. The Core action owns all
      * status, tenant, release, and authorization checks before calling this.
      *
-     * @param array<string, mixed> $assessment
+     * @param  array<string, mixed>  $assessment
      */
     public function replaceHouseholdAssessment(array $assessment): void
     {
@@ -222,6 +258,28 @@ class AssistanceRequest extends Model implements HasMedia
             $this->update(['metadata' => $metadata]);
         } finally {
             $this->allowHouseholdAssessmentRefresh = false;
+        }
+    }
+
+    /**
+     * Mutate the independent MSWD verification lifecycle without opening a
+     * general edit path for approved financial records. Callers must enforce
+     * all tenant, reviewer, state, and evidence guards before this method.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateMswdVerification(array $attributes): void
+    {
+        if (array_diff(array_keys($attributes), self::MSWD_VERIFICATION_FIELDS) !== []) {
+            throw new \InvalidArgumentException('Only MSWD verification fields may be changed through this workflow.');
+        }
+
+        $this->allowMswdVerificationMutation = true;
+
+        try {
+            $this->update($attributes);
+        } finally {
+            $this->allowMswdVerificationMutation = false;
         }
     }
 
@@ -245,6 +303,13 @@ class AssistanceRequest extends Model implements HasMedia
         return $this->hasOne(AssistanceRequestSnapshot::class, 'assistance_request_id');
     }
 
+    public function documentChecks(): HasMany
+    {
+        return $this->hasMany(AssistanceRequestDocumentCheck::class, 'assistance_request_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
     public function onBehalfHouseholdMember(): BelongsTo
     {
         return $this->belongsTo(HouseholdMember::class, 'on_behalf_household_member_id');
@@ -263,6 +328,11 @@ class AssistanceRequest extends Model implements HasMedia
     public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+
+    public function mswdVerifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'mswd_verified_by_user_id');
     }
 
     public function approvedBy(): BelongsTo

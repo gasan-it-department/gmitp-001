@@ -32,6 +32,7 @@ interface AssistanceRequestDetails {
     id: string;
     transaction_number: string;
     status: string;
+    mswd_verification_status: 'pending' | 'under_review' | 'needs_correction' | 'verified' | null;
     assistance_type: {
         id: string;
         name: string;
@@ -130,10 +131,10 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
         iconClass: 'bg-blue-100 text-blue-700',
     },
     approved: {
-        label: 'Approved',
-        title: 'Your assistance request was approved',
+        label: 'Amount approved',
+        title: 'The assistance amount was approved',
         description:
-            'Wait for the release instructions from MSWD. Bring a valid ID and your transaction number when you are asked to claim the assistance.',
+            'MSWD still needs to complete the document and eligibility verification. Wait for MSWD release instructions and bring your valid ID and transaction number when asked to claim the assistance.',
         icon: CheckCircle2,
         accentClass: 'bg-emerald-500',
         badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -181,6 +182,32 @@ const STATUS_PRESENTATIONS: Record<string, StatusPresentation> = {
         iconClass: 'bg-white text-slate-600',
     },
 };
+
+function statusPresentation(data: AssistanceRequestDetails): StatusPresentation {
+    const presentation = STATUS_PRESENTATIONS[data.status?.toLowerCase()] ?? STATUS_PRESENTATIONS.default;
+
+    if (data.status?.toLowerCase() !== 'approved') {
+        return presentation;
+    }
+
+    if (data.mswd_verification_status === 'verified') {
+        return {
+            ...presentation,
+            title: 'MSWD verification is complete',
+            description: 'MSWD has completed verification. Wait for release instructions and bring your valid ID and transaction number when asked to claim the assistance.',
+        };
+    }
+
+    if (data.mswd_verification_status === 'needs_correction') {
+        return {
+            ...presentation,
+            title: 'MSWD needs additional information',
+            description: 'The assistance amount remains approved, but MSWD needs additional information or documents before release. Follow the office instructions and bring your transaction number.',
+        };
+    }
+
+    return presentation;
+}
 
 function formatDateTime(value: string | null): string {
     if (!value) {
@@ -266,15 +293,34 @@ function buildTimeline(data: AssistanceRequestDetails): TimelineEntry[] {
             break;
         case 'approved':
             entries.push({
-                label: 'Request approved',
+                label: 'Amount approved',
                 detail: 'The approved amount has been recorded.',
                 date: data.approved_at,
                 state: 'complete',
             });
+            entries.push(
+                data.mswd_verification_status === 'verified'
+                    ? {
+                        label: 'MSWD verification complete',
+                        detail: 'MSWD completed the document and eligibility verification.',
+                        state: 'complete',
+                    }
+                    : data.mswd_verification_status === 'needs_correction'
+                        ? {
+                            label: 'MSWD correction needed',
+                            detail: 'MSWD needs additional information or documents before release.',
+                            state: 'current',
+                        }
+                        : {
+                            label: 'MSWD verification',
+                            detail: 'MSWD is completing the document and eligibility verification.',
+                            state: 'current',
+                        },
+            );
             entries.push({
                 label: 'Release of assistance',
                 detail: 'Wait for the release instructions from MSWD.',
-                state: 'current',
+                state: data.mswd_verification_status === 'verified' ? 'current' : 'upcoming',
             });
             break;
         case 'released':
@@ -394,7 +440,7 @@ function RequirementsSection({
                                                 isRequired ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
                                             }`}
                                         >
-                                            {isRequired ? 'Required before approval' : 'If applicable'}
+                                            {isRequired ? 'Required for MSWD verification' : 'If applicable'}
                                         </span>
                                         {document.physical_copy_requirement !== 'unspecified' && (
                                             <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
@@ -478,7 +524,7 @@ export default function AssistanceDetails({ request }: Props) {
     const data = request.data;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const [copied, setCopied] = useState(false);
-    const status = STATUS_PRESENTATIONS[data.status?.toLowerCase()] ?? STATUS_PRESENTATIONS.default;
+    const status = statusPresentation(data);
     const StatusIcon = status.icon;
     const recordedDocumentKeys = data.documents
         .map((document) => document.custom_properties?.document_key)
@@ -555,7 +601,7 @@ export default function AssistanceDetails({ request }: Props) {
                                     <Banknote className="h-4 w-4" aria-hidden="true" />
                                     {data.status === 'cancelled' && data.amount_approved !== null
                                         ? 'Previously approved assistance'
-                                        : 'Approved assistance'}
+                                    : 'Authorized assistance amount'}
                                 </p>
                                 <p
                                     className={`mt-2 font-bold break-words ${data.amount_approved === null ? 'text-base text-slate-700' : 'text-2xl text-emerald-700'}`}
@@ -563,7 +609,7 @@ export default function AssistanceDetails({ request }: Props) {
                                     {formatCurrency(data.amount_approved)}
                                 </p>
                                 {data.amount_approved === null && (
-                                    <p className="mt-1 text-xs leading-5 text-slate-500">The final amount is set after MSWD assessment.</p>
+                                    <p className="mt-1 text-xs leading-5 text-slate-500">The Mayor-authorized amount has not been recorded yet.</p>
                                 )}
                             </div>
                         </div>

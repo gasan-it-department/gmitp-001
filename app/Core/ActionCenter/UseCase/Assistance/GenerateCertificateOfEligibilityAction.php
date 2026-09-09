@@ -10,10 +10,10 @@ use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
+use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\Core\Municipality\Models\Municipality;
 use Carbon\CarbonImmutable;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -25,6 +25,8 @@ class GenerateCertificateOfEligibilityAction
     public function __construct(
         private readonly FinancialDocumentDefaultsProvider $defaults,
         private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
+        private readonly AssistanceMswdVerificationService $mswdVerification,
+        private readonly LockAssistanceRequestAction $lockRequest,
     ) {}
 
     public function formData(
@@ -90,53 +92,45 @@ class GenerateCertificateOfEligibilityAction
         string $assistanceRequestId,
         string $municipalId,
     ): array {
-        $request = AssistanceRequest::query()
-            ->with(['assistanceType', 'snapshot'])
-            ->whereKey($assistanceRequestId)
-            ->firstOr(function () {
-                throw new ModelNotFoundException('Assistance request not found.');
-            });
-
-        if ($request->municipal_id !== $municipalId) {
-            throw new AuthorizationException(
-                'You may only generate certificates for assistance requests in your own municipality.',
+        return DB::transaction(function () use ($assistanceRequestId, $municipalId): array {
+            $request = $this->lockRequest->execute(
+                $assistanceRequestId,
+                $municipalId,
+                [
+                    'assistanceType',
+                    'snapshot',
+                ],
             );
-        }
 
-        $this->ensureDocumentEnabled->execute(
-            $request,
-            AssistanceGeneratedDocument::CertificateOfEligibility,
-        );
-
-        $underReview = $request->status === AssistanceStatus::UnderReview
-            && $request->reviewed_at !== null;
-        $completedReview = in_array(
-            $request->status,
-            [AssistanceStatus::Approved, AssistanceStatus::Released],
-            true,
-        );
-
-        if (! $underReview && ! $completedReview) {
-            throw new \DomainException(
-                'A Certificate of Eligibility can only be generated after the case review has started.',
+            $this->ensureDocumentEnabled->execute(
+                $request,
+                AssistanceGeneratedDocument::CertificateOfEligibility,
             );
-        }
 
-        if ($request->snapshot === null) {
-            throw new \DomainException(
-                'The request snapshot is missing and the certificate cannot be generated safely.',
-            );
-        }
+            if (! $request->status->isOpen() && $request->status !== AssistanceStatus::Released) {
+                throw new \DomainException(
+                    'A Certificate of Eligibility cannot be generated for a closed, unreleased request.',
+                );
+            }
 
-        $municipality = Municipality::query()
-            ->with(['media', 'settings'])
-            ->find($municipalId);
+            $this->mswdVerification->assertCurrent($request);
 
-        return [
-            $request,
-            $municipality,
-            $this->provinceName($municipality),
-        ];
+            if ($request->snapshot === null) {
+                throw new \DomainException(
+                    'The request snapshot is missing and the certificate cannot be generated safely.',
+                );
+            }
+
+            $municipality = Municipality::query()
+                ->with(['media', 'settings'])
+                ->find($municipalId);
+
+            return [
+                $request,
+                $municipality,
+                $this->provinceName($municipality),
+            ];
+        }, attempts: 3);
     }
 
     /** @return array{name: string, birth_date: ?CarbonImmutable, civil_status: ?string} */

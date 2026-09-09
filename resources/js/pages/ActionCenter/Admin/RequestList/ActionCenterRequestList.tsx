@@ -20,6 +20,7 @@ interface AssistanceTypeOption {
 
 interface Filters {
     status?: string | null;
+    mswd_verification_status?: string | null;
     assistance_type_id?: string | null;
     search?: string | null;
     date_from?: string | null;
@@ -45,6 +46,13 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: 'cancelled', label: 'Cancelled' },
 ];
 
+const MSWD_STATUS_OPTIONS: { value: string; label: string }[] = [
+    { value: 'pending', label: 'MSWD Pending' },
+    { value: 'under_review', label: 'MSWD Under Review' },
+    { value: 'needs_correction', label: 'MSWD Needs Correction' },
+    { value: 'verified', label: 'MSWD Verified' },
+];
+
 // Radix Select does not accept an empty string as an item value.
 const ALL = '__all__';
 
@@ -57,6 +65,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
 
     const [search, setSearch] = useState<string>(filters.search ?? '');
     const [status, setStatus] = useState<string>(filters.status ?? ALL);
+    const [mswdVerificationStatus, setMswdVerificationStatus] = useState<string>(filters.mswd_verification_status ?? ALL);
     const [assistanceTypeId, setAssistanceTypeId] = useState<string>(filters.assistance_type_id ?? ALL);
     const [dateFrom, setDateFrom] = useState<string>(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState<string>(filters.date_to ?? '');
@@ -80,6 +89,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
     const applyFilters = (overrides: Partial<Filters>) => {
         const next: Record<string, string | undefined> = {
             status: toQuery(status, overrides.status),
+            mswd_verification_status: toQuery(mswdVerificationStatus, overrides.mswd_verification_status),
             assistance_type_id: toQuery(assistanceTypeId, overrides.assistance_type_id),
             search: firstDefined(overrides.search, search) || undefined,
             date_from: firstDefined(overrides.date_from, dateFrom) || undefined,
@@ -96,6 +106,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
     const clearFilters = () => {
         setSearch('');
         setStatus(ALL);
+        setMswdVerificationStatus(ALL);
         setAssistanceTypeId(ALL);
         setDateFrom('');
         setDateTo('');
@@ -104,8 +115,8 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
     };
 
     const rows = requests.data ?? [];
-    const hasActiveFilters = Boolean(search.trim() || (!isMine && status !== ALL) || assistanceTypeId !== ALL || dateFrom || dateTo);
-    const advancedFilterCount = [!isMine && status !== ALL, assistanceTypeId !== ALL, Boolean(dateFrom), Boolean(dateTo)].filter(Boolean).length;
+    const hasActiveFilters = Boolean(search.trim() || (!isMine && status !== ALL) || (!isMine && mswdVerificationStatus !== ALL) || assistanceTypeId !== ALL || dateFrom || dateTo);
+    const advancedFilterCount = [!isMine && status !== ALL, !isMine && mswdVerificationStatus !== ALL, assistanceTypeId !== ALL, Boolean(dateFrom), Boolean(dateTo)].filter(Boolean).length;
 
     const handleView = (row: AssistanceRequestListItem) => {
         router.get(requestUrl(row));
@@ -186,7 +197,7 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
 
                     <div
                         id="assistance-request-advanced-filters"
-                        className={`${advancedFiltersOpen ? 'grid' : 'hidden'} mt-3 grid-cols-1 items-end gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(160px,0.8fr)_minmax(220px,1fr)_minmax(150px,0.75fr)_minmax(150px,0.75fr)_auto]`}
+                        className={`${advancedFiltersOpen ? 'grid' : 'hidden'} mt-3 grid-cols-1 items-end gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(145px,0.7fr)_minmax(165px,0.8fr)_minmax(220px,1fr)_minmax(150px,0.75fr)_minmax(150px,0.75fr)_auto]`}
                     >
                         {!isMine && (
                             <div className="min-w-0">
@@ -208,6 +219,25 @@ export default function ActionCenterRequestList({ requests, filters, assistanceT
                                                 {option.label}
                                             </SelectItem>
                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {!isMine && (
+                            <div className="min-w-0">
+                                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">MSWD verification</label>
+                                <Select
+                                    value={mswdVerificationStatus}
+                                    onValueChange={(value) => {
+                                        setMswdVerificationStatus(value);
+                                        applyFilters({ mswd_verification_status: value });
+                                    }}
+                                >
+                                    <SelectTrigger className="h-10 w-full"><SelectValue placeholder="All MSWD states" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL}>All MSWD states</SelectItem>
+                                        {MSWD_STATUS_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>

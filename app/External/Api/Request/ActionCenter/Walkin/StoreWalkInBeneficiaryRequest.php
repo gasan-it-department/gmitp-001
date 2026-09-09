@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Enums\Sex;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Core\Users\Enums\EnumPermissions;
 use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,6 +31,13 @@ use Illuminate\Validation\Rule;
  */
 class StoreWalkInBeneficiaryRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->user()?->can(EnumPermissions::ACTION_CENTER_BENEFICIARIES_VERIFY->value)) {
+            $this->merge(['verify_now' => false]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;

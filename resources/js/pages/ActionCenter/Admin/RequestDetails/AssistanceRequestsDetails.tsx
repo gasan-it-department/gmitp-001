@@ -18,7 +18,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
-import { AssistanceGeneratedDocument, AssistanceRequestFormDefinition, PhysicalCopyRequirement } from '@/Core/Types/ActionCenter/assistance';
+import {
+    AssistanceDocumentCheck,
+    AssistanceGeneratedDocument,
+    AssistanceMswdVerification,
+    AssistanceRequestFormDefinition,
+    AssistanceReviewActor,
+    PresentedCopyOption,
+} from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
 import Utility from '@/pages/Utility/Utility';
@@ -32,7 +39,6 @@ import {
     BadgeCheck,
     CalendarPlus,
     CheckCircle2,
-    Circle,
     ClipboardCheck,
     ClockArrowUp,
     FilePenLine,
@@ -55,13 +61,16 @@ import {
     Users,
     XCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
 import CorrectAssistanceRequestFilerNameDialog from './Components/CorrectAssistanceRequestFilerNameDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
+import MswdDocuments from './Components/MswdDocuments';
+import MswdVerificationBadge from './Components/MswdVerificationBadge';
 import RejectRequestDialog from './Components/RejectRequestDialog';
 import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
+import ReplaceAdditionalDocumentDialog from './Components/ReplaceAdditionalDocumentDialog';
 import SyncApprovedHouseholdDialog, { type HouseholdAssessmentPreview } from './Components/SyncApprovedHouseholdDialog';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -194,16 +203,6 @@ interface AssistanceRequestDetail {
     updated_at: string | null;
 }
 
-interface RequiredDocument {
-    key: string;
-    label: string;
-    description: string | null;
-    is_required: boolean;
-    physical_copy_requirement: PhysicalCopyRequirement;
-    physical_copy_requirement_label: string;
-    sort_order: number;
-}
-
 interface RecentHistoryRow {
     id: string;
     transaction_number: string;
@@ -225,12 +224,15 @@ interface ActivityEntry {
 
 interface Props {
     request: { data: AssistanceRequestDetail } | AssistanceRequestDetail;
-    requiredDocuments: { data: RequiredDocument[] };
     recentHistory: { data: RecentHistoryRow[] };
     activityLog: { data: ActivityEntry[] };
     householdMembers: { data: HouseholdMemberBlock[] }; // 🚀 Injected family structure
     householdAssessmentPreview: HouseholdAssessmentPreview;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
+    mswdVerification: AssistanceMswdVerification;
+    documentChecks: AssistanceDocumentCheck[];
+    presentedCopyOptions: PresentedCopyOption[];
+    mswdReviewerOptions: AssistanceReviewActor[];
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -246,34 +248,27 @@ const STATUS_BADGE: Record<string, string> = {
     cancelled: 'bg-gray-100    text-gray-700    ring-1 ring-gray-200',
 };
 
-const humanizeStatus = (s: string) => s.replace(/_/g, ' ');
+const humanizeStatus = (s: string) => (s === 'approved' ? 'Amount Approved' : s.replace(/_/g, ' '));
 const statusClass = (s: string): string => STATUS_BADGE[s] ?? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
+const IDENTITY_DOCUMENT_KEYS = new Set(['valid_id_front', 'valid_id_back', 'recipient_valid_id_front', 'recipient_valid_id_back']);
 
 export default function AssistanceRequestsDetails({
     request,
-    requiredDocuments,
     recentHistory,
     activityLog,
     householdMembers,
     householdAssessmentPreview,
     crossMunicipalityMatches,
+    mswdVerification,
+    documentChecks,
+    presentedCopyOptions,
+    mswdReviewerOptions,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
     const { can } = usePermissions();
     const utils = Utility();
     const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
-    const filerIdIsRequired = requiredDocuments.data.some(
-        (document) => ['valid_id_front', 'valid_id_back'].includes(document.key) && document.is_required,
-    );
-    const recipientIdIsRequired =
-        detail.on_behalf !== null &&
-        filerIdIsRequired &&
-        detail.assistance_type?.request_form.subject_type !== 'deceased' &&
-        !detail.on_behalf.recipient_id_exception;
-    const requiredDocumentsData = requiredDocuments.data
-        .filter((document) => !document.key.startsWith('recipient_valid_id_') || detail.on_behalf !== null)
-        .map((document) => (document.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...document, is_required: true } : document));
     const recentHistoryData = recentHistory.data;
     const activityLogData = activityLog.data;
     const householdMembersData = householdMembers.data;
@@ -282,6 +277,8 @@ export default function AssistanceRequestsDetails({
     const canViewBeneficiaries = can('action_center.beneficiaries.view');
     const canManageBeneficiaries = can('action_center.beneficiaries.manage');
     const canProcessRequests = can('action_center.requests.process');
+    const canIntakeRequests = can('action_center.requests.intake');
+    const canVerifyRequests = can('action_center.requests.verify');
     const canDecideRequests = can('action_center.requests.decide');
     const canReleaseRequests = can('action_center.requests.release');
     const canCorrectRequests = can('action_center.requests.correct');
@@ -294,28 +291,41 @@ export default function AssistanceRequestsDetails({
     const [isFilerNameCorrectionOpen, setIsFilerNameCorrectionOpen] = useState(false);
     const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
     const [isApprovedHouseholdSyncOpen, setIsApprovedHouseholdSyncOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('intake');
+    const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+    const [additionalDocumentToReplace, setAdditionalDocumentToReplace] = useState<DocumentBlock | null>(null);
+    const [isStartingMswdReview, setIsStartingMswdReview] = useState(false);
+    const isStartingMswdReviewRef = useRef(false);
 
     // Every upload lives in the single spatie collection "documents"; the slot
     // it fills is in custom_properties.document_key — NOT collection_name. Match
     // on that, falling back to collection_name for any legacy/unkeyed media.
     const documentKeyOf = (d: DocumentBlock) => (d.custom_properties?.document_key as string | undefined) ?? d.collection_name;
-    const uploadedByKey = new Map((detail.documents ?? []).map((d) => [documentKeyOf(d), d]));
-    const missingRequiredDocuments = requiredDocumentsData.filter((document) => document.is_required && !uploadedByKey.has(document.key));
-    const hasMissingRequiredDocuments = missingRequiredDocuments.length > 0;
     const requiresDateOfDeath =
         detail.assistance_type?.request_form.fields.some((field) => field.key === 'on_behalf_date_of_death' && field.required) ?? false;
     const hasMissingDateOfDeath = requiresDateOfDeath && !detail.on_behalf?.date_of_death;
-    const approvalBlockReason = hasMissingDateOfDeath
-        ? 'Enter the Date of Death in Edit Request before approval.'
-        : hasMissingRequiredDocuments
-          ? 'Upload all required documents before approval.'
-          : null;
+    const approvalBlockReason = hasMissingDateOfDeath ? 'Enter the Date of Death in Edit Request before approval.' : null;
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
-    const canEditRequest = requestIsEditable && canProcessRequests;
-    const canRefreshUnderReviewHousehold = detail.status === 'under_review' && isMine && canProcessRequests;
-    const canCorrectApprovedHousehold = detail.status === 'approved' && !detail.has_release_artifacts && canCorrectRequests;
-    const canRefreshHouseholdAssessment = canRefreshUnderReviewHousehold || canCorrectApprovedHousehold;
-    const canManageInterviewHousehold = canRefreshUnderReviewHousehold && canManageBeneficiaries;
+    const canEditRequest = requestIsEditable && (canIntakeRequests || canProcessRequests);
+    const verificationIsComplete = mswdVerification.status === 'verified';
+    const canUploadRequestDocuments =
+        (canIntakeRequests || canProcessRequests) &&
+        ['pending', 'under_review', 'needs_correction'].includes(mswdVerification.status ?? 'pending') &&
+        ['pending', 'under_review', 'approved'].includes(detail.status) &&
+        !detail.has_release_artifacts;
+    const canRefreshAssignedHousehold =
+        ['under_review', 'approved'].includes(detail.status) &&
+        !detail.has_release_artifacts &&
+        isMine &&
+        canProcessRequests &&
+        !verificationIsComplete;
+    const canCorrectCompletedHousehold =
+        ['under_review', 'approved'].includes(detail.status) && !detail.has_release_artifacts && verificationIsComplete && canCorrectRequests;
+    const canRefreshHouseholdAssessment = canRefreshAssignedHousehold || canCorrectCompletedHousehold;
+    const householdAssessmentHasChanges =
+        householdAssessmentPreview.added.length > 0 || householdAssessmentPreview.removed.length > 0 || householdAssessmentPreview.changed.length > 0;
+    const householdAssessmentNeedsSync = detail.household_assessment === null || householdAssessmentHasChanges;
+    const canManageInterviewHousehold = canRefreshAssignedHousehold && canManageBeneficiaries;
     const canCorrectMissingDateOfDeath =
         canCorrectRequests &&
         detail.status === 'approved' &&
@@ -323,37 +333,45 @@ export default function AssistanceRequestsDetails({
         detail.on_behalf !== null &&
         !detail.filed_for_self &&
         !detail.on_behalf.date_of_death;
-    const filerNameCorrection = detail.filer_name_correction;
-    const canApplyFilerNameCorrection =
-        !detail.has_release_artifacts &&
-        ((detail.status === 'pending' && canProcessRequests) ||
-            (detail.status === 'under_review' && canProcessRequests && isMine) ||
-            (detail.status === 'approved' && canCorrectRequests));
-    const showFilerNameDifference =
-        filerNameCorrection?.has_difference === true &&
-        ['pending', 'under_review', 'approved'].includes(detail.status) &&
-        !detail.has_release_artifacts &&
-        (canProcessRequests || canCorrectRequests);
-    const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
+    const checkedDocumentKeys = new Set(documentChecks.map((check) => check.document_key));
+    const extraDocuments = (detail.documents ?? []).filter((document) => !checkedDocumentKeys.has(documentKeyOf(document)));
     const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
     const enabledGeneratedDocuments = new Set(detail.assistance_type?.enabled_generated_documents ?? []);
     const generatorIsEnabled = (document: AssistanceGeneratedDocument) => enabledGeneratedDocuments.has(document);
+    const verificationAllowsFinalDocuments =
+        (mswdVerification.status === 'verified' && mswdVerification.is_current) || (detail.status === 'released' && mswdVerification.status === null);
     const canGenerateAcknowledgementReceipt =
-        generatorIsEnabled('acknowledgement_receipt') && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+        generatorIsEnabled('acknowledgement_receipt') &&
+        receiptStatusIsEligible &&
+        detail.amount_approved !== null &&
+        canProcessRequests &&
+        verificationAllowsFinalDocuments;
     const canGenerateObligationRequest =
-        generatorIsEnabled('obligation_request') && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+        generatorIsEnabled('obligation_request') &&
+        receiptStatusIsEligible &&
+        detail.amount_approved !== null &&
+        canProcessRequests &&
+        verificationAllowsFinalDocuments;
     const canGenerateDisbursementVoucher =
-        generatorIsEnabled('disbursement_voucher') && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+        generatorIsEnabled('disbursement_voucher') &&
+        receiptStatusIsEligible &&
+        detail.amount_approved !== null &&
+        canProcessRequests &&
+        verificationAllowsFinalDocuments;
     const processingPacketDocumentCount = ['certificate_of_eligibility', 'obligation_request', 'disbursement_voucher'].filter((document) =>
         generatorIsEnabled(document as AssistanceGeneratedDocument),
     ).length;
     const canGenerateFinancialDocumentPacket =
-        processingPacketDocumentCount >= 2 && receiptStatusIsEligible && detail.amount_approved !== null && canProcessRequests;
+        processingPacketDocumentCount >= 2 &&
+        receiptStatusIsEligible &&
+        detail.amount_approved !== null &&
+        canProcessRequests &&
+        verificationAllowsFinalDocuments;
     const canGenerateCertificateOfEligibility =
         generatorIsEnabled('certificate_of_eligibility') &&
         canProcessRequests &&
         ['under_review', 'approved', 'released'].includes(detail.status) &&
-        (detail.status !== 'under_review' || detail.reviewed_at !== null);
+        verificationAllowsFinalDocuments;
     const canGenerateRequestIntakeSheet = generatorIsEnabled('request_intake_sheet') && canProcessRequests;
     const acknowledgementReceiptUrl = ShowAcknowledgementReceiptGeneratorController.url({
         municipality: currentMunicipality.slug,
@@ -395,18 +413,27 @@ export default function AssistanceRequestsDetails({
     };
 
     const handlePickUp = () => {
+        if (isStartingMswdReviewRef.current) return;
+
+        isStartingMswdReviewRef.current = true;
+        setIsStartingMswdReview(true);
+
         router.post(
             actionCenter.assistance.startReview.url({ assistanceRequestId: detail.id }),
             {},
             {
                 headers: { 'X-Municipality-Slug': currentMunicipality.slug },
                 preserveScroll: true,
+                onFinish: () => {
+                    isStartingMswdReviewRef.current = false;
+                    setIsStartingMswdReview(false);
+                },
             },
         );
     };
 
     const refreshHouseholdAssessment = () => {
-        if (detail.status === 'approved') {
+        if (canCorrectCompletedHousehold) {
             setIsApprovedHouseholdSyncOpen(true);
             return;
         }
@@ -456,6 +483,7 @@ export default function AssistanceRequestsDetails({
                                     >
                                         {humanizeStatus(detail.status)}
                                     </span>
+                                    <MswdVerificationBadge status={mswdVerification.status} isCurrent={mswdVerification.is_current} />
                                     {detail.is_walkin && (
                                         <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-bold tracking-wide text-purple-800 uppercase ring-1 ring-purple-200">
                                             walk-in
@@ -478,7 +506,13 @@ export default function AssistanceRequestsDetails({
                                         reviewerName={detail.reviewed_by?.name ?? null}
                                         acknowledgementReceiptUrl={acknowledgementReceiptUrl}
                                         approvalBlockReason={approvalBlockReason}
+                                        releaseBlockReason={
+                                            verificationAllowsFinalDocuments ? null : 'Complete current MSWD verification before physical release.'
+                                        }
                                         canProcess={canProcessRequests}
+                                        canVerify={canVerifyRequests}
+                                        mswdVerificationStatus={mswdVerification.status}
+                                        isStartingMswdReview={isStartingMswdReview}
                                         canDecide={canDecideRequests}
                                         canRelease={canReleaseRequests}
                                         canGenerateAcknowledgementReceipt={canGenerateAcknowledgementReceipt}
@@ -534,73 +568,52 @@ export default function AssistanceRequestsDetails({
                     </div>
                 )}
 
-                {showFilerNameDifference && filerNameCorrection && (
+                {mswdVerification.blockers.length > 0 && !['released', 'rejected', 'cancelled'].includes(detail.status) && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
                         <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex min-w-0 items-start gap-3">
                                 <UserRoundCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
                                 <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-amber-950">Filer name differs from the beneficiary profile</p>
-                                    <p className="mt-1 text-xs leading-relaxed text-amber-800">
-                                        Frozen request: <span className="font-semibold">{detail.identity_snapshot.full_name}</span>
-                                        <ArrowRight className="mx-1.5 inline h-3 w-3" aria-hidden="true" />
-                                        Current profile: <span className="font-semibold">{filerNameCorrection.current_profile_name}</span>
-                                    </p>
-                                    {!filerNameCorrection.identity_verified && (
-                                        <p className="mt-1 text-xs font-medium text-amber-900">
-                                            Verify the corrected beneficiary identity before applying it to this request.
-                                        </p>
-                                    )}
+                                    <p className="text-sm font-semibold text-amber-950">MSWD verification is not yet complete</p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">{mswdVerification.blockers[0]}</p>
                                 </div>
                             </div>
-                            {canApplyFilerNameCorrection && filerNameCorrection.identity_verified ? (
+                            {canUploadRequestDocuments && (
                                 <Button
-                                    type="button"
                                     variant="outline"
                                     className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
-                                    onClick={() => setIsFilerNameCorrectionOpen(true)}
+                                    onClick={() => {
+                                        setActiveTab('documents');
+                                        setIsDocumentUploadOpen(true);
+                                    }}
                                 >
-                                    <UserRoundCheck className="mr-2 h-4 w-4" /> Apply corrected name
-                                </Button>
-                            ) : canViewBeneficiaries ? (
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
-                                >
-                                    <Link href={manageInterviewHouseholdUrl}>
-                                        <User className="mr-2 h-4 w-4" /> View beneficiary profile
-                                    </Link>
+                                    <Upload className="mr-2 h-4 w-4" /> Upload documents
                                 </Button>
                             ) : null}
                         </div>
                     </div>
                 )}
 
-                {requestIsEditable && hasMissingRequiredDocuments && (
+                {mswdVerification.blockers.length > 0 && !['released', 'rejected', 'cancelled'].includes(detail.status) && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
                         <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex min-w-0 items-start gap-3">
                                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
                                 <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-amber-950">Awaiting required documents</p>
-                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
-                                        {missingRequiredDocuments.length} required{' '}
-                                        {missingRequiredDocuments.length === 1 ? 'document is' : 'documents are'} still missing:{' '}
-                                        {missingRequiredDocuments.map((document) => document.label).join(', ')}. Approval remains unavailable until
-                                        MSWD records them.
-                                    </p>
+                                    <p className="text-sm font-semibold text-amber-950">MSWD verification is not yet complete</p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">{mswdVerification.blockers[0]}</p>
                                 </div>
                             </div>
-                            {canProcessRequests && (
+                            {canUploadRequestDocuments && (
                                 <Button
-                                    asChild
                                     variant="outline"
                                     className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                    onClick={() => {
+                                        setActiveTab('documents');
+                                        setIsDocumentUploadOpen(true);
+                                    }}
                                 >
-                                    <Link href={editRequestUrl}>
-                                        <Upload className="mr-2 h-4 w-4" /> Upload documents
-                                    </Link>
+                                    <Upload className="mr-2 h-4 w-4" /> Upload documents
                                 </Button>
                             )}
                         </div>
@@ -664,7 +677,7 @@ export default function AssistanceRequestsDetails({
                     <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
                         {/* ─── Tabbed Layout Left Panel ─── */}
                         <div className="lg:col-span-8">
-                            <Tabs defaultValue="intake" className="space-y-4 sm:space-y-6">
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
                                 <TabsList className="grid h-11 w-full grid-cols-4 bg-slate-200/70 p-1">
                                     <TabsTrigger value="intake" className="min-w-0 px-1 text-[11px] font-medium sm:px-2 sm:text-xs">
                                         <span className="sm:hidden">Summary</span>
@@ -813,18 +826,34 @@ export default function AssistanceRequestsDetails({
                                                             <Button
                                                                 type="button"
                                                                 size="sm"
-                                                                className="min-h-10 w-full bg-slate-900 text-white hover:bg-slate-800 sm:w-auto"
-                                                                disabled={isRefreshingHouseholdAssessment}
+                                                                variant={householdAssessmentNeedsSync ? 'default' : 'outline'}
+                                                                className={
+                                                                    householdAssessmentNeedsSync
+                                                                        ? 'min-h-10 w-full bg-slate-900 text-white hover:bg-slate-800 sm:w-auto'
+                                                                        : 'min-h-10 w-full border-emerald-200 bg-emerald-50 text-emerald-800 sm:w-auto'
+                                                                }
+                                                                disabled={isRefreshingHouseholdAssessment || !householdAssessmentNeedsSync}
+                                                                title={
+                                                                    householdAssessmentNeedsSync
+                                                                        ? undefined
+                                                                        : 'No household changes are available to synchronize.'
+                                                                }
                                                                 onClick={refreshHouseholdAssessment}
                                                             >
-                                                                <RefreshCw
-                                                                    className={`mr-2 h-4 w-4 ${isRefreshingHouseholdAssessment ? 'animate-spin' : ''}`}
-                                                                />
-                                                                {detail.status === 'approved'
-                                                                    ? 'Review household correction'
-                                                                    : detail.household_assessment
-                                                                      ? 'Update household assessment'
-                                                                      : 'Capture household assessment'}
+                                                                {householdAssessmentNeedsSync ? (
+                                                                    <RefreshCw
+                                                                        className={`mr-2 h-4 w-4 ${isRefreshingHouseholdAssessment ? 'animate-spin' : ''}`}
+                                                                    />
+                                                                ) : (
+                                                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                                )}
+                                                                {!householdAssessmentNeedsSync
+                                                                    ? 'Household assessment is up to date'
+                                                                    : verificationIsComplete
+                                                                      ? 'Review household correction'
+                                                                      : detail.household_assessment
+                                                                        ? 'Update household assessment'
+                                                                        : 'Capture household assessment'}
                                                             </Button>
                                                         )}
                                                     </div>
@@ -938,37 +967,57 @@ export default function AssistanceRequestsDetails({
                                 {/* TAB 3: DOCUMENTS */}
                                 <TabsContent value="documents" className="space-y-4 outline-none sm:space-y-6">
                                     <Card>
-                                        <CardHeader className="p-4 sm:p-6">
-                                            <CardTitle className="flex items-center gap-2 text-base">
-                                                <FileText className="h-4 w-4 text-slate-600" /> Supporting Certificates & Verification Layouts
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-                                                {requiredDocumentsData.map((req) => {
-                                                    const uploaded = uploadedByKey.get(req.key);
-                                                    return <DocumentRow key={req.key} required={req} file={uploaded} />;
-                                                })}
-                                            </div>
-
-                                            {extraDocuments.length > 0 && (
-                                                <>
-                                                    <p className="mt-6 mb-3 border-t border-slate-100 pt-6 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-                                                        Extra attachments
-                                                    </p>
-                                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-                                                        {extraDocuments.map((doc) => (
-                                                            <DocumentRow key={doc.id} file={doc} />
-                                                        ))}
-                                                    </div>
-                                                </>
-                                            )}
-
-                                            {requiredDocumentsData.length === 0 && (detail.documents ?? []).length === 0 && (
-                                                <p className="py-2 text-center text-sm text-slate-400 italic">No verifying files attached.</p>
-                                            )}
+                                        <CardContent className="p-4 sm:p-6">
+                                            <MswdDocuments
+                                                requestId={detail.id}
+                                                verification={mswdVerification}
+                                                checks={documentChecks}
+                                                documents={(detail.documents ?? []).map((document) => ({
+                                                    id: document.id,
+                                                    document_key: documentKeyOf(document),
+                                                    url: document.url,
+                                                    file_name: document.file_name,
+                                                    mime_type: document.mime_type,
+                                                    size: document.size,
+                                                    uploaded_at: document.uploaded_at,
+                                                }))}
+                                                reviewer={detail.reviewed_by ?? null}
+                                                reviewerOptions={mswdReviewerOptions}
+                                                presentedCopyOptions={presentedCopyOptions}
+                                                canReview={canVerifyRequests && isMine && mswdVerification.status === 'under_review'}
+                                                canCorrect={canCorrectRequests}
+                                                uploadOpen={isDocumentUploadOpen}
+                                                onUploadOpenChange={setIsDocumentUploadOpen}
+                                            />
                                         </CardContent>
                                     </Card>
+                                    {extraDocuments.length > 0 && (
+                                        <Card>
+                                            <CardHeader className="p-4 sm:p-6">
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    <FileText className="h-4 w-4 text-slate-600" /> Other Supporting Documents
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+                                                <p className="mb-3 text-xs text-slate-500">
+                                                    Attachments that are not part of the MSWD verification checklist.
+                                                </p>
+                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                                                    {extraDocuments.map((document) => (
+                                                        <DocumentRow
+                                                            key={document.id}
+                                                            file={document}
+                                                            canReplace={
+                                                                canUploadRequestDocuments && !IDENTITY_DOCUMENT_KEYS.has(documentKeyOf(document))
+                                                            }
+                                                            isIdentityDocument={IDENTITY_DOCUMENT_KEYS.has(documentKeyOf(document))}
+                                                            onReplace={() => setAdditionalDocumentToReplace(document)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
                                 </TabsContent>
 
                                 {/* TAB 4: AUDIT HISTORY */}
@@ -1337,24 +1386,21 @@ export default function AssistanceRequestsDetails({
                     onClose={() => setIsMissingDateCorrectionOpen(false)}
                 />
             )}
-            {canApplyFilerNameCorrection && filerNameCorrection?.has_difference && filerNameCorrection.identity_verified && (
-                <CorrectAssistanceRequestFilerNameDialog
-                    requestId={detail.id}
-                    transactionNumber={detail.transaction_number}
-                    frozenName={detail.identity_snapshot.full_name}
-                    currentProfileName={filerNameCorrection.current_profile_name}
-                    isApproved={detail.status === 'approved'}
-                    isOpen={isFilerNameCorrectionOpen}
-                    onClose={() => setIsFilerNameCorrectionOpen(false)}
-                />
-            )}
-            {canCorrectApprovedHousehold && (
+            {canCorrectCompletedHousehold && (
                 <SyncApprovedHouseholdDialog
                     requestId={detail.id}
                     transactionNumber={detail.transaction_number}
                     preview={householdAssessmentPreview}
                     isOpen={isApprovedHouseholdSyncOpen}
                     onClose={() => setIsApprovedHouseholdSyncOpen(false)}
+                />
+            )}
+            {additionalDocumentToReplace && (
+                <ReplaceAdditionalDocumentDialog
+                    requestId={detail.id}
+                    document={additionalDocumentToReplace}
+                    label={documentKeyOf(additionalDocumentToReplace).replace(/_/g, ' ')}
+                    onClose={() => setAdditionalDocumentToReplace(null)}
                 />
             )}
             <FlashHandler />
@@ -1400,8 +1446,12 @@ function AuditValue({ value, muted = false }: { value: unknown; muted?: boolean 
     if (typeof value === 'object' && value !== null) {
         return (
             <details className="inline-block align-top">
-                <summary className={`cursor-pointer ${muted ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>View household data</summary>
-                <pre className="mt-1 max-h-48 overflow-auto rounded bg-slate-950 p-2 text-[10px] text-slate-100">{JSON.stringify(value, null, 2)}</pre>
+                <summary className={`cursor-pointer ${muted ? 'text-slate-400 line-through' : 'font-medium text-slate-800'}`}>
+                    View household data
+                </summary>
+                <pre className="mt-1 max-h-48 overflow-auto rounded bg-slate-950 p-2 text-[10px] text-slate-100">
+                    {JSON.stringify(value, null, 2)}
+                </pre>
             </details>
         );
     }
@@ -1432,64 +1482,29 @@ function AuditRow({ label, at, by }: { label: string; at: string | null; by?: st
     );
 }
 
-function DocumentRow({ required, file }: { required?: RequiredDocument; file?: DocumentBlock }) {
+function DocumentRow({
+    file,
+    canReplace,
+    isIdentityDocument,
+    onReplace,
+}: {
+    file: DocumentBlock;
+    canReplace: boolean;
+    isIdentityDocument: boolean;
+    onReplace: () => void;
+}) {
     const utils = Utility();
-    const isMissing = required && !file;
-    const isOptional = required && !required.is_required;
-    const label = required?.label ?? ((file?.custom_properties?.document_key as string | undefined) ?? file?.collection_name)?.replace(/_/g, ' ');
-
-    if (isMissing && !isOptional) {
-        return (
-            <div className="flex flex-row overflow-hidden rounded-lg border border-rose-200 bg-rose-50/50 transition hover:shadow-sm sm:flex-col sm:rounded-xl">
-                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 border-r border-rose-100 bg-white p-2 text-center sm:h-32 sm:w-full sm:gap-2 sm:border-r-0 sm:border-b sm:p-4">
-                    <XCircle className="h-8 w-8 text-rose-300" />
-                    <p className="text-[10px] font-bold tracking-widest text-rose-600 uppercase">Missing Required</p>
-                </div>
-                <div className="min-w-0 flex-1 p-3">
-                    <p className="truncate text-sm font-semibold text-slate-900 capitalize" title={label}>
-                        {label}
-                    </p>
-                    <p className="mt-0.5 text-xs text-rose-500">Action required</p>
-                    {required.physical_copy_requirement !== 'unspecified' && (
-                        <p className="mt-1 text-[11px] font-medium text-blue-700">Bring: {required.physical_copy_requirement_label}</p>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    if (isMissing && isOptional) {
-        return (
-            <div className="flex flex-row overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition hover:shadow-sm sm:flex-col sm:rounded-xl">
-                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 border-r border-slate-100 bg-white p-2 text-center opacity-60 sm:h-32 sm:w-full sm:gap-2 sm:border-r-0 sm:border-b sm:p-4">
-                    <Circle className="h-8 w-8 text-slate-300" />
-                    <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Optional</p>
-                </div>
-                <div className="min-w-0 flex-1 p-3 opacity-60">
-                    <p className="truncate text-sm font-medium text-slate-500 capitalize" title={label}>
-                        {label}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-400">Not provided</p>
-                    {required.physical_copy_requirement !== 'unspecified' && (
-                        <p className="mt-1 text-[11px] text-slate-500">Bring: {required.physical_copy_requirement_label}</p>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    if (!file) return null;
-
+    const label = ((file.custom_properties?.document_key as string | undefined) ?? file.collection_name).replace(/_/g, ' ');
     const isImage = file.mime_type?.startsWith('image/');
 
     return (
-        <a
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex min-h-20 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:border-[#005088] hover:shadow-md sm:flex-col sm:rounded-xl"
-        >
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-r border-slate-100 bg-slate-50 sm:h-32 sm:w-full sm:border-r-0 sm:border-b">
+        <div className="group flex min-h-20 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:border-[#005088] hover:shadow-md sm:flex-col sm:rounded-xl">
+            <a
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-r border-slate-100 bg-slate-50 sm:h-32 sm:w-full sm:border-r-0 sm:border-b"
+            >
                 {isImage ? (
                     <img
                         src={file.url}
@@ -1509,7 +1524,7 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
                 <span className="absolute right-1 bottom-1 rounded bg-white px-1.5 py-1 text-[9px] font-bold text-slate-700 shadow-sm sm:hidden">
                     View
                 </span>
-            </div>
+            </a>
 
             <div className="min-w-0 flex-1 p-3">
                 <div className="flex items-start justify-between gap-2">
@@ -1522,11 +1537,18 @@ function DocumentRow({ required, file }: { required?: RequiredDocument; file?: D
                     {formatBytes(file.size)}
                     {file.uploaded_at && <> • {utils.formatToReadableDateNoTime(file.uploaded_at)}</>}
                 </p>
-                {required && required.physical_copy_requirement !== 'unspecified' && (
-                    <p className="mt-1 text-[11px] font-medium text-blue-700">Physical copy: {required.physical_copy_requirement_label}</p>
+                {canReplace && (
+                    <Button type="button" variant="outline" size="sm" className="mt-3 h-8 w-full text-xs" onClick={onReplace}>
+                        <Upload className="mr-2 h-3.5 w-3.5" /> Replace file
+                    </Button>
+                )}
+                {isIdentityDocument && (
+                    <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
+                        Manage identity evidence from the beneficiary identity workflow.
+                    </p>
                 )}
             </div>
-        </a>
+        </div>
     );
 }
 
@@ -1538,7 +1560,11 @@ function ActionButtons({
     reviewerName,
     acknowledgementReceiptUrl,
     approvalBlockReason,
+    releaseBlockReason,
     canProcess,
+    canVerify,
+    mswdVerificationStatus,
+    isStartingMswdReview,
     canDecide,
     canRelease,
     canGenerateAcknowledgementReceipt,
@@ -1550,18 +1576,39 @@ function ActionButtons({
     reviewerName: string | null;
     acknowledgementReceiptUrl: string;
     approvalBlockReason: string | null;
+    releaseBlockReason: string | null;
     canProcess: boolean;
+    canVerify: boolean;
+    mswdVerificationStatus: AssistanceMswdVerification['status'];
+    isStartingMswdReview: boolean;
     canDecide: boolean;
     canRelease: boolean;
     canGenerateAcknowledgementReceipt: boolean;
 }) {
+    const canStartOrResumeMswdReview =
+        mswdVerificationStatus === null || mswdVerificationStatus === 'pending' || mswdVerificationStatus === 'needs_correction';
+
     switch (status) {
         case 'pending':
-            return canProcess ? (
-                <Button className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto" onClick={onPickUp}>
-                    <UserCheck className="mr-2 h-4 w-4" /> Pick Up Case
-                </Button>
-            ) : null;
+            return (
+                <>
+                    {canVerify && canStartOrResumeMswdReview && (
+                        <Button className="min-h-10 w-full sm:w-auto" onClick={onPickUp} disabled={isStartingMswdReview}>
+                            <UserCheck className="mr-2 h-4 w-4" /> Start MSWD Review
+                        </Button>
+                    )}
+                    {canDecide && (
+                        <Button
+                            className="min-h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+                            onClick={onAction('Approve')}
+                            disabled={approvalBlockReason !== null}
+                            title={approvalBlockReason ?? undefined}
+                        >
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> Record Amount
+                        </Button>
+                    )}
+                </>
+            );
         case 'under_review':
             if (!isMine && !canDecide) {
                 return (
@@ -1573,6 +1620,11 @@ function ActionButtons({
             }
             return (
                 <>
+                    {canVerify && isMine && canStartOrResumeMswdReview && (
+                        <Button variant="outline" className="min-h-10 w-full sm:w-auto" onClick={onPickUp} disabled={isStartingMswdReview}>
+                            <UserCheck className="mr-2 h-4 w-4" /> Resume MSWD Review
+                        </Button>
+                    )}
                     {canDecide && (
                         <>
                             <Button
@@ -1581,7 +1633,7 @@ function ActionButtons({
                                 disabled={approvalBlockReason !== null}
                                 title={approvalBlockReason ?? undefined}
                             >
-                                <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> Record Amount
                             </Button>
                             <Button variant="destructive" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reject')}>
                                 <XCircle className="mr-2 h-4 w-4" /> Reject
@@ -1602,8 +1654,18 @@ function ActionButtons({
         case 'approved':
             return (
                 <>
+                    {canVerify && canStartOrResumeMswdReview && (!reviewerName || isMine) && (
+                        <Button variant="outline" className="min-h-10 w-full sm:w-auto" onClick={onPickUp} disabled={isStartingMswdReview}>
+                            <UserCheck className="mr-2 h-4 w-4" /> {isMine ? 'Resume MSWD Review' : 'Start MSWD Review'}
+                        </Button>
+                    )}
                     {canRelease && (
-                        <Button className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto" onClick={onAction('Mark Released')}>
+                        <Button
+                            className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto"
+                            onClick={onAction('Mark Released')}
+                            disabled={releaseBlockReason !== null}
+                            title={releaseBlockReason ?? undefined}
+                        >
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
                         </Button>
                     )}

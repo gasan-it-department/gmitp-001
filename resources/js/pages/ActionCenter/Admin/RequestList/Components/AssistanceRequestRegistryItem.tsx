@@ -3,6 +3,10 @@ import { ArrowRight, CalendarDays, FilePenLine, MapPin, UserRound } from 'lucide
 import type { ReactNode } from 'react';
 import { AssistanceRequestListItem, humanizeStatus, statusClass } from './AssistanceRequestTable';
 
+const mswdLabel = (status: AssistanceRequestListItem['mswd_verification_status']) => status
+    ? `MSWD ${status.replace(/_/g, ' ')}`
+    : 'MSWD not recorded';
+
 interface Props {
     row: AssistanceRequestListItem;
     viewUrl: string;
@@ -61,6 +65,9 @@ export default function AssistanceRequestRegistryItem({ row, viewUrl }: Props) {
                     {row.is_walkin && (
                         <span className="inline-flex rounded-full bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-700">Walk-in</span>
                     )}
+                    <span className={`inline-flex rounded-full px-2 py-1 text-[11px] font-semibold ${row.mswd_verification_status === 'verified' ? 'bg-emerald-50 text-emerald-700' : row.mswd_verification_status === 'needs_correction' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>
+                        {mswdLabel(row.mswd_verification_status)}
+                    </span>
                 </div>
 
                 <dl className="mt-3 grid grid-cols-2 gap-x-4 border-t border-slate-100 pt-3 text-xs">

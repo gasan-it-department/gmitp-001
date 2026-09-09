@@ -77,9 +77,9 @@ export default function SyncApprovedHouseholdDialog({ requestId, transactionNumb
         <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
                 <DialogHeader>
-                    <DialogTitle>Synchronize approved household</DialogTitle>
+                    <DialogTitle>Synchronize assessed household</DialogTitle>
                     <DialogDescription>
-                        Review the live household against {baseline}. This changes only the assessed household for {transactionNumber}; approval and the original filing snapshot remain unchanged.
+                        Review the live household against {baseline}. This changes only the assessed household for {transactionNumber}; the amount decision and original filing snapshot remain unchanged.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -135,7 +135,7 @@ export default function SyncApprovedHouseholdDialog({ requestId, transactionNumb
                         <Button type="button" variant="outline" disabled={processing} onClick={close}>Cancel</Button>
                         <Button type="submit" disabled={processing} className="bg-amber-700 text-white hover:bg-amber-800">
                             {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                            Confirm household correction
+                            Confirm household synchronization
                         </Button>
                     </DialogFooter>
                 </form>

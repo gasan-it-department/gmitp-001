@@ -128,7 +128,7 @@ afterEach(function () {
     }
 });
 
-it('replaces one identity document side without changing verification state', function () {
+it('replaces one identity document side and requires renewed identity verification', function () {
     $beneficiary = replacementDocumentBeneficiary($this->municipalId, [
         'identity_verified_at' => now(),
         'identity_verified_by_user_id' => $this->adminId,
@@ -136,8 +136,6 @@ it('replaces one identity document side without changing verification state', fu
         'intake_rejected_by_user_id' => $this->adminId,
         'intake_rejection_reason' => 'Old rejection note stays untouched.',
     ]);
-    $verifiedAt = $beneficiary->identity_verified_at?->toIso8601String();
-
     $beneficiary
         ->addMedia(UploadedFile::fake()->image('old-front.jpg'))
         ->toMediaCollection('identity_id_front');
@@ -153,8 +151,8 @@ it('replaces one identity document side without changing verification state', fu
 
     expect($result->getMedia('identity_id_front'))->toHaveCount(1)
         ->and($result->getFirstMedia('identity_id_front')?->file_name)->toBe('identity-id-front-'.$beneficiary->id.'.jpg')
-        ->and($result->identity_verified_at?->toIso8601String())->toBe($verifiedAt)
-        ->and($result->identity_verified_by_user_id)->toBe($this->adminId)
+        ->and($result->identity_verified_at)->toBeNull()
+        ->and($result->identity_verified_by_user_id)->toBeNull()
         ->and($result->intake_rejected_at)->not->toBeNull()
         ->and($result->intake_rejection_reason)->toBe('Old rejection note stays untouched.');
 });

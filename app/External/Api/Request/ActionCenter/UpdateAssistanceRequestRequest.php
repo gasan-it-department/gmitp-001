@@ -5,7 +5,6 @@ namespace App\External\Api\Request\ActionCenter;
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Validates an ADMIN edit of an in-flight assistance request (description +
@@ -38,30 +37,16 @@ class UpdateAssistanceRequestRequest extends FormRequest
 
         $rules = [
             'description' => ['required', 'string', 'min:10', 'max:1000'],
-            'documents'   => ['nullable', 'array'],
+            'documents' => ['nullable', 'array'],
             'on_behalf_date_of_death' => $definition->requiresDateOfDeath()
                 ? ['required', 'date_format:Y-m-d', 'before_or_equal:today']
                 : ['prohibited'],
         ];
 
-        // Resolve the request's assistance type from the route id and append a
-        // per-slot rule for each required-document key. Nullable: replace-only.
-        if ($assistanceRequest) {
-            $requirements = DB::table('ac_assistance_type_documents as atd')
-                ->join('ac_document_types as dt', 'dt.id', '=', 'atd.document_type_id')
-                ->where('atd.assistance_type_id', $assistanceRequest->assistance_type_id)
-                ->orderBy('atd.sort_order')
-                ->get(['dt.key']);
-
-            foreach ($requirements as $req) {
-                $rules["documents.{$req->key}"] = [
-                    'nullable',
-                    'file',
-                    'mimes:jpg,jpeg,png,pdf',
-                    'max:5120', // 5 MB
-                ];
-            }
-        }
+        // The Core action validates document keys against the request's frozen
+        // checklist. The FormRequest deliberately validates only file shape so
+        // later assistance-type setting changes cannot rewrite an old case.
+        $rules['documents.*'] = ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'];
 
         return $rules;
     }
@@ -77,12 +62,12 @@ class UpdateAssistanceRequestRequest extends FormRequest
     {
         return [
             'description.required' => 'Please explain the request / situation.',
-            'description.min'      => 'Please give at least a few words about the situation.',
+            'description.min' => 'Please give at least a few words about the situation.',
             'on_behalf_date_of_death.required' => 'Enter the deceased person\'s date of death.',
             'on_behalf_date_of_death.date_format' => 'The Date of Death must be a valid date.',
             'on_behalf_date_of_death.prohibited' => 'Date of Death is not used by this assistance program.',
-            'documents.*.mimes'    => 'Allowed file types: JPG, PNG, PDF.',
-            'documents.*.max'      => 'Each file must be 5 MB or smaller.',
+            'documents.*.mimes' => 'Allowed file types: JPG, PNG, PDF.',
+            'documents.*.max' => 'Each file must be 5 MB or smaller.',
         ];
     }
 }

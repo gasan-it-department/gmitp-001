@@ -5,6 +5,8 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Models\AssistanceRequestDocumentCheck;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\Core\Users\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -26,6 +28,7 @@ class UpdateAssistanceRequestAction
     public function __construct(
         private readonly LockAssistanceRequestAction $lockRequest,
         private readonly AssistanceRequestFormDefinitionProvider $formDefinitions,
+        private readonly AssistanceMswdVerificationService $mswdVerification,
     ) {}
 
     public function execute(UpdateAssistanceRequestDto $dto): AssistanceRequest
@@ -35,12 +38,15 @@ class UpdateAssistanceRequestAction
                 $request = $this->lockRequest->execute(
                     id: $dto->assistanceRequestId,
                     municipalId: $dto->municipalId,
-                    with: ['media', 'assistanceType'],
+                    with: ['media', 'assistanceType', 'documentChecks'],
                 );
 
                 // A concurrent approval/release that committed first is visible
                 // here, after this action has acquired the same request-row lock.
                 $this->ensureEditable($request);
+
+                $this->mswdVerification->captureRequirements($request);
+                $request->load('documentChecks');
 
                 $definition = $this->formDefinitions->for(
                     $dto->municipalCode,
@@ -67,6 +73,8 @@ class UpdateAssistanceRequestAction
                     'metadata' => $metadata !== [] ? $metadata : null,
                 ]);
 
+                $this->assertDocumentKeysBelongToFrozenChecklist($request, $dto->documents);
+
                 // Storage I/O intentionally stays inside the lock window.
                 $replacedKeys = $this->replaceDocuments($request, $dto->documents);
 
@@ -82,6 +90,12 @@ class UpdateAssistanceRequestAction
     private function ensureEditable(AssistanceRequest $request): void
     {
         if ($request->status->isEditable()) {
+            if ($request->mswd_verification_status?->value === 'verified') {
+                throw new \DomainException(
+                    'Reopen MSWD verification with a correction reason before changing request evidence.',
+                );
+            }
+
             return;
         }
 
@@ -117,10 +131,23 @@ class UpdateAssistanceRequestAction
                 ->toMediaCollection('documents');
 
             $existingMedia->each(fn ($media) => $media->delete());
+            $this->mswdVerification->resetCheckForReplacement($request, (string) $documentKey);
             $replaced[] = (string) $documentKey;
         }
 
         return $replaced;
+    }
+
+    /** @param array<string, UploadedFile> $documents */
+    private function assertDocumentKeysBelongToFrozenChecklist(AssistanceRequest $request, array $documents): void
+    {
+        foreach (array_keys($documents) as $documentKey) {
+            $check = $request->documentChecks->firstWhere('document_key', (string) $documentKey);
+
+            if (! $check instanceof AssistanceRequestDocumentCheck || ! $check->is_applicable) {
+                throw new \DomainException('One of the uploaded files does not belong to an applicable frozen document requirement.');
+            }
+        }
     }
 
     private function safeFileName(UploadedFile $file): string

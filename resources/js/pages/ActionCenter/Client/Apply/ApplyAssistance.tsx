@@ -196,7 +196,7 @@ export default function ApplyAssistance({
             recipient_id_unavailable_reason: '',
         }));
         setPendingMemberMessage(
-            `${member.first_name} ${member.last_name} was added to this request and is awaiting MSWD verification. The request may be submitted, but it cannot be approved until the member is verified.`,
+            `${member.first_name} ${member.last_name} was added to this request and is awaiting MSWD verification. The request may be submitted, but MSWD must complete verification before financial documents or release can proceed.`,
         );
     };
 

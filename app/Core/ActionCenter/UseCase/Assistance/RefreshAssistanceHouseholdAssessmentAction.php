@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
+use App\Core\ActionCenter\Enums\MswdVerificationStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
@@ -50,7 +51,7 @@ class RefreshAssistanceHouseholdAssessmentAction
                 with: ['beneficiary', 'household'],
             );
 
-            $isApprovedCorrection = $this->ensureAssessmentCanBeRefreshed(
+            $requiresCorrection = $this->ensureAssessmentCanBeRefreshed(
                 request: $request,
                 actingUserId: $actingUserId,
                 municipalId: $municipalId,
@@ -84,16 +85,34 @@ class RefreshAssistanceHouseholdAssessmentAction
                 );
             }
 
+            if ($preview['previous_source'] === 'assessment' && ! $this->previewHasChanges($preview)) {
+                throw new \DomainException('The household assessment is already up to date.');
+            }
+
             $assessment = [
                 'household_id' => $request->household_id,
                 'household_code' => $request->household->household_code,
                 'captured_at' => $capturedAt->toIso8601String(),
                 'captured_by_user_id' => $actingUserId,
-                'source' => $isApprovedCorrection ? 'approved_correction' : 'mswd_interview',
+                'source' => $requiresCorrection ? 'approved_correction' : 'mswd_interview',
                 'members' => $snapshotMembers,
             ];
             $previousAssessment = $this->previousAssessment($request);
             $request->replaceHouseholdAssessment($assessment);
+
+            if ($requiresCorrection) {
+                // A signed-off assessment cannot remain current after the
+                // household evidence changes. Keep the amount decision intact,
+                // but require the assigned MSWD reviewer to complete a fresh
+                // verification before financial documents/release continue.
+                $request->updateMswdVerification([
+                    'mswd_verification_status' => MswdVerificationStatus::UnderReview,
+                    'mswd_verification_notes' => trim((string) $correctionReason),
+                    'mswd_verified_by_user_id' => null,
+                    'mswd_verified_at' => null,
+                    'mswd_verification_fingerprint' => null,
+                ]);
+            }
 
             activity('assistance_request')
                 ->performedOn($request)
@@ -102,12 +121,12 @@ class RefreshAssistanceHouseholdAssessmentAction
                     'municipal_id' => $municipalId,
                     'old' => ['household_assessment_snapshot' => $previousAssessment],
                     'attributes' => ['household_assessment_snapshot' => $assessment],
-                    'correction_reason' => $isApprovedCorrection ? trim((string) $correctionReason) : null,
+                    'correction_reason' => $requiresCorrection ? trim((string) $correctionReason) : null,
                     'assessment_status' => $request->status->value,
                     'assessment_fingerprint' => $preview['fingerprint'],
                 ])
-                ->log($isApprovedCorrection
-                    ? 'Corrected household assessment after approval'
+                ->log($requiresCorrection
+                    ? 'Corrected completed household assessment'
                     : 'Updated household assessment during assistance interview');
 
             return $request->fresh();
@@ -115,7 +134,7 @@ class RefreshAssistanceHouseholdAssessmentAction
     }
 
     /**
-     * @param Collection<int, HouseholdMember> $members
+     * @param  Collection<int, HouseholdMember>  $members
      * @return array{fingerprint: string, previous_source: string, added: list<array<string, mixed>>, removed: list<array<string, mixed>>, changed: list<array<string, mixed>>, current_member_count: int}
      */
     public function preview(AssistanceRequest $request, Collection $members): array
@@ -126,7 +145,7 @@ class RefreshAssistanceHouseholdAssessmentAction
     }
 
     /**
-     * @param Collection<int, HouseholdMember> $members
+     * @param  Collection<int, HouseholdMember>  $members
      * @return list<array<string, mixed>>
      */
     private function snapshotMembers(Collection $members, CarbonImmutable $ageReferenceAt): array
@@ -140,7 +159,7 @@ class RefreshAssistanceHouseholdAssessmentAction
     }
 
     /**
-     * @param list<array<string, mixed>> $currentMembers
+     * @param  list<array<string, mixed>>  $currentMembers
      * @return array{fingerprint: string, previous_source: string, added: list<array<string, mixed>>, removed: list<array<string, mixed>>, changed: list<array<string, mixed>>, current_member_count: int}
      */
     private function previewFromMembers(AssistanceRequest $request, array $currentMembers): array
@@ -184,8 +203,8 @@ class RefreshAssistanceHouseholdAssessmentAction
     }
 
     /**
-     * @param list<array<string, mixed>> $previousMembers
-     * @param list<array<string, mixed>> $currentMembers
+     * @param  list<array<string, mixed>>  $previousMembers
+     * @param  list<array<string, mixed>>  $currentMembers
      * @return array{added: list<array<string, mixed>>, removed: list<array<string, mixed>>, changed: list<array<string, mixed>>}
      */
     private function compareMembers(array $previousMembers, array $currentMembers): array
@@ -199,6 +218,7 @@ class RefreshAssistanceHouseholdAssessmentAction
         foreach ($currentByKey as $key => $member) {
             if (! isset($previousByKey[$key])) {
                 $added[] = $this->memberSummary($member);
+
                 continue;
             }
 
@@ -214,6 +234,16 @@ class RefreshAssistanceHouseholdAssessmentAction
         }
 
         return compact('added', 'removed', 'changed');
+    }
+
+    /**
+     * @param  array{added: list<array<string, mixed>>, removed: list<array<string, mixed>>, changed: list<array<string, mixed>>}  $preview
+     */
+    private function previewHasChanges(array $preview): bool
+    {
+        return $preview['added'] !== []
+            || $preview['removed'] !== []
+            || $preview['changed'] !== [];
     }
 
     /** @param list<array<string, mixed>> $members @return array<string, array<string, mixed>> */
@@ -280,24 +310,33 @@ class RefreshAssistanceHouseholdAssessmentAction
             );
         }
 
-        $isApprovedCorrection = $request->status === AssistanceStatus::Approved;
-        if ($isApprovedCorrection && ($request->released_at !== null
+        $isApproved = $request->status === AssistanceStatus::Approved;
+        if ($isApproved && ($request->released_at !== null
             || $request->released_by_user_id !== null || $request->release_reference_number !== null)) {
             throw new \DomainException('This approved request already contains release data and cannot have its household assessment changed.');
         }
-        if (! $isApprovedCorrection && ! $canProcessRequests) {
-            throw new AuthorizationException('You are not authorized to update an in-review household assessment.');
-        }
-        if (! $isApprovedCorrection && $request->reviewed_by_user_id !== $actingUserId) {
-            throw new \DomainException(
-                'Only the reviewer assigned to this case may update its household assessment.',
-            );
-        }
-        if ($isApprovedCorrection && ! $canCorrectRequests) {
-            throw new AuthorizationException('You are not authorized to correct an approved household assessment.');
-        }
-        if ($isApprovedCorrection && (mb_strlen(trim((string) $correctionReason)) < 10 || mb_strlen(trim((string) $correctionReason)) > 1000)) {
-            throw new \DomainException('Enter a household correction reason of 10 to 1,000 characters.');
+        // Read the persisted lifecycle value. The action always works on a
+        // fresh locked row, and this also keeps the guard correct for legacy
+        // rows hydrated before enum casts were introduced.
+        $verificationIsComplete = MswdVerificationStatus::tryFrom(
+            (string) $request->getRawOriginal('mswd_verification_status'),
+        ) === MswdVerificationStatus::Verified;
+        $requiresCorrection = $verificationIsComplete;
+
+        if ($requiresCorrection) {
+            if (! $canCorrectRequests) {
+                throw new AuthorizationException('You are not authorized to correct a completed MSWD household assessment.');
+            }
+            if (mb_strlen(trim((string) $correctionReason)) < 10 || mb_strlen(trim((string) $correctionReason)) > 1000) {
+                throw new \DomainException('Enter a household correction reason of 10 to 1,000 characters.');
+            }
+        } else {
+            if (! $canProcessRequests) {
+                throw new AuthorizationException('You are not authorized to update an MSWD household assessment.');
+            }
+            if ($request->reviewed_by_user_id !== $actingUserId) {
+                throw new \DomainException('Only the reviewer assigned to this case may update its household assessment.');
+            }
         }
 
         if ($request->household === null || $request->household->municipal_id !== $municipalId) {
@@ -314,6 +353,6 @@ class RefreshAssistanceHouseholdAssessmentAction
             );
         }
 
-        return $isApprovedCorrection;
+        return $requiresCorrection;
     }
 }

@@ -71,6 +71,11 @@ beforeEach(function () {
         $table->ulid('released_by_user_id')->nullable();
         $table->string('release_reference_number')->nullable();
         $table->string('status');
+        $table->string('mswd_verification_status')->nullable();
+        $table->ulid('mswd_verified_by_user_id')->nullable();
+        $table->timestamp('mswd_verified_at')->nullable();
+        $table->text('mswd_verification_notes')->nullable();
+        $table->string('mswd_verification_fingerprint')->nullable();
         $table->json('metadata')->nullable();
         $table->timestamp('released_at')->nullable();
         $table->softDeletes();
@@ -153,6 +158,7 @@ beforeEach(function () {
         'household_id' => $this->householdId,
         'reviewed_by_user_id' => $this->reviewerId,
         'status' => 'under_review',
+        'mswd_verification_status' => 'pending',
         'metadata' => json_encode([
             'household_composition_snapshot' => $this->filingSnapshot,
         ], JSON_THROW_ON_ERROR),
@@ -239,6 +245,26 @@ it('does not report a changed income when JSON only changes its numeric represen
         ->and($preview['changed'])->toBe([]);
 });
 
+it('rejects a repeated synchronization when the assessed household has not changed', function () {
+    refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+    );
+
+    $assessmentBefore = data_get(requestMetadata($this->requestId), 'household_assessment_snapshot');
+    $activityCountBefore = DB::table('activity_log')->count();
+
+    expect(fn () => refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+    ))->toThrow(DomainException::class, 'The household assessment is already up to date.');
+
+    expect(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBe($assessmentBefore)
+        ->and(DB::table('activity_log')->count())->toBe($activityCountBefore);
+});
+
 it('rejects synchronization for every unsupported request status', function (string $status) {
     DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
         'status' => $status,
@@ -280,12 +306,14 @@ it('lets a correction-authorized administrator refresh an approved unreleased ho
     ]);
     DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
         'status' => 'approved',
+        'mswd_verification_status' => 'verified',
         'updated_at' => now(),
     ]);
     DB::table('ac_household_members')->where('id', $this->headMemberId)->update([
         'monthly_income' => 5500,
         'updated_at' => now(),
     ]);
+
     DB::table('ac_household_members')->insert([
         'id' => (string) Str::ulid(),
         'household_id' => $this->householdId,
@@ -313,14 +341,14 @@ it('lets a correction-authorized administrator refresh an approved unreleased ho
     $metadata = requestMetadata($this->requestId);
     $audit = json_decode(
         DB::table('activity_log')
-            ->where('description', 'Corrected household assessment after approval')
+            ->where('description', 'Corrected completed household assessment')
             ->value('properties'),
         true,
         flags: JSON_THROW_ON_ERROR,
     );
     $auditPayload = (new ActivityLogResource(
         Activity::query()
-            ->where('description', 'Corrected household assessment after approval')
+            ->where('description', 'Corrected completed household assessment')
             ->with('causer')
             ->firstOrFail(),
     ))->resolve();
@@ -344,6 +372,10 @@ it('lets a correction-authorized administrator refresh an approved unreleased ho
         'monthly_income' => 6000,
         'updated_at' => now(),
     ]);
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'mswd_verification_status' => 'verified',
+        'updated_at' => now(),
+    ]);
 
     refreshHouseholdAssessment(
         assistanceRequestId: $this->requestId,
@@ -355,13 +387,14 @@ it('lets a correction-authorized administrator refresh an approved unreleased ho
     );
 
     expect(DB::table('activity_log')
-        ->where('description', 'Corrected household assessment after approval')
+        ->where('description', 'Corrected completed household assessment')
         ->count())->toBe(2);
 });
 
 it('blocks approved synchronization without correction permission or a valid reason', function () {
     DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
         'status' => 'approved',
+        'mswd_verification_status' => 'verified',
         'updated_at' => now(),
     ]);
 
@@ -383,6 +416,25 @@ it('blocks approved synchronization without correction permission or a valid rea
         correctionReason: 'Too short',
     ))->toThrow(DomainException::class, '10 to 1,000 characters');
 
+});
+
+it('lets the assigned MSWD reviewer synchronize an approved request awaiting verification', function () {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'status' => 'approved',
+        'mswd_verification_status' => 'pending',
+        'updated_at' => now(),
+    ]);
+
+    $updated = refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+        canProcessRequests: true,
+        canCorrectRequests: false,
+    );
+
+    expect($updated->status->value)->toBe('approved')
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot.source'))->toBe('mswd_interview');
 });
 
 it('blocks approved synchronization when any release artifact already exists', function (string $column, mixed $value) {

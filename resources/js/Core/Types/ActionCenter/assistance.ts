@@ -6,6 +6,56 @@
 export type CooldownType = 'per_request' | 'one_time';
 export type CooldownScope = 'per_beneficiary' | 'per_household';
 export type PhysicalCopyRequirement = 'unspecified' | 'original' | 'certified_true_copy' | 'original_or_certified_true_copy' | 'photocopy';
+export type PresentedCopyType = 'original' | 'certified_true_copy' | 'photocopy';
+export interface PresentedCopyOption {
+    value: PresentedCopyType;
+    label: string;
+}
+export type MswdVerificationStatus = 'pending' | 'under_review' | 'needs_correction' | 'verified';
+
+export interface AssistanceReviewActor {
+    id: string | number;
+    name: string;
+}
+
+export interface AssistanceMswdVerification {
+    status: MswdVerificationStatus | null;
+    is_current: boolean;
+    blockers: string[];
+    fingerprint: string | null;
+    notes: string | null;
+    verified_at: string | null;
+    verified_by: AssistanceReviewActor | null;
+}
+
+export interface AssistanceDocumentCheck {
+    id: string | number;
+    document_key: string;
+    label: string;
+    description: string | null;
+    is_required: boolean;
+    is_applicable: boolean;
+    exemption_reason: string | null;
+    physical_copy_requirement: PhysicalCopyRequirement;
+    verification_status: 'pending' | 'verified' | 'needs_correction';
+    presented_copy_type: PresentedCopyType | null;
+    remarks: string | null;
+    checked_by: AssistanceReviewActor | null;
+    checked_at: string | null;
+    media_id: number | null;
+    media_version: string | null;
+}
+
+export const MSWD_VERIFICATION_LABELS: Record<MswdVerificationStatus, string> = {
+    pending: 'MSWD Pending',
+    under_review: 'MSWD Under Review',
+    needs_correction: 'MSWD Needs Correction',
+    verified: 'MSWD Verified',
+};
+
+export function mswdVerificationLabel(status: MswdVerificationStatus | null | undefined): string {
+    return status ? MSWD_VERIFICATION_LABELS[status] : 'MSWD Not Started';
+}
 export type AssistanceRequestFilingMode = 'self_or_on_behalf' | 'on_behalf_only';
 export type AssistanceRequestSubjectType = 'person' | 'deceased';
 export type AssistanceGeneratedDocument =

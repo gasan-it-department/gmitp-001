@@ -51,7 +51,7 @@ class AssistanceRequestSmsNotifier
             $request,
             'request_approved',
             fn (string $office, string $reference): string => sprintf(
-                '%s: Naaprubahan ang request mo (%s). Hintayin ang abiso ng MSWD para sa release.',
+                '%s: Na-record na ang approved amount ng request mo (%s). Kailangan pa itong kumpletuhin sa MSWD verification bago ang release. Hintayin ang abiso ng MSWD.',
                 $office,
                 $reference,
             ),

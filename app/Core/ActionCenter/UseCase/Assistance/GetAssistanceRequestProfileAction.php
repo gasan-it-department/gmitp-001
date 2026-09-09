@@ -4,7 +4,10 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\UseCase\Beneficiary\FindCrossMunicipalityMatchesAction;
+use App\Core\Users\Enums\EnumPermissions;
+use App\Core\Users\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Spatie\Activitylog\Models\Activity;
 
@@ -13,6 +16,7 @@ class GetAssistanceRequestProfileAction
     public function __construct(
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
         private readonly RefreshAssistanceHouseholdAssessmentAction $refreshAssessment,
+        private readonly AssistanceMswdVerificationService $mswdVerification,
     ) {}
 
     public function execute(string $municipalId, string $assistanceRequestId)
@@ -30,9 +34,13 @@ class GetAssistanceRequestProfileAction
             'cancelledBy',
             'media',
             'snapshot',
+            'documentChecks.checkedBy',
+            'mswdVerifiedBy',
+            'onBehalfHouseholdMember',
             // Live beneficiary — powers the cross-LGU warning AND the
             // beneficiary_number on the detail resource.
             'beneficiary',
+            'beneficiary.media',
         ])->findOrFail($assistanceRequestId);
 
         if ($assistanceRequest->municipal_id !== $municipalId) {
@@ -85,6 +93,21 @@ class GetAssistanceRequestProfileAction
             'householdMembers' => $householdMembers,
             'householdAssessmentPreview' => $this->refreshAssessment->preview($assistanceRequest, $householdMembers),
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
+            'mswdVerification' => $this->mswdVerification->payload($assistanceRequest),
+            'documentChecks' => $this->mswdVerification->documentChecksPayload($assistanceRequest),
+            'mswdReviewerOptions' => User::query()
+                ->where('municipal_id', $municipalId)
+                ->whereNull('deactivated_at')
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get()
+                ->filter(fn (User $user): bool => $user->can(EnumPermissions::ACTION_CENTER_REQUESTS_VERIFY->value))
+                ->map(fn (User $user): array => [
+                    'id' => $user->id,
+                    'name' => trim(implode(' ', array_filter([$user->first_name, $user->last_name]))) ?: ($user->user_name ?? 'Unknown user'),
+                ])
+                ->values()
+                ->all(),
         ];
     }
 }

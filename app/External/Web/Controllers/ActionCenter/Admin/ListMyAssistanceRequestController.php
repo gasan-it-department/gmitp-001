@@ -3,6 +3,7 @@
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\Enums\AssistanceStatus;
+use App\Core\ActionCenter\Enums\MswdVerificationStatus;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\UseCase\Assistance\ListAssistanceRequestAction;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestListResource;
@@ -36,8 +37,7 @@ class ListMyAssistanceRequestController extends Controller
 {
     public function __construct(
         private readonly ListAssistanceRequestAction $listAssistanceRequestAction,
-    ) {
-    }
+    ) {}
 
     public function __invoke(Request $request): Response
     {
@@ -50,17 +50,25 @@ class ListMyAssistanceRequestController extends Controller
         // by editing the URL.
         $userFilters = $request->validate([
             'assistance_type_id' => ['nullable', 'ulid', Rule::exists('ac_assistance_types', 'id')->where('municipal_id', $municipalId)],
-            'search'             => ['nullable', 'string', 'max:100'],
-            'date_from'          => ['nullable', 'date'],
-            'date_to'            => ['nullable', 'date', 'after_or_equal:date_from'],
-            'per_page'           => ['nullable', 'integer', 'min:5', 'max:100'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
         // Compose the user-tunable filters with the pinned ownership scope.
         // Pinned keys are written LAST so any sneak-through from the request
         // input would be overwritten anyway.
         $filters = array_merge($userFilters, [
-            'status'              => AssistanceStatus::UnderReview->value,
+            'statuses' => [
+                AssistanceStatus::UnderReview->value,
+                AssistanceStatus::Approved->value,
+            ],
+            'mswd_verification_statuses' => [
+                MswdVerificationStatus::Pending->value,
+                MswdVerificationStatus::UnderReview->value,
+                MswdVerificationStatus::NeedsCorrection->value,
+            ],
             'reviewed_by_user_id' => Auth::id(),
         ]);
 
@@ -77,12 +85,12 @@ class ListMyAssistanceRequestController extends Controller
         // `viewMode` prop tells the page to show the personal-worklist
         // heading + hide the status filter dropdown.
         return Inertia::render('ActionCenter/Admin/RequestList/ActionCenterRequestList', [
-            'requests'        => AssistanceRequestListResource::collection($assistanceRequests),
+            'requests' => AssistanceRequestListResource::collection($assistanceRequests),
             // Echo back only the user-tweakable filters so the input boxes
             // hydrate correctly. The pinned ones are implicit on this page.
-            'filters'         => $userFilters,
+            'filters' => $userFilters,
             'assistanceTypes' => $assistanceTypes,
-            'viewMode'        => 'mine',
+            'viewMode' => 'mine',
         ]);
     }
 }

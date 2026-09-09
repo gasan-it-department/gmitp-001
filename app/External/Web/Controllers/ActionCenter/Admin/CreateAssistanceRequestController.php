@@ -22,7 +22,7 @@ use Inertia\Response;
  * Route: GET /{municipality}/action-center/admin/beneficiary/{beneficiaryId}/file-assistance
  *
  * Display-only (per the Web = render / Api = mutate split). The form is
- * ANCHORED to an existing, verified beneficiary — identity is shown read-only
+ * ANCHORED to an existing beneficiary — identity is shown read-only
  * and never re-typed — which is the whole point of routing through a chosen
  * beneficiary rather than re-collecting a person. The POST goes to
  * StoreAdminAssistanceRequestController.
@@ -45,7 +45,7 @@ class CreateAssistanceRequestController extends Controller
             ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
             ->firstOrFail();
 
-        if (! $beneficiary->is_active || ! $beneficiary->household->isVerified()) {
+        if (! $beneficiary->is_active || $beneficiary->isIntakeRejected()) {
             return redirect()
                 ->route('actionCenter.admin.beneficiary.profile', [
                     'municipality' => $municipality,
@@ -55,7 +55,7 @@ class CreateAssistanceRequestController extends Controller
                     'error',
                     ! $beneficiary->is_active
                         ? 'This beneficiary record is inactive. Resolve their residence or status before filing assistance.'
-                        : 'This household is on hold until an eligible head of household is assigned.',
+                        : 'This beneficiary intake was rejected by MSWD. Reopen or correct the intake before filing assistance.',
                 );
         }
 

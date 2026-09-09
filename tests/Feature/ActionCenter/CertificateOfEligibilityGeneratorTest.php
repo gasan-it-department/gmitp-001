@@ -3,6 +3,7 @@
 use App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateCertificateOfEligibilityDto;
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
+use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\UseCase\Assistance\GenerateCertificateOfEligibilityAction;
 use App\Core\ActionCenter\UseCase\Assistance\GenerateFinancialDocumentPacketAction;
 use App\External\Api\Request\ActionCenter\GenerateCertificateOfEligibilityRequest;
@@ -118,7 +119,7 @@ afterEach(function () {
 });
 
 it('uses the frozen claimant snapshot and trusted municipality data', function () {
-    $context = seedCertificateOfEligibilityContext(status: 'under_review', reviewed: true);
+    $context = seedCertificateOfEligibilityContext();
     DB::table('municipalities')
         ->where('id', $context['municipal_id'])
         ->update(['municipal_code' => '174003000']);
@@ -172,51 +173,28 @@ it('uses the frozen filer for on-behalf certificates', function () {
         ->and($pdfData->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque');
 });
 
-it('falls back to the request submission date when review has no recorded date', function () {
-    $context = seedCertificateOfEligibilityContext(status: 'approved', reviewed: false);
-    DB::table('ac_assistance_requests')
-        ->where('id', $context['request_id'])
-        ->update(['created_at' => '2026-08-12 09:30:00']);
-
-    $data = app(GenerateCertificateOfEligibilityAction::class)->formData(
-        $context['request_id'],
-        $context['municipal_id'],
-    );
-
-    expect($data->intakeDate)->toBe('2026-08-12');
-});
-
-it('requires a started review and rejects terminal or pending requests', function () {
-    foreach (['pending', 'rejected', 'cancelled'] as $status) {
+it('requires current MSWD verification for open requests and preserves legacy released reprints', function () {
+    foreach (['pending', 'under_review', 'approved', 'rejected', 'cancelled'] as $status) {
         $context = seedCertificateOfEligibilityContext(status: $status, reviewed: false);
 
-        expect(fn () => app(GenerateCertificateOfEligibilityAction::class)->formData(
+        expect(fn() => app(GenerateCertificateOfEligibilityAction::class)->formData(
             $context['request_id'],
             $context['municipal_id'],
         ))->toThrow(DomainException::class);
     }
 
-    $notStarted = seedCertificateOfEligibilityContext(status: 'under_review', reviewed: false);
+    $legacyReleased = seedCertificateOfEligibilityContext(status: AssistanceStatus::Released->value, reviewed: false);
 
-    expect(fn () => app(GenerateCertificateOfEligibilityAction::class)->formData(
-        $notStarted['request_id'],
-        $notStarted['municipal_id'],
-    ))->toThrow(DomainException::class);
-
-    foreach (['approved', 'released'] as $status) {
-        $context = seedCertificateOfEligibilityContext(status: $status, reviewed: false);
-
-        expect(app(GenerateCertificateOfEligibilityAction::class)->formData(
-            $context['request_id'],
-            $context['municipal_id'],
-        ))->toBeInstanceOf(\App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityFormData::class);
-    }
+    expect(app(GenerateCertificateOfEligibilityAction::class)->formData(
+        $legacyReleased['request_id'],
+        $legacyReleased['municipal_id'],
+    ))->toBeInstanceOf(\App\Core\ActionCenter\Dto\Assistance\CertificateOfEligibilityFormData::class);
 });
 
 it('rejects a request from another municipality', function () {
     $context = seedCertificateOfEligibilityContext();
 
-    expect(fn () => app(GenerateCertificateOfEligibilityAction::class)->formData(
+    expect(fn() => app(GenerateCertificateOfEligibilityAction::class)->formData(
         $context['request_id'],
         (string) Str::ulid(),
     ))->toThrow(AuthorizationException::class);
@@ -225,7 +203,7 @@ it('rejects a request from another municipality', function () {
 it('blocks the certificate when it is disabled for the assistance type', function () {
     $context = seedCertificateOfEligibilityContext(enabledGeneratedDocuments: []);
 
-    expect(fn () => app(GenerateCertificateOfEligibilityAction::class)->formData(
+    expect(fn() => app(GenerateCertificateOfEligibilityAction::class)->formData(
         $context['request_id'],
         $context['municipal_id'],
     ))->toThrow(DomainException::class, 'Certificate of Eligibility generation is not enabled');
@@ -303,7 +281,7 @@ it('does not write records and renders a one-page-compatible dompdf document', f
 /** @return array{municipal_id: string, request_id: string} */
 function seedCertificateOfEligibilityContext(
     ?array $metadata = null,
-    string $status = 'approved',
+    string $status = 'released',
     bool $reviewed = true,
     ?array $enabledGeneratedDocuments = null,
 ): array {
@@ -324,8 +302,8 @@ function seedCertificateOfEligibilityContext(
     DB::table('municipalities')->insert([
         'id' => $municipalId,
         'name' => 'Gasan',
-        'slug' => 'gasan-4905-'.Str::lower(Str::random(4)),
-        'municipal_code' => 'GAS-'.Str::upper(Str::random(4)),
+        'slug' => 'gasan-4905-' . Str::lower(Str::random(4)),
+        'municipal_code' => 'GAS-' . Str::upper(Str::random(4)),
         'psgc_municipal_id' => (string) $psgcMunicipalId,
         'is_active' => true,
         'created_at' => $now,
@@ -358,12 +336,13 @@ function seedCertificateOfEligibilityContext(
         'beneficiary_id' => (string) Str::ulid(),
         'household_id' => (string) Str::ulid(),
         'assistance_type_id' => $assistanceTypeId,
-        'transaction_number' => 'REQ-2026-'.Str::upper(Str::random(5)),
+        'transaction_number' => 'REQ-2026-' . Str::upper(Str::random(5)),
         'status' => $status,
         'amount_approved' => 1000,
         'metadata' => $metadata ? json_encode($metadata, JSON_THROW_ON_ERROR) : null,
         'reviewed_at' => $reviewed ? '2026-08-13 10:00:00' : null,
         'approved_at' => in_array($status, ['approved', 'released'], true) ? '2026-08-16 10:00:00' : null,
+        'released_at' => $status === 'released' ? '2026-08-17 10:00:00' : null,
         'created_at' => $now,
         'updated_at' => $now,
     ]);

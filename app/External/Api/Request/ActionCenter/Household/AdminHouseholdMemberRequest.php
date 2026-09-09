@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Enums\Sex;
+use App\Core\Users\Enums\EnumPermissions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,6 +23,15 @@ use Illuminate\Validation\Rule;
  */
 class AdminHouseholdMemberRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (! $this->user()?->can(EnumPermissions::ACTION_CENTER_BENEFICIARIES_VERIFY->value)) {
+            // False cannot grant verification; the update action preserves an
+            // existing verified row unless its material identity changes.
+            $this->merge(['is_verified_dependent' => false]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;

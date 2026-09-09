@@ -38,6 +38,7 @@ class AssistanceRequestDetailsResource extends JsonResource
             'id' => $this->id,
             'transaction_number' => $this->transaction_number,
             'status' => $this->status,
+            'mswd_verification_status' => $this->mswd_verification_status?->value,
 
             // ── Program ──────────────────────────────────────────────────────
             'assistance_type' => $this->whenLoaded('assistanceType', fn () => [

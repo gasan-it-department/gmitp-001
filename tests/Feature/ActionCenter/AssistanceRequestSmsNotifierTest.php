@@ -39,7 +39,7 @@ it('sends the assistance request lifecycle messages', function (string $method, 
 })->with([
     'received' => ['requestReceived', 'Natanggap ang request'],
     'under review' => ['reviewStarted', 'para sa interview, verification'],
-    'approved' => ['requestApproved', 'Naaprubahan'],
+    'approved' => ['requestApproved', 'Na-record na ang approved amount'],
     'rejected' => ['requestRejected', 'Hindi naaprubahan'],
     'released' => ['requestReleased', 'Naitala nang released'],
 ]);

@@ -3,17 +3,23 @@
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
-use App\External\Api\Controllers\ActionCenter\Assistance\CorrectAssistanceRequestFilerNameController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdVerificationController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
+use App\External\Api\Controllers\ActionCenter\Assistance\ReassignAssistanceMswdReviewerController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RefreshAssistanceHouseholdAssessmentController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\ReopenAssistanceMswdVerificationController;
+use App\External\Api\Controllers\ActionCenter\Assistance\ReplaceAssistanceAdditionalDocumentController;
+use App\External\Api\Controllers\ActionCenter\Assistance\ReturnAssistanceForCorrectionController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAdminAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceTypeController;
+use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceDocumentCheckController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
+use App\External\Api\Controllers\ActionCenter\Assistance\UploadAssistanceRequestDocumentsController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReassignBeneficiaryHouseholdController;
@@ -166,7 +172,7 @@ Route::prefix('{municipality}/action-center')
             // read-only, never re-typed. Display only; POST goes to the Api
             // StoreAdminAssistanceRequestController.
             Route::get('beneficiary/{beneficiaryId}/file-assistance', CreateAssistanceRequestController::class)
-                ->middleware('permission:action_center.requests.process')
+                ->middleware('permission:action_center.requests.intake')
                 ->name('assistance.create');
 
             Route::get('create/assistance-type', CreateAssistanceTypeController::class)
@@ -332,8 +338,51 @@ Route::prefix('/api/action-center')
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/start-review',
                     StartAssistanceRequestReviewController::class,
-                )->middleware('permission:action_center.requests.process')
+                )->middleware('permission:action_center.requests.verify')
                     ->name('assistance.start-review');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/document-checks/{documentKey}',
+                    UpdateAssistanceDocumentCheckController::class,
+                )->middleware('permission:action_center.requests.verify')
+                    ->name('assistance.document-check.update');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/mswd/complete',
+                    CompleteAssistanceMswdVerificationController::class,
+                )->middleware('permission:action_center.requests.verify')
+                    ->name('assistance.mswd.complete');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/mswd/return',
+                    ReturnAssistanceForCorrectionController::class,
+                )->middleware('permission:action_center.requests.verify')
+                    ->name('assistance.mswd.return');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/mswd/reopen',
+                    ReopenAssistanceMswdVerificationController::class,
+                )->middleware('permission:action_center.requests.correct')
+                    ->name('assistance.mswd.reopen');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/mswd/reassign',
+                    ReassignAssistanceMswdReviewerController::class,
+                )->middleware('permission:action_center.requests.correct')
+                    ->name('assistance.mswd.reassign');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/documents',
+                    UploadAssistanceRequestDocumentsController::class,
+                )->middleware('permission:action_center.requests.intake|action_center.requests.process')
+                    ->name('assistance.documents.upload');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/additional-documents/{mediaId}/replace',
+                    ReplaceAssistanceAdditionalDocumentController::class,
+                )->whereNumber('mediaId')
+                    ->middleware('permission:action_center.requests.intake|action_center.requests.process')
+                    ->name('assistance.additional-document.replace');
 
                 // Admin correction of an in-flight request's content (description
                 // + document scans). POST + multipart for the uploads. The action
@@ -342,7 +391,7 @@ Route::prefix('/api/action-center')
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/update',
                     UpdateAssistanceRequestController::class,
-                )->middleware('permission:action_center.requests.process')
+                )->middleware('permission:action_center.requests.intake|action_center.requests.process')
                     ->name('assistance.update');
 
                 Route::post(
@@ -468,7 +517,7 @@ Route::prefix('/api/action-center')
                     '/beneficiary/{beneficiaryId}/identity-document/{side}',
                     ReplaceBeneficiaryIdentityDocumentController::class,
                 )->whereIn('side', ['front', 'back'])
-                    ->middleware('permission:action_center.beneficiaries.verify')
+                    ->middleware('permission:action_center.beneficiaries.manage|action_center.beneficiaries.verify')
                     ->name('beneficiary.identity-document.replace');
 
                 Route::post(
@@ -521,7 +570,7 @@ Route::prefix('/api/action-center')
                 // beneficiary. Reuses StoreAssistanceRequestAction with
                 // encoded_by_user_id = the acting admin. Tenant via header.
                 Route::post('/assistance-request', StoreAdminAssistanceRequestController::class)
-                    ->middleware('permission:action_center.requests.process')
+                    ->middleware('permission:action_center.requests.intake')
                     ->name('assistance.admin-store');
             });
 

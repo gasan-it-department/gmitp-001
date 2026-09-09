@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,7 @@ class ReleaseAssistanceRequestAction
 {
     public function __construct(
         private readonly AssistanceRequestSmsNotifier $smsNotifier,
+        private readonly AssistanceMswdVerificationService $mswdVerification,
     ) {}
 
     public function execute(ReleaseAssistanceRequestDto $dto): AssistanceRequest
@@ -63,6 +65,7 @@ class ReleaseAssistanceRequestAction
             $this->ensureTenantMatch($request, $dto->municipalId);
             $this->ensureTransitionAllowed($request);
             $this->ensureAmountApproved($request);
+            $this->mswdVerification->assertCurrent($request);
             $this->ensureReferenceNumberUnique($request, $dto->releaseReferenceNumber);
 
             $request->update([

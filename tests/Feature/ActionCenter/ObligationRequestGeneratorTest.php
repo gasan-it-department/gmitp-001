@@ -87,7 +87,7 @@ afterEach(function () {
 });
 
 it('builds trusted form data from the frozen request snapshot', function () {
-    $context = seedObligationRequestContext();
+    $context = seedObligationRequestContext(status: 'released');
     DB::table('municipalities')
         ->where('id', $context['municipal_id'])
         ->update(['municipal_code' => '174003000']);
@@ -114,7 +114,7 @@ it('keeps the claimant as payee and mentions the assisted person for on-behalf r
         'relationship_to_beneficiary' => 'parent',
         'on_behalf_first_name' => 'Juan',
         'on_behalf_last_name' => 'Rejano',
-    ]);
+    ], status: 'released');
 
     $data = app(GenerateObligationRequestAction::class)->formData(
         $context['request_id'],
@@ -184,12 +184,21 @@ it('blocks both form loading and generation when the obligation request is disab
 });
 
 it('keeps null generated-document settings backward compatible', function () {
-    $context = seedObligationRequestContext(enabledGeneratedDocuments: null);
+    $context = seedObligationRequestContext(status: 'released', enabledGeneratedDocuments: null);
 
     expect(app(GenerateObligationRequestAction::class)->formData(
         $context['request_id'],
         $context['municipal_id'],
     ))->toBeInstanceOf(\App\Core\ActionCenter\Dto\Assistance\ObligationRequestFormData::class);
+});
+
+it('requires current MSWD verification before an approved request can generate an obligation request', function () {
+    $context = seedObligationRequestContext();
+
+    expect(fn () => app(GenerateObligationRequestAction::class)->formData(
+        $context['request_id'],
+        $context['municipal_id'],
+    ))->toThrow(DomainException::class, 'MSWD verification must be completed');
 });
 
 it('validates only the manual obligation request fields', function () {
