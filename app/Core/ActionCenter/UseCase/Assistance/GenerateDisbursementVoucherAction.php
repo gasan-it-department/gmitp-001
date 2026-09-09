@@ -88,12 +88,10 @@ class GenerateDisbursementVoucherAction
     ): string {
         $lines = [
             'Payment for '.$context->assistanceType,
+            'For: '.($context->assistedPerson ?? $context->payee),
         ];
 
-        if ($context->assistedPerson !== null) {
-            $lines[] = 'For: '.$context->assistedPerson;
-        }
-
+        $lines[] = 'as per supporting papers hereto attached amounting to';
         $lines[] = $this->pesoInWords->format($context->approvedAmount);
 
         return implode("\n", $lines);

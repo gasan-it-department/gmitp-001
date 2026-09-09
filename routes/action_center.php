@@ -3,6 +3,7 @@
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CorrectAssistanceRequestFilerNameController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RefreshAssistanceHouseholdAssessmentController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
@@ -358,6 +359,12 @@ Route::prefix('/api/action-center')
                     CorrectMissingBurialDateOfDeathController::class,
                 )->middleware('permission:action_center.requests.correct')
                     ->name('assistance.correct-missing-date-of-death');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/correct-filer-name',
+                    CorrectAssistanceRequestFilerNameController::class,
+                )->middleware('permission:action_center.requests.process|action_center.requests.correct')
+                    ->name('assistance.correct-filer-name');
 
                 // Approve a case — commits the amount and writes cooldown rows.
                 // Sibling to start-review; both follow the same thin-controller

@@ -101,8 +101,10 @@ it('builds trusted voucher form data and spells the approved amount', function (
         ->and($data->address)->toBe('Purok 2, Brgy. Bognuyan, Gasan, Marinduque')
         ->and($data->approvedAmount)->toBe(1000.50)
         ->and($data->suggestedExplanation)->toContain('Payment for Medical Assistance')
+        ->and($data->suggestedExplanation)->toContain('For: Share Mae Rejano')
         ->and($data->suggestedExplanation)->not->toContain('Aid/Assistance to Individual in Crisis Situation')
         ->and($data->suggestedExplanation)->not->toContain('AICS')
+        ->and($data->suggestedExplanation)->toContain('as per supporting papers hereto attached amounting to')
         ->and($data->suggestedExplanation)->toContain('ONE THOUSAND PESOS AND 50/100 ONLY')
         ->and($data->recommendedDefaults['obligation_request_number'])->toBe(
             sprintf('200-%s-%s-', now()->format('Y'), now()->format('m')),

@@ -43,6 +43,7 @@ it('assigns every admin action center route to one explicit capability', functio
                 'actionCenter.assistance.update' => 'action_center.requests.process',
                 'actionCenter.assistance.household-assessment.refresh' => 'action_center.requests.process|action_center.requests.correct',
                 'actionCenter.assistance.correct-missing-date-of-death' => 'action_center.requests.correct',
+                'actionCenter.assistance.correct-filer-name' => 'action_center.requests.process|action_center.requests.correct',
                 'actionCenter.assistance.approve' => 'action_center.requests.decide',
                 'actionCenter.assistance.cancel-approved' => 'action_center.requests.decide',
                 'actionCenter.assistance.reject' => 'action_center.requests.decide',
