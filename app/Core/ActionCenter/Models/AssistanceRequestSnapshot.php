@@ -45,4 +45,20 @@ class AssistanceRequestSnapshot extends Model
     {
         return $this->belongsTo(AssistanceRequest::class, 'assistance_request_id');
     }
+
+    /**
+     * Replace only the frozen filer's name after the Core correction action
+     * has verified tenant, status, permission, and live identity state.
+     *
+     * @param  array{first_name: string, middle_name: ?string, last_name: string, suffix: ?string}  $name
+     */
+    public function replaceFilerName(array $name): void
+    {
+        $this->update([
+            'first_name' => $name['first_name'],
+            'middle_name' => $name['middle_name'],
+            'last_name' => $name['last_name'],
+            'suffix' => $name['suffix'],
+        ]);
+    }
 }

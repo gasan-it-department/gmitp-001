@@ -137,6 +137,7 @@ class AssistanceRequestDetailsResource extends JsonResource
                     : null,
                 'religion' => $snapshot?->religion,
             ],
+            'filer_name_correction' => $this->filerNameCorrectionData(),
 
             // ── Address snapshot (frozen at submission) ──────────────────────
             'address_snapshot' => [
@@ -232,6 +233,64 @@ class AssistanceRequestDetailsResource extends JsonResource
             $snapshot?->last_name,
             $snapshot?->suffix,
         ])));
+    }
+
+    /**
+     * Compare only name fields. Other live beneficiary changes remain outside
+     * this narrowly scoped request-snapshot correction.
+     *
+     * @return array{has_difference: bool, current_profile_name: string, identity_verified: bool}|null
+     */
+    private function filerNameCorrectionData(): ?array
+    {
+        if (! $this->resource->relationLoaded('beneficiary') || $this->beneficiary === null) {
+            return null;
+        }
+
+        $snapshot = $this->resource->snapshot;
+        $profileName = $this->normalizedNameParts(
+            $this->beneficiary->first_name,
+            $this->beneficiary->middle_name,
+            $this->beneficiary->last_name,
+            $this->beneficiary->suffix,
+        );
+        $snapshotName = $this->normalizedNameParts(
+            $snapshot?->first_name,
+            $snapshot?->middle_name,
+            $snapshot?->last_name,
+            $snapshot?->suffix,
+        );
+
+        return [
+            'has_difference' => $profileName !== $snapshotName,
+            'current_profile_name' => trim(implode(' ', array_filter($profileName))),
+            'identity_verified' => $this->beneficiary->isIdentityVerified(),
+        ];
+    }
+
+    /** @return array{first_name: ?string, middle_name: ?string, last_name: ?string, suffix: ?string} */
+    private function normalizedNameParts(
+        mixed $firstName,
+        mixed $middleName,
+        mixed $lastName,
+        mixed $suffix,
+    ): array {
+        $normalize = static function (mixed $value): ?string {
+            if (! is_string($value)) {
+                return null;
+            }
+
+            $value = trim($value);
+
+            return $value === '' ? null : $value;
+        };
+
+        return [
+            'first_name' => $normalize($firstName),
+            'middle_name' => $normalize($middleName),
+            'last_name' => $normalize($lastName),
+            'suffix' => $normalize($suffix),
+        ];
     }
 
     private function resolveOnBehalfFullName(): string

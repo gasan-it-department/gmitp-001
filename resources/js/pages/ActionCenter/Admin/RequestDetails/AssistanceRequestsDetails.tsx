@@ -28,6 +28,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowLeft,
+    ArrowRight,
     BadgeCheck,
     CalendarPlus,
     CheckCircle2,
@@ -50,12 +51,14 @@ import {
     Upload,
     User,
     UserCheck,
+    UserRoundCheck,
     Users,
     XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
+import CorrectAssistanceRequestFilerNameDialog from './Components/CorrectAssistanceRequestFilerNameDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
 import RejectRequestDialog from './Components/RejectRequestDialog';
 import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
@@ -108,6 +111,12 @@ interface IdentitySnapshot {
     age_at_submission: number | null;
     educational_attainment: string | null;
     religion: string | null;
+}
+
+interface FilerNameCorrection {
+    has_difference: boolean;
+    current_profile_name: string;
+    identity_verified: boolean;
 }
 
 interface AddressSnapshot {
@@ -168,6 +177,7 @@ interface AssistanceRequestDetail {
     relationship: { value: string; label: string } | null;
     on_behalf: OnBehalfBlock | null;
     identity_snapshot: IdentitySnapshot;
+    filer_name_correction: FilerNameCorrection | null;
     address_snapshot: AddressSnapshot;
     privacy_consented_at: string | null;
     privacy_notice_version: string | null;
@@ -281,6 +291,7 @@ export default function AssistanceRequestsDetails({
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
+    const [isFilerNameCorrectionOpen, setIsFilerNameCorrectionOpen] = useState(false);
     const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
     const [isApprovedHouseholdSyncOpen, setIsApprovedHouseholdSyncOpen] = useState(false);
 
@@ -312,6 +323,17 @@ export default function AssistanceRequestsDetails({
         detail.on_behalf !== null &&
         !detail.filed_for_self &&
         !detail.on_behalf.date_of_death;
+    const filerNameCorrection = detail.filer_name_correction;
+    const canApplyFilerNameCorrection =
+        !detail.has_release_artifacts &&
+        ((detail.status === 'pending' && canProcessRequests) ||
+            (detail.status === 'under_review' && canProcessRequests && isMine) ||
+            (detail.status === 'approved' && canCorrectRequests));
+    const showFilerNameDifference =
+        filerNameCorrection?.has_difference === true &&
+        ['pending', 'under_review', 'approved'].includes(detail.status) &&
+        !detail.has_release_artifacts &&
+        (canProcessRequests || canCorrectRequests);
     const extraDocuments = (detail.documents ?? []).filter((d) => !requiredDocumentsData.some((r) => r.key === documentKeyOf(d)));
     const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
     const enabledGeneratedDocuments = new Set(detail.assistance_type?.enabled_generated_documents ?? []);
@@ -509,6 +531,49 @@ export default function AssistanceRequestsDetails({
                 {crossMatches.length > 0 && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:hidden">
                         <CrossMunicipalityWarning matches={crossMatches} context="release" />
+                    </div>
+                )}
+
+                {showFilerNameDifference && filerNameCorrection && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+                        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <UserRoundCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-amber-950">Filer name differs from the beneficiary profile</p>
+                                    <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                                        Frozen request: <span className="font-semibold">{detail.identity_snapshot.full_name}</span>
+                                        <ArrowRight className="mx-1.5 inline h-3 w-3" aria-hidden="true" />
+                                        Current profile: <span className="font-semibold">{filerNameCorrection.current_profile_name}</span>
+                                    </p>
+                                    {!filerNameCorrection.identity_verified && (
+                                        <p className="mt-1 text-xs font-medium text-amber-900">
+                                            Verify the corrected beneficiary identity before applying it to this request.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            {canApplyFilerNameCorrection && filerNameCorrection.identity_verified ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                    onClick={() => setIsFilerNameCorrectionOpen(true)}
+                                >
+                                    <UserRoundCheck className="mr-2 h-4 w-4" /> Apply corrected name
+                                </Button>
+                            ) : canViewBeneficiaries ? (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                >
+                                    <Link href={manageInterviewHouseholdUrl}>
+                                        <User className="mr-2 h-4 w-4" /> View beneficiary profile
+                                    </Link>
+                                </Button>
+                            ) : null}
+                        </div>
                     </div>
                 )}
 
@@ -1270,6 +1335,17 @@ export default function AssistanceRequestsDetails({
                     transactionNumber={detail.transaction_number}
                     isOpen={isMissingDateCorrectionOpen}
                     onClose={() => setIsMissingDateCorrectionOpen(false)}
+                />
+            )}
+            {canApplyFilerNameCorrection && filerNameCorrection?.has_difference && filerNameCorrection.identity_verified && (
+                <CorrectAssistanceRequestFilerNameDialog
+                    requestId={detail.id}
+                    transactionNumber={detail.transaction_number}
+                    frozenName={detail.identity_snapshot.full_name}
+                    currentProfileName={filerNameCorrection.current_profile_name}
+                    isApproved={detail.status === 'approved'}
+                    isOpen={isFilerNameCorrectionOpen}
+                    onClose={() => setIsFilerNameCorrectionOpen(false)}
                 />
             )}
             {canCorrectApprovedHousehold && (
