@@ -44,10 +44,26 @@ it('returns the configured Gasan recommendations', function () {
 
     expect($defaults->obligationRequestNumberPrefix)->toBe('200-2026-09-')
         ->and($defaults->obligationRequestResponsibilityCenter)->toBe('7611')
+        ->and($defaults->obligationRequestParticulars)->toBe('')
         ->and($defaults->obligationRequestAccountCode)->toBe('5-02-99-080')
         ->and($defaults->disbursementVoucherResponsibilityCenterCode)->toBe('7611')
         ->and($defaults->certificateOfEligibilityCertifiedByPosition)->toBe('Social Welfare Officer III');
 
+});
+
+it('returns the senior burial obligation request recommendations for current and legacy Gasan codes', function () {
+    $provider = financialDocumentDefaultsProvider(
+        require dirname(__DIR__, 3) . '/config/action_center_financial_documents.php',
+    );
+
+    foreach (['1704003000', '174003000'] as $municipalCode) {
+        $defaults = $provider->for($municipalCode, 'burial-assisstance-senior-citizen');
+
+        expect($defaults->obligationRequestResponsibilityCenter)->toBe('7999-2A')
+            ->and($defaults->obligationRequestParticulars)
+            ->toBe('Reimbursement of Burial Expenses (Burial Assistance to the Family of Deceased Senior Citizen)')
+            ->and($defaults->obligationRequestAccountCode)->toBe('5-02-99-080');
+    }
 });
 
 it('gives assistance-type overrides precedence over municipality values', function () {
