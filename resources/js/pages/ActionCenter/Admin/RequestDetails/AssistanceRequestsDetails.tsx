@@ -35,7 +35,6 @@ import { Link, router, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
     ArrowLeft,
-    ArrowRight,
     BadgeCheck,
     CalendarPlus,
     CheckCircle2,
@@ -57,14 +56,12 @@ import {
     Upload,
     User,
     UserCheck,
-    UserRoundCheck,
     Users,
     XCircle,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
-import CorrectAssistanceRequestFilerNameDialog from './Components/CorrectAssistanceRequestFilerNameDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
 import MswdDocuments from './Components/MswdDocuments';
 import MswdVerificationBadge from './Components/MswdVerificationBadge';
@@ -288,7 +285,6 @@ export default function AssistanceRequestsDetails({
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
-    const [isFilerNameCorrectionOpen, setIsFilerNameCorrectionOpen] = useState(false);
     const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
     const [isApprovedHouseholdSyncOpen, setIsApprovedHouseholdSyncOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('intake');
@@ -565,32 +561,6 @@ export default function AssistanceRequestsDetails({
                 {crossMatches.length > 0 && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:hidden">
                         <CrossMunicipalityWarning matches={crossMatches} context="release" />
-                    </div>
-                )}
-
-                {mswdVerification.blockers.length > 0 && !['released', 'rejected', 'cancelled'].includes(detail.status) && (
-                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
-                        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex min-w-0 items-start gap-3">
-                                <UserRoundCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-                                <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-amber-950">MSWD verification is not yet complete</p>
-                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">{mswdVerification.blockers[0]}</p>
-                                </div>
-                            </div>
-                            {canUploadRequestDocuments && (
-                                <Button
-                                    variant="outline"
-                                    className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
-                                    onClick={() => {
-                                        setActiveTab('documents');
-                                        setIsDocumentUploadOpen(true);
-                                    }}
-                                >
-                                    <Upload className="mr-2 h-4 w-4" /> Upload documents
-                                </Button>
-                            ) : null}
-                        </div>
                     </div>
                 )}
 
