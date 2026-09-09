@@ -94,10 +94,6 @@ class GenerateDisbursementVoucherAction
             $lines[] = 'For: '.$context->assistedPerson;
         }
 
-        $lines[] = sprintf(
-            'RE: Aid/Assistance to Individual in Crisis Situation (AICS) CY %d, as per supporting papers hereto attached amounting to',
-            $context->approvedYear,
-        );
         $lines[] = $this->pesoInWords->format($context->approvedAmount);
 
         return implode("\n", $lines);
