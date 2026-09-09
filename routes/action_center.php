@@ -4,6 +4,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceReques
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdVerificationController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CorrectAssistanceRequestFilerNameController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReassignAssistanceMswdReviewerController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RefreshAssistanceHouseholdAssessmentController;
