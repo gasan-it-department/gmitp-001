@@ -15,7 +15,7 @@ $gasanFinancialDocumentDefaults = [
         'responsibility_center_office' => '',
         'responsibility_center_code' => '7611',
         'accountant_position' => 'Municipal Accountant',
-        'treasurer_position' => 'Municipal Treasurer',
+        'treasurer_position' => 'Acting Municipal Treasurer',
         'mayor_position' => 'Municipal Mayor',
     ],
     'certificate_of_eligibility' => [
