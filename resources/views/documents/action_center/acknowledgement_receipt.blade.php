@@ -224,7 +224,7 @@
 
             <p class="office">Municipal Social Welfare and Development Office</p>
 
-            <div class="document-date"></div>
+            <div class="document-date">{{ $data->submittedAt->format('F j, Y') }}</div>
 
             <h1 class="title-header">ACKNOWLEDGEMENT RECEIPT</h1>
 
@@ -235,14 +235,14 @@
                 <span class="line barangay-line">{{ $data->barangay ?: '________________' }}</span>,
                 {{ $data->municipalityName }}, Marinduque hereby acknowledge the receipt of the amount of
                 <span class="line amount-line">Php {{ number_format($data->approvedAmount, 2) }}</span>
-                as {{ $data->assistanceType }} under the ASSISTANCE TO INDIVIDUALS IN CRISIS SITUATIONS
-                (AICS) program, granted by the Municipal Social Welfare and Development Office (MSWDO)
+                as {{ $data->receiptAssistanceLabel }} under the {{ $data->programLabel }} program, granted by the
+                Municipal Social Welfare and Development Office (MSWDO)
                 of the Municipality of {{ $data->municipalityName }}, Marinduque.
             </p>
 
             <p class="purpose-row">
                 This assistance is for the purpose of
-                <span class="line purpose-line">{{ $data->assistanceType }}</span>,
+                <span class="line purpose-line">{{ $data->receiptAssistanceLabel }}</span>,
                 provided on
                 <span class="line provided-line">{{ $data->providedAt?->format('F j, Y') ?? '' }}</span>.
             </p>

@@ -341,6 +341,34 @@ it('resumes an MSWD review after it was returned for correction', function () {
         ->and($resumed->mswd_verification_notes)->toBeNull();
 });
 
+it('mirrors the filer ID requirement for an applicable assisted person', function (bool $filerIdRequired) {
+    $context = mswdVerificationContext();
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update([
+        'on_behalf_household_member_id' => (string) Str::ulid(),
+    ]);
+    addMswdVerificationRequirement($context['request_id'], 'valid_id_front', 'Filer Valid ID - Front', $filerIdRequired);
+    addMswdVerificationRequirement($context['request_id'], 'recipient_valid_id_front', 'Assisted Person Valid ID - Front', false);
+
+    $request = \App\Core\ActionCenter\Models\AssistanceRequest::query()->findOrFail($context['request_id']);
+    app(AssistanceMswdVerificationService::class)->captureRequirements($request);
+
+    $filerCheck = DB::table('ac_assistance_request_document_checks')
+        ->where('assistance_request_id', $context['request_id'])
+        ->where('document_key', 'valid_id_front')
+        ->first();
+    $recipientCheck = DB::table('ac_assistance_request_document_checks')
+        ->where('assistance_request_id', $context['request_id'])
+        ->where('document_key', 'recipient_valid_id_front')
+        ->first();
+
+    expect((bool) $filerCheck->is_required)->toBe($filerIdRequired)
+        ->and((bool) $recipientCheck->is_applicable)->toBeTrue()
+        ->and((bool) $recipientCheck->is_required)->toBe($filerIdRequired);
+})->with([
+    'optional filer ID remains optional for assisted person' => false,
+    'required filer ID is required for assisted person' => true,
+]);
+
 it('replaces an additional supporting document while verification is unfinished and audits both media versions', function () {
     $context = mswdVerificationContext();
     grantMswdVerificationPermission($context['reviewer_id'], EnumPermissions::ACTION_CENTER_REQUESTS_PROCESS);
@@ -634,6 +662,34 @@ function grantMswdVerificationPermission(string $userId, EnumPermissions $permis
         'model_id' => $userId,
     ]);
     app(PermissionRegistrar::class)->forgetCachedPermissions();
+}
+
+function addMswdVerificationRequirement(
+    string $requestId,
+    string $key,
+    string $label,
+    bool $isRequired,
+): void {
+    $assistanceTypeId = DB::table('ac_assistance_requests')->where('id', $requestId)->value('assistance_type_id');
+    $documentTypeId = (string) Str::ulid();
+
+    DB::table('ac_document_types')->insert([
+        'id' => $documentTypeId,
+        'key' => $key,
+        'label' => $label,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('ac_assistance_type_documents')->insert([
+        'id' => (string) Str::ulid(),
+        'assistance_type_id' => $assistanceTypeId,
+        'document_type_id' => $documentTypeId,
+        'is_required' => $isRequired,
+        'physical_copy_requirement' => 'photocopy',
+        'sort_order' => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 }
 
 /** @param array<string, mixed> $properties */
