@@ -3,6 +3,7 @@
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\CancelApprovedAssistanceRequestDto;
+use App\Core\ActionCenter\Dto\Assistance\CorrectApprovedAssistanceAmountDto;
 use App\Core\ActionCenter\Dto\Assistance\CorrectMissingBurialDateOfDeathDto;
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceRequestDto;
@@ -14,6 +15,7 @@ use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\CancelApprovedAssistanceRequestAction;
+use App\Core\ActionCenter\UseCase\Assistance\CorrectApprovedAssistanceAmountAction;
 use App\Core\ActionCenter\UseCase\Assistance\CorrectMissingBurialDateOfDeathAction;
 use App\Core\ActionCenter\UseCase\Assistance\ReleaseAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\UpdateAssistanceRequestAction;
@@ -388,6 +390,101 @@ it('cancels an approved unreleased request and expires its approval cooldowns', 
 
     expect(fn () => $cancelled->update(['description' => 'Direct mutation after cancellation']))
         ->toThrow(DomainException::class, 'Finalized assistance requests are immutable');
+});
+
+it('corrects only the approved amount while preserving approval, verification, and cooldown data', function () {
+    $context = mutationLockContext();
+    $request = mutationLockRequest($context);
+    $approvedAt = now()->subDay();
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => $approvedAt,
+        'mswd_verification_status' => 'verified',
+        'mswd_verification_fingerprint' => str_repeat('a', 64),
+    ]);
+    $cooldown = BeneficiaryCooldown::query()->create([
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'assistance_request_id' => $request->id,
+        'household_id' => $context['household_id'],
+        'cooldown_starts_at' => $approvedAt,
+        'cooldown_expires_at' => null,
+    ]);
+
+    activity()->enableLogging();
+    try {
+        $corrected = app(CorrectApprovedAssistanceAmountAction::class)->execute(
+            new CorrectApprovedAssistanceAmountDto(
+                assistanceRequestId: $request->id,
+                municipalId: $context['municipal_id'],
+                correctedByUserId: $context['admin_id'],
+                amountApproved: 3500,
+                reason: 'Corrected from the Mayor-authorized assistance record.',
+            ),
+        );
+    } finally {
+        activity()->disableLogging();
+    }
+
+    expect($corrected->amount_approved)->toBe('3500.00')
+        ->and($corrected->status)->toBe(AssistanceStatus::Approved)
+        ->and($corrected->approved_by_user_id)->toBe($context['admin_id'])
+        ->and($corrected->approved_at?->toDateTimeString())->toBe($approvedAt->toDateTimeString())
+        ->and($corrected->mswd_verification_status?->value)->toBe('verified')
+        ->and($corrected->mswd_verification_fingerprint)->toBe(str_repeat('a', 64))
+        ->and($cooldown->fresh()->cooldown_starts_at?->toDateTimeString())->toBe($approvedAt->toDateTimeString())
+        ->and($cooldown->fresh()->cooldown_expires_at)->toBeNull();
+
+    $activities = DB::table('activity_log')->where('subject_id', $request->id)->get();
+    $properties = json_decode((string) $activities->first()->properties, true);
+
+    expect($activities)->toHaveCount(1)
+        ->and($activities->first()->description)->toBe('Corrected approved assistance amount')
+        ->and($properties['old']['amount_approved'])->toBe('2500.00')
+        ->and($properties['attributes']['amount_approved'])->toBe('3500.00')
+        ->and($properties['correction_reason'])->toBe('Corrected from the Mayor-authorized assistance record.');
+
+    expect(fn () => $corrected->update(['amount_approved' => 4000]))
+        ->toThrow(DomainException::class, 'content-locked');
+});
+
+it('rejects approved amount corrections that are unchanged, outside program limits, released, or cross-tenant', function () {
+    $context = mutationLockContext();
+    $action = app(CorrectApprovedAssistanceAmountAction::class);
+    $request = mutationLockRequest($context);
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 2500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+    $dto = fn (float $amount, ?string $municipalId = null): CorrectApprovedAssistanceAmountDto => new CorrectApprovedAssistanceAmountDto(
+        assistanceRequestId: $request->id,
+        municipalId: $municipalId ?? $context['municipal_id'],
+        correctedByUserId: $context['admin_id'],
+        amountApproved: $amount,
+        reason: 'Corrected from the authorized source document.',
+    );
+
+    expect(fn () => $action->execute($dto(2500)))
+        ->toThrow(DomainException::class, 'must be different')
+        ->and(fn () => $action->execute($dto(6000)))
+        ->toThrow(DomainException::class, 'cannot exceed PHP 5,000.00')
+        ->and(fn () => $action->execute($dto(3000, (string) Str::ulid())))
+        ->toThrow(\Illuminate\Auth\Access\AuthorizationException::class);
+
+    $request->update([
+        'status' => AssistanceStatus::Released,
+        'released_by_user_id' => $context['admin_id'],
+        'released_at' => now(),
+        'release_reference_number' => 'REL-AMOUNT-LOCKED',
+    ]);
+
+    expect(fn () => $action->execute($dto(3000)))
+        ->toThrow(DomainException::class, 'approved, unreleased')
+        ->and($request->fresh()->amount_approved)->toBe('2500.00');
 });
 
 it('does not cancel released or non-approved assistance through the approved correction action', function () {

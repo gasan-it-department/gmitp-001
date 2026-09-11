@@ -60,6 +60,9 @@ class AssistanceRequest extends Model implements HasMedia
     /** Allows the dedicated pre-release household-assessment correction only. */
     private bool $allowHouseholdAssessmentRefresh = false;
 
+    /** Allows only the dedicated pre-release approved-amount correction. */
+    private bool $allowApprovedAmountCorrection = false;
+
     /** Allows only the dedicated MSWD verification lifecycle fields. */
     private bool $allowMswdVerificationMutation = false;
 
@@ -180,6 +183,12 @@ class AssistanceRequest extends Model implements HasMedia
                 return;
             }
 
+            if ($request->allowApprovedAmountCorrection
+                && $originalStatus === AssistanceStatus::Approved
+                && array_diff($dirtyFields, ['amount_approved', 'updated_at']) === []) {
+                return;
+            }
+
             if ($originalStatus === AssistanceStatus::Released) {
                 throw new \DomainException(
                     'Released assistance requests are immutable. Record a separate correction entry instead.',
@@ -258,6 +267,21 @@ class AssistanceRequest extends Model implements HasMedia
             $this->update(['metadata' => $metadata]);
         } finally {
             $this->allowHouseholdAssessmentRefresh = false;
+        }
+    }
+
+    /**
+     * Replace only the approved amount after the Core correction action has
+     * enforced tenant, status, release, program-limit, and audit rules.
+     */
+    public function correctApprovedAmount(float $amount): void
+    {
+        $this->allowApprovedAmountCorrection = true;
+
+        try {
+            $this->update(['amount_approved' => $amount]);
+        } finally {
+            $this->allowApprovedAmountCorrection = false;
         }
     }
 

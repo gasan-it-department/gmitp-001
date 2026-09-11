@@ -4,6 +4,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceReques
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdVerificationController;
+use App\External\Api\Controllers\ActionCenter\Assistance\CorrectApprovedAssistanceAmountController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectAssistanceRequestFilerNameController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReassignAssistanceMswdReviewerController;
@@ -424,6 +425,13 @@ Route::prefix('/api/action-center')
                     ApproveAssistanceRequestController::class,
                 )->middleware('permission:action_center.requests.decide')
                     ->name('assistance.approve');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/correct-approved-amount',
+                    CorrectApprovedAssistanceAmountController::class,
+                )->middleware('permission:action_center.requests.decide')
+                    ->middleware('permission:action_center.requests.correct')
+                    ->name('assistance.correct-approved-amount');
 
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/cancel-approved',
