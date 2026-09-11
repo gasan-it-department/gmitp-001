@@ -47,7 +47,14 @@ class UserRepository
             'roles.permissions',
             'permissions',
             'municipality',
+            'socialAccounts',
         ]);
+
+        if ($dto->group === 'administrators') {
+            $query->role(['admin', 'super_admin']);
+        } elseif ($dto->group === 'citizens') {
+            $query->role('client')->whereDoesntHave('roles', fn (Builder $roles) => $roles->whereIn('name', ['admin', 'super_admin']));
+        }
 
         $searchTerms = preg_split('/\s+/', trim((string) $dto->search), -1, PREG_SPLIT_NO_EMPTY);
 
@@ -55,15 +62,15 @@ class UserRepository
             $query->where(function (Builder $q) use ($term) {
                 $pattern = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%';
 
-                $q->where('first_name', 'ilike', $pattern)
-                    ->orWhere('middle_name', 'ilike', $pattern)
-                    ->orWhere('last_name', 'ilike', $pattern)
-                    ->orWhere('email', 'ilike', $pattern)
-                    ->orWhere('phone', 'ilike', $pattern);
+                $q->whereLike('first_name', $pattern)
+                    ->orWhereLike('middle_name', $pattern)
+                    ->orWhereLike('last_name', $pattern)
+                    ->orWhereLike('email', $pattern)
+                    ->orWhereLike('phone', $pattern);
             });
         }
 
-        if ($dto->role && $dto->role !== 'all') {
+        if ($dto->group !== 'citizens' && $dto->role && $dto->role !== 'all') {
 
             $query->role($dto->role);
 

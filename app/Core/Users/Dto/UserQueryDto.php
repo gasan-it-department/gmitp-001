@@ -11,6 +11,7 @@ class UserQueryDto
         public readonly ?string $search = null,
         public readonly ?string $role = null,
         public readonly ?string $municipality = null,
+        public readonly ?string $group = null,
 
     ) {
     }
@@ -23,6 +24,7 @@ class UserQueryDto
             search: $request->input('filter.search'),
             role: $request->input('filter.role'),
             municipality: $request->input('filter.municipality'),
+            group: $request->input('group') === 'citizens' ? 'citizens' : 'administrators',
         );
 
     }

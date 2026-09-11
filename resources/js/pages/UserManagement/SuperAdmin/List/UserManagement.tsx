@@ -1,5 +1,6 @@
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
 import superAdmin from '@/routes/superAdmin';
@@ -24,13 +25,14 @@ interface Props {
             last_page: number;
             total: number;
             to: number;
-            links: any[];
+            links: { url: string | null; label: string; active: boolean }[];
         };
     };
-    filters: any;
+    filters: { filter?: { search?: string; role?: string; municipality?: string } };
+    group: 'administrators' | 'citizens';
 }
 
-export default function UserManagement({ users, filters }: Props) {
+export default function UserManagement({ users, filters, group }: Props) {
     return (
         <BaseLayout>
             <Head title="User Management" />
@@ -44,18 +46,37 @@ export default function UserManagement({ users, filters }: Props) {
 
                     <div className="flex items-center gap-4">
                         <div className="hidden text-right text-sm text-muted-foreground sm:block">
-                            <span>{users.meta.total ?? 0} records</span>
+                            <span>
+                                {users.meta.total ?? 0} {group}
+                            </span>
                         </div>
-                        <Button onClick={() => router.visit(superAdmin.registry.page.url())}>
-                            <Plus className="mr-2 h-4 w-4" /> Add New
-                        </Button>
+                        {group === 'administrators' && (
+                            <Button onClick={() => router.visit(superAdmin.registry.page.url())}>
+                                <Plus className="mr-2 h-4 w-4" /> Create Administrator
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                <UserListHeader filters={filters.filter} />
+                <Tabs
+                    value={group}
+                    onValueChange={(value) =>
+                        router.get(
+                            superAdmin.users.page.url(),
+                            { group: value, filter: { ...filters.filter, role: undefined }, page: 1 },
+                            { preserveScroll: true },
+                        )
+                    }
+                >
+                    <TabsList>
+                        <TabsTrigger value="administrators">Administrators</TabsTrigger>
+                        <TabsTrigger value="citizens">Citizens</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                <UserListHeader key={group} filters={filters.filter} group={group} />
 
                 <div className="rounded-lg border bg-white">
-                    <UsersTable users={users.data} />
+                    <UsersTable users={users.data} group={group} />
                 </div>
 
                 <div className="mt-4">

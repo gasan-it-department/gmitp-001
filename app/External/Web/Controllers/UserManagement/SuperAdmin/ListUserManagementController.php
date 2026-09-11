@@ -19,6 +19,7 @@ class ListUserManagementController
         return Inertia::render('UserManagement/SuperAdmin/List/UserManagement', [
             'users' => UserResource::collection($users),
             'filters' => $request->only(['filter']),
+            'group' => $request->input('group') === 'citizens' ? 'citizens' : 'administrators',
         ]);
     }
 }

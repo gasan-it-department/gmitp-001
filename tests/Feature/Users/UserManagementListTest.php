@@ -12,6 +12,13 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
+    Schema::create('user_social_accounts', function ($table) {
+        $table->id();
+        $table->ulid('user_id');
+        $table->string('provider_name');
+        $table->string('avatar_url')->nullable();
+        $table->timestamps();
+    });
     Schema::create('municipalities', function ($table) {
         $table->ulid('id')->primary();
         $table->string('psgc_municipal_id')->nullable();
@@ -96,6 +103,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    Schema::dropIfExists('user_social_accounts');
     Schema::dropIfExists('media');
     Schema::dropIfExists('role_has_permissions');
     Schema::dropIfExists('model_has_permissions');
@@ -138,6 +146,21 @@ it('uses the invokable controller for the user-management route', function () {
         ->toContain(ListUserManagementController::class);
 });
 
+it('separates administrators and citizens and returns social avatars', function () {
+    $admin = usersTestUser();
+    $admin->assignRole([EnumRoles::ADMIN->value, EnumRoles::CLIENT->value]);
+    $citizen = usersTestUser();
+    $citizen->assignRole(EnumRoles::CLIENT->value);
+    $citizen->socialAccounts()->create(['provider_name' => 'google', 'avatar_url' => 'https://example.test/avatar.jpg']);
+
+    $this->get(route('superAdmin.users.page'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('group', 'administrators')->has('users.data', 1)->where('users.data.0.id', $admin->id));
+    $this->get(route('superAdmin.users.page', ['group' => 'citizens', 'filter' => ['role' => 'admin']]))
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('group', 'citizens')->has('users.data', 1)->where('users.data.0.id', $citizen->id)
+            ->where('users.data.0.social_accounts.0.avatar_url', 'https://example.test/avatar.jpg'));
+});
+
 it('searches users by first name, last name, email, and phone', function (string $search) {
     $user = usersTestUser([
         'first_name' => 'SearchableFirst',
@@ -148,6 +171,7 @@ it('searches users by first name, last name, email, and phone', function (string
     $user->assignRole(EnumRoles::CLIENT->value);
 
     $this->get(route('superAdmin.users.page', [
+            'group' => 'citizens',
             'filter' => ['search' => $search],
         ]))
         ->assertOk()
