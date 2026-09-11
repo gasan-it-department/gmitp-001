@@ -77,7 +77,8 @@ export default function EditAssistanceRequest({ request, requiredDocuments, subm
     const requiresDateOfDeath =
         r.assistance_type?.request_form.fields.some((field) => field.key === 'on_behalf_date_of_death' && field.required) ?? false;
     const isDeceasedRequest = r.assistance_type?.request_form.subject_type === 'deceased';
-    const recipientIdIsRequired = r.on_behalf !== null && !isDeceasedRequest && !r.on_behalf.recipient_id_exception;
+    const filerIdIsRequired = requiredDocuments.data.some((slot) => ['valid_id_front', 'valid_id_back'].includes(slot.key) && slot.is_required);
+    const recipientIdIsRequired = filerIdIsRequired && r.on_behalf !== null && !isDeceasedRequest && !r.on_behalf.recipient_id_exception;
     const slots = requiredDocuments.data
         .filter((slot) => !slot.key.startsWith('recipient_valid_id_') || r.on_behalf !== null)
         .map((slot) => (slot.key.startsWith('recipient_valid_id_') && recipientIdIsRequired ? { ...slot, is_required: true } : slot));

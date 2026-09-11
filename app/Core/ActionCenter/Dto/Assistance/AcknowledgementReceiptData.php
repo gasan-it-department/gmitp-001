@@ -12,6 +12,8 @@ readonly class AcknowledgementReceiptData
         public string $barangay,
         public float $approvedAmount,
         public string $assistanceType,
+        public string $receiptAssistanceLabel,
+        public string $programLabel,
         public \DateTimeInterface $submittedAt,
         public ?\DateTimeInterface $providedAt,
         public \DateTimeInterface $generatedAt,

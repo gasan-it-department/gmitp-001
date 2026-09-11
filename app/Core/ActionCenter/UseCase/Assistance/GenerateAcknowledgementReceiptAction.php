@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Contracts\AcknowledgementReceiptWordingProvider;
 use App\Core\ActionCenter\Dto\Assistance\AcknowledgementReceiptData;
 use App\Core\ActionCenter\Dto\Assistance\AcknowledgementReceiptFormData;
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
@@ -10,6 +11,7 @@ class GenerateAcknowledgementReceiptAction
 {
     public function __construct(
         private readonly BuildAssistanceFinancialDocumentContextAction $context,
+        private readonly AcknowledgementReceiptWordingProvider $wording,
     ) {}
 
     public function formData(
@@ -43,6 +45,10 @@ class GenerateAcknowledgementReceiptAction
             $municipalId,
             AssistanceGeneratedDocument::AcknowledgementReceipt,
         );
+        $wording = $this->wording->for(
+            $context->municipalCode,
+            $context->assistanceTypeSlug,
+        );
 
         return new AcknowledgementReceiptData(
             transactionNumber: $context->transactionNumber,
@@ -52,6 +58,8 @@ class GenerateAcknowledgementReceiptAction
             barangay: $context->barangay,
             approvedAmount: $context->approvedAmount,
             assistanceType: $context->assistanceType,
+            receiptAssistanceLabel: $wording->resolvedAssistanceLabel($context->assistanceType),
+            programLabel: $wording->programLabel(),
             submittedAt: $context->submittedAt,
             providedAt: $context->releasedAt,
             generatedAt: now(),

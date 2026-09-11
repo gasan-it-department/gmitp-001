@@ -584,10 +584,17 @@ class AssistanceMswdVerificationService
             return [false, 'Not applicable because the assisted person has a recorded ID exception.', false];
         }
 
-        // These slots are generated as optional type settings so they do not
-        // burden self-filed cases. For an applicable representative filing,
-        // they preserve the existing conditional recipient-ID rule.
-        return [true, null, true];
+        // Recipient slots are stored as optional because they do not apply to
+        // self-filed requests. For an on-behalf request, mirror the configured
+        // requirement of the corresponding filer ID side.
+        $filerDocumentKey = str_replace('recipient_', '', $documentKey);
+        $filerDocument = $request->assistanceType?->documents
+            ->first(fn ($document): bool => $document->key === $filerDocumentKey);
+        $isRequired = $filerDocument !== null
+            ? (bool) $filerDocument->pivot->is_required
+            : $configuredRequired;
+
+        return [true, null, $isRequired];
     }
 
     /** @return list<string> */
