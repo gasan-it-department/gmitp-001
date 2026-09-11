@@ -49,8 +49,10 @@ it('assigns every admin action center route to one explicit capability', functio
                 'actionCenter.assistance.mswd.reopen' => 'action_center.requests.correct',
                 'actionCenter.assistance.mswd.reassign' => 'action_center.requests.correct',
                 'actionCenter.assistance.household-assessment.refresh' => 'action_center.requests.process|action_center.requests.correct',
+                'actionCenter.assistance.correct-filer-name' => 'action_center.requests.process|action_center.requests.correct',
                 'actionCenter.assistance.correct-missing-date-of-death' => 'action_center.requests.correct',
                 'actionCenter.assistance.approve' => 'action_center.requests.decide',
+                'actionCenter.assistance.correct-approved-amount' => 'action_center.requests.decide',
                 'actionCenter.assistance.cancel-approved' => 'action_center.requests.decide',
                 'actionCenter.assistance.reject' => 'action_center.requests.decide',
                 'actionCenter.assistance.release' => 'action_center.requests.release',
@@ -101,5 +103,8 @@ it('assigns every admin action center route to one explicit capability', functio
                         ->toContain('permission:action_center.access')
                         ->toContain("permission:{$capability}");
         }
+
+        expect(Route::getRoutes()->getByName('actionCenter.assistance.correct-approved-amount')?->gatherMiddleware() ?? [])
+                ->toContain('permission:action_center.requests.correct');
 
 });

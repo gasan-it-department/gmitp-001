@@ -62,6 +62,7 @@ import {
 import { useRef, useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
+import CorrectApprovedAssistanceAmountDialog from './Components/CorrectApprovedAssistanceAmountDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
 import MswdDocuments from './Components/MswdDocuments';
 import MswdVerificationBadge from './Components/MswdVerificationBadge';
@@ -281,6 +282,7 @@ export default function AssistanceRequestsDetails({
     const canCorrectRequests = can('action_center.requests.correct');
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
+    const [isCorrectAmountOpen, setIsCorrectAmountOpen] = useState(false);
     const [isCancelApprovedOpen, setIsCancelApprovedOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
@@ -329,6 +331,8 @@ export default function AssistanceRequestsDetails({
         detail.on_behalf !== null &&
         !detail.filed_for_self &&
         !detail.on_behalf.date_of_death;
+    const canCorrectApprovedAmount =
+        canDecideRequests && canCorrectRequests && detail.status === 'approved' && detail.amount_approved !== null && !detail.has_release_artifacts;
     const checkedDocumentKeys = new Set(documentChecks.map((check) => check.document_key));
     const extraDocuments = (detail.documents ?? []).filter((document) => !checkedDocumentKeys.has(documentKeyOf(document)));
     const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
@@ -393,6 +397,10 @@ export default function AssistanceRequestsDetails({
         }
         if (label === 'Cancel Approved') {
             setIsCancelApprovedOpen(true);
+            return;
+        }
+        if (label === 'Correct Amount') {
+            setIsCorrectAmountOpen(true);
             return;
         }
         if (label === 'Mark Released') {
@@ -510,6 +518,7 @@ export default function AssistanceRequestsDetails({
                                         mswdVerificationStatus={mswdVerification.status}
                                         isStartingMswdReview={isStartingMswdReview}
                                         canDecide={canDecideRequests}
+                                        canCorrectApprovedAmount={canCorrectApprovedAmount}
                                         canRelease={canReleaseRequests}
                                         canGenerateAcknowledgementReceipt={canGenerateAcknowledgementReceipt}
                                     />
@@ -1339,6 +1348,17 @@ export default function AssistanceRequestsDetails({
                     />
                 </>
             )}
+            {canCorrectApprovedAmount && detail.amount_approved !== null && (
+                <CorrectApprovedAssistanceAmountDialog
+                    requestId={detail.id}
+                    transactionNumber={detail.transaction_number}
+                    currentAmount={detail.amount_approved}
+                    minAmount={detail.assistance_type?.min_amount}
+                    maxAmount={detail.assistance_type?.max_amount}
+                    isOpen={isCorrectAmountOpen}
+                    onClose={() => setIsCorrectAmountOpen(false)}
+                />
+            )}
 
             {canReleaseRequests && (
                 <ReleaseRequestDialog
@@ -1536,6 +1556,7 @@ function ActionButtons({
     mswdVerificationStatus,
     isStartingMswdReview,
     canDecide,
+    canCorrectApprovedAmount,
     canRelease,
     canGenerateAcknowledgementReceipt,
 }: {
@@ -1552,6 +1573,7 @@ function ActionButtons({
     mswdVerificationStatus: AssistanceMswdVerification['status'];
     isStartingMswdReview: boolean;
     canDecide: boolean;
+    canCorrectApprovedAmount: boolean;
     canRelease: boolean;
     canGenerateAcknowledgementReceipt: boolean;
 }) {
@@ -1637,6 +1659,15 @@ function ActionButtons({
                             title={releaseBlockReason ?? undefined}
                         >
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
+                        </Button>
+                    )}
+                    {canCorrectApprovedAmount && (
+                        <Button
+                            variant="outline"
+                            className="min-h-10 w-full border-amber-200 text-amber-800 hover:bg-amber-50 hover:text-amber-900 sm:w-auto"
+                            onClick={onAction('Correct Amount')}
+                        >
+                            <Pencil className="mr-2 h-4 w-4" /> Correct Amount
                         </Button>
                     )}
                     {canDecide && (
