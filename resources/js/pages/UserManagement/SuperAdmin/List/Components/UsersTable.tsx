@@ -1,109 +1,83 @@
-import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User } from '@/Core/Types/User/UserTypes';
-import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import superAdmin from '@/routes/superAdmin';
-import { router } from '@inertiajs/react';
-import { Eye } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { UserRound } from 'lucide-react';
 
-interface Props {
-    users: User[];
-}
+const roles: Record<string, string> = { admin: 'Municipal Admin', super_admin: 'Super Admin', client: 'Citizen' };
 
-export const UsersTable = ({ users }: Props) => {
-    const usersList = users;
-
-    // You can put this in a separate file like `constants/roleStyles.ts`
-    // or just at the top of your component file.
-
-    const ROLE_STYLES: Record<string, { label: string; className: string }> = {
-        super_admin: {
-            label: 'Super Admin',
-            className: 'bg-purple-100 text-purple-700 border-purple-200',
-        },
-        admin: {
-            label: 'Admin',
-            className: 'bg-blue-100 text-blue-700 border-blue-200',
-        },
-        client: {
-            label: 'Citizen',
-            className: 'bg-green-100 text-green-700 border-green-200',
-        },
-        // Fallback for unknown roles
-        default: {
-            label: 'Unknown',
-            className: 'bg-gray-100 text-gray-700 border-gray-200',
-        },
-    };
-
-    const handleViewUser = (id: string) => {
-        router.visit(superAdmin.show.user.url(id));
-    };
+export const UsersTable = ({ users, group }: { users: User[]; group: 'administrators' | 'citizens' }) => {
+    const { url } = usePage();
     return (
-        <>
-            <Table className="w-full">
-                    <TableHeader className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/60">
-                        <TableRow>
-                            <TableHead className="w-16 pl-4 text-xs font-bold text-gray-700">No.</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Name</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Roles</TableHead>
-                            <TableHead className="text-xs font-bold text-gray-700">Phone</TableHead>
-                            <TableHead className="text-center text-xs font-bold text-gray-700">Actions</TableHead>
+        <Table className="min-w-[640px]">
+            <TableHeader className="bg-muted/50">
+                <TableRow>
+                    {['User', 'Role', 'Municipality', 'Phone'].map((title) => (
+                        <TableHead key={title} className="px-5 py-4">
+                            {title}
+                        </TableHead>
+                    ))}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {users.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={4} className="py-16 text-center">
+                            <p className="font-medium">No {group} found</p>
+                            <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search or filters.</p>
+                        </TableCell>
+                    </TableRow>
+                )}
+                {users.map((user) => {
+                    const name = [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ') || 'Unnamed user';
+                    const initials = ((user.first_name?.charAt(0) ?? '') + (user.last_name?.charAt(0) ?? '')).toUpperCase();
+                    const accounts = user.social_accounts ?? [];
+                    const avatar =
+                        accounts.find((a) => a.provider_name === 'google' && a.avatar_url)?.avatar_url ??
+                        accounts.find((a) => a.avatar_url)?.avatar_url;
+                    const href = superAdmin.show.user.url(user.id) + '?return_to=' + encodeURIComponent(url);
+                    return (
+                        <TableRow
+                            key={user.id}
+                            className="cursor-pointer transition-colors focus-within:bg-orange-50/50 hover:bg-orange-50/50"
+                            onClick={(event) => {
+                                if ((event.target as HTMLElement).closest('a, button') || window.getSelection()?.toString()) return;
+                                if (event.ctrlKey || event.metaKey) window.open(href, '_blank', 'noopener');
+                                else router.visit(href);
+                            }}
+                        >
+                            <TableCell className="px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="size-11 border">
+                                        <AvatarImage src={avatar} alt="" className="object-cover" />
+                                        <AvatarFallback className="bg-orange-100 text-sm font-semibold text-orange-700">
+                                            {initials || <UserRound className="size-5" />}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <Link
+                                        href={href}
+                                        className="rounded font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
+                                    >
+                                        {name}
+                                    </Link>
+                                </div>
+                            </TableCell>
+                            <TableCell className="px-5">
+                                <div className="flex flex-wrap gap-1">
+                                    {user.roles.map((role) => (
+                                        <span key={role} className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+                                            {roles[role] ?? role}
+                                        </span>
+                                    ))}
+                                </div>
+                            </TableCell>
+                            <TableCell className="px-5 text-muted-foreground">{user.municipality?.name || 'Unassigned'}</TableCell>
+                            <TableCell className="px-5 text-muted-foreground">{user.phone || '—'}</TableCell>
                         </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
-                        {usersList.length === 0 ? (
-                            <AdminEmptyListItem colSpan={8} title="No records found." message="Action center records will show here." />
-                        ) : (
-                            usersList.map((item, index) => {
-                                return (
-                                    <ContextMenu key={item.id}>
-                                        <ContextMenuTrigger asChild>
-                                            <TableRow className="group transition-colors hover:bg-gray-50">
-                                                <TableCell className="text-xs text-gray-600">{index + 1}</TableCell>
-
-                                                <TableCell className="text-xs text-gray-600">
-                                                    {item.first_name} {item.last_name}
-                                                </TableCell>
-
-                                                <TableCell className="text-xs text-gray-600">
-                                                    {item.roles.map((roleKey) => {
-                                                        // Get the style or fallback to default
-                                                        const style = ROLE_STYLES[roleKey] || ROLE_STYLES.default;
-
-                                                        return (
-                                                            <span
-                                                                key={roleKey}
-                                                                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${style.className}`}
-                                                            >
-                                                                {style.label}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </TableCell>
-                                                <TableCell className="text-xs text-gray-600">{item.phone}</TableCell>
-                                                <TableCell className="text-center text-xs text-gray-600">
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="h-8 w-8 border-blue-200 text-blue-600 hover:bg-blue-50"
-                                                        onClick={() => {
-                                                            router.visit(superAdmin.show.user.url(item.id));
-                                                        }}
-                                                    >
-                                                        <Eye size={16} />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        </ContextMenuTrigger>
-                                    </ContextMenu>
-                                );
-                            })
-                        )}
-                    </TableBody>
-            </Table>
-        </>
+                    );
+                })}
+            </TableBody>
+        </Table>
     );
 };

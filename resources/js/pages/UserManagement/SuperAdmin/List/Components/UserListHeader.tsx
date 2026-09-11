@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 const ANY = '__any__';
 
 interface Props {
+    group: 'administrators' | 'citizens';
     className?: string;
     filters?: {
         search?: string;
@@ -22,13 +23,13 @@ interface Props {
     municipalities?: { slug: string; name: string }[];
 }
 
-export const UserListHeader = ({ className, filters = {}, municipalities = [] }: Props) => {
+export const UserListHeader = ({ className, filters = {}, group }: Props) => {
     const [search, setSearch] = useState<string>(filters.search ?? '');
     const [role, setRole] = useState(filters.role || 'all');
     const [municipality, setMunicipality] = useState(filters.municipality || 'all');
-    
+
     const isMounted = useRef(false);
-    
+
     const hasCriteria = Boolean(search.trim() || (role && role !== 'all') || (municipality && municipality !== 'all'));
 
     useEffect(() => {
@@ -39,9 +40,10 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
 
         const timeout = setTimeout(() => {
             const query = {
+                group,
                 filter: {
                     search: search.trim() || undefined,
-                    role: role === 'all' ? undefined : role,
+                    role: group === 'citizens' || role === 'all' ? undefined : role,
                     municipality: municipality === 'all' ? undefined : municipality,
                 },
                 page: 1,
@@ -54,19 +56,19 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
                 only: ['users', 'filters'],
             });
         }, 350);
-        
+
         return () => clearTimeout(timeout);
-    }, [search, role, municipality]);
+    }, [search, role, municipality, group]);
 
     const clearFilters = () => {
         setSearch('');
         setRole('all');
         setMunicipality('all');
-        router.get(superAdmin.users.page.url(), {}, { preserveState: false, replace: true });
+        router.get(superAdmin.users.page.url(), { group }, { preserveState: false, replace: true });
     };
 
     return (
-        <div className={cn("flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-4", className)}>
+        <div className={cn('flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-4', className)}>
             {/* Search */}
             <div className="min-w-[240px] flex-1">
                 <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Search</label>
@@ -76,7 +78,7 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search name, email..."
-                        className="h-10 pl-9 bg-white"
+                        className="h-10 bg-white pl-9"
                     />
                 </div>
             </div>
@@ -88,20 +90,21 @@ export const UserListHeader = ({ className, filters = {}, municipalities = [] }:
             </div>
 
             {/* Role */}
-            <div className="min-w-[160px]">
-                <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Role</label>
-                <Select value={role || ANY} onValueChange={(v) => setRole(v === ANY ? 'all' : v)}>
-                    <SelectTrigger className="h-10 bg-white">
-                        <SelectValue placeholder="All Roles" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Roles</SelectItem>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
-                        <SelectItem value="admin">Municipal Admin</SelectItem>
-                        <SelectItem value="client">Client (User)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+            {group === 'administrators' && (
+                <div className="min-w-[160px]">
+                    <label className="mb-1 block text-[11px] font-semibold tracking-wide text-gray-600 uppercase">Role</label>
+                    <Select value={role || ANY} onValueChange={(v) => setRole(v === ANY ? 'all' : v)}>
+                        <SelectTrigger className="h-10 bg-white">
+                            <SelectValue placeholder="All Roles" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Roles</SelectItem>
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                            <SelectItem value="admin">Municipal Admin</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
 
             {/* Clear */}
             {hasCriteria && (

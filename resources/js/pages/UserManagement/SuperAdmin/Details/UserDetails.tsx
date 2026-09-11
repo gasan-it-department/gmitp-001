@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { User } from '@/Core/Types/User/UserTypes';
 import BaseLayout from '@/layouts/App/AppLayout';
+import superAdmin from '@/routes/superAdmin';
 import { Head, router } from '@inertiajs/react'; // 1. Added router import
 import { ArrowLeft, Building2, CheckCircle2, Hash, Mail, MapPin, Phone, Shield, User as UserIcon } from 'lucide-react';
 import { UserDetailsActionMenu } from './Components/UserDetailsActionMenu';
@@ -11,15 +12,13 @@ interface Props {
 
 export default function UserDetails({ user }: Props) {
     const userData = user.data;
+    const isAdministrator = userData.roles.some((role) => ['admin', 'super_admin'].includes(role));
 
     // 2. Navigation logic: Preserves your filters and page number
     const handleBack = () => {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            // Fallback: If they opened the link in a new tab, go to the default list
-            router.visit(route('superAdmin.users.page'));
-        }
+        const target = new URLSearchParams(window.location.search).get('return_to');
+        const list = superAdmin.users.page.url();
+        router.visit(target && (target === list || target.startsWith(list + '?')) ? target : list);
     };
 
     // 3. Defensive initials helper (Prevents "charAt of undefined" error)
@@ -49,7 +48,7 @@ export default function UserDetails({ user }: Props) {
                         <ArrowLeft size={18} />
                         Back to users
                     </Button>
-                    <UserDetailsActionMenu userId={userData.id} userName={userData.first_name} isActive={userData.is_active} />
+                    {isAdministrator && <UserDetailsActionMenu userId={userData.id} userName={userData.first_name} isActive={userData.is_active} />}
                 </div>
                 {/* 1. HEADER CARD */}
                 <div className="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -97,7 +96,7 @@ export default function UserDetails({ user }: Props) {
                     </div>
                 </div>
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="space-y-6 lg:col-span-2">
+                    <div className={isAdministrator ? 'space-y-6 lg:col-span-2' : 'space-y-6 lg:col-span-3'}>
                         {/* Personal Information */}
                         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                             <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-900 uppercase">
@@ -160,35 +159,37 @@ export default function UserDetails({ user }: Props) {
                     </div>
 
                     {/* RIGHT COLUMN: Permissions */}
-                    <div className="lg:col-span-1">
-                        <div className="h-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                            <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-900 uppercase">
-                                <Shield className="h-4 w-4 text-orange-500" />
-                                System Access
-                            </h2>
+                    {isAdministrator && (
+                        <div className="lg:col-span-1">
+                            <div className="h-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                                <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-900 uppercase">
+                                    <Shield className="h-4 w-4 text-orange-500" />
+                                    System Access
+                                </h2>
 
-                            <div className="mb-6">
-                                <p className="mb-2 text-xs font-medium text-gray-500">Total Permissions</p>
-                                <p className="text-2xl font-bold text-gray-900">{userData.all_permission.length}</p>
-                            </div>
+                                <div className="mb-6">
+                                    <p className="mb-2 text-xs font-medium text-gray-500">Total Permissions</p>
+                                    <p className="text-2xl font-bold text-gray-900">{userData.all_permission.length}</p>
+                                </div>
 
-                            <div className="space-y-3">
-                                <p className="text-xs font-medium text-gray-500">Capabilities</p>
-                                {userData.all_permission.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {userData.all_permission.map((perm, index) => (
-                                            <li key={index} className="flex items-start gap-2.5">
-                                                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-                                                <span className="text-sm text-gray-700 capitalize">{formatPermission(perm)}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-sm text-gray-400 italic">No explicit permissions granted.</p>
-                                )}
+                                <div className="space-y-3">
+                                    <p className="text-xs font-medium text-gray-500">Capabilities</p>
+                                    {userData.all_permission.length > 0 ? (
+                                        <ul className="space-y-2">
+                                            {userData.all_permission.map((perm, index) => (
+                                                <li key={index} className="flex items-start gap-2.5">
+                                                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                                                    <span className="text-sm text-gray-700 capitalize">{formatPermission(perm)}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-gray-400 italic">No explicit permissions granted.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </BaseLayout>

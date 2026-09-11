@@ -501,14 +501,13 @@ export default function AssistanceRequestsDetails({
                                 </p>
 
                                 {/* Action Buttons moved here */}
-                                <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+                                <div className="mt-5 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                                     <ActionButtons
                                         status={detail.status}
                                         onAction={handleAction}
                                         onPickUp={handlePickUp}
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
-                                        acknowledgementReceiptUrl={acknowledgementReceiptUrl}
                                         approvalBlockReason={approvalBlockReason}
                                         releaseBlockReason={
                                             verificationAllowsFinalDocuments ? null : 'Complete current MSWD verification before physical release.'
@@ -520,7 +519,6 @@ export default function AssistanceRequestsDetails({
                                         canDecide={canDecideRequests}
                                         canCorrectApprovedAmount={canCorrectApprovedAmount}
                                         canRelease={canReleaseRequests}
-                                        canGenerateAcknowledgementReceipt={canGenerateAcknowledgementReceipt}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
@@ -1548,7 +1546,6 @@ function ActionButtons({
     onPickUp,
     isMine,
     reviewerName,
-    acknowledgementReceiptUrl,
     approvalBlockReason,
     releaseBlockReason,
     canProcess,
@@ -1558,14 +1555,12 @@ function ActionButtons({
     canDecide,
     canCorrectApprovedAmount,
     canRelease,
-    canGenerateAcknowledgementReceipt,
 }: {
     status: string;
     onAction: (label: string) => () => void;
     onPickUp: () => void;
     isMine: boolean;
     reviewerName: string | null;
-    acknowledgementReceiptUrl: string;
     approvalBlockReason: string | null;
     releaseBlockReason: string | null;
     canProcess: boolean;
@@ -1575,7 +1570,6 @@ function ActionButtons({
     canDecide: boolean;
     canCorrectApprovedAmount: boolean;
     canRelease: boolean;
-    canGenerateAcknowledgementReceipt: boolean;
 }) {
     const canStartOrResumeMswdReview =
         mswdVerificationStatus === null || mswdVerificationStatus === 'pending' || mswdVerificationStatus === 'needs_correction';
@@ -1604,7 +1598,7 @@ function ActionButtons({
         case 'under_review':
             if (!isMine && !canDecide) {
                 return (
-                    <div className="col-span-2 flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 sm:col-auto">
+                    <div className="col-span-full flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 sm:col-auto">
                         <UserCheck className="h-4 w-4 text-slate-400" />
                         <span className="font-semibold text-slate-700">Claimed by {reviewerName ?? 'another reviewer'}</span>
                     </div>
@@ -1635,7 +1629,7 @@ function ActionButtons({
                     {canProcess && isMine && (
                         <Button
                             variant="outline"
-                            className="col-span-2 min-h-10 w-full sm:col-auto sm:w-auto"
+                            className="col-span-full min-h-10 w-full sm:col-auto sm:w-auto"
                             onClick={onAction('Request More Info')}
                         >
                             <AlertTriangle className="mr-2 h-4 w-4" /> Request More Info
@@ -1679,27 +1673,10 @@ function ActionButtons({
                             <XCircle className="mr-2 h-4 w-4" /> Cancel Approved Request
                         </Button>
                     )}
-                    {canGenerateAcknowledgementReceipt && (
-                        <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
-                            <Link href={acknowledgementReceiptUrl}>
-                                <Printer className="mr-2 h-4 w-4" />
-                                <span className="sm:hidden">Receipt</span>
-                                <span className="hidden sm:inline">Generate Acknowledgement Receipt</span>
-                            </Link>
-                        </Button>
-                    )}
                 </>
             );
         case 'released':
-            return canGenerateAcknowledgementReceipt ? (
-                <Button variant="outline" className="min-h-10 w-full sm:w-auto" asChild>
-                    <Link href={acknowledgementReceiptUrl}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        <span className="sm:hidden">Receipt</span>
-                        <span className="hidden sm:inline">Generate Acknowledgement Receipt</span>
-                    </Link>
-                </Button>
-            ) : null;
+            return null;
         case 'rejected':
             return canDecide ? (
                 <Button variant="outline" className="min-h-10 w-full sm:w-auto" onClick={onAction('Reopen')}>
