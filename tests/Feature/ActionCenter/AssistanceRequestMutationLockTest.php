@@ -246,7 +246,8 @@ it('serializes edits with approval and rejects an edit that acquires the lock la
         approvalNotes: 'Approved after document review.',
     ));
 
-    expect($approved->status)->toBe(AssistanceStatus::Approved);
+    expect($approved->status)->toBe(AssistanceStatus::Approved)
+        ->and(BeneficiaryCooldown::query()->where('assistance_request_id', $request->id)->count())->toBe(0);
 
     expect(fn () => $updateAction->execute(mutationUpdateDto(
         context: $context,
@@ -320,6 +321,16 @@ it('allows the dedicated release transition and rejects every later content edit
     expect($released->status)->toBe(AssistanceStatus::Released)
         ->and($released->release_reference_number)->toBe('REL-2026-0001');
 
+    $cooldown = BeneficiaryCooldown::query()
+        ->where('assistance_request_id', $request->id)
+        ->first();
+
+    expect($cooldown)->not->toBeNull()
+        ->and($cooldown->cooldown_starts_at?->toDateString())->toBe('2026-07-17')
+        ->and($cooldown->cooldown_expires_at?->toDateString())->toBe('2026-10-17')
+        ->and(data_get($released->metadata, 'cooldown_policy.months'))->toBe(3)
+        ->and(data_get($released->metadata, 'cooldown_policy.captured_beneficiary_ids'))->toBe([$context['beneficiary_id']]);
+
     $updateAction = new UpdateAssistanceRequestAction(
         new LockAssistanceRequestAction,
         app(AssistanceRequestFormDefinitionProvider::class),
@@ -338,6 +349,79 @@ it('allows the dedicated release transition and rejects every later content edit
 
     expect($request->fresh()->description)->toBe('Original assistance request description.')
         ->and($request->fresh()->getMedia('documents'))->toHaveCount(0);
+});
+
+it('uses calendar month addition without overflowing the release day', function () {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update(['cooldown_months' => 1, 'is_independent' => true]);
+    $request = mutationLockRequest($context);
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 1500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldReceive('requestReleased')->once();
+    $verification = Mockery::mock(AssistanceMswdVerificationService::class);
+    $verification->shouldReceive('assertCurrent')->once();
+
+    (new ReleaseAssistanceRequestAction($smsNotifier, $verification))->execute(
+        new ReleaseAssistanceRequestDto(
+            assistanceRequestId: $request->id,
+            municipalId: $context['municipal_id'],
+            cashierId: $context['admin_id'],
+            cashierName: 'MSWD Cashier',
+            releaseReferenceNumber: 'REL-MONTH-END',
+            releasedAt: CarbonImmutable::parse('2026-01-31'),
+            releaseNotes: null,
+        ),
+    );
+
+    $cooldown = BeneficiaryCooldown::query()
+        ->where('assistance_request_id', $request->id)
+        ->firstOrFail();
+
+    expect($cooldown->cooldown_starts_at?->toDateString())->toBe('2026-01-31')
+        ->and($cooldown->cooldown_expires_at?->toDateString())->toBe('2026-02-28');
+});
+
+it('does not create an ongoing cooldown when the configured duration is zero', function () {
+    $context = mutationLockContext();
+    DB::table('ac_assistance_types')
+        ->where('id', $context['assistance_type_id'])
+        ->update(['cooldown_months' => 0]);
+    $request = mutationLockRequest($context);
+    $request->update([
+        'status' => AssistanceStatus::Approved,
+        'amount_approved' => 1500,
+        'approved_by_user_id' => $context['admin_id'],
+        'approved_at' => now(),
+    ]);
+
+    $smsNotifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $smsNotifier->shouldReceive('requestReleased')->once();
+    $verification = Mockery::mock(AssistanceMswdVerificationService::class);
+    $verification->shouldReceive('assertCurrent')->once();
+
+    $released = (new ReleaseAssistanceRequestAction($smsNotifier, $verification))->execute(
+        new ReleaseAssistanceRequestDto(
+            assistanceRequestId: $request->id,
+            municipalId: $context['municipal_id'],
+            cashierId: $context['admin_id'],
+            cashierName: 'MSWD Cashier',
+            releaseReferenceNumber: 'REL-ZERO-MONTHS',
+            releasedAt: CarbonImmutable::parse('2026-07-17'),
+            releaseNotes: null,
+        ),
+    );
+
+    expect($released->status)->toBe(AssistanceStatus::Released)
+        ->and(BeneficiaryCooldown::query()->where('assistance_request_id', $request->id)->count())->toBe(0)
+        ->and(data_get($released->metadata, 'cooldown_policy.months'))->toBe(0);
 });
 
 it('cancels an approved unreleased request and expires its approval cooldowns', function () {

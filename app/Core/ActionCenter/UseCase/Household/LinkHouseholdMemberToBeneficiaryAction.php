@@ -5,6 +5,8 @@ namespace App\Core\ActionCenter\UseCase\Household;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +40,11 @@ use Illuminate\Support\Facades\DB;
  */
 class LinkHouseholdMemberToBeneficiaryAction
 {
+    public function __construct(
+        private readonly HouseholdMemberIdentityMatcher $identityMatcher,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
+    ) {}
+
     public function execute(
         string $memberId,
         string $beneficiaryNumber,
@@ -45,6 +52,7 @@ class LinkHouseholdMemberToBeneficiaryAction
         string $actingAdminId,
     ): HouseholdMember {
         return DB::transaction(function () use ($memberId, $beneficiaryNumber, $municipalId, $actingAdminId) {
+            $this->lockMunicipality->execute($municipalId);
             $member = HouseholdMember::query()
                 ->with('household')
                 ->whereKey($memberId)
@@ -69,9 +77,14 @@ class LinkHouseholdMemberToBeneficiaryAction
                 );
             }
 
+            if (! $member->is_active) {
+                throw new \DomainException('Move the roster member back in before linking a beneficiary profile.');
+            }
+
             $target = Beneficiary::query()
                 ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
                 ->where('beneficiary_number', mb_strtoupper(trim($beneficiaryNumber)))
+                ->lockForUpdate()
                 ->first();
 
             if (! $target) {
@@ -80,8 +93,28 @@ class LinkHouseholdMemberToBeneficiaryAction
                 );
             }
 
-            // Stamp the link. We deliberately do NOT touch $target->household_id —
-            // the target keeps their own primary household.
+            if (! $target->is_active) {
+                throw new \DomainException('The beneficiary profile is inactive. Restore or transfer it before linking.');
+            }
+
+            if ($target->household_id !== $member->household_id) {
+                throw new \DomainException(
+                    'This beneficiary belongs to another primary household. Use Transfer/Reassign Household instead of linking.',
+                );
+            }
+
+            $this->identityMatcher->assertMatches($member, $target);
+
+            if (HouseholdMember::query()
+                ->where('beneficiary_id', $target->id)
+                ->where('is_active', true)
+                ->whereKeyNot($member->id)
+                ->exists()) {
+                throw new \DomainException(
+                    'This beneficiary already has an active household membership. Use Transfer/Reassign Household if residence changed.',
+                );
+            }
+
             $member->update([
                 'beneficiary_id' => $target->id,
                 'is_verified_dependent' => false,

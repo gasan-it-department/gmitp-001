@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,13 @@ class ChangeHouseholdHeadAction
 {
     public function __construct(
         private readonly EvaluateHouseholdHeadCandidateAction $evaluateCandidate,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
     public function execute(ChangeHouseholdHeadDto $dto): Household
     {
         return DB::transaction(function () use ($dto) {
+            $this->lockMunicipality->execute($dto->municipalId);
             $household = Household::query()
                 ->whereKey($dto->householdId)
                 ->lockForUpdate()

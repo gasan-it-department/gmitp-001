@@ -1,3 +1,4 @@
+import GetAssistanceCooldownContextController from '@/actions/App/External/Api/Controllers/ActionCenter/Assistance/GetAssistanceCooldownContextController';
 import ReleaseAssistanceRequestController from '@/actions/App/External/Api/Controllers/ActionCenter/Assistance/ReleaseAssistanceRequestController';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -5,10 +6,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { CooldownAdvisory } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
-import { Banknote, Loader2 } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import axios from 'axios';
+import { AlertTriangle, Banknote, Loader2 } from 'lucide-react';
+import { FormEventHandler, useEffect, useState } from 'react';
 
 interface Props {
     requestId: string;
@@ -47,6 +50,33 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
         release_notes: '',
         confirm: false as boolean,
     });
+    const [cooldownContext, setCooldownContext] = useState<CooldownAdvisory | null>(null);
+    const [checkingCooldown, setCheckingCooldown] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen || !data.release_date) return;
+
+        let cancelled = false;
+        setCheckingCooldown(true);
+        axios
+            .get(GetAssistanceCooldownContextController.url({ assistanceRequestId: requestId }), {
+                params: { release_date: data.release_date },
+                headers: { 'x-Municipality-Slug': currentMunicipality.slug },
+            })
+            .then((response) => {
+                if (!cancelled) setCooldownContext(response.data as CooldownAdvisory);
+            })
+            .catch(() => {
+                if (!cancelled) setCooldownContext(null);
+            })
+            .finally(() => {
+                if (!cancelled) setCheckingCooldown(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentMunicipality.slug, data.release_date, isOpen, requestId]);
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -65,6 +95,7 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
     const handleClose = () => {
         clearErrors();
         reset();
+        setCooldownContext(null);
         onClose();
     };
 
@@ -90,6 +121,29 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                         <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-4 py-3">
                             <p className="text-[10px] font-bold tracking-widest text-blue-700 uppercase">Approved Amount Being Released</p>
                             <p className="mt-1 text-2xl font-bold text-blue-900">₱{formattedAmount}</p>
+                        </div>
+                    )}
+
+                    {(checkingCooldown || cooldownContext?.active || cooldownContext?.permanent_block) && (
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                            {checkingCooldown ? (
+                                <p className="flex items-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" /> Checking cooldowns for the release date...
+                                </p>
+                            ) : cooldownContext?.permanent_block ? (
+                                <p className="flex items-center gap-2 font-semibold">
+                                    <AlertTriangle className="h-4 w-4" /> A one-time limit blocks release.
+                                </p>
+                            ) : cooldownContext?.authorization_current ? (
+                                <p className="flex items-center gap-2 font-semibold">
+                                    <AlertTriangle className="h-4 w-4" /> The timed cooldown exception is authorized.
+                                </p>
+                            ) : (
+                                <p className="flex items-start gap-2 font-semibold">
+                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> A decision maker must authorize the current timed cooldown
+                                    before release.
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -174,7 +228,16 @@ export default function ReleaseRequestDialog({ requestId, amountApproved, isOpen
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={processing} className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto">
+                        <Button
+                            type="submit"
+                            disabled={
+                                processing ||
+                                checkingCooldown ||
+                                cooldownContext?.permanent_block === true ||
+                                (cooldownContext?.active === true && cooldownContext.authorization_current !== true)
+                            }
+                            className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto"
+                        >
                             {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Banknote className="mr-2 h-4 w-4" />}
                             Confirm Release
                         </Button>

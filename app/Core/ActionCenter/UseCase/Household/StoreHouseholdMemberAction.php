@@ -4,7 +4,9 @@ namespace App\Core\ActionCenter\UseCase\Household;
 
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Enums\Relationship;
+use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
 
 /**
  * Persist one ac_household_members row.
@@ -28,6 +30,10 @@ use App\Core\ActionCenter\Models\HouseholdMember;
  */
 class StoreHouseholdMemberAction
 {
+    public function __construct(
+        private readonly HouseholdMemberIdentityMatcher $identityMatcher,
+    ) {}
+
     /**
      * Maximum active members per household. Above this, encoding moves to
      * the MSWD office (in-person walk-in) where a social worker can verify
@@ -44,6 +50,32 @@ class StoreHouseholdMemberAction
         bool $isVerifiedDependent = false,
     ): HouseholdMember {
         $isHead = $dto->relationship === Relationship::Head->value;
+
+        if ($beneficiaryId !== null) {
+            $beneficiary = Beneficiary::query()->whereKey($beneficiaryId)->lockForUpdate()->firstOrFail();
+            $candidate = new HouseholdMember([
+                'first_name' => $dto->firstName,
+                'middle_name' => $dto->middleName,
+                'last_name' => $dto->lastName,
+                'suffix' => $dto->suffix,
+                'birth_date' => $dto->birthDate,
+            ]);
+
+            $this->identityMatcher->assertMatches($candidate, $beneficiary);
+
+            if ($beneficiary->household_id !== $dto->householdId) {
+                throw new \DomainException(
+                    'An existing beneficiary cannot be linked into a different household during creation. Use Transfer/Reassign Household.',
+                );
+            }
+
+            if (HouseholdMember::query()
+                ->where('beneficiary_id', $beneficiaryId)
+                ->where('is_active', true)
+                ->exists()) {
+                throw new \DomainException('This beneficiary already has an active household membership.');
+            }
+        }
 
         // ── Head-uniqueness guard ────────────────────────────────────────────
         // Each household has exactly one Head — the self-row created by

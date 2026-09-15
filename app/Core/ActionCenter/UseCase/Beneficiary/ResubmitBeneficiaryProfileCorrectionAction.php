@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,13 @@ class ResubmitBeneficiaryProfileCorrectionAction
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
     public function execute(ResubmitBeneficiaryProfileCorrectionDto $dto): Beneficiary
     {
         $beneficiary = DB::transaction(function () use ($dto) {
+            $this->lockMunicipality->execute($dto->municipalId);
             $beneficiary = Beneficiary::query()
                 ->with('household')
                 ->where('user_id', $dto->userId)
@@ -182,6 +185,6 @@ class ResubmitBeneficiaryProfileCorrectionAction
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
 
-        return 'identity-id-' . $side . '-' . $beneficiary->getKey() . '.' . $extension;
+        return 'identity-id-'.$side.'-'.$beneficiary->getKey().'.'.$extension;
     }
 }

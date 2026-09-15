@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceCooldownService;
 use App\Core\ActionCenter\UseCase\Household\EvaluateHouseholdHeadCandidateAction;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -38,6 +39,7 @@ class GetBeneficiaryProfileAction
         private readonly ResolveBeneficiaryIdentityGroupAction $resolveGroup,
         private readonly FindHouseholdMembershipMatchesAction $findHouseholdMatches,
         private readonly EvaluateHouseholdHeadCandidateAction $evaluateHeadCandidate,
+        private readonly AssistanceCooldownService $cooldowns,
     ) {}
 
     public function execute(string $municipalId, string $beneficiaryId): array
@@ -124,6 +126,9 @@ class GetBeneficiaryProfileAction
             'beneficiary' => $beneficiary,
             'householdMembers' => $householdMembers,
             'assistanceHistory' => $assistanceHistory,
+            'cooldownAdvisory' => $this->cooldowns
+                ->advisoryFor($beneficiary, resolvedGroup: $group)
+                ->toArray(),
             'householdTotalIncome' => $householdTotalIncome,
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
             'householdMatches' => $this->findHouseholdMatches->execute($beneficiary)

@@ -10,6 +10,7 @@ use App\Core\ActionCenter\Models\BeneficiaryFlag;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -47,12 +48,14 @@ class CreateBeneficiaryProfileAction
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
         private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
         private readonly BeneficiarySmsNotifier $smsNotifier,
-    ) {
-    }
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
+    ) {}
 
     public function execute(CreateBeneficiaryProfileDto $dto): Beneficiary
     {
         $beneficiary = DB::transaction(function () use ($dto) {
+
+            $this->lockMunicipality->execute($dto->municipalId);
 
             DB::table('users')
                 ->where('id', $dto->userId)
@@ -106,7 +109,7 @@ class CreateBeneficiaryProfileAction
             // ── Write the self-referencing "Head of Household" row ───────
             // The citizen IS a member of their own household. Mirroring
             // their identity here means every per-household operation
-            // (cooldown fan-out, total income, member count) can query
+            // (release-time cooldown capture, total income, member count) can query
             // a single table without special-casing the head.
             //
             // BeneficiaryObserver keeps this row in sync if the citizen
@@ -150,9 +153,9 @@ class CreateBeneficiaryProfileAction
                     'user_id' => null, // system-raised, not an admin action
                     'reason' => 'potential_duplicate',
                     'severity' => BeneficiaryFlag::SEVERITY_WARNING,
-                    'notes' => 'Possible duplicate of: ' . $possibleDuplicates
-                        ->map(fn(Beneficiary $b) => $b->beneficiary_number ?? $b->id)
-                        ->implode(', ') . '. Verify against government ID before assisting.',
+                    'notes' => 'Possible duplicate of: '.$possibleDuplicates
+                        ->map(fn (Beneficiary $b) => $b->beneficiary_number ?? $b->id)
+                        ->implode(', ').'. Verify against government ID before assisting.',
                 ]);
             }
 
@@ -160,7 +163,7 @@ class CreateBeneficiaryProfileAction
         }, attempts: 3);
 
         $wasRecentlyCreated = $beneficiary->wasRecentlyCreated;
-        $frontWasMissing = !$beneficiary->hasMedia('identity_id_front');
+        $frontWasMissing = ! $beneficiary->hasMedia('identity_id_front');
 
         // A previous request may have committed the database records and then
         // failed while writing the required ID to object storage. In that case,
@@ -184,7 +187,7 @@ class CreateBeneficiaryProfileAction
             return;
         }
 
-        if (!$dto->identityIdFront instanceof UploadedFile) {
+        if (! $dto->identityIdFront instanceof UploadedFile) {
             throw BeneficiaryIdentityDocumentStorageException::requiredFrontMissing();
         }
 
@@ -199,7 +202,7 @@ class CreateBeneficiaryProfileAction
             // Some storage adapters can throw after the media row was already
             // persisted. Only ask the citizen to retry when the required file
             // is genuinely still absent.
-            if (!$beneficiary->fresh()->hasMedia('identity_id_front')) {
+            if (! $beneficiary->fresh()->hasMedia('identity_id_front')) {
                 throw BeneficiaryIdentityDocumentStorageException::frontUploadFailed();
             }
         }
@@ -211,7 +214,7 @@ class CreateBeneficiaryProfileAction
     ): void {
         if (
             $beneficiary->hasMedia('identity_id_back')
-            || !$dto->identityIdBack instanceof UploadedFile
+            || ! $dto->identityIdBack instanceof UploadedFile
         ) {
             return;
         }
@@ -233,6 +236,6 @@ class CreateBeneficiaryProfileAction
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
 
-        return 'identity-id-' . $side . '-' . $beneficiary->getKey() . '.' . $extension;
+        return 'identity-id-'.$side.'-'.$beneficiary->getKey().'.'.$extension;
     }
 }

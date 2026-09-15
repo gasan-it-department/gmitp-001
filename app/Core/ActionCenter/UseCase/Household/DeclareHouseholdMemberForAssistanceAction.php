@@ -8,6 +8,7 @@ use App\Core\ActionCenter\Exceptions\HouseholdMemberDeclarationException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class DeclareHouseholdMemberForAssistanceAction
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeMember,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
     public function execute(
@@ -25,6 +27,7 @@ class DeclareHouseholdMemberForAssistanceAction
         string $municipalId,
     ): HouseholdMember {
         return DB::transaction(function () use ($beneficiary, $dto, $actingUserId, $municipalId) {
+            $this->lockMunicipality->execute($municipalId);
             $lockedBeneficiary = Beneficiary::query()
                 ->whereKey($beneficiary->id)
                 ->where('user_id', $actingUserId)

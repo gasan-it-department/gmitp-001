@@ -6,12 +6,17 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
 class UnlinkHouseholdMemberBeneficiaryAction
 {
+    public function __construct(
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
+    ) {}
+
     public function execute(
         string $memberId,
         string $reason,
@@ -19,6 +24,7 @@ class UnlinkHouseholdMemberBeneficiaryAction
         string $actingAdminId,
     ): HouseholdMember {
         return DB::transaction(function () use ($memberId, $reason, $municipalId, $actingAdminId) {
+            $this->lockMunicipality->execute($municipalId);
             $member = HouseholdMember::query()
                 ->with('household')
                 ->whereKey($memberId)

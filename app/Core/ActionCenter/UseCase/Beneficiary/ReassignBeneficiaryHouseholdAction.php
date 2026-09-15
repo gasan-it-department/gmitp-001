@@ -8,6 +8,8 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +20,14 @@ class ReassignBeneficiaryHouseholdAction
         private readonly \App\Core\ActionCenter\UseCase\Household\EvaluateHouseholdHeadCandidateAction $evaluateCandidate,
         private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
         private readonly EnsureBeneficiaryHasNoOpenAssistanceRequestAction $ensureNoOpenAssistanceRequest,
+        private readonly HouseholdMemberIdentityMatcher $identityMatcher,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
     public function execute(ReassignBeneficiaryHouseholdDto $dto): Beneficiary
     {
         return DB::transaction(function () use ($dto) {
+            $this->lockMunicipality->execute($dto->municipalId);
             $beneficiary = Beneficiary::query()
                 ->whereKey($dto->beneficiaryId)
                 ->lockForUpdate()
@@ -80,7 +85,7 @@ class ReassignBeneficiaryHouseholdAction
         }
 
         $verificationBefore = $sourceMember->is_verified_dependent;
-        
+
         if ($beneficiary->is_active) {
             $sourceMember->update(['is_active' => false]);
             $beneficiary->update(['is_active' => false]);
@@ -132,13 +137,17 @@ class ReassignBeneficiaryHouseholdAction
         }
 
         $activeDuplicate = HouseholdMember::query()
-            ->where('household_id', $destinationHousehold->id)
             ->where('beneficiary_id', $beneficiary->id)
             ->where('is_active', true)
-            ->exists();
+            ->whereKeyNot($sourceMember->id)
+            ->first();
 
-        if ($activeDuplicate) {
-            throw new \DomainException('The beneficiary is already active in the destination household.');
+        if ($activeDuplicate !== null) {
+            throw new \DomainException(
+                $activeDuplicate->household_id === $destinationHousehold->id
+                    ? 'The beneficiary is already active in the destination household.'
+                    : 'The beneficiary already has another active household membership. Resolve it before transferring.',
+            );
         }
 
         $destinationMember = null;
@@ -149,16 +158,19 @@ class ReassignBeneficiaryHouseholdAction
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (! $destinationMember->is_active) {
-                throw new \DomainException('The selected destination roster row is not active.');
-            }
-
             if ($destinationMember->beneficiary_id !== null && $destinationMember->beneficiary_id !== $beneficiary->id) {
                 throw new \DomainException('The destination roster row is already linked to another beneficiary.');
             }
 
+            $this->identityMatcher->assertMatches($destinationMember, $beneficiary);
+
+            if ($sourceMember->is_active) {
+                $sourceMember->update(['is_active' => false]);
+            }
+
             $destinationMember->update([
                 'beneficiary_id' => $beneficiary->id,
+                'is_active' => true,
                 'is_verified_dependent' => $dto->verifyAtDestination,
             ]);
         } else {
@@ -173,32 +185,60 @@ class ReassignBeneficiaryHouseholdAction
                 $newRelationship = Relationship::Sibling->value;
             }
 
-            $destinationMember = HouseholdMember::create([
-                'household_id' => $destinationHousehold->id,
-                'beneficiary_id' => $beneficiary->id,
-                'first_name' => $beneficiary->first_name,
-                'middle_name' => $beneficiary->middle_name,
-                'last_name' => $beneficiary->last_name,
-                'suffix' => $beneficiary->suffix,
-                'birth_date' => $beneficiary->birth_date,
-                'sex' => $beneficiary->sex,
-                'civil_status' => $beneficiary->civil_status?->value,
-                'educational_attainment' => $beneficiary->educational_attainment,
-                'occupation' => $beneficiary->occupation,
-                'monthly_income' => $beneficiary->monthly_income ?? 0,
-                'religion_id' => $beneficiary->religion_id,
-                'relationship' => $newRelationship,
-                'is_active' => true,
-                'is_verified_dependent' => $newRelationship === Relationship::Head->value ? false : $dto->verifyAtDestination,
-            ]);
+            $historicalMatches = HouseholdMember::query()
+                ->where('household_id', $destinationHousehold->id)
+                ->where('is_active', false)
+                ->where(function ($query) use ($beneficiary): void {
+                    $query->whereNull('beneficiary_id')
+                        ->orWhere('beneficiary_id', $beneficiary->id);
+                })
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->filter(fn (HouseholdMember $member): bool => $this->identityMatcher->mismatches($member, $beneficiary) === [])
+                ->values();
+
+            if ($historicalMatches->count() > 1) {
+                throw new \DomainException(
+                    'Multiple historical destination roster rows match this beneficiary. Select the correct row for reviewed transfer.',
+                );
+            }
+
+            if ($sourceMember->is_active) {
+                $sourceMember->update(['is_active' => false]);
+            }
+
+            $destinationMember = $historicalMatches->first();
+            if ($destinationMember !== null) {
+                $destinationMember->update([
+                    'beneficiary_id' => $beneficiary->id,
+                    'is_active' => true,
+                    'is_verified_dependent' => $newRelationship === Relationship::Head->value ? false : $dto->verifyAtDestination,
+                ]);
+            } else {
+                $destinationMember = HouseholdMember::create([
+                    'household_id' => $destinationHousehold->id,
+                    'beneficiary_id' => $beneficiary->id,
+                    'first_name' => $beneficiary->first_name,
+                    'middle_name' => $beneficiary->middle_name,
+                    'last_name' => $beneficiary->last_name,
+                    'suffix' => $beneficiary->suffix,
+                    'birth_date' => $beneficiary->birth_date,
+                    'sex' => $beneficiary->sex,
+                    'civil_status' => $beneficiary->civil_status?->value,
+                    'educational_attainment' => $beneficiary->educational_attainment,
+                    'occupation' => $beneficiary->occupation,
+                    'monthly_income' => $beneficiary->monthly_income ?? 0,
+                    'religion_id' => $beneficiary->religion_id,
+                    'relationship' => $newRelationship,
+                    'is_active' => true,
+                    'is_verified_dependent' => $newRelationship === Relationship::Head->value ? false : $dto->verifyAtDestination,
+                ]);
+            }
         }
 
         $verificationBefore = $sourceMember->is_verified_dependent;
         $verificationAfter = $destinationMember->is_verified_dependent;
-
-        if ($beneficiary->is_active) {
-            $sourceMember->update(['is_active' => false]);
-        }
 
         $beneficiary->update([
             'household_id' => $destinationHousehold->id,
@@ -206,12 +246,12 @@ class ReassignBeneficiaryHouseholdAction
         ]);
 
         $this->logActivity(
-            $beneficiary, 
-            $sourceMember, 
-            $destinationMember, 
-            $destinationHousehold, 
-            $verificationBefore, 
-            $verificationAfter, 
+            $beneficiary,
+            $sourceMember,
+            $destinationMember,
+            $destinationHousehold,
+            $verificationBefore,
+            $verificationAfter,
             $dto
         );
 
@@ -231,6 +271,7 @@ class ReassignBeneficiaryHouseholdAction
             if ($dto->successorMemberId !== null) {
                 throw new \DomainException('Cannot appoint a successor when placing the household on hold.');
             }
+
             return; // Leaves household with no active head
         }
 
@@ -289,6 +330,6 @@ class ReassignBeneficiaryHouseholdAction
                 'verification_before' => $verificationBefore,
                 'verification_after' => $verificationAfter,
             ])
-            ->log($dto->operation->label() . ' applied');
+            ->log($dto->operation->label().' applied');
     }
 }

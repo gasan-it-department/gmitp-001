@@ -1,15 +1,19 @@
 <?php
 
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
+use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\RejectAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
 use App\Core\ActionCenter\Dto\Beneficiary\BeneficiaryIdentityGroup;
 use App\Core\ActionCenter\Dto\Beneficiary\EligibilityResult;
 use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
+use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Services\AssistanceCooldownService;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
+use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\RejectAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
@@ -30,6 +34,13 @@ use Illuminate\Support\Str;
 
 beforeEach(function () {
     activity()->disableLogging();
+
+    Schema::create('users', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->string('first_name')->nullable();
+        $table->string('last_name')->nullable();
+        $table->timestamps();
+    });
 
     Schema::create('ac_religions', function (Blueprint $table) {
         $table->ulid('id')->primary();
@@ -52,6 +63,7 @@ beforeEach(function () {
         $table->ulid('user_id')->nullable();
         $table->ulid('household_id');
         $table->ulid('municipal_id');
+        $table->ulid('merged_into_beneficiary_id')->nullable();
         $table->boolean('is_active')->default(true);
         $table->string('first_name');
         $table->string('last_name');
@@ -139,11 +151,14 @@ beforeEach(function () {
         $table->text('description')->nullable();
         $table->text('remarks')->nullable();
         $table->ulid('reviewed_by_user_id')->nullable();
+        $table->ulid('approved_by_user_id')->nullable();
+        $table->ulid('released_by_user_id')->nullable();
         $table->ulid('rejected_by_user_id')->nullable();
         $table->decimal('amount_approved', 10, 2)->nullable();
         $table->timestamp('reviewed_at')->nullable();
         $table->timestamp('approved_at')->nullable();
         $table->timestamp('released_at')->nullable();
+        $table->string('release_reference_number')->nullable();
         $table->timestamp('rejected_at')->nullable();
         $table->timestamp('privacy_consented_at');
         $table->string('privacy_notice_version');
@@ -225,6 +240,7 @@ afterEach(function () {
         'ac_beneficiaries',
         'ac_households',
         'ac_religions',
+        'users',
     ] as $table) {
         Schema::dropIfExists($table);
     }
@@ -787,6 +803,220 @@ it('throttles citizen assistance submissions as abuse protection', function () {
 
     expect($route)->not->toBeNull()
         ->and($route->gatherMiddleware())->toContain('throttle:5,1');
+});
+
+it('ignores premature cooldown rows until their request has an actual release', function (): void {
+    $context = seedAdultOnBehalfIdentityContext();
+    $requestId = (string) Str::ulid();
+    $now = CarbonImmutable::parse('2026-09-14 10:00:00');
+
+    DB::table('ac_assistance_requests')->insert([
+        'id' => $requestId,
+        'municipal_id' => $context['municipal_id'],
+        'beneficiary_id' => $context['beneficiary_id'],
+        'household_id' => $context['household_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'transaction_number' => 'REQ-PREMATURE-CD',
+        'status' => 'approved',
+        'privacy_consented_at' => $now,
+        'privacy_notice_version' => 'v1.0',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    DB::table('ac_beneficiary_cooldowns')->insert([
+        'id' => (string) Str::ulid(),
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'assistance_request_id' => $requestId,
+        'household_id' => $context['household_id'],
+        'cooldown_starts_at' => $now->subMonth(),
+        'cooldown_expires_at' => $now->addMonths(2),
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $beneficiary = Beneficiary::query()->findOrFail($context['beneficiary_id']);
+    $type = AssistanceType::query()->findOrFail($context['assistance_type_id']);
+    $service = app(AssistanceCooldownService::class);
+
+    expect($service->evaluate($beneficiary, $type, asOf: $now)->advisory->isActive())->toBeFalse();
+
+    DB::table('ac_assistance_requests')->where('id', $requestId)->update([
+        'status' => 'released',
+        'released_at' => $now->subMonth(),
+    ]);
+
+    expect($service->evaluate($beneficiary, $type, asOf: $now)->advisory->isActive())->toBeTrue();
+});
+
+it('applies a household release to later members without spreading a transferee history', function (): void {
+    $context = seedAdultOnBehalfIdentityContext();
+    $now = CarbonImmutable::parse('2026-09-14 10:00:00');
+    $requestId = (string) Str::ulid();
+    DB::table('ac_assistance_requests')->insert([
+        'id' => $requestId,
+        'municipal_id' => $context['municipal_id'],
+        'beneficiary_id' => $context['beneficiary_id'],
+        'household_id' => $context['household_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'transaction_number' => 'REQ-HOUSEHOLD-CD',
+        'status' => 'released',
+        'released_at' => $now->subMonth(),
+        'metadata' => json_encode(['cooldown_policy' => ['scope' => 'per_household']]),
+        'privacy_consented_at' => $now,
+        'privacy_notice_version' => 'v1.0',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    DB::table('ac_beneficiary_cooldowns')->insert([
+        'id' => (string) Str::ulid(),
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'assistance_request_id' => $requestId,
+        'household_member_id' => $context['head_member_id'],
+        'household_id' => $context['household_id'],
+        'cooldown_starts_at' => $now->subMonth(),
+        'cooldown_expires_at' => $now->addMonths(2),
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $laterMemberId = (string) Str::ulid();
+    DB::table('ac_beneficiaries')->insert([
+        'id' => $laterMemberId,
+        'household_id' => $context['household_id'],
+        'municipal_id' => $context['municipal_id'],
+        'is_active' => true,
+        'first_name' => 'LATER',
+        'last_name' => 'MEMBER',
+        'birth_date' => '2000-01-01',
+        'monthly_income' => 0,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $service = app(AssistanceCooldownService::class);
+    $type = AssistanceType::query()->findOrFail($context['assistance_type_id']);
+    $laterMember = Beneficiary::query()->findOrFail($laterMemberId);
+    expect($service->evaluate($laterMember, $type, asOf: $now)->advisory->sources[0]['match_type'])
+        ->toBe('household');
+
+    $destinationHouseholdId = (string) Str::ulid();
+    DB::table('ac_households')->insert([
+        'id' => $destinationHouseholdId,
+        'municipal_id' => $context['municipal_id'],
+        'barangay' => 'Barangay Dos',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    DB::table('ac_beneficiaries')->where('id', $context['beneficiary_id'])->update([
+        'household_id' => $destinationHouseholdId,
+    ]);
+    DB::table('ac_beneficiaries')->where('id', $laterMemberId)->update([
+        'household_id' => $destinationHouseholdId,
+    ]);
+
+    $transferred = Beneficiary::query()->findOrFail($context['beneficiary_id']);
+    $unrelatedDestinationMember = Beneficiary::query()->findOrFail($laterMemberId);
+
+    expect($service->evaluate($transferred, $type, asOf: $now)->advisory->sources[0]['match_type'])
+        ->toBe('personal')
+        ->and($service->evaluate($unrelatedDestinationMember, $type, asOf: $now)->advisory->isActive())
+        ->toBeFalse();
+});
+
+it('requires a fresh reason and context before recording an amount during a timed cooldown', function (): void {
+    $context = seedAdultOnBehalfIdentityContext();
+    $actorId = (string) Str::ulid();
+    $now = CarbonImmutable::parse('2026-09-14 10:00:00');
+    DB::table('users')->insert([
+        'id' => $actorId,
+        'first_name' => 'Mayor',
+        'last_name' => 'Office',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $priorRequestId = (string) Str::ulid();
+    DB::table('ac_assistance_requests')->insert([
+        'id' => $priorRequestId,
+        'municipal_id' => $context['municipal_id'],
+        'beneficiary_id' => $context['beneficiary_id'],
+        'household_id' => $context['household_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'transaction_number' => 'REQ-PRIOR-RELEASE',
+        'status' => 'released',
+        'amount_approved' => 2000,
+        'released_at' => $now->subMonth(),
+        'privacy_consented_at' => $now,
+        'privacy_notice_version' => 'v1.0',
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    DB::table('ac_beneficiary_cooldowns')->insert([
+        'id' => (string) Str::ulid(),
+        'beneficiary_id' => $context['beneficiary_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'assistance_request_id' => $priorRequestId,
+        'household_id' => $context['household_id'],
+        'cooldown_starts_at' => $now->subMonth(),
+        'cooldown_expires_at' => $now->addMonths(2),
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $current = AssistanceRequest::query()->create([
+        'id' => (string) Str::ulid(),
+        'municipal_id' => $context['municipal_id'],
+        'beneficiary_id' => $context['beneficiary_id'],
+        'household_id' => $context['household_id'],
+        'assistance_type_id' => $context['assistance_type_id'],
+        'transaction_number' => 'REQ-CURRENT-AMOUNT',
+        'status' => 'under_review',
+        'privacy_consented_at' => $now,
+        'privacy_notice_version' => 'v1.0',
+    ]);
+    $service = app(AssistanceCooldownService::class);
+    $evaluation = $service->evaluate(
+        Beneficiary::query()->findOrFail($context['beneficiary_id']),
+        AssistanceType::query()->findOrFail($context['assistance_type_id']),
+        asOf: $now,
+        excludeRequestId: $current->id,
+    );
+    $notifier = Mockery::mock(AssistanceRequestSmsNotifier::class);
+    $notifier->shouldReceive('requestApproved')->once();
+    $action = new ApproveAssistanceRequestAction(
+        new LockAssistanceRequestAction,
+        $notifier,
+        app(AssistanceRequestFormDefinitionProvider::class),
+    );
+
+    $makeDto = fn (string $fingerprint, ?string $reason): ApproveAssistanceRequestDto => new ApproveAssistanceRequestDto(
+        assistanceRequestId: $current->id,
+        municipalId: $context['municipal_id'],
+        municipalCode: '174003000',
+        approverId: $actorId,
+        amountApproved: 2500,
+        approvalNotes: 'Mayor-authorized assistance amount.',
+        cooldownContextFingerprint: $fingerprint,
+        cooldownExceptionReason: $reason,
+    );
+
+    expect(fn () => $action->execute($makeDto($evaluation->advisory->contextFingerprint, null)))
+        ->toThrow(DomainException::class, 'cooldown exception reason')
+        ->and(fn () => $action->execute($makeDto(str_repeat('0', 64), 'Authorized due to urgent medical need.')))
+        ->toThrow(DomainException::class, 'context changed');
+
+    $approved = $action->execute($makeDto(
+        $evaluation->advisory->contextFingerprint,
+        'Authorized due to urgent medical need.',
+    ));
+
+    expect($approved->status?->value)->toBe('approved')
+        ->and(data_get($approved->metadata, 'cooldown_exception_authorization.reason'))
+        ->toBe('Authorized due to urgent medical need.')
+        ->and(DB::table('ac_beneficiary_cooldowns')->where('assistance_request_id', $current->id)->count())
+        ->toBe(0);
 });
 
 function seedAdultOnBehalfIdentityContext(): array

@@ -5,10 +5,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import type { CooldownAdvisory } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import { useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, Loader2 } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { FormEventHandler, useEffect } from 'react';
 
 interface Props {
     requestId: string;
@@ -16,15 +17,22 @@ interface Props {
     onClose: () => void;
     minAmount?: number | null;
     maxAmount?: number | null;
+    cooldownAdvisory: CooldownAdvisory;
 }
 
-export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAmount, maxAmount }: Props) {
+export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAmount, maxAmount, cooldownAdvisory }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         amount_approved: '',
         approval_notes: '',
+        cooldown_context_fingerprint: cooldownAdvisory.context_fingerprint,
+        cooldown_exception_reason: '',
         confirm: false as boolean,
     });
+
+    useEffect(() => {
+        setData('cooldown_context_fingerprint', cooldownAdvisory.context_fingerprint);
+    }, [cooldownAdvisory.context_fingerprint, setData]);
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -55,12 +63,27 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                     </div>
                     <DialogTitle className="text-xl text-slate-900">Record Authorized Amount</DialogTitle>
                     <DialogDescription className="text-slate-500">
-                        Record the Mayor-authorized amount and provide the approval basis. This locks the amount and starts the applicant's
-                        cooldown period; MSWD verification and physical release remain separate steps.
+                        Record the Mayor-authorized amount and provide the approval basis. The cooldown starts only when assistance is physically
+                        released; MSWD verification remains a separate step.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-5 pt-2 sm:space-y-6 sm:pt-4">
+                    {cooldownAdvisory.active && (
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                            <div className="flex items-start gap-2 font-semibold">
+                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                                Timed cooldown exception required
+                            </div>
+                            <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                                {cooldownAdvisory.sources.length} prior release{cooldownAdvisory.sources.length === 1 ? '' : 's'} applies until{' '}
+                                {cooldownAdvisory.effective_expires_at
+                                    ? new Date(cooldownAdvisory.effective_expires_at).toLocaleDateString('en-PH')
+                                    : 'a later date'}
+                                .
+                            </p>
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="amount_approved" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
                             Authorized Amount (PHP)
@@ -84,6 +107,24 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                         )}
                         {errors.amount_approved && <p className="text-xs font-medium text-red-500">{errors.amount_approved}</p>}
                     </div>
+
+                    {cooldownAdvisory.active && (
+                        <div className="space-y-2">
+                            <Label htmlFor="cooldown_exception_reason" className="text-xs font-bold tracking-widest text-amber-700 uppercase">
+                                Cooldown Exception Reason
+                            </Label>
+                            <Textarea
+                                id="cooldown_exception_reason"
+                                placeholder="Explain why another grant is being authorized during the active cooldown..."
+                                rows={3}
+                                value={data.cooldown_exception_reason}
+                                onChange={(e) => setData('cooldown_exception_reason', e.target.value)}
+                            />
+                            {errors.cooldown_exception_reason && (
+                                <p className="text-xs font-medium text-red-500">{errors.cooldown_exception_reason}</p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label htmlFor="approval_notes" className="text-xs font-bold tracking-widest text-slate-500 uppercase">
@@ -114,7 +155,9 @@ export default function ApproveRequestDialog({ requestId, isOpen, onClose, minAm
                             >
                                 I understand this amount is locked after recording
                             </Label>
-                            <p className="text-xs text-slate-500">This records the amount decision and enforces the applicable cooldown. It does not complete MSWD verification or release funds.</p>
+                            <p className="text-xs text-slate-500">
+                                This records the amount decision. Any new cooldown begins only on physical release.
+                            </p>
                             {errors.confirm && <p className="text-xs font-medium text-red-500">{errors.confirm}</p>}
                         </div>
                     </div>

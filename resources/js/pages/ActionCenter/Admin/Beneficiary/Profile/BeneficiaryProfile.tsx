@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
+import type { CooldownAdvisory } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
@@ -18,6 +19,7 @@ import {
     AlertTriangle,
     ArrowLeft,
     BadgeCheck,
+    CalendarClock,
     Check,
     Clock3,
     Copy,
@@ -124,6 +126,7 @@ interface Props {
     beneficiary: { data: BeneficiaryProfileData } | BeneficiaryProfileData;
     householdMembers: { data: HouseholdMemberRow[] };
     assistanceHistory: { data: AssistanceHistoryRow[] };
+    cooldownAdvisory: CooldownAdvisory;
     householdTotalIncome: number;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
     householdMatches: HouseholdMatch[];
@@ -145,6 +148,7 @@ export default function BeneficiaryProfile({
     beneficiary,
     householdMembers,
     assistanceHistory,
+    cooldownAdvisory,
     householdTotalIncome,
     crossMunicipalityMatches,
     householdMatches,
@@ -458,6 +462,25 @@ export default function BeneficiaryProfile({
                 {crossMatches.length > 0 && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
                         <CrossMunicipalityWarning matches={crossMatches} context="profile" />
+                    </div>
+                )}
+
+                {cooldownAdvisory.active && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-6">
+                        <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+                            <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+                            <div className="text-sm">
+                                <p className="font-semibold">Active assistance cooldown advisory</p>
+                                <p className="mt-0.5 text-amber-800">
+                                    {cooldownAdvisory.sources.length} prior release{cooldownAdvisory.sources.length === 1 ? '' : 's'} currently
+                                    applies
+                                    {cooldownAdvisory.effective_expires_at
+                                        ? ` until ${new Date(cooldownAdvisory.effective_expires_at).toLocaleDateString('en-PH')}`
+                                        : ''}
+                                    . A decision maker must document an exception before another amount is recorded.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 )}
 

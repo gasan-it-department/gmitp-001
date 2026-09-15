@@ -19,7 +19,7 @@ use Illuminate\Foundation\Http\FormRequest;
  *     Minimum length forces something more substantial than "OK" / "approved".
  *   • confirm         → forces an explicit "I understand this is irreversible"
  *     checkbox click on the frontend. Defensive against accidental clicks
- *     since approval triggers cooldown writes that block future requests.
+ *     since approval commits the authorized amount and any cooldown exception.
  */
 class ApproveAssistanceRequestRequest extends FormRequest
 {
@@ -40,11 +40,14 @@ class ApproveAssistanceRequestRequest extends FormRequest
             // Basis of approval — COA evidence. The action appends this to
             // the request's existing remarks rather than replacing them, so
             // the full case-study history is preserved.
-            'approval_notes'  => ['required', 'string', 'min:10', 'max:2000'],
+            'approval_notes' => ['required', 'string', 'min:10', 'max:2000'],
 
-            // Explicit "I understand this is COA-immutable once released"
+            'cooldown_context_fingerprint' => ['required', 'string', 'size:64'],
+            'cooldown_exception_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
+
+            // Explicit acknowledgement before committing the authorized amount.
             // checkbox. Prevents accidental approval clicks.
-            'confirm'         => ['required', 'accepted'],
+            'confirm' => ['required', 'accepted'],
         ];
     }
 
@@ -52,10 +55,12 @@ class ApproveAssistanceRequestRequest extends FormRequest
     {
         return [
             'amount_approved.required' => 'An approved amount is required.',
-            'amount_approved.gt'       => 'The approved amount must be greater than 0.',
-            'approval_notes.required'  => 'A short note explaining the basis of approval is required for COA records.',
-            'approval_notes.min'       => 'The approval notes must be at least 10 characters (e.g. "Approved per Mayor E.O. 2026-04").',
-            'confirm.accepted'         => 'Please confirm you understand this approval is COA-immutable.',
+            'amount_approved.gt' => 'The approved amount must be greater than 0.',
+            'approval_notes.required' => 'A short note explaining the basis of approval is required for COA records.',
+            'approval_notes.min' => 'The approval notes must be at least 10 characters (e.g. "Approved per Mayor E.O. 2026-04").',
+            'cooldown_context_fingerprint.required' => 'Refresh the request before recording the amount.',
+            'cooldown_exception_reason.min' => 'The cooldown exception reason must be at least 10 characters.',
+            'confirm.accepted' => 'Please confirm you understand this approval is COA-immutable.',
         ];
     }
 }
