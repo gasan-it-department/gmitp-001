@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -13,6 +14,7 @@ class StoreAdminHouseholdMemberAction
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeMember,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
     public function execute(
@@ -22,6 +24,7 @@ class StoreAdminHouseholdMemberAction
         bool $isVerifiedDependent,
     ): HouseholdMember {
         return DB::transaction(function () use ($beneficiary, $dto, $municipalId, $isVerifiedDependent) {
+            $this->lockMunicipality->execute($municipalId);
             $household = Household::query()
                 ->whereKey($beneficiary->household_id)
                 ->where('municipal_id', $municipalId)

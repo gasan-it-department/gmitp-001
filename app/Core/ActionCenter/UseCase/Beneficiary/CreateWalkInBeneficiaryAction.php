@@ -11,6 +11,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -47,11 +48,14 @@ class CreateWalkInBeneficiaryAction
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
         private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
         private readonly CreateHouseholdAction $createHousehold,
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
     public function execute(CreateWalkInBeneficiaryDto $dto): Beneficiary
     {
         $beneficiary = DB::transaction(function () use ($dto) {
+
+            $this->lockMunicipality->execute($dto->municipalId);
 
             // ── Soft duplicate guard ────────────────────────────────────────
             // Stands in for the UNIQUE(user_id) constraint, which does nothing

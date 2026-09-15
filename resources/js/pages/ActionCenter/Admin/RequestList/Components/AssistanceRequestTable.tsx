@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import AdminEmptyListItem from '@/pages/Utility/AdminEmptyListItem';
 import Utility from '@/pages/Utility/Utility';
 import { Link } from '@inertiajs/react';
-import { ChevronRight } from 'lucide-react';
+import { CalendarClock, ChevronRight } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types — mirror AssistanceRequestListResource exactly. Re-export so the
@@ -16,6 +16,10 @@ export interface AssistanceRequestListItem {
     transaction_number: string;
     status: string;
     mswd_verification_status: 'pending' | 'under_review' | 'needs_correction' | 'verified' | null;
+    cooldown_advisory?: {
+        active: boolean;
+        effective_expires_at: string | null;
+    } | null;
 
     assistance_type_id: string;
     assistance_type?: {
@@ -223,9 +227,16 @@ export function AssistanceRequestTable({ paginator, onView, getViewUrl }: Props)
                                                 >
                                                     {humanizeStatus(row.status)}
                                                 </span>
-                                                <span className={`text-[10px] font-semibold ${row.mswd_verification_status === 'verified' ? 'text-emerald-700' : row.mswd_verification_status === 'needs_correction' ? 'text-rose-700' : 'text-amber-800'}`}>
+                                                <span
+                                                    className={`text-[10px] font-semibold ${row.mswd_verification_status === 'verified' ? 'text-emerald-700' : row.mswd_verification_status === 'needs_correction' ? 'text-rose-700' : 'text-amber-800'}`}
+                                                >
                                                     {mswdStatusLabel(row.mswd_verification_status)}
                                                 </span>
+                                                {row.cooldown_advisory?.active && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700">
+                                                        <CalendarClock className="h-3 w-3" aria-hidden="true" /> Cooldown warning
+                                                    </span>
+                                                )}
                                             </div>
                                         </TableCell>
 

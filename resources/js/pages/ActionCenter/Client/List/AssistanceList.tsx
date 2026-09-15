@@ -9,6 +9,7 @@ import {
     ArrowUp,
     Banknote,
     Calendar,
+    CalendarClock,
     CheckCircle2,
     ChevronLeft,
     Clock,
@@ -16,9 +17,9 @@ import {
     HelpingHand,
     User,
     XCircle,
+    type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import AssistanceDetailsDialog from './AssistanceRequestDialog';
 
 // ----------------------------------------------------------------------
 // TYPES (Based on AssistanceRequestListResource)
@@ -27,6 +28,10 @@ interface AssistanceRequest {
     id: string;
     transaction_number: string;
     status: string;
+    cooldown_advisory?: {
+        active: boolean;
+        effective_expires_at: string | null;
+    } | null;
     assistance_type_id: string;
     assistance_type: {
         id: string;
@@ -58,15 +63,15 @@ interface AssistanceRequest {
 interface Props {
     requests: {
         data: AssistanceRequest[];
-        meta?: any;
-        links?: any;
+        meta?: { total: number };
+        links?: Array<{ url: string | null; label: string; active: boolean }>;
     };
 }
 
 // ----------------------------------------------------------------------
 // STYLES CONFIGURATION
 // ----------------------------------------------------------------------
-const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; icon: any; label: string }> = {
+const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; icon: LucideIcon; label: string }> = {
     approved: {
         bg: 'bg-green-100',
         text: 'text-green-700',
@@ -123,18 +128,11 @@ export default function AssistanceList({ requests }: Props) {
     const totalCount = requests?.meta?.total || data.length || 0;
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     // --- State ---
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
     const [showScrollTop, setShowScrollTop] = useState(false);
 
     // --- Handlers ---
     const handleViewDetails = (request: AssistanceRequest) => {
         router.visit(actionCenter.show.url({ municipality: currentMunicipality.slug, assistanceRequestId: request.id }));
-    };
-
-    const handleCloseDialog = () => {
-        setIsDialogOpen(false);
-        setTimeout(() => setSelectedRequest(null), 300);
     };
 
     const scrollToTop = () => {
@@ -250,6 +248,12 @@ export default function AssistanceList({ requests }: Props) {
                                                         {req.assistance_type?.name || 'Assistance'}
                                                     </h3>
 
+                                                    {req.cooldown_advisory?.active && (
+                                                        <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
+                                                            <CalendarClock className="h-3.5 w-3.5" /> Active household or personal cooldown warning
+                                                        </p>
+                                                    )}
+
                                                     <div className="mt-3 space-y-2">
                                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                             <User className="h-4 w-4 text-primary" />
@@ -326,8 +330,6 @@ export default function AssistanceList({ requests }: Props) {
                     <ArrowUp className="h-5 w-5" />
                 </button>
             </div>
-
-            <AssistanceDetailsDialog isOpen={isDialogOpen} onClose={handleCloseDialog} request={selectedRequest} />
         </PublicLayout>
     );
 }

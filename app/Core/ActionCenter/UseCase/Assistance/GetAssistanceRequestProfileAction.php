@@ -4,6 +4,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceCooldownService;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\UseCase\Beneficiary\FindCrossMunicipalityMatchesAction;
 use App\Core\Users\Enums\EnumPermissions;
@@ -17,6 +18,7 @@ class GetAssistanceRequestProfileAction
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
         private readonly RefreshAssistanceHouseholdAssessmentAction $refreshAssessment,
         private readonly AssistanceMswdVerificationService $mswdVerification,
+        private readonly AssistanceCooldownService $cooldowns,
     ) {}
 
     public function execute(string $municipalId, string $assistanceRequestId)
@@ -86,6 +88,22 @@ class GetAssistanceRequestProfileAction
             $municipalId,
         );
 
+        $cooldownEvaluation = $this->cooldowns->evaluate(
+            $assistanceRequest->beneficiary,
+            $assistanceRequest->assistanceType,
+            $assistanceRequest->onBehalfHouseholdMember,
+            excludeRequestId: $assistanceRequest->id,
+        );
+        $storedAuthorization = data_get($assistanceRequest->metadata, 'cooldown_exception_authorization');
+        $cooldownAdvisory = $cooldownEvaluation->advisory->toArray();
+        $cooldownAdvisory['permanent_block'] = $cooldownEvaluation->hasPermanentBlock;
+        $cooldownAdvisory['authorization_current'] = ! $cooldownEvaluation->advisory->isActive()
+            || (is_array($storedAuthorization)
+                && $this->cooldowns->authorizationCovers(
+                    $cooldownEvaluation->advisory,
+                    is_array($storedAuthorization['sources'] ?? null) ? $storedAuthorization['sources'] : [],
+                ));
+
         return [
             'request' => $assistanceRequest,
             'recentHistory' => $recentHistory,
@@ -95,6 +113,7 @@ class GetAssistanceRequestProfileAction
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
             'mswdVerification' => $this->mswdVerification->payload($assistanceRequest),
             'documentChecks' => $this->mswdVerification->documentChecksPayload($assistanceRequest),
+            'cooldownAdvisory' => $cooldownAdvisory,
             'mswdReviewerOptions' => User::query()
                 ->where('municipal_id', $municipalId)
                 ->whereNull('deactivated_at')

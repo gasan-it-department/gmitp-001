@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * One row per beneficiary × assistance_type × approved request.
+ * One row per beneficiary, assistance type, and released request.
  *
- * Inserted by the approval workflow (NOT at submission). Read by the eligibility
+ * Inserted atomically by the release workflow. Read by the eligibility
  * checker on every Apply-page load and again server-side in the store action so
  * the citizen can't bypass the front-end gate.
  *
@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * - cooldown_expires_at FUTURE → on cooldown until that timestamp
  * - cooldown_expires_at PAST → effectively eligible (row kept for audit)
  *
- * For per_household scope (e.g. Financial Assistance E.O.) the inserter writes
- * one row per registered household member at snapshot time, all sharing the
+ * For per_household scope the release action writes one row per active linked
+ * household member at release time, all sharing the
  * same household_id so the lookup index stays single-column on household_id.
  */
 class BeneficiaryCooldown extends Model
@@ -26,7 +26,9 @@ class BeneficiaryCooldown extends Model
     use HasUlids;
 
     protected $table = 'ac_beneficiary_cooldowns';
+
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -40,7 +42,7 @@ class BeneficiaryCooldown extends Model
     ];
 
     protected $casts = [
-        'cooldown_starts_at'  => 'datetime',
+        'cooldown_starts_at' => 'datetime',
         'cooldown_expires_at' => 'datetime',
     ];
 
@@ -60,9 +62,8 @@ class BeneficiaryCooldown extends Model
     }
 
     /**
-     * The deceased / subject this cooldown is keyed to, for per-deceased
-     * (independent) programs like Burial. NULL for ordinary per-beneficiary or
-     * per-household cooldowns.
+     * Roster member captured for a household-scoped release. Null for a
+     * beneficiary-scoped cooldown.
      */
     public function householdMember(): BelongsTo
     {

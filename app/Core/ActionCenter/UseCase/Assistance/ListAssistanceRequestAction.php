@@ -2,12 +2,19 @@
 
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
+use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceCooldownService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Schema;
 
 class ListAssistanceRequestAction
 {
+    public function __construct(
+        private readonly AssistanceCooldownService $cooldowns,
+    ) {}
+
     /**
      * Return a paginated, filterable list of assistance requests scoped to one municipality.
      *
@@ -47,12 +54,20 @@ class ListAssistanceRequestAction
         // itself, so no beneficiary / household eager load is needed for the
         // list view (and it keeps historical rows accurate even if the
         // beneficiary later edits their profile).
+        $relations = [
+            'assistanceType:id,name,slug',
+            'media',
+            'snapshot',
+        ];
+        if (Schema::hasTable('ac_beneficiaries')) {
+            $relations[] = 'beneficiary';
+        }
+        if (Schema::hasTable('ac_household_members')) {
+            $relations[] = 'onBehalfHouseholdMember';
+        }
+
         $query = AssistanceRequest::query()
-            ->with([
-                'assistanceType:id,name,slug',
-                'media',
-                'snapshot',
-            ])
+            ->with($relations)
             ->where('ac_assistance_requests.municipal_id', $municipalId)
             ->orderBy('ac_assistance_requests.created_at', 'desc');
 
@@ -128,7 +143,32 @@ class ListAssistanceRequestAction
 
         $perPage = min((int) ($filters['per_page'] ?? 15), 100);
 
-        return $query->paginate($perPage)->withQueryString();
+        $paginator = $query->paginate($perPage)->withQueryString();
+        if (! Schema::hasTable('ac_beneficiaries') || ! Schema::hasTable('ac_beneficiary_cooldowns')) {
+            return $paginator;
+        }
+
+        $paginator->getCollection()->each(function (AssistanceRequest $request): void {
+            if (! in_array($request->status, [
+                AssistanceStatus::Pending,
+                AssistanceStatus::UnderReview,
+                AssistanceStatus::Approved,
+            ], true)) {
+                return;
+            }
+
+            $request->setAttribute(
+                'cooldown_advisory',
+                $this->cooldowns->evaluate(
+                    $request->beneficiary,
+                    $request->assistanceType,
+                    $request->onBehalfHouseholdMember,
+                    excludeRequestId: $request->id,
+                )->advisory->toArray(),
+            );
+        });
+
+        return $paginator;
     }
 
     private function normalizeSearch(mixed $value): ?string

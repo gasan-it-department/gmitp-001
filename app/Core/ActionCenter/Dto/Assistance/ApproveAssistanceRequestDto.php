@@ -25,8 +25,9 @@ readonly class ApproveAssistanceRequestDto
         public string $approverId,
         public float $amountApproved,
         public string $approvalNotes,
-    ) {
-    }
+        public string $cooldownContextFingerprint = '',
+        public ?string $cooldownExceptionReason = null,
+    ) {}
 
     /**
      * Build from the validated FormRequest plus context resolved by the
@@ -46,6 +47,10 @@ readonly class ApproveAssistanceRequestDto
             approverId: $approverId,
             amountApproved: (float) $request->validated('amount_approved'),
             approvalNotes: (string) $request->validated('approval_notes'),
+            cooldownContextFingerprint: (string) $request->validated('cooldown_context_fingerprint'),
+            cooldownExceptionReason: filled($request->validated('cooldown_exception_reason'))
+                ? trim((string) $request->validated('cooldown_exception_reason'))
+                : null,
         );
     }
 }

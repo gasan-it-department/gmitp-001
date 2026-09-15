@@ -14,6 +14,7 @@ use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -35,13 +36,18 @@ use Illuminate\Support\Facades\DB;
  */
 class StoreAssistanceRequestAction
 {
+    private readonly LockActionCenterMunicipalityAction $lockMunicipality;
+
     public function __construct(
         private IdGeneratorInterface $idGenerator,
         private AssistanceRequestSmsNotifier $smsNotifier,
         private CheckElegibilityAction $checkEligibility,
         private AssistanceRequestFormDefinitionProvider $formDefinitions,
         private AssistanceMswdVerificationService $mswdVerification,
-    ) {}
+        ?LockActionCenterMunicipalityAction $lockMunicipality = null,
+    ) {
+        $this->lockMunicipality = $lockMunicipality ?? app(LockActionCenterMunicipalityAction::class);
+    }
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
     {
@@ -61,6 +67,7 @@ class StoreAssistanceRequestAction
         // Media uploads remain outside this transaction. The claimant/member
         // locks protect the eligibility check and request insert only.
         $request = DB::transaction(function () use ($dto, $assistanceType, $formDefinition) {
+            $this->lockMunicipality->execute($dto->municipalId);
             // Submission lock order is always claimant first, then the
             // selected recipient. Every citizen/admin store path shares this
             // action, so competing submissions cannot reverse that order.
@@ -111,7 +118,8 @@ class StoreAssistanceRequestAction
                 allowPendingDependent: $dto->encodedByUserId === null,
             );
 
-            if (! $eligibility->eligible && $dto->encodedByUserId === null) {
+            if (! $eligibility->eligible
+                && ($dto->encodedByUserId === null || $eligibility->isHardBlockForAdminIntake())) {
                 throw AssistanceEligibilityException::from($eligibility);
             }
 

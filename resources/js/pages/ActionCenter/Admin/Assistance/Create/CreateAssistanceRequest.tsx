@@ -64,6 +64,7 @@ interface Eligibility {
     reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | 'blacklisted' | 'identity_unverified' | 'dependent_unverified' | null;
     message: string;
     cooldown_ends_at: string | null;
+    cooldown_advisory?: { active: boolean } | null;
 }
 
 interface Props {
@@ -164,6 +165,7 @@ export default function CreateAssistanceRequest({
     // admin may override for an emergency; the override is recorded server-side).
     const selectedEligibility = selectedType ? eligibilityByType?.[selectedType.id] : undefined;
     const selectedBlocked = selectedEligibility ? !selectedEligibility.eligible : false;
+    const selectedHasTimedCooldown = selectedEligibility?.reason === 'on_cooldown';
     const selectedMember = householdRoster.find((member) => member.id === data.on_behalf_household_member_id) ?? null;
     const selectedMemberNeedsOverride =
         effectiveFilingFor === 'family_member' &&
@@ -467,13 +469,15 @@ export default function CreateAssistanceRequest({
 
                             {/* Cooldown advisory — non-blocking. The admin may proceed for a
                                 verified emergency; the override is recorded in the audit trail. */}
-                            {selectedBlocked && selectedEligibility && (
+                            {(selectedBlocked || selectedHasTimedCooldown) && selectedEligibility && (
                                 <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                                     <div>
                                         <p className="font-semibold">{advisoryText(selectedEligibility)}</p>
                                         <p className="mt-0.5 text-amber-700">
-                                            Magpatuloy lamang para sa kumpirmadong emergency — ang pag-override na ito ay itatala sa audit trail.
+                                            {selectedHasTimedCooldown
+                                                ? 'Ang cooldown ay babala lamang sa intake. Kakailanganin ng decision maker ang malinaw na exception reason bago i-record ang amount.'
+                                                : 'Resolve this eligibility restriction before filing another request.'}
                                         </p>
                                     </div>
                                 </div>

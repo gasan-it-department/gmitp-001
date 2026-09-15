@@ -3,7 +3,9 @@
 namespace App\Core\ActionCenter\UseCase\Household;
 
 use App\Core\ActionCenter\Enums\Relationship;
+use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -23,9 +25,14 @@ use Illuminate\Support\Facades\DB;
  */
 class SetHouseholdMemberActiveAction
 {
+    public function __construct(
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
+    ) {}
+
     public function execute(string $memberId, bool $isActive, string $municipalId): HouseholdMember
     {
         return DB::transaction(function () use ($memberId, $isActive, $municipalId) {
+            $this->lockMunicipality->execute($municipalId);
             $member = HouseholdMember::query()
                 ->with('household')
                 ->whereKey($memberId)
@@ -76,10 +83,46 @@ class SetHouseholdMemberActiveAction
                         StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT,
                     ));
                 }
+
+                if ($member->beneficiary_id !== null) {
+                    $beneficiary = Beneficiary::query()
+                        ->whereKey($member->beneficiary_id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if ($beneficiary->household_id !== $member->household_id) {
+                        throw new \DomainException(
+                            'This beneficiary is assigned to another primary household. Use Transfer/Reassign Household to move them back.',
+                        );
+                    }
+
+                    if (HouseholdMember::query()
+                        ->where('beneficiary_id', $beneficiary->id)
+                        ->where('is_active', true)
+                        ->whereKeyNot($member->id)
+                        ->exists()) {
+                        throw new \DomainException(
+                            'This beneficiary is already active in another roster row. Use Transfer/Reassign Household.',
+                        );
+                    }
+
+                    if (! $beneficiary->is_active) {
+                        $beneficiary->update(['is_active' => true]);
+                    }
+                }
             }
 
             $member->update(['is_active' => $isActive]);
 
+            if (! $isActive && $member->beneficiary_id !== null) {
+                $beneficiary = Beneficiary::query()
+                    ->whereKey($member->beneficiary_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($beneficiary?->household_id === $member->household_id && $beneficiary->is_active) {
+                    $beneficiary->update(['is_active' => false]);
+                }
+            }
 
             return $member->fresh();
         }, attempts: 3);

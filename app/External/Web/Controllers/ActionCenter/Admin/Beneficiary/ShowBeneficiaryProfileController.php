@@ -42,6 +42,7 @@ class ShowBeneficiaryProfileController extends Controller
             'beneficiary' => new BeneficiaryProfileResource($data['beneficiary']),
             'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
             'assistanceHistory' => RecentAssistanceRequestResource::collection($data['assistanceHistory']),
+            'cooldownAdvisory' => $data['cooldownAdvisory'],
             'householdTotalIncome' => $data['householdTotalIncome'],
             'crossMunicipalityMatches' => CrossMunicipalityMatchResource::collection($data['crossMunicipalityMatches']),
             'householdMatches' => $data['householdMatches'],

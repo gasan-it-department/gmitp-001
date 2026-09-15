@@ -24,6 +24,7 @@ import {
     AssistanceMswdVerification,
     AssistanceRequestFormDefinition,
     AssistanceReviewActor,
+    CooldownAdvisory,
     PresentedCopyOption,
 } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
@@ -61,6 +62,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
+import AuthorizeCooldownExceptionDialog from './Components/AuthorizeCooldownExceptionDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
 import CorrectApprovedAssistanceAmountDialog from './Components/CorrectApprovedAssistanceAmountDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
@@ -231,6 +233,7 @@ interface Props {
     documentChecks: AssistanceDocumentCheck[];
     presentedCopyOptions: PresentedCopyOption[];
     mswdReviewerOptions: AssistanceReviewActor[];
+    cooldownAdvisory: CooldownAdvisory;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -261,6 +264,7 @@ export default function AssistanceRequestsDetails({
     documentChecks,
     presentedCopyOptions,
     mswdReviewerOptions,
+    cooldownAdvisory,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
@@ -286,6 +290,7 @@ export default function AssistanceRequestsDetails({
     const [isCancelApprovedOpen, setIsCancelApprovedOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
+    const [isCooldownExceptionOpen, setIsCooldownExceptionOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
     const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
     const [isApprovedHouseholdSyncOpen, setIsApprovedHouseholdSyncOpen] = useState(false);
@@ -333,6 +338,13 @@ export default function AssistanceRequestsDetails({
         !detail.on_behalf.date_of_death;
     const canCorrectApprovedAmount =
         canDecideRequests && canCorrectRequests && detail.status === 'approved' && detail.amount_approved !== null && !detail.has_release_artifacts;
+    const canAuthorizeCooldownException =
+        canDecideRequests &&
+        detail.status === 'approved' &&
+        !detail.has_release_artifacts &&
+        cooldownAdvisory.active &&
+        cooldownAdvisory.authorization_current !== true &&
+        cooldownAdvisory.permanent_block !== true;
     const checkedDocumentKeys = new Set(documentChecks.map((check) => check.document_key));
     const extraDocuments = (detail.documents ?? []).filter((document) => !checkedDocumentKeys.has(documentKeyOf(document)));
     const receiptStatusIsEligible = detail.status === 'approved' || detail.status === 'released';
@@ -340,6 +352,13 @@ export default function AssistanceRequestsDetails({
     const generatorIsEnabled = (document: AssistanceGeneratedDocument) => enabledGeneratedDocuments.has(document);
     const verificationAllowsFinalDocuments =
         (mswdVerification.status === 'verified' && mswdVerification.is_current) || (detail.status === 'released' && mswdVerification.status === null);
+    const releaseBlockReason = !verificationAllowsFinalDocuments
+        ? 'Complete current MSWD verification before physical release.'
+        : cooldownAdvisory.permanent_block
+          ? 'A one-time assistance limit blocks this release.'
+          : cooldownAdvisory.active && cooldownAdvisory.authorization_current !== true
+            ? 'A decision maker must authorize the current cooldown exception before release.'
+            : null;
     const canGenerateAcknowledgementReceipt =
         generatorIsEnabled('acknowledgement_receipt') &&
         receiptStatusIsEligible &&
@@ -509,9 +528,7 @@ export default function AssistanceRequestsDetails({
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
                                         approvalBlockReason={approvalBlockReason}
-                                        releaseBlockReason={
-                                            verificationAllowsFinalDocuments ? null : 'Complete current MSWD verification before physical release.'
-                                        }
+                                        releaseBlockReason={releaseBlockReason}
                                         canProcess={canProcessRequests}
                                         canVerify={canVerifyRequests}
                                         mswdVerificationStatus={mswdVerification.status}
@@ -568,6 +585,36 @@ export default function AssistanceRequestsDetails({
                 {crossMatches.length > 0 && (
                     <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:hidden">
                         <CrossMunicipalityWarning matches={crossMatches} context="release" />
+                    </div>
+                )}
+
+                {(cooldownAdvisory.active || cooldownAdvisory.permanent_block) && detail.status !== 'released' && (
+                    <div className="container mx-auto max-w-7xl px-4 pt-4 sm:px-6">
+                        <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                                <div>
+                                    <p className="text-sm font-semibold text-amber-950">
+                                        {cooldownAdvisory.permanent_block ? 'One-time assistance limit applies' : 'Active assistance cooldown'}
+                                    </p>
+                                    <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
+                                        {cooldownAdvisory.permanent_block
+                                            ? 'This limit cannot be overridden.'
+                                            : `${cooldownAdvisory.sources.length} prior release${cooldownAdvisory.sources.length === 1 ? '' : 's'} applies${cooldownAdvisory.effective_expires_at ? ` until ${new Date(cooldownAdvisory.effective_expires_at).toLocaleDateString('en-PH')}` : ''}.`}
+                                    </p>
+                                </div>
+                            </div>
+                            {canAuthorizeCooldownException && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-amber-300 bg-white text-amber-900"
+                                    onClick={() => setIsCooldownExceptionOpen(true)}
+                                >
+                                    <ShieldCheck className="mr-2 h-4 w-4" /> Authorize Cooldown Exception
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -1328,6 +1375,7 @@ export default function AssistanceRequestsDetails({
                         onClose={() => setIsApproveOpen(false)}
                         minAmount={detail.assistance_type?.min_amount}
                         maxAmount={detail.assistance_type?.max_amount}
+                        cooldownAdvisory={cooldownAdvisory}
                     />
 
                     <CancelApprovedRequestDialog
@@ -1364,6 +1412,14 @@ export default function AssistanceRequestsDetails({
                     amountApproved={detail.amount_approved}
                     isOpen={isReleaseOpen}
                     onClose={() => setIsReleaseOpen(false)}
+                />
+            )}
+            {canDecideRequests && (
+                <AuthorizeCooldownExceptionDialog
+                    requestId={detail.id}
+                    transactionNumber={detail.transaction_number}
+                    isOpen={isCooldownExceptionOpen}
+                    onClose={() => setIsCooldownExceptionOpen(false)}
                 />
             )}
             {canCorrectMissingDateOfDeath && (

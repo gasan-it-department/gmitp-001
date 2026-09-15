@@ -2,9 +2,12 @@
 
 namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\BeneficiaryFlag;
+use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use App\Core\Users\UseCases\DeactivateAdminUseCase;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -35,8 +38,8 @@ class MergeBeneficiaryAction
 {
     public function __construct(
         private readonly DeactivateAdminUseCase $deactivateAccount,
-    ) {
-    }
+        private readonly LockActionCenterMunicipalityAction $lockMunicipality,
+    ) {}
 
     public function execute(
         string $duplicateId,
@@ -54,6 +57,7 @@ class MergeBeneficiaryAction
             $wasImproperClaim,
             $notes,
         ) {
+            $this->lockMunicipality->execute($municipalId);
             $duplicate = Beneficiary::query()
                 ->with('household')
                 ->whereKey($duplicateId)
@@ -71,6 +75,7 @@ class MergeBeneficiaryAction
             $canonical = Beneficiary::query()
                 ->whereHas('household', fn ($q) => $q->where('municipal_id', $municipalId))
                 ->where('beneficiary_number', mb_strtoupper(trim($canonicalBeneficiaryNumber)))
+                ->lockForUpdate()
                 ->first();
 
             if (! $canonical) {
@@ -94,9 +99,14 @@ class MergeBeneficiaryAction
                 );
             }
 
+            $this->prepareMembershipsForMerge($duplicate, $canonical);
+
             // 4. Stamp the link. Frozen records are NOT moved — group-resolution
             //    at read time covers eligibility + history.
-            $duplicate->update(['merged_into_beneficiary_id' => $canonical->id]);
+            $duplicate->update([
+                'merged_into_beneficiary_id' => $canonical->id,
+                'is_active' => false,
+            ]);
 
             // 5. Neutralise the duplicate's portal account (revoke + deactivate;
             //    login is blocked while deactivated_at is set). Walk-ins have no
@@ -111,12 +121,12 @@ class MergeBeneficiaryAction
             //    administrative dedup with no improper claim is a warning.
             BeneficiaryFlag::create([
                 'beneficiary_id' => $canonical->id,
-                'user_id'        => $actingAdminId,
-                'reason'         => 'duplicate_merge',
-                'severity'       => $wasImproperClaim
+                'user_id' => $actingAdminId,
+                'reason' => 'duplicate_merge',
+                'severity' => $wasImproperClaim
                     ? BeneficiaryFlag::SEVERITY_BLACKLIST
                     : BeneficiaryFlag::SEVERITY_WARNING,
-                'notes'          => $this->buildFlagNotes($duplicate, $wasImproperClaim, $notes),
+                'notes' => $this->buildFlagNotes($duplicate, $wasImproperClaim, $notes),
             ]);
 
             // 7. Audit — explicit, with both identities and the acting admin.
@@ -124,17 +134,71 @@ class MergeBeneficiaryAction
                 ->performedOn($canonical)
                 ->causedBy(User::find($actingAdminId))
                 ->withProperties([
-                    'municipal_id'                => $municipalId,
-                    'canonical_beneficiary_id'    => $canonical->id,
+                    'municipal_id' => $municipalId,
+                    'canonical_beneficiary_id' => $canonical->id,
                     'canonical_beneficiary_number' => $canonical->beneficiary_number,
-                    'duplicate_beneficiary_id'    => $duplicate->id,
+                    'duplicate_beneficiary_id' => $duplicate->id,
                     'duplicate_beneficiary_number' => $duplicate->beneficiary_number,
-                    'was_improper_claim'          => $wasImproperClaim,
+                    'was_improper_claim' => $wasImproperClaim,
                 ])
                 ->log('Merged a duplicate beneficiary into a canonical record');
 
             return $canonical->fresh();
         }, attempts: 3);
+    }
+
+    private function prepareMembershipsForMerge(Beneficiary $duplicate, Beneficiary $canonical): void
+    {
+        $canonicalMemberships = HouseholdMember::query()
+            ->where('beneficiary_id', $canonical->id)
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($canonicalMemberships->count() !== 1
+            || $canonicalMemberships->first()?->household_id !== $canonical->household_id) {
+            throw new \DomainException(
+                'The canonical beneficiary does not have one valid active primary household membership. Correct it before merging.',
+            );
+        }
+
+        $duplicateMemberships = HouseholdMember::query()
+            ->where('beneficiary_id', $duplicate->id)
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($duplicateMemberships->count() > 1) {
+            throw new \DomainException(
+                'The duplicate beneficiary has multiple active household memberships. Resolve them before merging.',
+            );
+        }
+
+        $membership = $duplicateMemberships->first();
+        if ($membership === null) {
+            return;
+        }
+
+        if ($membership->household_id !== $duplicate->household_id) {
+            throw new \DomainException(
+                'The duplicate beneficiary active roster row does not match its primary household. Correct it before merging.',
+            );
+        }
+
+        if ($membership->relationship === Relationship::Head->value
+            && HouseholdMember::query()
+                ->where('household_id', $membership->household_id)
+                ->where('is_active', true)
+                ->where('id', '!=', $membership->id)
+                ->exists()) {
+            throw new \DomainException(
+                'Assign a successor or transfer the duplicate household members before merging its active head.',
+            );
+        }
+
+        $membership->update(['is_active' => false]);
     }
 
     /**
@@ -165,7 +229,7 @@ class MergeBeneficiaryAction
         }
 
         if (! empty($releasedRefs)) {
-            $parts[] = 'Duplicate released requests: ' . implode(', ', $releasedRefs) . '.';
+            $parts[] = 'Duplicate released requests: '.implode(', ', $releasedRefs).'.';
         }
 
         if (filled($adminNotes)) {

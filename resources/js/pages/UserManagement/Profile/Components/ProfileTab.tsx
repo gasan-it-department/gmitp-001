@@ -354,7 +354,8 @@ export default function ProfileTab() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={isSocialLoading}
+                            disabled
+                            title="Account linking is temporarily unavailable"
                             onClick={() => linkWithGoogle()}
                             className="h-9 rounded-xl px-4 text-xs font-bold"
                         >

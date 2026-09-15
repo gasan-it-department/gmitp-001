@@ -32,6 +32,7 @@ interface Eligibility {
     reason: 'on_cooldown' | 'permanent_block' | 'in_flight_request' | 'blacklisted' | 'identity_unverified' | 'dependent_unverified' | null;
     message: string;
     cooldown_ends_at: string | null;
+    cooldown_advisory?: { active: boolean } | null;
 }
 
 interface Props {
@@ -250,6 +251,7 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
                             // Absent entry → assume eligible (guest / pre-profile flow).
                             const eligibility = eligibilityByType?.[type.id];
                             const isBlocked = eligibility ? !eligibility.eligible : false;
+                            const hasTimedCooldown = eligibility?.reason === 'on_cooldown';
 
                             // Program cards are informational. The details page decides
                             // whether the citizen may continue to profile setup or apply.
@@ -316,6 +318,11 @@ export default function ActionCenterPortal({ assistanceTypes, eligibilityByType,
                                             </p>
                                         ) : (
                                             <>
+                                                {hasTimedCooldown && (
+                                                    <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                                                        <CalendarClock className="h-3.5 w-3.5" /> May aktibong cooldown; maaari pa ring magsumite
+                                                    </div>
+                                                )}
                                                 {type.max_amount && Number(type.max_amount) > 0 && (
                                                     <div className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-500/10 dark:text-green-400">
                                                         <Banknote className="h-3.5 w-3.5" />

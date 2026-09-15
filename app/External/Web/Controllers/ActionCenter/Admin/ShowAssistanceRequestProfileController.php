@@ -60,6 +60,8 @@ class ShowAssistanceRequestProfileController extends Controller
 
             'documentChecks' => $data['documentChecks'],
 
+            'cooldownAdvisory' => $data['cooldownAdvisory'],
+
             'presentedCopyOptions' => PhysicalCopyRequirement::presentedOptions(),
 
             'mswdReviewerOptions' => $data['mswdReviewerOptions'],

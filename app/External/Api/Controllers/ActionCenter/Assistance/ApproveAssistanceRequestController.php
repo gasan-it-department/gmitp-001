@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Dto\Assistance\ApproveAssistanceRequestDto;
 use App\Core\ActionCenter\UseCase\Assistance\ApproveAssistanceRequestAction;
 use App\External\Api\Request\ActionCenter\ApproveAssistanceRequestRequest;
 use App\Http\Controllers\Controller;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,10 +19,11 @@ use Illuminate\Support\Facades\Auth;
  *   • validates the payload shape (via ApproveAssistanceRequestRequest)
  *   • collects tenant context + authenticated approver id
  *   • builds the DTO from primitives and hands off to the action
- *   • translates domain / authorization exceptions to flash-message redirects
+ *   - translates domain / authorization exceptions to flash-message redirects
  *
  * All business rules (status transition, amount bounds, required-docs
- * presence, cooldown fan-out) live in ApproveAssistanceRequestAction.
+ * presence, and cooldown exception authorization) live in
+ * ApproveAssistanceRequestAction.
  */
 class ApproveAssistanceRequestController extends Controller
 {
@@ -34,20 +36,23 @@ class ApproveAssistanceRequestController extends Controller
         ApproveAssistanceRequestRequest $request,
     ): RedirectResponse {
 
-        $dto = ApproveAssistanceRequestDto::fromRequest(
-            request: $request,
-            assistanceRequestId: $assistanceRequestId,
-            municipalId: app('municipal_id'),
-            municipalCode: app('current_municipality')->municipal_code,
-            approverId: Auth::id(),
-        );
+        try {
+            $dto = ApproveAssistanceRequestDto::fromRequest(
+                request: $request,
+                assistanceRequestId: $assistanceRequestId,
+                municipalId: app('municipal_id'),
+                municipalCode: app('current_municipality')->municipal_code,
+                approverId: Auth::id(),
+            );
 
-        $this->approve->execute($dto);
+            $this->approve->execute($dto);
 
-        return back()->with(
-            'success',
-            'Authorized amount recorded. MSWD verification must still be completed before financial documents or release.',
-        );
-
+            return back()->with(
+                'success',
+                'Authorized amount recorded. MSWD verification must still be completed before financial documents or release.',
+            );
+        } catch (\DomainException|AuthorizationException $exception) {
+            return back()->withErrors(['approval' => $exception->getMessage()]);
+        }
     }
 }

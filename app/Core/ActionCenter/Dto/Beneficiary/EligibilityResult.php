@@ -39,6 +39,7 @@ final class EligibilityResult
         public readonly bool $eligible,
         public readonly ?string $reason,
         public readonly ?CarbonImmutable $cooldownEndsAt = null,
+        public readonly ?CooldownAdvisory $cooldownAdvisory = null,
     ) {}
 
     public static function eligible(): self
@@ -46,12 +47,13 @@ final class EligibilityResult
         return new self(true, null);
     }
 
-    public static function onCooldown(DateTimeInterface $until): self
+    public static function onCooldown(DateTimeInterface $until, CooldownAdvisory $advisory): self
     {
         return new self(
-            eligible: false,
+            eligible: true,
             reason: self::REASON_ON_COOLDOWN,
             cooldownEndsAt: CarbonImmutable::instance($until),
+            cooldownAdvisory: $advisory,
         );
     }
 
@@ -108,6 +110,17 @@ final class EligibilityResult
         ], true);
     }
 
+    public function isHardBlockForAdminIntake(): bool
+    {
+        return in_array($this->reason, [
+            self::REASON_PERMANENT_BLOCK,
+            self::REASON_IN_FLIGHT,
+            self::REASON_BLACKLISTED,
+            self::REASON_INTAKE_REJECTED,
+            self::REASON_BENEFICIARY_INACTIVE,
+        ], true);
+    }
+
     /**
      * Human-readable explanation for citizen UI and admin tooltips.
      * Kept here (not in the frontend) so the same wording is used for both
@@ -151,6 +164,7 @@ final class EligibilityResult
             'reason' => $this->reason,
             'message' => $this->message(),
             'cooldown_ends_at' => $this->cooldownEndsAt?->toIso8601String(),
+            'cooldown_advisory' => $this->cooldownAdvisory?->toArray(),
         ];
     }
 }

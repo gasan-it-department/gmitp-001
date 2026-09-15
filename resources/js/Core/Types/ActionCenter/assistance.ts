@@ -13,6 +13,29 @@ export interface PresentedCopyOption {
 }
 export type MswdVerificationStatus = 'pending' | 'under_review' | 'needs_correction' | 'verified';
 
+export interface CooldownAdvisorySource {
+    request_id: string;
+    transaction_number: string | null;
+    assistance_type_id: string;
+    program: string | null;
+    amount: number | null;
+    release_date: string | null;
+    cooldown_starts_at: string | null;
+    cooldown_expires_at: string;
+    match_type: 'personal' | 'household' | 'personal_and_household';
+    scope: CooldownScope;
+    source_fingerprint: string;
+}
+
+export interface CooldownAdvisory {
+    active: boolean;
+    effective_expires_at: string | null;
+    context_fingerprint: string;
+    sources: CooldownAdvisorySource[];
+    permanent_block?: boolean;
+    authorization_current?: boolean;
+}
+
 export interface AssistanceReviewActor {
     id: string | number;
     name: string;

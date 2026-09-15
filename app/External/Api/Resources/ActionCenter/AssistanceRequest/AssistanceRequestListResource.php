@@ -41,6 +41,7 @@ class AssistanceRequestListResource extends JsonResource
             // Values: pending | under_review | approved | released | rejected | cancelled
             'status' => $this->status,
             'mswd_verification_status' => $this->mswd_verification_status?->value,
+            'cooldown_advisory' => $this->resource->getAttribute('cooldown_advisory'),
 
             // ── Program ──────────────────────────────────────────────────────
             'assistance_type_id' => $this->assistance_type_id,

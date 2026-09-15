@@ -37,6 +37,7 @@ class AssistanceRequest extends Model implements HasMedia
         'released_by_user_id',
         'released_at',
         'release_reference_number',
+        'metadata',
         'remarks',
         'updated_at',
     ];
@@ -62,6 +63,9 @@ class AssistanceRequest extends Model implements HasMedia
 
     /** Allows only the dedicated pre-release approved-amount correction. */
     private bool $allowApprovedAmountCorrection = false;
+
+    /** Allows only a decision-maker's pre-release cooldown authorization. */
+    private bool $allowCooldownExceptionAuthorization = false;
 
     /** Allows only the dedicated MSWD verification lifecycle fields. */
     private bool $allowMswdVerificationMutation = false;
@@ -183,6 +187,12 @@ class AssistanceRequest extends Model implements HasMedia
                 return;
             }
 
+            if ($request->allowCooldownExceptionAuthorization
+                && $originalStatus === AssistanceStatus::Approved
+                && array_diff($dirtyFields, ['metadata', 'updated_at']) === []) {
+                return;
+            }
+
             if ($request->allowApprovedAmountCorrection
                 && $originalStatus === AssistanceStatus::Approved
                 && array_diff($dirtyFields, ['amount_approved', 'updated_at']) === []) {
@@ -285,6 +295,27 @@ class AssistanceRequest extends Model implements HasMedia
         }
     }
 
+    /** @param array<string, mixed> $authorization */
+    public function replaceCooldownExceptionAuthorization(array $authorization): void
+    {
+        $metadata = $this->metadata ?? [];
+        $metadata['cooldown_exception_authorization'] = $authorization;
+        $this->allowCooldownExceptionAuthorization = true;
+
+        try {
+            $this->update(['metadata' => $metadata]);
+        } finally {
+            $this->allowCooldownExceptionAuthorization = false;
+        }
+    }
+
+    public function hasReleaseArtifacts(): bool
+    {
+        return $this->released_at !== null
+            || $this->released_by_user_id !== null
+            || filled($this->release_reference_number);
+    }
+
     /**
      * Mutate the independent MSWD verification lifecycle without opening a
      * general edit path for approved financial records. Callers must enforce
@@ -332,6 +363,11 @@ class AssistanceRequest extends Model implements HasMedia
         return $this->hasMany(AssistanceRequestDocumentCheck::class, 'assistance_request_id')
             ->orderBy('sort_order')
             ->orderBy('id');
+    }
+
+    public function cooldowns(): HasMany
+    {
+        return $this->hasMany(BeneficiaryCooldown::class, 'assistance_request_id');
     }
 
     public function onBehalfHouseholdMember(): BelongsTo
