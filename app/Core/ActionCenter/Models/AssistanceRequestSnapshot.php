@@ -47,18 +47,31 @@ class AssistanceRequestSnapshot extends Model
     }
 
     /**
-     * Replace only the frozen filer's name after the Core correction action
-     * has verified tenant, status, permission, and live identity state.
+     * Replace selected claimant fields after the dedicated Core action has
+     * enforced tenant, lifecycle, verification, and audit requirements.
      *
-     * @param  array{first_name: string, middle_name: ?string, last_name: string, suffix: ?string}  $name
+     * @param  array<string, string|float|null>  $attributes
      */
-    public function replaceFilerName(array $name): void
+    public function replaceClaimantProfileFields(array $attributes): void
     {
-        $this->update([
-            'first_name' => $name['first_name'],
-            'middle_name' => $name['middle_name'],
-            'last_name' => $name['last_name'],
-            'suffix' => $name['suffix'],
-        ]);
+        $allowed = [
+            'first_name',
+            'middle_name',
+            'last_name',
+            'suffix',
+            'sex',
+            'birth_date',
+            'educational_attainment',
+            'religion',
+            'civil_status',
+            'occupation',
+            'monthly_income',
+        ];
+
+        if ($attributes === [] || array_diff(array_keys($attributes), $allowed) !== []) {
+            throw new \InvalidArgumentException('Only supported claimant snapshot fields may be corrected.');
+        }
+
+        $this->update($attributes);
     }
 }

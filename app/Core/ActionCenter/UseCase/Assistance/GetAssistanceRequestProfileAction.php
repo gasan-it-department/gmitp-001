@@ -41,7 +41,7 @@ class GetAssistanceRequestProfileAction
             'onBehalfHouseholdMember',
             // Live beneficiary — powers the cross-LGU warning AND the
             // beneficiary_number on the detail resource.
-            'beneficiary',
+            'beneficiary.religion',
             'beneficiary.media',
         ])->findOrFail($assistanceRequestId);
 
