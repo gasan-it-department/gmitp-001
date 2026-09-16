@@ -3,6 +3,8 @@
 namespace App\External\Api\Resources\ActionCenter\AssistanceRequest;
 
 use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
+use App\Core\ActionCenter\Enums\CivilStatus;
+use App\Core\ActionCenter\Enums\EducationalAttainment;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -138,7 +140,7 @@ class AssistanceRequestDetailsResource extends JsonResource
                     : null,
                 'religion' => $snapshot?->religion,
             ],
-            'filer_name_correction' => $this->filerNameCorrectionData(),
+            'profile_correction' => $this->profileCorrectionData(),
 
             // ── Address snapshot (frozen at submission) ──────────────────────
             'address_snapshot' => [
@@ -236,62 +238,123 @@ class AssistanceRequestDetailsResource extends JsonResource
         ])));
     }
 
-    /**
-     * Compare only name fields. Other live beneficiary changes remain outside
-     * this narrowly scoped request-snapshot correction.
-     *
-     * @return array{has_difference: bool, current_profile_name: string, identity_verified: bool}|null
-     */
-    private function filerNameCorrectionData(): ?array
+    /** @return array{has_difference:bool,identity_verified:bool,differences:list<array{key:string,label:string,request_value:?string,profile_value:?string}>}|null */
+    private function profileCorrectionData(): ?array
     {
         if (! $this->resource->relationLoaded('beneficiary') || $this->beneficiary === null) {
             return null;
         }
 
         $snapshot = $this->resource->snapshot;
-        $profileName = $this->normalizedNameParts(
-            $this->beneficiary->first_name,
-            $this->beneficiary->middle_name,
-            $this->beneficiary->last_name,
-            $this->beneficiary->suffix,
-        );
-        $snapshotName = $this->normalizedNameParts(
-            $snapshot?->first_name,
-            $snapshot?->middle_name,
-            $snapshot?->last_name,
-            $snapshot?->suffix,
-        );
+        if ($snapshot === null) {
+            return [
+                'has_difference' => false,
+                'identity_verified' => $this->beneficiary->isIdentityVerified(),
+                'differences' => [],
+            ];
+        }
+
+        $labels = [
+            'first_name' => 'First name',
+            'middle_name' => 'Middle name',
+            'last_name' => 'Last name',
+            'suffix' => 'Suffix',
+            'sex' => 'Sex',
+            'birth_date' => 'Date of birth',
+            'educational_attainment' => 'Educational attainment',
+            'religion' => 'Religion',
+            'civil_status' => 'Civil status',
+            'occupation' => 'Occupation',
+            'monthly_income' => 'Monthly income',
+        ];
+        $snapshotValues = [
+            'first_name' => $snapshot->first_name,
+            'middle_name' => $snapshot->middle_name,
+            'last_name' => $snapshot->last_name,
+            'suffix' => $snapshot->suffix,
+            'sex' => $snapshot->sex,
+            'birth_date' => $snapshot->birth_date?->toDateString(),
+            'educational_attainment' => $snapshot->educational_attainment,
+            'religion' => $snapshot->religion,
+            'civil_status' => $snapshot->civil_status,
+            'occupation' => $snapshot->occupation,
+            'monthly_income' => $snapshot->monthly_income,
+        ];
+        $profileValues = [
+            'first_name' => $this->beneficiary->first_name,
+            'middle_name' => $this->beneficiary->middle_name,
+            'last_name' => $this->beneficiary->last_name,
+            'suffix' => $this->beneficiary->suffix,
+            'sex' => $this->beneficiary->getRawOriginal('sex'),
+            'birth_date' => $this->beneficiary->birth_date?->toDateString(),
+            'educational_attainment' => $this->beneficiary->getRawOriginal('educational_attainment'),
+            'religion' => $this->beneficiary->religion?->name,
+            'civil_status' => $this->beneficiary->getRawOriginal('civil_status'),
+            'occupation' => $this->beneficiary->occupation,
+            'monthly_income' => $this->beneficiary->monthly_income,
+        ];
+
+        $differences = collect($labels)
+            ->map(function (string $label, string $key) use ($snapshotValues, $profileValues): ?array {
+                $requestValue = $this->normalizeCorrectionValue($key, $snapshotValues[$key]);
+                $profileValue = $this->normalizeCorrectionValue($key, $profileValues[$key]);
+
+                if ($requestValue === $profileValue) {
+                    return null;
+                }
+
+                return [
+                    'key' => $key,
+                    'label' => $label,
+                    'request_value' => $this->displayCorrectionValue($key, $requestValue),
+                    'profile_value' => $this->displayCorrectionValue($key, $profileValue),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
 
         return [
-            'has_difference' => $profileName !== $snapshotName,
-            'current_profile_name' => trim(implode(' ', array_filter($profileName))),
+            'has_difference' => $differences !== [],
             'identity_verified' => $this->beneficiary->isIdentityVerified(),
+            'differences' => $differences,
         ];
     }
 
-    /** @return array{first_name: ?string, middle_name: ?string, last_name: ?string, suffix: ?string} */
-    private function normalizedNameParts(
-        mixed $firstName,
-        mixed $middleName,
-        mixed $lastName,
-        mixed $suffix,
-    ): array {
-        $normalize = static function (mixed $value): ?string {
-            if (! is_string($value)) {
-                return null;
-            }
+    private function normalizeCorrectionValue(string $key, mixed $value): string|float|null
+    {
+        if ($key === 'monthly_income') {
+            return $value !== null && is_numeric($value) ? (float) $value : null;
+        }
 
-            $value = trim($value);
+        if (! is_string($value)) {
+            return null;
+        }
 
-            return $value === '' ? null : $value;
-        };
+        $value = trim($value);
 
-        return [
-            'first_name' => $normalize($firstName),
-            'middle_name' => $normalize($middleName),
-            'last_name' => $normalize($lastName),
-            'suffix' => $normalize($suffix),
-        ];
+        return $value === '' ? null : $value;
+    }
+
+    private function displayCorrectionValue(string $key, string|float|null $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($key === 'monthly_income') {
+            return 'PHP '.number_format((float) $value, 2);
+        }
+
+        if ($key === 'educational_attainment') {
+            return EducationalAttainment::tryFrom((string) $value)?->label() ?? (string) $value;
+        }
+
+        if ($key === 'civil_status') {
+            return CivilStatus::tryFrom((string) $value)?->label() ?? (string) $value;
+        }
+
+        return (string) $value;
     }
 
     private function resolveOnBehalfFullName(): string

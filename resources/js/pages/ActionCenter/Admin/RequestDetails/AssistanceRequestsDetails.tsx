@@ -61,6 +61,9 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import ApplyAssistanceRequestProfileCorrectionsDialog, {
+    type ProfileCorrectionDifference,
+} from './Components/ApplyAssistanceRequestProfileCorrectionsDialog';
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import AuthorizeCooldownExceptionDialog from './Components/AuthorizeCooldownExceptionDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
@@ -122,10 +125,10 @@ interface IdentitySnapshot {
     religion: string | null;
 }
 
-interface FilerNameCorrection {
+interface ProfileCorrection {
     has_difference: boolean;
-    current_profile_name: string;
     identity_verified: boolean;
+    differences: ProfileCorrectionDifference[];
 }
 
 interface AddressSnapshot {
@@ -186,7 +189,7 @@ interface AssistanceRequestDetail {
     relationship: { value: string; label: string } | null;
     on_behalf: OnBehalfBlock | null;
     identity_snapshot: IdentitySnapshot;
-    filer_name_correction: FilerNameCorrection | null;
+    profile_correction: ProfileCorrection | null;
     address_snapshot: AddressSnapshot;
     privacy_consented_at: string | null;
     privacy_notice_version: string | null;
@@ -292,6 +295,7 @@ export default function AssistanceRequestsDetails({
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
     const [isCooldownExceptionOpen, setIsCooldownExceptionOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
+    const [isProfileCorrectionOpen, setIsProfileCorrectionOpen] = useState(false);
     const [isRefreshingHouseholdAssessment, setIsRefreshingHouseholdAssessment] = useState(false);
     const [isApprovedHouseholdSyncOpen, setIsApprovedHouseholdSyncOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('intake');
@@ -311,6 +315,20 @@ export default function AssistanceRequestsDetails({
     const requestIsEditable = detail.status === 'pending' || detail.status === 'under_review';
     const canEditRequest = requestIsEditable && (canIntakeRequests || canProcessRequests);
     const verificationIsComplete = mswdVerification.status === 'verified';
+    const profileCorrectionAllowedByStatus = verificationIsComplete
+        ? canCorrectRequests && ['under_review', 'approved'].includes(detail.status)
+        : detail.status === 'pending'
+          ? canProcessRequests
+          : detail.status === 'under_review'
+            ? canProcessRequests && isMine
+            : detail.status === 'approved'
+              ? canCorrectRequests
+              : false;
+    const canApplyProfileCorrections =
+        detail.profile_correction?.has_difference === true &&
+        detail.profile_correction.identity_verified &&
+        !detail.has_release_artifacts &&
+        profileCorrectionAllowedByStatus;
     const canUploadRequestDocuments =
         (canIntakeRequests || canProcessRequests) &&
         ['pending', 'under_review', 'needs_correction'].includes(mswdVerification.status ?? 'pending') &&
@@ -757,6 +775,37 @@ export default function AssistanceRequestsDetails({
                                                                 ? ` — ${detail.on_behalf.recipient_id_exception_reason}`
                                                                 : '.'}
                                                         </InfoLine>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {detail.profile_correction?.has_difference && (
+                                                <div className="flex flex-col gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-semibold text-amber-950">
+                                                            Beneficiary profile corrections available
+                                                        </p>
+                                                        <p className="mt-1 text-xs leading-5 text-amber-800">
+                                                            {detail.profile_correction.differences.length} profile field
+                                                            {detail.profile_correction.differences.length === 1 ? '' : 's'} differ from this
+                                                            request&apos;s frozen claimant snapshot.
+                                                        </p>
+                                                        {!detail.profile_correction.identity_verified && (
+                                                            <p className="mt-1 text-xs font-medium text-amber-900">
+                                                                Verify the corrected beneficiary identity before applying these changes.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    {canApplyProfileCorrections && (
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="min-h-10 w-full shrink-0 border-amber-300 bg-white text-amber-900 hover:bg-amber-100 sm:w-auto"
+                                                            onClick={() => setIsProfileCorrectionOpen(true)}
+                                                        >
+                                                            <RefreshCw className="mr-2 h-4 w-4" /> Apply Profile Corrections
+                                                        </Button>
                                                     )}
                                                 </div>
                                             )}
@@ -1428,6 +1477,17 @@ export default function AssistanceRequestsDetails({
                     transactionNumber={detail.transaction_number}
                     isOpen={isMissingDateCorrectionOpen}
                     onClose={() => setIsMissingDateCorrectionOpen(false)}
+                />
+            )}
+            {canApplyProfileCorrections && detail.profile_correction && (
+                <ApplyAssistanceRequestProfileCorrectionsDialog
+                    requestId={detail.id}
+                    transactionNumber={detail.transaction_number}
+                    differences={detail.profile_correction.differences}
+                    reopensVerification={verificationIsComplete}
+                    isApproved={detail.status === 'approved'}
+                    isOpen={isProfileCorrectionOpen}
+                    onClose={() => setIsProfileCorrectionOpen(false)}
                 />
             )}
             {canCorrectCompletedHousehold && (

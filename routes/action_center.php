@@ -1,12 +1,12 @@
 <?php
 
+use App\External\Api\Controllers\ActionCenter\Assistance\ApplyAssistanceRequestProfileCorrectionsController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ApproveAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\AuthorizeCooldownExceptionController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdVerificationController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectApprovedAssistanceAmountController;
-use App\External\Api\Controllers\ActionCenter\Assistance\CorrectAssistanceRequestFilerNameController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\GetAssistanceCooldownContextController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReassignAssistanceMswdReviewerController;
@@ -414,10 +414,10 @@ Route::prefix('/api/action-center')
                     ->name('assistance.correct-missing-date-of-death');
 
                 Route::post(
-                    '/assistance-request/{assistanceRequestId}/correct-filer-name',
-                    CorrectAssistanceRequestFilerNameController::class,
+                    '/assistance-request/{assistanceRequestId}/apply-profile-corrections',
+                    ApplyAssistanceRequestProfileCorrectionsController::class,
                 )->middleware('permission:action_center.requests.process|action_center.requests.correct')
-                    ->name('assistance.correct-filer-name');
+                    ->name('assistance.apply-profile-corrections');
 
                 // Approve a case — commits the amount and writes cooldown rows.
                 // Sibling to start-review; both follow the same thin-controller
