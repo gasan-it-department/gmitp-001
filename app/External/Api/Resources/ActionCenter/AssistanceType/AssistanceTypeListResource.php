@@ -23,10 +23,11 @@ class AssistanceTypeListResource extends JsonResource
             'is_active' => (bool) $this->is_active,
             'max_amount' => $this->max_amount !== null ? (float) $this->max_amount : null,
             'cooldown_months' => (int) $this->cooldown_months,
+            'cooldown_scope' => $this->cooldown_scope,
 
             // 🎯 SENIOR MOVE: The Safe Count
             // Eloquent's withCount('documents') automatically creates a 'documents_count' attribute.
-            // The null coalescing operator (?? 0) ensures that if another developer forgets 
+            // The null coalescing operator (?? 0) ensures that if another developer forgets
             // to add withCount() to their query, the frontend gets a safe 0 instead of a crash.
             'requirements_count' => $this->documents_count ?? 0,
         ];

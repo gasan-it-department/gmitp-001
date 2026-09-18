@@ -21,6 +21,7 @@ interface ShadcnSelectFieldProps {
     error?: string;
     required?: boolean;
     disabled?: boolean;
+    contentClassName?: string;
 }
 
 export function ShadcnSelectField({
@@ -33,6 +34,7 @@ export function ShadcnSelectField({
     error,
     required = false,
     disabled = false,
+    contentClassName,
 }: ShadcnSelectFieldProps) {
     return (
         <div className="flex flex-col gap-1.5">
@@ -46,7 +48,7 @@ export function ShadcnSelectField({
                 >
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className={contentClassName}>
                     {options.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}

@@ -3,8 +3,10 @@ import EditBeneficiaryProfileController from '@/actions/App/External/Web/Control
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import CreateAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/CreateAssistanceRequestController';
 import DownloadBeneficiaryIdentityDocumentSheetController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/DownloadBeneficiaryIdentityDocumentSheetController';
+import ShowHouseholdProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowHouseholdProfileController';
 import { ContactPhoneActions } from '@/components/ActionCenter/ContactPhoneActions';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -31,7 +33,6 @@ import {
     Link2,
     Loader2,
     Mail,
-    MapPin,
     MoreHorizontal,
     OctagonX,
     Pencil,
@@ -44,15 +45,13 @@ import {
     Users,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { EnumOption, ReligionOption } from '../../../Client/Apply/Beneficiary/types';
 import AssistanceHistoryList, { type AssistanceHistoryRow } from './Components/AssistanceHistoryList';
 import AvatarUploader from './Components/AvatarUploader';
 import type { HouseholdHeadState } from './Components/ChangeHouseholdHeadDialog';
-import HouseholdMembersManager from './Components/HouseholdMembersManager';
+import HouseholdAssistanceInvolvementList, { type HouseholdAssistanceInvolvementRow } from './Components/HouseholdAssistanceInvolvementList';
 import { type HouseholdMemberRow } from './Components/HouseholdMembersTable';
 import IntakeReviewPanel, { type HouseholdMatch, type IdentityDocuments } from './Components/IntakeReviewPanel';
 import LinkAccountDialog from './Components/LinkAccountDialog';
-import { type RelationshipOption } from './Components/MemberFormDialog';
 import MergeDuplicateDialog from './Components/MergeDuplicateDialog';
 import ReassignHouseholdDialog from './Components/ReassignHouseholdDialog';
 import ReplaceIdentityDocumentDialog from './Components/ReplaceIdentityDocumentDialog';
@@ -101,9 +100,9 @@ interface BeneficiaryProfileData {
 }
 
 interface Summary {
-    total_requests: number;
-    released_count: number;
-    total_released_amount: number;
+    received_request_count: number;
+    released_received_count: number;
+    total_released_received_amount: number;
     active_member_count: number;
 }
 
@@ -126,18 +125,13 @@ interface Props {
     beneficiary: { data: BeneficiaryProfileData } | BeneficiaryProfileData;
     householdMembers: { data: HouseholdMemberRow[] };
     assistanceHistory: { data: AssistanceHistoryRow[] };
+    householdAssistanceInvolvement: { data: HouseholdAssistanceInvolvementRow[] };
     cooldownAdvisory: CooldownAdvisory;
-    householdTotalIncome: number;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
     householdMatches: HouseholdMatch[];
     merge: MergeInfo;
     summary: Summary;
-    religions: ReligionOption[];
-    civilStatus: EnumOption[];
-    educationalAttainment: EnumOption[];
-    relationships: RelationshipOption[];
     householdHead: HouseholdHeadState;
-    headDispositions: EnumOption[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,18 +142,13 @@ export default function BeneficiaryProfile({
     beneficiary,
     householdMembers,
     assistanceHistory,
+    householdAssistanceInvolvement,
     cooldownAdvisory,
-    householdTotalIncome,
     crossMunicipalityMatches,
     householdMatches,
     merge,
     summary,
-    religions,
-    civilStatus,
-    educationalAttainment,
-    relationships,
     householdHead,
-    headDispositions,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { can } = usePermissions();
@@ -168,9 +157,12 @@ export default function BeneficiaryProfile({
     const profile: BeneficiaryProfileData = 'data' in beneficiary ? beneficiary.data : beneficiary;
     const members = householdMembers.data;
     const history = assistanceHistory.data;
+    const householdInvolvement = householdAssistanceInvolvement.data;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const rosterMatches = householdMatches ?? [];
     const activeRosterCount = members.filter((member) => member.is_active).length;
+    const currentMembership = members.find((member) => member.is_active && member.beneficiary_id === profile.id);
+    const currentHead = members.find((member) => member.is_active && member.relationship === 'head');
     const canManageBeneficiaries = can('action_center.beneficiaries.manage');
     const canVerifyBeneficiaries = can('action_center.beneficiaries.verify');
     const canCorrectBeneficiaries = can('action_center.beneficiaries.correct');
@@ -424,9 +416,9 @@ export default function BeneficiaryProfile({
 
                             {/* Summary stats */}
                             <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:gap-3">
-                                <Stat label="Total Requests" value={String(summary.total_requests)} />
-                                <Stat label="Released" value={String(summary.released_count)} />
-                                <Stat label="Total Received" value={utils.formatCurrency(summary.total_released_amount)} highlight />
+                                <Stat label="Received Cases" value={String(summary.received_request_count)} />
+                                <Stat label="Released" value={String(summary.released_received_count)} />
+                                <Stat label="Total Received" value={utils.formatCurrency(summary.total_released_received_amount)} highlight />
                                 <Stat label="Household Size" value={String(summary.active_member_count)} />
                             </div>
                         </div>
@@ -540,42 +532,52 @@ export default function BeneficiaryProfile({
                                 </CardContent>
                             </Card>
 
-                            {/* Household */}
+                            {/* Current household */}
                             <Card>
-                                <CardHeader className="flex flex-col items-start gap-2 space-y-0 p-4 pb-3 sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pb-4">
-                                    <div className="flex flex-wrap items-center gap-3">
+                                <CardHeader className="flex flex-row items-start justify-between gap-3 p-4 pb-3 sm:p-6 sm:pb-4">
+                                    <div>
                                         <CardTitle className="flex items-center gap-2 text-base">
-                                            <Users className="h-4 w-4 text-slate-600" /> Household Composition
+                                            <Users className="h-4 w-4 text-slate-600" /> Current Household
                                         </CardTitle>
-                                        {profile.household?.household_code && (
-                                            <CopyableBadge
-                                                text={profile.household.household_code}
-                                                className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-slate-700 hover:bg-slate-200"
-                                            />
-                                        )}
-                                        <HouseholdStatusBadge
-                                            activeRosterCount={activeRosterCount}
-                                            householdOnHold={householdHead.household_on_hold}
-                                            householdVerified={profile.household_verified}
-                                        />
+                                        <p className="mt-1 text-xs text-slate-500">Shared household details and roster management.</p>
                                     </div>
-                                    <span className="text-xs text-slate-400">
-                                        {activeRosterCount} active {activeRosterCount === 1 ? 'member' : 'members'}
-                                    </span>
+                                    <HouseholdStatusBadge
+                                        activeRosterCount={activeRosterCount}
+                                        householdOnHold={householdHead.household_on_hold}
+                                        householdVerified={profile.household_verified}
+                                    />
                                 </CardHeader>
                                 <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                                    <HouseholdMembersManager
-                                        members={members}
-                                        totalIncome={householdTotalIncome}
-                                        beneficiaryId={profile.id}
-                                        religions={religions}
-                                        civilStatus={civilStatus}
-                                        educationalAttainment={educationalAttainment}
-                                        relationships={relationships}
-                                        householdId={profile.household!.id}
-                                        headState={householdHead}
-                                        headDispositions={headDispositions}
-                                    />
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <Field label="Household code" value={profile.household?.household_code ?? '—'} />
+                                        <Field
+                                            label="Current head"
+                                            value={currentHead?.beneficiary_full_name ?? currentHead?.first_name ?? 'Not assigned'}
+                                            capitalize
+                                        />
+                                        <Field
+                                            label="Relationship"
+                                            value={currentMembership?.relationship_label ?? currentMembership?.relationship ?? 'Not linked'}
+                                            capitalize
+                                        />
+                                        <Field label="Active members" value={String(activeRosterCount)} />
+                                        <div className="sm:col-span-2">
+                                            <Field label="Address" value={address} capitalize />
+                                        </div>
+                                    </div>
+
+                                    {profile.household && (
+                                        <Button asChild variant="outline" className="mt-5 w-full sm:w-auto">
+                                            <Link
+                                                href={ShowHouseholdProfileController.url({
+                                                    municipality: currentMunicipality.slug,
+                                                    householdId: profile.household.id,
+                                                })}
+                                            >
+                                                <Home className="h-4 w-4" /> View Household
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -583,7 +585,7 @@ export default function BeneficiaryProfile({
                             <Card>
                                 <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <HandCoins className="h-4 w-4 text-slate-600" /> Assistance History (all programs)
+                                        <HandCoins className="h-4 w-4 text-slate-600" /> Assistance for This Person
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
@@ -594,28 +596,37 @@ export default function BeneficiaryProfile({
                                     />
                                 </CardContent>
                             </Card>
+
+                            <Card>
+                                <CardHeader className="p-4 sm:p-6">
+                                    <CardTitle className="flex items-center gap-2 text-base">
+                                        <Users className="h-4 w-4 text-slate-600" /> Household Assistance Affecting This Person
+                                    </CardTitle>
+                                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                                        These requests included this person in the saved household roster, but the assistance was intended for someone
+                                        else. Their amounts are not counted as assistance personally received.
+                                    </p>
+                                </CardHeader>
+                                <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+                                    <HouseholdAssistanceInvolvementList
+                                        history={householdInvolvement}
+                                        municipalitySlug={currentMunicipality.slug}
+                                        canOpenRequests={canViewRequests}
+                                    />
+                                </CardContent>
+                            </Card>
                         </div>
 
                         {/* Right column */}
                         <div className="space-y-4 sm:space-y-6 lg:col-span-4">
-                            {/* Contact / address */}
+                            {/* Contact and account */}
                             <Card>
                                 <CardHeader className="p-4 sm:p-6">
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <Home className="h-4 w-4 text-slate-600" /> Address & Account
+                                        <Phone className="h-4 w-4 text-slate-600" /> Contact & Account
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
-                                    <div className="flex items-start gap-3">
-                                        <MapPin className="mt-0.5 h-4 w-4 text-slate-400" />
-                                        <div>
-                                            <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Address</p>
-                                            <p className="text-sm text-slate-800 capitalize">{address}</p>
-                                            {profile.household?.household_code && (
-                                                <p className="mt-0.5 text-[11px] text-slate-400">HH #{profile.household.household_code}</p>
-                                            )}
-                                        </div>
-                                    </div>
                                     <div className="flex items-start gap-3">
                                         <Phone className="mt-0.5 h-4 w-4 text-slate-400" />
                                         <div className="min-w-0 flex-1">
@@ -1069,6 +1080,17 @@ function PossibleRosterMatchesPanel({ matches, municipalitySlug }: { matches: Ho
                                         className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 font-mono text-[11px] font-semibold tracking-wide text-amber-900 hover:bg-amber-100"
                                     />
                                 )}
+
+                                <Link
+                                    href={ShowHouseholdProfileController.url({
+                                        municipality: municipalitySlug,
+                                        householdId: match.household_id,
+                                    })}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-950"
+                                >
+                                    <Home className="h-3.5 w-3.5" />
+                                    View household
+                                </Link>
 
                                 {match.head_beneficiary_id && (
                                     <Link

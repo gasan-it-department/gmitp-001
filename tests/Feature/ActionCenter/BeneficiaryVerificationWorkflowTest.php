@@ -18,6 +18,8 @@ use App\Core\ActionCenter\UseCase\Beneficiary\SearchHouseholdMembershipAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\UpdateBeneficiaryProfileAction;
 use App\Core\ActionCenter\UseCase\Household\ChangeHouseholdHeadAction;
 use App\Core\ActionCenter\UseCase\Household\DeclareHouseholdMemberForAssistanceAction;
+use App\Core\ActionCenter\UseCase\Household\LinkHouseholdMemberToBeneficiaryAction;
+use App\Core\ActionCenter\UseCase\Household\SetHouseholdMemberActiveAction;
 use App\Core\ActionCenter\UseCase\Household\StoreAdminHouseholdMemberAction;
 use App\Core\ActionCenter\UseCase\Household\UnlinkHouseholdMemberBeneficiaryAction;
 use App\Core\ActionCenter\UseCase\Household\UpdateHouseholdMemberAction;
@@ -470,7 +472,243 @@ it('resets claimant and dependent verification after material identity edits', f
 
     expect($beneficiary->identity_verified_at)->toBeNull()
         ->and($beneficiary->identity_verified_by_user_id)->toBeNull()
-        ->and($primaryRow->first_name)->toBe('JUANITO');
+        ->and($primaryRow->first_name)->toBe('JUANITO')
+        ->and($primaryRow->occupation)->toBe('FARMER')
+        ->and((float) $primaryRow->monthly_income)->toBe(5000.0);
+});
+
+it('keeps linked member personal data authoritative from the beneficiary profile', function () {
+    [$householdOwner] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+
+    $linkedBeneficiary = Beneficiary::create([
+        'household_id' => $householdOwner->household_id,
+        'municipal_id' => $this->municipalId,
+        'beneficiary_number' => 'GAS-000222',
+        'first_name' => 'PEDRO',
+        'middle_name' => 'SANTOS',
+        'last_name' => 'CRUZ',
+        'sex' => 'male',
+        'birth_date' => '1992-04-10',
+        'civil_status' => 'single',
+        'educational_attainment' => 'college_grad',
+        'occupation' => 'NURSE',
+        'monthly_income' => 7500,
+        'terms_consented_at' => now(),
+        'terms_version' => 'v1.0',
+    ]);
+    $member = HouseholdMember::create([
+        'household_id' => $householdOwner->household_id,
+        'beneficiary_id' => $linkedBeneficiary->id,
+        'first_name' => 'STALE',
+        'last_name' => 'VALUE',
+        'birth_date' => '1992-04-10',
+        'relationship' => 'sibling',
+        'occupation' => 'OLD JOB',
+        'monthly_income' => 100,
+        'is_active' => true,
+        'is_verified_dependent' => true,
+    ]);
+
+    app(UpdateHouseholdMemberAction::class)->execute(UpdateHouseholdMemberDto::fromArray([
+        'first_name' => 'FORGED',
+        'middle_name' => null,
+        'last_name' => 'HOUSEHOLD VALUE',
+        'relationship' => 'child',
+        'birth_date' => '2001-01-01',
+        'sex' => 'female',
+        'civil_status' => 'married',
+        'educational_attainment' => 'elementary_grad',
+        'occupation' => 'FORGED JOB',
+        'monthly_income' => 99999,
+        'is_verified_dependent' => true,
+    ], $member->id, $this->municipalId));
+
+    $member->refresh();
+    $linkedBeneficiary->refresh();
+
+    expect($member->first_name)->toBe('PEDRO')
+        ->and($member->middle_name)->toBe('SANTOS')
+        ->and($member->last_name)->toBe('CRUZ')
+        ->and($member->birth_date?->toDateString())->toBe('1992-04-10')
+        ->and($member->sex)->toBe('male')
+        ->and($member->occupation)->toBe('NURSE')
+        ->and((float) $member->monthly_income)->toBe(7500.0)
+        ->and($member->relationship)->toBe('child')
+        ->and($member->is_verified_dependent)->toBeFalse()
+        ->and($linkedBeneficiary->first_name)->toBe('PEDRO')
+        ->and($linkedBeneficiary->occupation)->toBe('NURSE');
+});
+
+it('copies the complete beneficiary profile into a roster row when linking', function () {
+    [$householdOwner] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+    $target = Beneficiary::create([
+        'household_id' => $householdOwner->household_id,
+        'municipal_id' => $this->municipalId,
+        'beneficiary_number' => 'GAS-000333',
+        'first_name' => 'MARIA',
+        'middle_name' => 'REYES',
+        'last_name' => 'CRUZ',
+        'sex' => 'female',
+        'birth_date' => '1995-08-20',
+        'civil_status' => 'single',
+        'educational_attainment' => 'college_grad',
+        'occupation' => 'TEACHER',
+        'monthly_income' => 12000,
+        'terms_consented_at' => now(),
+        'terms_version' => 'v1.0',
+    ]);
+    $member = HouseholdMember::create([
+        'household_id' => $householdOwner->household_id,
+        'first_name' => 'MARIA',
+        'last_name' => 'CRUZ',
+        'birth_date' => '1995-08-20',
+        'relationship' => 'sibling',
+        'occupation' => 'STALE JOB',
+        'monthly_income' => 0,
+        'is_active' => true,
+    ]);
+
+    app(LinkHouseholdMemberToBeneficiaryAction::class)->execute(
+        memberId: $member->id,
+        beneficiaryNumber: 'GAS-000333',
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+    );
+
+    $member->refresh();
+
+    expect($member->beneficiary_id)->toBe($target->id)
+        ->and($member->middle_name)->toBe('REYES')
+        ->and($member->sex)->toBe('female')
+        ->and($member->occupation)->toBe('TEACHER')
+        ->and((float) $member->monthly_income)->toBe(12000.0)
+        ->and($member->is_verified_dependent)->toBeFalse();
+
+    app(UpdateHouseholdMemberAction::class)->execute(UpdateHouseholdMemberDto::fromArray([
+        'first_name' => 'MARIA',
+        'middle_name' => 'REYES',
+        'last_name' => 'CRUZ',
+        'relationship' => 'sibling',
+        'birth_date' => '1995-08-20',
+        'sex' => 'female',
+        'civil_status' => 'single',
+        'educational_attainment' => 'college_grad',
+        'occupation' => 'TEACHER',
+        'monthly_income' => 12000,
+        'is_verified_dependent' => true,
+    ], $member->id, $this->municipalId));
+
+    expect($member->fresh()->is_verified_dependent)->toBeTrue();
+});
+
+it('restores a linked member using current beneficiary profile values', function () {
+    [$beneficiary, $member] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+    $beneficiary->update([
+        'first_name' => 'JUANITO',
+        'occupation' => 'DRIVER',
+        'monthly_income' => 6400,
+        'is_active' => false,
+    ]);
+    $member->update([
+        'first_name' => 'STALE',
+        'occupation' => 'OLD JOB',
+        'monthly_income' => 0,
+        'is_active' => false,
+    ]);
+
+    app(SetHouseholdMemberActiveAction::class)->execute(
+        memberId: $member->id,
+        isActive: true,
+        municipalId: $this->municipalId,
+    );
+
+    expect($beneficiary->fresh()->is_active)->toBeTrue()
+        ->and($member->fresh()->is_active)->toBeTrue()
+        ->and($member->fresh()->first_name)->toBe('JUANITO')
+        ->and($member->fresh()->occupation)->toBe('DRIVER')
+        ->and((float) $member->fresh()->monthly_income)->toBe(6400.0);
+});
+
+it('restores a former head as a non-head member when the household has a current head', function () {
+    [$formerHead, $formerHeadRow] = createClaimant(
+        $this->municipalId,
+        'JUAN',
+        'CRUZ',
+        verifiedBy: $this->adminId,
+    );
+    [, $successorRow] = createVerifiedSuccessor(
+        $formerHead->household_id,
+        $this->municipalId,
+        $this->adminId,
+    );
+
+    app(ChangeHouseholdHeadAction::class)->execute(new ChangeHouseholdHeadDto(
+        householdId: $formerHead->household_id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        successorMemberId: $successorRow->id,
+        currentHeadDisposition: HeadDepartureDisposition::MovedOut,
+        formerHeadRelationship: null,
+        reason: 'Former head temporarily moved out of the household.',
+    ));
+
+    expect(fn () => app(SetHouseholdMemberActiveAction::class)->execute(
+        memberId: $formerHeadRow->id,
+        isActive: true,
+        municipalId: $this->municipalId,
+    ))->toThrow(DomainException::class, 'Choose the former head\'s new relationship');
+
+    app(SetHouseholdMemberActiveAction::class)->execute(
+        memberId: $formerHeadRow->id,
+        isActive: true,
+        municipalId: $this->municipalId,
+        restoreRelationship: 'parent',
+    );
+
+    expect($formerHeadRow->fresh()->relationship)->toBe('parent')
+        ->and($formerHeadRow->fresh()->is_active)->toBeTrue()
+        ->and($formerHeadRow->fresh()->is_verified_dependent)->toBeFalse()
+        ->and($formerHead->fresh()->is_active)->toBeTrue()
+        ->and($successorRow->fresh()->relationship)->toBe('head')
+        ->and($successorRow->fresh()->is_active)->toBeTrue()
+        ->and(HouseholdMember::query()
+            ->where('household_id', $formerHead->household_id)
+            ->where('relationship', 'head')
+            ->where('is_active', true)
+            ->count())->toBe(1);
+});
+
+it('rejects profile updates when multiple active roster rows are linked', function () {
+    [$beneficiary] = createClaimant($this->municipalId, 'JUAN', 'CRUZ', verifiedBy: $this->adminId);
+    HouseholdMember::create([
+        'household_id' => $beneficiary->household_id,
+        'beneficiary_id' => $beneficiary->id,
+        'first_name' => 'JUAN',
+        'last_name' => 'CRUZ',
+        'birth_date' => '1990-01-01',
+        'relationship' => 'sibling',
+        'is_active' => true,
+    ]);
+
+    expect(fn () => app(UpdateBeneficiaryProfileAction::class)->execute(new UpdateBeneficiaryProfileDto(
+        beneficiaryId: $beneficiary->id,
+        municipalId: $this->municipalId,
+        actingAdminId: $this->adminId,
+        firstName: 'JUANITO',
+        lastName: 'CRUZ',
+        middleName: null,
+        suffix: null,
+        sex: 'male',
+        birthDate: '1990-01-01',
+        religionId: null,
+        educationalAttainment: null,
+        civilStatus: 'single',
+        occupation: 'FARMER',
+        monthlyIncome: 5000,
+        contactPhone: null,
+    )))->toThrow(DomainException::class, 'multiple active household rows');
+
+    expect($beneficiary->fresh()->first_name)->toBe('JUAN');
 });
 
 it('revokes dependent verification on material edits and preserves it on non-material edits', function () {

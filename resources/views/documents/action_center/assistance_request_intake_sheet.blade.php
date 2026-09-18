@@ -168,8 +168,8 @@
         <section class="section">
             <div class="section-title">
                 V. {{ match ($data->householdCompositionSource) {
-                    'interview_assessment' => 'Household Composition at MSWD Interview',
-                    'current_household_fallback' => 'Current Household Composition (Legacy Request)',
+                    'assessment' => 'Household Composition at MSWD Interview',
+                    'legacy_current_fallback' => 'Current Household Composition (Legacy Request)',
                     default => 'Household Composition at Filing',
                 } }}
                 - {{ $compositionMembers->count() }} {{ $data->usesCurrentHouseholdFallback ? 'Active Member(s)' : 'Member(s)' }}

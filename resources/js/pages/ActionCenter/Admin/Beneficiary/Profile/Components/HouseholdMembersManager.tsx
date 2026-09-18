@@ -13,12 +13,16 @@ import ChangeHouseholdHeadDialog, { type HouseholdHeadState } from './ChangeHous
 import type { HouseholdMemberRow } from './HouseholdMembersTable';
 import LinkMemberDialog from './LinkMemberDialog';
 import MemberFormDialog, { type RelationshipOption } from './MemberFormDialog';
+import RestoreFormerHeadDialog from './RestoreFormerHeadDialog';
 import UnlinkMemberDialog from './UnlinkMemberDialog';
 
 interface Props {
     members: HouseholdMemberRow[];
     totalIncome: number;
-    beneficiaryId: string;
+    currentBeneficiaryId?: string;
+    storeMemberUrl: string;
+    onAddPerson?: () => void;
+    allowHeadManagement?: boolean;
     religions: ReligionOption[];
     civilStatus: EnumOption[];
     educationalAttainment: EnumOption[];
@@ -29,17 +33,20 @@ interface Props {
 }
 
 /**
- * Interactive household-roster manager for the admin beneficiary profile.
+ * Interactive household-roster manager shared by household administration surfaces.
  *
  * Active members (head first) plus a "moved out" section for deactivated rows.
- * The head row mirrors the beneficiary and is read-only here (corrected via
- * "Edit profile"). Non-head rows can be edited, moved out, or restored — moves
- * never delete (is_active toggle).
+ * Linked rows are read-only here because person fields are corrected from the
+ * beneficiary profile. Unlinked rows can be edited, moved out, or restored;
+ * moves never delete historical membership.
  */
 export default function HouseholdMembersManager({
     members,
     totalIncome,
-    beneficiaryId,
+    currentBeneficiaryId,
+    storeMemberUrl,
+    onAddPerson,
+    allowHeadManagement = false,
     religions,
     civilStatus,
     educationalAttainment,
@@ -63,6 +70,7 @@ export default function HouseholdMembersManager({
     const [unlinkOpen, setUnlinkOpen] = useState(false);
     const [unlinking, setUnlinking] = useState<HouseholdMemberRow | undefined>(undefined);
     const [headDialogOpen, setHeadDialogOpen] = useState(false);
+    const [restoringFormerHead, setRestoringFormerHead] = useState<HouseholdMemberRow | undefined>(undefined);
 
     const getLinkStatus = (member: HouseholdMemberRow) => {
         if (!member.beneficiary_id) {
@@ -118,6 +126,15 @@ export default function HouseholdMembersManager({
         );
     };
 
+    const restoreMember = (member: HouseholdMemberRow) => {
+        if (member.relationship === 'head' && !headState.household_on_hold) {
+            setRestoringFormerHead(member);
+            return;
+        }
+
+        setActive(member, true);
+    };
+
     const isHead = (m: HouseholdMemberRow) => m.relationship === 'head';
 
     const getLinkStatusLabel = (member: HouseholdMemberRow) => {
@@ -129,7 +146,7 @@ export default function HouseholdMembersManager({
     };
 
     const renderMobileMemberMenu = (member: HouseholdMemberRow, movedOut = false) => {
-        const canViewLinkedProfile = member.beneficiary_id !== null && member.beneficiary_id !== beneficiaryId;
+        const canViewLinkedProfile = member.beneficiary_id !== null && member.beneficiary_id !== currentBeneficiaryId;
         const hasAvailableAction = canViewLinkedProfile || canManageBeneficiaries || (canCorrectBeneficiaries && !isHead(member));
 
         if (!hasAvailableAction) {
@@ -149,7 +166,7 @@ export default function HouseholdMembersManager({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                     {member.beneficiary_id &&
-                        (member.beneficiary_id === beneficiaryId ? (
+                        (member.beneficiary_id === currentBeneficiaryId ? (
                             <DropdownMenuItem disabled>
                                 <Link2 className="h-4 w-4" /> Current Profile
                             </DropdownMenuItem>
@@ -170,11 +187,13 @@ export default function HouseholdMembersManager({
                     {movedOut
                         ? canManageBeneficiaries && (
                               <>
-                                  <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
-                                      <Pencil className="h-4 w-4" /> Edit Member
-                                  </DropdownMenuItem>
+                                  {!member.beneficiary_id && (
+                                      <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
+                                          <Pencil className="h-4 w-4" /> Edit Member
+                                      </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
-                                      onSelect={() => setTimeout(() => setActive(member, true), 150)}
+                                      onSelect={() => setTimeout(() => restoreMember(member), 150)}
                                       className="text-emerald-600 focus:text-emerald-700"
                                   >
                                       <RotateCcw className="h-4 w-4" /> Move Back In
@@ -199,7 +218,8 @@ export default function HouseholdMembersManager({
                                   {canManageBeneficiaries && (
                                       <>
                                           <DropdownMenuItem onSelect={() => setTimeout(() => openEdit(member), 150)}>
-                                              <Pencil className="h-4 w-4" /> Edit Member
+                                              <Pencil className="h-4 w-4" />
+                                              {member.beneficiary_id ? 'Update Household Role' : 'Edit Member'}
                                           </DropdownMenuItem>
                                           <DropdownMenuItem
                                               onSelect={() => setTimeout(() => setActive(member, false), 150)}
@@ -219,7 +239,7 @@ export default function HouseholdMembersManager({
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-                {canCorrectBeneficiaries && (headState.profile_is_current_head || headState.household_on_hold) && (
+                {canCorrectBeneficiaries && (allowHeadManagement || headState.profile_is_current_head || headState.household_on_hold) && (
                     <button
                         type="button"
                         onClick={() => setHeadDialogOpen(true)}
@@ -232,10 +252,10 @@ export default function HouseholdMembersManager({
                 {canManageBeneficiaries && (
                     <button
                         type="button"
-                        onClick={openAdd}
+                        onClick={onAddPerson ?? openAdd}
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                     >
-                        <UserPlus className="h-3.5 w-3.5" /> Add member
+                        <UserPlus className="h-3.5 w-3.5" /> {onAddPerson ? 'Add person' : 'Add member'}
                     </button>
                 )}
             </div>
@@ -441,7 +461,7 @@ export default function HouseholdMembersManager({
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-48">
                                                 {member.beneficiary_id &&
-                                                    (member.beneficiary_id === beneficiaryId ? (
+                                                    (member.beneficiary_id === currentBeneficiaryId ? (
                                                         <DropdownMenuItem disabled className="flex items-center gap-2 opacity-50">
                                                             <Link2 className="h-4 w-4" /> Current Profile
                                                         </DropdownMenuItem>
@@ -484,7 +504,8 @@ export default function HouseholdMembersManager({
                                                                     onSelect={() => setTimeout(() => openEdit(member), 150)}
                                                                     className="flex cursor-pointer items-center gap-2"
                                                                 >
-                                                                    <Pencil className="h-4 w-4" /> Edit Member
+                                                                    <Pencil className="h-4 w-4" />
+                                                                    {member.beneficiary_id ? 'Update Household Role' : 'Edit Member'}
                                                                 </DropdownMenuItem>
 
                                                                 <DropdownMenuItem
@@ -561,14 +582,16 @@ export default function HouseholdMembersManager({
                                                         )}
                                                         {canManageBeneficiaries && (
                                                             <>
+                                                                {!member.beneficiary_id && (
+                                                                    <DropdownMenuItem
+                                                                        onSelect={() => setTimeout(() => openEdit(member), 150)}
+                                                                        className="flex cursor-pointer items-center gap-2"
+                                                                    >
+                                                                        <Pencil className="h-4 w-4" /> Edit Member
+                                                                    </DropdownMenuItem>
+                                                                )}
                                                                 <DropdownMenuItem
-                                                                    onSelect={() => setTimeout(() => openEdit(member), 150)}
-                                                                    className="flex cursor-pointer items-center gap-2"
-                                                                >
-                                                                    <Pencil className="h-4 w-4" /> Edit Member
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    onSelect={() => setTimeout(() => setActive(member, true), 150)}
+                                                                    onSelect={() => setTimeout(() => restoreMember(member), 150)}
                                                                     className="flex cursor-pointer items-center gap-2 text-emerald-600 focus:text-emerald-700"
                                                                 >
                                                                     <RotateCcw className="h-4 w-4" /> Move Back In
@@ -612,7 +635,7 @@ export default function HouseholdMembersManager({
                     open={dialogOpen}
                     onClose={() => setDialogOpen(false)}
                     mode={dialogMode}
-                    beneficiaryId={beneficiaryId}
+                    storeUrl={storeMemberUrl}
                     member={editing}
                     religions={religions}
                     civilStatus={civilStatus}
@@ -648,6 +671,15 @@ export default function HouseholdMembersManager({
                     headState={headState}
                     relationships={relationships}
                     headDispositions={headDispositions}
+                />
+            )}
+
+            {canManageBeneficiaries && restoringFormerHead && (
+                <RestoreFormerHeadDialog
+                    open
+                    onClose={() => setRestoringFormerHead(undefined)}
+                    member={restoringFormerHead}
+                    relationships={relationships}
                 />
             )}
         </div>

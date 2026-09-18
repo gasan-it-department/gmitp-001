@@ -15,7 +15,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * the present truth so the reviewer can verify it against the uploaded ID.
  *
  * Household members and assistance history are passed as their own props by
- * the controller (HouseholdMemberDetailsResource / RecentAssistanceRequestResource).
+ * the controller (HouseholdMemberDetailsResource / BeneficiaryAssistanceHistoryResource).
  */
 class BeneficiaryProfileResource extends JsonResource
 {

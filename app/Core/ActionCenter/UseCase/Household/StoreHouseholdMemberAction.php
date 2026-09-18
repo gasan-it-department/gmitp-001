@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
+use App\Core\ActionCenter\Services\LinkedHouseholdMemberProfileSynchronizer;
 
 /**
  * Persist one ac_household_members row.
@@ -32,6 +33,7 @@ class StoreHouseholdMemberAction
 {
     public function __construct(
         private readonly HouseholdMemberIdentityMatcher $identityMatcher,
+        private readonly LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
     ) {}
 
     /**
@@ -51,6 +53,7 @@ class StoreHouseholdMemberAction
     ): HouseholdMember {
         $isHead = $dto->relationship === Relationship::Head->value;
 
+        $beneficiary = null;
         if ($beneficiaryId !== null) {
             $beneficiary = Beneficiary::query()->whereKey($beneficiaryId)->lockForUpdate()->firstOrFail();
             $candidate = new HouseholdMember([
@@ -112,7 +115,7 @@ class StoreHouseholdMemberAction
             );
         }
 
-        return HouseholdMember::create([
+        $attributes = [
             'household_id' => $dto->householdId,
             'first_name' => $dto->firstName,
             'last_name' => $dto->lastName,
@@ -132,6 +135,15 @@ class StoreHouseholdMemberAction
             // (or later via identity reconciliation when a member registers
             // their own portal account).
             'beneficiary_id' => $beneficiaryId,
-        ]);
+        ];
+
+        if ($beneficiary !== null) {
+            $attributes = array_replace(
+                $attributes,
+                $this->profileSynchronizer->profileAttributes($beneficiary),
+            );
+        }
+
+        return HouseholdMember::create($attributes);
     }
 }

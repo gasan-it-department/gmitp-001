@@ -45,6 +45,7 @@ class StoreAssistanceTypeAction
                     'min_amount' => $dto->minAmount,
                     'max_amount' => $dto->maxAmount,
                     'cooldown_months' => $dto->cooldownMonths,
+                    'cooldown_scope' => $dto->cooldownScope->value,
                     'description' => $dto->description,
                     'is_active' => $dto->isActive,
                     'enabled_generated_documents' => $this->normalizeGeneratedDocuments->execute(

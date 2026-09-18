@@ -1,7 +1,7 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
+import { AssistanceDocumentUploadField } from '@/components/ActionCenter/AssistanceDocumentUploadField';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +17,6 @@ import AdminLayout from '@/layouts/App/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, AlertTriangle, ArrowLeft, FileText, HandCoins, Info, Loader2, Paperclip, User, UserCheck, Users } from 'lucide-react';
 import { FormEvent, useCallback, useMemo, useState } from 'react';
-import { IdentityDocumentPair } from '../../../Client/Apply/Components/DocumentUploadsGrid';
 import { OnBehalfOfData, OnBehalfOfSection, RelationshipType } from '../../../Client/Apply/Components/OnBehalfOfSection';
 import { OnBehalfAffirmation } from './Components/OnBehalfAffirmation';
 
@@ -222,7 +221,13 @@ export default function CreateAssistanceRequest({
         notices: documentPreparationNotices,
         prepareDocument: handleFileChange,
         preparingKeys: preparingDocumentKeys,
+        rotateDocument,
     } = useOptimizedAssistanceDocuments(storePreparedDocument);
+
+    const rotatePreparedDocument = (key: string, direction: 'left' | 'right') => {
+        const file = data.documents[key];
+        if (file) void rotateDocument(key, file, direction);
+    };
 
     const handleFilingForChange = (value: 'self' | 'family_member') => {
         setFilingFor(value);
@@ -516,7 +521,7 @@ export default function CreateAssistanceRequest({
 
                             {/* Document slots (appear once a type is chosen) */}
                             {selectedType && selectedType.documents.length > 0 && (
-                                <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+                                <div className="rounded-md border border-blue-100 bg-blue-50/50 p-4">
                                     <h4 className="mb-1 flex items-center gap-2 text-sm font-semibold text-blue-900">
                                         <Paperclip className="h-4 w-4" /> Mga sumusuportang dokumento
                                     </h4>
@@ -532,17 +537,43 @@ export default function CreateAssistanceRequest({
                                     )}
                                     <div className="space-y-4">
                                         {selectedFilerIdDocuments.length > 0 && (
-                                            <IdentityDocumentPair
-                                                title="Filer's valid government ID"
-                                                description="Attach the front and back when available. Both sides are required before approval when this program requires ID evidence."
-                                                documents={selectedFilerIdDocuments}
-                                                files={data.documents}
-                                                onFileChange={handleFileChange}
-                                                errors={fieldErrors}
-                                                required={false}
-                                                preparingKeys={preparingDocumentKeys}
-                                                preparationNotices={documentPreparationNotices}
-                                            />
+                                            <div className="border-t border-blue-100 pt-4 first:border-t-0 first:pt-0">
+                                                <div className="mb-4">
+                                                    <h5 className="text-sm font-semibold text-slate-900">Filer's valid government ID</h5>
+                                                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                                                        Attach the front and back when available. Both sides are required before approval when this
+                                                        program requires ID evidence.
+                                                    </p>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    {selectedFilerIdDocuments.map((document) => (
+                                                        <AssistanceDocumentUploadField
+                                                            key={document.key}
+                                                            documentKey={document.key}
+                                                            label={document.name}
+                                                            description={document.description}
+                                                            required={false}
+                                                            physicalCopyLabel={
+                                                                document.physical_copy_requirement !== 'unspecified'
+                                                                    ? document.physical_copy_requirement_label
+                                                                    : null
+                                                            }
+                                                            file={data.documents[document.key]}
+                                                            preparing={preparingDocumentKeys.has(document.key)}
+                                                            notice={documentPreparationNotices[document.key]}
+                                                            errors={
+                                                                fieldErrors[`documents.${document.key}`]
+                                                                    ? [fieldErrors[`documents.${document.key}`]!]
+                                                                    : []
+                                                            }
+                                                            inputIdPrefix="create-request"
+                                                            onSelect={(file) => void handleFileChange(document.key, file)}
+                                                            onRotate={(direction) => rotatePreparedDocument(document.key, direction)}
+                                                            onRemove={() => void handleFileChange(document.key, null)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
                                         )}
 
                                         {effectiveFilingFor === 'family_member' && filerIdRequired && (
@@ -559,17 +590,45 @@ export default function CreateAssistanceRequest({
                                                 ) : (
                                                     <div className="space-y-4">
                                                         {!data.recipient_id_unavailable && selectedRecipientIdDocuments.length > 0 && (
-                                                            <IdentityDocumentPair
-                                                                title="Assisted person's valid government ID"
-                                                                description="Attach both sides when available. Approval will remain blocked until the ID or an accepted exception is recorded."
-                                                                documents={selectedRecipientIdDocuments}
-                                                                files={data.documents}
-                                                                onFileChange={handleFileChange}
-                                                                errors={fieldErrors}
-                                                                required={false}
-                                                                preparingKeys={preparingDocumentKeys}
-                                                                preparationNotices={documentPreparationNotices}
-                                                            />
+                                                            <div>
+                                                                <div className="mb-4">
+                                                                    <h5 className="text-sm font-semibold text-slate-900">
+                                                                        Assisted person's valid government ID
+                                                                    </h5>
+                                                                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                                                                        Attach both sides when available. Approval will remain blocked until the ID or
+                                                                        an accepted exception is recorded.
+                                                                    </p>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                                    {selectedRecipientIdDocuments.map((document) => (
+                                                                        <AssistanceDocumentUploadField
+                                                                            key={document.key}
+                                                                            documentKey={document.key}
+                                                                            label={document.name}
+                                                                            description={document.description}
+                                                                            required={false}
+                                                                            physicalCopyLabel={
+                                                                                document.physical_copy_requirement !== 'unspecified'
+                                                                                    ? document.physical_copy_requirement_label
+                                                                                    : null
+                                                                            }
+                                                                            file={data.documents[document.key]}
+                                                                            preparing={preparingDocumentKeys.has(document.key)}
+                                                                            notice={documentPreparationNotices[document.key]}
+                                                                            errors={
+                                                                                fieldErrors[`documents.${document.key}`]
+                                                                                    ? [fieldErrors[`documents.${document.key}`]!]
+                                                                                    : []
+                                                                            }
+                                                                            inputIdPrefix="create-request"
+                                                                            onSelect={(file) => void handleFileChange(document.key, file)}
+                                                                            onRotate={(direction) => rotatePreparedDocument(document.key, direction)}
+                                                                            onRemove={() => void handleFileChange(document.key, null)}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         )}
 
                                                         <div className="border-t border-slate-200 pt-4">
@@ -628,50 +687,37 @@ export default function CreateAssistanceRequest({
                                             </div>
                                         )}
 
-                                        {selectedStandardDocuments.map((doc) => (
-                                            <div key={doc.key} className="space-y-1.5">
-                                                <Label className="text-sm">
-                                                    {doc.name}
-                                                    {doc.is_required && (
-                                                        <span className="ml-1 text-[10px] font-medium text-amber-600">
-                                                            (Required before approval)
-                                                        </span>
-                                                    )}
-                                                </Label>
-                                                {doc.description && <p className="text-xs text-slate-500">{doc.description}</p>}
-                                                {doc.physical_copy_requirement !== 'unspecified' && (
-                                                    <p className="text-xs font-medium text-blue-700">
-                                                        Physical copy: {doc.physical_copy_requirement_label}
-                                                    </p>
-                                                )}
-                                                <Input
-                                                    type="file"
-                                                    accept=".jpg,.jpeg,.png,.pdf"
-                                                    disabled={preparingDocumentKeys.has(doc.key)}
-                                                    className="cursor-pointer bg-white file:font-medium file:text-blue-600"
-                                                    onChange={(e) => void handleFileChange(doc.key, e.target.files?.[0] ?? null)}
-                                                />
-                                                {preparingDocumentKeys.has(doc.key) && (
-                                                    <p className="flex items-center gap-1.5 text-xs font-medium text-blue-700">
-                                                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Preparing image...
-                                                    </p>
-                                                )}
-                                                {!preparingDocumentKeys.has(doc.key) && documentPreparationNotices[doc.key] && (
-                                                    <p
-                                                        className={`text-xs font-medium ${
-                                                            documentPreparationNotices[doc.key]?.tone === 'warning'
-                                                                ? 'text-amber-700'
-                                                                : 'text-emerald-700'
-                                                        }`}
-                                                    >
-                                                        {documentPreparationNotices[doc.key]?.message}
-                                                    </p>
-                                                )}
-                                                {fieldErrors[`documents.${doc.key}`] && (
-                                                    <p className="text-xs text-red-500">{fieldErrors[`documents.${doc.key}`]}</p>
-                                                )}
+                                        {selectedStandardDocuments.length > 0 && (
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                {selectedStandardDocuments.map((document) => (
+                                                    <AssistanceDocumentUploadField
+                                                        key={document.key}
+                                                        documentKey={document.key}
+                                                        label={document.name}
+                                                        description={document.description}
+                                                        required={document.is_required}
+                                                        requiredLabel="Required before approval"
+                                                        physicalCopyLabel={
+                                                            document.physical_copy_requirement !== 'unspecified'
+                                                                ? document.physical_copy_requirement_label
+                                                                : null
+                                                        }
+                                                        file={data.documents[document.key]}
+                                                        preparing={preparingDocumentKeys.has(document.key)}
+                                                        notice={documentPreparationNotices[document.key]}
+                                                        errors={
+                                                            fieldErrors[`documents.${document.key}`]
+                                                                ? [fieldErrors[`documents.${document.key}`]!]
+                                                                : []
+                                                        }
+                                                        inputIdPrefix="create-request"
+                                                        onSelect={(file) => void handleFileChange(document.key, file)}
+                                                        onRotate={(direction) => rotatePreparedDocument(document.key, direction)}
+                                                        onRemove={() => void handleFileChange(document.key, null)}
+                                                    />
+                                                ))}
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 </div>
                             )}

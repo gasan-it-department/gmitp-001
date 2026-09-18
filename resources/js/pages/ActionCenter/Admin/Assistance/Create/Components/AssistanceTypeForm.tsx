@@ -13,7 +13,7 @@ import {
 } from '@/Core/Types/ActionCenter/assistance';
 import actionCenter from '@/routes/actionCenter';
 import { useForm } from '@inertiajs/react';
-import { FileCog, FileText, ShieldAlert, Trash2 } from 'lucide-react';
+import { FileCog, FileText, ShieldAlert, Trash2, UserRound, UsersRound } from 'lucide-react';
 
 interface SharedFormProps {
     mode: 'create' | 'edit';
@@ -214,6 +214,57 @@ export default function AssistanceTypeForm({
                                     {errors.cooldown_months && <p className="mb-1 text-xs font-medium text-red-600">{errors.cooldown_months}</p>}
                                     <p className="mt-auto text-xs text-gray-500">Time before re-application.</p>
                                 </div>
+                            </div>
+
+                            <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                <div>
+                                    <Label className="text-sm font-semibold text-gray-700">Cooldown applies to</Label>
+                                    <p className="mt-1 text-xs text-gray-500">Choose who receives the cooldown when assistance is released.</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="group" aria-label="Cooldown scope">
+                                    <button
+                                        type="button"
+                                        aria-pressed={data.cooldown_scope === 'per_beneficiary'}
+                                        onClick={() => setData('cooldown_scope', 'per_beneficiary')}
+                                        className={`flex min-h-16 items-start gap-3 rounded-md border px-3 py-3 text-left transition ${
+                                            data.cooldown_scope === 'per_beneficiary'
+                                                ? 'border-blue-600 bg-white text-blue-900 ring-1 ring-blue-600'
+                                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        <UserRound className="mt-0.5 h-4 w-4 shrink-0" />
+                                        <span>
+                                            <span className="block text-sm font-semibold">Beneficiary only</span>
+                                            <span className="mt-0.5 block text-xs font-normal text-gray-500">
+                                                Only the request beneficiary profile is covered.
+                                            </span>
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-pressed={data.cooldown_scope === 'per_household'}
+                                        onClick={() => setData('cooldown_scope', 'per_household')}
+                                        className={`flex min-h-16 items-start gap-3 rounded-md border px-3 py-3 text-left transition ${
+                                            data.cooldown_scope === 'per_household'
+                                                ? 'border-blue-600 bg-white text-blue-900 ring-1 ring-blue-600'
+                                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        <UsersRound className="mt-0.5 h-4 w-4 shrink-0" />
+                                        <span>
+                                            <span className="block text-sm font-semibold">Entire household</span>
+                                            <span className="mt-0.5 block text-xs font-normal text-gray-500">
+                                                Active linked household members are covered.
+                                            </span>
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {errors.cooldown_scope && <p className="text-xs font-medium text-red-600">{errors.cooldown_scope}</p>}
+                                <p className="text-xs text-amber-700">
+                                    Scope changes apply to future releases. Existing released requests keep their recorded cooldown policy.
+                                </p>
                             </div>
 
                             <div className="mt-6 rounded-lg border border-gray-100 bg-gray-50 p-4 transition-colors hover:bg-gray-100/80">

@@ -1,5 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import ShowBeneficiarySearchController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiarySearchController';
+import ShowHouseholdProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowHouseholdProfileController';
 import ShowCreateWalkInBeneficiaryController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Walkin/ShowCreateWalkInBeneficiaryController';
 import { Pagination } from '@/components/Shared/Pagination';
 import { Button } from '@/components/ui/button';
@@ -373,6 +374,7 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                                     key={`beneficiary-${row.id}`}
                                     row={row}
                                     isPossibleDuplicate={isPossibleSamePerson(row)}
+                                    municipalitySlug={currentMunicipality.slug}
                                     profileHref={ShowBeneficiaryProfileController.url({
                                         municipality: currentMunicipality.slug,
                                         beneficiaryId: row.id,
@@ -383,11 +385,11 @@ export default function BeneficiarySearch({ results, filters }: Props) {
                                     key={`roster-${row.id}`}
                                     row={row}
                                     isPossibleMatch={isPossibleSamePerson(row)}
-                                    headProfileHref={
-                                        row.household.head_beneficiary_id
-                                            ? ShowBeneficiaryProfileController.url({
+                                    householdHref={
+                                        row.household.id
+                                            ? ShowHouseholdProfileController.url({
                                                   municipality: currentMunicipality.slug,
-                                                  beneficiaryId: row.household.head_beneficiary_id,
+                                                  householdId: row.household.id,
                                               })
                                             : null
                                     }

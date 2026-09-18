@@ -6,11 +6,11 @@ use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetData;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestIntakeSheetFormData;
 use App\Core\ActionCenter\Dto\Assistance\GenerateAssistanceRequestIntakeSheetDto;
+use App\Core\ActionCenter\Dto\Assistance\ResolvedAssistanceRequestHouseholdData;
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceIntakeProblem;
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
-use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Municipality\Models\Municipality;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -25,6 +25,7 @@ class GenerateAssistanceRequestIntakeSheetAction
 {
     public function __construct(
         private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
+        private readonly ResolveAssistanceRequestHouseholdAction $resolveRequestHousehold,
     ) {}
 
     public function formData(
@@ -60,13 +61,13 @@ class GenerateAssistanceRequestIntakeSheetAction
             frozenEconomicValues: $frozenEconomicValues,
             currentEconomicValues: $currentEconomicValues,
             householdComposition: [
-                'source' => $householdComposition['source'],
-                'captured_at' => $householdComposition['captured_at']?->toIso8601String(),
+                'source' => $householdComposition->source,
+                'captured_at' => $householdComposition->capturedAt?->toIso8601String(),
                 'member_count' => $this->printableHouseholdMembers(
-                    $householdComposition['members'],
+                    $householdComposition->members,
                     $request,
                 )->count(),
-                'warning' => $householdComposition['uses_current_fallback']
+                'warning' => $householdComposition->usesCurrentFallback
                     ? 'This legacy request has no request-time household snapshot. Section V will use the household members currently recorded in the beneficiary profile.'
                     : null,
             ],
@@ -92,10 +93,10 @@ class GenerateAssistanceRequestIntakeSheetAction
 
         return new AssistanceRequestIntakeSheetData(
             request: $request,
-            householdMembers: $householdComposition['members'],
-            householdCompositionCapturedAt: $householdComposition['captured_at'],
-            householdCompositionSource: $householdComposition['source'],
-            usesCurrentHouseholdFallback: $householdComposition['uses_current_fallback'],
+            householdMembers: $householdComposition->members,
+            householdCompositionCapturedAt: $householdComposition->capturedAt,
+            householdCompositionSource: $householdComposition->source,
+            usesCurrentHouseholdFallback: $householdComposition->usesCurrentFallback,
             municipalityName: $municipality?->name,
             municipalityLogoDataUri: $this->municipalityLogoDataUri(
                 $municipality?->getFirstMedia('logo'),
@@ -113,12 +114,7 @@ class GenerateAssistanceRequestIntakeSheetAction
      * @return array{
      *     0: AssistanceRequest,
      *     1: ?Municipality,
-     *     2: array{
-     *         members: Collection<int, AssistanceRequestHouseholdMemberData>,
-     *         captured_at: ?CarbonImmutable,
-     *         source: 'interview_assessment'|'request_snapshot'|'current_household_fallback',
-     *         uses_current_fallback: bool
-     *     }
+     *     2: ResolvedAssistanceRequestHouseholdData
      * }
      */
     private function loadContext(
@@ -161,7 +157,7 @@ class GenerateAssistanceRequestIntakeSheetAction
         return [
             $request,
             $municipality,
-            $this->resolveHouseholdComposition($request),
+            $this->resolveRequestHousehold->execute($request),
         ];
     }
 
@@ -197,7 +193,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             $request->on_behalf_suffix,
         ])));
 
-        return trim(strtolower($request->relationship_to_beneficiary->label()) . ($name ? ' ' . $name : ''));
+        return trim(strtolower($request->relationship_to_beneficiary->label()).($name ? ' '.$name : ''));
     }
 
     /** @return list<string> */
@@ -225,7 +221,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             return $value->label();
         }
 
-        if (!is_string($value) || trim($value) === '') {
+        if (! is_string($value) || trim($value) === '') {
             return null;
         }
 
@@ -235,7 +231,7 @@ class GenerateAssistanceRequestIntakeSheetAction
 
     private function presentOccupation(mixed $value): ?string
     {
-        if (!is_string($value) || trim($value) === '') {
+        if (! is_string($value) || trim($value) === '') {
             return null;
         }
 
@@ -245,97 +241,6 @@ class GenerateAssistanceRequestIntakeSheetAction
     private function presentIncome(mixed $value): ?float
     {
         return $value === null ? null : (float) $value;
-    }
-
-    /**
-     * New requests use the request-time metadata snapshot. Legacy requests
-     * fall back to the current active roster and are explicitly identified to
-     * the admin and in the generated Section V heading.
-     *
-     * @return array{
-     *     members: Collection<int, AssistanceRequestHouseholdMemberData>,
-     *     captured_at: ?CarbonImmutable,
-     *     source: 'interview_assessment'|'request_snapshot'|'current_household_fallback',
-     *     uses_current_fallback: bool
-     * }
-     */
-    private function resolveHouseholdComposition(AssistanceRequest $request): array
-    {
-        $assessmentSnapshot = data_get($request->metadata, 'household_assessment_snapshot');
-
-        if ($this->hasHouseholdMembers($assessmentSnapshot)) {
-            return $this->householdSnapshotData(
-                $assessmentSnapshot,
-                'interview_assessment',
-            );
-        }
-
-        $snapshot = data_get($request->metadata, 'household_composition_snapshot');
-
-        if ($this->hasHouseholdMembers($snapshot)) {
-            return $this->householdSnapshotData($snapshot, 'request_snapshot');
-        }
-
-        $capturedAt = CarbonImmutable::now();
-        $members = HouseholdMember::query()
-            ->where('household_id', $request->household_id)
-            ->where('is_active', true)
-            ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
-            ->orderBy('created_at')
-            ->get()
-            ->map(
-                fn (HouseholdMember $member): AssistanceRequestHouseholdMemberData => AssistanceRequestHouseholdMemberData::fromModel(
-                    $member,
-                    $capturedAt,
-                ),
-            )
-            ->values();
-
-        return [
-            'members' => $members,
-            'captured_at' => null,
-            'source' => 'current_household_fallback',
-            'uses_current_fallback' => true,
-        ];
-    }
-
-    private function hasHouseholdMembers(mixed $snapshot): bool
-    {
-        return is_array($snapshot)
-            && array_key_exists('members', $snapshot)
-            && is_array($snapshot['members']);
-    }
-
-    /**
-     * @param  array<string, mixed>  $snapshot
-     * @param  'interview_assessment'|'request_snapshot'  $source
-     * @return array{
-     *     members: Collection<int, AssistanceRequestHouseholdMemberData>,
-     *     captured_at: ?CarbonImmutable,
-     *     source: 'interview_assessment'|'request_snapshot',
-     *     uses_current_fallback: false
-     * }
-     */
-    private function householdSnapshotData(array $snapshot, string $source): array
-    {
-        $members = collect($snapshot['members'])
-            ->filter(fn (mixed $member): bool => is_array($member))
-            ->map(
-                fn (array $member): AssistanceRequestHouseholdMemberData => AssistanceRequestHouseholdMemberData::fromSnapshot(
-                    $member,
-                ),
-            )
-            ->filter(
-                fn (AssistanceRequestHouseholdMemberData $member): bool => $member->fullName !== '',
-            )
-            ->values();
-
-        return [
-            'members' => $members,
-            'captured_at' => $this->parseCapturedAt($snapshot['captured_at'] ?? null),
-            'source' => $source,
-            'uses_current_fallback' => false,
-        ];
     }
 
     /** @param Collection<int, AssistanceRequestHouseholdMemberData> $members */
@@ -349,19 +254,6 @@ class GenerateAssistanceRequestIntakeSheetAction
                     && $member->beneficiaryId === (string) $request->beneficiary_id,
             )
             ->values();
-    }
-
-    private function parseCapturedAt(mixed $value): ?CarbonImmutable
-    {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        try {
-            return CarbonImmutable::parse($value);
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     private function municipalityLogoDataUri(?Media $media): ?string

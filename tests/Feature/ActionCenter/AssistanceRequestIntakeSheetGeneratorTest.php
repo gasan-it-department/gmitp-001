@@ -145,25 +145,25 @@ it('prefills trusted snapshot values and medical assessment defaults', function 
         ->and($data->assistanceType)->toBe('Medical Assistance')
         ->and($data->filingSubject)->toBe('self')
         ->and($data->frozenEconomicValues)->toBe([
-                'source_of_income' => 'Fishing',
-                'monthly_income' => 3000.0,
-            ])
+            'source_of_income' => 'Fishing',
+            'monthly_income' => 3000.0,
+        ])
         ->and($data->currentEconomicValues)->toBe([
-                'source_of_income' => 'Seaweed farming',
-                'monthly_income' => 4250.0,
-            ])
+            'source_of_income' => 'Seaweed farming',
+            'monthly_income' => 4250.0,
+        ])
         ->and($data->householdComposition)->toMatchArray([
-                'source' => 'current_household_fallback',
-                'captured_at' => null,
-                'member_count' => 0,
-            ])
+            'source' => 'legacy_current_fallback',
+            'captured_at' => null,
+            'member_count' => 0,
+        ])
         ->and($data->householdComposition['warning'])->not->toBeNull()
         ->and($data->recommendedDefaults)->toMatchArray([
-                'problem_presented' => [AssistanceIntakeProblem::SeekingMedicalAssistance->value],
-                'source_of_income' => 'Fishing',
-                'monthly_income' => 3000.0,
-                'recommendation' => 'Medical Assistance',
-            ]);
+            'problem_presented' => [AssistanceIntakeProblem::SeekingMedicalAssistance->value],
+            'source_of_income' => 'Fishing',
+            'monthly_income' => 3000.0,
+            'recommendation' => 'Medical Assistance',
+        ]);
 });
 
 it('falls back to current profile economics when the frozen request values are missing', function () {
@@ -184,12 +184,12 @@ it('falls back to current profile economics when the frozen request values are m
         'source_of_income' => null,
         'monthly_income' => null,
     ])->and($data->currentEconomicValues)->toBe([
-                'source_of_income' => 'Seaweed farming',
-                'monthly_income' => 4250.0,
-            ])->and($data->recommendedDefaults)->toMatchArray([
-                'source_of_income' => 'Seaweed farming',
-                'monthly_income' => 4250.0,
-            ]);
+        'source_of_income' => 'Seaweed farming',
+        'monthly_income' => 4250.0,
+    ])->and($data->recommendedDefaults)->toMatchArray([
+        'source_of_income' => 'Seaweed farming',
+        'monthly_income' => 4250.0,
+    ]);
 });
 
 it('prefills burial and on-behalf context without trusting submitted identity', function () {
@@ -235,7 +235,7 @@ it('validates assessment inputs and rejects unsupported problem values', functio
 it('rejects an assistance request from another municipality', function () {
     $context = seedAssistanceRequestIntakeSheetContext();
 
-    expect(fn() => app(GenerateAssistanceRequestIntakeSheetAction::class)->formData(
+    expect(fn () => app(GenerateAssistanceRequestIntakeSheetAction::class)->formData(
         $context['request_id'],
         (string) Str::ulid(),
     ))->toThrow(AuthorizationException::class);
@@ -438,7 +438,7 @@ it('renders the request-time household snapshot after the live roster changes', 
     $sectionFive = Str::between($html, 'V. Household Composition at Filing', '<table class="privacy-table">');
 
     expect($formData->householdComposition)->toMatchArray([
-        'source' => 'request_snapshot',
+        'source' => 'filing',
         'member_count' => 1,
         'warning' => null,
     ])->and($formData->householdComposition['captured_at'])->not->toBeNull()
@@ -510,7 +510,7 @@ it('prefers the MSWD interview assessment without replacing the filing snapshot'
     $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
 
     expect($formData->householdComposition)->toMatchArray([
-        'source' => 'interview_assessment',
+        'source' => 'assessment',
         'member_count' => 1,
         'warning' => null,
     ])->and($html)->toContain(
@@ -573,8 +573,8 @@ function seedAssistanceRequestIntakeSheetContext(
     DB::table('municipalities')->insert([
         'id' => $municipalId,
         'name' => 'Gasan',
-        'slug' => 'gasan-' . Str::lower(Str::random(5)),
-        'municipal_code' => 'GAS-' . Str::upper(Str::random(5)),
+        'slug' => 'gasan-'.Str::lower(Str::random(5)),
+        'municipal_code' => 'GAS-'.Str::upper(Str::random(5)),
         'is_active' => true,
         'created_at' => $now,
         'updated_at' => $now,

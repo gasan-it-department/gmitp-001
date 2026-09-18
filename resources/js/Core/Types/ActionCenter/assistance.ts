@@ -125,6 +125,7 @@ export interface AssistanceTypeListItem {
     is_active: boolean;
     max_amount: number | null;
     cooldown_months: number;
+    cooldown_scope: CooldownScope;
     requirements_count: number;
 }
 
@@ -235,7 +236,7 @@ export type AssistanceTypeFormData = {
     min_amount: number | null;
     cooldown_months: number;
     cooldown_type?: CooldownType;
-    cooldown_scope?: CooldownScope;
+    cooldown_scope: CooldownScope;
     enabled_generated_documents: AssistanceGeneratedDocument[];
     documents: {
         id: string;

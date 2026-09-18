@@ -1,3 +1,4 @@
+import ShowHouseholdProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowHouseholdProfileController';
 import { Link } from '@inertiajs/react';
 import { AlertTriangle, ArrowRight, BadgeCheck, CalendarClock, ChevronDown, Clock3, Home, Mail, OctagonX, UserCircle2, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -7,9 +8,10 @@ interface Props {
     row: BeneficiarySearchRow;
     isPossibleDuplicate: boolean;
     profileHref: string;
+    municipalitySlug: string;
 }
 
-export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profileHref }: Props) {
+export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profileHref, municipalitySlug }: Props) {
     const releasedRecently = isWithinDays(row.last_released_at, 90);
     const demographics = [row.sex_label, row.age !== null ? `${row.age} yrs` : null, row.civil_status_label].filter(Boolean).join(' / ');
     const currentMembership = row.memberships.find((membership) => membership.status === 'current_household') ?? null;
@@ -85,7 +87,7 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
                 )}
 
                 {currentMembership ? (
-                    <MembershipSummary membership={currentMembership} />
+                    <MembershipSummary membership={currentMembership} municipalitySlug={municipalitySlug} />
                 ) : (
                     <p className="text-xs text-slate-500">No current household membership is linked to this profile.</p>
                 )}
@@ -100,7 +102,7 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
                         </summary>
                         <div className="space-y-2 border-t border-slate-200 p-2">
                             {otherMemberships.map((membership) => (
-                                <MembershipSummary key={membership.id} membership={membership} compact />
+                                <MembershipSummary key={membership.id} membership={membership} municipalitySlug={municipalitySlug} compact />
                             ))}
                         </div>
                     </details>
@@ -145,16 +147,27 @@ export default function BeneficiaryResultCard({ row, isPossibleDuplicate, profil
     );
 }
 
-function MembershipSummary({ membership, compact = false }: { membership: BeneficiaryMembershipRow; compact?: boolean }) {
+function MembershipSummary({
+    membership,
+    municipalitySlug,
+    compact = false,
+}: {
+    membership: BeneficiaryMembershipRow;
+    municipalitySlug: string;
+    compact?: boolean;
+}) {
     const status = MEMBERSHIP_STATUS[membership.status];
     const address = [membership.street, membership.barangay].filter(Boolean).join(', ') || 'Address not recorded';
 
     return (
         <div className={`flex min-w-0 flex-col gap-1 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between ${status.container}`}>
             <div className="min-w-0">
-                <p className={`font-semibold break-words text-slate-800 ${compact ? 'text-xs' : 'text-sm'}`}>
+                <Link
+                    href={ShowHouseholdProfileController.url({ municipality: municipalitySlug, householdId: membership.household_id })}
+                    className={`font-semibold break-words text-slate-800 hover:underline ${compact ? 'text-xs' : 'text-sm'}`}
+                >
                     {membership.household_code || 'Household code unavailable'}
-                </p>
+                </Link>
                 <p className="text-xs break-words text-slate-500">
                     {membership.relationship_label || membership.relationship || 'Relationship not recorded'} / {address}
                 </p>

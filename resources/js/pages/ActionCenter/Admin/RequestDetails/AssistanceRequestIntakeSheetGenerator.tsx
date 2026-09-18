@@ -35,7 +35,7 @@ interface IntakeSheetContext {
     frozen_economic_values: EconomicValues;
     current_economic_values: EconomicValues;
     household_composition: {
-        source: 'interview_assessment' | 'request_snapshot' | 'current_household_fallback';
+        source: 'assessment' | 'filing' | 'legacy_current_fallback';
         captured_at: string | null;
         member_count: number;
         warning: string | null;
@@ -295,7 +295,7 @@ export default function AssistanceRequestIntakeSheetGenerator({ assistanceReques
                                 </dd>
                                 {assistanceRequestIntakeSheet.household_composition.captured_at && (
                                     <dd className="mt-1 text-xs text-slate-500">
-                                        {assistanceRequestIntakeSheet.household_composition.source === 'interview_assessment'
+                                        {assistanceRequestIntakeSheet.household_composition.source === 'assessment'
                                             ? 'Captured during MSWD interview on '
                                             : 'Frozen at request filing on '}
                                         {new Intl.DateTimeFormat('en-PH', {

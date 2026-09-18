@@ -7,10 +7,10 @@ import type { RosterOnlyRow } from '../BeneficiarySearch';
 interface Props {
     row: RosterOnlyRow;
     isPossibleMatch: boolean;
-    headProfileHref: string | null;
+    householdHref: string | null;
 }
 
-export default function RosterOnlyResultCard({ row, isPossibleMatch, headProfileHref }: Props) {
+export default function RosterOnlyResultCard({ row, isPossibleMatch, householdHref }: Props) {
     const [copied, setCopied] = useState(false);
     const demographics = [row.sex_label, row.age !== null ? `${row.age} yrs` : null].filter(Boolean).join(' / ');
     const address = [row.household.street, row.household.barangay].filter(Boolean).join(', ') || 'Address not recorded';
@@ -83,15 +83,15 @@ export default function RosterOnlyResultCard({ row, isPossibleMatch, headProfile
                     )}
                 </div>
 
-                {headProfileHref ? (
+                {householdHref ? (
                     <Link
-                        href={headProfileHref}
+                        href={householdHref}
                         className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900 sm:w-auto"
                     >
                         View household <ArrowRight className="h-4 w-4" />
                     </Link>
                 ) : (
-                    <span className="text-xs text-slate-500">No linked head profile is available for navigation.</span>
+                    <span className="text-xs text-slate-500">Household navigation is unavailable.</span>
                 )}
             </div>
         </article>
