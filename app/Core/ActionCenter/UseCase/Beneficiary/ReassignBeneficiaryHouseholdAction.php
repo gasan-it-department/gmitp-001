@@ -9,6 +9,7 @@ use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
+use App\Core\ActionCenter\Services\LinkedHouseholdMemberProfileSynchronizer;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -21,6 +22,7 @@ class ReassignBeneficiaryHouseholdAction
         private readonly \App\Core\ActionCenter\UseCase\Household\CreateHouseholdAction $createHousehold,
         private readonly EnsureBeneficiaryHasNoOpenAssistanceRequestAction $ensureNoOpenAssistanceRequest,
         private readonly HouseholdMemberIdentityMatcher $identityMatcher,
+        private readonly LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
@@ -110,7 +112,9 @@ class ReassignBeneficiaryHouseholdAction
 
         $destinationHousehold = null;
 
-        if ($dto->destinationHouseholdId !== null) {
+        $joiningExistingHousehold = $dto->destinationHouseholdId !== null;
+
+        if ($joiningExistingHousehold) {
             $destinationHousehold = Household::query()
                 ->whereKey($dto->destinationHouseholdId)
                 ->lockForUpdate()
@@ -174,17 +178,6 @@ class ReassignBeneficiaryHouseholdAction
                 'is_verified_dependent' => $dto->verifyAtDestination,
             ]);
         } else {
-            $existingHead = HouseholdMember::query()
-                ->where('household_id', $destinationHousehold->id)
-                ->where('relationship', Relationship::Head->value)
-                ->where('is_active', true)
-                ->exists();
-
-            $newRelationship = $existingHead ? $sourceMember->relationship : Relationship::Head->value;
-            if ($newRelationship === Relationship::Head->value && $existingHead) {
-                $newRelationship = Relationship::Sibling->value;
-            }
-
             $historicalMatches = HouseholdMember::query()
                 ->where('household_id', $destinationHousehold->id)
                 ->where('is_active', false)
@@ -213,9 +206,22 @@ class ReassignBeneficiaryHouseholdAction
                 $destinationMember->update([
                     'beneficiary_id' => $beneficiary->id,
                     'is_active' => true,
-                    'is_verified_dependent' => $newRelationship === Relationship::Head->value ? false : $dto->verifyAtDestination,
+                    'is_verified_dependent' => $destinationMember->relationship === Relationship::Head->value
+                        ? false
+                        : $dto->verifyAtDestination,
                 ]);
             } else {
+                if ($joiningExistingHousehold && ($dto->destinationRelationship === null
+                    || $dto->destinationRelationship === Relationship::Head->value)) {
+                    throw new \DomainException(
+                        'Select the beneficiary\'s relationship to the destination household head.',
+                    );
+                }
+
+                $destinationRelationship = $joiningExistingHousehold
+                    ? $dto->destinationRelationship
+                    : Relationship::Head->value;
+
                 $destinationMember = HouseholdMember::create([
                     'household_id' => $destinationHousehold->id,
                     'beneficiary_id' => $beneficiary->id,
@@ -230,12 +236,16 @@ class ReassignBeneficiaryHouseholdAction
                     'occupation' => $beneficiary->occupation,
                     'monthly_income' => $beneficiary->monthly_income ?? 0,
                     'religion_id' => $beneficiary->religion_id,
-                    'relationship' => $newRelationship,
+                    'relationship' => $destinationRelationship,
                     'is_active' => true,
-                    'is_verified_dependent' => $newRelationship === Relationship::Head->value ? false : $dto->verifyAtDestination,
+                    'is_verified_dependent' => $destinationRelationship === Relationship::Head->value
+                        ? false
+                        : $dto->verifyAtDestination,
                 ]);
             }
         }
+
+        $this->profileSynchronizer->sync($destinationMember, $beneficiary);
 
         $verificationBefore = $sourceMember->is_verified_dependent;
         $verificationAfter = $destinationMember->is_verified_dependent;

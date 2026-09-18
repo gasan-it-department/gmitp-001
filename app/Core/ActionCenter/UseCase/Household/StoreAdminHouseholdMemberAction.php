@@ -23,10 +23,30 @@ class StoreAdminHouseholdMemberAction
         string $municipalId,
         bool $isVerifiedDependent,
     ): HouseholdMember {
-        return DB::transaction(function () use ($beneficiary, $dto, $municipalId, $isVerifiedDependent) {
+        if ($dto->householdId !== $beneficiary->household_id) {
+            throw new AuthorizationException(
+                'You may only add household members to the beneficiary\'s current household.',
+            );
+        }
+
+        return $this->executeForHousehold(
+            householdId: $beneficiary->household_id,
+            dto: $dto,
+            municipalId: $municipalId,
+            isVerifiedDependent: $isVerifiedDependent,
+        );
+    }
+
+    public function executeForHousehold(
+        string $householdId,
+        StoreHouseholdMemberDto $dto,
+        string $municipalId,
+        bool $isVerifiedDependent,
+    ): HouseholdMember {
+        return DB::transaction(function () use ($householdId, $dto, $municipalId, $isVerifiedDependent) {
             $this->lockMunicipality->execute($municipalId);
             $household = Household::query()
-                ->whereKey($beneficiary->household_id)
+                ->whereKey($householdId)
                 ->where('municipal_id', $municipalId)
                 ->lockForUpdate()
                 ->first();

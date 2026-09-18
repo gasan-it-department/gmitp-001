@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
+use App\Core\ActionCenter\Services\LinkedHouseholdMemberProfileSynchronizer;
 use App\Core\Municipality\Models\Municipality;
 use Illuminate\Console\Command;
 
@@ -12,10 +13,12 @@ class AuditActionCenterHouseholdMemberships extends Command
     protected $signature = 'action-center:audit-household-memberships
         {--municipality= : Municipality id, slug, or municipal code}';
 
-    protected $description = 'Report active beneficiary membership conflicts before enabling the unique index';
+    protected $description = 'Report active beneficiary membership and linked-profile consistency conflicts';
 
-    public function handle(HouseholdMemberIdentityMatcher $identityMatcher): int
-    {
+    public function handle(
+        HouseholdMemberIdentityMatcher $identityMatcher,
+        LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
+    ): int {
         $municipalId = $this->resolveMunicipalId($this->option('municipality'));
         if ($this->option('municipality') && $municipalId === null) {
             $this->error('The municipality filter did not match an existing municipality.');
@@ -46,6 +49,14 @@ class AuditActionCenterHouseholdMemberships extends Command
                     : ['missing_beneficiary'],
             ])
             ->filter(fn (array $row): bool => $row['fields'] !== []);
+        $profileMismatches = $members
+            ->map(fn (HouseholdMember $member): array => [
+                'member' => $member,
+                'fields' => $member->beneficiary
+                    ? array_keys($profileSynchronizer->differences($member, $member->beneficiary))
+                    : ['missing_beneficiary'],
+            ])
+            ->filter(fn (array $row): bool => $row['fields'] !== []);
 
         $this->table(['Beneficiary', 'Active roster rows'], $duplicateLinks->map(
             fn ($rows, string $beneficiaryId): array => [$beneficiaryId, $rows->pluck('id')->implode(', ')],
@@ -65,8 +76,15 @@ class AuditActionCenterHouseholdMemberships extends Command
                 implode(', ', $row['fields']),
             ],
         )->values()->all());
+        $this->table(['Member', 'Beneficiary', 'Profile mirror mismatches'], $profileMismatches->map(
+            fn (array $row): array => [
+                $row['member']->id,
+                $row['member']->beneficiary_id,
+                implode(', ', $row['fields']),
+            ],
+        )->values()->all());
 
-        $issues = $duplicateLinks->count() + $primaryMismatches->count() + $identityMismatches->count();
+        $issues = $duplicateLinks->count() + $primaryMismatches->count() + $profileMismatches->count();
         $this->line($issues === 0
             ? 'No active household membership conflicts found.'
             : "Found {$issues} conflict group(s)/row(s). Resolve them before running the index migration.");

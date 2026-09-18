@@ -19,6 +19,7 @@ final readonly class ReassignBeneficiaryHouseholdDto
         public bool $verifyAtDestination,
         public ?string $successorMemberId,
         public bool $placeHouseholdOnHold,
+        public ?string $destinationRelationship = null,
     ) {}
 
     public static function fromArray(
@@ -35,6 +36,7 @@ final readonly class ReassignBeneficiaryHouseholdDto
             reason: $data['reason'],
             destinationHouseholdId: $data['destination_household_id'] ?? null,
             destinationMemberId: $data['destination_member_id'] ?? null,
+            destinationRelationship: $data['destination_relationship'] ?? null,
             newHouseholdBarangay: ! empty($data['new_household_barangay'])
                 ? mb_strtoupper($data['new_household_barangay'])
                 : null,

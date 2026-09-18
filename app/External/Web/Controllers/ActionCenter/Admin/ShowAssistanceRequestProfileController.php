@@ -6,8 +6,8 @@ use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestHouseholdResource;
 use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
-use App\External\Api\Resources\ActionCenter\Household\HouseholdMemberDetailsResource;
 use App\External\Api\Resources\ActionCenter\RecentAssistanceRequestResource;
 use App\External\Api\Resources\ActionCenter\RequiredDocumentResource;
 use App\Http\Controllers\Controller;
@@ -52,7 +52,7 @@ class ShowAssistanceRequestProfileController extends Controller
 
             'activityLog' => ActivityLogResource::collection($data['activityLog']),
 
-            'householdMembers' => HouseholdMemberDetailsResource::collection($data['householdMembers']),
+            'requestHousehold' => new AssistanceRequestHouseholdResource($data['requestHousehold']),
 
             'householdAssessmentPreview' => $data['householdAssessmentPreview'],
 

@@ -2,7 +2,6 @@
 
 namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
-use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceCooldownService;
@@ -25,9 +24,9 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  * @return array{
  *     beneficiary: Beneficiary,
  *     householdMembers: \Illuminate\Database\Eloquent\Collection,
- *     assistanceHistory: \Illuminate\Database\Eloquent\Collection,
- *     householdTotalIncome: float,
- *     summary: array{total_requests:int, released_count:int, total_released_amount:float, active_member_count:int},
+ *     assistanceHistory: \Illuminate\Support\Collection,
+ *     householdAssistanceInvolvement: \Illuminate\Support\Collection,
+ *     summary: array{received_request_count:int, released_received_count:int, total_released_received_amount:float, active_member_count:int},
  *     crossMunicipalityMatches: \Illuminate\Support\Collection,
  *     merge: array{is_merged_duplicate:bool, merged_into:?array, merged_duplicates:array},
  * }
@@ -40,6 +39,8 @@ class GetBeneficiaryProfileAction
         private readonly FindHouseholdMembershipMatchesAction $findHouseholdMatches,
         private readonly EvaluateHouseholdHeadCandidateAction $evaluateHeadCandidate,
         private readonly AssistanceCooldownService $cooldowns,
+        private readonly ListBeneficiaryAssistanceHistoryAction $listAssistanceHistory,
+        private readonly ListHouseholdAssistanceHistoryAction $listHouseholdAssistanceHistory,
     ) {}
 
     public function execute(string $municipalId, string $beneficiaryId): array
@@ -78,19 +79,11 @@ class GetBeneficiaryProfileAction
             ->get();
 
         $activeMembers = $householdMembers->filter(
-            fn (HouseholdMember $member) => $member->is_active
-            && ($member->relationship === 'head' || $member->is_verified_dependent)
+            fn (HouseholdMember $member) => $member->is_active,
         );
 
-        // Every request the identity GROUP has ever filed, across all programs.
-        // After a merge this includes the duplicate's frozen history so the
-        // canonical profile shows one complete record (rows stay owned by their
-        // original beneficiary_id — nothing is rewritten).
-        $assistanceHistory = AssistanceRequest::query()
-            ->whereIn('beneficiary_id', $group->beneficiaryIds)
-            ->with('assistanceType')
-            ->orderByDesc('created_at')
-            ->get();
+        $assistanceHistory = $this->listAssistanceHistory->execute($municipalId, $group);
+        $householdAssistanceInvolvement = $this->listHouseholdAssistanceHistory->execute($municipalId, $group);
 
         // Advisory cross-LGU double-dip signal — same person on record in
         // another municipality. Minimal disclosure (see the detector).
@@ -100,15 +93,6 @@ class GetBeneficiaryProfileAction
             $beneficiary->birth_date,
             $beneficiary->sex,
             $municipalId,
-        );
-
-        $householdTotalIncome = (float) $activeMembers->sum(fn (HouseholdMember $m) => (float) $m->monthly_income);
-
-        // status is cast to the AssistanceStatus enum, so filter on its value
-        // (a loose ->where('status', 'released') would compare enum !== string
-        // and silently match nothing).
-        $releasedHistory = $assistanceHistory->filter(
-            fn (AssistanceRequest $r) => $r->status?->value === 'released'
         );
 
         $currentHead = $householdMembers->first(
@@ -125,11 +109,11 @@ class GetBeneficiaryProfileAction
         return [
             'beneficiary' => $beneficiary,
             'householdMembers' => $householdMembers,
-            'assistanceHistory' => $assistanceHistory,
+            'assistanceHistory' => $assistanceHistory->entries,
+            'householdAssistanceInvolvement' => $householdAssistanceInvolvement,
             'cooldownAdvisory' => $this->cooldowns
                 ->advisoryFor($beneficiary, resolvedGroup: $group)
                 ->toArray(),
-            'householdTotalIncome' => $householdTotalIncome,
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
             'householdMatches' => $this->findHouseholdMatches->execute($beneficiary)
                 ->map(fn (HouseholdMember $member) => [
@@ -173,9 +157,9 @@ class GetBeneficiaryProfileAction
                     ->all(),
             ],
             'summary' => [
-                'total_requests' => $assistanceHistory->count(),
-                'released_count' => $releasedHistory->count(),
-                'total_released_amount' => (float) $releasedHistory->sum(fn (AssistanceRequest $r) => (float) ($r->amount_approved ?? 0)),
+                'received_request_count' => $assistanceHistory->receivedRequestCount,
+                'released_received_count' => $assistanceHistory->releasedReceivedCount,
+                'total_released_received_amount' => $assistanceHistory->totalReleasedReceivedAmount,
                 'active_member_count' => $activeMembers->count(),
             ],
             'householdHead' => [

@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\HouseholdMemberIdentityMatcher;
+use App\Core\ActionCenter\Services\LinkedHouseholdMemberProfileSynchronizer;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -17,12 +18,10 @@ use Illuminate\Support\Facades\DB;
  * home household.
  *
  * When the admin recognises that a household member is already in the registry,
- * this stamps the member row's beneficiary_id with the existing beneficiary —
- * the row becomes a descriptive "also lives in this family" reference. Crucially
- * it does NOT change the target beneficiary's household_id: one person keeps one
- * primary household (ac_household_members.beneficiary_id is intentionally NOT
- * unique, so the same person can be referenced by their own Head row and a
- * roster row in another family).
+ * this stamps the member row's beneficiary_id with the existing beneficiary and
+ * replaces its shared personal fields with the beneficiary profile values. The
+ * target must already belong to this same primary household and may have only
+ * one active linked roster row.
  *
  * The target is resolved by its human-friendly beneficiary_number (e.g.
  * GAS-000123), mirroring how LinkBeneficiaryToUserAction resolves an account by
@@ -42,6 +41,7 @@ class LinkHouseholdMemberToBeneficiaryAction
 {
     public function __construct(
         private readonly HouseholdMemberIdentityMatcher $identityMatcher,
+        private readonly LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
@@ -119,6 +119,7 @@ class LinkHouseholdMemberToBeneficiaryAction
                 'beneficiary_id' => $target->id,
                 'is_verified_dependent' => false,
             ]);
+            $this->profileSynchronizer->sync($member, $target);
 
             activity('household-member-link')
                 ->performedOn($member)

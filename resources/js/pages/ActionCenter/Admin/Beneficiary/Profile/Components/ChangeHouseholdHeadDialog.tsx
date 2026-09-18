@@ -15,7 +15,7 @@ const HOLD = '__hold__';
 
 interface HouseholdHeadState {
     current_head_member_id: string | null;
-    profile_is_current_head: boolean;
+    profile_is_current_head?: boolean;
     household_on_hold: boolean;
     candidate_reasons: Record<string, string | null>;
 }

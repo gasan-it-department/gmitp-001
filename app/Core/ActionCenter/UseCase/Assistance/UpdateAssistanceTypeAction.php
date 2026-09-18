@@ -28,6 +28,7 @@ class UpdateAssistanceTypeAction
                 'min_amount' => $dto->minAmount,
                 'max_amount' => $dto->maxAmount,
                 'cooldown_months' => $dto->cooldownMonths,
+                'cooldown_scope' => $dto->cooldownScope->value,
                 'is_active' => $dto->isActive,
             ];
 

@@ -6,7 +6,6 @@ use App\Core\ActionCenter\Enums\HouseholdReassignmentOperation;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
-use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Beneficiary\ReassignBeneficiaryHouseholdAction;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -119,7 +118,7 @@ beforeEach(function () {
     DB::table('municipalities')->insert([
         'id' => $this->municipalId,
         'name' => 'GASAN',
-        'municipal_code' => '1704003000'
+        'municipal_code' => '1704003000',
     ]);
     DB::table('users')->insert(['id' => $this->adminId, 'first_name' => 'Admin']);
 
@@ -201,6 +200,7 @@ test('correct accidental household join', function () {
         verifyAtDestination: true,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -237,6 +237,7 @@ test('transfer legitimate member', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -261,6 +262,7 @@ test('move beneficiary out', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -300,6 +302,7 @@ test('reject cross-municipality', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->expectException(\DomainException::class);
@@ -332,6 +335,7 @@ test('reject duplicate active membership', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->expectException(\DomainException::class);
@@ -364,6 +368,7 @@ test('blocks reassignment when beneficiary has an open assistance request', func
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->expectException(\DomainException::class);
@@ -396,6 +401,7 @@ test('allows reassignment when beneficiary assistance requests are final', funct
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -420,6 +426,7 @@ test('dependent verification resets', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -445,6 +452,7 @@ test('activity log properties', function () {
         verifyAtDestination: true,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -479,6 +487,7 @@ test('head protection on move-out', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->expectException(\DomainException::class);
@@ -535,6 +544,7 @@ test('head protection on move-out with successor', function () {
         verifyAtDestination: false,
         successorMemberId: $successorId,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -569,6 +579,7 @@ test('head protection on move-out with hold', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: true,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);
@@ -601,6 +612,7 @@ test('create provisional household', function () {
         verifyAtDestination: false,
         successorMemberId: null,
         placeHouseholdOnHold: false,
+        destinationRelationship: Relationship::Sibling->value,
     );
 
     $this->action->execute($dto);

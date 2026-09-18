@@ -15,9 +15,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * interview — citizens do not encode their own family on registration.
  *
  * A row may or may not be linked to ac_beneficiaries.id via beneficiary_id.
- * If NULL, the personal info is stored inline here. When that person later
- * registers, the admin links beneficiary_id and the inline fields become
- * the snapshot of who they were at first encoding.
+ * If NULL, the personal info is owned by this row. Once beneficiary_id is set,
+ * shared personal fields become a controlled mirror of the beneficiary profile;
+ * only household-specific fields such as relationship and activity stay local.
  *
  * is_active = false means "moved out" — never hard-deleted.
  */

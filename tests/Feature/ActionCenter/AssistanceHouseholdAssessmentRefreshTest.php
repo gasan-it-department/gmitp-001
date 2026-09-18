@@ -3,6 +3,7 @@
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\UseCase\Assistance\RefreshAssistanceHouseholdAssessmentAction;
+use App\Core\ActionCenter\UseCase\Assistance\ResolveAssistanceRequestHouseholdAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
@@ -229,6 +230,65 @@ it('captures the current roster after profile edits while preserving the filing 
         ->and(DB::table('activity_log')
             ->where('description', 'Updated household assessment during assistance interview')
             ->exists())->toBeTrue();
+});
+
+it('keeps the filing household authoritative until an assessment is synchronized', function () {
+    $request = AssistanceRequest::query()->with('household')->findOrFail($this->requestId);
+    $resolver = app(ResolveAssistanceRequestHouseholdAction::class);
+
+    $beforeProfileEdit = $resolver->execute($request);
+
+    DB::table('ac_household_members')->where('id', $this->headMemberId)->update([
+        'occupation' => 'FARMER',
+        'monthly_income' => 4800,
+        'updated_at' => now(),
+    ]);
+
+    $afterProfileEdit = $resolver->execute($request->fresh('household'));
+
+    expect($beforeProfileEdit->source)->toBe('filing')
+        ->and($beforeProfileEdit->members)->toHaveCount(0)
+        ->and($afterProfileEdit->source)->toBe('filing')
+        ->and($afterProfileEdit->members)->toHaveCount(0)
+        ->and($afterProfileEdit->usesCurrentFallback)->toBeFalse();
+});
+
+it('resolves the synchronized assessment as the request household', function () {
+    DB::table('ac_household_members')->where('id', $this->headMemberId)->update([
+        'occupation' => 'FARMER',
+        'monthly_income' => 4800,
+        'updated_at' => now(),
+    ]);
+
+    refreshHouseholdAssessment(
+        assistanceRequestId: $this->requestId,
+        municipalId: $this->municipalId,
+        actingUserId: $this->reviewerId,
+    );
+
+    $resolved = app(ResolveAssistanceRequestHouseholdAction::class)
+        ->execute(AssistanceRequest::query()->with('household')->findOrFail($this->requestId));
+
+    expect($resolved->source)->toBe('assessment')
+        ->and($resolved->members)->toHaveCount(1)
+        ->and($resolved->members->first()->occupation)->toBe('FARMER')
+        ->and($resolved->members->first()->monthlyIncome)->toBe(4800.0)
+        ->and($resolved->usesCurrentFallback)->toBeFalse();
+});
+
+it('marks the current roster as a legacy fallback when no request snapshot exists', function () {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'metadata' => json_encode([], JSON_THROW_ON_ERROR),
+        'updated_at' => now(),
+    ]);
+
+    $resolved = app(ResolveAssistanceRequestHouseholdAction::class)
+        ->execute(AssistanceRequest::query()->with('household')->findOrFail($this->requestId));
+
+    expect($resolved->source)->toBe('legacy_current_fallback')
+        ->and($resolved->members)->toHaveCount(1)
+        ->and($resolved->capturedAt)->toBeNull()
+        ->and($resolved->usesCurrentFallback)->toBeTrue();
 });
 
 it('does not report a changed income when JSON only changes its numeric representation', function () {

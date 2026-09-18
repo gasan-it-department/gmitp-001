@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Request\ActionCenter;
 
+use App\Core\ActionCenter\Enums\AssistanceCooldownScope;
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use Illuminate\Database\Query\Builder;
@@ -60,6 +61,10 @@ class UpdateAssistanceTypeRequest extends FormRequest
                 'integer',
                 'min:0',
                 'max:60',
+            ],
+            'cooldown_scope' => [
+                'required',
+                Rule::enum(AssistanceCooldownScope::class),
             ],
             // 3. Ensure it's a strict boolean true/false from the React Switch
             'is_active' => [

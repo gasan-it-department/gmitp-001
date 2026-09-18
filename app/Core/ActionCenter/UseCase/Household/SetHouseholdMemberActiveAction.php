@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Household;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\LinkedHouseholdMemberProfileSynchronizer;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -26,12 +27,17 @@ use Illuminate\Support\Facades\DB;
 class SetHouseholdMemberActiveAction
 {
     public function __construct(
+        private readonly LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
-    public function execute(string $memberId, bool $isActive, string $municipalId): HouseholdMember
-    {
-        return DB::transaction(function () use ($memberId, $isActive, $municipalId) {
+    public function execute(
+        string $memberId,
+        bool $isActive,
+        string $municipalId,
+        ?string $restoreRelationship = null,
+    ): HouseholdMember {
+        return DB::transaction(function () use ($memberId, $isActive, $municipalId, $restoreRelationship) {
             $this->lockMunicipality->execute($municipalId);
             $member = HouseholdMember::query()
                 ->with('household')
@@ -51,6 +57,17 @@ class SetHouseholdMemberActiveAction
                 );
             }
 
+            // No-op — already in the requested state.
+            if ((bool) $member->is_active === $isActive && $restoreRelationship === null) {
+                return $member;
+            }
+
+            $restoredRelationship = $this->resolveRestoreRelationship(
+                member: $member,
+                isActive: $isActive,
+                relationship: $restoreRelationship,
+            );
+
             if ($member->relationship === Relationship::Head->value && $isActive) {
                 $hasActiveHead = HouseholdMember::query()
                     ->where('household_id', $member->household_id)
@@ -58,19 +75,21 @@ class SetHouseholdMemberActiveAction
                     ->where('is_active', true)
                     ->exists();
 
-                if ($hasActiveHead) {
+                if ($hasActiveHead && $restoredRelationship === null) {
                     throw new \DomainException(
-                        'This household already has an active head. You cannot move this member back in as a head without resolving the roster first.',
+                        'This household already has an active head. Choose the former head\'s new relationship before moving them back in.',
+                    );
+                }
+
+                if (! $hasActiveHead && $restoredRelationship !== null) {
+                    throw new \DomainException(
+                        'This household has no active head. Restore this member as head or assign a new head first.',
                     );
                 }
             }
 
-            // No-op — already in the requested state.
-            if ((bool) $member->is_active === $isActive) {
-                return $member;
-            }
-
             // Re-activating: respect the per-household active-member cap.
+            $linkedBeneficiary = null;
             if ($isActive) {
                 $activeCount = HouseholdMember::query()
                     ->where('household_id', $member->household_id)
@@ -109,10 +128,22 @@ class SetHouseholdMemberActiveAction
                     if (! $beneficiary->is_active) {
                         $beneficiary->update(['is_active' => true]);
                     }
+
+                    $linkedBeneficiary = $beneficiary;
                 }
             }
 
-            $member->update(['is_active' => $isActive]);
+            $memberChanges = ['is_active' => $isActive];
+            if ($restoredRelationship !== null) {
+                $memberChanges['relationship'] = $restoredRelationship->value;
+                $memberChanges['is_verified_dependent'] = false;
+            }
+
+            $member->update($memberChanges);
+
+            if ($linkedBeneficiary !== null) {
+                $this->profileSynchronizer->sync($member, $linkedBeneficiary);
+            }
 
             if (! $isActive && $member->beneficiary_id !== null) {
                 $beneficiary = Beneficiary::query()
@@ -126,5 +157,36 @@ class SetHouseholdMemberActiveAction
 
             return $member->fresh();
         }, attempts: 3);
+    }
+
+    private function resolveRestoreRelationship(
+        HouseholdMember $member,
+        bool $isActive,
+        ?string $relationship,
+    ): ?Relationship {
+        if ($relationship === null) {
+            return null;
+        }
+
+        if (! $isActive || $member->is_active) {
+            throw new \DomainException(
+                'A replacement relationship may only be selected when moving a former head back in.',
+            );
+        }
+
+        if ($member->relationship !== Relationship::Head->value) {
+            throw new \DomainException(
+                'Only a former household head needs a replacement relationship when moving back in.',
+            );
+        }
+
+        $resolved = Relationship::tryFrom($relationship);
+        if ($resolved === null || $resolved === Relationship::Head) {
+            throw new \DomainException(
+                'Choose the former head\'s relationship to the current household head.',
+            );
+        }
+
+        return $resolved;
     }
 }

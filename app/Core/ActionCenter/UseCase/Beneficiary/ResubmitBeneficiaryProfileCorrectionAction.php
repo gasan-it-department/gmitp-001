@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\LinkedHouseholdMemberProfileSynchronizer;
 use App\Core\ActionCenter\UseCase\Household\StoreHouseholdMemberAction;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
 use App\Core\Users\Models\User;
@@ -17,6 +18,7 @@ class ResubmitBeneficiaryProfileCorrectionAction
 {
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
+        private readonly LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
@@ -71,7 +73,7 @@ class ResubmitBeneficiaryProfileCorrectionAction
                 'intake_rejection_reason' => null,
             ]);
 
-            $this->syncPrimaryHeadRow($beneficiary->fresh(), $dto);
+            $this->syncPrimaryHeadRow($beneficiary->fresh());
             $this->replaceProvisionalDependents($beneficiary->household_id, $dto);
 
             activity('beneficiary')
@@ -112,28 +114,20 @@ class ResubmitBeneficiaryProfileCorrectionAction
 
     private function syncPrimaryHeadRow(
         Beneficiary $beneficiary,
-        ResubmitBeneficiaryProfileCorrectionDto $dto,
     ): void {
-        HouseholdMember::query()
+        $member = HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
             ->where('beneficiary_id', $beneficiary->id)
             ->where('relationship', Relationship::Head->value)
             ->lockForUpdate()
-            ->first()
-            ?->update([
-                'first_name' => $dto->firstName,
-                'last_name' => $dto->lastName,
-                'middle_name' => $dto->middleName,
-                'suffix' => $dto->suffix,
-                'sex' => $dto->sex,
-                'birth_date' => $dto->birthDate,
-                'religion_id' => $dto->religionId,
-                'educational_attainment' => $dto->educationalAttainment,
-                'civil_status' => $dto->civilStatus,
-                'occupation' => $dto->occupation,
-                'monthly_income' => $dto->monthlyIncome,
-                'is_verified_dependent' => false,
-            ]);
+            ->first();
+
+        if ($member === null) {
+            return;
+        }
+
+        $this->profileSynchronizer->sync($member, $beneficiary);
+        $member->update(['is_verified_dependent' => false]);
     }
 
     private function replaceProvisionalDependents(

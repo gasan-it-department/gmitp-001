@@ -2,6 +2,7 @@
 
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceTypeDto;
 use App\Core\ActionCenter\Dto\Assistance\UpdateAssistanceTypeDto;
+use App\Core\ActionCenter\Enums\AssistanceCooldownScope;
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Exceptions\AssistanceTypeException;
 use App\Core\ActionCenter\UseCase\Assistance\GetActiveAssistanceTypeBySlugAction;
@@ -99,6 +100,35 @@ it('stores a zero minimum when the field is left blank', function () {
         ->and($assistanceType->max_amount)->toBeNull();
 });
 
+it('stores and updates the configured cooldown scope', function () {
+    $dto = storeDto('Household Scoped Assistance');
+    $assistanceType = $this->storeAction->execute(new StoreAssistanceTypeDto(
+        name: $dto->name,
+        description: $dto->description,
+        minAmount: $dto->minAmount,
+        maxAmount: $dto->maxAmount,
+        cooldownMonths: $dto->cooldownMonths,
+        isActive: $dto->isActive,
+        documents: [],
+        cooldownScope: AssistanceCooldownScope::Household,
+    ), 'municipality-a');
+
+    expect($assistanceType->fresh()->cooldown_scope)->toBe('per_household');
+
+    $this->updateAction->execute(new UpdateAssistanceTypeDto(
+        name: 'Household Scoped Assistance',
+        description: 'Updated cooldown ownership.',
+        minAmount: 0,
+        maxAmount: 5000,
+        cooldownMonths: 3,
+        isActive: true,
+        documents: [],
+        cooldownScope: AssistanceCooldownScope::Beneficiary,
+    ), $assistanceType->id, 'municipality-a');
+
+    expect($assistanceType->fresh()->cooldown_scope)->toBe('per_beneficiary');
+});
+
 it('defaults omitted generated documents to the request intake sheet', function () {
     $assistanceType = $this->storeAction->execute(storeDto('Default Generator Test'), 'municipality-a');
 
@@ -190,6 +220,7 @@ it('validates generated document selections at the request boundary', function (
         'min_amount' => 0,
         'max_amount' => 5000,
         'cooldown_months' => 3,
+        'cooldown_scope' => 'per_beneficiary',
         'is_active' => true,
         'documents' => [],
     ];
@@ -209,6 +240,11 @@ it('validates generated document selections at the request boundary', function (
                 AssistanceGeneratedDocument::RequestIntakeSheet->value,
             ],
         ], $request->rules())->fails())->toBeTrue();
+
+    expect(Validator::make([
+        ...$payload,
+        'cooldown_scope' => 'everybody',
+    ], $request->rules())->fails())->toBeTrue();
 });
 
 it('blocks a duplicate slug within the same municipality', function () {
@@ -472,6 +508,7 @@ it('rejects foreign custom document types during request validation', function (
         'min_amount' => 0,
         'max_amount' => 5000,
         'cooldown_months' => 3,
+        'cooldown_scope' => 'per_beneficiary',
         'is_active' => true,
         'documents' => [[
             'id' => $documentId,

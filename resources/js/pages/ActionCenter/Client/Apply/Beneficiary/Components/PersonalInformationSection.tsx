@@ -77,11 +77,7 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                     options={SEX_OPTIONS.map((s) => ({ value: s, label: s === 'male' ? 'Lalaki' : 'Babae' }))}
                 />
 
-                <DatePicker
-                    label="Araw ng Kapanganakan"
-                    value={data.birth_date}
-                    onChange={(dateValue) => setData('birth_date', dateValue)}
-                />
+                <DatePicker label="Araw ng Kapanganakan" value={data.birth_date} onChange={(dateValue) => setData('birth_date', dateValue)} />
             </div>
 
             {/* Religion + Educational attainment */}
@@ -94,6 +90,7 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                     onValueChange={(value) => setData('religion_id', value)}
                     error={errors.religion_id}
                     options={religions.map((r) => ({ value: r.id, label: r.name }))}
+                    contentClassName="max-h-60 overflow-y-auto"
                 />
 
                 <ShadcnSelectField
@@ -104,6 +101,7 @@ export function PersonalInformationSection({ data, setData, errors, religions, e
                     onValueChange={(value) => setData('educational_attainment', value)}
                     error={errors.educational_attainment}
                     options={educationalAttainment}
+                    contentClassName="max-h-60 overflow-y-auto"
                 />
             </div>
         </div>

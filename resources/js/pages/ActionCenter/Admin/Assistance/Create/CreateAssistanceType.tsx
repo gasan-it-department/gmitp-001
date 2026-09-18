@@ -21,6 +21,7 @@ export default function CreateAssistanceType({ documentTypes, generatedDocumentO
         max_amount: null,
         min_amount: null,
         cooldown_months: 0,
+        cooldown_scope: 'per_beneficiary',
         is_active: true,
         enabled_generated_documents: ['request_intake_sheet'],
         documents: [],

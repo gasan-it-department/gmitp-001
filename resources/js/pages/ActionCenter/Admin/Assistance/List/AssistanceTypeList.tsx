@@ -88,7 +88,8 @@ export default function AssistanceTypeList({ assistanceTypeList }: Props) {
                                     {type.cooldown_months > 0 && (
                                         <span className="flex items-center gap-1.5 rounded-md border border-gray-100 bg-gray-50 px-2 py-1.5">
                                             <CalendarClock className="h-3.5 w-3.5 text-blue-600" />
-                                            {type.cooldown_months} Month Cooldown
+                                            {type.cooldown_months} Month {type.cooldown_scope === 'per_household' ? 'Household' : 'Beneficiary'}{' '}
+                                            Cooldown
                                         </span>
                                     )}
                                 </div>

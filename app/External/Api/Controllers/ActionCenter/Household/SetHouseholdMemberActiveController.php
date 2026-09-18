@@ -20,15 +20,20 @@ class SetHouseholdMemberActiveController extends Controller
 {
     public function __construct(
         private readonly SetHouseholdMemberActiveAction $setActive,
-    ) {
-    }
+    ) {}
 
     public function __invoke(string $memberId, SetHouseholdMemberActiveRequest $request): RedirectResponse
     {
         try {
-            $isActive = $request->boolean('is_active');
+            $validated = $request->validated();
+            $isActive = (bool) $validated['is_active'];
 
-            $this->setActive->execute($memberId, $isActive, app('municipal_id'));
+            $this->setActive->execute(
+                memberId: $memberId,
+                isActive: $isActive,
+                municipalId: app('municipal_id'),
+                restoreRelationship: $validated['relationship'] ?? null,
+            );
 
             return back()->with(
                 'success',

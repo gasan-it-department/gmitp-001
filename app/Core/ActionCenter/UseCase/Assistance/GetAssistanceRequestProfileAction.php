@@ -17,6 +17,7 @@ class GetAssistanceRequestProfileAction
     public function __construct(
         private readonly FindCrossMunicipalityMatchesAction $findCrossMunicipalityMatches,
         private readonly RefreshAssistanceHouseholdAssessmentAction $refreshAssessment,
+        private readonly ResolveAssistanceRequestHouseholdAction $resolveRequestHousehold,
         private readonly AssistanceMswdVerificationService $mswdVerification,
         private readonly AssistanceCooldownService $cooldowns,
     ) {}
@@ -39,6 +40,7 @@ class GetAssistanceRequestProfileAction
             'documentChecks.checkedBy',
             'mswdVerifiedBy',
             'onBehalfHouseholdMember',
+            'household',
             // Live beneficiary — powers the cross-LGU warning AND the
             // beneficiary_number on the detail resource.
             'beneficiary.religion',
@@ -108,7 +110,7 @@ class GetAssistanceRequestProfileAction
             'request' => $assistanceRequest,
             'recentHistory' => $recentHistory,
             'activityLog' => $activityLog,
-            'householdMembers' => $householdMembers,
+            'requestHousehold' => $this->resolveRequestHousehold->execute($assistanceRequest, $householdMembers),
             'householdAssessmentPreview' => $this->refreshAssessment->preview($assistanceRequest, $householdMembers),
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
             'mswdVerification' => $this->mswdVerification->payload($assistanceRequest),

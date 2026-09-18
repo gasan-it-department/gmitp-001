@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Dto\Assistance;
 
+use App\Core\ActionCenter\Enums\AssistanceCooldownScope;
 use App\External\Api\Request\ActionCenter\StoreAssistanceTypeRequest;
 
 readonly class StoreAssistanceTypeDto
@@ -14,6 +15,7 @@ readonly class StoreAssistanceTypeDto
         public int $cooldownMonths,
         public bool $isActive,
         public array $documents = [],
+        public AssistanceCooldownScope $cooldownScope = AssistanceCooldownScope::Beneficiary,
         public ?array $enabledGeneratedDocuments = null,
     ) {}
 
@@ -29,6 +31,7 @@ readonly class StoreAssistanceTypeDto
             cooldownMonths: $validated['cooldown_months'],
             isActive: (bool) $validated['is_active'],
             documents: $validated['documents'] ?? [],
+            cooldownScope: AssistanceCooldownScope::from($validated['cooldown_scope']),
             enabledGeneratedDocuments: array_key_exists('enabled_generated_documents', $validated)
                 ? $validated['enabled_generated_documents']
                 : null,

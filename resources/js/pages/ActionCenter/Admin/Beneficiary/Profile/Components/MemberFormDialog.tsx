@@ -1,4 +1,3 @@
-import StoreAdminHouseholdMemberController from '@/actions/App/External/Api/Controllers/ActionCenter/Household/StoreAdminHouseholdMemberController';
 import UpdateHouseholdMemberController from '@/actions/App/External/Api/Controllers/ActionCenter/Household/UpdateHouseholdMemberController';
 import { FormInput } from '@/components/FormInputField';
 import { DatePicker } from '@/components/Shared/DatePicker';
@@ -61,7 +60,7 @@ interface Props {
     open: boolean;
     onClose: () => void;
     mode: 'add' | 'edit';
-    beneficiaryId: string;
+    storeUrl: string;
     /** Required in edit mode — the row being corrected. */
     member?: HouseholdMemberRow;
     religions: ReligionOption[];
@@ -83,7 +82,7 @@ export default function MemberFormDialog({
     open,
     onClose,
     mode,
-    beneficiaryId,
+    storeUrl,
     member,
     religions,
     civilStatus,
@@ -102,10 +101,11 @@ export default function MemberFormDialog({
             setData(memberToFormData(member));
             clearErrors();
         }
-    }, [open, member?.id]);
+    }, [clearErrors, member, open, setData]);
 
     const serverError = (errors as Record<string, string | undefined>).member;
     const isEditingVerifiedMember = mode === 'edit' && member?.is_verified_dependent === true;
+    const isLinkedMember = mode === 'edit' && member?.beneficiary_id !== null && member?.beneficiary_id !== undefined;
 
     const handleClose = () => {
         clearErrors();
@@ -125,7 +125,7 @@ export default function MemberFormDialog({
         } as const;
 
         if (mode === 'add') {
-            post(StoreAdminHouseholdMemberController.url({ beneficiaryId }), options);
+            post(storeUrl, options);
         } else if (member) {
             put(UpdateHouseholdMemberController.url({ memberId: member.id }), options);
         }
@@ -133,20 +133,26 @@ export default function MemberFormDialog({
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
-        submitWithVerification(false);
+        submitWithVerification(isLinkedMember ? (member?.is_verified_dependent ?? false) : false);
     };
 
-    const canSubmit = data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing;
+    const canSubmit = isLinkedMember
+        ? data.relationship.length > 0 && !processing
+        : data.first_name.trim().length > 0 && data.last_name.trim().length > 0 && data.relationship.length > 0 && !processing;
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <DialogTitle className="text-xl text-slate-900">{mode === 'add' ? 'Add household member' : 'Edit household member'}</DialogTitle>
+                    <DialogTitle className="text-xl text-slate-900">
+                        {mode === 'add' ? 'Add household member' : isLinkedMember ? 'Update household role' : 'Edit household member'}
+                    </DialogTitle>
                     <DialogDescription className="text-slate-500">
                         {mode === 'add'
                             ? 'Add another person who lives in this household. The change is logged.'
-                            : 'Correct this household member’s details. The change is logged.'}
+                            : isLinkedMember
+                              ? 'Personal details come from the linked beneficiary profile. Only this person’s household role can be changed here.'
+                              : 'Correct this household member’s details. The change is logged.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -157,7 +163,7 @@ export default function MemberFormDialog({
                     </div>
                 )}
 
-                {isEditingVerifiedMember && (
+                {isEditingVerifiedMember && !isLinkedMember && (
                     <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>Name, birth date, sex, suffix, or relationship changes will return this member to pending verification.</span>
@@ -165,129 +171,179 @@ export default function MemberFormDialog({
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5 pt-1">
-                    {/* Name row */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <FormInput
-                            id="m_first_name"
-                            label="First Name"
-                            required
-                            value={data.first_name}
-                            onChange={(e) => setData('first_name', e.target.value)}
-                            error={errors.first_name}
-                        />
-                        <FormInput
-                            id="m_middle_name"
-                            label="Middle Name"
-                            value={data.middle_name}
-                            onChange={(e) => setData('middle_name', e.target.value)}
-                            error={errors.middle_name}
-                        />
-                        <FormInput
-                            id="m_last_name"
-                            label="Last Name"
-                            required
-                            value={data.last_name}
-                            onChange={(e) => setData('last_name', e.target.value)}
-                            error={errors.last_name}
-                        />
-                    </div>
+                    {isLinkedMember ? (
+                        <div className="space-y-4">
+                            <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3">
+                                <p className="text-sm font-semibold text-blue-950">
+                                    {member?.first_name} {member?.middle_name ? `${member.middle_name} ` : ''}
+                                    {member?.last_name} {member?.suffix}
+                                </p>
+                                <p className="mt-1 text-xs leading-5 text-blue-800">
+                                    Name, birth date, sex, civil status, education, religion, occupation, and income are managed from the linked
+                                    beneficiary profile.
+                                </p>
+                            </div>
+                            <ShadcnSelectField
+                                id="m_relationship"
+                                label="Relationship to household head"
+                                required
+                                placeholder="Select…"
+                                value={data.relationship}
+                                onValueChange={(value) => setData('relationship', value)}
+                                error={errors.relationship}
+                                options={relationships.map((r) => ({ value: r.value, label: r.label }))}
+                                contentClassName="max-h-64"
+                            />
+                            {data.relationship !== member?.relationship && member?.is_verified_dependent && (
+                                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                    <span>Changing the household relationship returns this member to pending dependent verification.</span>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <FormInput
+                                    id="m_first_name"
+                                    label="First Name"
+                                    required
+                                    value={data.first_name}
+                                    onChange={(e) => setData('first_name', e.target.value)}
+                                    error={errors.first_name}
+                                />
+                                <FormInput
+                                    id="m_middle_name"
+                                    label="Middle Name"
+                                    value={data.middle_name}
+                                    onChange={(e) => setData('middle_name', e.target.value)}
+                                    error={errors.middle_name}
+                                />
+                                <FormInput
+                                    id="m_last_name"
+                                    label="Last Name"
+                                    required
+                                    value={data.last_name}
+                                    onChange={(e) => setData('last_name', e.target.value)}
+                                    error={errors.last_name}
+                                />
+                            </div>
 
-                    {/* Suffix + Relationship + Sex */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <ShadcnSelectField
-                            id="m_suffix"
-                            label="Suffix"
-                            placeholder="None"
-                            value={data.suffix}
-                            onValueChange={(value) => setData('suffix', value === 'none' ? '' : value)}
-                            error={errors.suffix}
-                            options={[{ value: 'none', label: 'None' }, ...SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))]}
-                        />
-                        <ShadcnSelectField
-                            id="m_relationship"
-                            label="Relationship"
-                            required
-                            placeholder="Select…"
-                            value={data.relationship}
-                            onValueChange={(value) => setData('relationship', value)}
-                            error={errors.relationship}
-                            options={relationships.map((r) => ({ value: r.value, label: r.label }))}
-                        />
-                        <ShadcnSelectField
-                            id="m_sex"
-                            label="Sex"
-                            placeholder="Select…"
-                            value={data.sex}
-                            onValueChange={(value) => setData('sex', value)}
-                            error={errors.sex}
-                            options={SEX_OPTIONS.map((s) => ({ value: s, label: s }))}
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <ShadcnSelectField
+                                    id="m_suffix"
+                                    label="Suffix"
+                                    placeholder="None"
+                                    value={data.suffix}
+                                    onValueChange={(value) => setData('suffix', value === 'none' ? '' : value)}
+                                    error={errors.suffix}
+                                    options={[{ value: 'none', label: 'None' }, ...SUFFIX_OPTIONS.map((s) => ({ value: s, label: s }))]}
+                                />
+                                <ShadcnSelectField
+                                    id="m_relationship"
+                                    label="Relationship"
+                                    required
+                                    placeholder="Select…"
+                                    value={data.relationship}
+                                    onValueChange={(value) => setData('relationship', value)}
+                                    error={errors.relationship}
+                                    options={relationships.map((r) => ({ value: r.value, label: r.label }))}
+                                />
+                                <ShadcnSelectField
+                                    id="m_sex"
+                                    label="Sex"
+                                    placeholder="Select…"
+                                    value={data.sex}
+                                    onValueChange={(value) => setData('sex', value)}
+                                    error={errors.sex}
+                                    options={SEX_OPTIONS.map((s) => ({ value: s, label: s }))}
+                                />
+                            </div>
 
-                    {/* Birth date + Civil status */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <DatePicker label="Date of Birth" value={data.birth_date} onChange={(v) => setData('birth_date', v)} />
-                        <ShadcnSelectField
-                            id="m_civil_status"
-                            label="Civil Status"
-                            placeholder="Select…"
-                            value={data.civil_status}
-                            onValueChange={(value) => setData('civil_status', value)}
-                            error={errors.civil_status}
-                            options={civilStatus}
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <DatePicker label="Date of Birth" value={data.birth_date} onChange={(v) => setData('birth_date', v)} />
+                                <ShadcnSelectField
+                                    id="m_civil_status"
+                                    label="Civil Status"
+                                    placeholder="Select…"
+                                    value={data.civil_status}
+                                    onValueChange={(value) => setData('civil_status', value)}
+                                    error={errors.civil_status}
+                                    options={civilStatus}
+                                />
+                            </div>
 
-                    {/* Educational attainment + Religion */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <ShadcnSelectField
-                            id="m_educational_attainment"
-                            label="Educational Attainment"
-                            placeholder="Select…"
-                            value={data.educational_attainment}
-                            onValueChange={(value) => setData('educational_attainment', value)}
-                            error={errors.educational_attainment}
-                            options={educationalAttainment}
-                        />
-                        <ShadcnSelectField
-                            id="m_religion_id"
-                            label="Religion"
-                            placeholder="Prefer not to say"
-                            value={data.religion_id}
-                            onValueChange={(value) => setData('religion_id', value)}
-                            error={errors.religion_id}
-                            options={religions.map((r) => ({ value: r.id, label: r.name }))}
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <ShadcnSelectField
+                                    id="m_educational_attainment"
+                                    label="Educational Attainment"
+                                    placeholder="Select…"
+                                    value={data.educational_attainment}
+                                    onValueChange={(value) => setData('educational_attainment', value)}
+                                    error={errors.educational_attainment}
+                                    options={educationalAttainment}
+                                />
+                                <ShadcnSelectField
+                                    id="m_religion_id"
+                                    label="Religion"
+                                    placeholder="Prefer not to say"
+                                    value={data.religion_id}
+                                    onValueChange={(value) => setData('religion_id', value)}
+                                    error={errors.religion_id}
+                                    options={religions.map((r) => ({ value: r.id, label: r.name }))}
+                                />
+                            </div>
 
-                    {/* Occupation + Income */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormInput
-                            id="m_occupation"
-                            label="Occupation"
-                            value={data.occupation}
-                            onChange={(e) => setData('occupation', e.target.value)}
-                            placeholder='e.g. Farmer, "None"'
-                            error={errors.occupation}
-                        />
-                        <FormInput
-                            id="m_monthly_income"
-                            label="Monthly Income (₱)"
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={data.monthly_income}
-                            onChange={(e) => setData('monthly_income', e.target.value)}
-                            placeholder="0.00"
-                            error={errors.monthly_income}
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <FormInput
+                                    id="m_occupation"
+                                    label="Occupation"
+                                    value={data.occupation}
+                                    onChange={(e) => setData('occupation', e.target.value)}
+                                    placeholder='e.g. Farmer, "None"'
+                                    error={errors.occupation}
+                                />
+                                <FormInput
+                                    id="m_monthly_income"
+                                    label="Monthly Income (₱)"
+                                    type="number"
+                                    min={0}
+                                    step={0.01}
+                                    value={data.monthly_income}
+                                    onChange={(e) => setData('monthly_income', e.target.value)}
+                                    placeholder="0.00"
+                                    error={errors.monthly_income}
+                                />
+                            </div>
+                        </>
+                    )}
 
                     <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <Button type="button" variant="ghost" onClick={handleClose} className="text-slate-500 hover:bg-slate-100">
                             Cancel
                         </Button>
-                        {isEditingVerifiedMember ? (
+                        {isLinkedMember && isEditingVerifiedMember ? (
+                            <Button type="submit" disabled={!canSubmit}>
+                                {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save household role
+                            </Button>
+                        ) : isLinkedMember ? (
+                            <>
+                                <Button type="submit" variant="outline" disabled={!canSubmit}>
+                                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save pending
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => submitWithVerification(true)}
+                                    disabled={!canSubmit}
+                                    className="bg-emerald-700 text-white hover:bg-emerald-800"
+                                >
+                                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save and verify role
+                                </Button>
+                            </>
+                        ) : isEditingVerifiedMember ? (
                             <Button type="submit" disabled={!canSubmit}>
                                 {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Save changes

@@ -35,9 +35,13 @@ use App\External\Api\Controllers\ActionCenter\Beneficiary\StoreProfileSetupContr
 use App\External\Api\Controllers\ActionCenter\Beneficiary\UpdateBeneficiaryProfileController;
 use App\External\Api\Controllers\ActionCenter\Household\ChangeHouseholdHeadController;
 use App\External\Api\Controllers\ActionCenter\Household\DeclareHouseholdMemberForAssistanceController;
+use App\External\Api\Controllers\ActionCenter\Household\GetHouseholdTransferContextController;
 use App\External\Api\Controllers\ActionCenter\Household\LinkHouseholdMemberToBeneficiaryController;
+use App\External\Api\Controllers\ActionCenter\Household\SearchHouseholdBeneficiaryCandidatesController;
 use App\External\Api\Controllers\ActionCenter\Household\SetHouseholdMemberActiveController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreAdminHouseholdMemberController;
+use App\External\Api\Controllers\ActionCenter\Household\StoreHouseholdBeneficiaryController;
+use App\External\Api\Controllers\ActionCenter\Household\StoreHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Household\UnlinkHouseholdMemberBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
@@ -68,6 +72,8 @@ use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowFinancialDocume
 use App\External\Web\Controllers\ActionCenter\Admin\Document\ShowObligationRequestGeneratorController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\EditAssistanceTypeController;
+use App\External\Web\Controllers\ActionCenter\Admin\Household\ShowCreateHouseholdBeneficiaryController;
+use App\External\Web\Controllers\ActionCenter\Admin\Household\ShowHouseholdProfileController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceRequestController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListAssistanceTypeController;
 use App\External\Web\Controllers\ActionCenter\Admin\ListMyAssistanceRequestController;
@@ -134,6 +140,14 @@ Route::prefix('{municipality}/action-center')
                 Route::get('beneficiary/{beneficiaryId}/profile', ShowBeneficiaryProfileController::class)
                     ->middleware('permission:action_center.beneficiaries.view')
                     ->name('beneficiary.profile');
+
+                Route::get('households/{householdId}', ShowHouseholdProfileController::class)
+                    ->middleware('permission:action_center.beneficiaries.view')
+                    ->name('household.profile');
+
+                Route::get('households/{householdId}/beneficiaries/create', ShowCreateHouseholdBeneficiaryController::class)
+                    ->middleware('permission:action_center.beneficiaries.manage')
+                    ->name('household.beneficiaries.create');
 
                 // Admin-only "correct this beneficiary's profile" form — display
                 // only. Identity is pre-filled from the LIVE record; the POST goes
@@ -570,6 +584,24 @@ Route::prefix('/api/action-center')
                 Route::post('/beneficiary/{beneficiaryId}/household/members', StoreAdminHouseholdMemberController::class)
                     ->middleware('permission:action_center.beneficiaries.manage')
                     ->name('household.members.admin-store');
+
+                Route::post('/households/{householdId}/members', StoreHouseholdMemberController::class)
+                    ->middleware('permission:action_center.beneficiaries.manage')
+                    ->name('household.members.store-admin');
+
+                Route::post('/households/{householdId}/beneficiaries', StoreHouseholdBeneficiaryController::class)
+                    ->middleware('permission:action_center.beneficiaries.manage')
+                    ->name('household.beneficiaries.store');
+
+                Route::get('/households/{householdId}/beneficiary-candidates', SearchHouseholdBeneficiaryCandidatesController::class)
+                    ->middleware('permission:action_center.beneficiaries.correct')
+                    ->name('household.beneficiary-candidates.index');
+
+                Route::get(
+                    '/households/{householdId}/beneficiary-candidates/{beneficiaryId}/transfer-context',
+                    GetHouseholdTransferContextController::class,
+                )->middleware('permission:action_center.beneficiaries.correct')
+                    ->name('household.beneficiary-candidates.transfer-context');
 
                 // Link, don't duplicate: reconcile a roster row to an existing
                 // beneficiary (by beneficiary number) without moving that

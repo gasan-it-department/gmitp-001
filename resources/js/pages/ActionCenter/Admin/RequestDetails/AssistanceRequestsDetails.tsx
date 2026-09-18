@@ -7,6 +7,7 @@ import ShowDisbursementVoucherGeneratorController from '@/actions/App/External/W
 import ShowFinancialDocumentPacketGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowFinancialDocumentPacketGeneratorController';
 import ShowObligationRequestGeneratorController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Document/ShowObligationRequestGeneratorController';
 import EditAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/EditAssistanceRequestController';
+import ShowHouseholdProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowHouseholdProfileController';
 import ListAssistanceRequestController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/ListAssistanceRequestController';
 import { ContactPhoneActions } from '@/components/ActionCenter/ContactPhoneActions';
 import { CrossMunicipalityWarning, type CrossMunicipalityMatch } from '@/components/Shared/CrossMunicipalityWarning';
@@ -150,20 +151,28 @@ interface OnBehalfBlock {
     recipient_id_exception_reason: string | null;
 }
 
-interface HouseholdMemberBlock {
-    id: string;
-    first_name: string;
-    last_name: string;
-    middle_name: string | null;
-    suffix: string | null;
-    relationship: string;
-    relationship_label: string | null;
+interface RequestHouseholdMember {
+    household_member_id: string | null;
+    beneficiary_id: string | null;
+    full_name: string;
+    relationship: string | null;
     birth_date: string | null;
-    age: number | null;
+    age_at_filing: number | null;
     sex: string | null;
-    civil_status: string | null;
+    educational_attainment: string | null;
     occupation: string | null;
-    monthly_income: number;
+    monthly_income: number | null;
+    is_household_head: boolean;
+}
+
+interface RequestHousehold {
+    source: 'assessment' | 'filing' | 'legacy_current_fallback';
+    captured_at: string | null;
+    household_id: string | null;
+    household_code: string | null;
+    member_count: number;
+    uses_current_fallback: boolean;
+    members: RequestHouseholdMember[];
 }
 
 interface AssistanceRequestDetail {
@@ -229,7 +238,7 @@ interface Props {
     request: { data: AssistanceRequestDetail } | AssistanceRequestDetail;
     recentHistory: { data: RecentHistoryRow[] };
     activityLog: { data: ActivityEntry[] };
-    householdMembers: { data: HouseholdMemberBlock[] }; // 🚀 Injected family structure
+    requestHousehold: { data: RequestHousehold } | RequestHousehold;
     householdAssessmentPreview: HouseholdAssessmentPreview;
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
     mswdVerification: AssistanceMswdVerification;
@@ -255,12 +264,28 @@ const STATUS_BADGE: Record<string, string> = {
 const humanizeStatus = (s: string) => (s === 'approved' ? 'Amount Approved' : s.replace(/_/g, ' '));
 const statusClass = (s: string): string => STATUS_BADGE[s] ?? 'bg-gray-100 text-gray-700 ring-1 ring-gray-200';
 const IDENTITY_DOCUMENT_KEYS = new Set(['valid_id_front', 'valid_id_back', 'recipient_valid_id_front', 'recipient_valid_id_back']);
+const REQUEST_HOUSEHOLD_SOURCE = {
+    assessment: {
+        label: 'MSWD Assessment',
+        className: 'border-sky-200 bg-sky-50 text-sky-800',
+    },
+    filing: {
+        label: 'Household at Filing',
+        className: 'border-slate-200 bg-slate-50 text-slate-700',
+    },
+    legacy_current_fallback: {
+        label: 'Legacy Current-Household Fallback',
+        className: 'border-amber-200 bg-amber-50 text-amber-800',
+    },
+} as const;
+
+const humanizeHouseholdValue = (value: string | null) => (value ? value.replace(/_/g, ' ') : '—');
 
 export default function AssistanceRequestsDetails({
     request,
     recentHistory,
     activityLog,
-    householdMembers,
+    requestHousehold,
     householdAssessmentPreview,
     crossMunicipalityMatches,
     mswdVerification,
@@ -276,7 +301,8 @@ export default function AssistanceRequestsDetails({
     const detail: AssistanceRequestDetail = 'data' in request ? request.data : request;
     const recentHistoryData = recentHistory.data;
     const activityLogData = activityLog.data;
-    const householdMembersData = householdMembers.data;
+    const requestHouseholdData: RequestHousehold = 'data' in requestHousehold ? requestHousehold.data : requestHousehold;
+    const requestHouseholdMembers = requestHouseholdData.members;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const isMine = detail.reviewed_by?.id === auth.user?.id;
     const canViewBeneficiaries = can('action_center.beneficiaries.view');
@@ -418,9 +444,9 @@ export default function AssistanceRequestsDetails({
         municipality: currentMunicipality.slug,
         assistanceRequest: detail.id,
     });
-    const manageInterviewHouseholdUrl = ShowBeneficiaryProfileController.url({
+    const manageInterviewHouseholdUrl = ShowHouseholdProfileController.url({
         municipality: currentMunicipality.slug,
-        beneficiaryId: detail.beneficiary_id,
+        householdId: detail.household_id,
     });
 
     const handleAction = (label: string) => () => {
@@ -491,7 +517,8 @@ export default function AssistanceRequestsDetails({
     };
 
     // Calculate total family economics for validation
-    const totalHouseholdIncome = householdMembersData.reduce((sum, m) => sum + m.monthly_income, 0);
+    const totalHouseholdIncome = requestHouseholdMembers.reduce((sum, member) => sum + (member.monthly_income ?? 0), 0);
+    const requestHouseholdSource = REQUEST_HOUSEHOLD_SOURCE[requestHouseholdData.source];
 
     return (
         <>
@@ -732,7 +759,7 @@ export default function AssistanceRequestsDetails({
                                         <span className="sm:hidden">Family</span>
                                         <span className="hidden sm:inline">Household</span>
                                         <Badge variant="secondary" className="h-4 bg-slate-300 px-1 text-[10px]">
-                                            {householdMembersData.length}
+                                            {requestHouseholdData.member_count}
                                         </Badge>
                                     </TabsTrigger>
                                     <TabsTrigger value="documents" className="min-w-0 px-1 text-[11px] font-medium sm:px-2 sm:text-xs">
@@ -870,13 +897,28 @@ export default function AssistanceRequestsDetails({
                                     </Card>
                                 </TabsContent>
 
-                                {/* TAB 2: HOUSEHOLD COMPOSITION (RESILIENT SIDE-BY-SIDE INTEGRATION) */}
+                                {/* TAB 2: HOUSEHOLD SAVED FOR THIS REQUEST */}
                                 <TabsContent value="household" className="outline-none">
                                     <Card>
                                         <CardHeader className="flex flex-col items-start gap-2 space-y-0 p-4 pb-3 sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pb-4">
-                                            <CardTitle className="flex items-center gap-2 text-base">
-                                                <Users className="h-4 w-4 text-slate-600" /> Family Composition
-                                            </CardTitle>
+                                            <div className="space-y-2">
+                                                <CardTitle className="flex items-center gap-2 text-base">
+                                                    <Users className="h-4 w-4 text-slate-600" /> Household Used for This Request
+                                                </CardTitle>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Badge variant="outline" className={requestHouseholdSource.className}>
+                                                        {requestHouseholdSource.label}
+                                                    </Badge>
+                                                    {requestHouseholdData.captured_at && (
+                                                        <span className="text-xs text-slate-500">
+                                                            Captured {utils.formatToReadableDate(requestHouseholdData.captured_at)}
+                                                        </span>
+                                                    )}
+                                                    {requestHouseholdData.household_code && (
+                                                        <span className="text-xs text-slate-400">{requestHouseholdData.household_code}</span>
+                                                    )}
+                                                </div>
+                                            </div>
                                             <div className="flex w-full flex-col items-start gap-3 sm:w-auto sm:items-end">
                                                 <div className="text-left sm:text-right">
                                                     <span className="block text-[10px] font-bold tracking-widest text-slate-400 uppercase">
@@ -934,55 +976,72 @@ export default function AssistanceRequestsDetails({
                                             </div>
                                         </CardHeader>
                                         <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-                                            {detail.household_assessment && (
-                                                <div className="mb-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-                                                    <span className="font-semibold">MSWD interview assessment:</span>{' '}
-                                                    {detail.household_assessment.member_count} active household members captured
-                                                    {detail.household_assessment.captured_at
-                                                        ? ` on ${utils.formatToReadableDate(detail.household_assessment.captured_at)}`
-                                                        : ''}
-                                                    . The original filing snapshot remains unchanged.
-                                                </div>
-                                            )}
-                                            {!detail.household_assessment && canRefreshHouseholdAssessment && (
+                                            {requestHouseholdData.uses_current_fallback && (
                                                 <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                                                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                                                     <p>
-                                                        No MSWD interview household has been captured yet. Review the live household, then use{' '}
-                                                        <span className="font-semibold">Capture household assessment</span> before preparing the
-                                                        intake sheet.
+                                                        This legacy request has no saved filing or MSWD assessment roster. The current beneficiary
+                                                        household is shown only as a fallback and must not be treated as historical request data.
                                                     </p>
                                                 </div>
                                             )}
-                                            {householdMembersData.length === 0 ? (
-                                                <p className="py-4 text-center text-sm text-slate-400 italic">No family profiles declared.</p>
+                                            {householdAssessmentHasChanges && (
+                                                <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                                    <ClockArrowUp className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                                                    <p>
+                                                        <span className="font-semibold">Current profile changes not yet synchronized.</span>{' '}
+                                                        {householdAssessmentPreview.added.length} added, {householdAssessmentPreview.removed.length}{' '}
+                                                        removed, and {householdAssessmentPreview.changed.length} changed. The roster below and the
+                                                        Intake Sheet remain unchanged until Sync Household is confirmed.
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {requestHouseholdData.source === 'filing' &&
+                                                !detail.household_assessment &&
+                                                canRefreshHouseholdAssessment && (
+                                                    <div className="mb-4 flex items-start gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                                                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+                                                        <p>
+                                                            This is the household saved when the request was filed. Use{' '}
+                                                            <span className="font-semibold">Capture household assessment</span> to confirm the current
+                                                            interviewed roster for the Intake Sheet.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            {requestHouseholdMembers.length === 0 ? (
+                                                <p className="py-4 text-center text-sm text-slate-400 italic">
+                                                    No household members were saved for this request.
+                                                </p>
                                             ) : (
                                                 <div>
                                                     <div className="space-y-2 md:hidden">
-                                                        {householdMembersData.map((member) => (
-                                                            <div key={member.id} className="rounded-md border border-slate-200 bg-white p-3">
-                                                                <p className="text-sm font-semibold break-words text-slate-900 capitalize">
-                                                                    {member.first_name} {member.middle_name ? `${member.middle_name[0]}. ` : ''}
-                                                                    {member.last_name} {member.suffix}
-                                                                </p>
+                                                        {requestHouseholdMembers.map((member, index) => (
+                                                            <div
+                                                                key={member.household_member_id ?? `${member.full_name}-${index}`}
+                                                                className="rounded-md border border-slate-200 bg-white p-3"
+                                                            >
+                                                                <p className="text-sm font-semibold break-words text-slate-900">{member.full_name}</p>
                                                                 <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
                                                                     <MobileDetail
                                                                         label="Relationship"
-                                                                        value={member.relationship_label || member.relationship}
-                                                                    />
-                                                                    <MobileDetail
-                                                                        label="Age / Sex"
-                                                                        value={`${member.age ?? '—'} yrs / ${member.sex || '—'}`}
-                                                                    />
-                                                                    <MobileDetail
-                                                                        label="Occupation"
-                                                                        value={member.occupation?.toLowerCase() || 'none'}
+                                                                        value={humanizeHouseholdValue(member.relationship)}
                                                                         capitalize
                                                                     />
                                                                     <MobileDetail
+                                                                        label="Age at filing / Sex"
+                                                                        value={`${member.age_at_filing ?? '—'} yrs / ${humanizeHouseholdValue(member.sex)}`}
+                                                                        capitalize
+                                                                    />
+                                                                    <MobileDetail
+                                                                        label="Education"
+                                                                        value={humanizeHouseholdValue(member.educational_attainment)}
+                                                                        capitalize
+                                                                    />
+                                                                    <MobileDetail label="Occupation" value={member.occupation || '—'} capitalize />
+                                                                    <MobileDetail
                                                                         label="Monthly income"
                                                                         value={
-                                                                            member.monthly_income > 0
+                                                                            member.monthly_income !== null
                                                                                 ? utils.formatCurrency(member.monthly_income)
                                                                                 : '—'
                                                                         }
@@ -1000,29 +1059,34 @@ export default function AssistanceRequestsDetails({
                                                                     <TableHead className="text-xs">Name</TableHead>
                                                                     <TableHead className="text-xs">Relationship</TableHead>
                                                                     <TableHead className="text-xs">Age/Sex</TableHead>
+                                                                    <TableHead className="text-xs">Education</TableHead>
                                                                     <TableHead className="text-xs">Occupation</TableHead>
                                                                     <TableHead className="text-right text-xs">Income</TableHead>
                                                                 </TableRow>
                                                             </TableHeader>
                                                             <TableBody>
-                                                                {householdMembersData.map((member) => (
-                                                                    <TableRow key={member.id} className="hover:bg-slate-50/50">
-                                                                        <TableCell className="text-xs font-medium text-slate-900 capitalize">
-                                                                            {member.first_name}{' '}
-                                                                            {member.middle_name ? `${member.middle_name[0]}. ` : ''}{' '}
-                                                                            {member.last_name} {member.suffix}
+                                                                {requestHouseholdMembers.map((member, index) => (
+                                                                    <TableRow
+                                                                        key={member.household_member_id ?? `${member.full_name}-${index}`}
+                                                                        className="hover:bg-slate-50/50"
+                                                                    >
+                                                                        <TableCell className="text-xs font-medium text-slate-900">
+                                                                            {member.full_name}
                                                                         </TableCell>
-                                                                        <TableCell className="text-xs text-slate-600">
-                                                                            {member.relationship_label || member.relationship}
+                                                                        <TableCell className="text-xs text-slate-600 capitalize">
+                                                                            {humanizeHouseholdValue(member.relationship)}
                                                                         </TableCell>
-                                                                        <TableCell className="text-xs text-slate-600">
-                                                                            {member.age ?? '—'} yrs / {member.sex || '—'}
+                                                                        <TableCell className="text-xs text-slate-600 capitalize">
+                                                                            {member.age_at_filing ?? '—'} yrs / {humanizeHouseholdValue(member.sex)}
+                                                                        </TableCell>
+                                                                        <TableCell className="max-w-[140px] text-xs text-slate-500 capitalize">
+                                                                            {humanizeHouseholdValue(member.educational_attainment)}
                                                                         </TableCell>
                                                                         <TableCell className="max-w-[120px] truncate text-xs text-slate-500 capitalize">
-                                                                            {member.occupation?.toLowerCase() || 'none'}
+                                                                            {member.occupation || '—'}
                                                                         </TableCell>
                                                                         <TableCell className="text-right text-xs font-semibold text-slate-700">
-                                                                            {member.monthly_income > 0
+                                                                            {member.monthly_income !== null
                                                                                 ? utils.formatCurrency(member.monthly_income)
                                                                                 : '—'}
                                                                         </TableCell>
