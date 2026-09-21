@@ -224,7 +224,7 @@
 
             <p class="office">Municipal Social Welfare and Development Office</p>
 
-            <div class="document-date">{{ $data->submittedAt->format('F j, Y') }}</div>
+            <div class="document-date"></div>
 
             <h1 class="title-header">ACKNOWLEDGEMENT RECEIPT</h1>
 
