@@ -20,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/Core/Hooks/Shared/usePermissions';
 import {
+    AssistanceClaimLocation,
+    AssistanceDisbursement,
     AssistanceDocumentCheck,
     AssistanceGeneratedDocument,
     AssistanceMswdVerification,
@@ -70,8 +72,10 @@ import AuthorizeCooldownExceptionDialog from './Components/AuthorizeCooldownExce
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
 import CorrectApprovedAssistanceAmountDialog from './Components/CorrectApprovedAssistanceAmountDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
+import DisbursementPanel from './Components/DisbursementPanel';
 import MswdDocuments from './Components/MswdDocuments';
 import MswdVerificationBadge from './Components/MswdVerificationBadge';
+import PrepareDisbursementDialog from './Components/PrepareDisbursementDialog';
 import RejectRequestDialog from './Components/RejectRequestDialog';
 import ReleaseRequestDialog from './Components/ReleaseRequestDialog';
 import ReplaceAdditionalDocumentDialog from './Components/ReplaceAdditionalDocumentDialog';
@@ -246,6 +250,8 @@ interface Props {
     presentedCopyOptions: PresentedCopyOption[];
     mswdReviewerOptions: AssistanceReviewActor[];
     cooldownAdvisory: CooldownAdvisory;
+    disbursements: { data: AssistanceDisbursement[] };
+    claimLocations: AssistanceClaimLocation[];
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -293,6 +299,8 @@ export default function AssistanceRequestsDetails({
     presentedCopyOptions,
     mswdReviewerOptions,
     cooldownAdvisory,
+    disbursements,
+    claimLocations,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const { auth } = usePage<SharedData>().props;
@@ -304,6 +312,9 @@ export default function AssistanceRequestsDetails({
     const requestHouseholdData: RequestHousehold = 'data' in requestHousehold ? requestHousehold.data : requestHousehold;
     const requestHouseholdMembers = requestHouseholdData.members;
     const crossMatches = crossMunicipalityMatches?.data ?? [];
+    const disbursementRows = disbursements?.data ?? [];
+    const activeDisbursement = disbursementRows.find((item) => item.status === 'preparing' || item.status === 'ready') ?? null;
+    const activeDisbursementDraft = activeDisbursement?.status === 'preparing' ? activeDisbursement : null;
     const isMine = detail.reviewed_by?.id === auth.user?.id;
     const canViewBeneficiaries = can('action_center.beneficiaries.view');
     const canManageBeneficiaries = can('action_center.beneficiaries.manage');
@@ -312,6 +323,7 @@ export default function AssistanceRequestsDetails({
     const canVerifyRequests = can('action_center.requests.verify');
     const canDecideRequests = can('action_center.requests.decide');
     const canReleaseRequests = can('action_center.requests.release');
+    const canDisburseRequests = can('action_center.requests.disburse');
     const canCorrectRequests = can('action_center.requests.correct');
     const [adminNote, setAdminNote] = useState<string>('');
     const [isApproveOpen, setIsApproveOpen] = useState(false);
@@ -319,6 +331,8 @@ export default function AssistanceRequestsDetails({
     const [isCancelApprovedOpen, setIsCancelApprovedOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
     const [isReleaseOpen, setIsReleaseOpen] = useState(false);
+    const [isPrepareDisbursementOpen, setIsPrepareDisbursementOpen] = useState(false);
+    const [releaseDisbursement, setReleaseDisbursement] = useState<AssistanceDisbursement | null>(null);
     const [isCooldownExceptionOpen, setIsCooldownExceptionOpen] = useState(false);
     const [isMissingDateCorrectionOpen, setIsMissingDateCorrectionOpen] = useState(false);
     const [isProfileCorrectionOpen, setIsProfileCorrectionOpen] = useState(false);
@@ -354,7 +368,8 @@ export default function AssistanceRequestsDetails({
         detail.profile_correction?.has_difference === true &&
         detail.profile_correction.identity_verified &&
         !detail.has_release_artifacts &&
-        profileCorrectionAllowedByStatus;
+        profileCorrectionAllowedByStatus &&
+        activeDisbursement === null;
     const canUploadRequestDocuments =
         (canIntakeRequests || canProcessRequests) &&
         ['pending', 'under_review', 'needs_correction'].includes(mswdVerification.status ?? 'pending') &&
@@ -365,9 +380,14 @@ export default function AssistanceRequestsDetails({
         !detail.has_release_artifacts &&
         isMine &&
         canProcessRequests &&
-        !verificationIsComplete;
+        !verificationIsComplete &&
+        activeDisbursement === null;
     const canCorrectCompletedHousehold =
-        ['under_review', 'approved'].includes(detail.status) && !detail.has_release_artifacts && verificationIsComplete && canCorrectRequests;
+        ['under_review', 'approved'].includes(detail.status) &&
+        !detail.has_release_artifacts &&
+        verificationIsComplete &&
+        canCorrectRequests &&
+        activeDisbursement === null;
     const canRefreshHouseholdAssessment = canRefreshAssignedHousehold || canCorrectCompletedHousehold;
     const householdAssessmentHasChanges =
         householdAssessmentPreview.added.length > 0 || householdAssessmentPreview.removed.length > 0 || householdAssessmentPreview.changed.length > 0;
@@ -379,9 +399,16 @@ export default function AssistanceRequestsDetails({
         requiresDateOfDeath &&
         detail.on_behalf !== null &&
         !detail.filed_for_self &&
-        !detail.on_behalf.date_of_death;
+        !detail.on_behalf.date_of_death &&
+        activeDisbursement === null;
     const canCorrectApprovedAmount =
-        canDecideRequests && canCorrectRequests && detail.status === 'approved' && detail.amount_approved !== null && !detail.has_release_artifacts;
+        canDecideRequests &&
+        canCorrectRequests &&
+        detail.status === 'approved' &&
+        detail.amount_approved !== null &&
+        !detail.has_release_artifacts &&
+        activeDisbursement === null;
+    const canCancelApprovedRequest = canDecideRequests && activeDisbursement === null;
     const canAuthorizeCooldownException =
         canDecideRequests &&
         detail.status === 'approved' &&
@@ -396,13 +423,12 @@ export default function AssistanceRequestsDetails({
     const generatorIsEnabled = (document: AssistanceGeneratedDocument) => enabledGeneratedDocuments.has(document);
     const verificationAllowsFinalDocuments =
         (mswdVerification.status === 'verified' && mswdVerification.is_current) || (detail.status === 'released' && mswdVerification.status === null);
-    const releaseBlockReason = !verificationAllowsFinalDocuments
-        ? 'Complete current MSWD verification before physical release.'
-        : cooldownAdvisory.permanent_block
-          ? 'A one-time assistance limit blocks this release.'
-          : cooldownAdvisory.active && cooldownAdvisory.authorization_current !== true
-            ? 'A decision maker must authorize the current cooldown exception before release.'
-            : null;
+    const canPrepareDisbursement =
+        detail.status === 'approved' &&
+        detail.amount_approved !== null &&
+        !detail.has_release_artifacts &&
+        mswdVerification.status === 'verified' &&
+        mswdVerification.is_current;
     const canGenerateAcknowledgementReceipt =
         generatorIsEnabled('acknowledgement_receipt') &&
         receiptStatusIsEligible &&
@@ -464,10 +490,6 @@ export default function AssistanceRequestsDetails({
         }
         if (label === 'Correct Amount') {
             setIsCorrectAmountOpen(true);
-            return;
-        }
-        if (label === 'Mark Released') {
-            setIsReleaseOpen(true);
             return;
         }
         console.warn(`[admin] action not yet wired: ${label}`, { requestId: detail.id, note: adminNote || undefined });
@@ -573,14 +595,13 @@ export default function AssistanceRequestsDetails({
                                         isMine={isMine}
                                         reviewerName={detail.reviewed_by?.name ?? null}
                                         approvalBlockReason={approvalBlockReason}
-                                        releaseBlockReason={releaseBlockReason}
                                         canProcess={canProcessRequests}
                                         canVerify={canVerifyRequests}
                                         mswdVerificationStatus={mswdVerification.status}
                                         isStartingMswdReview={isStartingMswdReview}
                                         canDecide={canDecideRequests}
                                         canCorrectApprovedAmount={canCorrectApprovedAmount}
-                                        canRelease={canReleaseRequests}
+                                        canCancelApprovedRequest={canCancelApprovedRequest}
                                     />
 
                                     <div className="hidden h-8 w-px bg-slate-200 sm:block" />
@@ -743,6 +764,23 @@ export default function AssistanceRequestsDetails({
 
                 {/* Main Content Grid */}
                 <div className="container mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+                    {(detail.status === 'approved' || detail.status === 'released' || disbursementRows.length > 0) && (
+                        <div className="mb-4 sm:mb-6">
+                            <DisbursementPanel
+                                requestId={detail.id}
+                                requestStatus={detail.status}
+                                disbursements={disbursementRows}
+                                canDisburse={canDisburseRequests}
+                                canRelease={canReleaseRequests}
+                                canPrepare={canPrepareDisbursement}
+                                onPrepare={() => setIsPrepareDisbursementOpen(true)}
+                                onRelease={(item) => {
+                                    setReleaseDisbursement(item);
+                                    setIsReleaseOpen(true);
+                                }}
+                            />
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
                         {/* ─── Tabbed Layout Left Panel ─── */}
                         <div className="lg:col-span-8">
@@ -1519,12 +1557,28 @@ export default function AssistanceRequestsDetails({
                 />
             )}
 
-            {canReleaseRequests && (
+            {canDisburseRequests && detail.amount_approved !== null && (
+                <PrepareDisbursementDialog
+                    requestId={detail.id}
+                    amount={detail.amount_approved}
+                    claimantName={detail.identity_snapshot.full_name}
+                    existing={activeDisbursementDraft}
+                    locations={claimLocations}
+                    open={isPrepareDisbursementOpen}
+                    onClose={() => setIsPrepareDisbursementOpen(false)}
+                />
+            )}
+
+            {canReleaseRequests && releaseDisbursement && (
                 <ReleaseRequestDialog
                     requestId={detail.id}
-                    amountApproved={detail.amount_approved}
+                    claimantName={detail.identity_snapshot.full_name}
+                    disbursement={releaseDisbursement}
                     isOpen={isReleaseOpen}
-                    onClose={() => setIsReleaseOpen(false)}
+                    onClose={() => {
+                        setIsReleaseOpen(false);
+                        setReleaseDisbursement(null);
+                    }}
                 />
             )}
             {canDecideRequests && (
@@ -1727,14 +1781,13 @@ function ActionButtons({
     isMine,
     reviewerName,
     approvalBlockReason,
-    releaseBlockReason,
     canProcess,
     canVerify,
     mswdVerificationStatus,
     isStartingMswdReview,
     canDecide,
     canCorrectApprovedAmount,
-    canRelease,
+    canCancelApprovedRequest,
 }: {
     status: string;
     onAction: (label: string) => () => void;
@@ -1742,14 +1795,13 @@ function ActionButtons({
     isMine: boolean;
     reviewerName: string | null;
     approvalBlockReason: string | null;
-    releaseBlockReason: string | null;
     canProcess: boolean;
     canVerify: boolean;
     mswdVerificationStatus: AssistanceMswdVerification['status'];
     isStartingMswdReview: boolean;
     canDecide: boolean;
     canCorrectApprovedAmount: boolean;
-    canRelease: boolean;
+    canCancelApprovedRequest: boolean;
 }) {
     const canStartOrResumeMswdReview =
         mswdVerificationStatus === null || mswdVerificationStatus === 'pending' || mswdVerificationStatus === 'needs_correction';
@@ -1825,16 +1877,6 @@ function ActionButtons({
                             <UserCheck className="mr-2 h-4 w-4" /> {isMine ? 'Resume MSWD Review' : 'Start MSWD Review'}
                         </Button>
                     )}
-                    {canRelease && (
-                        <Button
-                            className="min-h-10 w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto"
-                            onClick={onAction('Mark Released')}
-                            disabled={releaseBlockReason !== null}
-                            title={releaseBlockReason ?? undefined}
-                        >
-                            <CheckCircle2 className="mr-2 h-4 w-4" /> Mark as Released
-                        </Button>
-                    )}
                     {canCorrectApprovedAmount && (
                         <Button
                             variant="outline"
@@ -1844,7 +1886,7 @@ function ActionButtons({
                             <Pencil className="mr-2 h-4 w-4" /> Correct Amount
                         </Button>
                     )}
-                    {canDecide && (
+                    {canCancelApprovedRequest && (
                         <Button
                             variant="outline"
                             className="min-h-10 w-full border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800 sm:w-auto"

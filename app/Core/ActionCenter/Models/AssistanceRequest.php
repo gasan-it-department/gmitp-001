@@ -2,6 +2,7 @@
 
 namespace App\Core\ActionCenter\Models;
 
+use App\Core\ActionCenter\Enums\AssistanceDisbursementStatus;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\MswdVerificationStatus;
 use App\Core\ActionCenter\Enums\Relationship;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
@@ -316,6 +318,23 @@ class AssistanceRequest extends Model implements HasMedia
             || filled($this->release_reference_number);
     }
 
+    public function assertNoActiveDisbursement(): void
+    {
+        if (! Schema::hasTable('ac_assistance_disbursements')) {
+            return;
+        }
+
+        if (AssistanceDisbursement::query()
+            ->where('assistance_request_id', $this->id)
+            ->whereIn('status', [
+                AssistanceDisbursementStatus::Preparing->value,
+                AssistanceDisbursementStatus::Ready->value,
+            ])
+            ->exists()) {
+            throw new \DomainException('Void the active disbursement before changing this approved request.');
+        }
+    }
+
     /**
      * Mutate the independent MSWD verification lifecycle without opening a
      * general edit path for approved financial records. Callers must enforce
@@ -368,6 +387,27 @@ class AssistanceRequest extends Model implements HasMedia
     public function cooldowns(): HasMany
     {
         return $this->hasMany(BeneficiaryCooldown::class, 'assistance_request_id');
+    }
+
+    public function disbursements(): HasMany
+    {
+        return $this->hasMany(AssistanceDisbursement::class, 'assistance_request_id')
+            ->orderByDesc('attempt_number');
+    }
+
+    public function activeDisbursement(): HasOne
+    {
+        return $this->hasOne(AssistanceDisbursement::class, 'assistance_request_id')
+            ->whereIn('status', [
+                AssistanceDisbursementStatus::Preparing->value,
+                AssistanceDisbursementStatus::Ready->value,
+            ]);
+    }
+
+    public function latestDisbursement(): HasOne
+    {
+        return $this->hasOne(AssistanceDisbursement::class, 'assistance_request_id')
+            ->ofMany('attempt_number', 'max');
     }
 
     public function onBehalfHouseholdMember(): BelongsTo

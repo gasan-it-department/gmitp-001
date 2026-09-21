@@ -264,6 +264,7 @@ class AssistanceMswdVerificationService
     ): AssistanceRequest {
         return DB::transaction(function () use ($assistanceRequestId, $municipalId, $actorId, $reason): AssistanceRequest {
             $request = $this->lockedRequestForAssessment($assistanceRequestId, $municipalId);
+            $request->assertNoActiveDisbursement();
             $this->assertAssignedReviewer($request, $actorId, $municipalId);
             $this->assertReason($reason);
 
@@ -292,6 +293,7 @@ class AssistanceMswdVerificationService
     ): AssistanceRequest {
         return DB::transaction(function () use ($assistanceRequestId, $municipalId, $actorId, $reason): AssistanceRequest {
             $request = $this->lockedRequestForAssessment($assistanceRequestId, $municipalId);
+            $request->assertNoActiveDisbursement();
             $this->assertActorCanCorrect($actorId, $municipalId);
             $this->assertReason($reason);
             $this->assertOpenAndUnreleased($request);

@@ -10,13 +10,13 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 
 /**
- * Cashier "Mark as Released" endpoint.
+ * Physical-handover endpoint for an authorized releasing user.
  *
  * Route: POST /api/action-center/assistance-request/{assistanceRequestId}/release
  *
  * Thin controller — no queries, no model loads, no rules. It only:
  *   • validates the payload shape (via ReleaseAssistanceRequestRequest)
- *   • resolves tenant context + the authenticated cashier's id + display name
+ *   • resolves tenant context + the authenticated releasing user's identity
  *   • builds the DTO from primitives and hands off to the action
  *   • translates domain / authorization exceptions to flash-message redirects
  *
@@ -27,8 +27,7 @@ class ReleaseAssistanceRequestController extends Controller
 {
     public function __construct(
         private readonly ReleaseAssistanceRequestAction $release,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         ReleaseAssistanceRequestRequest $request,

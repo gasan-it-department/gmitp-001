@@ -12,6 +12,57 @@ export interface PresentedCopyOption {
     label: string;
 }
 export type MswdVerificationStatus = 'pending' | 'under_review' | 'needs_correction' | 'verified';
+export type AssistanceDisbursementMethod = 'check' | 'cash';
+export type AssistanceDisbursementStatus = 'preparing' | 'ready' | 'released' | 'voided';
+
+export interface AssistanceClaimLocation {
+    key: string;
+    label: string;
+    instructions: string | null;
+    office_hours: string | null;
+}
+
+export interface AssistanceDisbursement {
+    id: string;
+    attempt_number: number;
+    method: AssistanceDisbursementMethod;
+    method_label: string;
+    status: AssistanceDisbursementStatus;
+    status_label: string;
+    amount: number;
+    payee_name: string;
+    instrument_reference_number: string;
+    instrument_date: string;
+    claim_location_key: string;
+    claim_location_label: string;
+    claim_instructions: string | null;
+    preparation_notes: string | null;
+    prepared_by: AssistanceReviewActor | null;
+    prepared_at: string | null;
+    ready_by: AssistanceReviewActor | null;
+    ready_at: string | null;
+    notification_status: 'pending' | 'sending' | 'sent' | 'failed' | 'unavailable' | null;
+    notification_phone: string | null;
+    notification_attempts: number;
+    notification_attempted_at: string | null;
+    notification_sent_at: string | null;
+    notification_failure: string | null;
+    manual_contacts: { channel: string; note: string; actor_id: string; recorded_at: string }[];
+    released_by: AssistanceReviewActor | null;
+    released_at: string | null;
+    release_reference_number: string | null;
+    receiver_type: 'claimant' | 'representative' | null;
+    receiver_name: string | null;
+    receiver_relationship: string | null;
+    receiver_id_type: string | null;
+    receiver_id_last_four: string | null;
+    identity_checked_at: string | null;
+    acknowledgement_signed_at: string | null;
+    release_notes: string | null;
+    voided_by: AssistanceReviewActor | null;
+    voided_at: string | null;
+    void_reason: string | null;
+}
 
 export interface CooldownAdvisorySource {
     request_id: string;

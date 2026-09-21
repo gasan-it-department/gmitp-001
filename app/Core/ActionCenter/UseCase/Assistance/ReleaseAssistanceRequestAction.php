@@ -3,12 +3,15 @@
 namespace App\Core\ActionCenter\UseCase\Assistance;
 
 use App\Core\ActionCenter\Dto\Assistance\ReleaseAssistanceRequestDto;
+use App\Core\ActionCenter\Enums\AssistanceDisbursementStatus;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
+use App\Core\ActionCenter\Models\AssistanceDisbursement;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\BeneficiaryCooldown;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceCooldownService;
+use App\Core\ActionCenter\Services\AssistanceDisbursementService;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Shared\LockActionCenterMunicipalityAction;
@@ -26,21 +29,28 @@ class ReleaseAssistanceRequestAction
 
     private readonly AssistanceCooldownService $cooldowns;
 
+    private readonly AssistanceDisbursementService $disbursements;
+
     public function __construct(
         private readonly AssistanceRequestSmsNotifier $smsNotifier,
         private readonly AssistanceMswdVerificationService $mswdVerification,
         ?LockActionCenterMunicipalityAction $lockMunicipality = null,
         ?AssistanceCooldownService $cooldowns = null,
+        ?AssistanceDisbursementService $disbursements = null,
     ) {
         $this->lockMunicipality = $lockMunicipality ?? app(LockActionCenterMunicipalityAction::class);
         $this->cooldowns = $cooldowns ?? app(AssistanceCooldownService::class);
+        $this->disbursements = $disbursements ?? app(AssistanceDisbursementService::class);
     }
 
     public function execute(ReleaseAssistanceRequestDto $dto): AssistanceRequest
     {
         $request = DB::transaction(function () use ($dto): AssistanceRequest {
             $this->lockMunicipality->execute($dto->municipalId);
-            $relations = ['assistanceType', 'onBehalfHouseholdMember'];
+            $relations = ['assistanceType', 'onBehalfHouseholdMember', 'documentChecks'];
+            if (Schema::hasTable('ac_assistance_disbursements')) {
+                $relations[] = 'snapshot';
+            }
             if (Schema::hasTable('ac_beneficiaries')) {
                 $relations[] = 'beneficiary';
             }
@@ -53,8 +63,16 @@ class ReleaseAssistanceRequestAction
             $this->ensureTenantMatch($request, $dto->municipalId);
             $this->ensureTransitionAllowed($request);
             $this->ensureAmountApproved($request);
+            if ($dto->releasedAt->isFuture()) {
+                throw new \DomainException('The actual release date cannot be in the future.');
+            }
             $this->mswdVerification->assertCurrent($request);
             $this->ensureReferenceNumberUnique($request, $dto->releaseReferenceNumber);
+
+            $disbursement = $this->readyDisbursement($request, $dto);
+            if ($disbursement !== null) {
+                $this->disbursements->assertCurrent($request, $disbursement);
+            }
 
             $evaluation = Schema::hasTable('ac_beneficiaries') && Schema::hasTable('ac_beneficiary_cooldowns')
                 ? $this->cooldowns->evaluate(
@@ -110,6 +128,28 @@ class ReleaseAssistanceRequestAction
                 ),
             ]);
 
+            if ($disbursement !== null) {
+                $receiverName = $dto->receiverType === 'claimant'
+                    ? $disbursement->payee_name
+                    : (string) $dto->receiverName;
+                $disbursement->update([
+                    'status' => AssistanceDisbursementStatus::Released,
+                    'released_by_user_id' => $dto->cashierId,
+                    'released_at' => $dto->releasedAt,
+                    'release_reference_number' => $dto->releaseReferenceNumber,
+                    'receiver_type' => $dto->receiverType,
+                    'receiver_name' => $receiverName,
+                    'receiver_relationship' => $dto->receiverType === 'representative' ? $dto->receiverRelationship : null,
+                    'receiver_id_type' => $dto->receiverType === 'representative' ? $dto->receiverIdType : null,
+                    'receiver_id_last_four' => $dto->receiverType === 'representative'
+                        ? strtoupper((string) $dto->receiverIdLastFour)
+                        : null,
+                    'identity_checked_at' => now(),
+                    'acknowledgement_signed_at' => now(),
+                    'release_notes' => $dto->releaseNotes,
+                ]);
+            }
+
             if (Schema::hasTable('ac_beneficiary_cooldowns')) {
                 $this->writeCooldowns($request, $dto->releasedAt, $capturedMembers);
             }
@@ -119,6 +159,8 @@ class ReleaseAssistanceRequestAction
                 ->causedBy(User::find($dto->cashierId))
                 ->withProperties([
                     'event' => 'release_cooldown_created',
+                    'disbursement_id' => $disbursement?->id,
+                    'receiver_type' => $dto->receiverType,
                     'cooldown_policy' => $metadata['cooldown_policy'],
                 ])
                 ->log('Started assistance cooldown at physical release');
@@ -129,6 +171,50 @@ class ReleaseAssistanceRequestAction
         $this->smsNotifier->requestReleased($request);
 
         return $request;
+    }
+
+    private function readyDisbursement(
+        AssistanceRequest $request,
+        ReleaseAssistanceRequestDto $dto,
+    ): ?AssistanceDisbursement {
+        if (! Schema::hasTable('ac_assistance_disbursements')) {
+            return null;
+        }
+
+        if (blank($dto->disbursementId)) {
+            throw new \DomainException('Prepare and mark a disbursement ready before recording physical release.');
+        }
+
+        $disbursement = AssistanceDisbursement::query()
+            ->whereKey($dto->disbursementId)
+            ->where('assistance_request_id', $request->id)
+            ->where('municipal_id', $request->municipal_id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($disbursement->status !== AssistanceDisbursementStatus::Ready) {
+            throw new \DomainException('Only a disbursement marked Ready for Claim can be released.');
+        }
+
+        if (! in_array($dto->receiverType, ['claimant', 'representative'], true)) {
+            throw new \DomainException('Choose whether the claimant or an authorized representative received the assistance.');
+        }
+
+        if (! $dto->identityConfirmed || ! $dto->acknowledgementSigned) {
+            throw new \DomainException(
+                'Confirm the receiver identity inspection and signed acknowledgement before release.',
+            );
+        }
+
+        if ($dto->receiverType === 'representative'
+            && (blank($dto->receiverName)
+                || blank($dto->receiverRelationship)
+                || blank($dto->receiverIdType)
+                || mb_strlen((string) $dto->receiverIdLastFour) !== 4)) {
+            throw new \DomainException('Complete the authorized representative and inspected-ID details.');
+        }
+
+        return $disbursement;
     }
 
     /** @return array{0: Collection<int, HouseholdMember>, 1: list<string>} */

@@ -5,6 +5,7 @@ namespace App\Core\ActionCenter\UseCase\Assistance;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceCooldownService;
+use App\Core\ActionCenter\Services\AssistanceDisbursementService;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\UseCase\Beneficiary\FindCrossMunicipalityMatchesAction;
 use App\Core\Users\Enums\EnumPermissions;
@@ -20,6 +21,7 @@ class GetAssistanceRequestProfileAction
         private readonly ResolveAssistanceRequestHouseholdAction $resolveRequestHousehold,
         private readonly AssistanceMswdVerificationService $mswdVerification,
         private readonly AssistanceCooldownService $cooldowns,
+        private readonly AssistanceDisbursementService $disbursements,
     ) {}
 
     public function execute(string $municipalId, string $assistanceRequestId)
@@ -41,6 +43,10 @@ class GetAssistanceRequestProfileAction
             'mswdVerifiedBy',
             'onBehalfHouseholdMember',
             'household',
+            'disbursements.preparedBy',
+            'disbursements.readyBy',
+            'disbursements.releasedBy',
+            'disbursements.voidedBy',
             // Live beneficiary — powers the cross-LGU warning AND the
             // beneficiary_number on the detail resource.
             'beneficiary.religion',
@@ -116,6 +122,7 @@ class GetAssistanceRequestProfileAction
             'mswdVerification' => $this->mswdVerification->payload($assistanceRequest),
             'documentChecks' => $this->mswdVerification->documentChecksPayload($assistanceRequest),
             'cooldownAdvisory' => $cooldownAdvisory,
+            'claimLocations' => array_values($this->disbursements->claimLocations($municipalId)),
             'mswdReviewerOptions' => User::query()
                 ->where('municipal_id', $municipalId)
                 ->whereNull('deactivated_at')
