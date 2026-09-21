@@ -65,6 +65,9 @@ class ListAssistanceRequestAction
         if (Schema::hasTable('ac_household_members')) {
             $relations[] = 'onBehalfHouseholdMember';
         }
+        if (Schema::hasTable('ac_assistance_disbursements')) {
+            $relations[] = 'latestDisbursement';
+        }
 
         $query = AssistanceRequest::query()
             ->with($relations)
@@ -85,6 +88,18 @@ class ListAssistanceRequestAction
         }
         if (! empty($filters['mswd_verification_statuses']) && is_array($filters['mswd_verification_statuses'])) {
             $query->whereIn('mswd_verification_status', $filters['mswd_verification_statuses']);
+        }
+
+        if (Schema::hasTable('ac_assistance_disbursements') && ! empty($filters['disbursement_status'])) {
+            $disbursementStatus = $filters['disbursement_status'];
+            if ($disbursementStatus === 'not_started') {
+                $query->where('status', AssistanceStatus::Approved->value)
+                    ->whereDoesntHave('disbursements');
+            } elseif ($disbursementStatus === 'released') {
+                $query->where('status', AssistanceStatus::Released->value);
+            } else {
+                $query->whereHas('latestDisbursement', fn (Builder $builder) => $builder->where('status', $disbursementStatus));
+            }
         }
 
         // ── Assistance type ───────────────────────────────────────────────────

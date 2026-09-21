@@ -34,6 +34,7 @@ class CancelApprovedAssistanceRequestAction
             );
 
             $this->ensureApprovedAndUnreleased($request);
+            $request->assertNoActiveDisbursement();
 
             $cancelledAt = now();
             $this->expireApprovalCooldowns($request, $cancelledAt);

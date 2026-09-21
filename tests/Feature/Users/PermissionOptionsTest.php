@@ -52,6 +52,11 @@ it('publishes and normalizes action center permission dependencies', function ()
             EnumPermissions::ACTION_CENTER_ACCESS->value,
             EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
         ])
+        ->and($permissions[EnumPermissions::ACTION_CENTER_REQUESTS_DISBURSE->value]['dependencies'])
+        ->toBe([
+            EnumPermissions::ACTION_CENTER_ACCESS->value,
+            EnumPermissions::ACTION_CENTER_REQUESTS_VIEW->value,
+        ])
         ->and($permissions[EnumPermissions::ACTION_CENTER_REQUESTS_INTAKE->value]['dependencies'])
         ->toBe([
             EnumPermissions::ACTION_CENTER_ACCESS->value,

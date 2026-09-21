@@ -43,6 +43,7 @@ class ApplyAssistanceRequestProfileCorrectionsAction
 
             $verificationWasComplete = $request->mswd_verification_status === MswdVerificationStatus::Verified;
             $this->authorizeStatus($request, $dto, $verificationWasComplete);
+            $request->assertNoActiveDisbursement();
             $this->ensureReason($dto->reason);
             $this->ensureSupportedFields($dto->fields);
 

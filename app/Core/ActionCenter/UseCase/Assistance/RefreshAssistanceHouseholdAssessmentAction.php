@@ -50,6 +50,7 @@ class RefreshAssistanceHouseholdAssessmentAction
                 municipalId: $municipalId,
                 with: ['beneficiary', 'household'],
             );
+            $request->assertNoActiveDisbursement();
 
             $requiresCorrection = $this->ensureAssessmentCanBeRefreshed(
                 request: $request,

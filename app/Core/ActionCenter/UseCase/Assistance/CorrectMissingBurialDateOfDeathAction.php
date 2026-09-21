@@ -23,8 +23,7 @@ class CorrectMissingBurialDateOfDeathAction
     public function __construct(
         private readonly LockAssistanceRequestAction $lockRequest,
         private readonly AssistanceRequestFormDefinitionProvider $formDefinitions,
-    ) {
-    }
+    ) {}
 
     public function execute(CorrectMissingBurialDateOfDeathDto $dto): AssistanceRequest
     {
@@ -34,6 +33,7 @@ class CorrectMissingBurialDateOfDeathAction
                 municipalId: $dto->municipalId,
                 with: ['assistanceType'],
             );
+            $request->assertNoActiveDisbursement();
 
             $this->ensureEligibleStatus($request);
 

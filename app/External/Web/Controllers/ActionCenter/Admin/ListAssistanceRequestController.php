@@ -51,6 +51,7 @@ class ListAssistanceRequestController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', Rule::in(self::ALLOWED_STATUSES)],
             'mswd_verification_status' => ['nullable', Rule::in(MswdVerificationStatus::values())],
+            'disbursement_status' => ['nullable', Rule::in(['not_started', 'preparing', 'ready', 'released', 'voided'])],
             'assistance_type_id' => ['nullable', 'ulid', Rule::exists('ac_assistance_types', 'id')->where('municipal_id', $municipalId)],
             'search' => ['nullable', 'string', 'max:100'],
             'date_from' => ['nullable', 'date'],

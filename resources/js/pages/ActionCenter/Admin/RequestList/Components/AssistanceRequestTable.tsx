@@ -16,6 +16,7 @@ export interface AssistanceRequestListItem {
     transaction_number: string;
     status: string;
     mswd_verification_status: 'pending' | 'under_review' | 'needs_correction' | 'verified' | null;
+    disbursement_status: 'not_started' | 'preparing' | 'ready' | 'released' | 'voided' | null;
     cooldown_advisory?: {
         active: boolean;
         effective_expires_at: string | null;
@@ -99,6 +100,14 @@ export function humanizeStatus(status: string): string {
 
 function mswdStatusLabel(status: AssistanceRequestListItem['mswd_verification_status']): string {
     return status ? `MSWD ${status.replace(/_/g, ' ')}` : 'MSWD not recorded';
+}
+
+export function disbursementStatusLabel(status: AssistanceRequestListItem['disbursement_status']): string {
+    if (status === 'ready') return 'Ready for Claim';
+    if (status === 'preparing') return 'Disbursement Preparing';
+    if (status === 'released') return 'Disbursement Released';
+    if (status === 'voided') return 'Disbursement Voided';
+    return 'Disbursement Not Started';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -232,6 +241,13 @@ export function AssistanceRequestTable({ paginator, onView, getViewUrl }: Props)
                                                 >
                                                     {mswdStatusLabel(row.mswd_verification_status)}
                                                 </span>
+                                                {(row.status === 'approved' || row.status === 'released') && row.disbursement_status && (
+                                                    <span
+                                                        className={`text-[10px] font-semibold ${row.disbursement_status === 'ready' ? 'text-sky-700' : row.disbursement_status === 'released' ? 'text-emerald-700' : 'text-slate-600'}`}
+                                                    >
+                                                        {disbursementStatusLabel(row.disbursement_status)}
+                                                    </span>
+                                                )}
                                                 {row.cooldown_advisory?.active && (
                                                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700">
                                                         <CalendarClock className="h-3 w-3" aria-hidden="true" /> Cooldown warning
