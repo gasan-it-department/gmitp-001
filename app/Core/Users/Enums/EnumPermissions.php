@@ -30,6 +30,7 @@ enum EnumPermissions: string
     case ACTION_CENTER_REQUESTS_PROCESS = 'action_center.requests.process';
     case ACTION_CENTER_REQUESTS_VERIFY = 'action_center.requests.verify';
     case ACTION_CENTER_REQUESTS_DECIDE = 'action_center.requests.decide';
+    case ACTION_CENTER_REQUESTS_DISBURSE = 'action_center.requests.disburse';
     case ACTION_CENTER_REQUESTS_RELEASE = 'action_center.requests.release';
     case ACTION_CENTER_REQUESTS_CORRECT = 'action_center.requests.correct';
     case ACTION_CENTER_REPORTS_VIEW = 'action_center.reports.view';
@@ -99,6 +100,7 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_PROCESS => 'Action Center - MSWD Assessment / Document Preparation',
             self::ACTION_CENTER_REQUESTS_VERIFY => 'Action Center - Verify Assistance Requests',
             self::ACTION_CENTER_REQUESTS_DECIDE => 'Action Center - Approve or Reject Requests',
+            self::ACTION_CENTER_REQUESTS_DISBURSE => 'Action Center - Prepare Assistance Disbursements',
             self::ACTION_CENTER_REQUESTS_RELEASE => 'Action Center - Release Assistance',
             self::ACTION_CENTER_REQUESTS_CORRECT => 'Action Center - Correct Approved Request Data',
             self::ACTION_CENTER_REPORTS_VIEW => 'Action Center - View Reports',
@@ -137,6 +139,7 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_PROCESS,
             self::ACTION_CENTER_REQUESTS_VERIFY,
             self::ACTION_CENTER_REQUESTS_DECIDE,
+            self::ACTION_CENTER_REQUESTS_DISBURSE,
             self::ACTION_CENTER_REQUESTS_RELEASE,
             self::ACTION_CENTER_REQUESTS_CORRECT,
             self::ACTION_CENTER_REPORTS_VIEW,
@@ -192,6 +195,7 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_INTAKE,
             self::ACTION_CENTER_REQUESTS_PROCESS,
             self::ACTION_CENTER_REQUESTS_DECIDE,
+            self::ACTION_CENTER_REQUESTS_DISBURSE,
             self::ACTION_CENTER_REQUESTS_RELEASE => [
                 self::ACTION_CENTER_ACCESS->value,
                 self::ACTION_CENTER_REQUESTS_VIEW->value,

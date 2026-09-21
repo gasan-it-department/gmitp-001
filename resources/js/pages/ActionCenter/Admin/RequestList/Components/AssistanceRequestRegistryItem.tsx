@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, CalendarClock, CalendarDays, FilePenLine, MapPin, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { AssistanceRequestListItem, humanizeStatus, statusClass } from './AssistanceRequestTable';
+import { AssistanceRequestListItem, disbursementStatusLabel, humanizeStatus, statusClass } from './AssistanceRequestTable';
 
 const mswdLabel = (status: AssistanceRequestListItem['mswd_verification_status']) =>
     status ? `MSWD ${status.replace(/_/g, ' ')}` : 'MSWD not recorded';
@@ -69,6 +69,11 @@ export default function AssistanceRequestRegistryItem({ row, viewUrl }: Props) {
                     >
                         {mswdLabel(row.mswd_verification_status)}
                     </span>
+                    {(row.status === 'approved' || row.status === 'released') && row.disbursement_status && (
+                        <span className="inline-flex rounded-full bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">
+                            {disbursementStatusLabel(row.disbursement_status)}
+                        </span>
+                    )}
                     {row.cooldown_advisory?.active && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
                             <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" /> Cooldown warning

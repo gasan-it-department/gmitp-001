@@ -9,13 +9,17 @@ use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdV
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectApprovedAssistanceAmountController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\GetAssistanceCooldownContextController;
+use App\External\Api\Controllers\ActionCenter\Assistance\MarkAssistanceDisbursementReadyController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReassignAssistanceMswdReviewerController;
+use App\External\Api\Controllers\ActionCenter\Assistance\RecordAssistanceDisbursementManualContactController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RefreshAssistanceHouseholdAssessmentController;
 use App\External\Api\Controllers\ActionCenter\Assistance\RejectAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReleaseAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReopenAssistanceMswdVerificationController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReplaceAssistanceAdditionalDocumentController;
+use App\External\Api\Controllers\ActionCenter\Assistance\RetryAssistanceDisbursementNotificationController;
 use App\External\Api\Controllers\ActionCenter\Assistance\ReturnAssistanceForCorrectionController;
+use App\External\Api\Controllers\ActionCenter\Assistance\SaveAssistanceDisbursementController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StartAssistanceRequestReviewController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAdminAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\StoreAssistanceRequestController;
@@ -24,6 +28,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceDocumen
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UploadAssistanceRequestDocumentsController;
+use App\External\Api\Controllers\ActionCenter\Assistance\VoidAssistanceDisbursementController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReassignBeneficiaryHouseholdController;
@@ -476,10 +481,38 @@ Route::prefix('/api/action-center')
                 )->middleware('permission:action_center.requests.decide')
                     ->name('assistance.reject');
 
-                // Mark as Released — cashier records the physical
-                // disbursement. Terminal, COA-immutable. Requires an
-                // OR/voucher reference number that is unique within
-                // the municipality.
+                // Financial preparation and claim notification are separate
+                // from the terminal physical-handover transition below.
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/disbursement',
+                    SaveAssistanceDisbursementController::class,
+                )->middleware('permission:action_center.requests.disburse')
+                    ->name('assistance.disbursement.save');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/disbursement/{disbursementId}/ready',
+                    MarkAssistanceDisbursementReadyController::class,
+                )->middleware('permission:action_center.requests.disburse')
+                    ->name('assistance.disbursement.ready');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/disbursement/{disbursementId}/retry-notification',
+                    RetryAssistanceDisbursementNotificationController::class,
+                )->middleware('permission:action_center.requests.disburse')
+                    ->name('assistance.disbursement.retry-notification');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/disbursement/{disbursementId}/manual-contact',
+                    RecordAssistanceDisbursementManualContactController::class,
+                )->middleware('permission:action_center.requests.disburse')
+                    ->name('assistance.disbursement.manual-contact');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/disbursement/{disbursementId}/void',
+                    VoidAssistanceDisbursementController::class,
+                )->middleware('permission:action_center.requests.disburse')
+                    ->name('assistance.disbursement.void');
+
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/release',
                     ReleaseAssistanceRequestController::class,

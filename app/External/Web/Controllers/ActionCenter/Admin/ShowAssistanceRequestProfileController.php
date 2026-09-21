@@ -5,6 +5,7 @@ namespace App\External\Web\Controllers\ActionCenter\Admin;
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
+use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceDisbursementResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestHouseholdResource;
 use App\External\Api\Resources\ActionCenter\CrossMunicipalityMatchResource;
@@ -61,6 +62,10 @@ class ShowAssistanceRequestProfileController extends Controller
             'documentChecks' => $data['documentChecks'],
 
             'cooldownAdvisory' => $data['cooldownAdvisory'],
+
+            'disbursements' => AssistanceDisbursementResource::collection($data['request']->disbursements),
+
+            'claimLocations' => $data['claimLocations'],
 
             'presentedCopyOptions' => PhysicalCopyRequirement::presentedOptions(),
 

@@ -25,6 +25,7 @@ class CorrectApprovedAssistanceAmountAction
             );
 
             $this->ensureApprovedAndUnreleased($request);
+            $request->assertNoActiveDisbursement();
             $this->ensureAmountWithinProgramLimits($request, $dto->amountApproved);
 
             $oldAmount = (float) $request->amount_approved;
