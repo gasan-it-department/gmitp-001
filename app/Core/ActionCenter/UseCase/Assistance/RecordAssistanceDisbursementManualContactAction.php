@@ -35,8 +35,10 @@ class RecordAssistanceDisbursementManualContactAction
             if ($disbursement->status !== AssistanceDisbursementStatus::Ready) {
                 throw new \DomainException('Manual claimant contact can only be recorded while the disbursement is ready.');
             }
-            if ($disbursement->notification_status === 'sent') {
-                throw new \DomainException('The claimant was already notified successfully by SMS.');
+            if (! in_array($disbursement->notification_status, ['failed', 'unavailable'], true)) {
+                throw new \DomainException(
+                    'Manual contact can only be recorded when the claim SMS failed or no contact number was available.',
+                );
             }
 
             $metadata = $disbursement->metadata ?? [];

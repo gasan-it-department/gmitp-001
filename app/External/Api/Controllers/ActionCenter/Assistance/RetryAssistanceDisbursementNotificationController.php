@@ -25,9 +25,11 @@ class RetryAssistanceDisbursementNotificationController extends Controller
                 (string) $request->user()->id,
             );
 
-            return $result->notification_status === 'sent'
-                ? back()->with('success', 'Claim notification sent.')
-                : back()->withErrors(['disbursement_notification' => $result->notification_failure]);
+            return match ($result->notification_status) {
+                'sent' => back()->with('success', 'Semaphore sent the claim notice to the mobile network.'),
+                'submitted' => back()->with('success', 'The claim notice was accepted by Semaphore.'),
+                default => back()->withErrors(['disbursement_notification' => $result->notification_failure]),
+            };
         } catch (\DomainException|AuthorizationException $exception) {
             return back()->withErrors(['disbursement_notification' => $exception->getMessage()]);
         }
