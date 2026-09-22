@@ -19,7 +19,7 @@ class VoidAssistanceDisbursementController extends Controller
         string $disbursementId,
     ): RedirectResponse {
         try {
-            $this->void->execute(new VoidAssistanceDisbursementDto(
+            $disbursement = $this->void->execute(new VoidAssistanceDisbursementDto(
                 assistanceRequestId: $assistanceRequestId,
                 disbursementId: $disbursementId,
                 municipalId: app('municipal_id'),
@@ -27,7 +27,12 @@ class VoidAssistanceDisbursementController extends Controller
                 reason: trim((string) $request->validated('reason')),
             ));
 
-            return back()->with('success', 'Disbursement voided. A replacement may now be prepared.');
+            $message = 'Disbursement voided. A replacement may now be prepared.';
+            if (count(data_get($disbursement->metadata, 'manual_contacts', [])) > 0) {
+                $message .= ' The claimant was previously contacted manually; notify them manually that this claim notice was cancelled.';
+            }
+
+            return back()->with('success', $message);
         } catch (\DomainException|AuthorizationException $exception) {
             return back()->withErrors(['disbursement' => $exception->getMessage()]);
         }
