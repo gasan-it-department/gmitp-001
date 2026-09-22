@@ -62,7 +62,10 @@ class AssistanceTypeSeeder extends Seeder
 
         foreach ($this->programs() as $program) {
             $pivotRows = $program['documents'];
-            $typeData = array_diff_key($program, ['documents' => null]);
+            $typeData = array_merge(
+                ['is_independent' => false],
+                array_diff_key($program, ['documents' => null]),
+            );
 
             // --- Create or update the assistance type ---
             $type = AssistanceType::updateOrCreate(
@@ -130,31 +133,28 @@ class AssistanceTypeSeeder extends Seeder
     /**
      * Returns the 7 assistance programs aligned with the Gasan AICS Executive Order.
      *
-     *   1. Medical Assistance          (sort 10) — 6 months, per_beneficiary
-     *   2. Burial Assistance           (sort 20) — 12 months, per_beneficiary (per-deceased, independent)
-     *   3. Educational (Elementary)    (sort 30) — 12 months, per_beneficiary
-     *   4. Educational (High School)   (sort 40) — 12 months, per_beneficiary
-     *   5. Educational (College)       (sort 50) —  6 months, per_beneficiary
-     *   6. Food Assistance             (sort 60) —  0 months (as needed), per_beneficiary
+     *   1. Medical Assistance          (sort 10) — 6 months, per_household
+     *   2. Burial Assistance           (sort 20) — 12 months, per_household
+     *   3. Educational (Elementary)    (sort 30) — 12 months, per_household
+     *   4. Educational (High School)   (sort 40) — 12 months, per_household
+     *   5. Educational (College)       (sort 50) —  6 months, per_household
+     *   6. Food Assistance             (sort 60) —  0 months (as needed), per_household
      *   7. Cash Assistance             (sort 70) —  6 months, per_household
      *
      * Sort orders are spaced by 10 so Transportation (sort ~5) or other
      * future types can be inserted without renumbering.
      *
      * cooldown_type:
-     *   per_request — cooldown_months enforced between each approved request
-     *   one_time    — permanently blocked after first approval (capability kept,
+     *   per_request — cooldown_months enforced between each released request
+     *   one_time    — permanently blocked after first release (capability kept,
      *                 but no program currently uses it; Burial is per_request/12mo)
      *
      * cooldown_scope:
      *   per_beneficiary — cooldown follows the individual across households
      *   per_household   — any member of the same household triggers the block
      *
-     * is_independent:
-     *   false — participates in the cross-program lockout (default)
-     *   true  — evaluated in isolation; only cools down itself (Burial). For an
-     *           on-behalf-of-deceased program this means the cooldown is per
-     *           deceased person, keyed on the on-behalf household member.
+     * is_independent is retained for schema compatibility. Seeded programs all
+     * participate in the same household cooldown advisory.
      *
      * Amount fields:
      *   min_amount / max_amount bound what the approver can grant.
@@ -176,7 +176,7 @@ class AssistanceTypeSeeder extends Seeder
                 'description' => 'Financial aid for hospital bills, medicines, laboratory fees, and medical procedures for indigent residents. Covers both in-patient and out-patient expenses.',
                 'cooldown_months' => 6,  // EO: hospital bills = once every 6 months
                 'cooldown_type' => 'per_request',
-                'cooldown_scope' => 'per_beneficiary',
+                'cooldown_scope' => 'per_household',
                 'min_amount' => 1000.00,
                 'max_amount' => 10000.00,
                 'sort_order' => 10,
@@ -206,20 +206,16 @@ class AssistanceTypeSeeder extends Seeder
             // EO: Funeral Expenses ₱5,000–₱10,000 | Transfer of Cadaver ₱5,000–₱10,000
             //     Casualties ₱10,000/casualty.
             //     NOT one-time: a household can suffer more than one death over time.
-            //     Modeled as a 12-month cooldown scoped PER DECEASED PERSON (keyed on
-            //     the on-behalf household member), and INDEPENDENT of the cross-program
-            //     lockout — a death is an emergency and must not be gated by an
-            //     unrelated medical/educational cooldown.
+            //     Uses the same household cooldown advisory as every other program.
             //     Applied for by an authorized representative — the deceased cannot apply.
             // ----------------------------------------------------------------
             [
                 'name' => 'Burial Assistance',
                 'slug' => 'burial',
                 'description' => 'Financial aid for funeral expenses, transfer of cadaver, and related burial costs of a deceased household member. Applied for by an authorized family representative.',
-                'cooldown_months' => 12,   // one approved burial per deceased person every 12 months
+                'cooldown_months' => 12,
                 'cooldown_type' => 'per_request',
-                'cooldown_scope' => 'per_beneficiary',
-                'is_independent' => true,  // per-deceased; does not cross-block other programs
+                'cooldown_scope' => 'per_household',
                 'min_amount' => 5000.00,
                 'max_amount' => 10000.00,
                 'sort_order' => 20,
@@ -263,7 +259,7 @@ class AssistanceTypeSeeder extends Seeder
                 'description' => 'Cash grant for indigent elementary school students (Grades 1–6) to defray school fees, supplies, and other related expenses. Maximum of three (3) children per family.',
                 'cooldown_months' => 12, // once per school year ≈ 12 months
                 'cooldown_type' => 'per_request',
-                'cooldown_scope' => 'per_beneficiary',
+                'cooldown_scope' => 'per_household',
                 'min_amount' => 500.00,
                 'max_amount' => 1000.00,
                 'sort_order' => 30,
@@ -290,7 +286,7 @@ class AssistanceTypeSeeder extends Seeder
                 'description' => 'Cash grant for indigent junior and senior high school students, including vocational and technical school enrollees. Maximum of three (3) children per family.',
                 'cooldown_months' => 12, // once per school year ≈ 12 months
                 'cooldown_type' => 'per_request',
-                'cooldown_scope' => 'per_beneficiary',
+                'cooldown_scope' => 'per_household',
                 'min_amount' => 1000.00,
                 'max_amount' => 2000.00,
                 'sort_order' => 40,
@@ -318,7 +314,7 @@ class AssistanceTypeSeeder extends Seeder
                 'description' => 'Cash grant for indigent college students enrolled in state colleges, universities, or other tertiary institutions. Granted once per semester. Not applicable for graduate or post-graduate studies.',
                 'cooldown_months' => 6,  // once per semester ≈ 6 months
                 'cooldown_type' => 'per_request',
-                'cooldown_scope' => 'per_beneficiary',
+                'cooldown_scope' => 'per_household',
                 'min_amount' => 3000.00,
                 'max_amount' => 5000.00,
                 'sort_order' => 50,
@@ -345,7 +341,7 @@ class AssistanceTypeSeeder extends Seeder
                 'description' => 'Emergency food pack or cash-for-food assistance for households and individuals facing food insecurity or crisis. Provided as needed with no fixed cooldown period.',
                 'cooldown_months' => 0,  // EO: "as needed" — no cooldown restriction
                 'cooldown_type' => 'per_request',
-                'cooldown_scope' => 'per_beneficiary',
+                'cooldown_scope' => 'per_household',
                 'min_amount' => 800.00,   // ₱80/meal × 10 days minimum
                 'max_amount' => 3000.00,
                 'sort_order' => 60,

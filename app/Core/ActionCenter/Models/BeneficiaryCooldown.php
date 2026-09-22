@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * checker on every Apply-page load and again server-side in the store action so
  * the citizen can't bypass the front-end gate.
  *
- * - cooldown_expires_at NULL → permanent block (one_time programs like Burial)
+ * - cooldown_expires_at NULL → permanent block for one_time programs
  * - cooldown_expires_at FUTURE → on cooldown until that timestamp
  * - cooldown_expires_at PAST → effectively eligible (row kept for audit)
  *

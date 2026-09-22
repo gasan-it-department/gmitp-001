@@ -18,14 +18,18 @@ use App\Core\ActionCenter\UseCase\Assistance\Client\ShowClientAssistanceRequestA
 use App\Core\ActionCenter\UseCase\Assistance\RejectAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\StoreAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
+use App\Core\ActionCenter\UseCase\Beneficiary\ResolveApplicantProfileAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\ResolveBeneficiaryIdentityGroupAction;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\External\Api\Request\ActionCenter\StoreAdminAssistanceRequest;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceRequestDetailsResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\ClientAssistanceRequestDetailsResource;
+use App\External\Web\Controllers\ActionCenter\Public\ApplyAssistanceRequestController;
 use App\Shared\IdGenerator\Contracts\IdGeneratorInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -224,6 +228,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    CarbonImmutable::setTestNow();
     activity()->enableLogging();
 
     foreach ([
@@ -805,6 +810,41 @@ it('throttles citizen assistance submissions as abuse protection', function () {
         ->and($route->gatherMiddleware())->toContain('throttle:5,1');
 });
 
+it('applies the shared eligibility policy to burial before rendering the citizen form', function (): void {
+    $context = seedAdultOnBehalfIdentityContext();
+    DB::table('ac_assistance_types')->where('id', $context['assistance_type_id'])->update([
+        'name' => 'Burial Assistance',
+        'slug' => 'burial',
+        'cooldown_scope' => 'per_household',
+        'is_independent' => true,
+    ]);
+
+    $beneficiary = Beneficiary::query()->with('household')->findOrFail($context['beneficiary_id']);
+    $type = AssistanceType::query()->findOrFail($context['assistance_type_id']);
+    $resolver = Mockery::mock(ResolveApplicantProfileAction::class);
+    $resolver->shouldReceive('execute')
+        ->once()
+        ->with($context['submitter_user_id'], $context['municipal_id'])
+        ->andReturn($beneficiary);
+    $eligibility = Mockery::mock(CheckElegibilityAction::class);
+    $eligibility->shouldReceive('execute')
+        ->once()
+        ->with($beneficiary, $type)
+        ->andReturn(EligibilityResult::permanentBlock());
+
+    app()->instance('municipal_id', $context['municipal_id']);
+    $request = Request::create('/gasan-4905/action-center/apply/burial', 'GET');
+    $request->setUserResolver(fn (): object => (object) ['id' => $context['submitter_user_id']]);
+
+    $response = (new ApplyAssistanceRequestController($resolver, $eligibility))(
+        $request,
+        'gasan-4905',
+        $type,
+    );
+
+    expect($response)->toBeInstanceOf(RedirectResponse::class);
+});
+
 it('ignores premature cooldown rows until their request has an actual release', function (): void {
     $context = seedAdultOnBehalfIdentityContext();
     $requestId = (string) Str::ulid();
@@ -929,6 +969,7 @@ it('requires a fresh reason and context before recording an amount during a time
     $context = seedAdultOnBehalfIdentityContext();
     $actorId = (string) Str::ulid();
     $now = CarbonImmutable::parse('2026-09-14 10:00:00');
+    CarbonImmutable::setTestNow($now);
     DB::table('users')->insert([
         'id' => $actorId,
         'first_name' => 'Mayor',

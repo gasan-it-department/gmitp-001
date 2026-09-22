@@ -121,13 +121,23 @@ it('initializes seeded programs once without restoring an administrator selectio
     expect($assistanceTypes)->toHaveCount(7)
         ->and($assistanceTypes->every(
             fn (AssistanceType $type): bool => $type->generatedDocumentValues() === AssistanceGeneratedDocument::values(),
+        ))->toBeTrue()
+        ->and($assistanceTypes->every(
+            fn (AssistanceType $type): bool => $type->cooldown_scope === 'per_household'
+                && ! $type->is_independent,
         ))->toBeTrue();
 
     $medical = $assistanceTypes->firstWhere('slug', 'medical');
-    $medical->update(['enabled_generated_documents' => []]);
+    $medical->update([
+        'enabled_generated_documents' => [],
+        'cooldown_scope' => 'per_beneficiary',
+        'is_independent' => true,
+    ]);
 
     $this->seed(AssistanceTypeSeeder::class);
 
     expect($medical->fresh()->enabled_generated_documents)->toBe([])
-        ->and($medical->fresh()->generatedDocumentValues())->toBe([]);
+        ->and($medical->fresh()->generatedDocumentValues())->toBe([])
+        ->and($medical->fresh()->cooldown_scope)->toBe('per_household')
+        ->and($medical->fresh()->is_independent)->toBeFalse();
 });
