@@ -59,6 +59,11 @@ export default function DisbursementPanel({
     const [busy, setBusy] = useState(false);
     const voidForm = useForm({ reason: '', confirm: true });
     const contactForm = useForm({ channel: 'phone_call', note: '' });
+    const retryableNotification = current?.notification_status === 'failed' || current?.notification_status === 'unavailable';
+    const recentSubmission =
+        current?.notification_status === 'sending' &&
+        current.notification_attempted_at !== null &&
+        new Date(current.notification_attempted_at).getTime() > Date.now() - 5 * 60 * 1000;
 
     const markReady = () => {
         if (!current) return;
@@ -189,19 +194,34 @@ export default function DisbursementPanel({
                                 </p>
                             )}
 
-                            {current.status === 'ready' && current.notification_status !== 'sent' && (
-                                <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                                    <div>
-                                        <p className="font-semibold">Claimant notification needs attention</p>
-                                        <p className="mt-0.5 text-xs">{current.notification_failure ?? 'The SMS has not been confirmed as sent.'}</p>
+                            {current.status === 'ready' &&
+                                (current.notification_status === 'failed' || current.notification_status === 'unavailable') && (
+                                    <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                        <div>
+                                            <p className="font-semibold">Claimant notification needs attention</p>
+                                            <p className="mt-0.5 text-xs">
+                                                {current.notification_failure ?? 'The SMS has not been confirmed as sent.'}
+                                            </p>
+                                        </div>
                                     </div>
+                                )}
+
+                            {current.status === 'ready' && current.notification_status === 'sending' && (
+                                <div className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800">
+                                    <Loader2 className="h-4 w-4 animate-spin" /> Submitting SMS to Semaphore.
+                                </div>
+                            )}
+
+                            {current.status === 'ready' && current.notification_status === 'submitted' && (
+                                <div className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800">
+                                    <CheckCircle2 className="h-4 w-4" /> SMS accepted by Semaphore for {current.notification_phone}.
                                 </div>
                             )}
 
                             {current.status === 'ready' && current.notification_status === 'sent' && (
                                 <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                                    <CheckCircle2 className="h-4 w-4" /> Claim notice sent to {current.notification_phone}.
+                                    <CheckCircle2 className="h-4 w-4" /> Claim notice sent to the mobile network for {current.notification_phone}.
                                 </div>
                             )}
 
@@ -216,7 +236,7 @@ export default function DisbursementPanel({
                                         </Button>
                                     </>
                                 )}
-                                {canDisburse && current.status === 'ready' && current.notification_status !== 'sent' && (
+                                {canDisburse && current.status === 'ready' && retryableNotification && (
                                     <>
                                         <Button variant="outline" onClick={retry} disabled={busy}>
                                             <RefreshCw className="mr-2 h-4 w-4" /> Retry SMS
@@ -235,6 +255,10 @@ export default function DisbursementPanel({
                                     <Button
                                         variant="outline"
                                         onClick={() => setVoidOpen(true)}
+                                        disabled={recentSubmission}
+                                        title={
+                                            recentSubmission ? 'Wait for the active SMS submission to finish, then refresh this request.' : undefined
+                                        }
                                         className="border-rose-200 text-rose-700 hover:bg-rose-50"
                                     >
                                         <XCircle className="mr-2 h-4 w-4" /> Void disbursement
@@ -293,7 +317,12 @@ export default function DisbursementPanel({
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Void disbursement</DialogTitle>
-                        <DialogDescription>The attempt remains in history. A notified claimant will receive a cancellation notice.</DialogDescription>
+                        <DialogDescription>
+                            The attempt remains in history. A claimant whose SMS was accepted will receive a cancellation notice.
+                            {current?.manual_contacts.length
+                                ? ' Because manual contact was recorded, staff must also communicate the cancellation manually.'
+                                : ''}
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2">
                         <Label htmlFor="void_reason">Reason</Label>

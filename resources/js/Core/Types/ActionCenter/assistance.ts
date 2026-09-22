@@ -41,7 +41,7 @@ export interface AssistanceDisbursement {
     prepared_at: string | null;
     ready_by: AssistanceReviewActor | null;
     ready_at: string | null;
-    notification_status: 'pending' | 'sending' | 'sent' | 'failed' | 'unavailable' | null;
+    notification_status: 'pending' | 'sending' | 'submitted' | 'sent' | 'failed' | 'unavailable' | null;
     notification_phone: string | null;
     notification_attempts: number;
     notification_attempted_at: string | null;

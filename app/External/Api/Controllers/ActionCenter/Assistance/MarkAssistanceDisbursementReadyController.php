@@ -25,9 +25,11 @@ class MarkAssistanceDisbursementReadyController extends Controller
                 (string) $request->user()->id,
             );
 
-            $message = $result->notification_status === 'sent'
-                ? 'Disbursement marked ready and the claimant was notified.'
-                : 'Disbursement marked ready, but the claimant SMS was not delivered.';
+            $message = match ($result->notification_status) {
+                'sent' => 'Disbursement marked ready. Semaphore sent the claim notice to the mobile network.',
+                'submitted' => 'Disbursement marked ready. The claim notice was accepted by Semaphore.',
+                default => 'Disbursement marked ready, but the claim notice was not submitted.',
+            };
 
             return back()->with('success', $message);
         } catch (\DomainException|AuthorizationException $exception) {

@@ -33,8 +33,16 @@ class VoidAssistanceDisbursementAction
                 throw new \DomainException('Only a preparing or ready disbursement can be voided.');
             }
 
+            if ($disbursement->status === AssistanceDisbursementStatus::Ready
+                && $disbursement->notification_status === 'sending'
+                && $disbursement->notification_attempted_at?->greaterThan(now()->subMinutes(5))) {
+                throw new \DomainException(
+                    'A claimant notification is currently being submitted. Wait for it to finish, refresh the request, then void the disbursement.',
+                );
+            }
+
             $cancelNotice = $disbursement->status === AssistanceDisbursementStatus::Ready
-                && $disbursement->notification_status === 'sent';
+                && in_array($disbursement->notification_status, ['submitted', 'sent', 'sending'], true);
             $disbursement->update([
                 'status' => AssistanceDisbursementStatus::Voided,
                 'voided_by_user_id' => $dto->actorId,
@@ -66,9 +74,15 @@ class VoidAssistanceDisbursementAction
                     'disbursement_id' => $disbursement->id,
                     'notification_status' => $outcome['status'],
                     'notification_phone' => $outcome['phone'],
+                    'provider_message_id' => $outcome['provider_message_id'] ?? null,
+                    'provider_status' => $outcome['provider_status'] ?? null,
                     'failure' => $outcome['failure'],
                 ])
-                ->log($outcome['status'] === 'sent' ? 'Sent cancelled claim notice' : 'Cancelled claim notice was not delivered');
+                ->log(match ($outcome['status']) {
+                    'sent' => 'Sent cancelled claim notice to the mobile network',
+                    'submitted' => 'Submitted cancelled claim notice to Semaphore',
+                    default => 'Cancelled claim notice was not submitted',
+                });
         }
 
         return $disbursement;

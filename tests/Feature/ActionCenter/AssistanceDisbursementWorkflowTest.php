@@ -13,6 +13,7 @@ use App\Core\ActionCenter\Services\AssistanceDisbursementSmsNotifier;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Assistance\MarkAssistanceDisbursementReadyAction;
+use App\Core\ActionCenter\UseCase\Assistance\RecordAssistanceDisbursementManualContactAction;
 use App\Core\ActionCenter\UseCase\Assistance\ReleaseAssistanceRequestAction;
 use App\Core\ActionCenter\UseCase\Assistance\SaveAssistanceDisbursementAction;
 use App\Core\ActionCenter\UseCase\Assistance\SendAssistanceDisbursementNotificationAction;
@@ -278,8 +279,155 @@ it('keeps the ready notice free of the amount and financial instrument reference
     $outcome = (new AssistanceDisbursementSmsNotifier($provider))->ready($request, $disbursement);
 
     expect($outcome['status'])->toBe('sent')
-        ->and($outcome['phone'])->toBe('09171234567');
+        ->and($outcome['phone'])->toBe('09171234567')
+        ->and($outcome['provider_status'])->toBe('Sent');
 });
+
+it('maps Semaphore submission statuses without claiming queued messages were sent', function (array $response, string $expectedStatus) {
+    $request = AssistanceRequest::query()->with('beneficiary')->findOrFail($this->requestId);
+    $disbursement = AssistanceDisbursement::query()->create(disbursementAttributes($this));
+    $provider = Mockery::mock(SmsProviderInterface::class);
+    $provider->shouldReceive('send')->once()->andReturn($response);
+
+    $outcome = (new AssistanceDisbursementSmsNotifier($provider))->ready($request, $disbursement);
+
+    expect($outcome['status'])->toBe($expectedStatus)
+        ->and($outcome['provider_message_id'])->toBe(isset($response[0]['message_id']) ? (string) $response[0]['message_id'] : null)
+        ->and($outcome['provider_status'])->toBe($response[0]['status'] ?? null);
+})->with([
+    'queued' => [[['message_id' => 101, 'status' => 'Queued']], 'submitted'],
+    'pending' => [[['message_id' => 102, 'status' => 'Pending']], 'submitted'],
+    'sent' => [[['message_id' => 103, 'status' => 'Sent']], 'sent'],
+    'failed' => [[['message_id' => 104, 'status' => 'Failed']], 'failed'],
+    'refunded' => [[['message_id' => 105, 'status' => 'Refunded']], 'failed'],
+    'malformed successful response' => [[], 'submitted'],
+]);
+
+it('marks missing phones unavailable without calling Semaphore', function () {
+    DB::table('ac_beneficiaries')->where('id', $this->beneficiaryId)->update(['contact_phone' => null]);
+    $request = AssistanceRequest::query()->with('beneficiary')->findOrFail($this->requestId);
+    $disbursement = AssistanceDisbursement::query()->create(disbursementAttributes($this));
+    $provider = Mockery::mock(SmsProviderInterface::class);
+    $provider->shouldNotReceive('send');
+
+    $outcome = (new AssistanceDisbursementSmsNotifier($provider))->ready($request, $disbursement);
+
+    expect($outcome['status'])->toBe('unavailable')
+        ->and($outcome['failure'])->toContain('no contact number');
+});
+
+it('records provider failures and timeouts as failed submissions', function (bool $throws) {
+    $request = AssistanceRequest::query()->with('beneficiary')->findOrFail($this->requestId);
+    $disbursement = AssistanceDisbursement::query()->create(disbursementAttributes($this));
+    $provider = Mockery::mock(SmsProviderInterface::class);
+    $expectation = $provider->shouldReceive('send')->once();
+    $throws
+        ? $expectation->andThrow(new RuntimeException('Semaphore timed out.'))
+        : $expectation->andReturn(null);
+
+    $outcome = (new AssistanceDisbursementSmsNotifier($provider))->ready($request, $disbursement);
+
+    expect($outcome['status'])->toBe('failed')
+        ->and($outcome['failure'])->not->toBeNull();
+})->with([
+    'HTTP failure' => [false],
+    'timeout' => [true],
+]);
+
+it('stores the exact claim notice and Semaphore acceptance details', function () {
+    $attributes = disbursementAttributes($this);
+    $attributes['status'] = AssistanceDisbursementStatus::Ready;
+    $attributes['notification_status'] = 'pending';
+    $ready = AssistanceDisbursement::query()->create($attributes);
+    $provider = Mockery::mock(SmsProviderInterface::class);
+    $provider->shouldReceive('send')->once()->andReturn([['message_id' => 501, 'status' => 'Queued']]);
+
+    $result = (new SendAssistanceDisbursementNotificationAction(
+        new LockActionCenterMunicipalityAction,
+        new AssistanceDisbursementSmsNotifier($provider),
+    ))->execute($this->requestId, $ready->id, $this->municipalId, $this->actorId);
+
+    expect($result->notification_status)->toBe('submitted')
+        ->and($result->notification_phone)->toBe('09171234567')
+        ->and($result->notification_message)->toContain('REQ-2026-9001')
+        ->and($result->notification_attempts)->toBe(1)
+        ->and($result->notification_sent_at)->toBeNull()
+        ->and(data_get($result->metadata, 'notifications.claim_ready.provider_message_id'))->toBe('501')
+        ->and(data_get($result->metadata, 'notifications.claim_ready.provider_status'))->toBe('Queued');
+});
+
+it('allows retries only after failed or unavailable submissions', function (string $status, bool $allowed) {
+    $attributes = disbursementAttributes($this);
+    $attributes['status'] = AssistanceDisbursementStatus::Ready;
+    $attributes['notification_status'] = $status;
+    $ready = AssistanceDisbursement::query()->create($attributes);
+    $provider = Mockery::mock(SmsProviderInterface::class);
+
+    if ($allowed) {
+        $provider->shouldReceive('send')->once()->andReturn([['message_id' => 601, 'status' => 'Queued']]);
+        $result = (new SendAssistanceDisbursementNotificationAction(
+            new LockActionCenterMunicipalityAction,
+            new AssistanceDisbursementSmsNotifier($provider),
+        ))->execute($this->requestId, $ready->id, $this->municipalId, $this->actorId);
+
+        expect($result->notification_status)->toBe('submitted');
+
+        return;
+    }
+
+    $provider->shouldNotReceive('send');
+    expect(fn () => (new SendAssistanceDisbursementNotificationAction(
+        new LockActionCenterMunicipalityAction,
+        new AssistanceDisbursementSmsNotifier($provider),
+    ))->execute($this->requestId, $ready->id, $this->municipalId, $this->actorId))
+        ->toThrow(DomainException::class);
+})->with([
+    'failed can retry' => ['failed', true],
+    'unavailable can retry' => ['unavailable', true],
+    'sending cannot retry' => ['sending', false],
+    'submitted cannot retry' => ['submitted', false],
+    'sent cannot retry' => ['sent', false],
+]);
+
+it('records manual contact only when SMS failed or was unavailable', function (string $status, bool $allowed) {
+    $attributes = disbursementAttributes($this);
+    $attributes['status'] = AssistanceDisbursementStatus::Ready;
+    $attributes['notification_status'] = $status;
+    $ready = AssistanceDisbursement::query()->create($attributes);
+    $action = new RecordAssistanceDisbursementManualContactAction(
+        new LockActionCenterMunicipalityAction,
+        new LockAssistanceRequestAction,
+    );
+
+    if ($allowed) {
+        $result = $action->execute(
+            $this->requestId,
+            $ready->id,
+            $this->municipalId,
+            $this->actorId,
+            'phone_call',
+            'The claimant was advised where and when to claim the assistance.',
+        );
+
+        expect(data_get($result->metadata, 'manual_contacts.0.channel'))->toBe('phone_call');
+
+        return;
+    }
+
+    expect(fn () => $action->execute(
+        $this->requestId,
+        $ready->id,
+        $this->municipalId,
+        $this->actorId,
+        'phone_call',
+        'The claimant was advised where and when to claim the assistance.',
+    ))->toThrow(DomainException::class, 'only be recorded');
+})->with([
+    'failed' => ['failed', true],
+    'unavailable' => ['unavailable', true],
+    'submitted' => ['submitted', false],
+    'sent' => ['sent', false],
+]);
 
 it('creates and updates one frozen disbursement draft without releasing the request', function () {
     $request = AssistanceRequest::query()->findOrFail($this->requestId);
@@ -489,6 +637,121 @@ it('keeps a voided notified attempt in history and creates a replacement attempt
         ->and($replacement->attempt_number)->toBe(2)
         ->and($replacement->status)->toBe(AssistanceDisbursementStatus::Preparing)
         ->and(AssistanceDisbursement::query()->count())->toBe(2);
+});
+
+it('blocks voiding while a recent SMS submission is in progress', function () {
+    $attributes = disbursementAttributes($this);
+    $attributes['status'] = AssistanceDisbursementStatus::Ready;
+    $attributes['notification_status'] = 'sending';
+    $attributes['notification_attempted_at'] = now();
+    $ready = AssistanceDisbursement::query()->create($attributes);
+    $notifier = Mockery::mock(AssistanceDisbursementSmsNotifier::class);
+    $notifier->shouldNotReceive('voided');
+
+    expect(fn () => (new VoidAssistanceDisbursementAction(
+        new LockActionCenterMunicipalityAction,
+        new LockAssistanceRequestAction,
+        $notifier,
+    ))->execute(new VoidAssistanceDisbursementDto(
+        assistanceRequestId: $this->requestId,
+        disbursementId: $ready->id,
+        municipalId: $this->municipalId,
+        actorId: $this->actorId,
+        reason: 'The financial instrument details require a reviewed correction.',
+    )))->toThrow(DomainException::class, 'currently being submitted');
+
+    expect($ready->fresh()->status)->toBe(AssistanceDisbursementStatus::Ready);
+});
+
+it('sends a precautionary cancellation when a sending state is stale', function () {
+    $attributes = disbursementAttributes($this);
+    $attributes['status'] = AssistanceDisbursementStatus::Ready;
+    $attributes['notification_status'] = 'sending';
+    $attributes['notification_attempted_at'] = now()->subMinutes(6);
+    $ready = AssistanceDisbursement::query()->create($attributes);
+    $notifier = Mockery::mock(AssistanceDisbursementSmsNotifier::class);
+    $notifier->shouldReceive('voided')->once()->andReturn([
+        'status' => 'submitted',
+        'phone' => '09171234567',
+        'message' => 'Cancelled claim notice.',
+        'failure' => null,
+        'provider_message_id' => '701',
+        'provider_status' => 'Queued',
+    ]);
+
+    $voided = (new VoidAssistanceDisbursementAction(
+        new LockActionCenterMunicipalityAction,
+        new LockAssistanceRequestAction,
+        $notifier,
+    ))->execute(new VoidAssistanceDisbursementDto(
+        assistanceRequestId: $this->requestId,
+        disbursementId: $ready->id,
+        municipalId: $this->municipalId,
+        actorId: $this->actorId,
+        reason: 'The SMS submission became stale while the financial record required correction.',
+    ));
+
+    expect($voided->status)->toBe(AssistanceDisbursementStatus::Voided);
+});
+
+it('cancels accepted notices but skips cancellation for notices that never submitted', function (string $notificationStatus, bool $expectsCancellation) {
+    $attributes = disbursementAttributes($this);
+    $attributes['status'] = AssistanceDisbursementStatus::Ready;
+    $attributes['notification_status'] = $notificationStatus;
+    $ready = AssistanceDisbursement::query()->create($attributes);
+    $notifier = Mockery::mock(AssistanceDisbursementSmsNotifier::class);
+
+    if ($expectsCancellation) {
+        $notifier->shouldReceive('voided')->once()->andReturn([
+            'status' => 'submitted',
+            'phone' => '09171234567',
+            'message' => 'Cancelled claim notice.',
+            'failure' => null,
+            'provider_message_id' => '702',
+            'provider_status' => 'Pending',
+        ]);
+    } else {
+        $notifier->shouldNotReceive('voided');
+    }
+
+    $voided = (new VoidAssistanceDisbursementAction(
+        new LockActionCenterMunicipalityAction,
+        new LockAssistanceRequestAction,
+        $notifier,
+    ))->execute(new VoidAssistanceDisbursementDto(
+        assistanceRequestId: $this->requestId,
+        disbursementId: $ready->id,
+        municipalId: $this->municipalId,
+        actorId: $this->actorId,
+        reason: 'The ready disbursement requires a reviewed financial correction.',
+    ));
+
+    expect($voided->status)->toBe(AssistanceDisbursementStatus::Voided);
+})->with([
+    'submitted notice' => ['submitted', true],
+    'sent notice' => ['sent', true],
+    'failed notice' => ['failed', false],
+    'unavailable notice' => ['unavailable', false],
+]);
+
+it('voids a preparing attempt without sending a cancellation', function () {
+    $preparing = AssistanceDisbursement::query()->create(disbursementAttributes($this));
+    $notifier = Mockery::mock(AssistanceDisbursementSmsNotifier::class);
+    $notifier->shouldNotReceive('voided');
+
+    $voided = (new VoidAssistanceDisbursementAction(
+        new LockActionCenterMunicipalityAction,
+        new LockAssistanceRequestAction,
+        $notifier,
+    ))->execute(new VoidAssistanceDisbursementDto(
+        assistanceRequestId: $this->requestId,
+        disbursementId: $preparing->id,
+        municipalId: $this->municipalId,
+        actorId: $this->actorId,
+        reason: 'The draft financial instrument details were entered incorrectly.',
+    ));
+
+    expect($voided->status)->toBe(AssistanceDisbursementStatus::Voided);
 });
 
 function disbursementDto(object $test, string $method, string $reference): SaveAssistanceDisbursementDto
