@@ -78,20 +78,14 @@ class ApplyAssistanceRequestController extends Controller
                 );
         }
 
-        // Don't render a dead form: bounce STANDARD programs the citizen can't
-        // currently file (cooldown / in-flight / one-time) back to the portal
-        // with the friendly message. Burial is independent + per-deceased — its
-        // gate depends on which deceased is chosen, so the form always loads and
-        // the store enforces it.
+        // Apply the shared household cooldown and hard-limit policy to every
+        // program before rendering the form, including burial assistance.
+        $eligibility = $this->checkEligibility->execute($beneficiary, $assistanceType);
 
-        if (! $assistanceType->is_independent) {
-            $eligibility = $this->checkEligibility->execute($beneficiary, $assistanceType);
-
-            if (! $eligibility->eligible) {
-                return redirect()
-                    ->route('actionCenter.portal', ['municipality' => $municipality])
-                    ->with('error', $eligibility->message());
-            }
+        if (! $eligibility->eligible) {
+            return redirect()
+                ->route('actionCenter.portal', ['municipality' => $municipality])
+                ->with('error', $eligibility->message());
         }
 
         // Roster the citizen can pick from when filing on behalf of a family
