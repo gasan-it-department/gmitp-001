@@ -4,6 +4,7 @@ namespace App\External\Api\Request\Feedback;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 use Throwable;
 
@@ -21,7 +22,10 @@ class SubmitFeedbackRequest extends FormRequest
             'contact_number'  => ['nullable', 'string', 'max:50'],
             'email'           => ['nullable', 'email', 'max:200'],
             'employee_name'   => ['nullable', 'string', 'max:200'],
-            'department_id'   => ['nullable', 'ulid', 'exists:departments,id'],
+            'department_id'   => ['nullable', 'ulid', Rule::exists('departments', 'id')
+                ->where('municipal_id', app('municipal_id'))
+                ->where('is_active', true)
+                ->whereNull('deleted_at')],
             'subject'         => ['required', 'string', 'max:255'],
             'message'         => ['required', 'string', 'max:5000'],
             'rating'          => ['nullable', 'integer', 'min:1', 'max:5'],

@@ -4,6 +4,7 @@ import { useState } from 'react';
 type StarRatingProps = {
     value?: number;
     max?: number;
+    required?: boolean;
     onChange: (rating: number) => void;
 };
 
@@ -14,14 +15,14 @@ const ratingMessage = (rating: number) => {
     return 'Napakaganda ng aking karanasan';
 };
 
-export default function StarRating({ value = 0, max = 5, onChange }: StarRatingProps) {
+export default function StarRating({ value = 0, max = 5, required = false, onChange }: StarRatingProps) {
     const [hover, setHover] = useState(0);
     const activeRating = hover || value;
 
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <label className="text-sm font-bold text-amber-950">Antas ng Serbisyo</label>
+                <span className="text-sm font-bold text-amber-950">Antas ng Serbisyo {required && <span className="text-destructive">*</span>}</span>
                 <span className="text-xs font-semibold text-amber-700">{value > 0 ? `${value} sa ${max}` : 'Pumili ng rating'}</span>
             </div>
 
@@ -31,6 +32,7 @@ export default function StarRating({ value = 0, max = 5, onChange }: StarRatingP
                         key={rating}
                         type="button"
                         aria-label={`${rating} sa ${max} na bituin`}
+                        aria-pressed={value === rating}
                         onClick={() => onChange(rating)}
                         onMouseEnter={() => setHover(rating)}
                         onFocus={() => setHover(rating)}

@@ -9,7 +9,7 @@ import api from '@/routes/api';
 import { type SharedData } from '@/types';
 import { useForm, usePage } from '@inertiajs/react';
 import imageCompression from 'browser-image-compression';
-import { AlertTriangle, Building2, Check, FileIcon, Loader2, MessageSquareText, Paperclip, ShieldCheck, Upload, UserRound, X } from 'lucide-react';
+import { AlertTriangle, Building2, Check, FileIcon, Loader2, MessageSquareText, Paperclip, ShieldCheck, Upload, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import StarRating from './StarRatingBar';
 
@@ -37,15 +37,14 @@ declare global {
 interface FeedbackFormContentProps {
     departments?: DepartmentOption[];
     feedbackTypes?: { value: string; label: string }[];
+    fixedDepartment?: DepartmentOption;
+    submitUrl?: string;
     onCancel?: () => void;
     onSuccess?: (message: string) => void;
     onError?: (message: string) => void;
 }
 
 type FeedbackFormShape = {
-    citizen_name: string;
-    contact_number: string;
-    email: string;
     employee_name: string;
     department_id: string;
     subject: string;
@@ -59,7 +58,15 @@ const MAX_FILES = 5;
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 const TURNSTILE_SCRIPT_ID = 'cloudflare-turnstile-script';
 
-export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCancel, onSuccess, onError }: FeedbackFormContentProps) {
+export function FeedbackFormContent({
+    departments = [],
+    feedbackTypes = [],
+    fixedDepartment,
+    submitUrl,
+    onCancel,
+    onSuccess,
+    onError,
+}: FeedbackFormContentProps) {
     const { currentMunicipality } = useMunicipality();
     const { auth } = usePage<SharedData>().props;
     const isGuest = !auth.user;
@@ -68,19 +75,17 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
     const turnstileWidgetIdRef = useRef<TurnstileWidgetId | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm<FeedbackFormShape>({
-        citizen_name: '',
-        contact_number: '',
-        email: '',
         employee_name: '',
-        department_id: '',
+        department_id: fixedDepartment?.id ?? '',
         subject: '',
         message: '',
-        rating: 5,
+        rating: fixedDepartment ? null : 5,
         captcha_token: '',
         attachments: [],
     });
 
     const [fileError, setFileError] = useState<string | null>(null);
+    const [ratingError, setRatingError] = useState<string | null>(null);
     const [isCompressing, setIsCompressing] = useState(false);
     const captchaRequired = isGuest;
 
@@ -194,8 +199,12 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
         e.preventDefault();
         if (isCompressing) return;
         setFileError(null);
+        if (fixedDepartment && data.rating === null) {
+            setRatingError('Pumili muna ng rating mula 1 hanggang 5 bituin.');
+            return;
+        }
 
-        post(api.feedback.store.url(), {
+        post(submitUrl ?? api.feedback.store.url(), {
             forceFormData: true,
             preserveScroll: true,
             headers: {
@@ -203,6 +212,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
             },
             onSuccess: () => {
                 reset();
+                setRatingError(null);
                 if (turnstileWidgetIdRef.current) {
                     window.turnstile?.reset(turnstileWidgetIdRef.current);
                 }
@@ -219,6 +229,58 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
 
     return (
         <form onSubmit={handleSubmit} className="space-y-7">
+            {!fixedDepartment && (
+                <section className="space-y-5 rounded-lg border border-sky-100 bg-sky-50/50 p-4 sm:p-5">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                            <Building2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-950">Departamento at empleyado</h3>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">
+                                Piliin ang departamento at, kung alam mo, ang pangalan ng empleyado.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                                <Building2 className="h-4 w-4 text-sky-700" />
+                                Departamento
+                            </Label>
+                            <Select value={data.department_id} onValueChange={(value) => setData('department_id', value)}>
+                                <SelectTrigger className={`${fieldClass} ${errors.department_id ? 'border-destructive' : ''}`}>
+                                    <SelectValue placeholder="Pumili ng Departamento" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {departments.length === 0 ? (
+                                        <div className="px-3 py-2 text-sm text-muted-foreground">Walang departamento</div>
+                                    ) : (
+                                        departments.map((dept) => (
+                                            <SelectItem key={dept.id} value={dept.id}>
+                                                {dept.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            {errors.department_id && <p className="text-xs font-medium text-destructive">{errors.department_id}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-800">Pangalan ng Empleyado</Label>
+                            <Input
+                                value={data.employee_name}
+                                onChange={(e) => setData('employee_name', e.target.value)}
+                                placeholder="Sino ang tumulong sa iyo?"
+                                className={`${fieldClass} ${errors.employee_name ? 'border-destructive' : ''}`}
+                            />
+                            {errors.employee_name && <p className="text-xs font-medium text-destructive">{errors.employee_name}</p>}
+                        </div>
+                    </div>
+                </section>
+            )}
+
             <section className="space-y-5">
                 <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700 ring-1 ring-teal-100">
@@ -272,8 +334,19 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                 </div>
 
                 <div className="rounded-lg border border-amber-200/80 bg-amber-50/60 p-4 sm:p-5">
-                    <StarRating value={data.rating ?? 0} onChange={(value) => setData('rating', value)} />
-                    {errors.rating && <p className="mt-2 text-xs font-medium text-destructive">{errors.rating}</p>}
+                    <StarRating
+                        value={data.rating ?? 0}
+                        required={Boolean(fixedDepartment)}
+                        onChange={(value) => {
+                            setData('rating', value);
+                            setRatingError(null);
+                        }}
+                    />
+                    {(ratingError || errors.rating) && (
+                        <p className="mt-2 text-xs font-medium text-destructive" role="alert">
+                            {ratingError ?? errors.rating}
+                        </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -291,80 +364,12 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                     />
                     {errors.message && <p className="text-xs font-medium text-destructive">{errors.message}</p>}
                 </div>
-            </section>
 
-            <section className="space-y-5 rounded-lg border border-sky-100 bg-sky-50/50 p-4 sm:p-5">
-                <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                        <UserRound className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-slate-950">Impormasyon tungkol sa iyo</h3>
-                        <p className="mt-1 text-xs leading-5 text-slate-600">Opsyonal ang lahat ng detalye sa seksyong ito.</p>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800">Pangalan</Label>
-                    <Input
-                        value={data.citizen_name}
-                        onChange={(e) => setData('citizen_name', e.target.value)}
-                        placeholder="Iwanang blangko kung nais maging anonymous"
-                        className={`${fieldClass} ${errors.citizen_name ? 'border-destructive' : ''}`}
-                    />
-                    {errors.citizen_name && <p className="text-xs font-medium text-destructive">{errors.citizen_name}</p>}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {fixedDepartment && (
                     <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800">Numero ng Telepono</Label>
-                        <Input
-                            value={data.contact_number}
-                            onChange={(e) => setData('contact_number', e.target.value)}
-                            placeholder="Hal: 09171234567"
-                            className={`${fieldClass} ${errors.contact_number ? 'border-destructive' : ''}`}
-                        />
-                        {errors.contact_number && <p className="text-xs font-medium text-destructive">{errors.contact_number}</p>}
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800">Email Address</Label>
-                        <Input
-                            type="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="halimbawa@email.com"
-                            className={`${fieldClass} ${errors.email ? 'border-destructive' : ''}`}
-                        />
-                        {errors.email && <p className="text-xs font-medium text-destructive">{errors.email}</p>}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 border-t border-sky-100 pt-5 sm:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                            <Building2 className="h-4 w-4 text-sky-700" />
-                            Departamento
+                        <Label className="text-sm font-bold text-foreground">
+                            Pangalan ng Empleyado <span className="font-normal text-muted-foreground">(opsyonal)</span>
                         </Label>
-                        <Select value={data.department_id} onValueChange={(value) => setData('department_id', value)}>
-                            <SelectTrigger className={`${fieldClass} ${errors.department_id ? 'border-destructive' : ''}`}>
-                                <SelectValue placeholder="Pumili ng Departamento" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {departments.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-muted-foreground">Walang departamento</div>
-                                ) : (
-                                    departments.map((dept) => (
-                                        <SelectItem key={dept.id} value={dept.id}>
-                                            {dept.name}
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                        {errors.department_id && <p className="text-xs font-medium text-destructive">{errors.department_id}</p>}
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800">Pangalan ng Empleyado</Label>
                         <Input
                             value={data.employee_name}
                             onChange={(e) => setData('employee_name', e.target.value)}
@@ -373,7 +378,7 @@ export function FeedbackFormContent({ departments = [], feedbackTypes = [], onCa
                         />
                         {errors.employee_name && <p className="text-xs font-medium text-destructive">{errors.employee_name}</p>}
                     </div>
-                </div>
+                )}
             </section>
 
             <section className="space-y-4 rounded-lg border border-violet-100 bg-violet-50/40 p-4 sm:p-5">
