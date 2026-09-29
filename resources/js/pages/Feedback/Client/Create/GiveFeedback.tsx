@@ -93,9 +93,9 @@ export default function GiveFeedback({ departments, feedbackTypes, is_eligible }
                                 <div className="flex gap-3">
                                     <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary-foreground/80" />
                                     <div>
-                                        <p className="text-sm font-bold">May opsyon kang maging anonymous</p>
+                                        <p className="text-sm font-bold">Walang personal na detalyeng hinihingi</p>
                                         <p className="mt-1 text-xs leading-5 text-primary-foreground/65">
-                                            Ang personal na detalye ay maaari mong iwanang blangko.
+                                            Hindi mo kailangang magbigay ng pangalan, numero ng telepono, o email sa form na ito.
                                         </p>
                                     </div>
                                 </div>

@@ -5,9 +5,11 @@ use App\External\Api\Controllers\Feedback\StoreFeedbackController;
 use App\External\Web\Controllers\Feedback\Admin\FeedbackAdminController;
 use App\External\Web\Controllers\Feedback\Admin\ShowFeedbackDetailsController;
 use App\External\Web\Controllers\Feedback\Client\CreateFeedbackController;
+use App\External\Web\Controllers\Feedback\Client\CreateDepartmentFeedbackController;
 use App\External\Web\Controllers\Feedback\Client\DepartmentRatingsController;
 use App\External\Web\Controllers\Feedback\Client\ListFeedbackController;
 use App\External\Web\Controllers\Feedback\Client\ShowFeedbackController;
+use App\External\Web\Controllers\Feedback\Client\StoreDepartmentFeedbackController;
 use Illuminate\Support\Facades\Route;
 
 //eg. https://gasan-4905/feedback/
@@ -36,6 +38,13 @@ Route::prefix('{municipality}/feedback/client')
     ->group(function () {
 
         Route::get('/create', CreateFeedbackController::class)->name('create');
+        Route::get('/departments/{department}/create', CreateDepartmentFeedbackController::class)
+            ->whereUlid('department')
+            ->name('department.create');
+        Route::post('/departments/{department}/submit', StoreDepartmentFeedbackController::class)
+            ->whereUlid('department')
+            ->middleware('throttle:3,1')
+            ->name('department.store');
         Route::get('/department-ratings', DepartmentRatingsController::class)->name('department-ratings');
 
         Route::middleware('auth')->group(function () {
