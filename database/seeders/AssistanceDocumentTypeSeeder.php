@@ -165,6 +165,20 @@ class AssistanceDocumentTypeSeeder extends Seeder
                 'sort_order' => 80,
             ],
             [
+                'key' => 'student_id',
+                'label' => 'Student ID',
+                'description' => 'Photocopy ng kasalukuyang school ID ng estudyanteng tatanggap ng educational assistance.',
+                'examples' => 'Valid student ID for the current school year',
+                'sort_order' => 82,
+            ],
+            [
+                'key' => 'education_statement_of_account',
+                'label' => 'Statement of Account (College)',
+                'description' => 'Statement of Account mula sa paaralan para sa estudyanteng nasa kolehiyo. Hindi ito hospital bill.',
+                'examples' => 'College tuition or school-fee Statement of Account',
+                'sort_order' => 84,
+            ],
+            [
                 'key' => 'report_card',
                 'label' => 'Report Card / Grade Slip',
                 'description' => 'Opisyal na rekord mula sa paaralan na nagpapakita ng mga marka ng estudyante sa nakaraang termino.',
