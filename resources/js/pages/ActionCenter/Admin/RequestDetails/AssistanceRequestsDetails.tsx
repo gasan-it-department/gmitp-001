@@ -29,6 +29,7 @@ import {
     AssistanceReviewActor,
     CooldownAdvisory,
     PresentedCopyOption,
+    RelationshipOption,
 } from '@/Core/Types/ActionCenter/assistance';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import ToastProvider from '@/pages/Utility/ToastShower';
@@ -70,6 +71,7 @@ import ApplyAssistanceRequestProfileCorrectionsDialog, {
 import ApproveRequestDialog from './Components/ApproveRequestDialog';
 import AuthorizeCooldownExceptionDialog from './Components/AuthorizeCooldownExceptionDialog';
 import CancelApprovedRequestDialog from './Components/CancelApprovedRequestDialog';
+import ConfirmFilerRelationshipsPanel, { type FilerRelationshipStatus } from './Components/ConfirmFilerRelationshipsPanel';
 import CorrectApprovedAssistanceAmountDialog from './Components/CorrectApprovedAssistanceAmountDialog';
 import CorrectMissingBurialDateOfDeathDialog from './Components/CorrectMissingBurialDateOfDeathDialog';
 import DisbursementPanel from './Components/DisbursementPanel';
@@ -244,6 +246,8 @@ interface Props {
     activityLog: { data: ActivityEntry[] };
     requestHousehold: { data: RequestHousehold } | RequestHousehold;
     householdAssessmentPreview: HouseholdAssessmentPreview;
+    filerRelationships: FilerRelationshipStatus;
+    householdRelationshipOptions: RelationshipOption[];
     crossMunicipalityMatches: { data: CrossMunicipalityMatch[] };
     mswdVerification: AssistanceMswdVerification;
     documentChecks: AssistanceDocumentCheck[];
@@ -293,6 +297,8 @@ export default function AssistanceRequestsDetails({
     activityLog,
     requestHousehold,
     householdAssessmentPreview,
+    filerRelationships,
+    householdRelationshipOptions,
     crossMunicipalityMatches,
     mswdVerification,
     documentChecks,
@@ -311,6 +317,8 @@ export default function AssistanceRequestsDetails({
     const activityLogData = activityLog.data;
     const requestHouseholdData: RequestHousehold = 'data' in requestHousehold ? requestHousehold.data : requestHousehold;
     const requestHouseholdMembers = requestHouseholdData.members;
+    const filerRelationshipLabel = (value: string | null): string =>
+        value ? (householdRelationshipOptions.find((option) => option.value === value)?.label ?? humanizeHouseholdValue(value)) : '—';
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const disbursementRows = disbursements?.data ?? [];
     const activeDisbursement = disbursementRows.find((item) => item.status === 'preparing' || item.status === 'ready') ?? null;
@@ -1061,8 +1069,20 @@ export default function AssistanceRequestsDetails({
                                                                 <p className="text-sm font-semibold break-words text-slate-900">{member.full_name}</p>
                                                                 <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
                                                                     <MobileDetail
-                                                                        label="Relationship"
+                                                                        label="Relationship to head"
                                                                         value={humanizeHouseholdValue(member.relationship)}
+                                                                        capitalize
+                                                                    />
+                                                                    <MobileDetail
+                                                                        label="Relationship to filer"
+                                                                        value={
+                                                                            member.household_member_id === filerRelationships.filer_member_id
+                                                                                ? 'Filer'
+                                                                                : filerRelationshipLabel(
+                                                                                      filerRelationships.answers[member.household_member_id ?? ''] ??
+                                                                                          null,
+                                                                                  )
+                                                                        }
                                                                         capitalize
                                                                     />
                                                                     <MobileDetail
@@ -1095,7 +1115,8 @@ export default function AssistanceRequestsDetails({
                                                             <TableHeader className="bg-slate-50/70">
                                                                 <TableRow>
                                                                     <TableHead className="text-xs">Name</TableHead>
-                                                                    <TableHead className="text-xs">Relationship</TableHead>
+                                                                    <TableHead className="text-xs">Relationship to Head</TableHead>
+                                                                    <TableHead className="text-xs">Relationship to Filer</TableHead>
                                                                     <TableHead className="text-xs">Age/Sex</TableHead>
                                                                     <TableHead className="text-xs">Education</TableHead>
                                                                     <TableHead className="text-xs">Occupation</TableHead>
@@ -1113,6 +1134,14 @@ export default function AssistanceRequestsDetails({
                                                                         </TableCell>
                                                                         <TableCell className="text-xs text-slate-600 capitalize">
                                                                             {humanizeHouseholdValue(member.relationship)}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-xs text-slate-600 capitalize">
+                                                                            {member.household_member_id === filerRelationships.filer_member_id
+                                                                                ? 'Filer'
+                                                                                : filerRelationshipLabel(
+                                                                                      filerRelationships.answers[member.household_member_id ?? ''] ??
+                                                                                          null,
+                                                                                  )}
                                                                         </TableCell>
                                                                         <TableCell className="text-xs text-slate-600 capitalize">
                                                                             {member.age_at_filing ?? '—'} yrs / {humanizeHouseholdValue(member.sex)}
@@ -1135,6 +1164,18 @@ export default function AssistanceRequestsDetails({
                                                     </div>
                                                 </div>
                                             )}
+                                            <ConfirmFilerRelationshipsPanel
+                                                key={`${filerRelationships.roster_fingerprint}-${filerRelationships.is_confirmed}-${filerRelationships.is_current}`}
+                                                requestId={detail.id}
+                                                municipalitySlug={currentMunicipality.slug}
+                                                filerName={detail.identity_snapshot.full_name}
+                                                members={requestHouseholdMembers}
+                                                status={filerRelationships}
+                                                options={householdRelationshipOptions}
+                                                canConfirm={canRefreshHouseholdAssessment}
+                                                completedVerification={verificationIsComplete}
+                                                activeDisbursement={activeDisbursement !== null}
+                                            />
                                         </CardContent>
                                     </Card>
                                 </TabsContent>

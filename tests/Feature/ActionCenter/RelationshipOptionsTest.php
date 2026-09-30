@@ -49,3 +49,11 @@ it('allows recognized family relatives as assistance representatives', function 
         Relationship::NonRelative->value,
     );
 });
+
+it('checks the filer age using the assisted persons relationship to the filer', function () {
+    $options = collect(Relationship::assistanceRepresentativeOptions())->keyBy('value');
+
+    expect($options[Relationship::Parent->value]['requires_legal_age'])->toBeTrue()
+        ->and($options[Relationship::Sibling->value]['requires_legal_age'])->toBeTrue()
+        ->and($options[Relationship::Child->value]['requires_legal_age'])->toBeFalse();
+});

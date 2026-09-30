@@ -23,5 +23,7 @@ readonly class AssistanceRequestIntakeSheetData
         public string $recommendation,
         public string $generatedByUserName,
         public \DateTimeInterface $generatedAt,
+        /** @var array{answers: array<string, string>, label: string, pending_confirmation: bool} */
+        public array $filerRelationships = [],
     ) {}
 }

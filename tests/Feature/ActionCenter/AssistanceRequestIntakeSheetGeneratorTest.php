@@ -2,6 +2,7 @@
 
 use App\Core\ActionCenter\Dto\Assistance\GenerateAssistanceRequestIntakeSheetDto;
 use App\Core\ActionCenter\Enums\AssistanceIntakeProblem;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\ActionCenter\UseCase\Assistance\GenerateAssistanceRequestIntakeSheetAction;
 use App\External\Api\Request\ActionCenter\GenerateAssistanceRequestIntakeSheetRequest;
 use App\External\Documents\ActionCenter\Pdf\AssistanceRequestIntakeSheetPdf;
@@ -312,6 +313,9 @@ it('uses edited assessment values without writing records and returns a dompdf d
 
 it('excludes the claimant roster row while retaining a different household head', function () {
     $context = seedAssistanceRequestIntakeSheetContext();
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update([
+        'status' => 'released',
+    ]);
 
     DB::table('ac_household_members')
         ->where('beneficiary_id', DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('beneficiary_id'))
@@ -449,6 +453,9 @@ it('renders the request-time household snapshot after the live roster changes', 
 
 it('prefers the MSWD interview assessment without replacing the filing snapshot', function () {
     $context = seedAssistanceRequestIntakeSheetContext();
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update([
+        'status' => 'released',
+    ]);
     $request = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->first();
     $filingSnapshot = [
         'household_id' => $request->household_id,
@@ -554,6 +561,66 @@ it('omits the internal roster member id from an on-behalf filing subject', funct
 
     expect($html)->toContain('Relationship', 'Subject Name', 'Juan Mawac')
         ->not->toContain('Roster Member ID', $rosterMemberId);
+});
+
+it('prints the relationship to Susan rather than the relationship to household head Kenneth', function () {
+    $context = seedAssistanceRequestIntakeSheetContext();
+    $request = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->first();
+    $kennethId = (string) Str::ulid();
+    $susanId = (string) Str::ulid();
+    $norbertoId = (string) Str::ulid();
+    $members = [
+        ['household_member_id' => $kennethId, 'beneficiary_id' => null, 'full_name' => 'Kenneth Solis', 'relationship' => 'head', 'is_household_head' => true],
+        ['household_member_id' => $susanId, 'beneficiary_id' => $request->beneficiary_id, 'full_name' => 'Susan Solis', 'relationship' => 'parent', 'is_household_head' => false],
+        ['household_member_id' => $norbertoId, 'beneficiary_id' => null, 'full_name' => 'Norberto Solis', 'relationship' => 'parent', 'is_household_head' => false],
+    ];
+    $relationships = app(AssistanceFilerRelationships::class)->capture($members, $request->beneficiary_id, [
+        $kennethId => 'child', $norbertoId => 'spouse',
+    ], null);
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update([
+        'on_behalf_household_member_id' => $kennethId,
+        'metadata' => json_encode([
+            'on_behalf_first_name' => 'Kenneth', 'on_behalf_last_name' => 'Solis',
+            'relationship_to_beneficiary' => 'child',
+            'filer_relationships' => $relationships,
+            'household_composition_snapshot' => ['household_id' => $request->household_id, 'members' => $members],
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
+    $data = $action->execute(new GenerateAssistanceRequestIntakeSheetDto(
+        assistanceRequestId: $context['request_id'], municipalId: $context['municipal_id'],
+        problemPresented: ['sick'], sourceOfIncome: 'Family support', monthlyIncome: 5000,
+        recommendation: 'Medical Assistance',
+    ), 'Test Admin');
+    $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
+
+    expect($data->filerRelationships['pending_confirmation'])->toBeTrue()
+        ->and($html)->toContain('Relationship to Filer', 'Son / Daughter', 'Kenneth Solis', 'Spouse', 'Norberto Solis', 'pending MSWD interview confirmation')
+        ->not->toContain('Legacy Relationship to Head');
+});
+
+it('requires legacy non-head answers before another unreleased intake sheet but keeps released history printable', function () {
+    $context = seedAssistanceRequestIntakeSheetContext();
+    $beneficiaryId = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('beneficiary_id');
+    DB::table('ac_household_members')->where('beneficiary_id', $beneficiaryId)->update(['relationship' => 'parent']);
+    $householdId = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('household_id');
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(), 'household_id' => $householdId,
+        'first_name' => 'Kenneth', 'last_name' => 'Mawac', 'relationship' => 'head',
+        'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
+    expect(fn () => $action->formData($context['request_id'], $context['municipal_id']))
+        ->toThrow(DomainException::class, 'Capture or reconfirm');
+
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update(['status' => 'released']);
+    $data = $action->execute(new GenerateAssistanceRequestIntakeSheetDto(
+        assistanceRequestId: $context['request_id'], municipalId: $context['municipal_id'],
+        problemPresented: ['sick'], sourceOfIncome: 'Fishing', monthlyIncome: 3000,
+        recommendation: 'Medical Assistance',
+    ), 'Test Admin');
+    expect($data->filerRelationships['label'])->toBe('Legacy Relationship to Head');
 });
 
 /** @return array{municipal_id: string, request_id: string} */

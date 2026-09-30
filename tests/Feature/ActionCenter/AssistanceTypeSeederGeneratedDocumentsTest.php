@@ -2,6 +2,8 @@
 
 use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Models\AssistanceType;
+use App\Core\ActionCenter\Models\DocumentType;
+use Database\Seeders\AssistanceDocumentTypeSeeder;
 use Database\Seeders\AssistanceTypeSeeder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +46,8 @@ beforeEach(function () {
         $table->ulid('municipal_id')->nullable();
         $table->string('key')->unique();
         $table->string('label');
+        $table->text('description')->nullable();
+        $table->text('examples')->nullable();
         $table->boolean('is_active')->default(true);
         $table->unsignedInteger('sort_order')->default(0);
         $table->timestamps();
@@ -58,6 +62,11 @@ beforeEach(function () {
         $table->unsignedInteger('sort_order')->default(0);
         $table->timestamps();
         $table->unique(['assistance_type_id', 'document_type_id']);
+    });
+
+    Schema::create('media', function (Blueprint $table) {
+        $table->id();
+        $table->json('custom_properties')->nullable();
     });
 
     $municipalId = (string) Str::ulid();
@@ -104,9 +113,12 @@ beforeEach(function () {
         ],
         $documentKeys,
     ));
+
+    $this->seed(AssistanceDocumentTypeSeeder::class);
 });
 
 afterEach(function () {
+    Schema::dropIfExists('media');
     Schema::dropIfExists('ac_assistance_type_documents');
     Schema::dropIfExists('ac_document_types');
     Schema::dropIfExists('ac_assistance_types');
@@ -140,4 +152,33 @@ it('initializes seeded programs once without restoring an administrator selectio
         ->and($medical->fresh()->generatedDocumentValues())->toBe([])
         ->and($medical->fresh()->cooldown_scope)->toBe('per_household')
         ->and($medical->fresh()->is_independent)->toBeFalse();
+});
+
+it('seeds education evidence for the correct school levels', function () {
+    $this->seed(AssistanceTypeSeeder::class);
+
+    expect(DocumentType::query()->where('key', 'student_id')->value('label'))->toBe('Student ID')
+        ->and(DocumentType::query()->where('key', 'education_statement_of_account')->value('label'))
+        ->toBe('Statement of Account (College)');
+
+    foreach (['educational-elementary', 'educational-highschool', 'educational-college'] as $slug) {
+        $type = AssistanceType::query()->where('slug', $slug)->firstOrFail();
+        $requirements = DB::table('ac_assistance_type_documents as pivot')
+            ->join('ac_document_types as document', 'document.id', '=', 'pivot.document_type_id')
+            ->where('pivot.assistance_type_id', $type->id)
+            ->whereIn('document.key', ['cert_enrollment', 'student_id', 'education_statement_of_account'])
+            ->select('document.key', 'pivot.is_required', 'pivot.physical_copy_requirement')
+            ->get()
+            ->keyBy('key');
+
+        expect((bool) $requirements['cert_enrollment']->is_required)->toBeTrue()
+            ->and($requirements['cert_enrollment']->physical_copy_requirement)->toBe('original')
+            ->and((bool) $requirements['student_id']->is_required)->toBeTrue()
+            ->and($requirements['student_id']->physical_copy_requirement)->toBe('photocopy')
+            ->and($requirements->has('education_statement_of_account'))->toBe($slug === 'educational-college');
+
+        if ($slug === 'educational-college') {
+            expect((bool) $requirements['education_statement_of_account']->is_required)->toBeTrue();
+        }
+    }
 });

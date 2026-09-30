@@ -633,6 +633,17 @@ class AssistanceMswdVerificationService
         if (! is_array($assessment) || ! is_array($assessment['members'] ?? null) || $assessment['members'] === []) {
             $blockers[] = 'Capture the assessed household using Sync Household before completing verification.';
         }
+        if (is_array($assessment['members'] ?? null)) {
+            $relationships = app(AssistanceFilerRelationships::class)->status($request, $assessment['members']);
+            $legacySignedOff = $relationships['is_legacy']
+                && ($request->mswd_verification_status === MswdVerificationStatus::Verified
+                    || $request->status === AssistanceStatus::Released);
+            if (! $legacySignedOff
+                && (! $relationships['is_legacy'] || ! $relationships['is_head_filer'])
+                && (! $relationships['is_current'] || ! $relationships['is_confirmed'])) {
+                $blockers[] = 'Confirm each household member relationship to the filer after the MSWD interview.';
+            }
+        }
 
         foreach ($request->documentChecks as $check) {
             if (! $check->is_applicable || ! $check->is_required) {
@@ -770,6 +781,9 @@ class AssistanceMswdVerificationService
             'requirements_captured_at' => $request->document_requirements_captured_at?->toIso8601String(),
             'checks' => $checks,
         ];
+        if (is_array(data_get($request->metadata, 'filer_relationships'))) {
+            $payload['filer_relationships'] = data_get($request->metadata, 'filer_relationships');
+        }
 
         return hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR));
     }

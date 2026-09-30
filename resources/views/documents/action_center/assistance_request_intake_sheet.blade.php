@@ -68,7 +68,9 @@
         $formatMoney = fn ($value): string => $value === null ? '---' : 'PHP '.number_format((float) $value, 2);
         $human = fn (?string $value): string => $value ? ucwords(str_replace('_', ' ', $value)) : '';
         $ageAtFiling = $snapshot?->birth_date && $request->created_at ? (int) $snapshot->birth_date->diffInYears($request->created_at) : null;
-        $relationship = $request->relationship_to_beneficiary?->label();
+        $assistedRelation = $data->filerRelationships['answers'][(string) $request->on_behalf_household_member_id] ?? null;
+        $relationship = \App\Core\ActionCenter\Enums\Relationship::tryFrom((string) $assistedRelation)?->label()
+            ?? $request->relationship_to_beneficiary?->label();
         $filingSubject = $relationship ? trim(strtolower($relationship).($onBehalfName !== '' ? ' '.$onBehalfName : '')) : 'self';
         $education = \App\Core\ActionCenter\Enums\EducationalAttainment::tryFrom((string) $snapshot?->educational_attainment)?->label() ?? $human($snapshot?->educational_attainment);
         $selectedProblems = array_fill_keys($data->problemPresented, true);
@@ -156,10 +158,13 @@
             @if($relationship)
                 <table class="field-table">
                     <tr>
-                        <td style="width: 30%;"><div class="field-label">Relationship</div><div class="field-value">{{ $relationship }}</div></td>
+                        <td style="width: 30%;"><div class="field-label">{{ $data->filerRelationships['label'] ?? 'Relationship' }}</div><div class="field-value">{{ $relationship }}</div></td>
                         <td style="width: 70%;"><div class="field-label">Subject Name</div><div class="field-value">{{ $onBehalfName ?: '---' }}</div></td>
                     </tr>
                 </table>
+                @if($data->filerRelationships['pending_confirmation'] ?? false)
+                    <div class="section-note">Relationship to the filer is pending MSWD interview confirmation.</div>
+                @endif
             @else
                 <div class="statement-box"><div class="field-value">Filed for self.</div></div>
             @endif
@@ -177,10 +182,13 @@
             @if($data->usesCurrentHouseholdFallback)
                 <div class="section-note">Request-time household snapshot unavailable; this section reflects the current active household roster.</div>
             @endif
+            @if($data->filerRelationships['pending_confirmation'] ?? false)
+                <div class="section-note">Relationships to the filer are pending MSWD interview confirmation.</div>
+            @endif
             <table class="household-table">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">Name</th><th style="width: 13%;">Relationship</th><th style="width: 7%;">Age</th><th style="width: 8%;">Sex</th><th style="width: 18%;">Education</th><th style="width: 15%;">Occupation</th><th style="width: 14%; text-align: right;">Income</th>
+                        <th style="width: 25%;">Name</th><th style="width: 13%;">{{ $data->filerRelationships['label'] ?? 'Relationship' }}</th><th style="width: 7%;">Age</th><th style="width: 8%;">Sex</th><th style="width: 18%;">Education</th><th style="width: 15%;">Occupation</th><th style="width: 14%; text-align: right;">Income</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -190,7 +198,7 @@
                                 ?? ($human($member->educationalAttainment) ?: '---');
                         @endphp
                         <tr>
-                            <td>{{ $member->fullName ?: '---' }}</td><td>{{ $human($member->relationship) ?: '---' }}</td><td class="center-cell">{{ $member->ageAtFiling ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ $member->monthlyIncome === null ? '---' : number_format($member->monthlyIncome, 2) }}</td>
+                            <td>{{ $member->fullName ?: '---' }}</td><td>{{ \App\Core\ActionCenter\Enums\Relationship::tryFrom((string) ($data->filerRelationships['answers'][$member->householdMemberId] ?? $member->relationship))?->label() ?? '---' }}</td><td class="center-cell">{{ $member->ageAtFiling ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ $member->monthlyIncome === null ? '---' : number_format($member->monthlyIncome, 2) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="center-cell">No other active household members on record.</td></tr>

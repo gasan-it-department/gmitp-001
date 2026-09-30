@@ -282,6 +282,22 @@ class AssistanceRequest extends Model implements HasMedia
         }
     }
 
+    /** @param array<string, mixed> $relationships */
+    public function replaceFilerRelationships(array $relationships, ?string $assistedRelationship): void
+    {
+        $metadata = $this->metadata ?? [];
+        $metadata['filer_relationships'] = $relationships;
+        if ($this->on_behalf_household_member_id !== null) {
+            $metadata['relationship_to_beneficiary'] = $assistedRelationship;
+        }
+        $this->allowHouseholdAssessmentRefresh = true;
+        try {
+            $this->update(['metadata' => $metadata]);
+        } finally {
+            $this->allowHouseholdAssessmentRefresh = false;
+        }
+    }
+
     /**
      * Replace only the approved amount after the Core correction action has
      * enforced tenant, status, release, program-limit, and audit rules.

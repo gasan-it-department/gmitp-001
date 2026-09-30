@@ -606,11 +606,60 @@ it('allows an admin to file for a pending household member with an override and 
         ->and($created->status->value)->toBe('pending')
         ->and(DB::table('media')->count())->toBe(0)
         ->and($created->on_behalf_household_member_id)->toBe($context['member_id'])
+        ->and(data_get($created->metadata, 'filer_relationships.confirmed_at'))->not->toBeNull()
         ->and($created->metadata)->toMatchArray([
             'relationship_to_beneficiary' => 'parent',
             'on_behalf_first_name' => 'Pedro',
             'on_behalf_verification_pending' => true,
         ]);
+});
+
+it('stores a non-head filer relationship for both filing paths without changing the permanent roster', function (bool $admin) {
+    $context = seedAdultOnBehalfIdentityContext();
+    makeNonHeadFilingRoster($context);
+
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(),
+        snapshotTestSmsNotifier(),
+        snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class),
+        snapshotTestMswdVerification(),
+    ))->execute(adultOnBehalfDto(
+        $context,
+        encodedByUserId: $admin ? $context['submitter_user_id'] : null,
+        relationshipToBeneficiary: 'parent',
+        filerRelationships: [$context['member_id'] => 'child'],
+    ));
+
+    expect($created->encoded_by_user_id)->toBe($admin ? $context['submitter_user_id'] : null)
+        ->and($created->relationship_to_beneficiary?->value)->toBe('child')
+        ->and(data_get($created->metadata, 'filer_relationships.answers.'.$context['member_id']))->toBe('child')
+        ->and(data_get($created->metadata, 'filer_relationships.confirmed_at'))->toBeNull()
+        ->and(DB::table('ac_household_members')->where('id', $context['member_id'])->value('relationship'))->toBe('head')
+        ->and(DB::table('ac_household_members')->where('id', $context['head_member_id'])->value('relationship'))->toBe('parent');
+})->with([false, true]);
+
+it('rejects forged or missing filer-relative roster answers', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    makeNonHeadFilingRoster($context);
+    $makeAction = function (): StoreAssistanceRequestAction {
+        $sms = Mockery::mock(AssistanceRequestSmsNotifier::class);
+        $sms->shouldNotReceive('requestReceived');
+
+        return new StoreAssistanceRequestAction(
+            snapshotTestIdGenerator(),
+            $sms,
+            snapshotTestEligibility(),
+            app(AssistanceRequestFormDefinitionProvider::class),
+            snapshotTestMswdVerification(),
+        );
+    };
+
+    expect(fn () => $makeAction()->execute(adultOnBehalfDto($context)))
+        ->toThrow(DomainException::class, 'every active household member')
+        ->and(fn () => $makeAction()->execute(adultOnBehalfDto($context, filerRelationships: [(string) Str::ulid() => 'child'])))
+        ->toThrow(DomainException::class, 'every active household member')
+        ->and(DB::table('ac_assistance_requests')->count())->toBe(0);
 });
 
 it('rechecks citizen eligibility after acquiring submission locks', function () {
@@ -1172,6 +1221,7 @@ function adultOnBehalfDto(
     string $relationshipToBeneficiary = 'parent',
     bool $filedForSelf = false,
     ?string $onBehalfDateOfDeath = null,
+    array $filerRelationships = [],
 ): StoreAssistanceRequestDto {
     return new StoreAssistanceRequestDto(
         municipalId: $context['municipal_id'],
@@ -1206,7 +1256,31 @@ function adultOnBehalfDto(
         snapshotBarangayPsgcCode: null,
         snapshotStreet: null,
         documents: [],
+        filerRelationships: $filerRelationships,
     );
+}
+
+function makeNonHeadFilingRoster(array $context): void
+{
+    $headBeneficiaryId = (string) Str::ulid();
+    $now = now();
+    DB::table('ac_beneficiaries')->insert([
+        'id' => $headBeneficiaryId,
+        'household_id' => $context['household_id'],
+        'municipal_id' => $context['municipal_id'],
+        'is_active' => true,
+        'first_name' => 'Pedro',
+        'last_name' => 'Santos',
+        'birth_date' => '1980-02-03',
+        'monthly_income' => 0,
+        'identity_verified_at' => $now,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    DB::table('ac_household_members')->where('id', $context['head_member_id'])->update(['relationship' => 'parent']);
+    DB::table('ac_household_members')->where('id', $context['member_id'])->update([
+        'relationship' => 'head', 'beneficiary_id' => $headBeneficiaryId,
+    ]);
 }
 
 function snapshotTestIdGenerator(): IdGeneratorInterface

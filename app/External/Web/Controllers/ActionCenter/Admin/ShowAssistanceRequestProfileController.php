@@ -3,6 +3,7 @@
 namespace App\External\Web\Controllers\ActionCenter\Admin;
 
 use App\Core\ActionCenter\Enums\PhysicalCopyRequirement;
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\UseCase\Assistance\GetAssistanceRequestProfileAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use App\External\Api\Resources\ActionCenter\AssistanceRequest\AssistanceDisbursementResource;
@@ -54,6 +55,8 @@ class ShowAssistanceRequestProfileController extends Controller
             'activityLog' => ActivityLogResource::collection($data['activityLog']),
 
             'requestHousehold' => new AssistanceRequestHouseholdResource($data['requestHousehold']),
+            'filerRelationships' => $data['filerRelationships'],
+            'householdRelationshipOptions' => Relationship::toOptions(),
 
             'householdAssessmentPreview' => $data['householdAssessmentPreview'],
 

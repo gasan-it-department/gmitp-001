@@ -11,6 +11,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\Services\AssistanceRequestSmsNotifier;
 use App\Core\ActionCenter\UseCase\Beneficiary\CheckElegibilityAction;
@@ -38,6 +39,8 @@ class StoreAssistanceRequestAction
 {
     private readonly LockActionCenterMunicipalityAction $lockMunicipality;
 
+    private readonly AssistanceFilerRelationships $filerRelationships;
+
     public function __construct(
         private IdGeneratorInterface $idGenerator,
         private AssistanceRequestSmsNotifier $smsNotifier,
@@ -45,8 +48,10 @@ class StoreAssistanceRequestAction
         private AssistanceRequestFormDefinitionProvider $formDefinitions,
         private AssistanceMswdVerificationService $mswdVerification,
         ?LockActionCenterMunicipalityAction $lockMunicipality = null,
+        ?AssistanceFilerRelationships $filerRelationships = null,
     ) {
         $this->lockMunicipality = $lockMunicipality ?? app(LockActionCenterMunicipalityAction::class);
+        $this->filerRelationships = $filerRelationships ?? app(AssistanceFilerRelationships::class);
     }
 
     public function execute(StoreAssistanceRequestDto $dto): AssistanceRequest
@@ -130,13 +135,24 @@ class StoreAssistanceRequestAction
             );
             $householdTotalIncome = $householdComposition['household_total_income'];
             $householdCompositionSnapshot = $householdComposition['snapshot'];
+            $filerRelationships = $this->filerRelationships->capture(
+                $householdCompositionSnapshot['members'],
+                (string) $beneficiary->id,
+                $dto->filerRelationships,
+                $dto->encodedByUserId ?? $dto->submitterUserId,
+            );
             $requestId = $this->idGenerator->generate();
 
             $onBehalfFirstName = $member?->first_name ?? $dto->onBehalfFirstName;
             $onBehalfMiddleName = $member?->middle_name ?? $dto->onBehalfMiddleName;
             $onBehalfLastName = $member?->last_name ?? $dto->onBehalfLastName;
             $onBehalfSuffix = $member?->suffix ?? $dto->onBehalfSuffix;
-            $relationshipToBeneficiary = $member?->relationship ?? $dto->relationshipToBeneficiary;
+            $relationshipToBeneficiary = $member !== null
+                ? ($filerRelationships['answers'][(string) $member->id] ?? null)
+                : null;
+            if ($member !== null && ! in_array($relationshipToBeneficiary, \App\Core\ActionCenter\Enums\Relationship::assistanceRepresentativeValues(), true)) {
+                throw new \DomainException('The assisted person must have a valid family relationship to the filer.');
+            }
 
             $metadata = array_filter([
                 'relationship_to_beneficiary' => $relationshipToBeneficiary,
@@ -159,6 +175,7 @@ class StoreAssistanceRequestAction
                     ? true
                     : null,
                 'household_composition_snapshot' => $householdCompositionSnapshot,
+                'filer_relationships' => $filerRelationships,
             ], static fn ($value) => $value !== null);
 
             $request = AssistanceRequest::create([
@@ -343,7 +360,7 @@ class StoreAssistanceRequestAction
         }
 
         if ($definition->isOnBehalfOnly()
-            && ($dto->onBehalfHouseholdMemberId === null || blank($dto->relationshipToBeneficiary))) {
+            && $dto->onBehalfHouseholdMemberId === null) {
             throw new \DomainException(
                 'This assistance program must be filed on behalf of the deceased household member. Select the deceased person and relationship.',
             );

@@ -1,5 +1,6 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import { AssistanceDocumentUploadField } from '@/components/ActionCenter/AssistanceDocumentUploadField';
+import { FilerRelationshipFields } from '@/components/ActionCenter/FilerRelationshipFields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -70,6 +71,7 @@ interface Props {
     beneficiary: { data: BeneficiaryData } | BeneficiaryData;
     assistanceTypes: { data: AssistanceTypeOption[] };
     relationships: RelationshipOption[];
+    householdRelationshipOptions: RelationshipOption[];
     householdMembers: { data: HouseholdMemberOption[] } | HouseholdMemberOption[];
     submitUrl: string;
     storeHouseholdMemberUrl: string;
@@ -92,6 +94,7 @@ type RequestFormData = {
     documents: Record<string, File | null>;
     verification_override_reason: string;
     relationship_to_beneficiary: RelationshipType;
+    filer_relationships: Record<string, string>;
     on_behalf_household_member_id: string;
     on_behalf_first_name: string;
     on_behalf_middle_name: string;
@@ -115,6 +118,7 @@ export default function CreateAssistanceRequest({
     beneficiary,
     assistanceTypes,
     relationships,
+    householdRelationshipOptions,
     householdMembers,
     submitUrl,
     storeHouseholdMemberUrl,
@@ -137,6 +141,7 @@ export default function CreateAssistanceRequest({
         documents: {},
         verification_override_reason: '',
         relationship_to_beneficiary: '',
+        filer_relationships: {},
         on_behalf_household_member_id: '',
         on_behalf_first_name: '',
         on_behalf_middle_name: '',
@@ -166,6 +171,13 @@ export default function CreateAssistanceRequest({
     const selectedBlocked = selectedEligibility ? !selectedEligibility.eligible : false;
     const selectedHasTimedCooldown = selectedEligibility?.reason === 'on_cooldown';
     const selectedMember = householdRoster.find((member) => member.id === data.on_behalf_household_member_id) ?? null;
+    const filerMember = householdRoster.find((member) => member.beneficiary_id === profile.id);
+    const filerIsHead = filerMember?.relationship === 'head';
+    const relationshipForMember = (member: HouseholdMemberOption) =>
+        filerIsHead ? (member.relationship ?? '') : (data.filer_relationships[member.id] ?? '');
+    const relationshipsComplete =
+        !!filerMember &&
+        (filerIsHead || householdRoster.filter((member) => member.id !== filerMember.id).every((member) => !!data.filer_relationships[member.id]));
     const selectedMemberNeedsOverride =
         effectiveFilingFor === 'family_member' &&
         selectedMember !== null &&
@@ -265,9 +277,11 @@ export default function CreateAssistanceRequest({
         };
 
         if (field === 'household_member_id' && value !== data.on_behalf_household_member_id) {
+            const chosen = householdRoster.find((member) => member.id === value);
             setData((current) => ({
                 ...current,
                 [keyMap[field]]: value,
+                relationship_to_beneficiary: chosen ? relationshipForMember(chosen) : '',
                 recipient_id_unavailable: false,
                 recipient_id_unavailable_reason: '',
                 documents: {
@@ -292,7 +306,7 @@ export default function CreateAssistanceRequest({
             on_behalf_middle_name: member.middle_name ?? '',
             on_behalf_last_name: member.last_name,
             on_behalf_suffix: member.suffix ?? '',
-            relationship_to_beneficiary: member.relationship ?? '',
+            relationship_to_beneficiary: filerIsHead ? (member.relationship ?? '') : '',
         }));
     };
 
@@ -342,6 +356,7 @@ export default function CreateAssistanceRequest({
         data.assistance_type_id.length > 0 &&
         data.description.trim().length >= 10 &&
         data.privacy_consent &&
+        relationshipsComplete &&
         representativeInfoComplete &&
         !legalAgeBlocked &&
         (!data.recipient_id_unavailable || data.recipient_id_unavailable_reason.trim().length >= 10) &&
@@ -432,6 +447,8 @@ export default function CreateAssistanceRequest({
                                     data={onBehalfOfData}
                                     onChange={handleBehalfChange}
                                     relationships={relationships}
+                                    householdRelationshipOptions={householdRelationshipOptions}
+                                    filerBeneficiaryId={profile.id}
                                     isDeceasedRequest={isDeceasedRequest}
                                     requiresDateOfDeath={requiresDateOfDeath}
                                     applicantBirthDate={profile.birth_date}
@@ -444,6 +461,24 @@ export default function CreateAssistanceRequest({
                                 />
                             </>
                         )}
+
+                        <FilerRelationshipFields
+                            filerName={profile.full_name}
+                            filerBeneficiaryId={profile.id}
+                            members={householdRoster}
+                            relationships={householdRelationshipOptions}
+                            answers={data.filer_relationships}
+                            onChange={(answers) =>
+                                setData((current) => ({
+                                    ...current,
+                                    filer_relationships: answers,
+                                    relationship_to_beneficiary: current.on_behalf_household_member_id
+                                        ? (answers[current.on_behalf_household_member_id] ?? '')
+                                        : '',
+                                }))
+                            }
+                            errors={fieldErrors}
+                        />
 
                         {/* ── Request details ── */}
                         <section className="space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">

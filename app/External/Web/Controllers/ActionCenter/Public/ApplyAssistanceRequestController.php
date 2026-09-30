@@ -99,6 +99,7 @@ class ApplyAssistanceRequestController extends Controller
         return Inertia::render('ActionCenter/Client/Apply/ApplyAssistance', [
             'assistanceType' => new AssistanceTypeDetailsResource($assistanceType),
             'relationships' => Relationship::assistanceRepresentativeOptions(),
+            'householdRelationshipOptions' => Relationship::toOptions(),
             'beneficiary' => new BeneficiaryDetailsResource($beneficiary),
             'household' => new HouseholdDetailsResource($beneficiary->household),
             'householdMembers' => HouseholdMemberOptionResource::collection($householdMembers),
