@@ -79,7 +79,7 @@ class CreateAssistanceRequestController extends Controller
         $householdMembers = HouseholdMember::query()
             ->where('household_id', $beneficiary->household_id)
             ->where('is_active', true)
-            ->where('relationship', '!=', Relationship::Head->value)
+            ->orderByRaw("CASE WHEN relationship = 'head' THEN 0 ELSE 1 END")
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
@@ -89,6 +89,7 @@ class CreateAssistanceRequestController extends Controller
             'assistanceTypes' => AssistanceTypeDetailsResource::collection($assistanceTypes),
             'eligibilityByType' => $eligibilityByType,
             'relationships' => Relationship::assistanceRepresentativeOptions(),
+            'householdRelationshipOptions' => Relationship::toOptions(),
             'householdMembers' => HouseholdMemberOptionResource::collection($householdMembers),
             'submitUrl' => route('actionCenter.assistance.admin-store'),
             'storeHouseholdMemberUrl' => route('actionCenter.household.members.admin-store', [

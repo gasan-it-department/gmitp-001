@@ -4,6 +4,7 @@ use App\Core\ActionCenter\Dto\Assistance\ReplaceAssistanceAdditionalDocumentDto;
 use App\Core\ActionCenter\Enums\AssistanceRequestDocumentCheckStatus;
 use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\MswdVerificationStatus;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\UseCase\Assistance\ReplaceAssistanceAdditionalDocumentAction;
 use App\Core\Users\Enums\EnumPermissions;
@@ -292,6 +293,44 @@ it('requires a current scan and physical inspection before MSWD verification can
 
     expect(fn () => $service->assertCurrent($completed->fresh()))
         ->toThrow(DomainException::class, 'MSWD verification is no longer current');
+});
+
+it('requires MSWD confirmation for a new non-head filer and fingerprints the answers', function () {
+    $context = mswdVerificationContext();
+    $service = app(AssistanceMswdVerificationService::class);
+    $service->start($context['request_id'], $context['municipal_id'], $context['reviewer_id']);
+    $request = \App\Core\ActionCenter\Models\AssistanceRequest::query()->findOrFail($context['request_id']);
+    $legacyFingerprint = $service->payload($request)['fingerprint'];
+    $metadata = $request->metadata;
+    $members = $metadata['household_assessment_snapshot']['members'];
+    $members[0]['relationship'] = 'parent';
+    $members[0]['is_household_head'] = false;
+    $kennethId = (string) Str::ulid();
+    $members[] = [
+        'household_member_id' => $kennethId, 'beneficiary_id' => null,
+        'full_name' => 'KENNETH SANTOS', 'relationship' => 'head', 'is_household_head' => true,
+    ];
+    $metadata['household_assessment_snapshot']['members'] = $members;
+    $metadata['filer_relationships'] = app(AssistanceFilerRelationships::class)->capture(
+        $members, $request->beneficiary_id, [$kennethId => 'child'], null,
+    );
+    $request->update(['metadata' => $metadata]);
+
+    $pending = $service->payload($request->fresh());
+    expect($pending['blockers'])->toContain('Confirm each household member relationship to the filer after the MSWD interview.')
+        ->and($pending['fingerprint'])->not->toBe($legacyFingerprint);
+    $metadata['filer_relationships']['confirmed_at'] = now()->toIso8601String();
+    $request->update(['metadata' => $metadata]);
+    expect($service->payload($request->fresh())['blockers'])
+        ->not->toContain('Confirm each household member relationship to the filer after the MSWD interview.');
+
+    unset($metadata['filer_relationships']);
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update([
+        'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),
+        'mswd_verification_status' => 'verified',
+    ]);
+    expect($service->payload($request->fresh())['blockers'])
+        ->not->toContain('Confirm each household member relationship to the filer after the MSWD interview.');
 });
 
 it('does not start an MSWD review again when it is already active', function () {
@@ -618,8 +657,10 @@ function mswdVerificationContext(): array
                 'source' => 'mswd_interview',
                 'members' => [[
                     'household_member_id' => (string) Str::ulid(),
+                    'beneficiary_id' => $beneficiaryId,
                     'full_name' => 'MARIA SANTOS',
                     'relationship' => 'head',
+                    'is_household_head' => true,
                 ]],
             ],
         ], JSON_THROW_ON_ERROR),

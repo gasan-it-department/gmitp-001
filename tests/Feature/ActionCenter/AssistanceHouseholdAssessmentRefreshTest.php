@@ -2,6 +2,8 @@
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
+use App\Core\ActionCenter\UseCase\Assistance\ConfirmAssistanceFilerRelationshipsAction;
 use App\Core\ActionCenter\UseCase\Assistance\RefreshAssistanceHouseholdAssessmentAction;
 use App\Core\ActionCenter\UseCase\Assistance\ResolveAssistanceRequestHouseholdAction;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
@@ -69,6 +71,7 @@ beforeEach(function () {
         $table->ulid('beneficiary_id');
         $table->ulid('household_id');
         $table->ulid('reviewed_by_user_id')->nullable();
+        $table->ulid('on_behalf_household_member_id')->nullable();
         $table->ulid('released_by_user_id')->nullable();
         $table->string('release_reference_number')->nullable();
         $table->string('status');
@@ -230,6 +233,63 @@ it('captures the current roster after profile edits while preserving the filing 
         ->and(DB::table('activity_log')
             ->where('description', 'Updated household assessment during assistance interview')
             ->exists())->toBeTrue();
+});
+
+it('confirms filer-relative answers and reopens a completed verification after an audited correction', function () {
+    $kennethId = (string) Str::ulid();
+    DB::table('ac_household_members')->where('id', $this->headMemberId)->update(['relationship' => 'parent']);
+    DB::table('ac_household_members')->insert([
+        'id' => $kennethId, 'household_id' => $this->householdId, 'first_name' => 'KENNETH',
+        'last_name' => 'MAWAC', 'relationship' => 'head', 'is_active' => true,
+        'is_verified_dependent' => true, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $members = HouseholdMember::query()->where('household_id', $this->householdId)->get()
+        ->map(fn (HouseholdMember $member): array => \App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData::fromModel($member, now())->toArray())
+        ->all();
+    $service = app(AssistanceFilerRelationships::class);
+    $capture = $service->capture($members, $this->beneficiaryId, [$kennethId => 'child'], $this->reviewerId);
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'metadata' => json_encode([
+            'household_composition_snapshot' => ['household_id' => $this->householdId, 'members' => $members],
+            'household_assessment_snapshot' => ['household_id' => $this->householdId, 'members' => $members],
+            'filer_relationships' => $capture,
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    $action = app(ConfirmAssistanceFilerRelationshipsAction::class);
+    expect(fn () => $action->execute($this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        str_repeat('0', 64), [$kennethId => 'child'], null))
+        ->toThrow(DomainException::class, 'roster changed');
+    expect(fn () => $action->execute($this->requestId, (string) Str::ulid(), $this->reviewerId, true, false,
+        $capture['roster_fingerprint'], [$kennethId => 'child'], null))
+        ->toThrow(AuthorizationException::class);
+
+    $confirmed = $action->execute($this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        $capture['roster_fingerprint'], [$kennethId => 'child'], null);
+    expect(data_get($confirmed->metadata, 'filer_relationships.confirmed_at'))->not->toBeNull()
+        ->and($service->status($confirmed, $members)['is_confirmed'])->toBeTrue();
+
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'mswd_verification_status' => 'verified', 'mswd_verification_fingerprint' => str_repeat('a', 64),
+    ]);
+    expect(fn () => $action->execute($this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        $capture['roster_fingerprint'], [$kennethId => 'child'], 'Reviewed after interview'))
+        ->toThrow(AuthorizationException::class);
+    $corrected = $action->execute($this->requestId, $this->municipalId, $this->reviewerId, false, true,
+        $capture['roster_fingerprint'], [$kennethId => 'sibling'], 'Reviewed after interview');
+    expect($corrected->mswd_verification_status?->value)->toBe('under_review')
+        ->and($corrected->mswd_verification_fingerprint)->toBeNull()
+        ->and(data_get($corrected->metadata, 'filer_relationships.answers.'.$kennethId))->toBe('sibling')
+        ->and(DB::table('activity_log')->where('description', 'Corrected filer-relative household relationships')->count())->toBe(1);
+
+    $incomeEdited = $members;
+    $incomeEdited[0]['monthly_income'] = 9000;
+    expect($service->status($corrected, $incomeEdited)['is_current'])->toBeTrue();
+    $incomeEdited[0]['beneficiary_id'] = (string) Str::ulid();
+    expect($service->status($corrected, $incomeEdited)['is_current'])->toBeFalse();
+    $relationshipEdited = $members;
+    $relationshipEdited[0]['relationship'] = 'spouse';
+    expect($service->status($corrected, $relationshipEdited)['is_current'])->toBeFalse();
 });
 
 it('keeps the filing household authoritative until an assessment is synchronized', function () {

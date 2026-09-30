@@ -11,6 +11,7 @@ use App\Core\ActionCenter\Enums\AssistanceGeneratedDocument;
 use App\Core\ActionCenter\Enums\AssistanceIntakeProblem;
 use App\Core\ActionCenter\Enums\CivilStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\Municipality\Models\Municipality;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -26,6 +27,7 @@ class GenerateAssistanceRequestIntakeSheetAction
     public function __construct(
         private readonly EnsureAssistanceGeneratedDocumentEnabledAction $ensureDocumentEnabled,
         private readonly ResolveAssistanceRequestHouseholdAction $resolveRequestHousehold,
+        private readonly AssistanceFilerRelationships $filerRelationships,
     ) {}
 
     public function formData(
@@ -36,6 +38,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             $assistanceRequestId,
             $municipalId,
         );
+        $this->ensureRelationshipsPrintable($request, $householdComposition);
         $snapshot = $request->snapshot;
         $frozenEconomicValues = [
             'source_of_income' => $this->presentOccupation($snapshot?->occupation),
@@ -90,6 +93,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             $dto->assistanceRequestId,
             $dto->municipalId,
         );
+        $relationships = $this->ensureRelationshipsPrintable($request, $householdComposition);
 
         return new AssistanceRequestIntakeSheetData(
             request: $request,
@@ -107,6 +111,7 @@ class GenerateAssistanceRequestIntakeSheetAction
             recommendation: $dto->recommendation,
             generatedByUserName: $generatedByUserName,
             generatedAt: CarbonImmutable::now(),
+            filerRelationships: $relationships,
         );
     }
 
@@ -178,6 +183,29 @@ class GenerateAssistanceRequestIntakeSheetAction
         }
 
         return $name;
+    }
+
+    private function ensureRelationshipsPrintable(
+        AssistanceRequest $request,
+        ResolvedAssistanceRequestHouseholdData $household,
+    ): array {
+        $members = $household->members->map->toArray()->all();
+        $status = $this->filerRelationships->status($request, $members);
+        if ($status['is_current']) {
+            return [
+                'answers' => $status['answers'],
+                'label' => 'Relationship to Filer',
+                'pending_confirmation' => ! $status['is_confirmed'],
+            ];
+        }
+        if ($request->status->value === 'released') {
+            return ['answers' => [], 'label' => 'Legacy Relationship to Head', 'pending_confirmation' => false];
+        }
+        if ($status['is_head_filer'] && $status['is_legacy']) {
+            return ['answers' => [], 'label' => 'Relationship to Filer (Head)', 'pending_confirmation' => false];
+        }
+
+        throw new \DomainException('Capture or reconfirm the household relationships to the filer before generating another Intake Sheet.');
     }
 
     private function filingSubject(AssistanceRequest $request): string

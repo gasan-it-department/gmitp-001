@@ -209,7 +209,7 @@ class AssistanceDocumentTypeSeeder extends Seeder
             ->where('key', 'valid_id')
             ->update(['is_active' => false]);
 
-        $this->command->info('AssistanceDocumentTypeSeeder: ' . count($documents) . ' document types seeded.');
+        $this->command->info('AssistanceDocumentTypeSeeder: '.count($documents).' document types seeded.');
     }
 
     private function reconcileLegacyDocumentKey(string $legacyKey, string $canonicalKey): void
@@ -225,13 +225,13 @@ class AssistanceDocumentTypeSeeder extends Seeder
 
             $legacy = $documents->get($legacyKey);
 
-            if (!$legacy) {
+            if (! $legacy) {
                 return;
             }
 
             $canonical = $documents->get($canonicalKey);
 
-            if (!$canonical) {
+            if (! $canonical) {
                 $legacy->update(['key' => $canonicalKey]);
 
                 return;
@@ -247,7 +247,7 @@ class AssistanceDocumentTypeSeeder extends Seeder
                     ->where('document_type_id', $canonical->id)
                     ->first();
 
-                if (!$canonicalAssignment) {
+                if (! $canonicalAssignment) {
                     DB::table('ac_assistance_type_documents')
                         ->where('id', $legacyAssignment->id)
                         ->update([

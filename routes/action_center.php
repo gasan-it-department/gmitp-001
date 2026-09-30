@@ -6,6 +6,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\AuthorizeCooldownExcept
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelApprovedAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CancelAssistanceRequestController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CompleteAssistanceMswdVerificationController;
+use App\External\Api\Controllers\ActionCenter\Assistance\ConfirmAssistanceFilerRelationshipsController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectApprovedAssistanceAmountController;
 use App\External\Api\Controllers\ActionCenter\Assistance\CorrectMissingBurialDateOfDeathController;
 use App\External\Api\Controllers\ActionCenter\Assistance\GetAssistanceCooldownContextController;
@@ -422,6 +423,12 @@ Route::prefix('/api/action-center')
                     RefreshAssistanceHouseholdAssessmentController::class,
                 )->middleware('permission:action_center.requests.process|action_center.requests.correct')
                     ->name('assistance.household-assessment.refresh');
+
+                Route::post(
+                    '/assistance-request/{assistanceRequestId}/filer-relationships/confirm',
+                    ConfirmAssistanceFilerRelationshipsController::class,
+                )->middleware('permission:action_center.requests.process|action_center.requests.correct')
+                    ->name('assistance.filer-relationships.confirm');
 
                 // One-time repair for legacy approved burial requests that
                 // were encoded without a Date of Death. The Core action locks

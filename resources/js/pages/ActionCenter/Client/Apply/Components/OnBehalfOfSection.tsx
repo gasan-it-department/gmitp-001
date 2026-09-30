@@ -35,6 +35,8 @@ interface Props {
      *  the enum copy. The `requires_legal_age` flag drives the "Must be 18+"
      *  pill rendered under the option. */
     relationships: RelationshipOption[];
+    householdRelationshipOptions: RelationshipOption[];
+    filerBeneficiaryId: string;
     /** Enables deceased-person language and behavior for configured programs. */
     isDeceasedRequest: boolean;
     /** Reveals the configured Date of Death request field. */
@@ -84,6 +86,8 @@ export function OnBehalfOfSection({
     data,
     onChange,
     relationships,
+    householdRelationshipOptions,
+    filerBeneficiaryId,
     isDeceasedRequest,
     requiresDateOfDeath,
     applicantBirthDate,
@@ -108,9 +112,13 @@ export function OnBehalfOfSection({
           ? 'Record the household member receiving assistance and keep the selected beneficiary as the filer.'
           : 'You are filing this request on behalf of a family member who needs assistance.';
 
+    const selectableMembers = useMemo(
+        () => householdMembers.filter((member) => member.beneficiary_id !== filerBeneficiaryId),
+        [householdMembers, filerBeneficiaryId],
+    );
     const selectedMember = useMemo(
-        () => householdMembers.find((m) => m.id === data.household_member_id) ?? null,
-        [householdMembers, data.household_member_id],
+        () => selectableMembers.find((m) => m.id === data.household_member_id) ?? null,
+        [selectableMembers, data.household_member_id],
     );
 
     const [isAdding, setIsAdding] = useState(false);
@@ -124,9 +132,6 @@ export function OnBehalfOfSection({
         onChange('middle_name', member.middle_name ?? '');
         onChange('last_name', member.last_name);
         onChange('suffix', member.suffix ?? '');
-        if (member.relationship) {
-            onChange('relationship', member.relationship);
-        }
     };
 
     const handleClearSelection = () => {
@@ -156,8 +161,8 @@ export function OnBehalfOfSection({
                 <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                     <p className="text-xs leading-relaxed text-blue-800">
-                        Select the deceased household member and provide the relationship recorded in the household roster. The filing representative
-                        must be an eligible family relative; adult-child and adult-sibling filing requirements still apply where applicable.
+                        Select the deceased household member and provide their relationship to the filer below. The filing representative must be an
+                        eligible family relative; adult-child and adult-sibling filing requirements still apply where applicable.
                     </p>
                 </div>
             ) : (
@@ -181,10 +186,15 @@ export function OnBehalfOfSection({
 
             {/* ── Selected member card OR picker ── */}
             {selectedMember ? (
-                <SelectedMemberCard member={selectedMember} relationships={relationships} onClear={handleClearSelection} />
+                <SelectedMemberCard
+                    member={selectedMember}
+                    relationship={data.relationship}
+                    relationships={relationships}
+                    onClear={handleClearSelection}
+                />
             ) : (
                 <FamilyMemberPicker
-                    members={householdMembers}
+                    members={selectableMembers}
                     isDeceasedRequest={isDeceasedRequest}
                     onPick={handlePickMember}
                     onStartAdding={() => setIsAdding(true)}
@@ -195,7 +205,7 @@ export function OnBehalfOfSection({
             {/* ── Inline "Add new family member" form ── */}
             {isAdding && (
                 <InlineAddMemberForm
-                    relationships={relationships}
+                    relationships={householdRelationshipOptions}
                     storeHouseholdMemberUrl={storeHouseholdMemberUrl}
                     municipalitySlug={municipalitySlug}
                     onCancel={() => setIsAdding(false)}
@@ -228,9 +238,8 @@ export function OnBehalfOfSection({
                 <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                     <p className="text-xs leading-relaxed text-red-800">
-                        Based on your profile, you appear to be <strong>under 18 years old</strong>. The Executive Order requires that a son/daughter
-                        or brother/sister must be of <strong>legal age (18+)</strong> to file on behalf of another person. Please ask a qualified
-                        family member (spouse or parent) to file instead.
+                        Based on your profile, you appear to be <strong>under 18 years old</strong>. A son/daughter or brother/sister filing for a
+                        parent or sibling must be of <strong>legal age (18+)</strong>. Please ask a qualified adult family member to file instead.
                     </p>
                 </div>
             )}
@@ -242,14 +251,16 @@ export function OnBehalfOfSection({
 
 function SelectedMemberCard({
     member,
+    relationship,
     relationships,
     onClear,
 }: {
     member: HouseholdMemberOption;
+    relationship: string;
     relationships: RelationshipOption[];
     onClear: () => void;
 }) {
-    const relationshipLabel = relationships.find((r) => r.value === member.relationship)?.label ?? null;
+    const relationshipLabel = relationships.find((r) => r.value === relationship)?.label ?? null;
 
     return (
         <div className="flex items-start gap-3 rounded-xl border border-[#005088]/30 bg-[#005088]/5 p-4">
@@ -261,7 +272,7 @@ function SelectedMemberCard({
                 {relationshipLabel ? (
                     <p className="text-xs text-slate-600">{relationshipLabel}</p>
                 ) : (
-                    <p className="text-xs text-amber-600">Relationship not yet set — please add this person again with the relationship filled in.</p>
+                    <p className="text-xs text-amber-600">Set this person's relationship to the filer in the household relationships section.</p>
                 )}
                 {!member.is_verified_dependent && member.relationship !== 'head' && (
                     <p className="mt-1 text-xs font-medium text-amber-700">Pending MSWD household verification</p>
@@ -473,7 +484,7 @@ function InlineAddMemberForm({
 
             <div className="space-y-2">
                 <Label className="text-xs font-semibold text-slate-700">
-                    Relationship to you <span className="text-rose-500">*</span>
+                    Relationship to the household head <span className="text-rose-500">*</span>
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {relationships
@@ -492,11 +503,6 @@ function InlineAddMemberForm({
                                     }`}
                                 >
                                     <span>{r.label}</span>
-                                    {r.requires_legal_age && (
-                                        <span className={`text-[10px] font-normal ${isSelected ? 'text-[#005088]/70' : 'text-slate-400'}`}>
-                                            Must be 18+
-                                        </span>
-                                    )}
                                 </button>
                             );
                         })}

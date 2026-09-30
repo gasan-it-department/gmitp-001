@@ -30,8 +30,7 @@ class StoreAssistanceRequestController extends Controller
         private StoreAssistanceRequestAction $storeAssistanceRequest,
         private ResolveApplicantProfileAction $resolveApplicantProfileAction,
         private CheckElegibilityAction $checkEligibility,
-    ) {
-    }
+    ) {}
 
     public function __invoke(
         StoreAssistanceRequest $request,
@@ -44,7 +43,7 @@ class StoreAssistanceRequestController extends Controller
         // We refuse to submit on behalf of users who haven't completed the profile wizard.
         $beneficiary = $this->resolveApplicantProfileAction->execute($request->user()->id, app('municipal_id'));
 
-        if (!$beneficiary || !$beneficiary->household) {
+        if (! $beneficiary || ! $beneficiary->household) {
             return redirect()
                 ->route('actionCenter.index', ['municipality' => $municipality])
                 ->withErrors([
@@ -68,7 +67,7 @@ class StoreAssistanceRequestController extends Controller
             allowPendingDependent: true,
         );
 
-        if (!$eligibility->eligible) {
+        if (! $eligibility->eligible) {
             throw AssistanceEligibilityException::from($eligibility);
         }
 
@@ -79,7 +78,11 @@ class StoreAssistanceRequestController extends Controller
             app('current_municipality')->municipal_code,
         );
 
-        $created = $this->storeAssistanceRequest->execute($dto);
+        try {
+            $created = $this->storeAssistanceRequest->execute($dto);
+        } catch (\DomainException $exception) {
+            return back()->withInput()->withErrors(['request' => $exception->getMessage()]);
+        }
 
         return redirect()
             ->route('actionCenter.portal', ['municipality' => $municipality])

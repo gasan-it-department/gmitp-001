@@ -60,9 +60,10 @@ class StoreAdminAssistanceRequest extends FormRequest
             // ── Representative ("on behalf of") fields ───────────────────────
             'relationship_to_beneficiary' => [
                 'nullable',
-                'required_with:on_behalf_household_member_id',
                 Rule::in(Relationship::assistanceRepresentativeValues()),
             ],
+            'filer_relationships' => ['sometimes', 'array'],
+            'filer_relationships.*' => ['required', Rule::in(array_map(fn (Relationship $case) => $case->value, Relationship::cases()))],
             'on_behalf_household_member_id' => [
                 'nullable',
                 'required_with:relationship_to_beneficiary,on_behalf_date_of_death',

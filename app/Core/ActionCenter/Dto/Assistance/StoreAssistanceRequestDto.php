@@ -79,9 +79,9 @@ readonly class StoreAssistanceRequestDto
         public ?string $snapshotBarangayPsgcCode,
         public ?string $snapshotStreet,
         public array $documents = [],
+        public array $filerRelationships = [],
 
-    ) {
-    }
+    ) {}
 
     /**
      * Build the DTO from a validated request, the route-bound AssistanceType,
@@ -111,6 +111,7 @@ readonly class StoreAssistanceRequestDto
             description: $request->validated('description'),
             verificationOverrideReason: null,
             documents: [],
+            filerRelationships: $request->input('filer_relationships', []),
 
             // Consent is server-stamped. The FormRequest enforced `accepted`;
             // arriving here means the citizen ticked the box.
@@ -196,6 +197,7 @@ readonly class StoreAssistanceRequestDto
             description: $request->validated('description'),
             verificationOverrideReason: $request->input('verification_override_reason') ?: null,
             documents: $documents,
+            filerRelationships: $request->input('filer_relationships', []),
 
             // Consent is the admin's on-behalf affirmation. The FormRequest
             // enforced `accepted`; arriving here means the box was ticked.
@@ -229,5 +231,4 @@ readonly class StoreAssistanceRequestDto
             snapshotStreet: $household->street,
         );
     }
-
 }

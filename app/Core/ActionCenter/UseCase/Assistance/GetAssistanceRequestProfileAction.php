@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceCooldownService;
 use App\Core\ActionCenter\Services\AssistanceDisbursementService;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\ActionCenter\Services\AssistanceMswdVerificationService;
 use App\Core\ActionCenter\UseCase\Beneficiary\FindCrossMunicipalityMatchesAction;
 use App\Core\Users\Enums\EnumPermissions;
@@ -22,6 +23,7 @@ class GetAssistanceRequestProfileAction
         private readonly AssistanceMswdVerificationService $mswdVerification,
         private readonly AssistanceCooldownService $cooldowns,
         private readonly AssistanceDisbursementService $disbursements,
+        private readonly AssistanceFilerRelationships $filerRelationships,
     ) {}
 
     public function execute(string $municipalId, string $assistanceRequestId)
@@ -112,11 +114,17 @@ class GetAssistanceRequestProfileAction
                     is_array($storedAuthorization['sources'] ?? null) ? $storedAuthorization['sources'] : [],
                 ));
 
+        $requestHousehold = $this->resolveRequestHousehold->execute($assistanceRequest, $householdMembers);
+
         return [
             'request' => $assistanceRequest,
             'recentHistory' => $recentHistory,
             'activityLog' => $activityLog,
-            'requestHousehold' => $this->resolveRequestHousehold->execute($assistanceRequest, $householdMembers),
+            'requestHousehold' => $requestHousehold,
+            'filerRelationships' => $this->filerRelationships->status(
+                $assistanceRequest,
+                $requestHousehold->members->map->toArray()->all(),
+            ),
             'householdAssessmentPreview' => $this->refreshAssessment->preview($assistanceRequest, $householdMembers),
             'crossMunicipalityMatches' => $crossMunicipalityMatches,
             'mswdVerification' => $this->mswdVerification->payload($assistanceRequest),

@@ -86,8 +86,8 @@ enum Relationship: string
             // Head is server-managed (assigned automatically to the registered
             // citizen). Hide it from the citizen-facing dropdown — they can
             // never pick "Head" for another household member.
-            ->reject(fn(self $case) => $case === self::Head)
-            ->map(fn(self $case) => [
+            ->reject(fn (self $case) => $case === self::Head)
+            ->map(fn (self $case) => [
                 'value' => $case->value,
                 'label' => $case->label(),
                 'requires_legal_age' => $case->requiresLegalAge(),
@@ -134,7 +134,7 @@ enum Relationship: string
     public static function assistanceRepresentativeValues(): array
     {
         return array_map(
-            fn(self $case) => $case->value,
+            fn (self $case) => $case->value,
             self::assistanceRepresentativeCases(),
         );
     }
@@ -143,10 +143,12 @@ enum Relationship: string
     public static function assistanceRepresentativeOptions(): array
     {
         return array_map(
-            fn(self $case) => [
+            fn (self $case) => [
                 'value' => $case->value,
                 'label' => $case->label(),
-                'requires_legal_age' => $case->requiresLegalAge(),
+                // Here the selected person is relative to the filer. A filer
+                // assisting their parent is the child who needs to be an adult.
+                'requires_legal_age' => in_array($case, [self::Parent, self::Sibling], true),
             ],
             self::assistanceRepresentativeCases(),
         );

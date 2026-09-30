@@ -257,6 +257,7 @@ export interface HouseholdSummary {
  */
 export interface HouseholdMemberOption {
     id: string;
+    beneficiary_id: string | null;
     first_name: string;
     middle_name: string | null;
     last_name: string;
