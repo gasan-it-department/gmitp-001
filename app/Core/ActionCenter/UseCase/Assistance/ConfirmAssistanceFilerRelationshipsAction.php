@@ -62,7 +62,19 @@ class ConfirmAssistanceFilerRelationshipsAction
             if (! hash_equals($fingerprint, $expectedFingerprint)) {
                 throw new \DomainException('The saved request roster changed. Refresh the page and review the relationships again.');
             }
-            $capture = $this->relationships->capture($members, (string) $request->beneficiary_id, $answers, $actorId);
+            $offRosterAssistedMemberId = $this->relationships->offRosterAssistedMemberId($request, $members);
+            if ($request->on_behalf_household_member_id !== null
+                && ! in_array((string) $request->on_behalf_household_member_id, array_column($members, 'household_member_id'), true)
+                && $offRosterAssistedMemberId === null) {
+                throw new \DomainException('The assisted person is absent from the assessed roster and cannot be verified against the filing snapshot. Review the request before confirming relationships.');
+            }
+            $capture = $this->relationships->capture(
+                $members,
+                (string) $request->beneficiary_id,
+                $answers,
+                $actorId,
+                $offRosterAssistedMemberId,
+            );
             $current = $this->relationships->status($request, $members);
             if ($current['is_confirmed'] && $current['answers'] === $capture['answers']) {
                 throw new \DomainException('These filer-relative relationships are already confirmed.');

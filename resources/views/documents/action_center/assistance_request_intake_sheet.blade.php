@@ -76,7 +76,8 @@
         $selectedProblems = array_fill_keys($data->problemPresented, true);
         $monthlyIncome = 'PHP '.number_format($data->monthlyIncome, 2);
         $compositionMembers = $data->householdMembers
-            ->reject(fn ($member) => $member->beneficiaryId !== null && $member->beneficiaryId === (string) $request->beneficiary_id)
+            ->reject(fn ($member) => ($member->beneficiaryId !== null && $member->beneficiaryId === (string) $request->beneficiary_id)
+                || ($request->recipient_id_exception === 'deceased' && $member->householdMemberId === (string) $request->on_behalf_household_member_id))
             ->values();
         $totalMonthlyHouseholdIncome = $data->monthlyIncome
             + (float) $compositionMembers->sum(fn ($member) => (float) $member->monthlyIncome);

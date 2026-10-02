@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
@@ -290,6 +291,78 @@ it('confirms filer-relative answers and reopens a completed verification after a
     $relationshipEdited = $members;
     $relationshipEdited[0]['relationship'] = 'spouse';
     expect($service->status($corrected, $relationshipEdited)['is_current'])->toBeFalse();
+});
+
+it('confirms a deceased assisted person after they are removed from the assessed active household', function (bool $filerIsHead) {
+    $ernestoId = (string) Str::ulid();
+    if (! $filerIsHead) {
+        DB::table('ac_household_members')->where('id', $this->headMemberId)->update(['relationship' => 'spouse']);
+    }
+    DB::table('ac_household_members')->insert([
+        'id' => $ernestoId, 'household_id' => $this->householdId,
+        'first_name' => 'ERNESTO', 'last_name' => 'MAWAC',
+        'relationship' => $filerIsHead ? 'spouse' : 'head',
+        'is_active' => true, 'is_verified_dependent' => true,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $membersAtFiling = HouseholdMember::query()->where('household_id', $this->householdId)->get()
+        ->map(fn (HouseholdMember $member): array => AssistanceRequestHouseholdMemberData::fromModel($member, now())->toArray())
+        ->all();
+    $relationships = app(AssistanceFilerRelationships::class)->capture(
+        $membersAtFiling, $this->beneficiaryId, $filerIsHead ? [] : [$ernestoId => 'spouse'], $this->reviewerId,
+    );
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'on_behalf_household_member_id' => $ernestoId,
+        'metadata' => json_encode([
+            'household_composition_snapshot' => ['household_id' => $this->householdId, 'members' => $membersAtFiling],
+            'filer_relationships' => $relationships,
+            'relationship_to_beneficiary' => 'spouse',
+            'recipient_id_exception' => 'deceased',
+            'on_behalf_first_name' => 'ERNESTO',
+            'on_behalf_last_name' => 'MAWAC',
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    DB::table('ac_household_members')->where('id', $ernestoId)->update(['is_active' => false]);
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+
+    $request = AssistanceRequest::findOrFail($this->requestId);
+    $assessedMembers = app(ResolveAssistanceRequestHouseholdAction::class)->execute($request)->members->map->toArray()->all();
+    $service = app(AssistanceFilerRelationships::class);
+    $status = $service->status($request, $assessedMembers);
+    expect($assessedMembers)->toHaveCount(1)
+        ->and($status['is_current'])->toBeFalse()
+        ->and($status['off_roster_assisted_member_id'])->toBe($ernestoId)
+        ->and($status['off_roster_assisted_relationship'])->toBe('spouse');
+
+    expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+        $this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        $status['roster_fingerprint'], [$ernestoId => 'non_relative'], null,
+    ))->toThrow(DomainException::class, 'valid family relationship');
+
+    $confirmed = app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+        $this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        $status['roster_fingerprint'], [$ernestoId => 'spouse'], null,
+    );
+    expect(data_get($confirmed->metadata, 'filer_relationships.answers.'.$ernestoId))->toBe('spouse')
+        ->and($service->status($confirmed, $assessedMembers)['is_confirmed'])->toBeTrue()
+        ->and(data_get($confirmed->metadata, 'household_assessment_snapshot.members'))->toHaveCount(1);
+})->with([false, true]);
+
+it('does not accept an off-roster subject without a proven deceased filing record', function () {
+    $subjectId = (string) Str::ulid();
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'on_behalf_household_member_id' => $subjectId,
+    ]);
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    $request = AssistanceRequest::findOrFail($this->requestId);
+    $members = app(ResolveAssistanceRequestHouseholdAction::class)->execute($request)->members->map->toArray()->all();
+    $fingerprint = app(AssistanceFilerRelationships::class)->fingerprint($members, $this->beneficiaryId);
+
+    expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+        $this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        $fingerprint, [], null,
+    ))->toThrow(DomainException::class, 'absent from the assessed roster');
 });
 
 it('keeps the filing household authoritative until an assessment is synchronized', function () {
