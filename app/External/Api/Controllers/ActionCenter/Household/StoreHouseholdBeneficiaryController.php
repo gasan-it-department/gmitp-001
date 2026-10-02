@@ -3,11 +3,10 @@
 namespace App\External\Api\Controllers\ActionCenter\Household;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateHouseholdBeneficiaryDto;
-use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
+use App\Core\ActionCenter\Exceptions\RegistrationIdentityCheckException;
 use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryInHouseholdAction;
 use App\External\Api\Request\ActionCenter\Household\StoreHouseholdBeneficiaryRequest;
-use App\External\Api\Resources\ActionCenter\Walkin\WalkInBeneficiaryResource;
 use App\Http\Controllers\Controller;
 use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\RedirectResponse;
@@ -41,19 +40,8 @@ final class StoreHouseholdBeneficiaryController extends Controller
                     'beneficiaryId' => $beneficiary->id,
                 ])
                 ->with('success', 'Beneficiary registered in the household.');
-        } catch (PotentialDuplicateBeneficiaryException $exception) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'duplicate' => sprintf(
-                        'Found %d existing record(s) with this name and birth date. Review them before registering another profile.',
-                        $exception->matches->count(),
-                    ),
-                ])
-                ->with(
-                    'householdBeneficiaryDuplicateMatches',
-                    WalkInBeneficiaryResource::collection($exception->matches)->resolve($request),
-                );
+        } catch (RegistrationIdentityCheckException $exception) {
+            return back()->withInput()->withErrors(['registration_check' => $exception->getMessage()]);
         } catch (WalkInBeneficiaryIdentityDocumentStorageException $exception) {
             return redirect()
                 ->route('actionCenter.admin.beneficiary.profile', [

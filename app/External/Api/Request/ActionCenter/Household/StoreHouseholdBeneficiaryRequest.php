@@ -42,7 +42,10 @@ final class StoreHouseholdBeneficiaryRequest extends FormRequest
             'contact_phone' => ['nullable', 'string', 'max:30', $this->validPhoneNumber()],
             'relationship' => ['required', Rule::in($this->nonHeadRelationships())],
             'terms_consent' => ['required', 'accepted'],
-            'force' => ['nullable', 'boolean'],
+            'force' => ['prohibited'],
+            'identity_check_context' => ['required', 'string', 'max:8192'],
+            'different_person_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
+            'selected_member_id' => ['nullable', 'ulid'],
             'verify_now' => ['nullable', 'boolean'],
             'identity_id_front' => [
                 Rule::requiredIf(fn (): bool => $this->boolean('verify_now')),

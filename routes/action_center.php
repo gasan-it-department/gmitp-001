@@ -30,6 +30,7 @@ use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceRequest
 use App\External\Api\Controllers\ActionCenter\Assistance\UpdateAssistanceTypeController;
 use App\External\Api\Controllers\ActionCenter\Assistance\UploadAssistanceRequestDocumentsController;
 use App\External\Api\Controllers\ActionCenter\Assistance\VoidAssistanceDisbursementController;
+use App\External\Api\Controllers\ActionCenter\Beneficiary\CheckBeneficiaryRegistrationIdentityController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\LinkBeneficiaryAccountController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\MergeBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Beneficiary\ReassignBeneficiaryHouseholdController;
@@ -660,6 +661,10 @@ Route::prefix('/api/action-center')
                 Route::post('/walkin', StoreWalkInBeneficiaryController::class)
                     ->middleware('permission:action_center.beneficiaries.manage')
                     ->name('walkin.store');
+
+                Route::post('/beneficiaries/registration-check', CheckBeneficiaryRegistrationIdentityController::class)
+                    ->middleware('permission:action_center.beneficiaries.manage')
+                    ->name('beneficiary.registration-check');
 
                 // Admin-encoded assistance request, filed on behalf of a
                 // beneficiary. Reuses StoreAssistanceRequestAction with

@@ -20,8 +20,7 @@ use Illuminate\Http\UploadedFile;
  *     in the activity log (the online flow's actor IS the beneficiary).
  *   • Consent (RA 10173) is obtained in person; the admin affirms it on the
  *     form. We still server-stamp terms_consented_at + version for evidence.
- *   • $force — set true to bypass the soft duplicate guard after the admin has
- *     reviewed the surfaced matches and confirmed this is a different person.
+ *   • A checked identity context is required; reviewed exceptions carry a reason.
  *
  * Identity strings are uppercased here for parity with the online flow and the
  * rest of the ac_beneficiaries identity columns. Enum-backed values (sex,
@@ -61,8 +60,8 @@ readonly class CreateWalkInBeneficiaryDto
         public CarbonImmutable $termsConsentedAt,
         public string $termsVersion,
 
-        // Override the soft duplicate guard after admin review.
-        public bool $force,
+        public string $identityCheckContext,
+        public ?string $differentPersonReason,
 
         // Admin chooses whether this in-person intake is trusted immediately.
         public bool $verifyNow,
@@ -135,7 +134,8 @@ readonly class CreateWalkInBeneficiaryDto
             termsConsentedAt: CarbonImmutable::now(),
             termsVersion: self::TERMS_VERSION,
 
-            force: (bool) ($data['force'] ?? false),
+            identityCheckContext: (string) ($data['identity_check_context'] ?? ''),
+            differentPersonReason: $data['different_person_reason'] ?? null,
             verifyNow: (bool) ($data['verify_now'] ?? false),
             identityIdFront: $identityIdFront,
             identityIdBack: $identityIdBack,

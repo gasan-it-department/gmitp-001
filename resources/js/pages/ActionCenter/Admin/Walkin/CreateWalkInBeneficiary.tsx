@@ -3,7 +3,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Briefcase, Home, IdCard, Loader2, Phone, User, UserPlus, Users } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 // Reuse the online profile-setup sections verbatim — same fields, same
 // validators — so the two intake forms can never drift.
 import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Components/CivilStatusEmploymentSection';
@@ -15,7 +15,7 @@ import { PersonalInformationSection } from '../../Client/Apply/Beneficiary/Compo
 import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import { AdminEncodeAffirmation } from './Components/AdminEncodeAffirmation';
-import { DuplicateMatchWarning, type WalkInMatch } from './Components/DuplicateMatchWarning';
+import { RegistrationIdentityCheck, type IdentityField } from './Components/RegistrationIdentityCheck';
 
 // ─── Page props (from ShowCreateWalkInBeneficiaryController) ──────────────────
 
@@ -25,8 +25,8 @@ interface Props {
     civilStatus: EnumOption[];
     relationships: EnumOption[];
     submitUrl: string;
-    /** Possible-duplicate matches flashed by a blocked submit (empty otherwise). */
-    duplicateMatches: WalkInMatch[];
+    checkUrl: string;
+    canCorrect: boolean;
 }
 
 /**
@@ -37,8 +37,8 @@ interface Props {
  * NULL). Reuses the same section components; swaps the citizen consent block
  * for an admin affirmation, and adds the soft duplicate guard / override.
  *
- * `force` rides along via useForm().transform() so the shared section
- * components keep the unmodified ProfileSetupFormData type.
+ * The registry check context rides along via useForm().transform() so the
+ * shared section components keep the unmodified ProfileSetupFormData type.
  */
 export default function CreateWalkInBeneficiary({
     religions,
@@ -46,10 +46,13 @@ export default function CreateWalkInBeneficiary({
     civilStatus,
     relationships,
     submitUrl,
-    duplicateMatches,
+    checkUrl,
+    canCorrect,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const [lastVerifyChoice, setLastVerifyChoice] = useState(false);
+    const [identityContext, setIdentityContext] = useState<string | null>(null);
+    const [checkedIdentity, setCheckedIdentity] = useState<string | null>(null);
+    const [differentPersonReason, setDifferentPersonReason] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors, transform } = useForm<ProfileSetupFormData>({
         first_name: '',
@@ -75,23 +78,44 @@ export default function CreateWalkInBeneficiary({
     });
 
     // Non-field server errors come back under their own keys.
-    const duplicateError = (errors as Record<string, string | undefined>).duplicate;
     const walkinError = (errors as Record<string, string | undefined>).walkin;
+    const registrationError = (errors as Record<string, string | undefined>).registration_check;
+    const identity = {
+        first_name: data.first_name,
+        middle_name: data.middle_name,
+        last_name: data.last_name,
+        suffix: data.suffix,
+        birth_date: data.birth_date,
+    };
+    const identitySignature = JSON.stringify(identity);
+    const previousIdentity = useRef(identitySignature);
+    useEffect(() => {
+        if (previousIdentity.current !== identitySignature) {
+            previousIdentity.current = identitySignature;
+            setIdentityContext(null);
+            setCheckedIdentity(null);
+            setDifferentPersonReason(null);
+        }
+    }, [identitySignature]);
+    const checked = identityContext !== null && checkedIdentity === identitySignature;
 
-    const submitWith = (force: boolean, verifyNow: boolean) => {
-        setLastVerifyChoice(verifyNow);
-        transform((d) => ({ ...d, force, verify_now: verifyNow }));
+    const submitWith = (verifyNow: boolean) => {
+        if (!checked) return;
+        transform((d) => ({ ...d, identity_check_context: identityContext, different_person_reason: differentPersonReason, verify_now: verifyNow }));
         post(submitUrl, {
             forceFormData: true,
             headers: {
                 'X-Municipality-Slug': currentMunicipality.slug,
+            },
+            onError: (responseErrors) => {
+                if (responseErrors.registration_check) setIdentityContext(null);
             },
         });
     };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        submitWith(false, false);
+        submitWith(false);
     };
 
     // Mirrors the server's required-field set (StoreWalkInBeneficiaryRequest).
@@ -105,7 +129,8 @@ export default function CreateWalkInBeneficiary({
         data.monthly_income.trim().length > 0 &&
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
-        !processing;
+        !processing &&
+        checked;
     const canSaveVerified = canSavePending && data.identity_id_front instanceof File;
 
     // const searchUrl = ShowBeneficiarySearchController.url({ municipality: currentMunicipality.slug });
@@ -142,14 +167,30 @@ export default function CreateWalkInBeneficiary({
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Soft-duplicate block (only after a blocked submit) */}
-                        <DuplicateMatchWarning
-                            matches={duplicateMatches}
+                    {!checked && (
+                        <RegistrationIdentityCheck
+                            identity={identity}
+                            onChange={(field: IdentityField, value) => setData(field, value)}
+                            onContinue={(context, reason) => {
+                                setIdentityContext(context);
+                                setCheckedIdentity(JSON.stringify(identity));
+                                setDifferentPersonReason(reason);
+                            }}
+                            checkUrl={checkUrl}
                             municipalitySlug={currentMunicipality.slug}
-                            onRegisterAnyway={() => submitWith(true, lastVerifyChoice)}
-                            processing={processing}
+                            canCorrect={canCorrect}
+                            submitError={registrationError}
                         />
+                    )}
+                    <form onSubmit={handleSubmit} className={checked ? 'space-y-6' : 'hidden'}>
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white p-4 text-sm">
+                            <span>
+                                Registry checked for {data.first_name} {data.last_name}
+                            </span>
+                            <Button type="button" variant="outline" onClick={() => setIdentityContext(null)}>
+                                Check again
+                            </Button>
+                        </div>
 
                         {/* ── Section 1: Personal Information ── */}
                         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -243,9 +284,6 @@ export default function CreateWalkInBeneficiary({
                         {walkinError && (
                             <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600">{walkinError}</p>
                         )}
-                        {duplicateError && duplicateMatches.length === 0 && (
-                            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600">{duplicateError}</p>
-                        )}
 
                         {/* Submit */}
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -265,7 +303,7 @@ export default function CreateWalkInBeneficiary({
                             </Button>
                             <Button
                                 type="button"
-                                onClick={() => submitWith(false, true)}
+                                onClick={() => submitWith(true)}
                                 disabled={!canSaveVerified}
                                 className="h-14 w-full rounded-2xl bg-emerald-700 text-base font-bold tracking-wide text-white uppercase shadow-lg hover:bg-emerald-800 disabled:opacity-50"
                             >

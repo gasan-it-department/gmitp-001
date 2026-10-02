@@ -55,8 +55,8 @@ final class HouseholdMemberIdentityMatcher
     /** @param array<string, array{member: ?string, beneficiary: ?string}> $mismatches */
     private function compareRequired(array &$mismatches, string $field, mixed $memberValue, mixed $beneficiaryValue): void
     {
-        $member = $this->normalize($memberValue);
-        $beneficiary = $this->normalize($beneficiaryValue);
+        $member = $this->normalizeName($memberValue);
+        $beneficiary = $this->normalizeName($beneficiaryValue);
 
         if ($member === null || $beneficiary === null || $member !== $beneficiary) {
             $mismatches[$field] = ['member' => $member, 'beneficiary' => $beneficiary];
@@ -66,15 +66,15 @@ final class HouseholdMemberIdentityMatcher
     /** @param array<string, array{member: ?string, beneficiary: ?string}> $mismatches */
     private function compareWhenBothPresent(array &$mismatches, string $field, mixed $memberValue, mixed $beneficiaryValue): void
     {
-        $member = $this->normalize($memberValue);
-        $beneficiary = $this->normalize($beneficiaryValue);
+        $member = $this->normalizeName($memberValue);
+        $beneficiary = $this->normalizeName($beneficiaryValue);
 
         if ($member !== null && $beneficiary !== null && $member !== $beneficiary) {
             $mismatches[$field] = ['member' => $member, 'beneficiary' => $beneficiary];
         }
     }
 
-    private function normalize(mixed $value): ?string
+    public function normalizeName(mixed $value): ?string
     {
         if (! is_string($value) || trim($value) === '') {
             return null;

@@ -7,14 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Finds beneficiaries in a municipality that share a person's first name, last
- * name, and birth date (case-insensitive). The soft duplicate net used at both
- * intake points:
- *
- *   - the walk-in encoder (CreateWalkInBeneficiaryAction) — aborts with these
- *     matches so the admin can confirm "different person?" before saving;
- *   - online profile-setup (CreateBeneficiaryProfileAction) — does NOT block
- *     (twins / common names cause false positives) but raises a warning flag
- *     for admin follow-up.
+ * name, and birth date (case-insensitive). Online profile setup uses these
+ * matches for an admin follow-up flag. Admin registration uses the broader
+ * CheckBeneficiaryRegistrationIdentityAction instead.
  *
  * Tenant scope lives on the household. `excludeBeneficiaryId` lets the online
  * caller skip the row it just inserted.

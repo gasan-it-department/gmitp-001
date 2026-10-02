@@ -3,11 +3,10 @@
 namespace App\External\Api\Controllers\ActionCenter\Walkin;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
-use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
+use App\Core\ActionCenter\Exceptions\RegistrationIdentityCheckException;
 use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
 use App\External\Api\Request\ActionCenter\Walkin\StoreWalkInBeneficiaryRequest;
-use App\External\Api\Resources\ActionCenter\Walkin\WalkInBeneficiaryResource;
 use App\Http\Controllers\Controller;
 use App\Shared\Phone\Services\PhoneFormatterService;
 use Illuminate\Http\RedirectResponse;
@@ -22,8 +21,7 @@ use Illuminate\Http\RedirectResponse;
  * Thin controller — builds the DTO from validated primitives + context and
  * hands off to the action. Three outcomes:
  *   • Success            → redirect to the new beneficiary's profile page.
- *   • Possible duplicate → redirect back with the matches flashed (read by the
- *     Web show controller) so the admin can review and override.
+ *   • Stale identity check → redirect back for another registry check.
  *   • Other domain error → redirect back with the message + old input.
  *
  * All rules (soft duplicate guard, per-household cap, audit) live in
@@ -65,19 +63,8 @@ class StoreWalkInBeneficiaryController extends Controller
                     'beneficiaryId' => $e->beneficiaryId(),
                 ])
                 ->with('error', $e->getMessage());
-        } catch (PotentialDuplicateBeneficiaryException $e) {
-            // Flash the matches so the Web show controller can render them as a
-            // prop, and surface a shared error. The form state is preserved by
-            // Inertia's useForm on the error response.
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'duplicate' => sprintf(
-                        'Found %d existing record(s) with this name and birth date. Review them, then register anyway only if this is a different person.',
-                        $e->matches->count(),
-                    ),
-                ])
-                ->with('walkinDuplicateMatches', WalkInBeneficiaryResource::collection($e->matches)->resolve($request));
+        } catch (RegistrationIdentityCheckException $e) {
+            return back()->withInput()->withErrors(['registration_check' => $e->getMessage()]);
         } catch (\DomainException $e) {
             // e.g. per-household member cap hit during fan-out.
             return back()->withInput()->withErrors(['walkin' => $e->getMessage()]);
