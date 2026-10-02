@@ -7,11 +7,13 @@ use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\ActionCenter\UseCase\Assistance\ConfirmAssistanceFilerRelationshipsAction;
 use App\Core\ActionCenter\UseCase\Assistance\RefreshAssistanceHouseholdAssessmentAction;
 use App\Core\ActionCenter\UseCase\Assistance\ResolveAssistanceRequestHouseholdAction;
+use App\External\Api\Request\ActionCenter\ConfirmAssistanceFilerRelationshipsRequest;
 use App\External\Api\Resources\ActionCenter\ActivityLogResource;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
 
@@ -348,6 +350,43 @@ it('confirms a deceased assisted person after they are removed from the assessed
         ->and($service->status($confirmed, $assessedMembers)['is_confirmed'])->toBeTrue()
         ->and(data_get($confirmed->metadata, 'household_assessment_snapshot.members'))->toHaveCount(1);
 })->with([false, true]);
+
+it('confirms derived head-filer relationships without submitted answers after a roster change', function () {
+    $parentId = (string) Str::ulid();
+    DB::table('ac_household_members')->insert([
+        'id' => $parentId, 'household_id' => $this->householdId,
+        'first_name' => 'SUSAN', 'last_name' => 'MAWAC',
+        'relationship' => 'parent', 'is_active' => true,
+        'is_verified_dependent' => true, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+
+    $request = AssistanceRequest::findOrFail($this->requestId);
+    $members = app(ResolveAssistanceRequestHouseholdAction::class)->execute($request)->members->map->toArray()->all();
+    $fingerprint = app(AssistanceFilerRelationships::class)->fingerprint($members, $this->beneficiaryId);
+    $rules = (new ConfirmAssistanceFilerRelationshipsRequest)->rules();
+
+    expect(Validator::make(['roster_fingerprint' => $fingerprint], $rules)->passes())->toBeTrue()
+        ->and(Validator::make(['roster_fingerprint' => $fingerprint, 'filer_relationships' => []], $rules)->passes())->toBeTrue();
+
+    $confirmed = app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+        $this->requestId, $this->municipalId, $this->reviewerId, true, false, $fingerprint, [], null,
+    );
+
+    expect(data_get($confirmed->metadata, 'filer_relationships.answers.'.$parentId))->toBe('parent')
+        ->and(app(AssistanceFilerRelationships::class)->status($confirmed, $members)['is_confirmed'])->toBeTrue();
+
+    DB::table('ac_household_members')->where('id', $this->headMemberId)->update(['relationship' => 'child']);
+    DB::table('ac_household_members')->where('id', $parentId)->update(['relationship' => 'head']);
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    $request = AssistanceRequest::findOrFail($this->requestId);
+    $members = app(ResolveAssistanceRequestHouseholdAction::class)->execute($request)->members->map->toArray()->all();
+    $fingerprint = app(AssistanceFilerRelationships::class)->fingerprint($members, $this->beneficiaryId);
+
+    expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+        $this->requestId, $this->municipalId, $this->reviewerId, true, false, $fingerprint, [], null,
+    ))->toThrow(DomainException::class, 'Answer the relationship of every active household member');
+});
 
 it('does not accept an off-roster subject without a proven deceased filing record', function () {
     $subjectId = (string) Str::ulid();

@@ -17,7 +17,7 @@ class ConfirmAssistanceFilerRelationshipsRequest extends FormRequest
     {
         return [
             'roster_fingerprint' => ['required', 'string', 'size:64'],
-            'filer_relationships' => ['required', 'array'],
+            'filer_relationships' => ['sometimes', 'array'],
             'filer_relationships.*' => ['required', Rule::in(array_map(fn (Relationship $case) => $case->value, Relationship::cases()))],
             'correction_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
         ];
