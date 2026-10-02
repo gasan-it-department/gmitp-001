@@ -278,8 +278,10 @@ class GenerateAssistanceRequestIntakeSheetAction
     ): Collection {
         return $members
             ->reject(
-                fn (AssistanceRequestHouseholdMemberData $member): bool => $member->beneficiaryId !== null
-                    && $member->beneficiaryId === (string) $request->beneficiary_id,
+                fn (AssistanceRequestHouseholdMemberData $member): bool => ($member->beneficiaryId !== null
+                    && $member->beneficiaryId === (string) $request->beneficiary_id)
+                    || ($request->recipient_id_exception === 'deceased'
+                        && $member->householdMemberId === (string) $request->on_behalf_household_member_id),
             )
             ->values();
     }

@@ -34,8 +34,13 @@ class AssistanceFilerRelationships
      * @param  array<string, mixed>  $answers
      * @return array<string, mixed>
      */
-    public function capture(array $members, string $beneficiaryId, array $answers, ?string $actorId): array
-    {
+    public function capture(
+        array $members,
+        string $beneficiaryId,
+        array $answers,
+        ?string $actorId,
+        ?string $offRosterAssistedMemberId = null,
+    ): array {
         $filer = $this->filerMember($members, $beneficiaryId);
         if ($filer === null) {
             throw new \DomainException('The filer must have exactly one linked active household row before filing or confirming relationships.');
@@ -53,7 +58,14 @@ class AssistanceFilerRelationships
             }
         }
 
-        if ($isHead && $answers !== []) {
+        if ($offRosterAssistedMemberId !== null) {
+            if ($offRosterAssistedMemberId === $filer['household_member_id'] || isset($expected[$offRosterAssistedMemberId])) {
+                throw new \DomainException('The assisted person must be separate from the assessed household roster.');
+            }
+            $expected[$offRosterAssistedMemberId] = null;
+        }
+
+        if ($isHead && array_diff_key($answers, $offRosterAssistedMemberId !== null ? [$offRosterAssistedMemberId => true] : []) !== []) {
             throw new \DomainException('Relationships for a household-head filer are derived from the saved roster.');
         }
         if (! $isHead && (array_diff_key($expected, $answers) !== [] || array_diff_key($answers, $expected) !== [])) {
@@ -62,7 +74,7 @@ class AssistanceFilerRelationships
 
         $relations = [];
         foreach ($expected as $id => $member) {
-            $relation = $isHead ? ($member['relationship'] ?? null) : ($answers[$id] ?? null);
+            $relation = $member === null ? ($answers[$id] ?? null) : ($isHead ? ($member['relationship'] ?? null) : ($answers[$id] ?? null));
             if (! is_string($relation) || Relationship::tryFrom($relation) === null || $relation === Relationship::Head->value) {
                 throw new \DomainException('Choose a valid relationship to the filer for every household member.');
             }
@@ -90,10 +102,14 @@ class AssistanceFilerRelationships
         $filer = $this->filerMember($members, (string) $request->beneficiary_id);
         $isHead = (bool) ($filer['is_household_head'] ?? false);
         $answers = is_array($saved['answers'] ?? null) ? $saved['answers'] : [];
+        $offRosterAssistedMemberId = $this->offRosterAssistedMemberId($request, $members);
         $expectedIds = array_values(array_filter(array_map(
             fn (array $member): string => (string) ($member['household_member_id'] ?? ''),
             $members,
         ), fn (string $id): bool => $id !== '' && $id !== ($filer['household_member_id'] ?? null)));
+        if ($offRosterAssistedMemberId !== null) {
+            $expectedIds[] = $offRosterAssistedMemberId;
+        }
         sort($expectedIds);
         $answerIds = array_keys($answers);
         sort($answerIds);
@@ -120,6 +136,35 @@ class AssistanceFilerRelationships
             'is_legacy' => ! is_array($saved),
             'roster_fingerprint' => $this->fingerprint($members, (string) $request->beneficiary_id),
             'filer_member_id' => $filer['household_member_id'] ?? null,
+            'off_roster_assisted_member_id' => $offRosterAssistedMemberId,
+            'off_roster_assisted_name' => $offRosterAssistedMemberId === null ? null : trim(implode(' ', array_filter([
+                $request->on_behalf_first_name, $request->on_behalf_middle_name,
+                $request->on_behalf_last_name, $request->on_behalf_suffix,
+            ]))),
+            'off_roster_assisted_relationship' => $offRosterAssistedMemberId === null
+                ? null
+                : ($answers[$offRosterAssistedMemberId] ?? $request->relationship_to_beneficiary?->value),
+            'assisted_member_id' => $request->on_behalf_household_member_id,
+            'assisted_relationship_values' => Relationship::assistanceRepresentativeValues(),
         ];
+    }
+
+    /** @param list<array<string, mixed>> $members */
+    public function offRosterAssistedMemberId(AssistanceRequest $request, array $members): ?string
+    {
+        $subjectId = (string) ($request->on_behalf_household_member_id ?? '');
+        if ($subjectId === '' || $request->recipient_id_exception !== 'deceased') {
+            return null;
+        }
+        if (in_array($subjectId, array_column($members, 'household_member_id'), true)) {
+            return null;
+        }
+
+        $filingMembers = data_get($request->metadata, 'household_composition_snapshot.members');
+        if (! is_array($filingMembers) || ! in_array($subjectId, array_column($filingMembers, 'household_member_id'), true)) {
+            return null;
+        }
+
+        return $subjectId;
     }
 }

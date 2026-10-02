@@ -16,6 +16,11 @@ export interface FilerRelationshipStatus {
     is_legacy: boolean;
     roster_fingerprint: string;
     filer_member_id: string | null;
+    assisted_member_id: string | null;
+    assisted_relationship_values: string[];
+    off_roster_assisted_member_id: string | null;
+    off_roster_assisted_name: string | null;
+    off_roster_assisted_relationship: string | null;
 }
 
 interface Member {
@@ -45,14 +50,33 @@ export default function ConfirmFilerRelationshipsPanel({
     completedVerification: boolean;
     activeDisbursement: boolean;
 }) {
-    const [answers, setAnswers] = useState<Record<string, string>>(status.answers);
+    const otherMembers = members.filter((member) => member.household_member_id && member.household_member_id !== status.filer_member_id);
+    const offRosterId = status.off_roster_assisted_member_id;
+    const [answers, setAnswers] = useState<Record<string, string>>(() => {
+        const ids = status.is_head_filer ? [] : otherMembers.map((member) => member.household_member_id!);
+        if (offRosterId) ids.push(offRosterId);
+        return Object.fromEntries(
+            ids
+                .map((id) => {
+                    const value =
+                        status.answers[id] ?? status.saved_answers[id] ?? (id === offRosterId ? status.off_roster_assisted_relationship : null);
+                    return [
+                        id,
+                        value && (id !== status.assisted_member_id || status.assisted_relationship_values.includes(value)) ? value : null,
+                    ] as const;
+                })
+                .filter((entry): entry is readonly [string, string] => !!entry[1]),
+        );
+    });
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const otherMembers = members.filter((member) => member.household_member_id && member.household_member_id !== status.filer_member_id);
-    const allAnswered = otherMembers.every((member) => !!answers[member.household_member_id!]);
+    const allAnswered =
+        (status.is_head_filer || otherMembers.every((member) => !!answers[member.household_member_id!])) && (!offRosterId || !!answers[offRosterId]);
     const hasChanges =
-        !status.is_confirmed || otherMembers.some((member) => answers[member.household_member_id!] !== status.answers[member.household_member_id!]);
+        !status.is_confirmed ||
+        otherMembers.some((member) => answers[member.household_member_id!] !== status.answers[member.household_member_id!]) ||
+        (!!offRosterId && answers[offRosterId] !== status.answers[offRosterId]);
 
     const confirm = () => {
         setError(null);
@@ -102,11 +126,16 @@ export default function ConfirmFilerRelationshipsPanel({
                                         <SelectValue placeholder="Choose relationship" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-64 overflow-y-auto">
-                                        {options.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
+                                        {options
+                                            .filter(
+                                                (option) =>
+                                                    id !== status.assisted_member_id || status.assisted_relationship_values.includes(option.value),
+                                            )
+                                            .map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
                                     </SelectContent>
                                 </Select>
                             ) : (
@@ -117,8 +146,40 @@ export default function ConfirmFilerRelationshipsPanel({
                         </div>
                     );
                 })}
+            {offRosterId && (
+                <div className="space-y-1.5">
+                    <Label className="text-xs font-medium">
+                        Relationship of {status.off_roster_assisted_name || 'the assisted person'} to {filerName}
+                    </Label>
+                    <p className="text-xs text-slate-600">
+                        Deceased assisted person; retained on this request but not in the assessed active household.
+                    </p>
+                    {canConfirm && !activeDisbursement ? (
+                        <Select
+                            value={answers[offRosterId] ?? ''}
+                            onValueChange={(value) => setAnswers((current) => ({ ...current, [offRosterId]: value }))}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Choose relationship to filer" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-64 overflow-y-auto">
+                                {options
+                                    .filter((option) => status.assisted_relationship_values.includes(option.value))
+                                    .map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    ) : (
+                        <span className="text-sm text-slate-700">
+                            {options.find((option) => option.value === answers[offRosterId])?.label ?? 'Not recorded'}
+                        </span>
+                    )}
+                </div>
+            )}
             {canConfirm &&
-                !status.is_head_filer &&
                 (activeDisbursement ? (
                     <p className="text-xs text-amber-700">Void the active disbursement before correcting these relationships.</p>
                 ) : (

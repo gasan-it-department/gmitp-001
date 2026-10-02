@@ -600,6 +600,53 @@ it('prints the relationship to Susan rather than the relationship to household h
         ->not->toContain('Legacy Relationship to Head');
 });
 
+it('prints a deceased assisted person in Section IV but not Section V', function (bool $includedInAssessment) {
+    $context = seedAssistanceRequestIntakeSheetContext('Burial Assistance', 'burial-assistance');
+    $request = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->first();
+    $susanId = (string) Str::ulid();
+    $ernestoId = (string) Str::ulid();
+    $luciaId = (string) Str::ulid();
+    $susan = ['household_member_id' => $susanId, 'beneficiary_id' => $request->beneficiary_id,
+        'full_name' => 'Susan Solis', 'relationship' => 'spouse', 'is_household_head' => false];
+    $ernesto = ['household_member_id' => $ernestoId, 'beneficiary_id' => null,
+        'full_name' => 'Ernesto Solis', 'relationship' => 'head', 'is_household_head' => true];
+    $lucia = ['household_member_id' => $luciaId, 'beneficiary_id' => null,
+        'full_name' => 'Lucia Solis', 'relationship' => 'child', 'is_household_head' => false];
+    $filingMembers = [$susan, $ernesto, $lucia];
+    $assessmentMembers = $includedInAssessment ? $filingMembers : [$susan, $lucia];
+    $relationships = app(AssistanceFilerRelationships::class)->capture(
+        $assessmentMembers, $request->beneficiary_id,
+        [$ernestoId => 'spouse', $luciaId => 'child'], null,
+        $includedInAssessment ? null : $ernestoId,
+    );
+    $relationships['confirmed_at'] = now()->toIso8601String();
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update([
+        'on_behalf_household_member_id' => $ernestoId,
+        'metadata' => json_encode([
+            'on_behalf_first_name' => 'Ernesto', 'on_behalf_last_name' => 'Solis',
+            'relationship_to_beneficiary' => 'spouse', 'recipient_id_exception' => 'deceased',
+            'household_composition_snapshot' => ['household_id' => $request->household_id, 'members' => $filingMembers],
+            'household_assessment_snapshot' => ['household_id' => $request->household_id, 'members' => $assessmentMembers],
+            'filer_relationships' => $relationships,
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
+    $form = $action->formData($context['request_id'], $context['municipal_id']);
+    $data = $action->execute(new GenerateAssistanceRequestIntakeSheetDto(
+        assistanceRequestId: $context['request_id'], municipalId: $context['municipal_id'],
+        problemPresented: ['helpless_to_bury_dead'], sourceOfIncome: 'Family support', monthlyIncome: 5000,
+        recommendation: 'Burial Assistance',
+    ), 'Test Admin');
+    $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
+    $sectionFive = Str::between($html, 'V. Household Composition at MSWD Interview', '<table class="privacy-table">');
+
+    expect($form->householdComposition['member_count'])->toBe(1)
+        ->and($html)->toContain('Ernesto Solis', 'Spouse')
+        ->and($sectionFive)->toContain('Lucia Solis')
+        ->not->toContain('Ernesto Solis');
+})->with([false, true]);
+
 it('requires legacy non-head answers before another unreleased intake sheet but keeps released history printable', function () {
     $context = seedAssistanceRequestIntakeSheetContext();
     $beneficiaryId = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('beneficiary_id');
