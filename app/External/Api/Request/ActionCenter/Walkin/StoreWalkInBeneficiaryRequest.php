@@ -23,8 +23,7 @@ use Illuminate\Validation\Rule;
  * Two differences from the online request:
  *   • `terms_consent` here is the ADMIN's affirmation that the applicant gave
  *     RA 10173 consent in person and that the registry was checked first.
- *   • `force` lets the admin override the soft duplicate guard after reviewing
- *     the surfaced matches.
+ *   • Registry context and a reviewed reason replace the old force bypass.
  *
  * The coarse admin gate (auth + admin + permission) is enforced by the route
  * middleware group, so authorize() is true.
@@ -69,17 +68,20 @@ class StoreWalkInBeneficiaryRequest extends FormRequest
             // ── Admin affirmation (RA 10173 consent obtained + registry checked)
             'terms_consent' => ['required', 'accepted'],
 
-            // ── Override the soft duplicate guard after admin review ──────────
-            'force' => ['nullable', 'boolean'],
+            // ── Registry check and reviewed exception ────────────────────────
+            'force' => ['prohibited'],
+            'identity_check_context' => ['required', 'string', 'max:8192'],
+            'different_person_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
+            'selected_member_id' => ['prohibited'],
             'verify_now' => ['nullable', 'boolean'],
 
             // ── Identity evidence. Required only when immediately verifying.
-            'identity_id_front' => [Rule::requiredIf(fn() => $this->boolean('verify_now')), 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'identity_id_front' => [Rule::requiredIf(fn () => $this->boolean('verify_now')), 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'identity_id_back' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'contact_phone' => ['nullable', 'string', 'max:30', $this->validPhoneNumber()],
 
             // ── Household composition (optional) ─────────────────────────────
-            'household_members' => ['nullable', 'array', 'max:' . StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
+            'household_members' => ['nullable', 'array', 'max:'.StoreHouseholdMemberAction::ACTIVE_MEMBER_HARD_LIMIT],
             'household_members.*.first_name' => ['required_with:household_members.*', 'string', 'max:100'],
             'household_members.*.last_name' => ['required_with:household_members.*', 'string', 'max:100'],
             'household_members.*.middle_name' => ['nullable', 'string', 'max:100'],

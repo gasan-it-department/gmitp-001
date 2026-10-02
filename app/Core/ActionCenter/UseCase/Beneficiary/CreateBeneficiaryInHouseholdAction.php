@@ -4,7 +4,6 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateHouseholdBeneficiaryDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
-use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
 use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\Household;
@@ -22,7 +21,7 @@ final class CreateBeneficiaryInHouseholdAction
 {
     public function __construct(
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
-        private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
+        private readonly CheckBeneficiaryRegistrationIdentityAction $checkIdentity,
         private readonly StoreHouseholdMemberAction $storeMember,
         private readonly HouseholdMemberIdentityMatcher $identityMatcher,
         private readonly LinkedHouseholdMemberProfileSynchronizer $profileSynchronizer,
@@ -39,18 +38,13 @@ final class CreateBeneficiaryInHouseholdAction
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (! $dto->force) {
-                $matches = $this->findPotentialDuplicates->execute(
-                    firstName: $dto->firstName,
-                    lastName: $dto->lastName,
-                    birthDate: $dto->birthDate,
-                    municipalId: $dto->municipalId,
-                );
-
-                if ($matches->isNotEmpty()) {
-                    throw new PotentialDuplicateBeneficiaryException($matches);
-                }
-            }
+            $candidates = $this->checkIdentity->authorizeCreation([
+                'first_name' => $dto->firstName,
+                'last_name' => $dto->lastName,
+                'middle_name' => $dto->middleName,
+                'suffix' => $dto->suffix,
+                'birth_date' => $dto->birthDate,
+            ], $dto->municipalId, $dto->encodedByUserId, $dto->identityCheckContext, $dto->differentPersonReason, $dto->selectedMemberId, $dto->selectedMemberId ? $household->id : null);
 
             $candidate = new Beneficiary([
                 'first_name' => $dto->firstName,
@@ -134,9 +128,21 @@ final class CreateBeneficiaryInHouseholdAction
                     'household_id' => $household->id,
                     'household_member_id' => $member->id,
                     'reused_household_member' => $matchingRows->isNotEmpty(),
-                    'forced_over_duplicate' => $dto->force,
+                    'different_person_reviewed' => $candidates !== [],
                 ])
                 ->log('Encoded a beneficiary directly into an existing household');
+
+            if ($candidates !== []) {
+                activity('beneficiary-duplicate-review')
+                    ->performedOn($beneficiary)
+                    ->causedBy(User::find($dto->encodedByUserId))
+                    ->withProperties([
+                        'municipal_id' => $dto->municipalId,
+                        'candidate_keys' => array_column($candidates, 'key'),
+                        'reason' => trim((string) $dto->differentPersonReason),
+                    ])
+                    ->log('Authorized registration of a different person');
+            }
 
             return $beneficiary;
         }, attempts: 3);

@@ -2,6 +2,7 @@
 
 use App\Core\ActionCenter\Dto\Beneficiary\CreateHouseholdBeneficiaryDto;
 use App\Core\ActionCenter\Enums\Relationship;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckBeneficiaryRegistrationIdentityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryInHouseholdAction;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
@@ -237,7 +238,7 @@ it('blocks ambiguous matching roster rows before creating the beneficiary', func
         householdId: $this->householdId,
         municipalId: $this->municipalId,
         adminId: $this->adminId,
-    )))->toThrow(DomainException::class, 'Multiple active unlinked household rows match this person');
+    )))->toThrow(DomainException::class, 'reason for registering a different person');
 
     expect(DB::table('ac_beneficiaries')->count())->toBe(0);
 });
@@ -261,6 +262,23 @@ it('rejects a destination household owned by another municipality', function () 
 
 function householdBeneficiaryDto(string $householdId, string $municipalId, string $adminId): CreateHouseholdBeneficiaryDto
 {
+    $identity = [
+        'first_name' => 'JUAN',
+        'last_name' => 'DELA CRUZ',
+        'middle_name' => 'SANTOS',
+        'suffix' => null,
+        'birth_date' => '1990-02-03',
+    ];
+    $matchingMemberIds = DB::table('ac_household_members')
+        ->where('household_id', $householdId)
+        ->where('first_name', 'JUAN')
+        ->where('last_name', 'DELA CRUZ')
+        ->where('birth_date', '1990-02-03')
+        ->pluck('id');
+    $selectedMemberId = $matchingMemberIds->count() === 1 ? $matchingMemberIds->first() : null;
+    $context = app(CheckBeneficiaryRegistrationIdentityAction::class)
+        ->execute($identity, $municipalId, $adminId, $selectedMemberId, $selectedMemberId ? $householdId : null)['context'];
+
     return new CreateHouseholdBeneficiaryDto(
         householdId: $householdId,
         municipalId: $municipalId,
@@ -280,7 +298,9 @@ function householdBeneficiaryDto(string $householdId, string $municipalId, strin
         relationship: Relationship::Sibling->value,
         termsConsentedAt: CarbonImmutable::now(),
         termsVersion: CreateHouseholdBeneficiaryDto::TERMS_VERSION,
-        force: false,
+        identityCheckContext: $context,
+        differentPersonReason: null,
+        selectedMemberId: $selectedMemberId,
         verifyNow: false,
         identityIdFront: null,
         identityIdBack: null,

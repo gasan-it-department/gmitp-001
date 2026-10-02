@@ -3,11 +3,12 @@
 use App\Core\ActionCenter\Dto\Beneficiary\CreateBeneficiaryProfileDto;
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Exceptions\BeneficiaryIdentityDocumentStorageException;
-use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
+use App\Core\ActionCenter\Exceptions\RegistrationIdentityCheckException;
 use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\ActionCenter\Services\BeneficiarySmsNotifier;
+use App\Core\ActionCenter\UseCase\Beneficiary\CheckBeneficiaryRegistrationIdentityAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateBeneficiaryProfileAction;
 use App\Core\ActionCenter\UseCase\Beneficiary\CreateWalkInBeneficiaryAction;
 use App\External\Api\Request\ActionCenter\StoreProfileSetupRequest;
@@ -147,18 +148,25 @@ beforeEach(function () {
         'updated_at' => now(),
     ]);
 
-    $this->app->bind(IdGeneratorInterface::class, fn() => new class implements IdGeneratorInterface {
+    $this->app->bind(IdGeneratorInterface::class, fn () => new class implements IdGeneratorInterface
+    {
         public function generate(): string
-            {
-                return (string) Str::ulid();
-            }
-        });
+        {
+            return (string) Str::ulid();
+        }
+    });
 });
 
 afterEach(function () {
     activity()->enableLogging();
 
     foreach ([
+        'activity_log',
+        'role_has_permissions',
+        'model_has_roles',
+        'model_has_permissions',
+        'roles',
+        'permissions',
         'media',
         'ac_household_members',
         'ac_beneficiaries',
@@ -202,14 +210,14 @@ it('recovers a missing portal front ID on retry without recreating or overwritin
 
     $action = app(CreateBeneficiaryProfileAction::class);
 
-    expect(fn() => $action->execute(portalProfileDto(
+    expect(fn () => $action->execute(portalProfileDto(
         municipalId: $this->municipalId,
         userId: $this->adminId,
         identityIdFront: $failedFront,
     )))->toThrow(
-            BeneficiaryIdentityDocumentStorageException::class,
-            'profile was saved, but the front ID could not be stored',
-        );
+        BeneficiaryIdentityDocumentStorageException::class,
+        'profile was saved, but the front ID could not be stored',
+    );
 
     expect(Beneficiary::count())->toBe(1)
         ->and(DB::table('ac_households')->count())->toBe(1)
@@ -265,7 +273,7 @@ it('stores walk-in identity documents on the beneficiary media collections', fun
                     'first_name' => 'Pedro',
                     'last_name' => 'Cruz',
                     'relationship' => 'sibling',
-                ]
+                ],
             ],
         ],
     ));
@@ -300,7 +308,7 @@ it('retains a failed verified walk-in as pending with pending dependents', funct
                         'first_name' => 'Pedro',
                         'last_name' => 'Cruz',
                         'relationship' => 'sibling',
-                    ]
+                    ],
                 ],
             ],
         ));
@@ -343,22 +351,195 @@ it('requires occupation and monthly income for portal and walk-in beneficiary pr
         ->and(Validator::make(portalProfileRequest()->all(), portalProfileRequest()->rules())->passes())->toBeTrue();
 });
 
+it('requires a registry context and rejects the old force bypass', function () {
+    $missingCheck = walkInRequest(['identity_check_context' => null]);
+    $forgedForce = walkInRequest(['force' => true]);
+
+    expect(Validator::make($missingCheck->all(), $missingCheck->rules())->errors()->has('identity_check_context'))->toBeTrue()
+        ->and(Validator::make($forgedForce->all(), $forgedForce->rules())->errors()->has('force'))->toBeTrue();
+});
+
 it('does not store identity documents when the duplicate guard blocks walk-in creation', function () {
     $existing = app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
         municipalId: $this->municipalId,
         adminId: $this->adminId,
-        force: true,
     ));
 
-    expect(fn() => app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+    expect(fn () => app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
         municipalId: $this->municipalId,
         adminId: $this->adminId,
         identityIdFront: UploadedFile::fake()->image('front.jpg'),
-    )))->toThrow(PotentialDuplicateBeneficiaryException::class);
+    )))->toThrow(RegistrationIdentityCheckException::class);
 
     expect(Beneficiary::count())->toBe(1)
         ->and($existing->fresh(['media'])->media)->toHaveCount(0)
         ->and(DB::table('media')->count())->toBe(0);
+});
+
+it('shows exact and possible matches without leaking records from another municipality', function () {
+    $existing = app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+    ));
+    $otherMunicipalId = (string) Str::ulid();
+    DB::table('municipalities')->insert(['id' => $otherMunicipalId, 'name' => 'BOAC']);
+    app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $otherMunicipalId,
+        adminId: $this->adminId,
+    ));
+
+    $check = app(CheckBeneficiaryRegistrationIdentityAction::class);
+    $exact = $check->execute(['first_name' => ' juan ', 'last_name' => 'CRUZ', 'birth_date' => '1990-01-01'], $this->municipalId, $this->adminId);
+    $possible = $check->execute(['first_name' => 'JUAN', 'last_name' => 'CRUZ', 'birth_date' => '1990-01-02'], $this->municipalId, $this->adminId);
+    $formatted = $check->execute(['first_name' => 'Juan.', 'last_name' => 'Cruz-', 'birth_date' => '1990-01-02'], $this->municipalId, $this->adminId);
+    $nameVariation = $check->execute(['first_name' => 'JUAN', 'last_name' => 'CRUS', 'birth_date' => '1990-01-01'], $this->municipalId, $this->adminId);
+
+    expect($exact['candidates'])->toHaveCount(1)
+        ->and($exact['candidates'][0]['id'])->toBe($existing->id)
+        ->and($exact['candidates'][0]['match_type'])->toBe('exact')
+        ->and($possible['candidates'])->toHaveCount(1)
+        ->and($possible['candidates'][0]['match_type'])->toBe('possible')
+        ->and($formatted['candidates'])->toHaveCount(1)
+        ->and($nameVariation['candidates'])->toHaveCount(1);
+});
+
+it('does not offer direct roster reuse when birth date evidence is missing', function () {
+    $existing = app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+    ));
+    DB::table('ac_household_members')->insert([
+        'id' => (string) Str::ulid(),
+        'household_id' => $existing->household_id,
+        'first_name' => 'MARIA',
+        'last_name' => 'SANTOS',
+        'relationship' => 'child',
+        'birth_date' => null,
+        'is_active' => true,
+        'is_verified_dependent' => false,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $result = app(CheckBeneficiaryRegistrationIdentityAction::class)->execute([
+        'first_name' => 'MARIA',
+        'last_name' => 'SANTOS',
+        'birth_date' => '2000-06-01',
+    ], $this->municipalId, $this->adminId);
+
+    expect($result['candidates'])->toHaveCount(1)
+        ->and($result['candidates'][0]['record_type'])->toBe('roster_only')
+        ->and($result['candidates'][0]['can_reuse'])->toBeFalse();
+});
+
+it('rejects stale checks and changed identity before writing another profile', function () {
+    $check = app(CheckBeneficiaryRegistrationIdentityAction::class);
+    $identity = ['first_name' => 'JUAN', 'last_name' => 'CRUZ', 'birth_date' => '1990-01-01'];
+    $emptyContext = $check->execute($identity, $this->municipalId, $this->adminId)['context'];
+
+    app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+        overrides: ['identity_check_context' => $emptyContext],
+    ));
+
+    expect(fn () => app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+        overrides: ['identity_check_context' => $emptyContext],
+    )))->toThrow(RegistrationIdentityCheckException::class, 'Registry results changed');
+
+    $currentContext = $check->execute($identity, $this->municipalId, $this->adminId)['context'];
+    expect(fn () => app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+        overrides: ['last_name' => 'SANTOS', 'identity_check_context' => $currentContext],
+    )))->toThrow(RegistrationIdentityCheckException::class, 'identity changed');
+
+    expect(Beneficiary::query()->count())->toBe(1);
+});
+
+it('rejects a forged registry context before creating a beneficiary', function () {
+    expect(fn () => app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+        overrides: ['identity_check_context' => 'forged-context'],
+    )))->toThrow(RegistrationIdentityCheckException::class, 'invalid');
+
+    expect(Beneficiary::query()->count())->toBe(0);
+});
+
+it('requires correction permission and audits an authorized different-person decision', function () {
+    Schema::create('activity_log', function (Blueprint $table) {
+        $table->id();
+        $table->string('log_name')->nullable();
+        $table->text('description');
+        $table->nullableUlidMorphs('subject');
+        $table->nullableUlidMorphs('causer');
+        $table->json('properties')->nullable();
+        $table->json('attribute_changes')->nullable();
+        $table->string('event')->nullable();
+        $table->uuid('batch_uuid')->nullable();
+        $table->timestamps();
+    });
+    Schema::create('permissions', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('guard_name');
+        $table->timestamps();
+    });
+    Schema::create('roles', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('guard_name');
+        $table->timestamps();
+    });
+    Schema::create('model_has_permissions', function (Blueprint $table) {
+        $table->unsignedBigInteger('permission_id');
+        $table->string('model_type');
+        $table->ulid('model_id');
+    });
+    Schema::create('model_has_roles', function (Blueprint $table) {
+        $table->unsignedBigInteger('role_id');
+        $table->string('model_type');
+        $table->ulid('model_id');
+    });
+    Schema::create('role_has_permissions', function (Blueprint $table) {
+        $table->unsignedBigInteger('permission_id');
+        $table->unsignedBigInteger('role_id');
+    });
+    $permissionId = DB::table('permissions')->insertGetId([
+        'name' => 'action_center.beneficiaries.correct',
+        'guard_name' => 'web',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+    ));
+    $reason = 'The government IDs show two different people with the same name and birth date.';
+    $dto = walkInDto(
+        municipalId: $this->municipalId,
+        adminId: $this->adminId,
+        overrides: ['different_person_reason' => $reason],
+    );
+
+    expect(fn () => app(CreateWalkInBeneficiaryAction::class)->execute($dto))
+        ->toThrow(RegistrationIdentityCheckException::class, 'correction permission');
+
+    DB::table('model_has_permissions')->insert([
+        'permission_id' => $permissionId,
+        'model_type' => 'user',
+        'model_id' => $this->adminId,
+    ]);
+    app(Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    activity()->enableLogging();
+    $created = app(CreateWalkInBeneficiaryAction::class)->execute($dto);
+
+    expect(Beneficiary::query()->count())->toBe(2)
+        ->and(DB::table('activity_log')->where('log_name', 'beneficiary-duplicate-review')->where('subject_id', $created->id)->exists())->toBeTrue();
 });
 
 function walkInRequest(array $overrides = []): StoreWalkInBeneficiaryRequest
@@ -382,6 +563,7 @@ function walkInRequest(array $overrides = []): StoreWalkInBeneficiaryRequest
         'barangay' => 'Poblacion',
         'terms_consent' => '1',
         'verify_now' => false,
+        'identity_check_context' => 'validated-in-other-tests',
     ], $overrides), [], $files);
 
     $request->setContainer(app());
@@ -420,12 +602,11 @@ function walkInDto(
     string $municipalId,
     string $adminId,
     bool $verifyNow = false,
-    bool $force = false,
     ?UploadedFile $identityIdFront = null,
     ?UploadedFile $identityIdBack = null,
     array $overrides = [],
 ): CreateWalkInBeneficiaryDto {
-    return CreateWalkInBeneficiaryDto::fromArray(array_merge([
+    $data = array_merge([
         'first_name' => 'Juan',
         'last_name' => 'Cruz',
         'sex' => 'male',
@@ -438,9 +619,11 @@ function walkInDto(
         'street' => 'Rizal',
         'terms_consent' => true,
         'verify_now' => $verifyNow,
-        'force' => $force,
         'household_members' => [],
-    ], $overrides), $adminId, $municipalId, $identityIdFront, $identityIdBack);
+    ], $overrides);
+    $data['identity_check_context'] ??= app(CheckBeneficiaryRegistrationIdentityAction::class)->execute($data, $municipalId, $adminId)['context'];
+
+    return CreateWalkInBeneficiaryDto::fromArray($data, $adminId, $municipalId, $identityIdFront, $identityIdBack);
 }
 
 function portalProfileDto(

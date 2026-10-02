@@ -4,7 +4,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Briefcase, IdCard, Loader2, Phone, User, UserPlus, Users } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { CivilStatusEmploymentSection } from '../../Client/Apply/Beneficiary/Components/CivilStatusEmploymentSection';
 import { CommunicationSection } from '../../Client/Apply/Beneficiary/Components/CommunicationSection';
 import { IdentityDocumentUploadSection } from '../../Client/Apply/Beneficiary/Components/IdentityDocumentUploadSection';
@@ -13,7 +13,7 @@ import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/Section
 import { ShadcnSelectField } from '../../Client/Apply/Beneficiary/Components/ShadcnSelectField';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import { AdminEncodeAffirmation } from '../Walkin/Components/AdminEncodeAffirmation';
-import { DuplicateMatchWarning, type WalkInMatch } from '../Walkin/Components/DuplicateMatchWarning';
+import { RegistrationIdentityCheck, type IdentityField } from '../Walkin/Components/RegistrationIdentityCheck';
 
 interface HouseholdData {
     id: string;
@@ -31,7 +31,14 @@ interface Props {
     civilStatus: EnumOption[];
     relationships: EnumOption[];
     submitUrl: string;
-    duplicateMatches: WalkInMatch[];
+    checkUrl: string;
+    canCorrect: boolean;
+    prefillIdentity:
+        | (Pick<ProfileSetupFormData, 'first_name' | 'middle_name' | 'last_name' | 'suffix' | 'birth_date'> & {
+              member_id: string;
+              relationship: string;
+          })
+        | null;
 }
 
 type HouseholdBeneficiaryForm = ProfileSetupFormData & { relationship: string };
@@ -43,18 +50,22 @@ export default function CreateHouseholdBeneficiary({
     civilStatus,
     relationships,
     submitUrl,
-    duplicateMatches,
+    checkUrl,
+    canCorrect,
+    prefillIdentity,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const profile = 'data' in household ? household.data : household;
-    const [lastVerifyChoice, setLastVerifyChoice] = useState(false);
+    const [identityContext, setIdentityContext] = useState<string | null>(null);
+    const [checkedIdentity, setCheckedIdentity] = useState<string | null>(null);
+    const [differentPersonReason, setDifferentPersonReason] = useState<string | null>(null);
     const { data, setData, post, processing, errors, transform } = useForm<HouseholdBeneficiaryForm>({
-        first_name: '',
-        middle_name: '',
-        last_name: '',
-        suffix: '',
+        first_name: prefillIdentity?.first_name ?? '',
+        middle_name: prefillIdentity?.middle_name ?? '',
+        last_name: prefillIdentity?.last_name ?? '',
+        suffix: prefillIdentity?.suffix ?? '',
         sex: '',
-        birth_date: '',
+        birth_date: prefillIdentity?.birth_date ?? '',
         religion_id: '',
         educational_attainment: '',
         identity_id_front: null,
@@ -68,20 +79,47 @@ export default function CreateHouseholdBeneficiary({
         street: '',
         terms_consent: false,
         household_members: [],
-        relationship: '',
+        relationship: prefillIdentity?.relationship ?? '',
     });
 
-    const submitWith = (force: boolean, verifyNow: boolean) => {
-        setLastVerifyChoice(verifyNow);
-        transform((current) => ({ ...current, force, verify_now: verifyNow }));
+    const identity = {
+        first_name: data.first_name,
+        middle_name: data.middle_name,
+        last_name: data.last_name,
+        suffix: data.suffix,
+        birth_date: data.birth_date,
+    };
+    const identitySignature = JSON.stringify(identity);
+    const previousIdentity = useRef(identitySignature);
+    useEffect(() => {
+        if (previousIdentity.current !== identitySignature) {
+            previousIdentity.current = identitySignature;
+            setIdentityContext(null);
+            setCheckedIdentity(null);
+            setDifferentPersonReason(null);
+        }
+    }, [identitySignature]);
+    const checked = identityContext !== null && checkedIdentity === identitySignature;
+    const submitWith = (verifyNow: boolean) => {
+        if (!checked) return;
+        transform((current) => ({
+            ...current,
+            identity_check_context: identityContext,
+            different_person_reason: differentPersonReason,
+            selected_member_id: prefillIdentity?.member_id ?? null,
+            verify_now: verifyNow,
+        }));
         post(submitUrl, {
             forceFormData: true,
             headers: { 'X-Municipality-Slug': currentMunicipality.slug },
+            onError: (responseErrors) => {
+                if (responseErrors.registration_check) setIdentityContext(null);
+            },
         });
     };
     const submit = (event: FormEvent) => {
         event.preventDefault();
-        submitWith(false, false);
+        submitWith(false);
     };
     const canSave =
         data.first_name.trim().length > 0 &&
@@ -93,10 +131,11 @@ export default function CreateHouseholdBeneficiary({
         data.monthly_income.trim().length > 0 &&
         data.relationship.length > 0 &&
         data.terms_consent &&
-        !processing;
+        !processing &&
+        checked;
     const canVerify = profile.permissions.verify && canSave && data.identity_id_front instanceof File;
     const serverError = (errors as Record<string, string | undefined>).beneficiary;
-    const duplicateError = (errors as Record<string, string | undefined>).duplicate;
+    const registrationError = (errors as Record<string, string | undefined>).registration_check;
     const address = [profile.street, profile.barangay].filter(Boolean).join(', ') || 'Address unavailable';
 
     return (
@@ -130,13 +169,32 @@ export default function CreateHouseholdBeneficiary({
                         </div>
                     </header>
 
-                    <form onSubmit={submit} className="space-y-5">
-                        <DuplicateMatchWarning
-                            matches={duplicateMatches}
+                    {!checked && (
+                        <RegistrationIdentityCheck
+                            identity={identity}
+                            onChange={(field: IdentityField, value) => setData(field, value)}
+                            onContinue={(context, reason) => {
+                                setIdentityContext(context);
+                                setCheckedIdentity(JSON.stringify(identity));
+                                setDifferentPersonReason(reason);
+                            }}
+                            checkUrl={checkUrl}
                             municipalitySlug={currentMunicipality.slug}
-                            onRegisterAnyway={() => submitWith(true, lastVerifyChoice)}
-                            processing={processing}
+                            canCorrect={canCorrect}
+                            destinationHouseholdId={profile.id}
+                            selectedMemberId={prefillIdentity?.member_id}
+                            submitError={registrationError}
                         />
+                    )}
+                    <form onSubmit={submit} className={checked ? 'space-y-5' : 'hidden'}>
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white p-4 text-sm">
+                            <span>
+                                Registry checked for {data.first_name} {data.last_name}
+                            </span>
+                            <Button type="button" variant="outline" onClick={() => setIdentityContext(null)}>
+                                Check again
+                            </Button>
+                        </div>
 
                         <FormSection icon={<User className="h-4 w-4" />} title="Personal information">
                             <PersonalInformationSection
@@ -191,9 +249,6 @@ export default function CreateHouseholdBeneficiary({
                         />
 
                         {serverError && <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</p>}
-                        {duplicateError && duplicateMatches.length === 0 && (
-                            <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{duplicateError}</p>
-                        )}
 
                         <div className={`grid gap-3 ${profile.permissions.verify ? 'sm:grid-cols-2' : ''}`}>
                             <Button type="submit" variant="outline" disabled={!canSave} className="h-12">
@@ -202,7 +257,7 @@ export default function CreateHouseholdBeneficiary({
                             {profile.permissions.verify && (
                                 <Button
                                     type="button"
-                                    onClick={() => submitWith(false, true)}
+                                    onClick={() => submitWith(true)}
                                     disabled={!canVerify}
                                     className="h-12 bg-emerald-700 hover:bg-emerald-800"
                                 >

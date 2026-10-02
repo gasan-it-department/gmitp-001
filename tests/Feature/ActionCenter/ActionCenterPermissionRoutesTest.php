@@ -51,6 +51,7 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.assistance.mswd.reopen' => 'action_center.requests.correct',
         'actionCenter.assistance.mswd.reassign' => 'action_center.requests.correct',
         'actionCenter.assistance.household-assessment.refresh' => 'action_center.requests.process|action_center.requests.correct',
+        'actionCenter.assistance.filer-relationships.confirm' => 'action_center.requests.process|action_center.requests.correct',
         'actionCenter.assistance.apply-profile-corrections' => 'action_center.requests.process|action_center.requests.correct',
         'actionCenter.assistance.correct-missing-date-of-death' => 'action_center.requests.correct',
         'actionCenter.assistance.approve' => 'action_center.requests.decide',
@@ -86,6 +87,7 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.household.members.link' => 'action_center.beneficiaries.correct',
         'actionCenter.household.members.unlink' => 'action_center.beneficiaries.correct',
         'actionCenter.walkin.store' => 'action_center.beneficiaries.manage',
+        'actionCenter.beneficiary.registration-check' => 'action_center.beneficiaries.manage',
         'actionCenter.assistance.admin-store' => 'action_center.requests.intake',
     ];
 

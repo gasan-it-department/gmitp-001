@@ -5,7 +5,6 @@ namespace App\Core\ActionCenter\UseCase\Beneficiary;
 use App\Core\ActionCenter\Dto\Beneficiary\CreateWalkInBeneficiaryDto;
 use App\Core\ActionCenter\Dto\Household\StoreHouseholdMemberDto;
 use App\Core\ActionCenter\Enums\Relationship;
-use App\Core\ActionCenter\Exceptions\PotentialDuplicateBeneficiaryException;
 use App\Core\ActionCenter\Exceptions\WalkInBeneficiaryIdentityDocumentStorageException;
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
@@ -27,9 +26,8 @@ use Throwable;
  *   • No portal account. user_id is NULL; there is no users-row lock and no
  *     user_id idempotency check (the online action's `where('user_id', …)`
  *     dedup is meaningless — even harmful — for a NULL user).
- *   • Duplicate control is a SOFT name + birth-date match (the UNIQUE(user_id)
- *     constraint can't protect walk-ins). On a hit, unless the admin forced an
- *     override, we abort with the matches so the UI can ask "different person?".
+ *   • Duplicate candidates are rechecked under the municipality lock against
+ *     a short-lived registry check; overrides need correction permission.
  *   • The actor is the admin, recorded via the activity log's causer.
  *
  * The household, beneficiary, and roster are committed atomically as pending.
@@ -46,7 +44,7 @@ class CreateWalkInBeneficiaryAction
     public function __construct(
         private readonly StoreHouseholdMemberAction $storeHouseholdMember,
         private readonly GenerateBeneficiaryNumberAction $generateBeneficiaryNumber,
-        private readonly FindPotentialDuplicateBeneficiariesAction $findPotentialDuplicates,
+        private readonly CheckBeneficiaryRegistrationIdentityAction $checkIdentity,
         private readonly CreateHouseholdAction $createHousehold,
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
@@ -57,22 +55,13 @@ class CreateWalkInBeneficiaryAction
 
             $this->lockMunicipality->execute($dto->municipalId);
 
-            // ── Soft duplicate guard ────────────────────────────────────────
-            // Stands in for the UNIQUE(user_id) constraint, which does nothing
-            // for NULL-user walk-ins. Skipped once the admin reviews the
-            // surfaced matches and confirms an override.
-            if (! $dto->force) {
-                $matches = $this->findPotentialDuplicates->execute(
-                    firstName: $dto->firstName,
-                    lastName: $dto->lastName,
-                    birthDate: $dto->birthDate,
-                    municipalId: $dto->municipalId,
-                );
-
-                if ($matches->isNotEmpty()) {
-                    throw new PotentialDuplicateBeneficiaryException($matches);
-                }
-            }
+            $candidates = $this->checkIdentity->authorizeCreation([
+                'first_name' => $dto->firstName,
+                'last_name' => $dto->lastName,
+                'middle_name' => $dto->middleName,
+                'suffix' => $dto->suffix,
+                'birth_date' => $dto->birthDate,
+            ], $dto->municipalId, $dto->encodedByUserId, $dto->identityCheckContext, $dto->differentPersonReason);
 
             $household = $this->createHousehold->execute(
                 $dto->municipalId,
@@ -137,7 +126,7 @@ class CreateWalkInBeneficiaryAction
             // ── Audit: who encoded this walk-in ─────────────────────────────
             // user_id is excluded from Beneficiary's LogsActivity set, so this
             // explicit entry is the record of an admin-created identity (DPA +
-            // COA trail). `forced_over_duplicate` flags overrides for review.
+            // COA trail). Reviewed different-person decisions have a separate log.
             activity('beneficiary-walkin')
                 ->performedOn($beneficiary)
                 ->causedBy(User::find($dto->encodedByUserId))
@@ -145,9 +134,21 @@ class CreateWalkInBeneficiaryAction
                     'municipal_id' => $dto->municipalId,
                     'beneficiary_id' => $beneficiary->id,
                     'household_id' => $household->id,
-                    'forced_over_duplicate' => $dto->force,
+                    'different_person_reviewed' => $candidates !== [],
                 ])
                 ->log('Encoded a walk-in beneficiary');
+
+            if ($candidates !== []) {
+                activity('beneficiary-duplicate-review')
+                    ->performedOn($beneficiary)
+                    ->causedBy(User::find($dto->encodedByUserId))
+                    ->withProperties([
+                        'municipal_id' => $dto->municipalId,
+                        'candidate_keys' => array_column($candidates, 'key'),
+                        'reason' => trim((string) $dto->differentPersonReason),
+                    ])
+                    ->log('Authorized registration of a different person');
+            }
 
             return $beneficiary;
         }, attempts: 3);
