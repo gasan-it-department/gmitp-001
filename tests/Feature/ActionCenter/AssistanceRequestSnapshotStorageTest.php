@@ -606,7 +606,7 @@ it('allows an admin to file for a pending household member with an override and 
         ->and($created->status->value)->toBe('pending')
         ->and(DB::table('media')->count())->toBe(0)
         ->and($created->on_behalf_household_member_id)->toBe($context['member_id'])
-        ->and(data_get($created->metadata, 'filer_relationships.confirmed_at'))->not->toBeNull()
+        ->and(data_get($created->metadata, 'filer_relationships'))->toBeNull()
         ->and($created->metadata)->toMatchArray([
             'relationship_to_beneficiary' => 'parent',
             'on_behalf_first_name' => 'Pedro',
@@ -627,19 +627,37 @@ it('stores a non-head filer relationship for both filing paths without changing 
     ))->execute(adultOnBehalfDto(
         $context,
         encodedByUserId: $admin ? $context['submitter_user_id'] : null,
-        relationshipToBeneficiary: 'parent',
-        filerRelationships: [$context['member_id'] => 'child'],
+        relationshipToBeneficiary: 'child',
     ));
 
     expect($created->encoded_by_user_id)->toBe($admin ? $context['submitter_user_id'] : null)
         ->and($created->relationship_to_beneficiary?->value)->toBe('child')
-        ->and(data_get($created->metadata, 'filer_relationships.answers.'.$context['member_id']))->toBe('child')
-        ->and(data_get($created->metadata, 'filer_relationships.confirmed_at'))->toBeNull()
+        ->and(data_get($created->metadata, 'filer_relationships'))->toBeNull()
         ->and(DB::table('ac_household_members')->where('id', $context['member_id'])->value('relationship'))->toBe('head')
         ->and(DB::table('ac_household_members')->where('id', $context['head_member_id'])->value('relationship'))->toBe('parent');
 })->with([false, true]);
 
-it('rejects forged or missing filer-relative roster answers', function () {
+it('accepts non-family assisted-person relationships without collecting the full roster at filing', function (bool $admin, string $relationship) {
+    $context = seedAdultOnBehalfIdentityContext();
+    makeNonHeadFilingRoster($context);
+
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(), snapshotTestSmsNotifier(), snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class), snapshotTestMswdVerification(),
+    ))->execute(adultOnBehalfDto(
+        $context,
+        encodedByUserId: $admin ? $context['submitter_user_id'] : null,
+        relationshipToBeneficiary: $relationship,
+    ));
+
+    expect($created->relationship_to_beneficiary?->value)->toBe($relationship)
+        ->and(data_get($created->metadata, 'filer_relationships'))->toBeNull();
+})->with([
+    [false, 'non_relative'], [true, 'non_relative'],
+    [false, 'guardian'], [true, 'ward'], [true, 'other_relative'],
+]);
+
+it('rejects submitted full-roster answers but permits MSWD capture after filing', function () {
     $context = seedAdultOnBehalfIdentityContext();
     makeNonHeadFilingRoster($context);
     $makeAction = function (): StoreAssistanceRequestAction {
@@ -655,11 +673,26 @@ it('rejects forged or missing filer-relative roster answers', function () {
         );
     };
 
-    expect(fn () => $makeAction()->execute(adultOnBehalfDto($context)))
-        ->toThrow(DomainException::class, 'every active household member')
-        ->and(fn () => $makeAction()->execute(adultOnBehalfDto($context, filerRelationships: [(string) Str::ulid() => 'child'])))
-        ->toThrow(DomainException::class, 'every active household member')
+    expect(fn () => $makeAction()->execute(adultOnBehalfDto($context, filerRelationships: [(string) Str::ulid() => 'child'])))
+        ->toThrow(DomainException::class, 'confirmed during MSWD review')
         ->and(DB::table('ac_assistance_requests')->count())->toBe(0);
+    $created = (new StoreAssistanceRequestAction(
+        snapshotTestIdGenerator(), snapshotTestSmsNotifier(), snapshotTestEligibility(),
+        app(AssistanceRequestFormDefinitionProvider::class), snapshotTestMswdVerification(),
+    ))->execute(adultOnBehalfDto($context, relationshipToBeneficiary: 'child'));
+    expect(data_get($created->metadata, 'filer_relationships'))->toBeNull();
+});
+
+it('rejects a full relationship map in the admin filing request validator', function () {
+    $context = seedAdultOnBehalfIdentityContext();
+    $request = StoreAdminAssistanceRequest::create('/', 'POST', [
+        'assistance_type_id' => $context['assistance_type_id'],
+        'filer_relationships' => [$context['member_id'] => 'parent'],
+    ]);
+
+    expect(Validator::make($request->all(), [
+        'filer_relationships' => $request->rules()['filer_relationships'],
+    ])->fails())->toBeTrue();
 });
 
 it('rechecks citizen eligibility after acquiring submission locks', function () {

@@ -63,10 +63,17 @@ class ConfirmAssistanceFilerRelationshipsAction
                 throw new \DomainException('The saved request roster changed. Refresh the page and review the relationships again.');
             }
             $offRosterAssistedMemberId = $this->relationships->offRosterAssistedMemberId($request, $members);
+            $filer = $this->relationships->filerMember($members, (string) $request->beneficiary_id);
+            if ($filer === null) {
+                throw new \DomainException('The filer must have exactly one linked row in the saved request roster.');
+            }
             if ($request->on_behalf_household_member_id !== null
                 && ! in_array((string) $request->on_behalf_household_member_id, array_column($members, 'household_member_id'), true)
                 && $offRosterAssistedMemberId === null) {
                 throw new \DomainException('The assisted person is absent from the assessed roster and cannot be verified against the filing snapshot. Review the request before confirming relationships.');
+            }
+            if ($filer['is_household_head'] ?? false) {
+                throw new \DomainException('The household-head filer relationships come from the saved roster and do not need confirmation.');
             }
             $capture = $this->relationships->capture(
                 $members,
@@ -79,15 +86,19 @@ class ConfirmAssistanceFilerRelationshipsAction
             if ($current['is_confirmed'] && $current['answers'] === $capture['answers']) {
                 throw new \DomainException('These filer-relative relationships are already confirmed.');
             }
+            $isCorrection = $current['is_confirmed'] || $completed;
+            if ($isCorrection && (mb_strlen(trim((string) $reason)) < 10 || mb_strlen(trim((string) $reason)) > 1000)) {
+                throw new \DomainException('Enter a correction reason of 10 to 1,000 characters.');
+            }
             $capture['confirmed_at'] = now()->toIso8601String();
             $capture['confirmed_by_user_id'] = $actorId;
-            $capture['source'] = $completed ? 'mswd_correction' : 'mswd_interview';
+            $capture['source'] = $isCorrection ? 'mswd_correction' : 'mswd_interview';
             $assisted = $request->on_behalf_household_member_id === null
                 ? null
                 : ($capture['answers'][(string) $request->on_behalf_household_member_id] ?? null);
             if ($request->on_behalf_household_member_id !== null
                 && ! in_array($assisted, Relationship::assistanceRepresentativeValues(), true)) {
-                throw new \DomainException('The assisted person must have a valid family relationship to the filer.');
+                throw new \DomainException('Choose a valid relationship of the assisted person to the filer.');
             }
 
             $old = data_get($request->metadata, 'filer_relationships');
@@ -107,9 +118,9 @@ class ConfirmAssistanceFilerRelationshipsAction
                     'municipal_id' => $municipalId,
                     'old' => ['filer_relationships' => $old],
                     'attributes' => ['filer_relationships' => $capture],
-                    'correction_reason' => $completed ? trim((string) $reason) : null,
+                    'correction_reason' => $isCorrection ? trim((string) $reason) : null,
                 ])
-                ->log($completed ? 'Corrected filer-relative household relationships' : 'Confirmed filer-relative household relationships');
+                ->log($isCorrection ? 'Corrected filer-relative household relationships' : 'Confirmed filer-relative household relationships');
 
             return $request->fresh();
         }, attempts: 3);

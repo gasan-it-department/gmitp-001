@@ -96,38 +96,10 @@ enum Relationship: string
             ->toArray();
     }
 
-    /**
-     * Family relationships allowed when filing assistance for another
-     * household member. This follows the MSWD workflow: the filer may assist
-     * any recognized family relative, not only spouse, parent, child, or
-     * sibling. Guardian, ward, and non-relative records remain separate
-     * household relationships and are not treated as family representatives.
-     *
-     * @return array<int, self>
-     */
+    /** @return array<int, self> */
     public static function assistanceRepresentativeCases(): array
     {
-        // return array_values(array_filter(
-        //     self::cases(),
-        //     fn(self $case) => $case !== self::Head,
-        // ));
-        return [
-            self::Spouse,
-            self::LiveInPartner,
-            self::Parent,
-            self::Child,
-            self::Sibling,
-            self::Grandparent,
-            self::Grandchild,
-            self::StepParent,
-            self::StepChild,
-            self::ParentInLaw,
-            self::ChildInLaw,
-            self::AuntUncle,
-            self::NieceNephew,
-            self::Cousin,
-            self::OtherRelative,
-        ];
+        return array_values(array_filter(self::cases(), fn (self $case): bool => $case !== self::Head));
     }
 
     /** @return array<int, string> */

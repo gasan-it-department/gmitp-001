@@ -542,9 +542,21 @@ it('omits the internal roster member id from an on-behalf filing subject', funct
         'on_behalf_last_name' => 'Mawac',
     ]);
     $rosterMemberId = (string) Str::ulid();
+    $filer = DB::table('ac_assistance_requests')->where('id', $context['request_id'])->first();
+    $headId = DB::table('ac_household_members')->where('beneficiary_id', $filer->beneficiary_id)->value('id');
     DB::table('ac_assistance_requests')
         ->where('id', $context['request_id'])
-        ->update(['on_behalf_household_member_id' => $rosterMemberId]);
+        ->update([
+            'on_behalf_household_member_id' => $rosterMemberId,
+            'metadata' => json_encode([
+                'relationship_to_beneficiary' => 'parent',
+                'on_behalf_first_name' => 'Juan', 'on_behalf_last_name' => 'Mawac',
+                'household_composition_snapshot' => ['household_id' => $filer->household_id, 'members' => [
+                    ['household_member_id' => $headId, 'beneficiary_id' => $filer->beneficiary_id, 'relationship' => 'head', 'is_household_head' => true, 'full_name' => 'April Joy Mawac'],
+                    ['household_member_id' => $rosterMemberId, 'beneficiary_id' => null, 'relationship' => 'parent', 'is_household_head' => false, 'full_name' => 'Juan Mawac'],
+                ]],
+            ], JSON_THROW_ON_ERROR),
+        ]);
 
     $data = app(GenerateAssistanceRequestIntakeSheetAction::class)->execute(
         new GenerateAssistanceRequestIntakeSheetDto(
@@ -588,15 +600,22 @@ it('prints the relationship to Susan rather than the relationship to household h
     ]);
 
     $action = app(GenerateAssistanceRequestIntakeSheetAction::class);
-    $data = $action->execute(new GenerateAssistanceRequestIntakeSheetDto(
+    $input = new GenerateAssistanceRequestIntakeSheetDto(
         assistanceRequestId: $context['request_id'], municipalId: $context['municipal_id'],
         problemPresented: ['sick'], sourceOfIncome: 'Family support', monthlyIncome: 5000,
         recommendation: 'Medical Assistance',
-    ), 'Test Admin');
+    );
+    expect(fn () => $action->execute($input, 'Test Admin'))
+        ->toThrow(DomainException::class, 'Capture or reconfirm');
+    $metadata = json_decode(DB::table('ac_assistance_requests')->where('id', $context['request_id'])->value('metadata'), true, flags: JSON_THROW_ON_ERROR);
+    $metadata['filer_relationships']['confirmed_at'] = now()->toIso8601String();
+    DB::table('ac_assistance_requests')->where('id', $context['request_id'])->update(['metadata' => json_encode($metadata, JSON_THROW_ON_ERROR)]);
+    $data = $action->execute($input, 'Test Admin');
     $html = view('documents.action_center.assistance_request_intake_sheet', compact('data'))->render();
 
-    expect($data->filerRelationships['pending_confirmation'])->toBeTrue()
-        ->and($html)->toContain('Relationship to Filer', 'Son / Daughter', 'Kenneth Solis', 'Spouse', 'Norberto Solis', 'pending MSWD interview confirmation')
+    expect($data->filerRelationships['pending_confirmation'])->toBeFalse()
+        ->and($html)->toContain('Relationship to Filer', 'Son / Daughter', 'Kenneth Solis', 'Spouse', 'Norberto Solis')
+        ->not->toContain('pending MSWD interview confirmation')
         ->not->toContain('Legacy Relationship to Head');
 });
 

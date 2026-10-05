@@ -268,10 +268,13 @@ class AssistanceRequest extends Model implements HasMedia
      *
      * @param  array<string, mixed>  $assessment
      */
-    public function replaceHouseholdAssessment(array $assessment): void
+    public function replaceHouseholdAssessment(array $assessment, ?string $assistedRelationship = null): void
     {
         $metadata = $this->metadata ?? [];
         $metadata['household_assessment_snapshot'] = $assessment;
+        if ($assistedRelationship !== null && $this->on_behalf_household_member_id !== null) {
+            $metadata['relationship_to_beneficiary'] = $assistedRelationship;
+        }
 
         $this->allowHouseholdAssessmentRefresh = true;
 

@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HouseholdMemberOption, RelationshipOption } from '@/Core/Types/ActionCenter/assistance';
 import api from '@/lib/axios';
 import axios from 'axios';
@@ -100,6 +101,7 @@ export function OnBehalfOfSection({
 }: Props) {
     const age = calculateAge(applicantBirthDate);
     const selectedOption = relationships.find((r) => r.value === data.relationship);
+    const filerIsHead = householdMembers.some((member) => member.beneficiary_id === filerBeneficiaryId && member.relationship === 'head');
     const requiresLegalAge = selectedOption?.requires_legal_age ?? false;
     const isUnderAge = requiresLegalAge && age < 18;
 
@@ -110,7 +112,7 @@ export function OnBehalfOfSection({
         ? 'Burial assistance is filed by an authorized family representative, not the deceased.'
         : audience === 'admin'
           ? 'Record the household member receiving assistance and keep the selected beneficiary as the filer.'
-          : 'You are filing this request on behalf of a family member who needs assistance.';
+          : 'You are filing this request on behalf of a household member who needs assistance.';
 
     const selectableMembers = useMemo(
         () => householdMembers.filter((member) => member.beneficiary_id !== filerBeneficiaryId),
@@ -162,7 +164,7 @@ export function OnBehalfOfSection({
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
                     <p className="text-xs leading-relaxed text-blue-800">
                         Select the deceased household member and provide their relationship to the filer below. The filing representative must be an
-                        eligible family relative; adult-child and adult-sibling filing requirements still apply where applicable.
+                        eligible household member; adult-child and adult-sibling filing requirements still apply where applicable.
                     </p>
                 </div>
             ) : (
@@ -176,8 +178,8 @@ export function OnBehalfOfSection({
                             </>
                         ) : (
                             <>
-                                As an <strong>authorized representative</strong>, you may file on behalf of any recognized family relative in your
-                                household. Your own verified identity will be recorded as the filing party.
+                                As an <strong>authorized representative</strong>, you may file on behalf of another member of your household. Your own
+                                verified identity will be recorded as the filing party.
                             </>
                         )}
                     </p>
@@ -202,7 +204,28 @@ export function OnBehalfOfSection({
                 />
             )}
 
-            {/* ── Inline "Add new family member" form ── */}
+            {selectedMember && !filerIsHead && (
+                <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-700">
+                        Relationship of {formatMemberName(selectedMember)} to the filer <span className="text-rose-500">*</span>
+                    </Label>
+                    <Select value={data.relationship} onValueChange={(value) => onChange('relationship', value)}>
+                        <SelectTrigger aria-label="Assisted person's relationship to the filer">
+                            <SelectValue placeholder="Select relationship" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64 overflow-y-auto">
+                            {relationships.map((relationship) => (
+                                <SelectItem key={relationship.value} value={relationship.value}>
+                                    {relationship.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {errors.relationship_to_beneficiary && <p className="text-xs text-rose-600">{errors.relationship_to_beneficiary}</p>}
+                </div>
+            )}
+
+            {/* ── Inline household-member form ── */}
             {isAdding && (
                 <InlineAddMemberForm
                     relationships={householdRelationshipOptions}
@@ -239,7 +262,7 @@ export function OnBehalfOfSection({
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                     <p className="text-xs leading-relaxed text-red-800">
                         Based on your profile, you appear to be <strong>under 18 years old</strong>. A son/daughter or brother/sister filing for a
-                        parent or sibling must be of <strong>legal age (18+)</strong>. Please ask a qualified adult family member to file instead.
+                        parent or sibling must be of <strong>legal age (18+)</strong>. Please ask a qualified adult to file instead.
                     </p>
                 </div>
             )}
@@ -272,7 +295,7 @@ function SelectedMemberCard({
                 {relationshipLabel ? (
                     <p className="text-xs text-slate-600">{relationshipLabel}</p>
                 ) : (
-                    <p className="text-xs text-amber-600">Set this person's relationship to the filer in the household relationships section.</p>
+                    <p className="text-xs text-amber-600">Select this person's relationship to the filer.</p>
                 )}
                 {!member.is_verified_dependent && member.relationship !== 'head' && (
                     <p className="mt-1 text-xs font-medium text-amber-700">Pending MSWD household verification</p>
@@ -306,7 +329,7 @@ function FamilyMemberPicker({
     return (
         <div className="space-y-3">
             <Label className="text-xs font-semibold text-slate-700">
-                {isDeceasedRequest ? 'Pick the deceased' : 'Pick a family member'} <span className="text-rose-500">*</span>
+                {isDeceasedRequest ? 'Pick the deceased' : 'Pick a household member'} <span className="text-rose-500">*</span>
             </Label>
 
             {members.length > 0 ? (
@@ -327,7 +350,7 @@ function FamilyMemberPicker({
                 </div>
             ) : (
                 <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">
-                    Your household roster is empty. Add a family member below to continue.
+                    Your household roster is empty. Add a household member below to continue.
                 </p>
             )}
 
@@ -337,7 +360,7 @@ function FamilyMemberPicker({
                 className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-2.5 text-xs font-semibold text-slate-600 transition-all hover:border-[#005088] hover:text-[#005088]"
             >
                 <Plus className="h-4 w-4" />
-                Add a new family member
+                Add a household member
             </button>
 
             {error && <p className="text-xs text-rose-500">{error}</p>}
@@ -408,7 +431,7 @@ function InlineAddMemberForm({
     return (
         <div className="space-y-4 rounded-xl border-2 border-dashed border-[#005088]/40 bg-blue-50/40 p-5">
             <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-slate-800">New family member</h4>
+                <h4 className="text-sm font-bold text-slate-800">New household member</h4>
                 <button type="button" onClick={onCancel} className="text-xs font-medium text-slate-500 hover:text-slate-800">
                     Cancel
                 </button>
@@ -525,7 +548,7 @@ function InlineAddMemberForm({
 
 function getHouseholdMemberError(error: unknown): string {
     if (!axios.isAxiosError(error)) {
-        return 'Could not save the family member. Please try again.';
+        return 'Could not save the household member. Please try again.';
     }
 
     if (!error.response) {
@@ -559,5 +582,5 @@ function getHouseholdMemberError(error: unknown): string {
         return 'Please sign in again before adding a household member.';
     }
 
-    return 'Could not save the family member. Please try again.';
+    return 'Could not save the household member. Please try again.';
 }

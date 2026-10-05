@@ -7,6 +7,7 @@ use App\Core\ActionCenter\Enums\AssistanceStatus;
 use App\Core\ActionCenter\Enums\MswdVerificationStatus;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\ActionCenter\Services\AssistanceFilerRelationships;
 use App\Core\ActionCenter\UseCase\Shared\LockAssistanceRequestAction;
 use App\Core\Users\Models\User;
 use Carbon\CarbonImmutable;
@@ -25,6 +26,7 @@ class RefreshAssistanceHouseholdAssessmentAction
 {
     public function __construct(
         private readonly LockAssistanceRequestAction $lockRequest,
+        private readonly AssistanceFilerRelationships $filerRelationships,
     ) {}
 
     public function execute(
@@ -99,7 +101,14 @@ class RefreshAssistanceHouseholdAssessmentAction
                 'members' => $snapshotMembers,
             ];
             $previousAssessment = $this->previousAssessment($request);
-            $request->replaceHouseholdAssessment($assessment);
+            $filer = $this->filerRelationships->filerMember($snapshotMembers, (string) $request->beneficiary_id);
+            $assistedRelationship = null;
+            if (($filer['is_household_head'] ?? false) && $request->on_behalf_household_member_id !== null) {
+                $assisted = collect($snapshotMembers)->firstWhere('household_member_id', (string) $request->on_behalf_household_member_id);
+                $assistedRelationship = $assisted['relationship'] ?? null;
+            }
+            $previousAssistedRelationship = $request->relationship_to_beneficiary?->value;
+            $request->replaceHouseholdAssessment($assessment, $assistedRelationship);
 
             if ($requiresCorrection) {
                 // A signed-off assessment cannot remain current after the
@@ -120,8 +129,8 @@ class RefreshAssistanceHouseholdAssessmentAction
                 ->causedBy(User::find($actingUserId))
                 ->withProperties([
                     'municipal_id' => $municipalId,
-                    'old' => ['household_assessment_snapshot' => $previousAssessment],
-                    'attributes' => ['household_assessment_snapshot' => $assessment],
+                    'old' => ['household_assessment_snapshot' => $previousAssessment, 'relationship_to_beneficiary' => $previousAssistedRelationship],
+                    'attributes' => ['household_assessment_snapshot' => $assessment, 'relationship_to_beneficiary' => $request->relationship_to_beneficiary?->value],
                     'correction_reason' => $requiresCorrection ? trim((string) $correctionReason) : null,
                     'assessment_status' => $request->status->value,
                     'assessment_fingerprint' => $preview['fingerprint'],
