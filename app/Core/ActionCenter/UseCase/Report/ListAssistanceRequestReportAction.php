@@ -52,13 +52,9 @@ class ListAssistanceRequestReportAction
             'Assistance Type',
             'Status',
             'Approved Amount',
-            'Reviewer',
-            'Reviewed Date',
-            'Approver',
             'Approved Date',
             'Released Date',
             'Release Reference',
-            'Purpose',
         ];
     }
 
@@ -78,13 +74,9 @@ class ListAssistanceRequestReportAction
                 $row['assistance_type'],
                 $row['status_label'],
                 $row['amount_approved'],
-                $row['reviewer_name'],
-                $row['reviewed_date'],
-                $row['approver_name'],
                 $row['approved_date'],
                 $row['released_date'],
                 $row['release_reference_number'],
-                $row['description'],
             ])
             ->values()
             ->all();

@@ -152,6 +152,36 @@ it('keeps assistance reports tenant scoped and uses frozen request identity', fu
         ->and($summary['released_amount'])->toBe(2500.0);
 });
 
+it('exports only the requested assistance report columns in order', function () {
+    $tenant = seedReportTenant('municipality-a', 'Current Beneficiary', 'GAS-000001', 'Tiguion');
+    seedReportRequest($tenant, 'AC-2026-000001', 'Original Snapshot', 2500);
+
+    $action = new ListAssistanceRequestReportAction;
+    $headings = $action->headings();
+    $rows = $action->exportRows('municipality-a', AssistanceRequestReportFiltersDto::fromArray([]));
+
+    expect($headings)->toBe([
+        'Transaction Number',
+        'Submitted Date',
+        'Beneficiary Number',
+        'Filer Name',
+        'Assisted Person',
+        'Filing Source',
+        'Barangay',
+        'Assistance Type',
+        'Status',
+        'Approved Amount',
+        'Approved Date',
+        'Released Date',
+        'Release Reference',
+    ])
+        ->and($rows)->toHaveCount(1)
+        ->and($rows[0])->toHaveCount(count($headings))
+        ->and($rows[0][0])->toBe('AC-2026-000001')
+        ->and($rows[0][9])->toBe(2500.0)
+        ->and($rows[0][12])->toBe('REF-AC-2026-000001');
+});
+
 it('uses current beneficiary data and authoritative household size in the registry report', function () {
     $tenant = seedReportTenant('municipality-a', 'Current Beneficiary', 'GAS-000001', 'Tiguion');
     seedReportRequest($tenant, 'AC-2026-000001', 'Earlier Snapshot', 1500);
