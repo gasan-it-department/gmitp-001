@@ -113,26 +113,46 @@ class AssistanceFilerRelationships
         sort($expectedIds);
         $answerIds = array_keys($answers);
         sort($answerIds);
-        $current = is_array($saved)
+        $savedCurrent = is_array($saved)
             && ($saved['filer_beneficiary_id'] ?? null) === (string) $request->beneficiary_id
             && hash_equals((string) ($saved['roster_fingerprint'] ?? ''), $this->fingerprint($members, (string) $request->beneficiary_id))
-            && $answerIds === $expectedIds;
-        $legacyHeadAnswers = [];
-        if (! is_array($saved) && $isHead) {
+            && $answerIds === $expectedIds
+            && collect($answers)->every(fn (mixed $value): bool => is_string($value)
+                && Relationship::tryFrom($value) !== null && $value !== Relationship::Head->value);
+        $current = $savedCurrent;
+        $headAnswers = [];
+        if ($isHead) {
             foreach ($members as $member) {
                 $id = (string) ($member['household_member_id'] ?? '');
                 if ($id !== '' && $id !== ($filer['household_member_id'] ?? null)) {
-                    $legacyHeadAnswers[$id] = (string) ($member['relationship'] ?? '');
+                    $headAnswers[$id] = (string) ($member['relationship'] ?? '');
                 }
             }
+            if ($offRosterAssistedMemberId !== null) {
+                $headAnswers[$offRosterAssistedMemberId] = (string) ($request->relationship_to_beneficiary?->value ?? '');
+            }
+            $current = $filer !== null && collect($headAnswers)->every(fn (string $value): bool => Relationship::tryFrom($value) !== null
+                && $value !== Relationship::Head->value);
+            $subjectId = (string) ($request->on_behalf_household_member_id ?? '');
+            if ($subjectId !== '' && ! isset($headAnswers[$subjectId])) {
+                $current = false;
+            }
+            if ($current && $savedCurrent && $request->status->value === 'released') {
+                $headAnswers = $answers;
+            }
+        }
+        $savedAnswers = $answers;
+        $assistedId = (string) ($request->on_behalf_household_member_id ?? '');
+        if (! $isHead && $assistedId !== '' && ! isset($savedAnswers[$assistedId]) && $request->relationship_to_beneficiary !== null) {
+            $savedAnswers[$assistedId] = $request->relationship_to_beneficiary->value;
         }
 
         return [
-            'answers' => $current ? $answers : $legacyHeadAnswers,
-            'saved_answers' => $answers,
+            'answers' => $isHead ? $headAnswers : ($current ? $answers : []),
+            'saved_answers' => $savedAnswers,
             'is_head_filer' => $isHead,
             'is_current' => $current,
-            'is_confirmed' => $current && filled($saved['confirmed_at'] ?? null),
+            'is_confirmed' => $isHead ? $current : ($current && filled($saved['confirmed_at'] ?? null)),
             'is_legacy' => ! is_array($saved),
             'roster_fingerprint' => $this->fingerprint($members, (string) $request->beneficiary_id),
             'filer_member_id' => $filer['household_member_id'] ?? null,
@@ -143,7 +163,7 @@ class AssistanceFilerRelationships
             ]))),
             'off_roster_assisted_relationship' => $offRosterAssistedMemberId === null
                 ? null
-                : ($answers[$offRosterAssistedMemberId] ?? $request->relationship_to_beneficiary?->value),
+                : ($isHead ? ($headAnswers[$offRosterAssistedMemberId] ?? null) : ($savedAnswers[$offRosterAssistedMemberId] ?? null)),
             'assisted_member_id' => $request->on_behalf_household_member_id,
             'assisted_relationship_values' => Relationship::assistanceRepresentativeValues(),
         ];

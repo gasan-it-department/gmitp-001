@@ -191,18 +191,18 @@ class GenerateAssistanceRequestIntakeSheetAction
     ): array {
         $members = $household->members->map->toArray()->all();
         $status = $this->filerRelationships->status($request, $members);
-        if ($status['is_current']) {
+        if ($status['is_head_filer'] && $status['is_current']) {
             return [
                 'answers' => $status['answers'],
                 'label' => 'Relationship to Filer',
-                'pending_confirmation' => ! $status['is_confirmed'],
+                'pending_confirmation' => false,
             ];
+        }
+        if ($status['is_current'] && $status['is_confirmed']) {
+            return ['answers' => $status['answers'], 'label' => 'Relationship to Filer', 'pending_confirmation' => false];
         }
         if ($request->status->value === 'released') {
             return ['answers' => [], 'label' => 'Legacy Relationship to Head', 'pending_confirmation' => false];
-        }
-        if ($status['is_head_filer'] && $status['is_legacy']) {
-            return ['answers' => [], 'label' => 'Relationship to Filer (Head)', 'pending_confirmation' => false];
         }
 
         throw new \DomainException('Capture or reconfirm the household relationships to the filer before generating another Intake Sheet.');

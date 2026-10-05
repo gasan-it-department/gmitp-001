@@ -638,9 +638,7 @@ class AssistanceMswdVerificationService
             $legacySignedOff = $relationships['is_legacy']
                 && ($request->mswd_verification_status === MswdVerificationStatus::Verified
                     || $request->status === AssistanceStatus::Released);
-            if (! $legacySignedOff
-                && (! $relationships['is_legacy'] || ! $relationships['is_head_filer'])
-                && (! $relationships['is_current'] || ! $relationships['is_confirmed'])) {
+            if (! $legacySignedOff && (! $relationships['is_current'] || ! $relationships['is_confirmed'])) {
                 $blockers[] = 'Confirm each household member relationship to the filer after the MSWD interview.';
             }
         }

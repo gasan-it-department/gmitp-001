@@ -62,8 +62,7 @@ class StoreAdminAssistanceRequest extends FormRequest
                 'nullable',
                 Rule::in(Relationship::assistanceRepresentativeValues()),
             ],
-            'filer_relationships' => ['sometimes', 'array'],
-            'filer_relationships.*' => ['required', Rule::in(array_map(fn (Relationship $case) => $case->value, Relationship::cases()))],
+            'filer_relationships' => ['prohibited'],
             'on_behalf_household_member_id' => [
                 'nullable',
                 'required_with:relationship_to_beneficiary,on_behalf_date_of_death',

@@ -47,8 +47,7 @@ class StoreAssistanceRequest extends FormRequest
             // and for verifying that the chosen household member belongs to the
             // filer's own household.
             'relationship_to_beneficiary' => ['nullable', Rule::in(Relationship::assistanceRepresentativeValues())],
-            'filer_relationships' => ['sometimes', 'array'],
-            'filer_relationships.*' => ['required', Rule::in(array_map(fn (Relationship $case) => $case->value, Relationship::cases()))],
+            'filer_relationships' => ['prohibited'],
             'on_behalf_household_member_id' => ['nullable', 'ulid', 'exists:ac_household_members,id'],
             'on_behalf_first_name' => ['nullable', 'string', 'max:100'],
             'on_behalf_middle_name' => ['nullable', 'string', 'max:100'],

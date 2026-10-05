@@ -1,4 +1,3 @@
-import { FilerRelationshipFields } from '@/components/ActionCenter/FilerRelationshipFields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -50,7 +49,6 @@ type FormData = {
     privacy_consent: boolean;
     // Representative fields — submitted for ALL programs; null = "myself"
     relationship_to_beneficiary: RelationshipType;
-    filer_relationships: Record<string, string>;
     on_behalf_household_member_id: string; // FK to ac_household_members; '' when filing for self
     on_behalf_first_name: string;
     on_behalf_middle_name: string;
@@ -120,7 +118,6 @@ export default function ApplyAssistance({
         description: '',
         privacy_consent: false,
         relationship_to_beneficiary: '',
-        filer_relationships: {},
         on_behalf_household_member_id: '',
         on_behalf_first_name: '',
         on_behalf_middle_name: '',
@@ -162,11 +159,6 @@ export default function ApplyAssistance({
     };
     const filerMember = householdRoster.find((member) => member.beneficiary_id === beneficiaryData.id);
     const filerIsHead = filerMember?.relationship === 'head';
-    const relationshipForMember = (member: HouseholdMemberOption) =>
-        filerIsHead ? (member.relationship ?? '') : (data.filer_relationships[member.id] ?? '');
-    const relationshipsComplete =
-        !!filerMember &&
-        (filerIsHead || householdRoster.filter((member) => member.id !== filerMember.id).every((member) => !!data.filer_relationships[member.id]));
 
     const handleBehalfChange = <K extends keyof OnBehalfOfData>(field: K, value: OnBehalfOfData[K]) => {
         const keyMap: Record<keyof OnBehalfOfData, keyof FormData> = {
@@ -183,7 +175,7 @@ export default function ApplyAssistance({
             setData((current) => ({
                 ...current,
                 [keyMap[field]]: value as string,
-                relationship_to_beneficiary: chosen ? relationshipForMember(chosen) : '',
+                relationship_to_beneficiary: chosen && filerIsHead ? (chosen.relationship ?? '') : '',
                 recipient_id_unavailable: false,
                 recipient_id_unavailable_reason: '',
             }));
@@ -244,7 +236,6 @@ export default function ApplyAssistance({
     const canSubmit =
         data.description.trim().length >= 10 &&
         data.privacy_consent &&
-        relationshipsComplete &&
         recipientIdDeclarationComplete &&
         representativeInfoComplete &&
         !isUnderAge &&
@@ -327,24 +318,6 @@ export default function ApplyAssistance({
                                         />
                                     </>
                                 )}
-
-                                <FilerRelationshipFields
-                                    filerName={beneficiaryData.full_name}
-                                    filerBeneficiaryId={beneficiaryData.id}
-                                    members={householdRoster}
-                                    relationships={householdRelationshipOptions}
-                                    answers={data.filer_relationships}
-                                    onChange={(answers) =>
-                                        setData((current) => ({
-                                            ...current,
-                                            filer_relationships: answers,
-                                            relationship_to_beneficiary: current.on_behalf_household_member_id
-                                                ? (answers[current.on_behalf_household_member_id] ?? '')
-                                                : '',
-                                        }))
-                                    }
-                                    errors={errors as Record<string, string | undefined>}
-                                />
 
                                 {/* ── 3. Applicant's own identity (read-only) ── */}
                                 <BeneficiaryInfoBlock beneficiary={{ data: beneficiaryData }} household={{ data: householdData }} />

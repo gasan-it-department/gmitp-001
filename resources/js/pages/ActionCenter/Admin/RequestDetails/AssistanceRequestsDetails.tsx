@@ -317,8 +317,6 @@ export default function AssistanceRequestsDetails({
     const activityLogData = activityLog.data;
     const requestHouseholdData: RequestHousehold = 'data' in requestHousehold ? requestHousehold.data : requestHousehold;
     const requestHouseholdMembers = requestHouseholdData.members;
-    const filerRelationshipLabel = (value: string | null): string =>
-        value ? (householdRelationshipOptions.find((option) => option.value === value)?.label ?? humanizeHouseholdValue(value)) : '—';
     const crossMatches = crossMunicipalityMatches?.data ?? [];
     const disbursementRows = disbursements?.data ?? [];
     const activeDisbursement = disbursementRows.find((item) => item.status === 'preparing' || item.status === 'ready') ?? null;
@@ -1054,116 +1052,6 @@ export default function AssistanceRequestsDetails({
                                                         </p>
                                                     </div>
                                                 )}
-                                            {requestHouseholdMembers.length === 0 ? (
-                                                <p className="py-4 text-center text-sm text-slate-400 italic">
-                                                    No household members were saved for this request.
-                                                </p>
-                                            ) : (
-                                                <div>
-                                                    <div className="space-y-2 md:hidden">
-                                                        {requestHouseholdMembers.map((member, index) => (
-                                                            <div
-                                                                key={member.household_member_id ?? `${member.full_name}-${index}`}
-                                                                className="rounded-md border border-slate-200 bg-white p-3"
-                                                            >
-                                                                <p className="text-sm font-semibold break-words text-slate-900">{member.full_name}</p>
-                                                                <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
-                                                                    <MobileDetail
-                                                                        label="Relationship to head"
-                                                                        value={humanizeHouseholdValue(member.relationship)}
-                                                                        capitalize
-                                                                    />
-                                                                    <MobileDetail
-                                                                        label="Relationship to filer"
-                                                                        value={
-                                                                            member.household_member_id === filerRelationships.filer_member_id
-                                                                                ? 'Filer'
-                                                                                : filerRelationshipLabel(
-                                                                                      filerRelationships.answers[member.household_member_id ?? ''] ??
-                                                                                          null,
-                                                                                  )
-                                                                        }
-                                                                        capitalize
-                                                                    />
-                                                                    <MobileDetail
-                                                                        label="Age at filing / Sex"
-                                                                        value={`${member.age_at_filing ?? '—'} yrs / ${humanizeHouseholdValue(member.sex)}`}
-                                                                        capitalize
-                                                                    />
-                                                                    <MobileDetail
-                                                                        label="Education"
-                                                                        value={humanizeHouseholdValue(member.educational_attainment)}
-                                                                        capitalize
-                                                                    />
-                                                                    <MobileDetail label="Occupation" value={member.occupation || '—'} capitalize />
-                                                                    <MobileDetail
-                                                                        label="Monthly income"
-                                                                        value={
-                                                                            member.monthly_income !== null
-                                                                                ? utils.formatCurrency(member.monthly_income)
-                                                                                : '—'
-                                                                        }
-                                                                        strong
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    <div className="hidden overflow-hidden rounded-md border border-slate-100 md:block">
-                                                        <Table>
-                                                            <TableHeader className="bg-slate-50/70">
-                                                                <TableRow>
-                                                                    <TableHead className="text-xs">Name</TableHead>
-                                                                    <TableHead className="text-xs">Relationship to Head</TableHead>
-                                                                    <TableHead className="text-xs">Relationship to Filer</TableHead>
-                                                                    <TableHead className="text-xs">Age/Sex</TableHead>
-                                                                    <TableHead className="text-xs">Education</TableHead>
-                                                                    <TableHead className="text-xs">Occupation</TableHead>
-                                                                    <TableHead className="text-right text-xs">Income</TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {requestHouseholdMembers.map((member, index) => (
-                                                                    <TableRow
-                                                                        key={member.household_member_id ?? `${member.full_name}-${index}`}
-                                                                        className="hover:bg-slate-50/50"
-                                                                    >
-                                                                        <TableCell className="text-xs font-medium text-slate-900">
-                                                                            {member.full_name}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-xs text-slate-600 capitalize">
-                                                                            {humanizeHouseholdValue(member.relationship)}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-xs text-slate-600 capitalize">
-                                                                            {member.household_member_id === filerRelationships.filer_member_id
-                                                                                ? 'Filer'
-                                                                                : filerRelationshipLabel(
-                                                                                      filerRelationships.answers[member.household_member_id ?? ''] ??
-                                                                                          null,
-                                                                                  )}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-xs text-slate-600 capitalize">
-                                                                            {member.age_at_filing ?? '—'} yrs / {humanizeHouseholdValue(member.sex)}
-                                                                        </TableCell>
-                                                                        <TableCell className="max-w-[140px] text-xs text-slate-500 capitalize">
-                                                                            {humanizeHouseholdValue(member.educational_attainment)}
-                                                                        </TableCell>
-                                                                        <TableCell className="max-w-[120px] truncate text-xs text-slate-500 capitalize">
-                                                                            {member.occupation || '—'}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right text-xs font-semibold text-slate-700">
-                                                                            {member.monthly_income !== null
-                                                                                ? utils.formatCurrency(member.monthly_income)
-                                                                                : '—'}
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-                                                    </div>
-                                                </div>
-                                            )}
                                             <ConfirmFilerRelationshipsPanel
                                                 key={`${filerRelationships.roster_fingerprint}-${filerRelationships.is_confirmed}-${filerRelationships.is_current}`}
                                                 requestId={detail.id}
@@ -1175,7 +1063,105 @@ export default function AssistanceRequestsDetails({
                                                 canConfirm={canRefreshHouseholdAssessment}
                                                 completedVerification={verificationIsComplete}
                                                 activeDisbursement={activeDisbursement !== null}
-                                            />
+                                            >
+                                                {(relationshipField) =>
+                                                    requestHouseholdMembers.length === 0 ? (
+                                                        <p className="py-4 text-center text-sm text-slate-400 italic">
+                                                            No household members were saved for this request.
+                                                        </p>
+                                                    ) : (
+                                                        <div>
+                                                            <div className="space-y-2 md:hidden">
+                                                                {requestHouseholdMembers.map((member, index) => (
+                                                                    <div
+                                                                        key={member.household_member_id ?? `${member.full_name}-${index}`}
+                                                                        className="rounded-md border border-slate-200 bg-white p-3"
+                                                                    >
+                                                                        <p className="text-sm font-semibold break-words text-slate-900">
+                                                                            {member.full_name}
+                                                                        </p>
+                                                                        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3">
+                                                                            <div className="col-span-2 space-y-1 text-xs text-slate-600">
+                                                                                <span className="font-medium">Relationship to filer</span>
+                                                                                <div>{relationshipField(member)}</div>
+                                                                            </div>
+                                                                            <MobileDetail
+                                                                                label="Age at filing / Sex"
+                                                                                value={`${member.age_at_filing ?? '—'} yrs / ${humanizeHouseholdValue(member.sex)}`}
+                                                                                capitalize
+                                                                            />
+                                                                            <MobileDetail
+                                                                                label="Education"
+                                                                                value={humanizeHouseholdValue(member.educational_attainment)}
+                                                                                capitalize
+                                                                            />
+                                                                            <MobileDetail
+                                                                                label="Occupation"
+                                                                                value={member.occupation || '—'}
+                                                                                capitalize
+                                                                            />
+                                                                            <MobileDetail
+                                                                                label="Monthly income"
+                                                                                value={
+                                                                                    member.monthly_income !== null
+                                                                                        ? utils.formatCurrency(member.monthly_income)
+                                                                                        : '—'
+                                                                                }
+                                                                                strong
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            <div className="hidden overflow-hidden rounded-md border border-slate-100 md:block">
+                                                                <Table>
+                                                                    <TableHeader className="bg-slate-50/70">
+                                                                        <TableRow>
+                                                                            <TableHead className="text-xs">Name</TableHead>
+                                                                            <TableHead className="text-xs">Relationship to Filer</TableHead>
+                                                                            <TableHead className="text-xs">Age/Sex</TableHead>
+                                                                            <TableHead className="text-xs">Education</TableHead>
+                                                                            <TableHead className="text-xs">Occupation</TableHead>
+                                                                            <TableHead className="text-right text-xs">Income</TableHead>
+                                                                        </TableRow>
+                                                                    </TableHeader>
+                                                                    <TableBody>
+                                                                        {requestHouseholdMembers.map((member, index) => (
+                                                                            <TableRow
+                                                                                key={member.household_member_id ?? `${member.full_name}-${index}`}
+                                                                                className="hover:bg-slate-50/50"
+                                                                            >
+                                                                                <TableCell className="text-xs font-medium text-slate-900">
+                                                                                    {member.full_name}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-xs text-slate-600 capitalize">
+                                                                                    {relationshipField(member)}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-xs text-slate-600 capitalize">
+                                                                                    {member.age_at_filing ?? '—'} yrs /{' '}
+                                                                                    {humanizeHouseholdValue(member.sex)}
+                                                                                </TableCell>
+                                                                                <TableCell className="max-w-[140px] text-xs text-slate-500 capitalize">
+                                                                                    {humanizeHouseholdValue(member.educational_attainment)}
+                                                                                </TableCell>
+                                                                                <TableCell className="max-w-[120px] truncate text-xs text-slate-500 capitalize">
+                                                                                    {member.occupation || '—'}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-right text-xs font-semibold text-slate-700">
+                                                                                    {member.monthly_income !== null
+                                                                                        ? utils.formatCurrency(member.monthly_income)
+                                                                                        : '—'}
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        ))}
+                                                                    </TableBody>
+                                                                </Table>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                            </ConfirmFilerRelationshipsPanel>
                                         </CardContent>
                                     </Card>
                                 </TabsContent>

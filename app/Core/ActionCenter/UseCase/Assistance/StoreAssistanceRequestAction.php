@@ -6,6 +6,7 @@ use App\Core\ActionCenter\Contracts\AssistanceRequestFormDefinitionProvider;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestFormDefinition;
 use App\Core\ActionCenter\Dto\Assistance\AssistanceRequestHouseholdMemberData;
 use App\Core\ActionCenter\Dto\Assistance\StoreAssistanceRequestDto;
+use App\Core\ActionCenter\Enums\Relationship;
 use App\Core\ActionCenter\Exceptions\AssistanceEligibilityException;
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\AssistanceType;
@@ -135,23 +136,23 @@ class StoreAssistanceRequestAction
             );
             $householdTotalIncome = $householdComposition['household_total_income'];
             $householdCompositionSnapshot = $householdComposition['snapshot'];
-            $filerRelationships = $this->filerRelationships->capture(
-                $householdCompositionSnapshot['members'],
-                (string) $beneficiary->id,
-                $dto->filerRelationships,
-                $dto->encodedByUserId ?? $dto->submitterUserId,
-            );
+            if ($dto->filerRelationships !== []) {
+                throw new \DomainException('Household relationships to the filer are confirmed during MSWD review, not at filing.');
+            }
+            $filerMember = $this->filerRelationships->filerMember($householdCompositionSnapshot['members'], (string) $beneficiary->id);
+            if ($filerMember === null) {
+                throw new \DomainException('The filer must have exactly one linked active household row before filing.');
+            }
+            $filerIsHead = (bool) ($filerMember['is_household_head'] ?? false);
             $requestId = $this->idGenerator->generate();
 
             $onBehalfFirstName = $member?->first_name ?? $dto->onBehalfFirstName;
             $onBehalfMiddleName = $member?->middle_name ?? $dto->onBehalfMiddleName;
             $onBehalfLastName = $member?->last_name ?? $dto->onBehalfLastName;
             $onBehalfSuffix = $member?->suffix ?? $dto->onBehalfSuffix;
-            $relationshipToBeneficiary = $member !== null
-                ? ($filerRelationships['answers'][(string) $member->id] ?? null)
-                : null;
-            if ($member !== null && ! in_array($relationshipToBeneficiary, \App\Core\ActionCenter\Enums\Relationship::assistanceRepresentativeValues(), true)) {
-                throw new \DomainException('The assisted person must have a valid family relationship to the filer.');
+            $relationshipToBeneficiary = $member === null ? null : ($filerIsHead ? $member->relationship : $dto->relationshipToBeneficiary);
+            if ($member !== null && ! in_array($relationshipToBeneficiary, Relationship::assistanceRepresentativeValues(), true)) {
+                throw new \DomainException('Choose a valid relationship of the assisted person to the filer.');
             }
 
             $metadata = array_filter([
@@ -175,7 +176,6 @@ class StoreAssistanceRequestAction
                     ? true
                     : null,
                 'household_composition_snapshot' => $householdCompositionSnapshot,
-                'filer_relationships' => $filerRelationships,
             ], static fn ($value) => $value !== null);
 
             $request = AssistanceRequest::create([

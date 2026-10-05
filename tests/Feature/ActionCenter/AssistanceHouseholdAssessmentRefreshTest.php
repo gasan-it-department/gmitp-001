@@ -272,6 +272,10 @@ it('confirms filer-relative answers and reopens a completed verification after a
     expect(data_get($confirmed->metadata, 'filer_relationships.confirmed_at'))->not->toBeNull()
         ->and($service->status($confirmed, $members)['is_confirmed'])->toBeTrue();
 
+    expect(fn () => $action->execute($this->requestId, $this->municipalId, $this->reviewerId, true, false,
+        $capture['roster_fingerprint'], [$kennethId => 'sibling'], null))
+        ->toThrow(DomainException::class, 'correction reason');
+
     DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
         'mswd_verification_status' => 'verified', 'mswd_verification_fingerprint' => str_repeat('a', 64),
     ]);
@@ -333,25 +337,31 @@ it('confirms a deceased assisted person after they are removed from the assessed
     $service = app(AssistanceFilerRelationships::class);
     $status = $service->status($request, $assessedMembers);
     expect($assessedMembers)->toHaveCount(1)
-        ->and($status['is_current'])->toBeFalse()
+        ->and($status['is_current'])->toBe($filerIsHead)
         ->and($status['off_roster_assisted_member_id'])->toBe($ernestoId)
         ->and($status['off_roster_assisted_relationship'])->toBe('spouse');
 
-    expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
-        $this->requestId, $this->municipalId, $this->reviewerId, true, false,
-        $status['roster_fingerprint'], [$ernestoId => 'non_relative'], null,
-    ))->toThrow(DomainException::class, 'valid family relationship');
+    if ($filerIsHead) {
+        expect($status['is_confirmed'])->toBeTrue()
+            ->and($status['answers'][$ernestoId])->toBe('spouse');
+        expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+            $this->requestId, $this->municipalId, $this->reviewerId, true, false,
+            $status['roster_fingerprint'], [], null,
+        ))->toThrow(DomainException::class, 'do not need confirmation');
+
+        return;
+    }
 
     $confirmed = app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
         $this->requestId, $this->municipalId, $this->reviewerId, true, false,
-        $status['roster_fingerprint'], [$ernestoId => 'spouse'], null,
+        $status['roster_fingerprint'], [$ernestoId => 'non_relative'], null,
     );
-    expect(data_get($confirmed->metadata, 'filer_relationships.answers.'.$ernestoId))->toBe('spouse')
+    expect(data_get($confirmed->metadata, 'filer_relationships.answers.'.$ernestoId))->toBe('non_relative')
         ->and($service->status($confirmed, $assessedMembers)['is_confirmed'])->toBeTrue()
         ->and(data_get($confirmed->metadata, 'household_assessment_snapshot.members'))->toHaveCount(1);
 })->with([false, true]);
 
-it('confirms derived head-filer relationships without submitted answers after a roster change', function () {
+it('derives head-filer relationships without a second confirmation after a roster change', function () {
     $parentId = (string) Str::ulid();
     DB::table('ac_household_members')->insert([
         'id' => $parentId, 'household_id' => $this->householdId,
@@ -369,12 +379,12 @@ it('confirms derived head-filer relationships without submitted answers after a 
     expect(Validator::make(['roster_fingerprint' => $fingerprint], $rules)->passes())->toBeTrue()
         ->and(Validator::make(['roster_fingerprint' => $fingerprint, 'filer_relationships' => []], $rules)->passes())->toBeTrue();
 
-    $confirmed = app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
+    expect(app(AssistanceFilerRelationships::class)->status($request, $members)['answers'][$parentId])->toBe('parent')
+        ->and(app(AssistanceFilerRelationships::class)->status($request, $members)['is_confirmed'])->toBeTrue()
+        ->and(data_get($request->metadata, 'filer_relationships'))->toBeNull();
+    expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
         $this->requestId, $this->municipalId, $this->reviewerId, true, false, $fingerprint, [], null,
-    );
-
-    expect(data_get($confirmed->metadata, 'filer_relationships.answers.'.$parentId))->toBe('parent')
-        ->and(app(AssistanceFilerRelationships::class)->status($confirmed, $members)['is_confirmed'])->toBeTrue();
+    ))->toThrow(DomainException::class, 'do not need confirmation');
 
     DB::table('ac_household_members')->where('id', $this->headMemberId)->update(['relationship' => 'child']);
     DB::table('ac_household_members')->where('id', $parentId)->update(['relationship' => 'head']);
@@ -386,6 +396,60 @@ it('confirms derived head-filer relationships without submitted answers after a 
     expect(fn () => app(ConfirmAssistanceFilerRelationshipsAction::class)->execute(
         $this->requestId, $this->municipalId, $this->reviewerId, true, false, $fingerprint, [], null,
     ))->toThrow(DomainException::class, 'Answer the relationship of every active household member');
+});
+
+it('updates a head filer assisted relationship from the confirmed assessment without changing the filing roster', function () {
+    $subjectId = (string) Str::ulid();
+    DB::table('ac_household_members')->insert([
+        'id' => $subjectId, 'household_id' => $this->householdId,
+        'first_name' => 'SUSAN', 'last_name' => 'MAWAC', 'relationship' => 'parent',
+        'is_active' => true, 'is_verified_dependent' => true,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $request = AssistanceRequest::findOrFail($this->requestId);
+    $metadata = $request->metadata;
+    $metadata['household_composition_snapshot']['members'][] = AssistanceRequestHouseholdMemberData::fromModel(
+        HouseholdMember::findOrFail($subjectId), now(),
+    )->toArray();
+    $metadata['relationship_to_beneficiary'] = 'parent';
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'on_behalf_household_member_id' => $subjectId,
+        'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),
+    ]);
+    DB::table('ac_household_members')->where('id', $subjectId)->update(['relationship' => 'guardian']);
+
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    $updated = AssistanceRequest::findOrFail($this->requestId);
+    $members = app(ResolveAssistanceRequestHouseholdAction::class)->execute($updated)->members->map->toArray()->all();
+
+    expect($updated->relationship_to_beneficiary?->value)->toBe('guardian')
+        ->and(collect(data_get($updated->metadata, 'household_composition_snapshot.members'))->firstWhere('household_member_id', $subjectId)['relationship'])->toBe('parent')
+        ->and(data_get($updated->metadata, 'filer_relationships'))->toBeNull()
+        ->and(app(AssistanceFilerRelationships::class)->status($updated, $members)['answers'][$subjectId])->toBe('guardian');
+});
+
+it('preserves an already released head filer answer map', function () {
+    $parentId = (string) Str::ulid();
+    DB::table('ac_household_members')->insert([
+        'id' => $parentId, 'household_id' => $this->householdId,
+        'first_name' => 'SUSAN', 'last_name' => 'MAWAC', 'relationship' => 'parent',
+        'is_active' => true, 'is_verified_dependent' => true,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    $request = AssistanceRequest::findOrFail($this->requestId);
+    $members = app(ResolveAssistanceRequestHouseholdAction::class)->execute($request)->members->map->toArray()->all();
+    $saved = app(AssistanceFilerRelationships::class)->capture($members, $this->beneficiaryId, [], $this->reviewerId);
+    $saved['answers'][$parentId] = 'spouse';
+    $metadata = $request->metadata;
+    $metadata['filer_relationships'] = $saved;
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'status' => 'released', 'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),
+    ]);
+
+    $released = AssistanceRequest::findOrFail($this->requestId);
+    expect(app(AssistanceFilerRelationships::class)->status($released, $members)['answers'][$parentId])->toBe('spouse')
+        ->and(collect(data_get($released->metadata, 'household_assessment_snapshot.members'))->firstWhere('household_member_id', $parentId)['relationship'])->toBe('parent');
 });
 
 it('does not accept an off-roster subject without a proven deceased filing record', function () {

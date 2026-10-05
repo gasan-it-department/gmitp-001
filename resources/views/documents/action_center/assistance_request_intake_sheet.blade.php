@@ -199,7 +199,7 @@
                                 ?? ($human($member->educationalAttainment) ?: '---');
                         @endphp
                         <tr>
-                            <td>{{ $member->fullName ?: '---' }}</td><td>{{ \App\Core\ActionCenter\Enums\Relationship::tryFrom((string) ($data->filerRelationships['answers'][$member->householdMemberId] ?? $member->relationship))?->label() ?? '---' }}</td><td class="center-cell">{{ $member->ageAtFiling ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ $member->monthlyIncome === null ? '---' : number_format($member->monthlyIncome, 2) }}</td>
+                            <td>{{ $member->fullName ?: '---' }}</td><td>{{ \App\Core\ActionCenter\Enums\Relationship::tryFrom((string) ($data->filerRelationships['answers'][$member->householdMemberId] ?? (($data->filerRelationships['label'] ?? '') === 'Legacy Relationship to Head' ? $member->relationship : '')))?->label() ?? '---' }}</td><td class="center-cell">{{ $member->ageAtFiling ?? '---' }}</td><td>{{ $human($member->sex) ?: '---' }}</td><td>{{ $memberEducation }}</td><td>{{ $member->occupation ?: '---' }}</td><td class="number-cell">{{ $member->monthlyIncome === null ? '---' : number_format($member->monthlyIncome, 2) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="center-cell">No other active household members on record.</td></tr>
