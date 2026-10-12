@@ -1,3 +1,4 @@
+import ShowGoodsRecipientsController from '@/actions/App/External/Web/Controllers/GoodsDistribution/ShowGoodsRecipientsController';
 import { Button } from '@/components/ui/button';
 import {
     Sidebar,
@@ -22,6 +23,7 @@ import communityReport from '@/routes/communityReport';
 import department from '@/routes/department';
 import event from '@/routes/event';
 import feedback from '@/routes/feedback';
+import goodsDistribution from '@/routes/goodsDistribution';
 import government from '@/routes/government';
 import municipality from '@/routes/municipality';
 import procurement from '@/routes/procurement';
@@ -31,6 +33,7 @@ import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import {
     Binoculars,
+    Boxes,
     CalendarDays,
     CalendarRange,
     ChartNoAxesCombined,
@@ -39,6 +42,7 @@ import {
     FileInput,
     Flower,
     Gavel,
+    HandHeart,
     Landmark,
     Layers,
     LayoutTemplate,
@@ -47,8 +51,11 @@ import {
     MapPinMinus,
     Megaphone,
     MessageSquareText,
+    Package,
     Palmtree,
+    ReceiptText,
     ScrollText,
+    Settings2,
     Siren,
     User2Icon,
     UserSearch,
@@ -57,6 +64,7 @@ import * as React from 'react';
 import { useEffect, useRef } from 'react';
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const page = usePage<SharedData & { program?: { id: string } | null; filters?: Record<string, string> }>();
     const { auth, url } = usePage<SharedData>().props;
     const userRole = auth.roles;
     const { currentMunicipality } = useMunicipality();
@@ -73,14 +81,24 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
     });
 
     const cachedUrl = typeof window !== 'undefined' ? localStorage.getItem('activeSidebarUrl') || String(url) : String(url);
+    const recipientsUrl = ShowGoodsRecipientsController.url({ municipality: currentMunicipality.slug });
+    const isGoodsDistributionUrl = (linkUrl: string) => linkUrl === recipientsUrl || linkUrl.startsWith(`${recipientsUrl}/`);
 
     const isRouteActive = (linkUrl: string) => {
         if (!linkUrl) return false;
+        if (isGoodsDistributionUrl(linkUrl)) {
+            const path = page.url.split('?')[0].replace(/\/$/, '');
+            if (linkUrl === recipientsUrl) return path === recipientsUrl;
+            const programsUrl = goodsDistribution.inventory.programs.url({ municipality: currentMunicipality.slug });
+            const inProgram = path.startsWith(`${programsUrl}/`) || (isGoodsDistributionUrl(path) && !!page.props.program);
+            if (inProgram) return linkUrl === programsUrl;
+            return path === linkUrl || path.startsWith(`${linkUrl}/`);
+        }
         return cachedUrl === linkUrl || cachedUrl.startsWith(linkUrl + '/') || cachedUrl.includes(linkUrl);
     };
 
     const handleLinkClick = (linkUrl: string) => {
-        localStorage.setItem('activeSidebarUrl', linkUrl);
+        if (!isGoodsDistributionUrl(linkUrl)) localStorage.setItem('activeSidebarUrl', linkUrl);
         router.visit(linkUrl);
     };
 
@@ -104,7 +122,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 block: 'nearest',
             });
         }
-    }, [url]);
+    }, [page.url, url]);
 
     const { can } = usePermissions();
     const hasPermission = (permission?: string) => !permission || can(permission);
@@ -144,6 +162,48 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: actionCenter.admin.reports.index.url({ municipality: currentMunicipality.slug }),
                     icon: ChartNoAxesCombined,
                     permission: 'action_center.reports.view',
+                },
+            ],
+        },
+        {
+            title: 'GOODS DISTRIBUTION',
+            icon: Package,
+            items: [
+                {
+                    title: 'Programs',
+                    url: goodsDistribution.inventory.programs.url({ municipality: currentMunicipality.slug }),
+                    icon: ClipboardList,
+                    permission: 'goods_distribution.inventory.view',
+                },
+                {
+                    title: 'Distribution',
+                    url: goodsDistribution.requests.index.url({ municipality: currentMunicipality.slug }),
+                    icon: HandHeart,
+                    permission: 'goods_distribution.requests.view',
+                },
+                {
+                    title: 'Stock Receipts',
+                    url: goodsDistribution.inventory.receipts.index.url({ municipality: currentMunicipality.slug }),
+                    icon: ReceiptText,
+                    permission: 'goods_distribution.inventory.view',
+                },
+                {
+                    title: 'Items',
+                    url: goodsDistribution.inventory.items.url({ municipality: currentMunicipality.slug }),
+                    icon: Boxes,
+                    permission: 'goods_distribution.inventory.view',
+                },
+                {
+                    title: 'Find/Register Recipient',
+                    url: ShowGoodsRecipientsController.url({ municipality: currentMunicipality.slug }),
+                    icon: UserSearch,
+                    permission: 'action_center.beneficiaries.view',
+                },
+                {
+                    title: 'Settings',
+                    url: goodsDistribution.inventory.settings.url({ municipality: currentMunicipality.slug }),
+                    icon: Settings2,
+                    permission: 'goods_distribution.inventory.view',
                 },
             ],
         },
@@ -331,12 +391,27 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                 <SidebarMenuSub className="space-y-1 border-l border-sidebar-border pl-4">
                                     {group.items.map((sub) => {
                                         const SubIcon = sub.icon;
+
+                                        if ('disabled' in sub && sub.disabled) {
+                                            return (
+                                                <SidebarMenuSubItem key={sub.title} title="Not yet available">
+                                                    <SidebarMenuSubButton asChild aria-disabled="true" className="px-3 py-1.5 text-sm font-medium">
+                                                        <button type="button" disabled>
+                                                            <SubIcon size={14} />
+                                                            <span>{sub.title}</span>
+                                                        </button>
+                                                    </SidebarMenuSubButton>
+                                                </SidebarMenuSubItem>
+                                            );
+                                        }
+
                                         const isActive = isRouteActive(sub.url);
 
                                         return (
                                             <SidebarMenuSubItem key={sub.title} ref={isActive ? activeItemRef : null}>
                                                 <SidebarMenuSubButton
                                                     asChild
+                                                    isActive={isActive}
                                                     // Active/Inactive Logic updated to Sidebar Theme
                                                     className={`group flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 ease-out ${
                                                         isActive
@@ -345,6 +420,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                                     }`}
                                                 >
                                                     <a
+                                                        aria-current={isActive ? 'page' : undefined}
                                                         onClick={() => handleLinkClick(sub.url)}
                                                         className="flex w-full cursor-pointer items-center gap-2"
                                                     >

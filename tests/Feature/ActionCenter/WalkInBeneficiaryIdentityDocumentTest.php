@@ -542,6 +542,165 @@ it('requires correction permission and audits an authorized different-person dec
         ->and(DB::table('activity_log')->where('log_name', 'beneficiary-duplicate-review')->where('subject_id', $created->id)->exists())->toBeTrue();
 });
 
+it('requires explicit actual-head confirmation for goods new-household registration', function () {
+    $dto = walkInDto($this->municipalId, $this->adminId);
+    expect(fn () => app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->head($dto, false))
+        ->toThrow(DomainException::class, 'actual household head');
+    expect(Beneficiary::query()->count())->toBe(0)->and(DB::table('ac_households')->count())->toBe(0);
+});
+
+it('creates a pending goods head and another beneficiary in one shared household', function () {
+    $register = app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class);
+    $head = $register->head(walkInDto($this->municipalId, $this->adminId), true);
+    expect($head->identity_verified_at)->toBeNull();
+    $data = [
+        'first_name' => 'Maria', 'last_name' => 'Santos', 'birth_date' => '1992-04-10', 'sex' => 'female',
+        'civil_status' => 'single', 'occupation' => 'none', 'monthly_income' => 0, 'relationship' => 'child', 'terms_consent' => true,
+    ];
+    $data['identity_check_context'] = app(CheckBeneficiaryRegistrationIdentityAction::class)->execute($data, $this->municipalId, $this->adminId)['context'];
+    $member = $register->member(\App\Core\ActionCenter\Dto\Beneficiary\CreateHouseholdBeneficiaryDto::fromArray(
+        $data, $head->household_id, $this->municipalId, $this->adminId, null, null, app(\App\Shared\Phone\Services\PhoneFormatterService::class),
+    ));
+    expect($member->household_id)->toBe($head->household_id)
+        ->and(DB::table('ac_households')->count())->toBe(1)
+        ->and(DB::table('ac_household_members')->where('relationship', 'head')->value('beneficiary_id'))->toBe($head->id);
+});
+
+it('rechecks goods identity candidates at final save', function () {
+    $dto = walkInDto($this->municipalId, $this->adminId);
+    app(CreateWalkInBeneficiaryAction::class)->execute(walkInDto($this->municipalId, $this->adminId));
+    expect(fn () => app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->head($dto, true))
+        ->toThrow(\App\Core\ActionCenter\Exceptions\RegistrationIdentityCheckException::class, 'Registry results changed');
+    expect(Beneficiary::query()->count())->toBe(1);
+});
+
+it('returns goods registrations to a fixed goods selection page and ignores redirect input', function () {
+    $this->withoutVite();
+    goodsHttpContext($this);
+    $data = [
+        'first_name' => 'Juan', 'last_name' => 'Cruz', 'birth_date' => '1990-01-01', 'sex' => 'male',
+        'civil_status' => 'single', 'occupation' => 'none', 'monthly_income' => 0, 'barangay' => 'Poblacion',
+        'terms_consent' => true, 'actual_household_head' => true, 'verify_now' => true,
+        'return_url' => 'https://untrusted.example',
+    ];
+    $data['identity_check_context'] = app(CheckBeneficiaryRegistrationIdentityAction::class)->execute($data, $this->municipalId, $this->adminId)['context'];
+    $this->post(route('goodsDistribution.head.store'), $data)->assertRedirect(route('goodsDistribution.recipients', [
+        'municipality' => 'gasan-4905', 'beneficiary_id' => Beneficiary::query()->firstOrFail()->id,
+    ]));
+    expect(Beneficiary::query()->first()->identity_verified_at)->toBeNull();
+});
+
+it('blocks a direct goods head POST without confirmed head or consent', function () {
+    $this->withoutVite();
+    goodsHttpContext($this);
+    $this->post(route('goodsDistribution.head.store'), [])->assertSessionHasErrors(['actual_household_head', 'terms_consent', 'identity_check_context']);
+    expect(Beneficiary::query()->count())->toBe(0);
+});
+
+it('keeps checked goods identity out of the URL while carrying it into the registration form', function () {
+    $this->withoutVite();
+    goodsHttpContext($this);
+    Schema::create('ac_religions', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->string('name');
+        $table->boolean('is_active')->default(true);
+    });
+    $identity = ['first_name' => 'Juan', 'middle_name' => '', 'last_name' => 'Cruz', 'suffix' => '', 'birth_date' => '1990-01-01'];
+    $context = app(CheckBeneficiaryRegistrationIdentityAction::class)->execute($identity, $this->municipalId, $this->adminId)['context'];
+    $response = $this->post(route('goodsDistribution.registration.begin'), [...$identity, 'identity_check_context' => $context]);
+    $response->assertRedirect();
+    $location = $response->headers->get('Location');
+    expect($location)->not->toContain('Juan', 'Cruz', '1990');
+    $this->get($location)->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+        ->component('ActionCenter/Admin/Walkin/CreateWalkInBeneficiary')
+        ->where('goodsDistribution', true)
+        ->where('registrationDraft.identity.first_name', 'Juan')
+        ->where('registrationDraft.context', $context)
+        ->where('submitUrl', route('goodsDistribution.head.store')));
+    Schema::drop('ac_religions');
+});
+
+it('rejects view-only staff attempting goods registration', function () {
+    $this->withoutVite();
+    goodsHttpContext($this, manage: false);
+    $this->post(route('goodsDistribution.head.store'), [])->assertForbidden();
+    $this->post(route('goodsDistribution.registration.begin'), [])->assertForbidden();
+});
+
+it('renders the goods household form and posts an exact roster reuse through its dedicated endpoint', function () {
+    $this->withoutVite();
+    goodsHttpContext($this);
+    Schema::create('ac_religions', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->string('name');
+        $table->boolean('is_active')->default(true);
+        $table->integer('sort_order')->default(0);
+    });
+    $head = app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->head(walkInDto(
+        $this->municipalId, $this->adminId, overrides: ['household_members' => [[
+            'first_name' => 'Maria', 'last_name' => 'Santos', 'birth_date' => '1992-04-10', 'relationship' => 'child',
+        ]]],
+    ), true);
+    $memberId = HouseholdMember::query()->where('relationship', 'child')->value('id');
+    $this->get(route('goodsDistribution.member.create', ['municipality' => 'gasan-4905', 'householdId' => $head->household_id, 'member_id' => $memberId]))
+        ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+        ->component('ActionCenter/Admin/Household/CreateHouseholdBeneficiary')->where('goodsDistribution', true)->where('prefillIdentity.member_id', $memberId));
+    $data = [
+        'first_name' => 'Maria', 'last_name' => 'Santos', 'birth_date' => '1992-04-10', 'sex' => 'female',
+        'civil_status' => 'single', 'occupation' => 'none', 'monthly_income' => 0, 'relationship' => 'sibling',
+        'terms_consent' => true, 'selected_member_id' => $memberId,
+    ];
+    $data['identity_check_context'] = app(CheckBeneficiaryRegistrationIdentityAction::class)->execute($data, $this->municipalId, $this->adminId, $memberId, $head->household_id)['context'];
+    $response = $this->post(route('goodsDistribution.member.store', ['householdId' => $head->household_id]), $data);
+    $response->assertRedirect(route('goodsDistribution.recipients', ['municipality' => 'gasan-4905', 'beneficiary_id' => Beneficiary::query()->where('first_name', 'MARIA')->value('id')]));
+    $this->assertDatabaseHas('ac_household_members', ['id' => $memberId, 'relationship' => 'child']);
+    expect(DB::table('ac_households')->count())->toBe(1)->and(DB::table('ac_household_members')->count())->toBe(2);
+    Schema::drop('ac_religions');
+});
+
+function goodsHttpContext($test, bool $manage = true): void
+{
+    Schema::create('permissions', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('guard_name');
+        $table->timestamps();
+    });
+    Schema::create('roles', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('guard_name');
+        $table->timestamps();
+    });
+    Schema::create('model_has_permissions', function (Blueprint $table) {
+        $table->unsignedBigInteger('permission_id');
+        $table->string('model_type');
+        $table->ulid('model_id');
+    });
+    Schema::create('model_has_roles', function (Blueprint $table) {
+        $table->unsignedBigInteger('role_id');
+        $table->string('model_type');
+        $table->ulid('model_id');
+    });
+    Schema::create('role_has_permissions', function (Blueprint $table) {
+        $table->unsignedBigInteger('permission_id');
+        $table->unsignedBigInteger('role_id');
+    });
+    foreach (['action_center.access', 'action_center.beneficiaries.view', ...$manage ? ['action_center.beneficiaries.manage'] : []] as $permission) {
+        $id = DB::table('permissions')->insertGetId(['name' => $permission, 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('model_has_permissions')->insert(['permission_id' => $id, 'model_type' => 'user', 'model_id' => $test->adminId]);
+    }
+    app(Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    $test->withoutMiddleware([
+        \App\Http\Middleware\Municipality\SetMunicipalityContext::class,
+        \App\Http\Middleware\Admin\AdminGuardMiddleware::class,
+        \App\Http\Middleware\HandleInertiaRequests::class,
+    ]);
+    app()->instance('municipal_id', $test->municipalId);
+    app()->instance('current_municipality', (object) ['id' => $test->municipalId, 'slug' => 'gasan-4905']);
+    $test->actingAs(\App\Core\Users\Models\User::findOrFail($test->adminId));
+}
+
 function walkInRequest(array $overrides = []): StoreWalkInBeneficiaryRequest
 {
     $files = array_filter([

@@ -260,6 +260,87 @@ it('rejects a destination household owned by another municipality', function () 
     expect(DB::table('ac_beneficiaries')->count())->toBe(0);
 });
 
+it('requires an actual head for goods registration without creating provisional records', function () {
+    expect(fn () => app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->member(householdBeneficiaryDto(
+        $this->householdId, $this->municipalId, $this->adminId,
+    )))->toThrow(DomainException::class, 'Confirm the actual household head');
+    expect(DB::table('ac_beneficiaries')->count())->toBe(0)
+        ->and(DB::table('ac_households')->count())->toBe(1)
+        ->and(DB::table('ac_household_members')->count())->toBe(0);
+});
+
+it('registers goods recipients as pending without changing the existing head', function () {
+    $headId = goodsTestHead($this->householdId);
+    $beneficiary = app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->member(householdBeneficiaryDto(
+        $this->householdId, $this->municipalId, $this->adminId,
+    ));
+    expect($beneficiary->household_id)->toBe($this->householdId)
+        ->and($beneficiary->identity_verified_at)->toBeNull()
+        ->and(DB::table('ac_households')->count())->toBe(1)
+        ->and(DB::table('ac_household_members')->where('relationship', 'head')->value('id'))->toBe($headId)
+        ->and(DB::table('activity_log')->where('log_name', 'goods-recipient-registration')->where('subject_id', $beneficiary->id)->exists())->toBeTrue();
+});
+
+it('reuses exact unlinked rows for goods recipients and preserves the relationship', function () {
+    goodsTestHead($this->householdId);
+    $memberId = (string) Str::ulid();
+    DB::table('ac_household_members')->insert([
+        'id' => $memberId, 'household_id' => $this->householdId, 'first_name' => 'JUAN', 'middle_name' => 'SANTOS',
+        'last_name' => 'DELA CRUZ', 'relationship' => 'child', 'birth_date' => '1990-02-03',
+        'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $beneficiary = app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->member(householdBeneficiaryDto(
+        $this->householdId, $this->municipalId, $this->adminId,
+    ));
+    expect(DB::table('ac_household_members')->count())->toBe(2);
+    $this->assertDatabaseHas('ac_household_members', ['id' => $memberId, 'beneficiary_id' => $beneficiary->id, 'relationship' => 'child']);
+});
+
+it('blocks goods registration when the head departs after household selection', function () {
+    $headId = goodsTestHead($this->householdId);
+    $dto = householdBeneficiaryDto($this->householdId, $this->municipalId, $this->adminId);
+    app(\App\Core\GoodsDistribution\Actions\GetRegistrationHouseholdAction::class)->execute($this->municipalId, $this->householdId);
+    DB::table('ac_household_members')->where('id', $headId)->update(['is_active' => false]);
+    expect(fn () => app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->member($dto))
+        ->toThrow(DomainException::class, 'Confirm the actual household head');
+    expect(DB::table('ac_beneficiaries')->count())->toBe(0);
+});
+
+it('excludes headless and cross-tenant households from goods registration search', function () {
+    $search = app(\App\Core\GoodsDistribution\Actions\GetRegistrationHouseholdAction::class);
+    expect($search->search($this->municipalId, '')->count())->toBe(0);
+    goodsTestHead($this->householdId);
+    expect($search->search($this->municipalId, 'GAS')->pluck('id')->all())->toBe([$this->householdId])
+        ->and($search->search((string) Str::ulid(), '')->count())->toBe(0);
+    expect(fn () => $search->execute((string) Str::ulid(), $this->householdId))->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+});
+
+it('returns minimal goods selection data without contact income or ID images', function () {
+    goodsTestHead($this->householdId);
+    $beneficiary = app(\App\Core\GoodsDistribution\Actions\RegisterGoodsRecipientAction::class)->member(householdBeneficiaryDto(
+        $this->householdId, $this->municipalId, $this->adminId,
+    ));
+    $get = app(\App\Core\GoodsDistribution\Actions\GetGoodsRecipientAction::class);
+    $data = (new \App\External\Api\Resources\GoodsDistribution\GoodsRecipientResource($get->execute($this->municipalId, $beneficiary->id)))
+        ->response()->getData(true)['data'];
+    expect($data['active_member_id'])->not->toBeNull()
+        ->and($data['household']['head_name'])->toBe('ACTUAL HEAD')
+        ->and(array_keys($data))->not->toContain('contact_phone', 'monthly_income', 'identity_id_front')
+        ->and($data['roster'][0]['full_name'])->toBe('ACTUAL HEAD');
+    expect(fn () => $get->execute((string) Str::ulid(), $beneficiary->id))->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+});
+
+function goodsTestHead(string $householdId): string
+{
+    $id = (string) Str::ulid();
+    DB::table('ac_household_members')->insert([
+        'id' => $id, 'household_id' => $householdId, 'first_name' => 'ACTUAL', 'last_name' => 'HEAD',
+        'relationship' => 'head', 'is_active' => true, 'birth_date' => '1960-01-01', 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    return $id;
+}
+
 function householdBeneficiaryDto(string $householdId, string $municipalId, string $adminId): CreateHouseholdBeneficiaryDto
 {
     $identity = [

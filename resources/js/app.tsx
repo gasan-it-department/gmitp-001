@@ -10,10 +10,11 @@ import './lib/axios';
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const queryClient = new QueryClient();
+const pages = import.meta.glob('./pages/**/*.tsx');
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
-    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
+    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, pages),
     setup({ el, App, props }) {
         const root = createRoot(el);
 

@@ -5,6 +5,7 @@ namespace App\Core\Users\Enums;
 enum EnumPermissionModule: string
 {
     case ACTION_CENTER = 'action_center';
+    case GOODS_DISTRIBUTION = 'goods_distribution';
     case BULLETIN_BOARD = 'bulletin_board';
     case COMMUNITY_REPORT = 'community_report';
     case SUPPORT_TICKET = 'support_ticket';
@@ -22,6 +23,7 @@ enum EnumPermissionModule: string
     {
         return match ($this) {
             self::ACTION_CENTER => 'Action Center',
+            self::GOODS_DISTRIBUTION => 'Goods Distribution',
             self::BULLETIN_BOARD => 'Bulletin Board',
             self::COMMUNITY_REPORT => 'Community Reporting',
             self::SUPPORT_TICKET => 'Support & Help Desk',
@@ -41,6 +43,7 @@ enum EnumPermissionModule: string
     {
         return match ($this) {
             self::ACTION_CENTER => 10,
+            self::GOODS_DISTRIBUTION => 15,
             self::CEMETERY => 20,
             self::COMMUNITY_REPORT => 30,
             self::SUPPORT_TICKET => 40,

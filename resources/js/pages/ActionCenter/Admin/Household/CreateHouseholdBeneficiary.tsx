@@ -13,7 +13,7 @@ import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/Section
 import { ShadcnSelectField } from '../../Client/Apply/Beneficiary/Components/ShadcnSelectField';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import { AdminEncodeAffirmation } from '../Walkin/Components/AdminEncodeAffirmation';
-import { RegistrationIdentityCheck, type IdentityField } from '../Walkin/Components/RegistrationIdentityCheck';
+import { RegistrationIdentityCheck, type IdentityField, type RegistrationDraft } from '../Walkin/Components/RegistrationIdentityCheck';
 
 interface HouseholdData {
     id: string;
@@ -33,6 +33,9 @@ interface Props {
     submitUrl: string;
     checkUrl: string;
     canCorrect: boolean;
+    goodsDistribution?: boolean;
+    returnUrl?: string;
+    registrationDraft?: RegistrationDraft | null;
     prefillIdentity:
         | (Pick<ProfileSetupFormData, 'first_name' | 'middle_name' | 'last_name' | 'suffix' | 'birth_date'> & {
               member_id: string;
@@ -53,12 +56,15 @@ export default function CreateHouseholdBeneficiary({
     checkUrl,
     canCorrect,
     prefillIdentity,
+    goodsDistribution = false,
+    returnUrl,
+    registrationDraft,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
     const profile = 'data' in household ? household.data : household;
-    const [identityContext, setIdentityContext] = useState<string | null>(null);
-    const [checkedIdentity, setCheckedIdentity] = useState<string | null>(null);
-    const [differentPersonReason, setDifferentPersonReason] = useState<string | null>(null);
+    const [identityContext, setIdentityContext] = useState<string | null>(registrationDraft?.context ?? null);
+    const [checkedIdentity, setCheckedIdentity] = useState<string | null>(registrationDraft ? JSON.stringify(registrationDraft.identity) : null);
+    const [differentPersonReason, setDifferentPersonReason] = useState<string | null>(registrationDraft?.reason ?? null);
     const { data, setData, post, processing, errors, transform } = useForm<HouseholdBeneficiaryForm>({
         first_name: prefillIdentity?.first_name ?? '',
         middle_name: prefillIdentity?.middle_name ?? '',
@@ -80,6 +86,7 @@ export default function CreateHouseholdBeneficiary({
         terms_consent: false,
         household_members: [],
         relationship: prefillIdentity?.relationship ?? '',
+        ...registrationDraft?.identity,
     });
 
     const identity = {
@@ -144,13 +151,16 @@ export default function CreateHouseholdBeneficiary({
                 <div className="border-b border-slate-200 bg-white">
                     <div className="container mx-auto max-w-3xl px-4 py-4 sm:px-6">
                         <Link
-                            href={ShowHouseholdProfileController.url({
-                                municipality: currentMunicipality.slug,
-                                householdId: profile.id,
-                            })}
+                            href={
+                                returnUrl ??
+                                ShowHouseholdProfileController.url({
+                                    municipality: currentMunicipality.slug,
+                                    householdId: profile.id,
+                                })
+                            }
                             className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-800"
                         >
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to household
+                            <ArrowLeft className="mr-2 h-4 w-4" /> {goodsDistribution ? 'Back to Goods Distribution' : 'Back to household'}
                         </Link>
                     </div>
                 </div>
@@ -184,6 +194,7 @@ export default function CreateHouseholdBeneficiary({
                             destinationHouseholdId={profile.id}
                             selectedMemberId={prefillIdentity?.member_id}
                             submitError={registrationError}
+                            goodsDistribution={goodsDistribution}
                         />
                     )}
                     <form onSubmit={submit} className={checked ? 'space-y-5' : 'hidden'}>
