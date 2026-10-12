@@ -30,6 +30,8 @@ beforeEach(function () {
         $table->ulid('municipal_id');
         $table->string('household_code')->nullable();
         $table->string('barangay');
+        $table->string('barangay_psgc_code')->nullable();
+        $table->string('street')->nullable();
         $table->softDeletes();
         $table->timestamps();
     });
@@ -78,6 +80,7 @@ beforeEach(function () {
         $table->ulid('released_by_user_id')->nullable();
         $table->string('release_reference_number')->nullable();
         $table->string('status');
+        $table->decimal('amount_approved', 10, 2)->nullable();
         $table->string('mswd_verification_status')->nullable();
         $table->ulid('mswd_verified_by_user_id')->nullable();
         $table->timestamp('mswd_verified_at')->nullable();
@@ -86,6 +89,17 @@ beforeEach(function () {
         $table->json('metadata')->nullable();
         $table->timestamp('released_at')->nullable();
         $table->softDeletes();
+        $table->timestamps();
+    });
+
+    Schema::create('ac_assistance_request_snapshots', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('assistance_request_id')->unique();
+        $table->string('barangay')->nullable();
+        $table->string('barangay_psgc_code')->nullable();
+        $table->string('street')->nullable();
+        $table->string('first_name')->nullable();
+        $table->decimal('monthly_income', 10, 2)->nullable();
         $table->timestamps();
     });
 
@@ -172,11 +186,18 @@ beforeEach(function () {
         'created_at' => now(),
         'updated_at' => now(),
     ]);
+    DB::table('ac_assistance_request_snapshots')->insert([
+        'id' => (string) Str::ulid(), 'assistance_request_id' => $this->requestId,
+        'barangay' => DB::table('ac_households')->where('id', $this->householdId)->value('barangay'),
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
 });
 
 afterEach(function () {
     foreach ([
         'activity_log',
+        'ac_assistance_disbursements',
+        'ac_assistance_request_snapshots',
         'ac_assistance_requests',
         'ac_household_members',
         'ac_beneficiaries',
@@ -572,7 +593,7 @@ it('rejects synchronization for every unsupported request status', function (str
         actingUserId: $this->reviewerId,
     ))->toThrow(DomainException::class, 'under review or approved')
         ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
-})->with(['pending', 'released', 'rejected', 'cancelled']);
+})->with(['released', 'rejected', 'cancelled']);
 
 it('preserves under-review processing and assigned-reviewer restrictions', function () {
     expect(fn () => refreshHouseholdAssessment(
@@ -820,6 +841,7 @@ function refreshHouseholdAssessment(
     bool $canCorrectRequests = false,
     ?string $correctionReason = null,
     ?string $expectedFingerprint = null,
+    bool $canIntakeRequests = false,
 ): AssistanceRequest {
     return app(RefreshAssistanceHouseholdAssessmentAction::class)->execute(
         assistanceRequestId: $assistanceRequestId,
@@ -829,5 +851,116 @@ function refreshHouseholdAssessment(
         canCorrectRequests: $canCorrectRequests,
         correctionReason: $correctionReason,
         expectedFingerprint: $expectedFingerprint ?? householdAssessmentFingerprint($assistanceRequestId),
+        canIntakeRequests: $canIntakeRequests,
     );
 }
+
+it('synchronizes an address-only change after a prior assessment with a readable audit', function () {
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    DB::table('ac_assistance_request_snapshots')->where('assistance_request_id', $this->requestId)->update([
+        'barangay' => 'Dawis', 'barangay_psgc_code' => '490501', 'street' => 'Purok 1',
+        'first_name' => 'Frozen claimant', 'monthly_income' => 2000,
+    ]);
+    DB::table('ac_households')->where('id', $this->householdId)->update([
+        'barangay' => 'Pingan', 'barangay_psgc_code' => '490502', 'street' => 'Purok 2',
+    ]);
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update(['amount_approved' => 5000]);
+    $preview = householdAssessmentPreview($this->requestId);
+    expect($preview['changed'])->toBe([])->and($preview['address_changed'])->toBeTrue()
+        ->and($preview['previous_address']['barangay'])->toBe('Dawis')
+        ->and($preview['current_address']['barangay'])->toBe('Pingan');
+    // Editing the live household alone must not silently rewrite a request.
+    expect(DB::table('ac_assistance_request_snapshots')->value('barangay'))->toBe('Dawis');
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    $snapshot = DB::table('ac_assistance_request_snapshots')->first();
+    expect($snapshot->barangay)->toBe('Pingan')->and($snapshot->barangay_psgc_code)->toBe('490502')
+        ->and($snapshot->street)->toBe('Purok 2')->and($snapshot->first_name)->toBe('Frozen claimant')
+        ->and((float) $snapshot->monthly_income)->toBe(2000.0)
+        ->and((float) DB::table('ac_assistance_requests')->value('amount_approved'))->toBe(5000.0)
+        ->and(data_get(requestMetadata($this->requestId), 'household_composition_snapshot'))->toBe($this->filingSnapshot)
+        ->and(householdAssessmentPreview($this->requestId)['address_changed'])->toBeFalse();
+    $audit = Activity::query()->latest('id')->firstOrFail()->properties->toArray();
+    expect(data_get($audit, 'old.address_snapshot.barangay'))->toBe('Dawis')
+        ->and(data_get($audit, 'attributes.address_snapshot.barangay'))->toBe('Pingan');
+});
+
+it('allows intake staff to synchronize pending requests without an assigned reviewer', function () {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update(['status' => 'pending', 'reviewed_by_user_id' => null]);
+    DB::table('ac_households')->where('id', $this->householdId)->update(['street' => 'Corrected pending address']);
+    $updated = refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId,
+        canProcessRequests: false, canIntakeRequests: true);
+    expect($updated->status->value)->toBe('pending')->and($updated->snapshot->street)->toBe('Corrected pending address')
+        ->and(data_get($updated->metadata, 'household_assessment_snapshot.source'))->toBe('intake_sync');
+});
+
+it('does not let intake permission bypass reviewer or completed verification guards', function (string $status, string $verification) {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update(['status' => $status, 'mswd_verification_status' => $verification]);
+    DB::table('ac_households')->where('id', $this->householdId)->update(['street' => 'Changed']);
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId,
+        canProcessRequests: false, canIntakeRequests: true))->toThrow(AuthorizationException::class);
+    expect(DB::table('ac_assistance_request_snapshots')->value('street'))->toBeNull();
+})->with([['pending', 'verified'], ['under_review', 'pending'], ['approved', 'pending']]);
+
+it('reopens a completed verification after a reviewed approved address correction', function () {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update([
+        'status' => 'approved', 'mswd_verification_status' => 'verified',
+        'mswd_verification_fingerprint' => str_repeat('a', 64), 'amount_approved' => 5000,
+    ]);
+    DB::table('ac_households')->where('id', $this->householdId)->update(['barangay' => 'Pingan']);
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId))
+        ->toThrow(AuthorizationException::class);
+    $updated = refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId,
+        canProcessRequests: false, canCorrectRequests: true, correctionReason: 'Corrected address confirmed during interview.');
+    expect($updated->snapshot->barangay)->toBe('Pingan')->and($updated->status->value)->toBe('approved')
+        ->and((float) $updated->amount_approved)->toBe(5000.0)
+        ->and($updated->mswd_verification_status->value)->toBe('under_review')->and($updated->mswd_verification_fingerprint)->toBeNull();
+});
+
+it('rejects changed live or saved addresses after the synchronization preview', function (string $table, string $key) {
+    $fingerprint = householdAssessmentFingerprint($this->requestId);
+    DB::table($table)->where($key, $key === 'id' ? $this->householdId : $this->requestId)->update(['street' => 'Changed after preview']);
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId,
+        expectedFingerprint: $fingerprint))->toThrow(DomainException::class, 'changed while you were reviewing');
+    expect(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+})->with([['ac_households', 'id'], ['ac_assistance_request_snapshots', 'assistance_request_id']]);
+
+it('never changes terminal request addresses during sync', function (string $status) {
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update(['status' => $status]);
+    DB::table('ac_households')->where('id', $this->householdId)->update(['street' => 'New household address']);
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId))->toThrow(DomainException::class);
+    expect(DB::table('ac_assistance_request_snapshots')->value('street'))->toBeNull();
+})->with(['released', 'cancelled', 'rejected']);
+
+it('does not fabricate a missing legacy address snapshot', function () {
+    DB::table('ac_assistance_request_snapshots')->delete();
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId))
+        ->toThrow(DomainException::class, 'no saved address snapshot');
+    expect(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+});
+
+it('rolls back the address and roster together if recording the audit fails', function () {
+    DB::table('ac_households')->where('id', $this->householdId)->update(['street' => 'New address']);
+    Schema::drop('activity_log');
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId))
+        ->toThrow(\Illuminate\Database\QueryException::class);
+    expect(DB::table('ac_assistance_request_snapshots')->value('street'))->toBeNull()
+        ->and(data_get(requestMetadata($this->requestId), 'household_assessment_snapshot'))->toBeNull();
+});
+
+it('blocks address synchronization until an active disbursement is voided', function (string $status) {
+    Schema::create('ac_assistance_disbursements', function (Blueprint $table) {
+        $table->ulid('id')->primary();
+        $table->ulid('assistance_request_id');
+        $table->string('status');
+    });
+    $id = (string) Str::ulid();
+    DB::table('ac_assistance_disbursements')->insert(['id' => $id, 'assistance_request_id' => $this->requestId, 'status' => $status]);
+    DB::table('ac_assistance_requests')->where('id', $this->requestId)->update(['status' => 'approved']);
+    DB::table('ac_households')->where('id', $this->householdId)->update(['street' => 'New address']);
+    expect(fn () => refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId))
+        ->toThrow(DomainException::class, 'Void the active disbursement');
+    expect(DB::table('ac_assistance_request_snapshots')->value('street'))->toBeNull();
+    DB::table('ac_assistance_disbursements')->where('id', $id)->update(['status' => 'voided']);
+    refreshHouseholdAssessment($this->requestId, $this->municipalId, $this->reviewerId);
+    expect(DB::table('ac_assistance_request_snapshots')->value('street'))->toBe('New address');
+})->with(['preparing', 'ready']);

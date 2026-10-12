@@ -19,6 +19,7 @@ class HouseholdProfileResource extends JsonResource
             'barangay' => $this->barangay,
             'barangay_psgc_code' => $this->barangay_psgc_code,
             'street' => $this->street,
+            'address_fingerprint' => $this->addressFingerprint(),
             'is_verified' => $this->isVerified(),
             'is_on_hold' => $head === null,
             'head' => $head ? [

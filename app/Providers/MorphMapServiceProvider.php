@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Core\ActionCenter\Models\AssistanceRequest;
 use App\Core\ActionCenter\Models\Beneficiary;
+use App\Core\ActionCenter\Models\Household;
 use App\Core\ActionCenter\Models\HouseholdMember;
 use App\Core\Announcement\Models\Announcement;
 use App\Core\Cemetery\Models\Block as CemeteryBlock;
@@ -57,6 +58,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'user' => User::class,
             'assistance_request' => AssistanceRequest::class,
             'beneficiary' => Beneficiary::class,
+            'household' => Household::class,
             'household_member' => HouseholdMember::class,
             'feedback_submission' => FeedbackSubmission::class,
             'report_submission' => ReportSubmission::class,

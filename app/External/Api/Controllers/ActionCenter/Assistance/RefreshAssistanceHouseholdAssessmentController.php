@@ -18,8 +18,7 @@ class RefreshAssistanceHouseholdAssessmentController extends Controller
     public function __invoke(
         string $assistanceRequestId,
         RefreshAssistanceHouseholdAssessmentRequest $request,
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         try {
             $actor = $request->user();
             $this->refreshAssessment->execute(
@@ -30,6 +29,7 @@ class RefreshAssistanceHouseholdAssessmentController extends Controller
                 canCorrectRequests: $actor->can('action_center.requests.correct'),
                 correctionReason: $request->input('correction_reason'),
                 expectedFingerprint: $request->string('assessment_fingerprint')->toString(),
+                canIntakeRequests: $actor->can('action_center.requests.intake'),
             );
 
             return back()->with(
