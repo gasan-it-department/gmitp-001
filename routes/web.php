@@ -11,6 +11,7 @@ require __DIR__ . '/public.php';
 require __DIR__ . '/client.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/action_center.php';
+require __DIR__ . '/goods_distribution.php';
 require __DIR__ . '/municipality.php';
 require __DIR__ . '/Feedback.php';
 require __DIR__ . '/super_admin.php';

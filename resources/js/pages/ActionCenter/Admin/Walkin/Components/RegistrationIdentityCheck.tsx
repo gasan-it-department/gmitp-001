@@ -1,11 +1,13 @@
 import ShowBeneficiaryProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Beneficiary/ShowBeneficiaryProfileController';
 import ShowCreateHouseholdBeneficiaryController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowCreateHouseholdBeneficiaryController';
 import ShowHouseholdProfileController from '@/actions/App/External/Web/Controllers/ActionCenter/Admin/Household/ShowHouseholdProfileController';
+import ShowGoodsRecipientsController from '@/actions/App/External/Web/Controllers/GoodsDistribution/ShowGoodsRecipientsController';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import goodsDistributionRoutes from '@/routes/goodsDistribution';
 import { Link } from '@inertiajs/react';
 import axios from 'axios';
 import { ArrowRight, Loader2, Search } from 'lucide-react';
@@ -13,6 +15,11 @@ import { useRef, useState } from 'react';
 
 export type IdentityField = 'first_name' | 'middle_name' | 'last_name' | 'suffix' | 'birth_date';
 export type RegistrationIdentity = Record<IdentityField, string>;
+export interface RegistrationDraft {
+    identity: RegistrationIdentity;
+    context: string;
+    reason: string | null;
+}
 
 interface Candidate {
     key: string;
@@ -44,6 +51,9 @@ interface Props {
     destinationHouseholdId?: string;
     selectedMemberId?: string;
     submitError?: string;
+    goodsDistribution?: boolean;
+    canRegister?: boolean;
+    appearance?: 'default' | 'directory';
 }
 
 export function RegistrationIdentityCheck({
@@ -56,7 +66,12 @@ export function RegistrationIdentityCheck({
     destinationHouseholdId,
     selectedMemberId,
     submitError,
+    goodsDistribution = false,
+    canRegister = true,
+    appearance = 'default',
 }: Props) {
+    const directory = appearance === 'directory';
+    const commandClass = directory ? 'bg-[#245e4f] text-white shadow-none hover:bg-[#1c4c3f]' : undefined;
     const [result, setResult] = useState<CheckResult | null>(null);
     const [checking, setChecking] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -118,11 +133,15 @@ export function RegistrationIdentityCheck({
                 event.preventDefault();
                 void check();
             }}
-            className="space-y-5 rounded-md border border-slate-200 bg-white p-4 sm:p-6"
+            className={
+                directory
+                    ? 'space-y-5 rounded-md border border-[#dfe6e1] bg-white p-4 sm:p-5'
+                    : 'space-y-5 rounded-md border border-slate-200 bg-white p-4 sm:p-6'
+            }
         >
             <div>
-                <h2 className="text-lg font-semibold text-slate-950">Check person</h2>
-                <p className="mt-1 text-sm text-slate-600">Check the registry before creating a beneficiary profile.</p>
+                <h2 className={directory ? 'text-base font-semibold text-[#243c33]' : 'text-lg font-semibold text-slate-950'}>Check person</h2>
+                {!directory && <p className="mt-1 text-sm text-slate-600">Check the registry before creating a beneficiary profile.</p>}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 {fields.map((field) => (
@@ -133,6 +152,7 @@ export function RegistrationIdentityCheck({
                         </Label>
                         <Input
                             id={`check-${field.key}`}
+                            className={directory ? 'border-[#dfe6e1] bg-[#fafcfb] shadow-none' : undefined}
                             type={field.key === 'birth_date' ? 'date' : 'text'}
                             value={identity[field.key]}
                             onChange={(event) => change(field.key, event.target.value)}
@@ -141,7 +161,11 @@ export function RegistrationIdentityCheck({
                     </div>
                 ))}
             </div>
-            <Button type="submit" disabled={checking || !identity.first_name.trim() || !identity.last_name.trim() || !identity.birth_date}>
+            <Button
+                className={commandClass}
+                type="submit"
+                disabled={checking || !identity.first_name.trim() || !identity.last_name.trim() || !identity.birth_date}
+            >
                 {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Check registry
             </Button>
@@ -158,9 +182,11 @@ export function RegistrationIdentityCheck({
                             ? 'Selected household member checked. No other possible match found.'
                             : 'No possible match found. Confirm the details before registering.'}
                     </p>
-                    <Button type="button" onClick={() => onContinue(result.context, null)}>
-                        Continue to registration <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    {canRegister && (
+                        <Button className={commandClass} type="button" onClick={() => onContinue(result.context, null)}>
+                            Continue to registration <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
             )}
 
@@ -171,7 +197,7 @@ export function RegistrationIdentityCheck({
                         {result.candidates.map((candidate) => (
                             <li key={candidate.key} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0 text-sm">
-                                    <p className="font-semibold text-slate-950">{candidate.full_name}</p>
+                                    <p className="font-semibold [overflow-wrap:anywhere] text-slate-950">{candidate.full_name}</p>
                                     <p className="text-slate-600">
                                         {candidate.match_type === 'exact' ? 'Same name and birth date' : 'Possible match'} ·{' '}
                                         {candidate.birth_date ?? 'Birth date not recorded'}
@@ -184,11 +210,21 @@ export function RegistrationIdentityCheck({
                                 {candidate.record_type === 'beneficiary' ? (
                                     <Link
                                         className="shrink-0 text-sm font-medium text-blue-700 hover:underline"
-                                        href={ShowBeneficiaryProfileController.url({ municipality: municipalitySlug, beneficiaryId: candidate.id })}
+                                        href={
+                                            goodsDistribution
+                                                ? ShowGoodsRecipientsController.url(
+                                                      { municipality: municipalitySlug },
+                                                      { query: { beneficiary_id: candidate.id } },
+                                                  )
+                                                : ShowBeneficiaryProfileController.url({
+                                                      municipality: municipalitySlug,
+                                                      beneficiaryId: candidate.id,
+                                                  })
+                                        }
                                     >
                                         Use existing beneficiary
                                     </Link>
-                                ) : !candidate.can_reuse ? (
+                                ) : !candidate.can_reuse || !canRegister ? (
                                     <Link
                                         className="shrink-0 text-sm font-medium text-blue-700 hover:underline"
                                         href={ShowHouseholdProfileController.url({
@@ -201,7 +237,14 @@ export function RegistrationIdentityCheck({
                                 ) : (
                                     <Link
                                         className="shrink-0 text-sm font-medium text-blue-700 hover:underline"
-                                        href={`${ShowCreateHouseholdBeneficiaryController.url({ municipality: municipalitySlug, householdId: candidate.household_id })}?member_id=${encodeURIComponent(candidate.id)}`}
+                                        href={
+                                            goodsDistribution
+                                                ? goodsDistributionRoutes.member.create.url(
+                                                      { municipality: municipalitySlug, householdId: candidate.household_id },
+                                                      { query: { member_id: candidate.id } },
+                                                  )
+                                                : `${ShowCreateHouseholdBeneficiaryController.url({ municipality: municipalitySlug, householdId: candidate.household_id })}?member_id=${encodeURIComponent(candidate.id)}`
+                                        }
                                     >
                                         Register in this household
                                     </Link>
@@ -224,15 +267,16 @@ export function RegistrationIdentityCheck({
                                 .
                             </p>
                         )}
-                    {canCorrect ? (
-                        <Button type="button" variant="outline" onClick={() => setDialogOpen(true)}>
-                            Different person
-                        </Button>
-                    ) : (
-                        <p className="text-sm text-amber-800">
-                            A user with beneficiary correction permission must review a different-person registration.
-                        </p>
-                    )}
+                    {canRegister &&
+                        (canCorrect ? (
+                            <Button type="button" variant="outline" onClick={() => setDialogOpen(true)}>
+                                Different person
+                            </Button>
+                        ) : (
+                            <p className="text-sm text-amber-800">
+                                A user with beneficiary correction permission must review a different-person registration.
+                            </p>
+                        ))}
                 </div>
             )}
 

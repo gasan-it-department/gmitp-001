@@ -28,15 +28,19 @@ final class CreateBeneficiaryInHouseholdAction
         private readonly LockActionCenterMunicipalityAction $lockMunicipality,
     ) {}
 
-    public function execute(CreateHouseholdBeneficiaryDto $dto): Beneficiary
+    public function execute(CreateHouseholdBeneficiaryDto $dto, bool $requireRecordedHead = false): Beneficiary
     {
-        $beneficiary = DB::transaction(function () use ($dto): Beneficiary {
+        $beneficiary = DB::transaction(function () use ($dto, $requireRecordedHead): Beneficiary {
             $this->lockMunicipality->execute($dto->municipalId);
             $household = Household::query()
                 ->whereKey($dto->householdId)
                 ->where('municipal_id', $dto->municipalId)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($requireRecordedHead && $household->activeMembers()->where('relationship', 'head')->count() !== 1) {
+                throw new \DomainException('Confirm the actual household head before registering a goods recipient in this household.');
+            }
 
             $candidates = $this->checkIdentity->authorizeCreation([
                 'first_name' => $dto->firstName,
