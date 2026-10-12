@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
-import { useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Briefcase, Home, IdCard, Loader2, Phone, User, UserPlus, Users } from 'lucide-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 // Reuse the online profile-setup sections verbatim — same fields, same
@@ -15,7 +15,7 @@ import { PersonalInformationSection } from '../../Client/Apply/Beneficiary/Compo
 import { SectionHeader } from '../../Client/Apply/Beneficiary/Components/SectionHeader';
 import type { EnumOption, ProfileSetupFormData, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import { AdminEncodeAffirmation } from './Components/AdminEncodeAffirmation';
-import { RegistrationIdentityCheck, type IdentityField } from './Components/RegistrationIdentityCheck';
+import { RegistrationIdentityCheck, type IdentityField, type RegistrationDraft } from './Components/RegistrationIdentityCheck';
 
 // ─── Page props (from ShowCreateWalkInBeneficiaryController) ──────────────────
 
@@ -27,6 +27,10 @@ interface Props {
     submitUrl: string;
     checkUrl: string;
     canCorrect: boolean;
+    goodsDistribution?: boolean;
+    returnUrl?: string;
+    registrationDraft?: RegistrationDraft | null;
+    canVerify?: boolean;
 }
 
 /**
@@ -48,11 +52,16 @@ export default function CreateWalkInBeneficiary({
     submitUrl,
     checkUrl,
     canCorrect,
+    goodsDistribution = false,
+    returnUrl,
+    registrationDraft,
+    canVerify = true,
 }: Props) {
     const { currentMunicipality } = usePage<{ currentMunicipality: Municipality }>().props;
-    const [identityContext, setIdentityContext] = useState<string | null>(null);
-    const [checkedIdentity, setCheckedIdentity] = useState<string | null>(null);
-    const [differentPersonReason, setDifferentPersonReason] = useState<string | null>(null);
+    const [identityContext, setIdentityContext] = useState<string | null>(registrationDraft?.context ?? null);
+    const [checkedIdentity, setCheckedIdentity] = useState<string | null>(registrationDraft ? JSON.stringify(registrationDraft.identity) : null);
+    const [differentPersonReason, setDifferentPersonReason] = useState<string | null>(registrationDraft?.reason ?? null);
+    const [confirmedHead, setConfirmedHead] = useState(false);
 
     const { data, setData, post, processing, errors, transform } = useForm<ProfileSetupFormData>({
         first_name: '',
@@ -75,6 +84,7 @@ export default function CreateWalkInBeneficiary({
         // Repurposed as the admin's encoder affirmation (see AdminEncodeAffirmation).
         terms_consent: false,
         household_members: [],
+        ...registrationDraft?.identity,
     });
 
     // Non-field server errors come back under their own keys.
@@ -101,7 +111,13 @@ export default function CreateWalkInBeneficiary({
 
     const submitWith = (verifyNow: boolean) => {
         if (!checked) return;
-        transform((d) => ({ ...d, identity_check_context: identityContext, different_person_reason: differentPersonReason, verify_now: verifyNow }));
+        transform((d) => ({
+            ...d,
+            identity_check_context: identityContext,
+            different_person_reason: differentPersonReason,
+            verify_now: verifyNow,
+            ...(goodsDistribution ? { actual_household_head: confirmedHead } : {}),
+        }));
         post(submitUrl, {
             forceFormData: true,
             headers: {
@@ -130,6 +146,7 @@ export default function CreateWalkInBeneficiary({
         data.barangay.trim().length > 0 &&
         data.terms_consent &&
         !processing &&
+        (!goodsDistribution || confirmedHead) &&
         checked;
     const canSaveVerified = canSavePending && data.identity_id_front instanceof File;
 
@@ -143,11 +160,11 @@ export default function CreateWalkInBeneficiary({
                     <div className="container mx-auto max-w-3xl px-6 py-4">
                         <button
                             type="button"
-                            onClick={() => window.history.back()}
+                            onClick={() => (returnUrl ? router.visit(returnUrl) : window.history.back())}
                             className="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Bumalik sa Listahan ng Benepisyaryo
+                            {goodsDistribution ? 'Back to Goods Distribution' : 'Bumalik sa Listahan ng Benepisyaryo'}
                         </button>
                     </div>
                 </div>
@@ -159,7 +176,9 @@ export default function CreateWalkInBeneficiary({
                             <UserPlus className="h-7 w-7" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold tracking-tight text-slate-900">Magrehistro ng Walk-in na Benepisyaryo</h1>
+                            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                                {goodsDistribution ? 'Register household head' : 'Magrehistro ng Walk-in na Benepisyaryo'}
+                            </h1>
                             <p className="mt-1 text-sm leading-relaxed text-slate-500">
                                 I-encode ang taong walang online account. Siguruhing naghanap muna sa registry — dapat lamang gumawa ng bagong record
                                 kung walang nahanap na kaparehong tao.
@@ -180,9 +199,28 @@ export default function CreateWalkInBeneficiary({
                             municipalitySlug={currentMunicipality.slug}
                             canCorrect={canCorrect}
                             submitError={registrationError}
+                            goodsDistribution={goodsDistribution}
                         />
                     )}
                     <form onSubmit={handleSubmit} className={checked ? 'space-y-6' : 'hidden'}>
+                        {goodsDistribution && (
+                            <div className="space-y-2 border-b border-slate-200 pb-4">
+                                <label className="flex items-start gap-3 text-sm font-medium">
+                                    <input
+                                        type="checkbox"
+                                        checked={confirmedHead}
+                                        onChange={(event) => setConfirmedHead(event.target.checked)}
+                                        className="mt-1 h-4 w-4 shrink-0"
+                                    />
+                                    This person is the actual head of this new household.
+                                </label>
+                                {(errors as Record<string, string>).actual_household_head && (
+                                    <p role="alert" className="text-sm text-red-700">
+                                        {(errors as Record<string, string>).actual_household_head}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white p-4 text-sm">
                             <span>
                                 Registry checked for {data.first_name} {data.last_name}
@@ -301,14 +339,16 @@ export default function CreateWalkInBeneficiary({
                                     'I-save bilang Pending'
                                 )}
                             </Button>
-                            <Button
-                                type="button"
-                                onClick={() => submitWith(true)}
-                                disabled={!canSaveVerified}
-                                className="h-14 w-full rounded-2xl bg-emerald-700 text-base font-bold tracking-wide text-white uppercase shadow-lg hover:bg-emerald-800 disabled:opacity-50"
-                            >
-                                {processing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'I-save bilang Verified'}
-                            </Button>
+                            {canVerify && (
+                                <Button
+                                    type="button"
+                                    onClick={() => submitWith(true)}
+                                    disabled={!canSaveVerified}
+                                    className="h-14 w-full rounded-2xl bg-emerald-700 text-base font-bold tracking-wide text-white uppercase shadow-lg hover:bg-emerald-800 disabled:opacity-50"
+                                >
+                                    {processing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'I-save bilang Verified'}
+                                </Button>
+                            )}
                         </div>
                     </form>
                 </div>

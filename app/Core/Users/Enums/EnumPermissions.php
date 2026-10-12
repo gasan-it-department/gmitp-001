@@ -36,6 +36,17 @@ enum EnumPermissions: string
     case ACTION_CENTER_REPORTS_VIEW = 'action_center.reports.view';
     case ACTION_CENTER_SETTINGS_MANAGE = 'action_center.settings.manage';
 
+    // goods distribution
+    case GOODS_DISTRIBUTION_ACCESS = 'goods_distribution.access';
+    case GOODS_DISTRIBUTION_INVENTORY_VIEW = 'goods_distribution.inventory.view';
+    case GOODS_DISTRIBUTION_INVENTORY_MANAGE = 'goods_distribution.inventory.manage';
+    case GOODS_DISTRIBUTION_INVENTORY_ADJUST = 'goods_distribution.inventory.adjust';
+    case GOODS_DISTRIBUTION_REQUESTS_VIEW = 'goods_distribution.requests.view';
+    case GOODS_DISTRIBUTION_REQUESTS_INTAKE = 'goods_distribution.requests.intake';
+    case GOODS_DISTRIBUTION_REQUESTS_PROCESS = 'goods_distribution.requests.process';
+    case GOODS_DISTRIBUTION_REQUESTS_DECIDE = 'goods_distribution.requests.decide';
+    case GOODS_DISTRIBUTION_REQUESTS_RELEASE = 'goods_distribution.requests.release';
+
     // announcement & events
     case BULLETIN_BOARD_ACCESS = 'bulletin_board.access';
 
@@ -105,6 +116,15 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_CORRECT => 'Action Center - Correct Approved Request Data',
             self::ACTION_CENTER_REPORTS_VIEW => 'Action Center - View Reports',
             self::ACTION_CENTER_SETTINGS_MANAGE => 'Action Center - Manage Assistance Settings',
+            self::GOODS_DISTRIBUTION_ACCESS => 'Goods Distribution',
+            self::GOODS_DISTRIBUTION_INVENTORY_VIEW => 'Goods Distribution - View Inventory',
+            self::GOODS_DISTRIBUTION_INVENTORY_MANAGE => 'Goods Distribution - Manage Setup and Receive Stock',
+            self::GOODS_DISTRIBUTION_INVENTORY_ADJUST => 'Goods Distribution - Adjust and Reverse Stock',
+            self::GOODS_DISTRIBUTION_REQUESTS_VIEW => 'Goods Distribution - View Distribution Requests',
+            self::GOODS_DISTRIBUTION_REQUESTS_INTAKE => 'Goods Distribution - Encode Distribution Requests',
+            self::GOODS_DISTRIBUTION_REQUESTS_PROCESS => 'Goods Distribution - Review Requests and Documents',
+            self::GOODS_DISTRIBUTION_REQUESTS_DECIDE => 'Goods Distribution - Approve, Return Approved, or Cancel Requests',
+            self::GOODS_DISTRIBUTION_REQUESTS_RELEASE => 'Goods Distribution - Record Goods Handover',
             self::BULLETIN_BOARD_ACCESS => 'Bulletin Board',
             self::COMMUNITY_REPORT_ACCESS => 'Community Reporting',
             self::SUPPORT_TICKET_ACCESS => 'Support & Help Desk',
@@ -144,6 +164,15 @@ enum EnumPermissions: string
             self::ACTION_CENTER_REQUESTS_CORRECT,
             self::ACTION_CENTER_REPORTS_VIEW,
             self::ACTION_CENTER_SETTINGS_MANAGE => EnumPermissionModule::ACTION_CENTER,
+            self::GOODS_DISTRIBUTION_ACCESS,
+            self::GOODS_DISTRIBUTION_INVENTORY_VIEW,
+            self::GOODS_DISTRIBUTION_INVENTORY_MANAGE,
+            self::GOODS_DISTRIBUTION_INVENTORY_ADJUST,
+            self::GOODS_DISTRIBUTION_REQUESTS_VIEW,
+            self::GOODS_DISTRIBUTION_REQUESTS_INTAKE,
+            self::GOODS_DISTRIBUTION_REQUESTS_PROCESS,
+            self::GOODS_DISTRIBUTION_REQUESTS_DECIDE,
+            self::GOODS_DISTRIBUTION_REQUESTS_RELEASE => EnumPermissionModule::GOODS_DISTRIBUTION,
             self::BULLETIN_BOARD_ACCESS => EnumPermissionModule::BULLETIN_BOARD,
             self::COMMUNITY_REPORT_ACCESS => EnumPermissionModule::COMMUNITY_REPORT,
             self::SUPPORT_TICKET_ACCESS => EnumPermissionModule::SUPPORT_TICKET,
@@ -178,6 +207,14 @@ enum EnumPermissions: string
     public function dependencies(): array
     {
         return match ($this) {
+            self::GOODS_DISTRIBUTION_INVENTORY_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
+            self::GOODS_DISTRIBUTION_REQUESTS_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
+            self::GOODS_DISTRIBUTION_REQUESTS_INTAKE,
+            self::GOODS_DISTRIBUTION_REQUESTS_PROCESS,
+            self::GOODS_DISTRIBUTION_REQUESTS_DECIDE,
+            self::GOODS_DISTRIBUTION_REQUESTS_RELEASE => [self::GOODS_DISTRIBUTION_ACCESS->value, self::GOODS_DISTRIBUTION_REQUESTS_VIEW->value],
+            self::GOODS_DISTRIBUTION_INVENTORY_MANAGE,
+            self::GOODS_DISTRIBUTION_INVENTORY_ADJUST => [self::GOODS_DISTRIBUTION_ACCESS->value, self::GOODS_DISTRIBUTION_INVENTORY_VIEW->value],
             self::ACTION_CENTER_BENEFICIARIES_VIEW => [
                 self::ACTION_CENTER_ACCESS->value,
             ],

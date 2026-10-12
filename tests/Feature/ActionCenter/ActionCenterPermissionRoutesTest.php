@@ -89,6 +89,14 @@ it('assigns every admin action center route to one explicit capability', functio
         'actionCenter.walkin.store' => 'action_center.beneficiaries.manage',
         'actionCenter.beneficiary.registration-check' => 'action_center.beneficiaries.manage',
         'actionCenter.assistance.admin-store' => 'action_center.requests.intake',
+        'goodsDistribution.recipients' => 'action_center.beneficiaries.view',
+        'goodsDistribution.identity-check' => 'action_center.beneficiaries.view',
+        'goodsDistribution.head.create' => 'action_center.beneficiaries.manage',
+        'goodsDistribution.member.create' => 'action_center.beneficiaries.manage',
+        'goodsDistribution.households.search' => 'action_center.beneficiaries.manage',
+        'goodsDistribution.registration.begin' => 'action_center.beneficiaries.manage',
+        'goodsDistribution.head.store' => 'action_center.beneficiaries.manage',
+        'goodsDistribution.member.store' => 'action_center.beneficiaries.manage',
     ];
 
     $actualRouteNames = collect(Route::getRoutes()->getRoutes())

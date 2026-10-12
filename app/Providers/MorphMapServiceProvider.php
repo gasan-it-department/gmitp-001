@@ -21,6 +21,13 @@ use App\Core\CommunityReport\Models\ReportSubmission;
 use App\Core\Department\Models\Department;
 use App\Core\Event\Models\Event;
 use App\Core\Feedback\Models\FeedbackSubmission;
+use App\Core\GoodsDistribution\Models\Item as GoodsItem;
+use App\Core\GoodsDistribution\Models\Program as GoodsProgram;
+use App\Core\GoodsDistribution\Models\ProgramItem;
+use App\Core\GoodsDistribution\Models\StockMovement;
+use App\Core\GoodsDistribution\Models\StockReceipt;
+use App\Core\GoodsDistribution\Models\StockSource;
+use App\Core\GoodsDistribution\Models\StorageLocation;
 use App\Core\Government\Models\Official;
 use App\Core\Government\Models\OfficialTerm;
 use App\Core\Government\Models\Position;
@@ -58,6 +65,14 @@ class MorphMapServiceProvider extends ServiceProvider
             'assistance_request' => AssistanceRequest::class,
             'beneficiary' => Beneficiary::class,
             'household_member' => HouseholdMember::class,
+            'goods_item' => GoodsItem::class,
+            'goods_program' => GoodsProgram::class,
+            'goods_program_item' => ProgramItem::class,
+            'goods_stock_source' => StockSource::class,
+            'goods_storage_location' => StorageLocation::class,
+            'goods_stock_receipt' => StockReceipt::class,
+            'goods_stock_movement' => StockMovement::class,
+            'goods_distribution_request' => \App\Core\GoodsDistribution\Models\DistributionRequest::class,
             'feedback_submission' => FeedbackSubmission::class,
             'report_submission' => ReportSubmission::class,
             'department' => Department::class,
