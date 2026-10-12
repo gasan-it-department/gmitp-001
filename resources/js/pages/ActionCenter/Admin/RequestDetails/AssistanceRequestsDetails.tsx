@@ -394,11 +394,20 @@ export default function AssistanceRequestsDetails({
         verificationIsComplete &&
         canCorrectRequests &&
         activeDisbursement === null;
-    const canRefreshHouseholdAssessment = canRefreshAssignedHousehold || canCorrectCompletedHousehold;
+    const canSyncPendingHousehold =
+        detail.status === 'pending' &&
+        !detail.has_release_artifacts &&
+        !verificationIsComplete &&
+        (canIntakeRequests || canProcessRequests) &&
+        activeDisbursement === null;
+    const canRefreshHouseholdAssessment = canSyncPendingHousehold || canRefreshAssignedHousehold || canCorrectCompletedHousehold;
     const householdAssessmentHasChanges =
-        householdAssessmentPreview.added.length > 0 || householdAssessmentPreview.removed.length > 0 || householdAssessmentPreview.changed.length > 0;
+        householdAssessmentPreview.added.length > 0 ||
+        householdAssessmentPreview.removed.length > 0 ||
+        householdAssessmentPreview.changed.length > 0 ||
+        householdAssessmentPreview.address_changed;
     const householdAssessmentNeedsSync = detail.household_assessment === null || householdAssessmentHasChanges;
-    const canManageInterviewHousehold = canRefreshAssignedHousehold && canManageBeneficiaries;
+    const canManageInterviewHousehold = canRefreshHouseholdAssessment && (canManageBeneficiaries || can('action_center.beneficiaries.correct'));
     const canCorrectMissingDateOfDeath =
         canCorrectRequests &&
         detail.status === 'approved' &&
@@ -528,7 +537,7 @@ export default function AssistanceRequestsDetails({
     };
 
     const refreshHouseholdAssessment = () => {
-        if (canCorrectCompletedHousehold) {
+        if (canCorrectCompletedHousehold || householdAssessmentPreview.address_changed) {
             setIsApprovedHouseholdSyncOpen(true);
             return;
         }
@@ -911,7 +920,7 @@ export default function AssistanceRequestsDetails({
                                     <Card>
                                         <CardHeader className="p-4 sm:p-6">
                                             <CardTitle className="flex items-center gap-2 text-base">
-                                                <MapPin className="h-4 w-4 text-slate-600" /> Home Address (at submission)
+                                                <MapPin className="h-4 w-4 text-slate-600" /> Home Address (saved for this request)
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
@@ -1035,8 +1044,10 @@ export default function AssistanceRequestsDetails({
                                                     <p>
                                                         <span className="font-semibold">Current profile changes not yet synchronized.</span>{' '}
                                                         {householdAssessmentPreview.added.length} added, {householdAssessmentPreview.removed.length}{' '}
-                                                        removed, and {householdAssessmentPreview.changed.length} changed. The roster below and the
-                                                        Intake Sheet remain unchanged until Sync Household is confirmed.
+                                                        removed, and {householdAssessmentPreview.changed.length} changed.
+                                                        {householdAssessmentPreview.address_changed &&
+                                                            ' The household address also differs from this request.'}{' '}
+                                                        The saved roster and address remain unchanged until Sync Household is confirmed.
                                                     </p>
                                                 </div>
                                             )}
@@ -1060,7 +1071,7 @@ export default function AssistanceRequestsDetails({
                                                 members={requestHouseholdMembers}
                                                 status={filerRelationships}
                                                 options={householdRelationshipOptions}
-                                                canConfirm={canRefreshHouseholdAssessment}
+                                                canConfirm={canRefreshAssignedHousehold || canCorrectCompletedHousehold}
                                                 completedVerification={verificationIsComplete}
                                                 activeDisbursement={activeDisbursement !== null}
                                             >
@@ -1635,11 +1646,12 @@ export default function AssistanceRequestsDetails({
                     onClose={() => setIsProfileCorrectionOpen(false)}
                 />
             )}
-            {canCorrectCompletedHousehold && (
+            {canRefreshHouseholdAssessment && (
                 <SyncApprovedHouseholdDialog
                     requestId={detail.id}
                     transactionNumber={detail.transaction_number}
                     preview={householdAssessmentPreview}
+                    requiresCorrection={canCorrectCompletedHousehold}
                     isOpen={isApprovedHouseholdSyncOpen}
                     onClose={() => setIsApprovedHouseholdSyncOpen(false)}
                 />

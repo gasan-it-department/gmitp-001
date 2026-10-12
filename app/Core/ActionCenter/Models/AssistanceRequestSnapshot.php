@@ -46,6 +46,16 @@ class AssistanceRequestSnapshot extends Model
         return $this->belongsTo(AssistanceRequest::class, 'assistance_request_id');
     }
 
+    /** The household synchronization action enforces pre-release correction guards. */
+    public function replaceAddressFields(array $address): void
+    {
+        if (array_keys($address) !== ['barangay', 'barangay_psgc_code', 'street']) {
+            throw new \InvalidArgumentException('Only request address fields may be synchronized.');
+        }
+
+        $this->update($address);
+    }
+
     /**
      * Replace selected claimant fields after the dedicated Core action has
      * enforced tenant, lifecycle, verification, and audit requirements.

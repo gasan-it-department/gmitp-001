@@ -42,6 +42,14 @@ class Household extends Model
         return $this->hasMany(HouseholdMember::class, 'household_id');
     }
 
+    public function addressFingerprint(): string
+    {
+        return hash('sha256', json_encode([
+            $this->id, $this->municipal_id, $this->barangay,
+            $this->barangay_psgc_code, $this->street,
+        ], JSON_THROW_ON_ERROR));
+    }
+
     public function activeMembers(): HasMany
     {
         return $this->members()->where('is_active', true);

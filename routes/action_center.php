@@ -50,6 +50,7 @@ use App\External\Api\Controllers\ActionCenter\Household\StoreAdminHouseholdMembe
 use App\External\Api\Controllers\ActionCenter\Household\StoreHouseholdBeneficiaryController;
 use App\External\Api\Controllers\ActionCenter\Household\StoreHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Household\UnlinkHouseholdMemberBeneficiaryController;
+use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdAddressController;
 use App\External\Api\Controllers\ActionCenter\Household\UpdateHouseholdMemberController;
 use App\External\Api\Controllers\ActionCenter\Walkin\StoreWalkInBeneficiaryController;
 use App\External\Documents\ActionCenter\ReplaceBeneficiaryIdentityDocumentController;
@@ -422,7 +423,7 @@ Route::prefix('/api/action-center')
                 Route::post(
                     '/assistance-request/{assistanceRequestId}/household-assessment/refresh',
                     RefreshAssistanceHouseholdAssessmentController::class,
-                )->middleware('permission:action_center.requests.process|action_center.requests.correct')
+                )->middleware('permission:action_center.requests.intake|action_center.requests.process|action_center.requests.correct')
                     ->name('assistance.household-assessment.refresh');
 
                 Route::post(
@@ -621,6 +622,10 @@ Route::prefix('/api/action-center')
                 Route::post('/households/{householdId}/change-head', ChangeHouseholdHeadController::class)
                     ->middleware('permission:action_center.beneficiaries.correct')
                     ->name('household.change-head');
+
+                Route::put('/households/{householdId}/address', UpdateHouseholdAddressController::class)
+                    ->middleware('permission:action_center.beneficiaries.correct')
+                    ->name('household.address.update');
 
                 Route::post('/beneficiary/{beneficiaryId}/household/members', StoreAdminHouseholdMemberController::class)
                     ->middleware('permission:action_center.beneficiaries.manage')

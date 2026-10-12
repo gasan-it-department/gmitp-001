@@ -6,7 +6,7 @@ import { Municipality } from '@/Core/Types/Municipality/MunicipalityTypes';
 import AdminLayout from '@/layouts/App/AppLayout';
 import Utility from '@/pages/Utility/Utility';
 import { Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, BadgeCheck, Clock3, Home, MapPin, Plus, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Clock3, Home, MapPin, Pencil, Plus, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import type { EnumOption, ReligionOption } from '../../Client/Apply/Beneficiary/types';
 import type { HouseholdHeadState } from '../Beneficiary/Profile/Components/ChangeHouseholdHeadDialog';
@@ -15,6 +15,7 @@ import HouseholdMembersManager from '../Beneficiary/Profile/Components/Household
 import type { HouseholdMemberRow } from '../Beneficiary/Profile/Components/HouseholdMembersTable';
 import MemberFormDialog, { type RelationshipOption } from '../Beneficiary/Profile/Components/MemberFormDialog';
 import AddPersonDialog from './Components/AddPersonDialog';
+import EditHouseholdAddressDialog from './Components/EditHouseholdAddressDialog';
 import TransferBeneficiaryIntoHouseholdDialog from './Components/TransferBeneficiaryIntoHouseholdDialog';
 
 interface HouseholdData {
@@ -23,6 +24,7 @@ interface HouseholdData {
     barangay: string | null;
     barangay_psgc_code: string | null;
     street: string | null;
+    address_fingerprint: string;
     is_verified: boolean;
     is_on_hold: boolean;
     head: {
@@ -73,6 +75,7 @@ export default function HouseholdProfile({
     const [choiceOpen, setChoiceOpen] = useState(false);
     const [memberOpen, setMemberOpen] = useState(false);
     const [transferOpen, setTransferOpen] = useState(false);
+    const [addressOpen, setAddressOpen] = useState(false);
     const address = [profile.street, profile.barangay].filter(Boolean).join(', ') || 'Address unavailable';
     const storeMemberUrl = StoreHouseholdMemberController.url({ householdId: profile.id });
 
@@ -115,15 +118,26 @@ export default function HouseholdProfile({
                             </p>
                         </div>
 
-                        {(profile.permissions.manage || profile.permissions.correct) && (
-                            <button
-                                type="button"
-                                onClick={() => setChoiceOpen(true)}
-                                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                            >
-                                <Plus className="h-4 w-4" /> Add person
-                            </button>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {profile.permissions.correct && (
+                                <button
+                                    type="button"
+                                    onClick={() => setAddressOpen(true)}
+                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    <Pencil className="h-4 w-4" /> Edit address
+                                </button>
+                            )}
+                            {(profile.permissions.manage || profile.permissions.correct) && (
+                                <button
+                                    type="button"
+                                    onClick={() => setChoiceOpen(true)}
+                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                                >
+                                    <Plus className="h-4 w-4" /> Add person
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -185,6 +199,7 @@ export default function HouseholdProfile({
                 </main>
             </div>
 
+            {profile.permissions.correct && addressOpen && <EditHouseholdAddressDialog household={profile} onClose={() => setAddressOpen(false)} />}
             <AddPersonDialog
                 open={choiceOpen}
                 onClose={() => setChoiceOpen(false)}
