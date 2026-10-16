@@ -7,6 +7,7 @@ use App\Core\GoodsDistribution\Actions\ManageCatalogAction;
 use App\Core\GoodsDistribution\Actions\PostStockReceiptAction;
 use App\Core\GoodsDistribution\Actions\ReverseStockAdjustmentAction;
 use App\Core\GoodsDistribution\Actions\SaveStockReceiptAction;
+use App\Core\GoodsDistribution\Actions\UpdateProgramCooldownAction;
 use App\Core\GoodsDistribution\Actions\VoidStockReceiptAction;
 use App\Core\GoodsDistribution\Dto\CatalogDto;
 use App\Core\GoodsDistribution\Dto\StockAdjustmentDto;
@@ -15,6 +16,7 @@ use App\Core\GoodsDistribution\Enums\CatalogKind;
 use App\External\Api\Request\GoodsDistribution\AdjustStockRequest;
 use App\External\Api\Request\GoodsDistribution\PostStockReceiptRequest;
 use App\External\Api\Request\GoodsDistribution\SaveCatalogRequest;
+use App\External\Api\Request\GoodsDistribution\SaveProgramCooldownRequest;
 use App\External\Api\Request\GoodsDistribution\SaveStockReceiptRequest;
 use App\External\Api\Request\GoodsDistribution\VoidStockReceiptRequest;
 use App\External\Api\Resources\GoodsDistribution\CatalogResource;
@@ -23,6 +25,11 @@ use Illuminate\Http\JsonResponse;
 
 final class InventoryCommandController extends Controller
 {
+    public function saveProgramCooldown(SaveProgramCooldownRequest $request, UpdateProgramCooldownAction $action): JsonResponse
+    {
+        return $this->respond(fn () => $action->execute(app('municipal_id'), $request->route('programId'), $request->user()->id, $request->validated()), true);
+    }
+
     public function saveCatalog(SaveCatalogRequest $request, ManageCatalogAction $action): JsonResponse
     {
         return $this->respond(fn () => $action->execute(new CatalogDto(app('municipal_id'), $request->user()->id, CatalogKind::from($request->route('catalog')), $request->validated(), $request->route('recordId'))), true);

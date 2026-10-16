@@ -95,13 +95,28 @@ it('validates complete receipt commands and posts only the reviewed draft', func
     $this->postJson('/api/goods-distribution/stock-receipts', $data)->assertUnprocessable();
     $created = $this->postJson('/api/goods-distribution/stock-receipts', goodsReceiptData($this), ['X-Municipality-Slug' => 'inventory-test'])->assertOk()->json('data.id');
     $receipt = StockReceipt::findOrFail($created)->load(['lines.item', 'lines.program', 'source', 'location']);
-    expect($receipt->receipt_number)->toBe('GR-'.$created)->and(StockMovement::count())->toBe(0);
+    expect($receipt->receipt_number)->toBe('GR-'.now()->format('Y').'-000001')->and(StockMovement::count())->toBe(0);
     $this->postJson("/api/goods-distribution/stock-receipts/{$created}/post", ['draft_fingerprint' => str_repeat('a', 64)])->assertUnprocessable();
     $payload = ['draft_fingerprint' => app(ReceiptFingerprintService::class)->make($receipt)];
     $this->postJson("/api/goods-distribution/stock-receipts/{$created}/post", $payload)->assertOk();
     $this->postJson("/api/goods-distribution/stock-receipts/{$created}/post", $payload)->assertOk();
     expect(StockMovement::count())->toBe(1);
     $this->patchJson("/api/goods-distribution/stock-receipts/{$created}", [...goodsReceiptData($this), ...$payload])->assertUnprocessable();
+});
+
+it('validates receipt kinds with an enum and derives status and lifecycle evidence on the server', function () {
+    goodsInventoryHttp($this, ['goods_distribution.inventory.manage']);
+    $this->postJson('/api/goods-distribution/stock-receipts', goodsReceiptData($this, ['kind' => 'invalid']))
+        ->assertUnprocessable()->assertJsonValidationErrors('kind');
+    expect(StockReceipt::count())->toBe(0);
+    $this->postJson('/api/goods-distribution/stock-receipts', goodsReceiptData($this, [
+        'kind' => 'opening', 'status' => 'posted', 'posted_at' => now()->toIso8601String(),
+        'voided_at' => now()->toIso8601String(), 'void_reason' => 'Forged state',
+    ]))->assertSuccessful();
+    $receipt = StockReceipt::firstOrFail();
+    expect($receipt->kind)->toBe('opening')->and($receipt->status)->toBe('draft')
+        ->and($receipt->posted_at)->toBeNull()->and($receipt->voided_at)->toBeNull()
+        ->and($receipt->void_reason)->toBeNull()->and(StockMovement::count())->toBe(0);
 });
 
 it('validates counted items and adjustment references with tenant isolation', function () {
@@ -114,6 +129,15 @@ it('validates counted items and adjustment references with tenant isolation', fu
     app()->instance('municipal_id', $this->otherMunicipalId);
     $this->get("/inventory-test/goods-distribution/stock-receipts/{$receipt->id}")->assertNotFound();
     $this->postJson("/api/goods-distribution/stock-batches/{$lineId}/adjustments", ['operation_key' => (string) Str::uuid(), 'quantity' => '5', 'direction' => 'remove', 'reason' => 'Damage counted', 'reference' => 'COUNT-1'])->assertNotFound();
+});
+
+it('validates item units with StockUnit on create and update APIs', function () {
+    goodsInventoryHttp($this, ['goods_distribution.inventory.manage']);
+    $data = ['name' => 'Invalid unit item', 'base_unit' => 'liter', 'is_active' => true];
+    $this->postJson('/api/goods-distribution/catalog/items', $data)->assertUnprocessable()->assertJsonValidationErrors('base_unit');
+    $this->patchJson('/api/goods-distribution/catalog/items/'.$this->item->id, [...$data, 'name' => $this->item->name])
+        ->assertUnprocessable()->assertJsonValidationErrors('base_unit');
+    expect($this->item->fresh()->base_unit)->toBe('kg')->and(StockMovement::count())->toBe(0);
 });
 
 it('catalogues Goods Distribution capabilities without granting them during seeding', function () {

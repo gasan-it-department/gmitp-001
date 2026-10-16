@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -27,9 +26,6 @@ return new class extends Migration
             $table->foreign(['distribution_request_line_id', 'distribution_request_id', 'municipal_id'], 'gd_allocations_request_line_fk')->references(['id', 'distribution_request_id', 'municipal_id'])->on('gd_distribution_request_lines')->restrictOnDelete();
             $table->foreign(['stock_receipt_line_id', 'municipal_id', 'base_unit'], 'gd_allocations_batch_tenant_unit_fk')->references(['id', 'municipal_id', 'base_unit'])->on('gd_stock_receipt_lines')->restrictOnDelete();
         });
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement("ALTER TABLE gd_distribution_stock_allocations ADD CONSTRAINT gd_allocations_quantity_check CHECK (quantity > 0 AND base_unit IN ('kg', 'piece') AND (base_unit <> 'piece' OR quantity = trunc(quantity)) AND status IN ('reserved', 'consumed', 'cancelled'))");
-        }
     }
 
     public function down(): void

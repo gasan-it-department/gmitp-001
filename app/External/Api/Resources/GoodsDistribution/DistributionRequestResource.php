@@ -16,6 +16,7 @@ final class DistributionRequestResource extends JsonResource
             'beneficiary_id' => $this->beneficiary_id, 'assisted_household_member_id' => $this->assisted_household_member_id,
             'snapshot' => $this->reviewed_snapshot, 'filing_snapshot' => $this->filing_snapshot, 'handover_snapshot' => $this->handover_snapshot,
             'notes' => $this->notes, 'transition_reason' => $this->transition_reason, 'created_at' => $this->created_at->toIso8601String(),
+            'cooldown_policy' => $this->cooldown_policy,
             'approved_at' => $this->approved_at?->toIso8601String(), 'released_at' => $this->released_at?->toIso8601String(),
             'approved_on' => $this->approved_at?->toDateString(),
             'actual_release_on' => $this->actual_release_on?->toDateString(), 'collector_type' => $this->collector_type,

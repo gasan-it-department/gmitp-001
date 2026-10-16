@@ -52,6 +52,7 @@ import {
     Megaphone,
     MessageSquareText,
     Package,
+    PackageCheck,
     Palmtree,
     ReceiptText,
     ScrollText,
@@ -89,6 +90,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         if (isGoodsDistributionUrl(linkUrl)) {
             const path = page.url.split('?')[0].replace(/\/$/, '');
             if (linkUrl === recipientsUrl) return path === recipientsUrl;
+            if (path.startsWith(`${recipientsUrl}/recipients/`) || path.startsWith(`${recipientsUrl}/household-members/`)) {
+                return linkUrl === goodsDistribution.requests.index.url({ municipality: currentMunicipality.slug });
+            }
+            const bulkUrl = goodsDistribution.bulk.index.url({ municipality: currentMunicipality.slug });
+            if (path === bulkUrl || path.startsWith(`${bulkUrl}/`)) return linkUrl === bulkUrl;
             const programsUrl = goodsDistribution.inventory.programs.url({ municipality: currentMunicipality.slug });
             const inProgram = path.startsWith(`${programsUrl}/`) || (isGoodsDistributionUrl(path) && !!page.props.program);
             if (inProgram) return linkUrl === programsUrl;
@@ -180,6 +186,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                     url: goodsDistribution.requests.index.url({ municipality: currentMunicipality.slug }),
                     icon: HandHeart,
                     permission: 'goods_distribution.requests.view',
+                },
+                {
+                    title: 'Bulk Dispatches',
+                    url: goodsDistribution.bulk.index.url({ municipality: currentMunicipality.slug }),
+                    icon: PackageCheck,
+                    permission: 'goods_distribution.bulk_dispatches.view',
                 },
                 {
                     title: 'Stock Receipts',

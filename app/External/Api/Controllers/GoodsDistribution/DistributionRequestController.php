@@ -2,6 +2,7 @@
 
 namespace App\External\Api\Controllers\GoodsDistribution;
 
+use App\Core\GoodsDistribution\Actions\ApplyDistributionRequirementsAction;
 use App\Core\GoodsDistribution\Actions\ReadDistributionRequestsAction;
 use App\Core\GoodsDistribution\Actions\ReviewDistributionDocumentAction;
 use App\Core\GoodsDistribution\Actions\SaveDistributionRequestAction;
@@ -9,6 +10,7 @@ use App\Core\GoodsDistribution\Actions\SaveProgramDocumentRequirementsAction;
 use App\Core\GoodsDistribution\Actions\SyncDistributionHouseholdAction;
 use App\Core\GoodsDistribution\Actions\TransitionDistributionRequestAction;
 use App\Core\GoodsDistribution\Dto\DistributionRequestDto;
+use App\External\Api\Request\GoodsDistribution\ApplyDistributionRequirementsRequest;
 use App\External\Api\Request\GoodsDistribution\DistributionCommandRequest;
 use App\External\Api\Request\GoodsDistribution\DistributionDocumentRequest;
 use App\External\Api\Request\GoodsDistribution\DistributionLookupRequest;
@@ -20,6 +22,11 @@ use Illuminate\Http\JsonResponse;
 
 final class DistributionRequestController extends Controller
 {
+    public function applyRequirements(ApplyDistributionRequirementsRequest $request, ApplyDistributionRequirementsAction $action): JsonResponse
+    {
+        return $this->respond(fn () => $action->execute(new DistributionRequestDto(app('municipal_id'), $request->user()->id, $request->validated(), $request->route('requestId'))));
+    }
+
     public function syncHousehold(SyncDistributionHouseholdRequest $request, SyncDistributionHouseholdAction $action): JsonResponse
     {
         return $this->respond(fn () => $action->execute(new DistributionRequestDto(app('municipal_id'), $request->user()->id, $request->validated(), $request->route('requestId'))));

@@ -3,13 +3,16 @@
 use App\Core\ActionCenter\Models\DocumentType;
 use App\Core\GoodsDistribution\Actions\ReviewDistributionDocumentAction;
 use App\Core\GoodsDistribution\Dto\DistributionRequestDto;
+use App\Core\GoodsDistribution\Enums\DistributionStatus;
 use App\Core\GoodsDistribution\Models\DistributionRequest;
 use App\Core\GoodsDistribution\Models\StockMovement;
 use App\Core\GoodsDistribution\Models\StorageLocation;
 use App\Core\Users\Enums\EnumPermissions;
+use App\External\Api\Request\GoodsDistribution\DistributionPageRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 require_once __DIR__.'/../../Support/GoodsDistributionFixture.php';
 beforeEach(function () {
@@ -22,6 +25,17 @@ function distributionHttp(object $test, array $capabilities): void
 {
     goodsInventoryHttp($test, ['goods_distribution.requests.view', ...$capabilities]);
 }
+
+it('validates distribution statuses with the existing backend enum', function () {
+    $rules = (new DistributionPageRequest)->rules();
+    foreach (DistributionStatus::cases() as $status) {
+        expect(Validator::make(['status' => $status->value], ['status' => $rules['status']])->passes())->toBeTrue();
+    }
+    expect(Validator::make(['status' => 'unsupported'], ['status' => $rules['status']])->fails())->toBeTrue();
+    $request = goodsRequest($this);
+    expect(fn () => $request->status = 'unsupported')->toThrow(ValueError::class);
+    expect($request->fresh()->status)->toBe(DistributionStatus::Pending);
+});
 
 it('uses independent GD permissions and municipality header API conventions', function () {
     foreach (['store' => 'intake', 'review' => 'process', 'approve' => 'decide', 'cancel' => 'decide', 'release' => 'release'] as $name => $capability) {
@@ -103,8 +117,9 @@ it('excludes representative-only fields from recipient handover API submissions'
         ->and($request->collector_id_last_four)->toBeNull()->and(StockMovement::where('type', 'distribution')->count())->toBe(1);
 });
 
-it('serves protected evidence only within the goods request and tenant', function () {
-    Storage::fake('local');
+it('keeps document endpoint checks for public and private media disks', function (string $disk) {
+    Storage::fake($disk);
+    config(['goods_distribution.document_disk' => $disk]);
     $request = goodsRequest($this);
     $check = $request->documentChecks()->create(['municipal_id' => $this->municipalId, 'document_key' => 'id', 'label' => 'ID',
         'evidence_mode' => 'upload', 'physical_copy_requirement' => 'unspecified', 'is_required' => true, 'sort_order' => 0]);
@@ -117,7 +132,7 @@ it('serves protected evidence only within the goods request and tenant', functio
     $this->get(str_replace($request->id, $other->id, $url))->assertNotFound();
     app()->instance('municipal_id', $this->otherMunicipalId);
     $this->get($url)->assertNotFound();
-});
+})->with(['local', 'public']);
 
 it('allows inventory managers to configure documents without request permissions', function () {
     $type = DocumentType::create(['key' => 'id', 'label' => 'ID', 'is_active' => true]);

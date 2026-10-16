@@ -9,6 +9,7 @@ import axios from 'axios';
 import { ChevronLeft, ChevronRight, Loader2, Search, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Options, PageData, Program, Receipt } from './types';
+import '../responsive.css';
 
 export function withProgram(url: string, programId?: string | null) {
     if (!programId) return url;
@@ -92,7 +93,7 @@ export function InventoryShell({
     const { slug } = useInventoryContext();
     return (
         <AdminLayout>
-            <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+            <main className="goods-workspace @container/goods mx-auto w-full min-w-0 max-w-7xl space-y-6 px-4 py-6 sm:px-6">
                 <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                     <div className="min-w-0 flex-1">
                         <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
@@ -151,7 +152,7 @@ export function StateBadge({ value }: { value: string }) {
             : ['voided', 'expired', 'cancelled', 'rejected'].includes(value)
               ? 'border-red-200 bg-red-50 text-red-800'
               : 'border-gray-200 bg-gray-50 text-gray-700';
-    return <span className={`inline-flex rounded border px-2 py-0.5 text-xs whitespace-nowrap capitalize ${color}`}>{value}</span>;
+    return <span className={`inline-flex max-w-full rounded border px-2 py-0.5 text-xs capitalize ${color}`}>{value}</span>;
 }
 
 export function quantity(value: string | number): string {

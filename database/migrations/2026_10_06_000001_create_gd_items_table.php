@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -27,9 +26,6 @@ return new class extends Migration
             $table->index(['municipal_id', 'is_active', 'name'], 'gd_items_municipal_active_name_idx');
         });
 
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement("ALTER TABLE gd_items ADD CONSTRAINT gd_items_base_unit_check CHECK (base_unit IN ('kg', 'piece'))");
-        }
     }
 
     public function down(): void

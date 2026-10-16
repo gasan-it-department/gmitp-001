@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -44,20 +43,6 @@ return new class extends Migration
             $table->index(['municipal_id', 'expires_on'], 'gd_lines_municipal_expiry_idx');
         });
 
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement('ALTER TABLE gd_stock_receipt_lines ADD CONSTRAINT gd_lines_quantity_check CHECK (quantity > 0)');
-            DB::statement('ALTER TABLE gd_stock_receipt_lines ADD CONSTRAINT gd_lines_number_check CHECK (line_number > 0)');
-            DB::statement("ALTER TABLE gd_stock_receipt_lines ADD CONSTRAINT gd_lines_piece_quantity_check CHECK (base_unit <> 'piece' OR quantity = trunc(quantity))");
-            DB::statement(
-                'ALTER TABLE gd_stock_receipt_lines ADD CONSTRAINT gd_lines_packaging_check CHECK (
-                    (package_type IS NULL AND package_count IS NULL AND quantity_per_package IS NULL)
-                    OR (package_type IS NOT NULL AND package_count IS NOT NULL AND quantity_per_package IS NOT NULL
-                        AND length(trim(package_type)) > 0 AND package_count > 0 AND quantity_per_package > 0
-                        AND quantity = package_count * quantity_per_package)
-                )',
-            );
-            DB::statement("ALTER TABLE gd_stock_receipt_lines ADD CONSTRAINT gd_lines_piece_package_check CHECK (base_unit <> 'piece' OR quantity_per_package IS NULL OR quantity_per_package = trunc(quantity_per_package))");
-        }
     }
 
     public function down(): void

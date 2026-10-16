@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import { Input } from '@/components/ui/input';
 import goodsDistribution from '@/routes/goodsDistribution';
 import axios from 'axios';

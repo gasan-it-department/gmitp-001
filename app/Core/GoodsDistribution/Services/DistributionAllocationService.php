@@ -2,6 +2,7 @@
 
 namespace App\Core\GoodsDistribution\Services;
 
+use App\Core\GoodsDistribution\Enums\AllocationStatus;
 use App\Core\GoodsDistribution\Models\DistributionRequest;
 use App\Core\GoodsDistribution\Models\DistributionStockAllocation;
 use App\Core\GoodsDistribution\Models\StockMovement;
@@ -30,7 +31,13 @@ final class DistributionAllocationService
             ->sortBy(fn ($batch) => ($batch->expires_on?->toDateString() ?? '9999-12-31').'|'.$batch->receipt->received_on->toDateString().'|'.$batch->id);
         DistributionStockAllocation::query()->where('municipal_id', $request->municipal_id)->whereIn('stock_receipt_line_id', $candidateIds)->orderBy('id')->lockForUpdate()->get();
         foreach ($request->lines as $line) {
+            if ($line->quantity === null) {
+                throw new \DomainException('Complete every requested quantity before reserving stock.');
+            }
             $remaining = $this->quantities->parse($line->quantity, $line->base_unit);
+            if ($remaining < 1) {
+                throw new \DomainException('Request quantities must be positive.');
+            }
             foreach ($batches->where('item_id', $line->item_id) as $batch) {
                 if ($batch->base_unit !== $line->base_unit) {
                     throw new \DomainException('Stock unit no longer matches the request.');
@@ -43,7 +50,7 @@ final class DistributionAllocationService
                 DistributionStockAllocation::create([
                     'municipal_id' => $request->municipal_id, 'distribution_request_id' => $request->id,
                     'distribution_request_line_id' => $line->id, 'stock_receipt_line_id' => $batch->id,
-                    'approval_revision' => $request->approval_revision, 'quantity' => $this->quantities->format($amount), 'status' => 'reserved',
+                    'approval_revision' => $request->approval_revision, 'quantity' => $this->quantities->format($amount), 'status' => AllocationStatus::Reserved->value,
                     'base_unit' => $line->base_unit,
                 ]);
                 $remaining -= $amount;
@@ -59,27 +66,27 @@ final class DistributionAllocationService
 
     public function cancel(DistributionRequest $request): void
     {
-        $ids = $request->allocations()->where('status', 'reserved')->pluck('stock_receipt_line_id')->all();
+        $ids = $request->allocations()->where('status', AllocationStatus::Reserved->value)->pluck('stock_receipt_line_id')->all();
         $this->lockBatches($request->municipal_id, $ids);
-        $allocations = $request->allocations()->where('status', 'reserved')->orderBy('id')->lockForUpdate()->get();
+        $allocations = $request->allocations()->where('status', AllocationStatus::Reserved->value)->orderBy('id')->lockForUpdate()->get();
         foreach ($allocations as $allocation) {
-            $allocation->update(['status' => 'cancelled']);
+            $allocation->update(['status' => AllocationStatus::Cancelled->value]);
         }
     }
 
     public function release(DistributionRequest $request, string $actorId, string $date, array $confirmedIds): void
     {
-        $allocations = $request->allocations()->where('status', 'reserved')->orderBy('id')->get();
+        $allocations = $request->allocations()->where('status', AllocationStatus::Reserved->value)->orderBy('id')->get();
         $expected = $allocations->pluck('id')->sort()->values()->all();
         sort($confirmedIds);
         if (! $expected || $expected !== $confirmedIds) {
             throw new \DomainException('Confirm every reserved batch from the current approval.');
         }
         $batches = $this->lockBatches($request->municipal_id, $allocations->pluck('stock_receipt_line_id')->all())->keyBy('id');
-        $allocations = $request->allocations()->where('status', 'reserved')->orderBy('id')->lockForUpdate()->get();
+        $allocations = $request->allocations()->where('status', AllocationStatus::Reserved->value)->orderBy('id')->lockForUpdate()->get();
         foreach ($request->lines as $line) {
             $total = $allocations->where('distribution_request_line_id', $line->id)->reduce(fn ($sum, $a) => $sum + $this->quantities->parse($a->quantity, $line->base_unit), 0);
-            if ($total !== $this->quantities->parse($line->quantity, $line->base_unit)) {
+            if ($line->quantity === null || $total !== $this->quantities->parse($line->quantity, $line->base_unit)) {
                 throw new \DomainException('Reservations do not match the approved quantities.');
             }
         }
@@ -103,7 +110,7 @@ final class DistributionAllocationService
                 'occurred_on' => $date, 'posted_at' => now(), 'actor_user_id' => $actorId,
                 'reference' => $request->reference, 'reason' => 'Goods handover',
             ]);
-            $allocation->update(['status' => 'consumed']);
+            $allocation->update(['status' => AllocationStatus::Consumed->value]);
         }
     }
 }

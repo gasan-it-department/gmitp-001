@@ -1,6 +1,7 @@
 import type { CatalogRecord, PageData } from '../Inventory/types';
+import type { CooldownPolicy } from './Cooldown';
 
-export type Status = 'pending' | 'under_review' | 'returned' | 'approved' | 'released' | 'cancelled';
+export type Status = 'draft' | 'pending' | 'under_review' | 'returned' | 'approved' | 'released' | 'cancelled';
 export type Permissions = Record<'view' | 'intake' | 'process' | 'decide' | 'release', boolean>;
 export interface Person {
     id: string;
@@ -36,7 +37,7 @@ export interface GoodsLine {
     item_name_snapshot: string;
     item_code_snapshot: string;
     base_unit: 'kg' | 'piece';
-    quantity: string;
+    quantity: string | null;
 }
 export interface HouseholdSyncPreview {
     snapshot: Snapshot | null;
@@ -50,6 +51,7 @@ export interface DocumentCheck {
     label: string;
     description: string | null;
     is_required: boolean;
+    is_active: boolean;
     evidence_mode: 'physical' | 'upload' | 'both';
     physical_copy_requirement: string;
     status: 'pending' | 'verified' | 'rejected';
@@ -58,6 +60,28 @@ export interface DocumentCheck {
     remarks: string | null;
     checked_at: string | null;
     checked_by_user_id: string | null;
+}
+export interface RequirementSnapshot {
+    document_key: string;
+    label: string;
+    description: string | null;
+    is_required: boolean;
+    evidence_mode: DocumentCheck['evidence_mode'];
+    physical_copy_requirement: string;
+    sort_order: number;
+}
+export interface RequirementsUpdate {
+    changed: boolean;
+    fingerprint: string | null;
+    error: string | null;
+    changes: {
+        document_key: string;
+        label: string;
+        kind: 'added' | 'updated' | 'removed' | 'restored';
+        before: RequirementSnapshot | null;
+        after: RequirementSnapshot | null;
+        resets_inspection: boolean;
+    }[];
 }
 export interface Allocation {
     id: string;
@@ -72,6 +96,7 @@ export interface Allocation {
     expires_on: string | null;
 }
 export interface GoodsRequest {
+    cooldown_policy?: CooldownPolicy | null;
     id: string;
     reference: string;
     status: Status;

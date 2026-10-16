@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -47,12 +46,6 @@ return new class extends Migration
             $table->index(['storage_location_id', 'municipal_id'], 'gd_receipts_location_tenant_idx');
         });
 
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement("ALTER TABLE gd_stock_receipts ADD CONSTRAINT gd_receipts_kind_check CHECK (kind IN ('receipt', 'opening'))");
-            DB::statement("ALTER TABLE gd_stock_receipts ADD CONSTRAINT gd_receipts_status_check CHECK (status IN ('draft', 'posted', 'voided'))");
-            DB::statement("ALTER TABLE gd_stock_receipts ADD CONSTRAINT gd_receipts_posted_at_check CHECK (status <> 'posted' OR posted_at IS NOT NULL)");
-            DB::statement("ALTER TABLE gd_stock_receipts ADD CONSTRAINT gd_receipts_void_details_check CHECK (status <> 'voided' OR (voided_at IS NOT NULL AND void_reason IS NOT NULL AND length(trim(void_reason)) > 0))");
-        }
     }
 
     public function down(): void

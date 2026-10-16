@@ -20,9 +20,8 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['program_id', 'document_type_id'], 'gd_program_documents_unique');
             $table->foreign(['program_id', 'municipal_id'], 'gd_program_documents_tenant_fk')->references(['id', 'municipal_id'])->on('gd_programs')->restrictOnDelete();
-            foreach (['municipal_id' => 'municipalities', 'document_type_id' => 'ac_document_types'] as $column => $target) {
-                $table->foreign($column)->references('id')->on($target)->restrictOnDelete();
-            }
+            $table->foreign('municipal_id')->references('id')->on('municipalities')->restrictOnDelete();
+            $table->foreign('document_type_id')->references('id')->on('ac_document_types')->restrictOnDelete();
         });
     }
 

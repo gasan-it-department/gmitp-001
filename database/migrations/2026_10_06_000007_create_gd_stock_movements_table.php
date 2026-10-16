@@ -24,6 +24,8 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->string('reference', 150)->nullable();
             $table->ulid('reverses_movement_id')->nullable();
+            $table->ulid('bulk_dispatch_stock_allocation_id')->nullable()->unique();
+            $table->ulid('bulk_dispatch_reconciliation_line_id')->nullable()->unique();
             $table->timestamp('created_at')->useCurrent();
 
             $table->foreign('municipal_id')->references('id')->on('municipalities')->restrictOnDelete();

@@ -4,6 +4,10 @@ export interface CatalogRecord {
     program_item_active?: boolean | null;
     items_in_stock?: number;
     draft_receipts_count?: number;
+    cooldown_enabled?: boolean;
+    cooldown_scope?: 'recipient' | 'household';
+    cooldown_duration?: number | null;
+    cooldown_unit?: 'days' | 'weeks' | 'months' | null;
     id: string;
     code: string;
     name: string;
@@ -42,6 +46,8 @@ export interface Options {
 }
 export interface CommonProps {
     canViewDistribution?: boolean;
+    canViewBulk?: boolean;
+    canPrepareBulk?: boolean;
     program?: Program | null;
     canManage: boolean;
     canAdjust: boolean;
@@ -52,6 +58,9 @@ export interface InventoryItem extends CatalogRecord {
     balance: string;
     reserved?: string;
     available?: string;
+    with_staff?: string;
+    reported_distributed?: string;
+    returned?: string;
 }
 export interface ReceiptSummary {
     id: string;
@@ -84,6 +93,9 @@ export interface ReceiptLine {
     unreserved?: string;
     reserved?: string;
     available?: string;
+    with_staff?: string;
+    reported_distributed?: string;
+    returned?: string;
 }
 export interface Receipt extends ReceiptSummary {
     programs?: { id: string | null; name: string }[];
@@ -108,6 +120,7 @@ export interface Receipt extends ReceiptSummary {
 }
 export interface Movement {
     distribution_request_id?: string | null;
+    bulk_dispatch_id?: string | null;
     item_id?: string;
     item_name?: string;
     program_id?: string | null;
@@ -115,7 +128,7 @@ export interface Movement {
     batch_reference?: string | null;
     id: string;
     stock_receipt_line_id: string;
-    type: 'receipt' | 'opening' | 'adjustment' | 'reversal' | 'distribution';
+    type: 'receipt' | 'opening' | 'adjustment' | 'reversal' | 'distribution' | 'bulk_dispatch' | 'bulk_return';
     base_unit: 'kg' | 'piece';
     quantity: string;
     reason: string | null;

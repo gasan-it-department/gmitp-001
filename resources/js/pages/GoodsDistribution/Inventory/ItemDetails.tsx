@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import { Input } from '@/components/ui/input';
 import goodsDistribution from '@/routes/goodsDistribution';
 import { Link, router } from '@inertiajs/react';
@@ -29,6 +30,7 @@ export default function ItemDetails({
     canAdjust,
     program,
     canViewDistribution,
+    canViewBulk,
 }: CommonProps & { item: InventoryItem; batches: PageData<ReceiptLine>; movements: PageData<Movement>; options: Options }) {
     const { slug } = useInventoryContext();
     const mutation = useInventoryMutation();
@@ -87,6 +89,9 @@ export default function ItemDetails({
                         Reserved {quantity(item.reserved ?? '0')} {item.base_unit} · Available {quantity(item.available ?? item.balance)}{' '}
                         {item.base_unit}
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        With staff {quantity(item.with_staff ?? '0')} · Reported distributed {quantity(item.reported_distributed ?? '0')} · Returned {quantity(item.returned ?? '0')} {item.base_unit}
+                    </p>
                 </div>
             </div>
             <DirectoryPanel
@@ -103,7 +108,7 @@ export default function ItemDetails({
                 }
             >
                 <table className="w-full table-fixed text-left text-sm">
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
                             {['Receipt / Batch', 'Source', 'Program', 'Storage', 'Expiry', 'Stock', ''].map((label, index) => (
                                 <th key={index} className={`px-3 py-3 font-medium ${label === 'Stock' ? 'text-right' : ''}`}>
@@ -112,11 +117,11 @@ export default function ItemDetails({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {batches.data.map((batch) => (
                             <tr
                                 key={batch.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] lg:table-row [&>td]:min-w-0 [&>td]:[overflow-wrap:anywhere]"
+                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row [&>td]:min-w-0 [&>td]:[overflow-wrap:anywhere]"
                             >
                                 <td className="px-3 py-3">
                                     {batch.receipt && (
@@ -137,19 +142,19 @@ export default function ItemDetails({
                                     {batch.receipt?.status === 'voided' && <StateBadge value="voided" />}
                                 </td>
                                 <td className="px-3 py-3">
-                                    <span className="block text-xs text-muted-foreground lg:hidden">Source</span>
+                                    <span className="block text-xs text-muted-foreground @min-[960px]/goods:hidden">Source</span>
                                     {batch.receipt?.source_name_snapshot}
                                 </td>
                                 <td className="px-3 py-3">
-                                    <span className="block text-xs text-muted-foreground lg:hidden">Program</span>
+                                    <span className="block text-xs text-muted-foreground @min-[960px]/goods:hidden">Program</span>
                                     {batch.program_name ?? 'Unassigned'}
                                 </td>
                                 <td className="px-3 py-3">
-                                    <span className="block text-xs text-muted-foreground lg:hidden">Storage</span>
+                                    <span className="block text-xs text-muted-foreground @min-[960px]/goods:hidden">Storage</span>
                                     {batch.receipt?.storage_location_name_snapshot}
                                 </td>
                                 <td className="px-3 py-3">
-                                    <span className="block text-xs text-muted-foreground lg:hidden">Expiry</span>
+                                    <span className="block text-xs text-muted-foreground @min-[960px]/goods:hidden">Expiry</span>
                                     {batch.expires_on ?? '-'}
                                     {['expired', 'soon'].includes(batch.expiry_state) && (
                                         <div className="mt-1">
@@ -165,6 +170,9 @@ export default function ItemDetails({
                                     </p>
                                     <p className="text-xs font-normal text-muted-foreground">
                                         Available {quantity(batch.available ?? batch.balance)} {batch.base_unit}
+                                    </p>
+                                    <p className="text-xs font-normal text-muted-foreground">
+                                        With staff {quantity(batch.with_staff ?? '0')} · Distributed {quantity(batch.reported_distributed ?? '0')} · Returned {quantity(batch.returned ?? '0')} {batch.base_unit}
                                     </p>
                                 </td>
                                 <td className="px-3 py-3">
@@ -194,7 +202,7 @@ export default function ItemDetails({
                 toolbar={<h2 className="text-sm font-medium">Stock movements</h2>}
             >
                 <table className="w-full table-fixed text-left text-sm">
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
                             {['Date / Posted', 'Type', 'Quantity', 'Reason / Reference', 'Actor', ''].map((label, index) => (
                                 <th key={index} className={`px-3 py-3 font-medium ${label === 'Quantity' ? 'text-right' : ''}`}>
@@ -203,11 +211,11 @@ export default function ItemDetails({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {movements.data.map((movement) => (
                             <tr
                                 key={movement.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] lg:table-row [&>td]:min-w-0 [&>td]:[overflow-wrap:anywhere]"
+                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row [&>td]:min-w-0 [&>td]:[overflow-wrap:anywhere]"
                             >
                                 <td className="px-3 py-3">
                                     {movement.occurred_on}
@@ -220,7 +228,7 @@ export default function ItemDetails({
                                 <td
                                     className={`px-3 py-3 text-right font-medium tabular-nums ${movement.quantity.startsWith('-') ? 'text-red-700' : 'text-emerald-700'}`}
                                 >
-                                    <span className="block text-xs font-normal text-muted-foreground lg:hidden">Quantity</span>
+                                    <span className="block text-xs font-normal text-muted-foreground @min-[960px]/goods:hidden">Quantity</span>
                                     {!movement.quantity.startsWith('-') && '+'}
                                     {quantity(movement.quantity)} {movement.base_unit}
                                 </td>
@@ -238,6 +246,9 @@ export default function ItemDetails({
                                         </Link>
                                     ) : (
                                         <p className="mt-1 text-xs text-muted-foreground">{movement.reference ?? movement.receipt.receipt_number}</p>
+                                    )}
+                                    {canViewBulk && movement.bulk_dispatch_id && (
+                                        <Link className="mt-1 block text-xs text-[#245e4f] underline" href={goodsDistribution.bulk.show.url({ municipality: slug, dispatchId: movement.bulk_dispatch_id })}>View bulk dispatch</Link>
                                     )}
                                 </td>
                                 <td className="px-3 py-3">{movement.actor ?? '-'}</td>

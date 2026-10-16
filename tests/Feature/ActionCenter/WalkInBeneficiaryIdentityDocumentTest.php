@@ -604,6 +604,7 @@ it('keeps checked goods identity out of the URL while carrying it into the regis
         $table->ulid('id')->primary();
         $table->string('name');
         $table->boolean('is_active')->default(true);
+        $table->integer('sort_order')->default(0);
     });
     $identity = ['first_name' => 'Juan', 'middle_name' => '', 'last_name' => 'Cruz', 'suffix' => '', 'birth_date' => '1990-01-01'];
     $context = app(CheckBeneficiaryRegistrationIdentityAction::class)->execute($identity, $this->municipalId, $this->adminId)['context'];

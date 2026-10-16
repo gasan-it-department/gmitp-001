@@ -23,6 +23,17 @@ afterEach(function () {
     }
 });
 
+it('creates program cooldown columns and disabled defaults in the original inventory migration', function () {
+    $program = $this->program->fresh();
+    expect($program->cooldown_enabled)->toBeFalse()
+        ->and($program->cooldown_scope)->toBe('household')
+        ->and($program->cooldown_duration)->toBeNull()
+        ->and($program->cooldown_unit)->toBeNull();
+
+    $program->update(['cooldown_enabled' => true, 'cooldown_duration' => 3, 'cooldown_unit' => 'months']);
+    expect($program->fresh()->cooldown_duration)->toBe(3);
+});
+
 it('serializes competing posts and creates only one movement', function () {
     $receipt = goodsReceipt($this);
     $command = ['command' => 'post', 'receipt_id' => $receipt->id, 'fingerprint' => app(ReceiptFingerprintService::class)->make($receipt)];
@@ -107,12 +118,10 @@ it('makes adjustment and receipt voiding mutually safe under contention', functi
     expect(app(StockLedgerService::class)->balance($line))->toBe($receipt->fresh()->status === 'voided' ? 0 : 245000);
 });
 
-it('enforces tenant unit packaging and ledger constraints in PostgreSQL', function () {
+it('enforces tenant unit and ledger constraints in PostgreSQL', function () {
     $receipt = goodsReceipt($this, true);
     $line = $receipt->lines->first();
     foreach ([
-        fn () => DB::table('gd_stock_receipt_lines')->where('id', $line->id)->update(['quantity' => '0']),
-        fn () => DB::table('gd_stock_receipt_lines')->where('id', $line->id)->update(['quantity' => '249']),
         fn () => DB::table('gd_stock_receipt_lines')->where('id', $line->id)->update(['municipal_id' => $this->otherMunicipalId]),
         fn () => DB::table('gd_stock_receipt_lines')->where('id', $line->id)->update(['base_unit' => 'piece']),
         fn () => DB::table('gd_stock_movements')->where('stock_receipt_line_id', $line->id)->update(['quantity' => '0']),
@@ -125,4 +134,19 @@ it('enforces tenant unit packaging and ledger constraints in PostgreSQL', functi
     $copy['operation_key'] = 'duplicate-receipt-movement';
     expect(fn () => DB::transaction(fn () => DB::table('gd_stock_movements')->insert($copy)))->toThrow(\Illuminate\Database\QueryException::class);
     expect(app(StockLedgerService::class)->balance($line))->toBe(250000);
+});
+
+it('keeps receipt line numeric and packaging checks in backend validation', function () {
+    $checks = DB::select("SELECT conname FROM pg_constraint WHERE conrelid = 'gd_stock_receipt_lines'::regclass AND contype = 'c'");
+    expect(array_column($checks, 'conname'))->not->toContain(
+        'gd_lines_quantity_check', 'gd_lines_number_check', 'gd_lines_piece_quantity_check',
+        'gd_lines_packaging_check', 'gd_lines_piece_package_check',
+    );
+});
+
+it('keeps stock receipt lifecycle values out of PostgreSQL check constraints', function () {
+    $checks = DB::select("SELECT conname FROM pg_constraint WHERE conrelid = 'gd_stock_receipts'::regclass AND contype = 'c'");
+    expect(array_column($checks, 'conname'))->not->toContain(
+        'gd_receipts_kind_check', 'gd_receipts_status_check', 'gd_receipts_posted_at_check', 'gd_receipts_void_details_check',
+    );
 });
