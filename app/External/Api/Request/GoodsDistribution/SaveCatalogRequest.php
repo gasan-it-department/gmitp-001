@@ -3,6 +3,8 @@
 namespace App\External\Api\Request\GoodsDistribution;
 
 use App\Core\GoodsDistribution\Enums\CatalogKind;
+use App\Core\GoodsDistribution\Enums\CooldownScope;
+use App\Core\GoodsDistribution\Enums\CooldownUnit;
 use App\Core\GoodsDistribution\Enums\ItemCategory;
 use App\Core\GoodsDistribution\Enums\StockUnit;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,7 +34,10 @@ final class SaveCatalogRequest extends FormRequest
                     'reviewed_item_ids' => ['sometimes', 'array'], 'reviewed_item_ids.*' => ['required', 'ulid', 'distinct'],
                     'duplicate_reason' => ['nullable', 'string'],
                 ],
-                CatalogKind::Programs => ['description' => ['nullable', 'string', 'max:2000']],
+                CatalogKind::Programs => ['description' => ['nullable', 'string', 'max:2000'],
+                    'cooldown_enabled' => ['sometimes', 'boolean'], 'cooldown_scope' => ['sometimes', Rule::enum(CooldownScope::class)],
+                    'cooldown_duration' => ['nullable', 'integer', 'min:1', 'max:3650'],
+                    'cooldown_unit' => ['nullable', Rule::enum(CooldownUnit::class)]],
                 CatalogKind::Sources => [
                     'source_type' => ['required', 'in:private_donor,government,lgu,other,unknown'],
                     'contact_name' => ['nullable', 'string', 'max:255'], 'contact_phone' => ['nullable', 'string', 'max:40'],

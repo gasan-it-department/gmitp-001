@@ -14,6 +14,7 @@ use App\Core\GoodsDistribution\Dto\StockReceiptDto;
 use App\Core\GoodsDistribution\Enums\CatalogKind;
 use App\Core\GoodsDistribution\Models\StockMovement;
 use App\Core\GoodsDistribution\Models\StockReceipt;
+use App\Core\GoodsDistribution\Models\StockReceiptLine;
 use App\Core\GoodsDistribution\Services\ReceiptFingerprintService;
 use App\Core\GoodsDistribution\Services\StockLedgerService;
 use App\Core\GoodsDistribution\Services\StockQuantityService;
@@ -24,6 +25,36 @@ require_once __DIR__.'/../../Support/GoodsInventoryFixture.php';
 
 beforeEach(fn () => goodsInventoryFixture($this));
 afterEach(fn () => goodsInventoryCleanup());
+
+it('validates receipt line quantities numbering and packaging in backend saves', function (array $changes) {
+    $line = goodsReceipt($this)->lines->first();
+    $before = $line->getAttributes();
+    expect(fn () => $line->update($changes))->toThrow(DomainException::class);
+    expect($line->fresh()->getAttributes())->toBe($before)->and(StockMovement::count())->toBe(0);
+    $attributes = $before;
+    unset($attributes['id']);
+    $attributes['line_number'] = 2;
+    expect(fn () => StockReceiptLine::create(array_replace($attributes, $changes)))->toThrow(DomainException::class);
+    expect(StockReceiptLine::count())->toBe(1);
+})->with([
+    [['quantity' => '0']], [['quantity' => '-1']], [['quantity' => '249']],
+    [['line_number' => 0]], [['line_number' => -1]], [['line_number' => '1.5']],
+    [['base_unit' => 'piece', 'quantity' => '1.5']],
+    [['package_type' => null]], [['package_type' => '  ']],
+    [['package_count' => null]], [['package_count' => 0]], [['package_count' => '1.5']],
+    [['quantity_per_package' => null]], [['quantity_per_package' => '0']],
+    [['base_unit' => 'piece', 'quantity_per_package' => '0.5', 'quantity' => '5']],
+]);
+
+it('rejects incomplete and inconsistent receipt lines again during posting', function (array $changes) {
+    $receipt = goodsReceipt($this);
+    $line = $receipt->lines->first();
+    DB::table('gd_stock_receipt_lines')->where('id', $line->id)->update($changes);
+    $receipt = $receipt->fresh(['source', 'location', 'lines.item', 'lines.program']);
+    expect(fn () => app(PostStockReceiptAction::class)->execute($this->municipalId, $receipt->id, $this->actor->id,
+        app(ReceiptFingerprintService::class)->make($receipt)))->toThrow(DomainException::class);
+    expect($receipt->fresh()->status)->toBe('draft')->and(StockMovement::count())->toBe(0);
+})->with([[['quantity' => '0']], [['quantity' => '249']], [['line_number' => 0]], [['package_type' => '  ']], [['package_count' => null]]]);
 
 it('posts ten sacks once and records damage and its reversal with readable audits', function () {
     $receipt = goodsReceipt($this);
@@ -44,6 +75,41 @@ it('posts ten sacks once and records damage and its reversal with readable audit
     expect(app(StockLedgerService::class)->balance($line))->toBe(250000)->and(StockMovement::count())->toBe(3);
     expect(DB::table('activity_log')->where('log_name', 'goods-inventory')->count())->toBe(4);
     expect(DB::table('activity_log')->where('description', 'Adjusted stock')->value('properties'))->toContain('245.000', '250.000');
+});
+
+it('rejects unsupported receipt kinds in Core without relying on a database check', function (mixed $kind) {
+    expect(fn () => goodsReceipt($this, false, ['kind' => $kind]))
+        ->toThrow(DomainException::class, 'valid receipt kind');
+    expect(StockReceipt::count())->toBe(0)->and(StockMovement::count())->toBe(0);
+})->with(['invalid', '', null]);
+
+it('requires a nonblank void reason in Core for drafts and posted stock', function (bool $posted) {
+    $receipt = goodsReceipt($this, $posted);
+    $movements = StockMovement::count();
+    expect(fn () => app(VoidStockReceiptAction::class)->execute($this->municipalId, $receipt->id, $this->actor->id, '   ', true, true))
+        ->toThrow(DomainException::class, 'Enter a reason');
+    expect($receipt->fresh()->status)->toBe($posted ? 'posted' : 'draft')
+        ->and($receipt->fresh()->voided_at)->toBeNull()->and(StockMovement::count())->toBe($movements);
+    app(VoidStockReceiptAction::class)->execute($this->municipalId, $receipt->id, $this->actor->id, '  Wrong delivery  ', true, true);
+    expect($receipt->fresh()->void_reason)->toBe('Wrong delivery')->and($receipt->fresh()->voided_at)->not->toBeNull();
+})->with([false, true]);
+
+it('does not silently treat a corrupted kind as a normal receipt when posting', function () {
+    $receipt = goodsReceipt($this);
+    DB::table('gd_stock_receipts')->where('id', $receipt->id)->update(['kind' => 'invalid']);
+    expect(fn () => app(PostStockReceiptAction::class)->execute($this->municipalId, $receipt->id, $this->actor->id, app(ReceiptFingerprintService::class)->make($receipt)))
+        ->toThrow(DomainException::class, 'valid receipt kind');
+    expect(StockMovement::count())->toBe(0)->and($receipt->fresh()->status)->toBe('draft');
+});
+
+it('does not accept missing posting timestamps or bypass adjust permission for malformed posted receipts', function () {
+    $receipt = goodsReceipt($this, true);
+    DB::table('gd_stock_receipts')->where('id', $receipt->id)->update(['posted_at' => null]);
+    expect(fn () => app(PostStockReceiptAction::class)->execute($this->municipalId, $receipt->id, $this->actor->id, 'ignored'))
+        ->toThrow(DomainException::class, 'no posting timestamp');
+    expect(fn () => app(VoidStockReceiptAction::class)->execute($this->municipalId, $receipt->id, $this->actor->id, 'Wrong receipt', true, false))
+        ->toThrow(DomainException::class, 'inconsistent lifecycle');
+    expect(StockMovement::count())->toBe(1)->and($receipt->fresh()->status)->toBe('posted');
 });
 
 it('uses exact decimal quantities and rejects invalid counted or packaged goods', function () {
@@ -67,6 +133,17 @@ it('locks item units after draft use and preserves inactive history', function (
     expect(app(ReadGoodsInventoryAction::class)->catalog($this->municipalId, CatalogKind::Items, new InventoryFiltersDto)->items()[0]->base_unit_locked)->toBeTrue();
     expect(fn () => goodsReceipt($this))->toThrow(DomainException::class);
 });
+
+it('rejects unsupported item units in Core for creation and editing', function (string $unit) {
+    $action = app(ManageCatalogAction::class);
+    $data = ['name' => 'Test item', 'base_unit' => $unit, 'is_active' => true];
+    expect(fn () => $action->execute(new CatalogDto($this->municipalId, $this->actor->id, CatalogKind::Items, $data)))
+        ->toThrow(DomainException::class, 'Select kg or piece');
+    expect(fn () => $action->execute(new CatalogDto($this->municipalId, $this->actor->id, CatalogKind::Items,
+        [...$data, 'name' => $this->item->name], $this->item->id)))
+        ->toThrow(DomainException::class, 'Select kg or piece');
+    expect($this->item->fresh()->base_unit)->toBe('kg')->and(StockMovement::count())->toBe(0);
+})->with(['liter', 'box', '']);
 
 it('blocks stale posting after draft edits or source changes', function () {
     $receipt = goodsReceipt($this);

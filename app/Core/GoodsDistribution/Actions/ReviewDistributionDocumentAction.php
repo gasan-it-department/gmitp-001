@@ -27,27 +27,27 @@ final class ReviewDistributionDocumentAction
                 $this->ledger->lockMunicipality($dto->municipalId);
                 $request = $this->requests->locked($dto->municipalId, $dto->requestId);
                 $this->requests->version($request, (int) $dto->data['version']);
-                if (! in_array($request->status, [DistributionStatus::Pending, DistributionStatus::Returned, DistributionStatus::UnderReview], true)) {
+                if (! in_array($request->status, [DistributionStatus::Draft, DistributionStatus::Pending, DistributionStatus::Returned, DistributionStatus::UnderReview], true)) {
                     throw new \DomainException('Return an approved request before changing its evidence.');
                 }
                 $check = $request->documentChecks()->where('municipal_id', $dto->municipalId)->whereKey($checkId)->firstOrFail();
+                if (! $check->is_active) {
+                    throw new \DomainException('This document requirement was removed from the active checklist.');
+                }
                 $before = $check->only(['status', 'current_media_id', 'inspected_media_id', 'presented_copy_type', 'remarks']);
                 if ($file) {
                     $disk = config('goods_distribution.document_disk');
                     $diskConfig = config('filesystems.disks.'.$disk);
-                    if (! is_array($diskConfig) || $disk === 'public' || ($diskConfig['visibility'] ?? null) === 'public'
-                        || (($diskConfig['driver'] ?? null) === 'local' && str_starts_with(
-                            str_replace('\\', '/', rtrim($diskConfig['root'] ?? '', '/\\')),
-                            str_replace('\\', '/', storage_path('app/public'))
-                        ))) {
-                        throw new \DomainException('Configure a private goods document storage disk before uploading evidence.');
+                    if (! is_array($diskConfig)) {
+                        throw new \DomainException('Configure a valid media storage disk before uploading evidence.');
                     }
                     if ($check->evidence_mode === 'physical') {
                         throw new \DomainException('This requirement uses physical inspection only.');
                     }
                     $newMedia = $request->addMedia($file)->usingFileName((string) \Illuminate\Support\Str::ulid().'.'.$file->extension())
-                        ->addCustomHeaders(['visibility' => 'private'])
-                        ->withCustomProperties(['document_check_id' => $check->id])->toMediaCollection('goods_documents', $disk);
+                        ->addCustomHeaders(['visibility' => $diskConfig['visibility'] ?? 'private'])
+                        ->withCustomProperties(['document_check_id' => $check->id,
+                            'goods_distribution_path_version' => 1])->toMediaCollection('goods_documents', $disk);
                     $check->update(['current_media_id' => $newMedia->id, 'status' => 'pending', 'inspected_media_id' => null, 'checked_at' => null, 'checked_by_user_id' => null, 'remarks' => null]);
                 } else {
                     if ($request->status !== DistributionStatus::UnderReview) {

@@ -57,7 +57,7 @@ export default function Inventory({
             >
                 <table className="w-full table-fixed text-left text-sm">
                     <caption className="sr-only">Inventory items and remaining stock in their base units</caption>
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f9fbfa] text-[11px] text-[#748078] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f9fbfa] text-[11px] text-[#748078] @min-[960px]/goods:table-header-group">
                         <tr>
                             <th scope="col" className="px-5 py-3 font-medium">
                                 Item
@@ -76,13 +76,13 @@ export default function Inventory({
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {records.data.map((item) => (
                             <tr
                                 key={item.id}
-                                className="grid grid-cols-2 items-center gap-y-1 border-t border-[#edf0ee] px-2 py-3 transition-colors first:border-t-0 hover:bg-[#fafcfb] lg:table-row lg:px-0 lg:py-0"
+                                className="grid grid-cols-2 items-center gap-y-1 border-t border-[#edf0ee] px-2 py-3 transition-colors first:border-t-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row @min-[960px]/goods:px-0 @min-[960px]/goods:py-0"
                             >
-                                <td className="col-span-2 min-w-0 px-3 py-2 lg:px-5 lg:py-5">
+                                <td className="col-span-2 min-w-0 px-3 py-2 @min-[960px]/goods:px-5 @min-[960px]/goods:py-5">
                                     <div className="flex items-start gap-3">
                                         <div
                                             className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md ${item.is_active ? 'bg-[#edf3ef] text-[#50816d]' : 'bg-[#f4f5f4] text-[#929b96]'}`}
@@ -97,7 +97,7 @@ export default function Inventory({
                                             >
                                                 {item.name}
                                             </Link>
-                                            <p className="mt-1 font-mono text-[11px] [overflow-wrap:anywhere] text-[#87948c] lg:hidden">
+                                            <p className="mt-1 font-mono text-[11px] [overflow-wrap:anywhere] text-[#87948c] @min-[960px]/goods:hidden">
                                                 {item.code}
                                             </p>
                                             {item.category && (
@@ -108,14 +108,14 @@ export default function Inventory({
                                         </div>
                                     </div>
                                 </td>
-                                <td className="hidden px-3 py-5 font-mono text-[11px] [overflow-wrap:anywhere] text-[#87948c] lg:table-cell">
+                                <td className="hidden px-3 py-5 font-mono text-[11px] [overflow-wrap:anywhere] text-[#87948c] @min-[960px]/goods:table-cell">
                                     {item.code}
                                 </td>
                                 <td className="px-3 py-4">
                                     <DirectoryStatus active={item.is_active} />
                                 </td>
                                 <td className="px-3 py-4 text-right font-medium tabular-nums">
-                                    <span className="mb-1 block text-[11px] font-normal text-[#87948c] lg:hidden">Remaining stock</span>
+                                    <span className="mb-1 block text-[11px] font-normal text-[#87948c] @min-[960px]/goods:hidden">Remaining stock</span>
                                     {quantity(item.balance)} <span className="text-xs font-normal text-[#75827c]">{item.base_unit}</span>
                                     <p className="mt-1 text-xs font-normal text-muted-foreground">
                                         Reserved {quantity(item.reserved ?? '0')} {item.base_unit}
@@ -123,8 +123,11 @@ export default function Inventory({
                                     <p className="mt-1 text-xs text-[#245e4f]">
                                         Available {quantity(item.available ?? item.balance)} {item.base_unit}
                                     </p>
+                                    <p className="mt-1 text-xs font-normal text-muted-foreground">
+                                        With staff {quantity(item.with_staff ?? '0')} · Distributed {quantity(item.reported_distributed ?? '0')} · Returned {quantity(item.returned ?? '0')} {item.base_unit}
+                                    </p>
                                 </td>
-                                <td className="col-span-2 px-3 py-2 lg:pr-5">
+                                <td className="col-span-2 px-3 py-2 @min-[960px]/goods:pr-5">
                                     <div className="flex justify-end">
                                         <Tooltip>
                                             <TooltipTrigger asChild>

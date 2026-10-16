@@ -75,6 +75,7 @@ class MorphMapServiceProvider extends ServiceProvider
             'goods_stock_receipt' => StockReceipt::class,
             'goods_stock_movement' => StockMovement::class,
             'goods_distribution_request' => \App\Core\GoodsDistribution\Models\DistributionRequest::class,
+            'goods_bulk_dispatch' => \App\Core\GoodsDistribution\Models\BulkDispatch::class,
             'feedback_submission' => FeedbackSubmission::class,
             'report_submission' => ReportSubmission::class,
             'department' => Department::class,

@@ -53,6 +53,7 @@ interface Props {
     submitError?: string;
     goodsDistribution?: boolean;
     canRegister?: boolean;
+    continuing?: boolean;
     appearance?: 'default' | 'directory';
 }
 
@@ -68,6 +69,7 @@ export function RegistrationIdentityCheck({
     submitError,
     goodsDistribution = false,
     canRegister = true,
+    continuing = false,
     appearance = 'default',
 }: Props) {
     const directory = appearance === 'directory';
@@ -89,6 +91,7 @@ export function RegistrationIdentityCheck({
     };
 
     const check = async () => {
+        if (continuing) return;
         const version = ++requestVersion.current;
         setChecking(true);
         setError(null);
@@ -155,6 +158,7 @@ export function RegistrationIdentityCheck({
                             className={directory ? 'border-[#dfe6e1] bg-[#fafcfb] shadow-none' : undefined}
                             type={field.key === 'birth_date' ? 'date' : 'text'}
                             value={identity[field.key]}
+                            disabled={continuing}
                             onChange={(event) => change(field.key, event.target.value)}
                             max={field.key === 'birth_date' ? new Date().toISOString().slice(0, 10) : undefined}
                         />
@@ -164,12 +168,12 @@ export function RegistrationIdentityCheck({
             <Button
                 className={commandClass}
                 type="submit"
-                disabled={checking || !identity.first_name.trim() || !identity.last_name.trim() || !identity.birth_date}
+                disabled={checking || continuing || !identity.first_name.trim() || !identity.last_name.trim() || !identity.birth_date}
             >
                 {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Check registry
             </Button>
-            {(error || (!result && !checking && submitError)) && (
+            {(error || submitError) && (
                 <p role="alert" className="text-sm text-red-700">
                     {error || submitError}
                 </p>
@@ -183,8 +187,9 @@ export function RegistrationIdentityCheck({
                             : 'No possible match found. Confirm the details before registering.'}
                     </p>
                     {canRegister && (
-                        <Button className={commandClass} type="button" onClick={() => onContinue(result.context, null)}>
-                            Continue to registration <ArrowRight className="ml-2 h-4 w-4" />
+                        <Button className={commandClass} type="button" disabled={continuing} onClick={() => onContinue(result.context, null)}>
+                            {continuing ? 'Opening registration' : 'Continue to registration'}
+                            {continuing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ArrowRight className="ml-2 h-4 w-4" />}
                         </Button>
                     )}
                 </div>
@@ -269,7 +274,7 @@ export function RegistrationIdentityCheck({
                         )}
                     {canRegister &&
                         (canCorrect ? (
-                            <Button type="button" variant="outline" onClick={() => setDialogOpen(true)}>
+                            <Button type="button" variant="outline" disabled={continuing} onClick={() => setDialogOpen(true)}>
                                 Different person
                             </Button>
                         ) : (
@@ -299,7 +304,7 @@ export function RegistrationIdentityCheck({
                         </Button>
                         <Button
                             type="button"
-                            disabled={reason.trim().length < 10}
+                            disabled={continuing || reason.trim().length < 10}
                             onClick={() => {
                                 setDialogOpen(false);
                                 if (result) onContinue(result.context, reason.trim());

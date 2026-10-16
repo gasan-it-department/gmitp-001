@@ -4,6 +4,7 @@ namespace App\External\Web\Controllers\GoodsDistribution;
 
 use App\Core\GoodsDistribution\Actions\ReadDistributionRequestsAction;
 use App\Core\GoodsDistribution\Services\DistributionHouseholdService;
+use App\Core\GoodsDistribution\Services\DistributionRequirementsService;
 use App\External\Api\Request\GoodsDistribution\DistributionPageRequest;
 use App\External\Api\Resources\GoodsDistribution\DistributionRequestResource;
 use App\Http\Controllers\Controller;
@@ -30,7 +31,9 @@ final class ShowDistributionRequestsController extends Controller
 
             return Inertia::render('GoodsDistribution/Distribution/Details', [...$common,
                 'request' => (new DistributionRequestResource($record))->resolve(),
-                'householdSync' => $request->validated('tab') === 'household' && in_array($record->status->value, ['pending', 'returned', 'under_review'], true)
+                'requirementsUpdate' => $request->validated('tab') === 'documents' && ! $record->status->terminal()
+                    ? \Illuminate\Support\Arr::except(app(DistributionRequirementsService::class)->preview($record), ['requirements']) : null,
+                'householdSync' => $request->validated('tab') === 'household' && in_array($record->status->value, ['draft', 'pending', 'returned', 'under_review'], true)
                     ? app(DistributionHouseholdService::class)->preview($record) : null,
                 'history' => ['data' => collect($history->items())->map(fn ($entry) => ['id' => $entry->id, 'description' => $entry->description,
                     'actor' => trim(($entry->causer?->first_name ?? '').' '.($entry->causer?->last_name ?? '')), 'created_at' => $entry->created_at->toIso8601String(), 'properties' => $entry->properties]),
@@ -40,8 +43,12 @@ final class ShowDistributionRequestsController extends Controller
         }
         if ($screen === 'create' || $screen === 'edit') {
             $record = $screen === 'edit' ? $read->detail($municipalId, $request->route('requestId')) : null;
-            if ($record && ! in_array($record->status->value, ['pending', 'returned'], true)) {
+            if ($record && ! in_array($record->status->value, ['draft', 'pending', 'returned'], true)) {
                 abort(409, 'Return this request before editing.');
+            }
+            if ($record) {
+                app(\App\Core\GoodsDistribution\Services\DistributionRequestService::class)->actor($municipalId, $request->user()->id,
+                    'goods_distribution.requests.'.app(\App\Core\GoodsDistribution\Services\DistributionRequestService::class)->editingCapability($record, $request->user()->id));
             }
 
             return Inertia::render('GoodsDistribution/Distribution/Form', [...$common, 'options' => $read->options($municipalId),

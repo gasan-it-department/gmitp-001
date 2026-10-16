@@ -10,10 +10,14 @@ use App\Core\GoodsDistribution\Actions\TransitionDistributionRequestAction;
 use App\Core\GoodsDistribution\Dto\DistributionRequestDto;
 use App\Core\GoodsDistribution\Dto\InventoryFiltersDto;
 use App\Core\GoodsDistribution\Dto\StockAdjustmentDto;
+use App\Core\GoodsDistribution\Enums\StockUnit;
+use App\Core\GoodsDistribution\Models\DistributionRequest;
+use App\Core\GoodsDistribution\Models\DistributionStockAllocation;
 use App\Core\GoodsDistribution\Models\Item;
 use App\Core\GoodsDistribution\Models\ProgramItem;
 use App\Core\GoodsDistribution\Models\StockMovement;
 use App\Core\GoodsDistribution\Services\StockLedgerService;
+use App\Core\GoodsDistribution\Services\StockQuantityService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +28,73 @@ beforeEach(fn () => goodsDistributionFixture($this));
 afterEach(function () {
     $this->travelBack();
     goodsDistributionCleanup();
+});
+
+it('validates stock units through the shared enum while retaining exact quantity arithmetic', function () {
+    $quantities = app(StockQuantityService::class);
+    expect($quantities->parse('0.250', StockUnit::Kilogram->value))->toBe(250)
+        ->and($quantities->parse('3', StockUnit::Piece->value))->toBe(3000);
+    foreach (['box', 'liter', ''] as $unit) {
+        expect(fn () => $quantities->parse('1', $unit))->toThrow(DomainException::class, 'valid stock unit');
+    }
+});
+
+it('validates allocation states units and quantities in the backend before insertion', function (array $changes) {
+    goodsReceipt($this, true);
+    $request = goodsApproval($this, goodsRequest($this));
+    $allocation = $request->allocations()->firstOrFail();
+    $attributes = $allocation->getAttributes();
+    unset($attributes['id']);
+    $attributes['approval_revision']++;
+    expect(fn () => DistributionStockAllocation::create(array_replace($attributes, $changes)))->toThrow(DomainException::class);
+    expect($request->allocations()->count())->toBe(1)->and($allocation->fresh()->status)->toBe('reserved');
+})->with([
+    [['status' => 'unknown']], [['status' => null]], [['base_unit' => 'liter']],
+    [['quantity' => '0']], [['quantity' => '-1']], [['quantity' => '1.2345']],
+    [['base_unit' => 'piece', 'quantity' => '1.5']],
+]);
+
+it('validates allocations on updates without changing their persisted state', function (array $changes) {
+    goodsReceipt($this, true);
+    $request = goodsApproval($this, goodsRequest($this));
+    $allocation = $request->allocations()->firstOrFail();
+    expect(fn () => $allocation->update($changes))->toThrow(DomainException::class);
+    expect($allocation->fresh()->status)->toBe('reserved')->and($allocation->fresh()->quantity)->toBe('2.000');
+})->with([[['status' => 'unknown']], [['quantity' => '0']], [['base_unit' => 'piece', 'quantity' => '1.5']]]);
+
+it('enforces distribution allocation links and negative quantities in the backend', function (string $type, ?string $link, string $quantity) {
+    goodsReceipt($this, true);
+    $request = goodsApproval($this, goodsRequest($this));
+    $allocation = $request->allocations()->firstOrFail();
+    $movements = StockMovement::count();
+    expect(fn () => StockMovement::create([
+        'municipal_id' => $this->municipalId, 'stock_receipt_line_id' => $allocation->stock_receipt_line_id,
+        'base_unit' => 'kg', 'type' => $type, 'quantity' => $quantity, 'operation_key' => 'invalid:'.Str::uuid(),
+        'distribution_stock_allocation_id' => $link === 'allocation' ? $allocation->id : null,
+        'occurred_on' => today()->toDateString(), 'posted_at' => now(), 'actor_user_id' => $this->actor->id,
+    ]))->toThrow(DomainException::class);
+    expect(StockMovement::count())->toBe($movements)->and($allocation->fresh()->status)->toBe('reserved');
+})->with([
+    ['distribution', null, '-2.000'], ['distribution', 'allocation', '2.000'],
+    ['distribution', 'allocation', '0.000'], ['adjustment', 'allocation', '-2.000'],
+]);
+
+it('rejects zero negative and fractional-piece requests without database quantity checks', function (string $unit, string $quantity) {
+    $this->item->update(['base_unit' => $unit]);
+    expect(fn () => goodsRequest($this, ['lines' => [['item_id' => $this->item->id, 'quantity' => $quantity, 'base_unit' => 'kg']]]))
+        ->toThrow(DomainException::class);
+    expect(DistributionRequest::count())->toBe(0)->and(StockMovement::count())->toBe(0);
+})->with([['kg', '0'], ['kg', '-1'], ['piece', '1.5']]);
+
+it('revalidates positive requested quantities when approving existing requests', function () {
+    goodsReceipt($this, true);
+    $request = goodsRequest($this);
+    $request = goodsTransition($this, $request, 'review');
+    DB::table('gd_distribution_request_lines')->where('distribution_request_id', $request->id)->update(['quantity' => '0']);
+    expect(fn () => goodsTransition($this, $request, 'approve', ['recipient_reviewed' => true]))
+        ->toThrow(DomainException::class, 'Request quantities must be positive.');
+    expect($request->fresh()->status->value)->toBe('under_review')->and($request->allocations()->count())->toBe(0)
+        ->and(StockMovement::count())->toBe(1);
 });
 
 it('shows matching reserved and available amounts at item and batch detail', function () {
@@ -260,7 +331,8 @@ it('enforces allocation tenant and one-outgoing-movement constraints', function 
     expect(fn () => DB::transaction(fn () => DB::table('gd_stock_movements')->insert($copy)))->toThrow(\Illuminate\Database\QueryException::class);
 });
 
-it('uses the configured private disk and rejects a public document disk', function () {
+it('uses the configured public or private media disk and retains inspection resets', function () {
+    Storage::fake('public');
     Storage::fake('s3');
     $request = goodsRequest($this);
     $check = $request->documentChecks()->create(['municipal_id' => $this->municipalId, 'document_key' => 'id', 'label' => 'ID',
@@ -270,9 +342,30 @@ it('uses the configured private disk and rejects a public document disk', functi
         ['version' => $request->fresh()->version], $request->id), $check->id,
         UploadedFile::fake()->createWithContent('proof.pdf', "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"));
     config(['goods_distribution.document_disk' => 'public']);
-    expect($upload)->toThrow(DomainException::class);
-    expect(DB::table('media')->count())->toBe(0)->and($request->fresh()->version)->toBe(1);
+    $upload();
+    $publicMedia = $request->media()->latest('id')->first();
+    expect($publicMedia->disk)->toBe('public');
+    Storage::disk('public')->assertExists($publicMedia->getPathRelativeToRoot());
+    expect($check->fresh()->status)->toBe('pending')->and($request->fresh()->version)->toBe(2);
     config(['goods_distribution.document_disk' => 's3']);
     $upload();
-    expect($request->getFirstMedia('goods_documents')->disk)->toBe('s3');
+    $privateMedia = $request->media()->latest('id')->first();
+    expect($privateMedia->disk)->toBe('s3');
+    Storage::disk('s3')->assertExists($privateMedia->getPathRelativeToRoot());
+    expect($check->fresh()->current_media_id)->toBe($privateMedia->id)
+        ->and($check->fresh()->inspected_media_id)->toBeNull()
+        ->and($request->fresh()->version)->toBe(3);
+});
+
+it('rejects an undefined media disk without changing document evidence', function () {
+    $request = goodsRequest($this);
+    $check = $request->documentChecks()->create(['municipal_id' => $this->municipalId, 'document_key' => 'id', 'label' => 'ID',
+        'evidence_mode' => 'upload', 'physical_copy_requirement' => 'unspecified', 'is_required' => true, 'sort_order' => 0]);
+    config(['goods_distribution.document_disk' => 'missing-disk']);
+    expect(fn () => app(ReviewDistributionDocumentAction::class)->execute(new DistributionRequestDto($this->municipalId, $this->actor->id,
+        ['version' => 1], $request->id), $check->id,
+        UploadedFile::fake()->createWithContent('proof.pdf', "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF")))
+        ->toThrow(DomainException::class, 'valid media storage disk');
+    expect(DB::table('media')->count())->toBe(0)->and($request->fresh()->version)->toBe(1);
+    expect($check->fresh()->current_media_id)->toBeNull();
 });

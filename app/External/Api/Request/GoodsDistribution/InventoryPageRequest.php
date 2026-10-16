@@ -21,7 +21,7 @@ final class InventoryPageRequest extends FormRequest
             'source_id' => ['nullable', 'ulid'], 'location_id' => ['nullable', 'ulid'],
             'program_id' => ['nullable', 'regex:/^(unassigned|[0-9A-HJKMNP-TV-Z]{26})$/i'],
             'expiry' => ['nullable', 'in:expired,soon,none'],
-            'tab' => ['nullable', 'in:stock,receipts,movements,items,documents'], 'include_zero' => ['nullable', 'boolean'],
+            'tab' => ['nullable', 'in:stock,receipts,movements,items,documents,cooldown,dispatches'], 'include_zero' => ['nullable', 'boolean'],
             'year' => ['nullable', 'integer', 'between:1,9999'], 'quarter' => ['nullable', 'integer', 'between:1,4'],
             'page' => ['nullable', 'integer', 'min:1'], 'batch_page' => ['nullable', 'integer', 'min:1'], 'movement_page' => ['nullable', 'integer', 'min:1'],
         ];

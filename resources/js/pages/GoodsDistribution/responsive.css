@@ -1,0 +1,191 @@
+.goods-workspace,
+.goods-dialog {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.goods-workspace :is(form, fieldset, section, dl, dd, td, th),
+.goods-dialog :is(form, fieldset, section, dl, dd) {
+    min-width: 0;
+}
+
+.goods-workspace [data-slot='tabs-list'] {
+    display: flex;
+    width: 100%;
+    height: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.goods-workspace [data-slot='tabs-trigger'] {
+    flex: 0 0 auto;
+}
+
+.goods-dialog {
+    max-height: calc(100dvh - 2rem);
+    overscroll-behavior: contain;
+}
+
+.goods-dialog [data-slot='dialog-header'] {
+    padding-right: 1.5rem;
+    text-align: left;
+}
+
+.goods-dialog [data-slot='dialog-title'] {
+    line-height: 1.4;
+}
+
+.goods-workspace :is(input, select, textarea),
+.goods-dialog :is(input, select, textarea) {
+    max-width: 100%;
+}
+
+.goods-responsive-table :is(td, th) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@container goods (max-width: 799px) {
+    .goods-responsive-table {
+        display: block;
+    }
+
+    .goods-responsive-table > thead {
+        display: none;
+    }
+
+    .goods-responsive-table > tbody {
+        display: block;
+    }
+
+    .goods-responsive-table > tbody > tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 0.5rem;
+    }
+
+    .goods-responsive-table > tbody > tr > td {
+        display: block;
+        width: auto;
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .goods-responsive-table td[data-label]::before {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--muted-foreground);
+        content: attr(data-label);
+        font-size: 0.75rem;
+        font-weight: 400;
+    }
+}
+
+@container goods (max-width: 420px) {
+    .goods-workspace table > tbody > tr {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .goods-workspace table > tbody > tr > td {
+        grid-column: 1 / -1;
+        text-align: left;
+    }
+
+    .goods-workspace header > div {
+        flex-basis: 100%;
+    }
+}
+
+@container goods-dialog (max-width: 740px) {
+    .goods-responsive-table,
+    .goods-responsive-table > tbody {
+        display: block;
+    }
+
+    .goods-responsive-table > thead {
+        display: none;
+    }
+
+    .goods-responsive-table > tbody > tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        padding: 0.5rem;
+    }
+
+    .goods-responsive-table > tbody > tr > td {
+        display: block;
+        width: auto;
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .goods-responsive-table td[data-label]::before {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--muted-foreground);
+        content: attr(data-label);
+        font-size: 0.75rem;
+        font-weight: 400;
+    }
+}
+
+@media (max-width: 1024px) {
+    :is(.goods-workspace, .goods-dialog) [data-slot='button'],
+    .goods-workspace [data-slot='tabs-trigger'] {
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+    }
+
+    :is(.goods-workspace, .goods-dialog) [data-slot='button'] {
+        height: auto;
+        white-space: normal;
+        text-align: center;
+    }
+
+    :is(.goods-workspace, .goods-dialog) :is(a, button)[aria-label][title] {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
+
+    :is(.goods-workspace, .goods-dialog) label:has(input[type='checkbox'], input[type='radio']) {
+        min-height: 2.75rem;
+    }
+
+    :is(.goods-workspace, .goods-dialog) :is(input, select):not([type='checkbox'], [type='radio']) {
+        min-height: 2.75rem;
+        font-size: 1rem;
+    }
+
+    :is(.goods-workspace, .goods-dialog) textarea {
+        font-size: 1rem;
+    }
+
+    :is(.goods-workspace, .goods-dialog) :is(input[type='checkbox'], input[type='radio']) {
+        flex-shrink: 0;
+        width: 1.125rem;
+        height: 1.125rem;
+    }
+
+    .goods-dialog [data-slot='dialog-close'] {
+        display: flex;
+        width: 2.75rem;
+        height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+}
+
+@media (max-width: 639px) {
+    .goods-dialog:not(.p-0) {
+        padding: 1rem;
+    }
+
+    .goods-dialog [data-slot='dialog-footer'] > * {
+        width: 100%;
+    }
+}

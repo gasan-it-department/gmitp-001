@@ -17,6 +17,9 @@ final class StockMovementResource extends JsonResource
             'item_id' => $this->line->item_id, 'item_name' => $this->line->item_name_snapshot,
             'program_id' => $this->line->program_id, 'program_name' => $this->line->program_name_snapshot,
             'batch_reference' => $this->line->batch_reference,
+            'bulk_dispatch_id' => $request->user()?->can('goods_distribution.bulk_dispatches.view')
+                ? ($this->whenLoaded('bulkAllocation', fn () => $this->bulkAllocation?->bulk_dispatch_id, null)
+                    ?? $this->whenLoaded('bulkReconciliationLine', fn () => $this->bulkReconciliationLine?->bulk_dispatch_id, null)) : null,
             'distribution_request_id' => $this->whenLoaded('distributionAllocation', fn () => $this->distributionAllocation?->distribution_request_id),
             'receipt' => $this->line->receipt->only(['id', 'receipt_number', 'status']),
         ];

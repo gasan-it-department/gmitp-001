@@ -92,7 +92,7 @@ export default function ProgramItems({
                         <col className="w-[20%]" />
                         <col className="w-[15%]" />
                     </colgroup>
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] md:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[800px]/goods:table-header-group">
                         <tr>
                             {['Item', 'Unit', 'Shared catalog', 'In this program', ''].map((label, index) => (
                                 <th key={index} className="px-5 py-3 font-medium">
@@ -101,26 +101,26 @@ export default function ProgramItems({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block md:table-row-group">
+                    <tbody className="block @min-[800px]/goods:table-row-group">
                         {records.data.map((record) => (
                             <tr
                                 key={record.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] md:table-row"
+                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[800px]/goods:table-row"
                             >
                                 <td className="col-span-2 min-w-0 px-5 py-4 [overflow-wrap:anywhere]">
                                     <p className="font-medium">{record.item.name}</p>
                                     <p className="mt-1 text-xs text-muted-foreground">{record.item.code}</p>
                                 </td>
                                 <td className="px-5 py-4">
-                                    <span className="block text-xs text-muted-foreground md:hidden">Unit</span>
+                                    <span className="block text-xs text-muted-foreground @min-[800px]/goods:hidden">Unit</span>
                                     {record.item.base_unit}
                                 </td>
                                 <td className="px-5 py-4">
-                                    <span className="mb-1 block text-xs text-muted-foreground md:hidden">Shared catalog</span>
+                                    <span className="mb-1 block text-xs text-muted-foreground @min-[800px]/goods:hidden">Shared catalog</span>
                                     <DirectoryStatus active={record.item.is_active} />
                                 </td>
                                 <td className="px-5 py-4">
-                                    <span className="mb-1 block text-xs text-muted-foreground md:hidden">In this program</span>
+                                    <span className="mb-1 block text-xs text-muted-foreground @min-[800px]/goods:hidden">In this program</span>
                                     <span className={`text-xs font-medium ${record.is_active ? 'text-emerald-700' : 'text-muted-foreground'}`}>
                                         {record.is_active ? 'Enabled' : 'Disabled'}
                                     </span>

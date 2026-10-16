@@ -4,6 +4,7 @@ namespace App\Core\GoodsDistribution\Enums;
 
 enum DistributionStatus: string
 {
+    case Draft = 'draft';
     case Pending = 'pending';
     case UnderReview = 'under_review';
     case Returned = 'returned';

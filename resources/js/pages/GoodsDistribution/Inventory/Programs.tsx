@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import goodsDistribution from '@/routes/goodsDistribution';
@@ -210,7 +211,7 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
             >
                 <table aria-busy={loading} className={`w-full table-fixed text-left text-sm transition-opacity ${loading ? 'opacity-50' : ''}`}>
                     <caption className="sr-only">Goods distribution programs, stock counts, and draft receipts</caption>
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f9fbfa] text-[11px] text-[#748078] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f9fbfa] text-[11px] text-[#748078] @min-[960px]/goods:table-header-group">
                         <tr>
                             <th scope="col" className="px-5 py-3 font-medium">
                                 Program
@@ -229,13 +230,13 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {records.data.map((record) => (
                             <tr
                                 key={record.id}
-                                className="group grid grid-cols-2 items-center gap-y-1 border-t border-[#edf0ee] px-2 py-3 transition-colors first:border-t-0 hover:bg-[#fafcfb] lg:table-row lg:px-0 lg:py-0"
+                                className="group grid grid-cols-2 items-center gap-y-1 border-t border-[#edf0ee] px-2 py-3 transition-colors first:border-t-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row @min-[960px]/goods:px-0 @min-[960px]/goods:py-0"
                             >
-                                <td className="col-span-2 min-w-0 px-3 py-2 lg:px-5 lg:py-5">
+                                <td className="col-span-2 min-w-0 px-3 py-2 @min-[960px]/goods:px-5 @min-[960px]/goods:py-5">
                                     <div className="flex items-start gap-3">
                                         <div
                                             className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md ${record.is_active ? 'bg-[#edf3ef] text-[#50816d]' : 'bg-[#f4f5f4] text-[#929b96]'}`}
@@ -265,8 +266,8 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
                                 <td className="px-3 py-2">
                                     <DirectoryStatus active={record.is_active} />
                                 </td>
-                                <td className="px-3 py-2 text-right tabular-nums lg:py-5">
-                                    <span className="mr-2 text-[11px] text-[#87948c] lg:hidden">Items in stock</span>
+                                <td className="px-3 py-2 text-right tabular-nums @min-[960px]/goods:py-5">
+                                    <span className="mr-2 text-[11px] text-[#87948c] @min-[960px]/goods:hidden">Items in stock</span>
                                     <Link
                                         href={`${programUrl(slug, record.id)}?tab=stock`}
                                         title={`Stock for ${record.name}`}
@@ -275,8 +276,8 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
                                         {record.items_in_stock ?? '-'}
                                     </Link>
                                 </td>
-                                <td className="px-3 py-2 text-right tabular-nums lg:py-5">
-                                    <span className="mr-2 text-[11px] text-[#87948c] lg:hidden">Draft receipts</span>
+                                <td className="px-3 py-2 text-right tabular-nums @min-[960px]/goods:py-5">
+                                    <span className="mr-2 text-[11px] text-[#87948c] @min-[960px]/goods:hidden">Draft receipts</span>
                                     <Link
                                         href={`${programUrl(slug, record.id)}?tab=receipts&status=draft`}
                                         title={`Draft receipts for ${record.name}`}
@@ -286,7 +287,7 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
                                         {record.draft_receipts_count ?? '-'}
                                     </Link>
                                 </td>
-                                <td className="px-3 py-2 lg:pr-5">
+                                <td className="px-3 py-2 @min-[960px]/goods:pr-5">
                                     <div className="flex justify-end gap-0.5">
                                         {canManage && (
                                             <>

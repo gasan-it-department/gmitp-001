@@ -1,5 +1,7 @@
+import ResponsiveTable from '../ResponsiveTable';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import goodsDistribution from '@/routes/goodsDistribution';
 import { router } from '@inertiajs/react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -60,7 +62,7 @@ export default function HouseholdSyncDialog({
                                     <p>{[household.street, household.barangay].filter(Boolean).join(', ') || 'Address not recorded'}</p>
                                 </div>
                             </div>
-                            <table aria-label="Current household members" className="w-full table-fixed border-collapse text-left text-sm leading-6">
+                            <ResponsiveTable aria-label="Current household members" className="w-full table-fixed border-collapse text-left text-sm leading-6">
                                 <thead className="sticky top-0 z-10 bg-[#f6f8f7] text-[#33463c]">
                                     <tr className="border-y border-[#dfe6e1]">
                                         <th scope="col" className="w-[42%] px-2 py-3 font-semibold md:w-[30%]">
@@ -94,8 +96,6 @@ export default function HouseholdSyncDialog({
                                                         <span>Recipient</span>
                                                     )}
                                                 </div>
-                                                <p className="mt-1 text-[#52665b] md:hidden">{birthDate(member.birth_date)}</p>
-                                                {member.sex && <p className="text-[#52665b] capitalize md:hidden">{member.sex}</p>}
                                             </td>
                                             <td className="px-2 py-4 [overflow-wrap:anywhere] capitalize">
                                                 {member.relationship?.replaceAll('_', ' ') || 'Not recorded'}
@@ -113,7 +113,7 @@ export default function HouseholdSyncDialog({
                                         </tr>
                                     )}
                                 </tbody>
-                            </table>
+                            </ResponsiveTable>
                         </>
                     )}
                 </div>

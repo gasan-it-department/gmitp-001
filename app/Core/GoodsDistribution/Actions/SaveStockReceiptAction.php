@@ -3,11 +3,14 @@
 namespace App\Core\GoodsDistribution\Actions;
 
 use App\Core\GoodsDistribution\Dto\StockReceiptDto;
+use App\Core\GoodsDistribution\Enums\ReceiptKind;
+use App\Core\GoodsDistribution\Enums\ReceiptStatus;
 use App\Core\GoodsDistribution\Models\Item;
 use App\Core\GoodsDistribution\Models\Program;
 use App\Core\GoodsDistribution\Models\StockReceipt;
 use App\Core\GoodsDistribution\Models\StockSource;
 use App\Core\GoodsDistribution\Models\StorageLocation;
+use App\Core\GoodsDistribution\Services\DistributionReferenceService;
 use App\Core\GoodsDistribution\Services\ProgramItemService;
 use App\Core\GoodsDistribution\Services\ReceiptFingerprintService;
 use App\Core\GoodsDistribution\Services\StockLedgerService;
@@ -18,11 +21,16 @@ use Illuminate\Support\Str;
 
 final class SaveStockReceiptAction
 {
-    public function __construct(private readonly StockLedgerService $ledger, private readonly StockQuantityService $quantities, private readonly ReceiptFingerprintService $fingerprint, private readonly ProgramItemService $programItems) {}
+    public function __construct(private readonly StockLedgerService $ledger, private readonly StockQuantityService $quantities, private readonly ReceiptFingerprintService $fingerprint, private readonly ProgramItemService $programItems, private readonly DistributionReferenceService $references) {}
 
     public function execute(StockReceiptDto $dto): StockReceipt
     {
-        return DB::transaction(function () use ($dto) {
+        $kind = is_string($dto->data['kind'] ?? null) ? ReceiptKind::tryFrom($dto->data['kind']) : null;
+        if ($kind === null) {
+            throw new \DomainException('Select a valid receipt kind: receipt or opening.');
+        }
+
+        return DB::transaction(function () use ($dto, $kind) {
             $this->ledger->lockMunicipality($dto->municipalId);
             $receipt = $dto->receiptId ? $this->ledger->receipt($dto->municipalId, $dto->receiptId) : new StockReceipt;
             if ($dto->scopedProgramId !== null) {
@@ -36,7 +44,7 @@ final class SaveStockReceiptAction
                     }
                 }
             }
-            if ($receipt->exists && $receipt->status !== 'draft') {
+            if ($receipt->exists && $receipt->status !== ReceiptStatus::Draft->value) {
                 throw new \DomainException('Only draft receipts can be edited.');
             }
             if ($receipt->exists && ! hash_equals($this->fingerprint->make($receipt), (string) ($dto->data['draft_fingerprint'] ?? ''))) {
@@ -47,13 +55,14 @@ final class SaveStockReceiptAction
             $location = $this->active(StorageLocation::class, $dto->data['storage_location_id'], $dto->municipalId);
             if (! $receipt->exists) {
                 $receipt->id = (string) Str::ulid();
-                $receipt->receipt_number = 'GR-'.$receipt->id;
+                $receipt->receipt_number = $this->references->nextReceipt($dto->municipalId);
                 $receipt->created_by_user_id = $dto->actorId;
                 $receipt->received_by_user_id = $dto->actorId;
-                $receipt->status = 'draft';
+                $receipt->status = ReceiptStatus::Draft->value;
             }
             $receipt->fill([
-                ...Arr::only($dto->data, ['kind', 'received_on', 'reference', 'notes']),
+                ...Arr::only($dto->data, ['received_on', 'reference', 'notes']),
+                'kind' => $kind->value,
                 'municipal_id' => $dto->municipalId, 'stock_source_id' => $source->id, 'storage_location_id' => $location->id,
                 'source_name_snapshot' => $source->name, 'storage_location_name_snapshot' => $location->name,
             ])->save();

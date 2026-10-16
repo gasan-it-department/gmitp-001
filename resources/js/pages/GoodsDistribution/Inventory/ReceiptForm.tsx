@@ -167,7 +167,7 @@ export default function ReceiptForm({
                 <Errors errors={{ ...localErrors, ...mutation.errors }} />
                 <section className="space-y-4 border-y border-[#dfe6e1] py-6">
                     <h2 className="text-sm font-semibold">Delivery details</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 @min-[520px]/goods:grid-cols-2 @min-[960px]/goods:grid-cols-3">
                         <Field label="Record kind">
                             <select
                                 className={inputClass}
@@ -226,8 +226,8 @@ export default function ReceiptForm({
                                 );
                             return (
                                 <fieldset key={line.key} aria-label={`Item ${index + 1}`} className="min-w-0 space-y-3 px-4 py-5 sm:px-5">
-                                    <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-12">
-                                        <div className="min-w-0 sm:col-span-2 lg:col-span-4">
+                                    <div className="grid items-end gap-3 @min-[520px]/goods:grid-cols-2 @min-[960px]/goods:grid-cols-12">
+                                        <div className="min-w-0 @min-[520px]/goods:col-span-2 @min-[960px]/goods:col-span-4">
                                             <p className="mb-1.5 text-sm leading-none font-medium">Item {index + 1}</p>
                                             <ItemPicker
                                                 value={selected}
@@ -236,7 +236,7 @@ export default function ReceiptForm({
                                                 onCreate={(name) => setCreating({ key: line.key, name })}
                                             />
                                         </div>
-                                        <div className="min-w-0 lg:col-span-2">
+                                        <div className="min-w-0 @min-[960px]/goods:col-span-2">
                                             <Field label="Packaging">
                                                 <select
                                                     className={inputClass}
@@ -250,7 +250,7 @@ export default function ReceiptForm({
                                                 </select>
                                             </Field>
                                         </div>
-                                        <div className="grid min-w-0 grid-cols-2 items-end gap-3 lg:col-span-4">
+                                        <div className="grid min-w-0 grid-cols-2 items-end gap-3 @min-[960px]/goods:col-span-4">
                                             {line.package_type ? (
                                                 <>
                                                     <Field label="Packages">
@@ -292,7 +292,7 @@ export default function ReceiptForm({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex min-w-0 items-end gap-2 sm:col-span-2 lg:col-span-2">
+                                        <div className="flex min-w-0 items-end gap-2 @min-[520px]/goods:col-span-2 @min-[960px]/goods:col-span-2">
                                             <div className="min-w-0 flex-1">
                                                 <p className="mb-1.5 text-sm leading-none font-medium">Total</p>
                                                 <output
@@ -378,7 +378,7 @@ export default function ReceiptForm({
                                         {!extraOpen && (line.batch_reference || line.expires_on || line.notes) ? ' / Added' : ''}
                                     </button>
                                     {extraOpen && (
-                                        <div className="grid gap-3 sm:grid-cols-3">
+                                        <div className="grid gap-3 @min-[520px]/goods:grid-cols-3">
                                             <Field label="Batch reference">
                                                 <Input
                                                     maxLength={100}
@@ -407,7 +407,7 @@ export default function ReceiptForm({
                         })}
                     </div>
                 </section>
-                <footer className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#dfe6e1] bg-[#f6f8f7]/95 py-4 backdrop-blur-sm">
+                <footer className="bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#dfe6e1] bg-[#f6f8f7]/95 py-4 backdrop-blur-sm @min-[960px]/goods:sticky">
                     <p className="text-sm text-muted-foreground">{receipt ? receipt.receipt_number : 'New receipt'} / Draft</p>
                     <Button
                         className="bg-[#245e4f] text-white hover:bg-[#194c3e]"

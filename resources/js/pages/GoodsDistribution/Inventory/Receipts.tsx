@@ -66,7 +66,7 @@ export default function Receipts({ records, filters, canManage, program, options
             >
                 <table className="w-full table-fixed text-left text-sm">
                     <caption className="sr-only">Stock receipts and their receiving status</caption>
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
                             {['Receipt', 'Received', 'Source', 'Storage', 'Kind', 'Status', ''].map((label) => (
                                 <th key={label} className="px-3 py-3 font-medium">
@@ -75,13 +75,13 @@ export default function Receipts({ records, filters, canManage, program, options
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {records.data.map((receipt) => (
                             <tr
                                 key={receipt.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] lg:table-row"
+                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row"
                             >
-                                <td className="col-span-2 min-w-0 px-5 py-4 [overflow-wrap:anywhere] lg:col-span-1">
+                                <td className="col-span-2 min-w-0 px-5 py-4 [overflow-wrap:anywhere] @min-[960px]/goods:col-span-1">
                                     <Link
                                         className="font-medium text-[#245e4f] hover:underline"
                                         href={withProgram(
@@ -96,15 +96,15 @@ export default function Receipts({ records, filters, canManage, program, options
                                     </div>
                                 </td>
                                 <td className="px-3 py-4 text-xs [overflow-wrap:anywhere] text-[#75827c]">
-                                    <span className="block lg:hidden">Received</span>
+                                    <span className="block @min-[960px]/goods:hidden">Received</span>
                                     {receipt.received_on}
                                 </td>
                                 <td className="min-w-0 px-3 py-3 break-words">
-                                    <span className="block text-xs text-[#75827c] lg:hidden">Source</span>
+                                    <span className="block text-xs text-[#75827c] @min-[960px]/goods:hidden">Source</span>
                                     {receipt.source_name}
                                 </td>
                                 <td className="min-w-0 px-3 py-3 break-words">
-                                    <span className="block text-xs text-[#75827c] lg:hidden">Storage</span>
+                                    <span className="block text-xs text-[#75827c] @min-[960px]/goods:hidden">Storage</span>
                                     {receipt.location_name}
                                 </td>
                                 <td className="px-3 py-3 capitalize">{receipt.kind === 'opening' ? 'Opening stock' : 'Receipt'}</td>

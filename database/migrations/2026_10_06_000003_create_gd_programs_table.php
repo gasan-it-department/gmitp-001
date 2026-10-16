@@ -15,6 +15,10 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->boolean('cooldown_enabled')->default(false);
+            $table->string('cooldown_scope', 20)->default('household');
+            $table->unsignedInteger('cooldown_duration')->nullable();
+            $table->string('cooldown_unit', 10)->nullable();
             $table->timestamps();
 
             $table->foreign('municipal_id')->references('id')->on('municipalities')->restrictOnDelete();

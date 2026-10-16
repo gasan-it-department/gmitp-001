@@ -3,12 +3,14 @@
 namespace App\External\Web\Controllers\GoodsDistribution;
 
 use App\Core\GoodsDistribution\Actions\ReadGoodsInventoryAction;
+use App\Core\GoodsDistribution\Actions\ReadBulkDispatchesAction;
 use App\Core\GoodsDistribution\Actions\ReadProgramItemsAction;
 use App\Core\GoodsDistribution\Dto\InventoryFiltersDto;
 use App\Core\GoodsDistribution\Enums\CatalogKind;
 use App\Core\GoodsDistribution\Enums\ItemCategory;
 use App\External\Api\Request\GoodsDistribution\InventoryPageRequest;
 use App\External\Api\Resources\GoodsDistribution\CatalogResource;
+use App\External\Api\Resources\GoodsDistribution\BulkDispatchResource;
 use App\External\Api\Resources\GoodsDistribution\InventoryItemResource;
 use App\External\Api\Resources\GoodsDistribution\ProgramItemResource;
 use App\External\Api\Resources\GoodsDistribution\StockMovementResource;
@@ -28,6 +30,8 @@ final class ShowGoodsInventoryController extends Controller
         $common['itemCategories'] = ItemCategory::options();
         $common['canIntakeDistribution'] = $request->user()->can('goods_distribution.requests.intake');
         $common['canViewDistribution'] = $request->user()->can('goods_distribution.requests.view');
+        $common['canViewBulk'] = $request->user()->can('goods_distribution.bulk_dispatches.view');
+        $common['canPrepareBulk'] = $request->user()->can('goods_distribution.bulk_dispatches.prepare');
         if (! $read->schemaReady()) {
             return Inertia::render('GoodsDistribution/Inventory/Unavailable', $common);
         }
@@ -41,6 +45,21 @@ final class ShowGoodsInventoryController extends Controller
         }
         if ($screen === 'program') {
             $tab = $filters->get('tab') ?? 'stock';
+            if ($tab === 'dispatches') {
+                abort_unless($common['canViewBulk'], 403);
+                $bulkRead = app(ReadBulkDispatchesAction::class);
+                if (! $bulkRead->schemaReady()) {
+                    return Inertia::render('GoodsDistribution/BulkDispatch/Unavailable', $common);
+                }
+
+                return Inertia::render('GoodsDistribution/Inventory/ProgramDetails', [...$common, 'tab' => $tab,
+                    'records' => $this->collection(BulkDispatchResource::class, $bulkRead->listing($municipalId, ['program_id' => $program->id, 'page' => $filters->get('page')])),
+                    'options' => $read->options($municipalId, includeInactive: true, includeItems: false)]);
+            }
+            if ($tab === 'cooldown') {
+                return Inertia::render('GoodsDistribution/Inventory/ProgramDetails', [...$common, 'tab' => $tab,
+                    'options' => $read->options($municipalId, includeInactive: true, includeItems: false)]);
+            }
             if ($tab === 'documents') {
                 if (! \Illuminate\Support\Facades\Schema::hasTable('gd_program_document_requirements')) {
                     return Inertia::render('GoodsDistribution/Inventory/Unavailable', $common);

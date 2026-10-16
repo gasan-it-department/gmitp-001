@@ -42,7 +42,12 @@ function summaries(value: unknown): [string, string][] {
     if (Array.isArray(data.lines)) {
         result.push([
             'Goods',
-            data.lines.map((line) => `${line.item_name_snapshot}: ${quantity(String(line.quantity))} ${line.base_unit}`).join('; '),
+            data.lines
+                .map(
+                    (line) =>
+                        `${line.item_name_snapshot}: ${line.quantity == null ? 'Quantity not set' : `${quantity(String(line.quantity))} ${line.base_unit}`}`,
+                )
+                .join('; ') || 'None',
         ]);
     }
     if (Array.isArray(data.allocations)) {
@@ -56,6 +61,21 @@ function summaries(value: unknown): [string, string][] {
         ]);
     }
     if ('current_media_id' in data) result.push(['Evidence', data.current_media_id ? 'Uploaded file recorded' : 'No uploaded file']);
+    if (data.cooldown_policy && typeof data.cooldown_policy === 'object') {
+        const policy = data.cooldown_policy as Record<string, unknown>;
+        result.push([
+            'Cooldown policy',
+            policy.enabled ? `${policy.duration} ${policy.unit} per ${policy.scope}; next eligible ${policy.ends_on}` : 'Disabled at handover',
+        ]);
+    }
+    if (data.cooldown_exception_authorization && typeof data.cooldown_exception_authorization === 'object') {
+        const authorization = data.cooldown_exception_authorization as Record<string, unknown>;
+        result.push(['Cooldown exception', String(authorization.reason)], ['Exception handover date', String(authorization.date)]);
+        if (Array.isArray(authorization.sources))
+            result.push(['Reviewed cooldown sources', authorization.sources.map((source) => source.reference).join(', ')]);
+    } else if ('cooldown_exception_authorization' in data) {
+        result.push(['Cooldown exception', 'None']);
+    }
     if ('inspected_media_id' in data) result.push(['File inspection', data.inspected_media_id ? 'Current file inspected' : 'Not confirmed']);
     return result;
 }

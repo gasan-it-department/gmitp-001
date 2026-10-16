@@ -6,6 +6,7 @@ import { ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Pagination, programUrl, useInventoryContext } from './components';
 import type { PageData, Program } from './types';
+import '../responsive.css';
 
 export function DirectoryLayout({
     title,
@@ -27,8 +28,8 @@ export function DirectoryLayout({
         <AdminLayout>
             <Head title={`Goods Distribution ${title}`} />
             <TooltipProvider delayDuration={200}>
-                <main className="min-h-[calc(100dvh-4rem)] flex-1 bg-[#f6f8f7] px-4 py-6 text-[#243c33] sm:px-6 lg:px-8 lg:py-8">
-                    <div className="mx-auto max-w-7xl space-y-6">
+                <main className="goods-workspace min-h-[calc(100dvh-4rem)] min-w-0 flex-1 bg-[#f6f8f7] px-4 py-6 text-[#243c33] sm:px-6 lg:px-8 lg:py-8">
+                    <div className="@container/goods mx-auto w-full min-w-0 max-w-7xl space-y-6">
                         <header className="flex flex-wrap items-end justify-between gap-4">
                             <div className="max-w-full min-w-0">
                                 <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-2 text-xs text-[#75827c]">
@@ -51,9 +52,9 @@ export function DirectoryLayout({
                                         {title}
                                     </span>
                                 </nav>
-                                <h1 className="text-2xl font-semibold [overflow-wrap:anywhere]">{title}</h1>
+                                <h1 className="text-xl font-semibold [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
                             </div>
-                            {actions}
+                            {actions && <div className="flex max-w-full flex-wrap gap-2 [&>*]:max-w-full">{actions}</div>}
                         </header>
                         {children}
                     </div>
@@ -76,13 +77,13 @@ export function DirectoryPanel({
     children: ReactNode;
 }) {
     return (
-        <section aria-label={label} className="overflow-hidden rounded-md border border-[#dfe6e1] bg-white">
+        <section aria-label={label} className="min-w-0 overflow-hidden rounded-md border border-[#dfe6e1] bg-white">
             {toolbar && (
                 <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b border-[#e8ede9] px-4 py-4 sm:px-5">
                     {toolbar}
                 </div>
             )}
-            <div className="flex items-center justify-between gap-3 px-5 py-3 text-xs text-[#75827c]">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-[#75827c] sm:px-5">
                 <span>{label}</span>
                 <span className="tabular-nums">{countLabel}</span>
             </div>

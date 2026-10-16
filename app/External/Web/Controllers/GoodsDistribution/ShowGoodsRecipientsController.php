@@ -23,6 +23,7 @@ final class ShowGoodsRecipientsController extends Controller
             'canManage' => $request->user()->can(EnumPermissions::ACTION_CENTER_BENEFICIARIES_MANAGE->value),
             'canCorrect' => $request->user()->can(EnumPermissions::ACTION_CENTER_BENEFICIARIES_CORRECT->value),
             'canIntakeDistribution' => $request->user()->can('goods_distribution.requests.intake'),
+            'canViewGoodsProfile' => $request->user()->can('goods_distribution.access') && $request->user()->can('goods_distribution.requests.view'),
         ]);
     }
 }

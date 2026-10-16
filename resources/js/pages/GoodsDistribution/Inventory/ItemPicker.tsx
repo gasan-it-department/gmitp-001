@@ -15,6 +15,7 @@ export default function ItemPicker({
     onCreate,
     catalogScope = 'program',
     searchUrl,
+    required = true,
 }: {
     value: CatalogRecord | null;
     programId?: string | null;
@@ -22,6 +23,7 @@ export default function ItemPicker({
     onCreate?: (name: string) => void;
     catalogScope?: 'program' | 'shared';
     searchUrl?: string;
+    required?: boolean;
 }) {
     const { slug } = useInventoryContext();
     const categories = useItemCategories();
@@ -79,9 +81,9 @@ export default function ItemPicker({
             <div className="relative min-w-0">
                 <ComboboxInput
                     aria-label="Item"
-                    required
+                    required={required}
                     autoComplete="off"
-                    className="h-10 w-full min-w-0 rounded-md border border-input bg-background pr-9 pl-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className="h-10 w-full min-w-0 rounded-md border border-input bg-background pr-12 pl-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                     displayValue={(item: CatalogRecord | null) => item?.name ?? ''}
                     placeholder="Search items"
                     onChange={(event) => {
@@ -90,23 +92,23 @@ export default function ItemPicker({
                         setRecords([]);
                     }}
                 />
-                <ComboboxButton aria-label="Show items" className="absolute inset-y-0 right-0 flex w-9 items-center justify-center">
+                <ComboboxButton aria-label="Show items" className="absolute inset-y-0 right-0 flex w-11 items-center justify-center">
                     <ChevronDown className="size-4 text-muted-foreground" />
                 </ComboboxButton>
             </div>
             <ComboboxOptions
                 anchor={{ to: 'bottom start', gap: 4 }}
-                className="z-[70] max-h-80 w-[var(--input-width)] max-w-[calc(100vw-2rem)] min-w-60 overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none"
+                className="z-[70] max-h-[min(20rem,50dvh)] w-[var(--input-width)] max-w-[calc(100vw-2rem)] min-w-0 overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none"
             >
                 {records.map((item) => (
                     <ComboboxOption
                         key={item.id}
                         value={item}
-                        className="group flex cursor-pointer items-center gap-2 rounded px-3 py-2 data-focus:bg-accent"
+                        className="group flex min-h-11 cursor-pointer items-center gap-2 rounded px-3 py-2 data-focus:bg-accent"
                     >
                         <Check className="size-4 shrink-0 opacity-0 group-data-selected:opacity-100" />
                         <div className="min-w-0">
-                            <p className="text-sm font-medium break-words">{item.name}</p>
+                            <p className="text-sm font-medium [overflow-wrap:anywhere]">{item.name}</p>
                             <p className="text-xs text-muted-foreground">
                                 {item.code} · {item.base_unit}
                                 {item.category ? ` · ${categories.label(item.category)}` : ''}

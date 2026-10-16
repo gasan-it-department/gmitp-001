@@ -8,7 +8,7 @@ final class Program extends GoodsModel
 {
     protected $table = 'gd_programs';
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'cooldown_enabled' => 'boolean', 'cooldown_duration' => 'integer'];
 
     public function programItems(): HasMany
     {

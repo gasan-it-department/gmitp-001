@@ -8,6 +8,7 @@ use App\Core\GoodsDistribution\Enums\ItemCategory;
 use App\Core\GoodsDistribution\Enums\StockUnit;
 use App\Core\GoodsDistribution\Models\StockReceiptLine;
 use App\Core\GoodsDistribution\Services\CatalogCodeService;
+use App\Core\GoodsDistribution\Services\DistributionCooldownService;
 use App\Core\GoodsDistribution\Services\ItemDuplicateService;
 use App\Core\GoodsDistribution\Services\StockLedgerService;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,11 @@ final class ManageCatalogAction
                 $data['name'] = Str::upper($data['name']);
             }
             $review = [];
+            if ($dto->kind === CatalogKind::Programs && array_intersect(array_keys($data), ['cooldown_enabled', 'cooldown_scope', 'cooldown_duration', 'cooldown_unit'])) {
+                $policy = app(DistributionCooldownService::class)->policy([...$record->only($dto->kind->fields()), ...$data]);
+                $data = [...$data, 'cooldown_enabled' => $policy['enabled'], 'cooldown_scope' => $policy['scope'],
+                    'cooldown_duration' => $policy['duration'], 'cooldown_unit' => $policy['unit']];
+            }
             if ($model::query()->where('municipal_id', $dto->municipalId)->where('code', $data['code'])->when($record->exists, fn ($query) => $query->where('id', '<>', $record->id))->exists()) {
                 throw new \DomainException('That code is already used in this municipality.');
             }

@@ -38,7 +38,7 @@ enum CatalogKind: string
     {
         return array_merge(['code', 'name', 'is_active'], match ($this) {
             self::Items => ['category', 'description', 'base_unit'],
-            self::Programs => ['description'],
+            self::Programs => ['description', 'cooldown_enabled', 'cooldown_scope', 'cooldown_duration', 'cooldown_unit'],
             self::Sources => ['source_type', 'contact_name', 'contact_phone', 'contact_email', 'notes'],
             self::Locations => ['address', 'notes'],
         });

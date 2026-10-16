@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import goodsDistribution from '@/routes/goodsDistribution';
 import { Link, router } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, Pencil, RefreshCw, XCircle } from 'lucide-react';
@@ -156,7 +157,7 @@ export default function ReceiptDetails({ receipt, canManage, canAdjust, program,
                 toolbar={<h2 className="text-sm font-medium">Receipt lines</h2>}
             >
                 <table className="w-full table-fixed text-left text-sm">
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
                             {['Item', 'Program', 'Packaging', 'Received quantity', 'Expiry', 'Batch'].map((label) => (
                                 <th key={label} className={`px-3 py-3 font-medium ${label === 'Received quantity' ? 'text-right' : ''}`}>
@@ -165,11 +166,11 @@ export default function ReceiptDetails({ receipt, canManage, canAdjust, program,
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {receipt.lines.map((line) => (
                             <tr
                                 key={line.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] lg:table-row [&>td]:min-w-0 [&>td]:[overflow-wrap:anywhere]"
+                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row [&>td]:min-w-0 [&>td]:[overflow-wrap:anywhere]"
                             >
                                 <td className="px-3 py-4">
                                     <Link
@@ -184,21 +185,21 @@ export default function ReceiptDetails({ receipt, canManage, canAdjust, program,
                                     {line.notes && <p className="mt-1 text-xs text-muted-foreground">{line.notes}</p>}
                                 </td>
                                 <td className="px-3 py-4">
-                                    <span className="block text-xs text-[#75827c] lg:hidden">Program</span>
+                                    <span className="block text-xs text-[#75827c] @min-[960px]/goods:hidden">Program</span>
                                     {line.program_name ?? 'Unassigned'}
                                 </td>
                                 <td className="px-3 py-4">
-                                    <span className="block text-xs text-[#75827c] lg:hidden">Packaging</span>
+                                    <span className="block text-xs text-[#75827c] @min-[960px]/goods:hidden">Packaging</span>
                                     {line.package_type
                                         ? `${line.package_count} ${line.package_type}${Number(line.package_count) !== 1 ? 's' : ''} x ${quantity(line.quantity_per_package ?? '0')} ${line.base_unit}`
                                         : '-'}
                                 </td>
                                 <td className="px-3 py-4 text-right font-semibold tabular-nums">
-                                    <span className="block text-xs font-normal text-muted-foreground lg:hidden">Received quantity</span>
+                                    <span className="block text-xs font-normal text-muted-foreground @min-[960px]/goods:hidden">Received quantity</span>
                                     {quantity(line.quantity)} {line.base_unit}
                                 </td>
                                 <td className="px-3 py-4">
-                                    <span className="block text-xs text-muted-foreground lg:hidden">Expiry</span>
+                                    <span className="block text-xs text-muted-foreground @min-[960px]/goods:hidden">Expiry</span>
                                     {line.expires_on ?? '-'}
                                     {line.expiry_state === 'expired' && (
                                         <div className="mt-1">
@@ -207,7 +208,7 @@ export default function ReceiptDetails({ receipt, canManage, canAdjust, program,
                                     )}
                                 </td>
                                 <td className="px-3 py-4">
-                                    <span className="block text-xs text-muted-foreground lg:hidden">Batch</span>
+                                    <span className="block text-xs text-muted-foreground @min-[960px]/goods:hidden">Batch</span>
                                     {line.batch_reference ?? '-'}
                                 </td>
                             </tr>

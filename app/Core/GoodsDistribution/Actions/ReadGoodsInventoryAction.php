@@ -3,6 +3,7 @@
 namespace App\Core\GoodsDistribution\Actions;
 
 use App\Core\GoodsDistribution\Dto\InventoryFiltersDto;
+use App\Core\GoodsDistribution\Enums\AllocationStatus;
 use App\Core\GoodsDistribution\Enums\CatalogKind;
 use App\Core\GoodsDistribution\Models\Item;
 use App\Core\GoodsDistribution\Models\Program;
@@ -14,9 +15,12 @@ use App\Core\GoodsDistribution\Models\StorageLocation;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Core\GoodsDistribution\Services\StockLedgerService;
 
 final class ReadGoodsInventoryAction
 {
+    public function __construct(private readonly StockLedgerService $ledger) {}
+
     public function schemaReady(): bool
     {
         return Schema::hasTable('gd_stock_movements') && Schema::hasTable('gd_program_items');
@@ -118,6 +122,7 @@ final class ReadGoodsInventoryAction
     {
         $query = StockMovement::query()->where('municipal_id', $municipalId)->with(['actor', 'reversal', 'line.receipt']);
         $query->when(Schema::hasTable('gd_distribution_stock_allocations'), fn ($query) => $query->with('distributionAllocation'));
+        $query->when(Schema::hasTable('gd_bulk_dispatches'), fn ($query) => $query->with(['bulkAllocation', 'bulkReconciliationLine']));
         $query->whereHas('line', function ($query) use ($municipalId, $filters) {
             $query->where('municipal_id', $municipalId);
             if ($filters->get('program_id')) {
@@ -153,22 +158,27 @@ final class ReadGoodsInventoryAction
         return $query;
     }
 
-    public function inventory(string $municipalId, InventoryFiltersDto $filters): mixed
+    public function inventory(string $municipalId, InventoryFiltersDto $filters, bool $paginate = true, array $itemIds = []): mixed
     {
         $balance = $this->filteredLines($municipalId, $filters)
             ->leftJoin('gd_stock_movements as movement', 'movement.stock_receipt_line_id', '=', 'batch.id')
             ->whereColumn('batch.item_id', 'gd_items.id')->selectRaw('COALESCE(SUM(movement.quantity), 0)');
         $query = Item::query()->where('gd_items.municipal_id', $municipalId)->select('gd_items.*')->selectSub($balance, 'balance');
-        if (Schema::hasTable('gd_distribution_stock_allocations')) {
-            $reserved = $this->filteredLines($municipalId, $filters)
-                ->join('gd_distribution_stock_allocations as allocation', 'allocation.stock_receipt_line_id', '=', 'batch.id')
-                ->where('allocation.municipal_id', $municipalId)->where('allocation.status', 'reserved')
-                ->whereColumn('batch.item_id', 'gd_items.id')->selectRaw('COALESCE(SUM(allocation.quantity), 0)');
-            $query->selectSub($reserved, 'reserved');
-            $query->selectSub($this->allocatable($municipalId, $filters)->whereColumn('batch.item_id', 'gd_items.id'), 'available');
+        if ($itemIds) {
+            $query->whereIn('gd_items.id', $itemIds);
+        }
+        $reserved = $this->filteredLines($municipalId, $filters)
+            ->joinSub($this->ledger->reservationQuery($municipalId), 'held', 'held.stock_receipt_line_id', '=', 'batch.id')
+            ->whereColumn('batch.item_id', 'gd_items.id')->selectRaw('COALESCE(SUM(held.quantity), 0)');
+        $query->selectSub($reserved, 'reserved');
+        $query->selectSub($this->allocatable($municipalId, $filters)->whereColumn('batch.item_id', 'gd_items.id'), 'available');
+        foreach (['with_staff', 'reported_distributed', 'returned'] as $metric) {
+            $query->selectSub($this->custodyTotals($municipalId, $filters, $metric)->whereColumn('batch.item_id', 'gd_items.id'), $metric);
         }
         if ($filters->get('include_zero') !== '1') {
-            $query->whereRaw('('.$balance->toSql().') > 0', $balance->getBindings());
+            $custody = $this->custodyTotals($municipalId, $filters, 'with_staff')->whereColumn('batch.item_id', 'gd_items.id');
+            $query->where(fn ($query) => $query->whereRaw('('.$balance->toSql().') > 0', $balance->getBindings())
+                ->orWhereRaw('('.$custody->toSql().') > 0', $custody->getBindings()));
         }
         if ($filters->get('search')) {
             $term = '%'.mb_strtolower($filters->get('search')).'%';
@@ -178,15 +188,16 @@ final class ReadGoodsInventoryAction
             $query->whereExists($this->filteredLines($municipalId, $filters)->whereColumn('batch.item_id', 'gd_items.id')->selectRaw('1'));
         }
 
-        return $query->orderBy('gd_items.name')->paginate(20)->withQueryString();
+        $query->orderBy('gd_items.name');
+
+        return $paginate ? $query->paginate(20)->withQueryString() : $query->get();
     }
 
     private function allocatable(string $municipalId, InventoryFiltersDto $filters): Builder
     {
         $physical = DB::table('gd_stock_movements')->where('municipal_id', $municipalId)
             ->select('stock_receipt_line_id')->selectRaw('SUM(quantity) as quantity')->groupBy('stock_receipt_line_id');
-        $reserved = DB::table('gd_distribution_stock_allocations')->where('municipal_id', $municipalId)->where('status', 'reserved')
-            ->select('stock_receipt_line_id')->selectRaw('SUM(quantity) as quantity')->groupBy('stock_receipt_line_id');
+        $reserved = $this->ledger->reservationQuery($municipalId);
 
         return $this->filteredLines($municipalId, $filters)->joinSub($physical, 'physical', 'physical.stock_receipt_line_id', '=', 'batch.id')
             ->leftJoinSub($reserved, 'held', 'held.stock_receipt_line_id', '=', 'batch.id')
@@ -202,9 +213,11 @@ final class ReadGoodsInventoryAction
     private function lineTotals(mixed $query, string $municipalId): mixed
     {
         $query->withSum('movements as balance', 'quantity');
-        if (Schema::hasTable('gd_distribution_stock_allocations')) {
-            $query->withSum('reservedAllocations as reserved', 'quantity')
-                ->selectSub($this->allocatable($municipalId, new InventoryFiltersDto)->whereColumn('batch.id', 'gd_stock_receipt_lines.id'), 'available');
+        $query->selectSub(DB::query()->fromSub($this->ledger->reservationQuery($municipalId), 'held')
+            ->whereColumn('held.stock_receipt_line_id', 'gd_stock_receipt_lines.id')->selectRaw('COALESCE(SUM(held.quantity), 0)'), 'reserved');
+        $query->selectSub($this->allocatable($municipalId, new InventoryFiltersDto)->whereColumn('batch.id', 'gd_stock_receipt_lines.id'), 'available');
+        foreach (['with_staff', 'reported_distributed', 'returned'] as $metric) {
+            $query->selectSub($this->custodyTotals($municipalId, new InventoryFiltersDto, $metric)->whereColumn('batch.id', 'gd_stock_receipt_lines.id'), $metric);
         }
 
         return $query;
@@ -216,10 +229,10 @@ final class ReadGoodsInventoryAction
         $ids = $this->filteredLines($municipalId, $filters)->where('batch.item_id', $itemId)->select('batch.id');
         $balance = DB::table('gd_stock_movements')->where('municipal_id', $municipalId)->whereIn('stock_receipt_line_id', clone $ids)->sum('quantity');
         $item->setAttribute('balance', $balance);
-        if (Schema::hasTable('gd_distribution_stock_allocations')) {
-            $item->setAttribute('reserved', DB::table('gd_distribution_stock_allocations')->where('municipal_id', $municipalId)
-                ->where('status', 'reserved')->whereIn('stock_receipt_line_id', clone $ids)->sum('quantity'));
-            $item->setAttribute('available', $this->allocatable($municipalId, $filters)->where('batch.item_id', $itemId)->value(DB::raw('COALESCE(SUM(physical.quantity - COALESCE(held.quantity, 0)), 0)')));
+        $item->setAttribute('reserved', DB::query()->fromSub($this->ledger->reservationQuery($municipalId), 'held')->whereIn('stock_receipt_line_id', clone $ids)->sum('quantity'));
+        $item->setAttribute('available', $this->allocatable($municipalId, $filters)->where('batch.item_id', $itemId)->value(DB::raw('COALESCE(SUM(physical.quantity - COALESCE(held.quantity, 0)), 0)')));
+        foreach (['with_staff', 'reported_distributed', 'returned'] as $metric) {
+            $item->setAttribute($metric, $this->custodyTotals($municipalId, $filters, $metric)->where('batch.item_id', $itemId)->value(DB::raw('COALESCE(SUM(custody.'.$metric.'), 0)')));
         }
         $batches = $this->lineTotals(StockReceiptLine::query()->where('municipal_id', $municipalId)->whereIn('id', clone $ids)
             ->with(['receipt', 'program']), $municipalId)
@@ -227,9 +240,17 @@ final class ReadGoodsInventoryAction
         $movements = StockMovement::query()->where('municipal_id', $municipalId)->whereIn('stock_receipt_line_id', clone $ids)
             ->with(['actor', 'reversal', 'line.receipt']);
         $movements->when(Schema::hasTable('gd_distribution_stock_allocations'), fn ($query) => $query->with('distributionAllocation'));
+        $movements->when(Schema::hasTable('gd_bulk_dispatches'), fn ($query) => $query->with(['bulkAllocation', 'bulkReconciliationLine']));
         $this->historyFilters($movements, 'occurred_on', $filters);
         $movements = $movements->orderByDesc('posted_at')->orderByDesc('id')->paginate(20, ['*'], 'movement_page')->withQueryString();
 
         return compact('item', 'batches', 'movements');
+    }
+
+    private function custodyTotals(string $municipalId, InventoryFiltersDto $filters, string $metric): Builder
+    {
+        return $this->filteredLines($municipalId, $filters)
+            ->joinSub($this->ledger->custodyQuery($municipalId), 'custody', 'custody.stock_receipt_line_id', '=', 'batch.id')
+            ->selectRaw('COALESCE(SUM(custody.'.$metric.'), 0)');
     }
 }

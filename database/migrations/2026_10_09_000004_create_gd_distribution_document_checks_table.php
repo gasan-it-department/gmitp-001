@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('label');
             $table->text('description')->nullable();
             $table->boolean('is_required');
+            $table->boolean('is_active')->default(true);
             $table->string('evidence_mode', 24);
             $table->string('physical_copy_requirement', 40);
             $table->unsignedInteger('sort_order');
