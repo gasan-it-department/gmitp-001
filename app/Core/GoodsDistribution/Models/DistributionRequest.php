@@ -19,6 +19,7 @@ final class DistributionRequest extends GoodsModel implements HasMedia
         'version' => 'integer', 'approval_revision' => 'integer', 'actual_release_on' => 'date',
         'reviewed_at' => 'datetime', 'approved_at' => 'datetime', 'returned_at' => 'datetime',
         'cancelled_at' => 'datetime', 'released_at' => 'datetime', 'identity_inspected_at' => 'datetime',
+        'cooldown_policy' => 'array', 'cooldown_exception_authorization' => 'array',
     ];
 
     protected static function booted(): void

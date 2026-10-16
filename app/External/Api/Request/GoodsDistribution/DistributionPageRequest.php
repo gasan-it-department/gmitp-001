@@ -21,6 +21,11 @@ final class DistributionPageRequest extends FormRequest
             'from' => ['nullable', 'date_format:Y-m-d'], 'to' => array_filter(['nullable', 'date_format:Y-m-d', $this->filled('from') ? 'after_or_equal:from' : null]),
             'page' => ['nullable', 'integer', 'min:1'], 'history_page' => ['nullable', 'integer', 'min:1'],
             'tab' => ['nullable', 'in:goods,household,documents,history'],
+            'recipient_profile_kind' => ['nullable', 'in:beneficiary,member'], 'recipient_profile_id' => ['nullable', 'ulid'],
+            'profile_tab' => ['nullable', 'in:overview,received,requests'], 'profile_program_id' => ['nullable', 'ulid'],
+            'profile_from' => ['nullable', 'date_format:Y-m-d'], 'profile_to' => ['nullable', 'date_format:Y-m-d'],
+            'profile_status' => ['nullable', Rule::enum(DistributionStatus::class)], 'profile_role' => ['nullable', 'in:all,recipient,filer'],
+            'profile_page' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

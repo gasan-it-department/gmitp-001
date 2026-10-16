@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { GoodsDialogContent as DialogContent } from '../GoodsDialog';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import goodsDistribution from '@/routes/goodsDistribution';
@@ -99,7 +100,7 @@ export default function Catalog({ kind, records, canManage, filters }: CommonPro
                 toolbar={<Filters appearance="directory" filters={settings ? { ...filters, kind } : filters} url={url} />}
             >
                 <table className="w-full table-fixed text-left text-sm">
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] lg:table-header-group">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
                             {['Name', 'Code', kind === 'items' ? 'Unit' : 'Details', 'Status', ''].map((label, index) => (
                                 <th key={index} className="px-3 py-3 font-medium">
@@ -108,19 +109,19 @@ export default function Catalog({ kind, records, canManage, filters }: CommonPro
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block lg:table-row-group">
+                    <tbody className="block @min-[960px]/goods:table-row-group">
                         {records.data.map((record) => (
                             <tr
                                 key={record.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] lg:table-row"
+                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row"
                             >
-                                <td className="col-span-2 min-w-0 px-5 py-4 font-medium [overflow-wrap:anywhere] lg:col-span-1">{record.name}</td>
+                                <td className="col-span-2 min-w-0 px-5 py-4 font-medium [overflow-wrap:anywhere] @min-[960px]/goods:col-span-1">{record.name}</td>
                                 <td className="min-w-0 px-3 py-4 font-mono text-xs [overflow-wrap:anywhere] text-[#75827c]">
-                                    <span className="block font-sans lg:hidden">Code</span>
+                                    <span className="block font-sans @min-[960px]/goods:hidden">Code</span>
                                     {record.code}
                                 </td>
                                 <td className="min-w-0 px-3 py-4 [overflow-wrap:anywhere]">
-                                    <span className="block text-xs text-[#75827c] lg:hidden">{kind === 'items' ? 'Unit' : 'Details'}</span>
+                                    <span className="block text-xs text-[#75827c] @min-[960px]/goods:hidden">{kind === 'items' ? 'Unit' : 'Details'}</span>
                                     {record.base_unit ?? record.source_type?.replaceAll('_', ' ') ?? record.description ?? record.address ?? '-'}
                                 </td>
                                 <td className="px-3 py-3">

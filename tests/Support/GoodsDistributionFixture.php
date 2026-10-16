@@ -59,6 +59,15 @@ function goodsDistributionFixture(object $test): void
     foreach (glob(database_path('migrations/2026_10_09_*.php')) as $path) {
         (require $path)->up();
     }
+    foreach (glob(database_path('migrations/2026_10_13_*gd_*.php')) as $path) {
+        (require $path)->up();
+    }
+    foreach (glob(database_path('migrations/2026_10_14_*gd_*.php')) as $path) {
+        (require $path)->up();
+    }
+    foreach (glob(database_path('migrations/2026_10_15_*gd_*.php')) as $path) {
+        (require $path)->up();
+    }
     $test->actor->givePermissionTo(['goods_distribution.access', 'goods_distribution.requests.view', 'goods_distribution.requests.intake',
         'goods_distribution.requests.process', 'goods_distribution.requests.decide', 'goods_distribution.requests.release',
         'goods_distribution.inventory.view', 'goods_distribution.inventory.manage', 'goods_distribution.inventory.adjust']);
@@ -71,6 +80,15 @@ function goodsDistributionFixture(object $test): void
 
 function goodsDistributionCleanup(): void
 {
+    foreach (array_reverse(glob(database_path('migrations/2026_10_15_*gd_*.php'))) as $path) {
+        (require $path)->down();
+    }
+    foreach (array_reverse(glob(database_path('migrations/2026_10_14_*gd_*.php'))) as $path) {
+        (require $path)->down();
+    }
+    foreach (array_reverse(glob(database_path('migrations/2026_10_13_*gd_*.php'))) as $path) {
+        (require $path)->down();
+    }
     foreach (array_reverse(glob(database_path('migrations/2026_10_09_*.php'))) as $path) {
         (require $path)->down();
     }

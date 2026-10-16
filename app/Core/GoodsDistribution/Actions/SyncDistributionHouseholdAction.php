@@ -3,6 +3,7 @@
 namespace App\Core\GoodsDistribution\Actions;
 
 use App\Core\GoodsDistribution\Dto\DistributionRequestDto;
+use App\Core\GoodsDistribution\Enums\AllocationStatus;
 use App\Core\GoodsDistribution\Enums\DistributionStatus as Status;
 use App\Core\GoodsDistribution\Models\DistributionRequest;
 use App\Core\GoodsDistribution\Services\DistributionHouseholdService;
@@ -20,7 +21,7 @@ final class SyncDistributionHouseholdAction
         return DB::transaction(function () use ($dto) {
             $this->ledger->lockMunicipality($dto->municipalId);
             $request = $this->requests->locked($dto->municipalId, $dto->requestId);
-            $permission = $request->status === Status::UnderReview ? 'process' : 'intake';
+            $permission = $this->requests->editingCapability($request, $dto->actorId);
             $this->requests->actor($dto->municipalId, $dto->actorId, 'goods_distribution.requests.'.$permission);
             $data = $dto->data;
             $hash = $this->requests->hash([$dto->actorId, 'sync-household', $data]);
@@ -33,10 +34,10 @@ final class SyncDistributionHouseholdAction
                 return $request;
             }
             $this->requests->version($request, (int) $data['version']);
-            if (! in_array($request->status, [Status::Pending, Status::Returned, Status::UnderReview], true)) {
-                throw new \DomainException('Only pending, returned, or under-review requests can sync. Return approved requests for correction first.');
+            if (! in_array($request->status, [Status::Draft, Status::Pending, Status::Returned, Status::UnderReview], true)) {
+                throw new \DomainException('Only draft, pending, returned, or under-review requests can sync. Return approved requests for correction first.');
             }
-            if ($request->allocations()->where('status', 'reserved')->exists()) {
+            if ($request->allocations()->where('status', AllocationStatus::Reserved->value)->exists()) {
                 throw new \DomainException('Resolve existing stock reservations before syncing this request.');
             }
             if (! ($data['household_reviewed'] ?? false)) {
@@ -55,9 +56,10 @@ final class SyncDistributionHouseholdAction
             $checks = fn () => $request->documentChecks()->orderBy('id')->get()->map->only(['id', 'status', 'inspected_media_id', 'checked_at', 'checked_by_user_id'])->all();
             $before = ['status' => $request->status->value, 'version' => $request->version, 'snapshot' => $request->reviewed_snapshot, 'document_checks' => $checks()];
             if ($preview['identity_changed']) {
-                $request->documentChecks()->update(['status' => 'pending', 'inspected_media_id' => null, 'checked_at' => null, 'checked_by_user_id' => null]);
+                $request->documentChecks()->where('is_active', true)->update(['status' => 'pending', 'inspected_media_id' => null, 'checked_at' => null, 'checked_by_user_id' => null]);
             }
             $request->update(['household_id' => $preview['snapshot']['household_id'], 'reviewed_snapshot' => $preview['snapshot'],
+                'cooldown_exception_authorization' => null,
                 'version' => $request->version + 1, 'operations' => [...($request->operations ?? []), $data['operation_key'] => $hash]]);
             $this->ledger->audit($request, $dto->actorId, 'Synced goods request household', $before,
                 ['status' => $request->status->value, 'version' => $request->version, 'snapshot' => $request->reviewed_snapshot,

@@ -3,6 +3,8 @@
 namespace App\Core\GoodsDistribution\Actions;
 
 use App\Core\GoodsDistribution\Enums\MovementType;
+use App\Core\GoodsDistribution\Enums\ReceiptKind;
+use App\Core\GoodsDistribution\Enums\ReceiptStatus;
 use App\Core\GoodsDistribution\Models\StockReceipt;
 use App\Core\GoodsDistribution\Services\ProgramItemService;
 use App\Core\GoodsDistribution\Services\ReceiptFingerprintService;
@@ -19,11 +21,19 @@ final class PostStockReceiptAction
         return DB::transaction(function () use ($municipalId, $receiptId, $actorId, $fingerprint) {
             $this->ledger->lockMunicipality($municipalId);
             $receipt = $this->ledger->receipt($municipalId, $receiptId);
-            if ($receipt->status === 'posted') {
+            if ($receipt->status === ReceiptStatus::Posted->value) {
+                if ($receipt->posted_at === null) {
+                    throw new \DomainException('This posted receipt has no posting timestamp. Resolve its history before continuing.');
+                }
+
                 return $receipt;
             }
-            if ($receipt->status !== 'draft') {
+            if ($receipt->status !== ReceiptStatus::Draft->value) {
                 throw new \DomainException('A voided receipt cannot be posted.');
+            }
+            $kind = ReceiptKind::tryFrom($receipt->kind);
+            if ($kind === null) {
+                throw new \DomainException('Select a valid receipt kind before posting.');
             }
             $receipt->lines()->reorder('id')->lockForUpdate()->get();
             $receipt->load(['source', 'location', 'lines.item', 'lines.program']);
@@ -41,14 +51,12 @@ final class PostStockReceiptAction
                 if (! $line->item->is_active || ($line->program && ! $line->program->is_active) || $line->base_unit !== $line->item->base_unit) {
                     throw new \DomainException('An item or program is inactive or its unit changed. Review the draft.');
                 }
-                if ($this->quantities->received($line->toArray(), $line->base_unit) !== $line->quantity) {
-                    throw new \DomainException('The saved packaging and received quantity do not agree.');
-                }
+                $this->quantities->assertReceiptLine($line->getAttributes(), $line->base_unit);
                 $line->update(['item_name_snapshot' => $line->item->name, 'program_name_snapshot' => $line->program?->name]);
-                $this->ledger->append($line, $actorId, $receipt->kind === 'opening' ? MovementType::Opening : MovementType::Receipt, $line->quantity, 'post:'.$line->id, occurredOn: $receipt->received_on->toDateString());
+                $this->ledger->append($line, $actorId, $kind === ReceiptKind::Opening ? MovementType::Opening : MovementType::Receipt, $line->quantity, 'post:'.$line->id, occurredOn: $receipt->received_on->toDateString());
             }
             $receipt->update([
-                'status' => 'posted', 'posted_at' => now(), 'posted_by_user_id' => $actorId,
+                'status' => ReceiptStatus::Posted->value, 'posted_at' => now(), 'posted_by_user_id' => $actorId,
                 'source_name_snapshot' => $receipt->source->name, 'storage_location_name_snapshot' => $receipt->location->name,
             ]);
             $this->ledger->audit($receipt, $actorId, 'Posted stock receipt', $before, $receipt->fresh('lines')->toArray());

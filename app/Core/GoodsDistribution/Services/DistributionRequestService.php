@@ -4,13 +4,57 @@ namespace App\Core\GoodsDistribution\Services;
 
 use App\Core\ActionCenter\Models\Beneficiary;
 use App\Core\ActionCenter\Models\HouseholdMember;
+use App\Core\GoodsDistribution\Enums\DistributionStatus;
 use App\Core\GoodsDistribution\Models\DistributionRequest;
+use App\Core\GoodsDistribution\Models\Item;
+use App\Core\GoodsDistribution\Models\Program;
+use App\Core\GoodsDistribution\Models\ProgramItem;
+use App\Core\GoodsDistribution\Models\StorageLocation;
 use App\Core\Users\Enums\EnumRoles;
 use App\Core\Users\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 
 final class DistributionRequestService
 {
+    public function __construct(private readonly StockQuantityService $quantities) {}
+
+    public function editingCapability(DistributionRequest $request, string $actorId): string
+    {
+        return $request->status === DistributionStatus::UnderReview
+            || ($request->status === DistributionStatus::Draft && ! User::findOrFail($actorId)->can('goods_distribution.requests.intake'))
+            ? 'process' : 'intake';
+    }
+
+    public function assertReady(DistributionRequest $request, bool $checkIdentity = true): void
+    {
+        if ($checkIdentity) {
+            $this->unchangedIdentity($request);
+        }
+        Program::query()->where('municipal_id', $request->municipal_id)->whereKey($request->program_id)->where('is_active', true)->firstOrFail();
+        StorageLocation::query()->where('municipal_id', $request->municipal_id)->whereKey($request->storage_location_id)->where('is_active', true)->firstOrFail();
+        $request->load('lines');
+        if ($request->lines->isEmpty()) {
+            throw new \DomainException('Add at least one item and complete its quantity before submitting for review.');
+        }
+        foreach ($request->lines as $line) {
+            if ($line->quantity === null) {
+                throw new \DomainException('Complete every item quantity before submitting for review.');
+            }
+            if ($this->quantities->parse((string) $line->quantity, $line->base_unit) < 1) {
+                throw new \DomainException('Request quantities must be positive.');
+            }
+            $item = Item::query()->where('municipal_id', $request->municipal_id)->whereKey($line->item_id)->where('is_active', true)->first();
+            if (! $item
+                || ! ProgramItem::query()->where('municipal_id', $request->municipal_id)->where('program_id', $request->program_id)
+                    ->where('item_id', $line->item_id)->where('is_active', true)->exists()) {
+                throw new \DomainException('A requested item is no longer enabled.');
+            }
+            if ($item->base_unit !== $line->base_unit) {
+                throw new \DomainException('A requested item unit changed. Edit its goods details before submitting for review.');
+            }
+        }
+    }
+
     public function actor(string $municipalId, string $actorId, string $capability): User
     {
         $actor = User::findOrFail($actorId);

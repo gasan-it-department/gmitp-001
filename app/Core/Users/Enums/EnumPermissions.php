@@ -46,6 +46,12 @@ enum EnumPermissions: string
     case GOODS_DISTRIBUTION_REQUESTS_PROCESS = 'goods_distribution.requests.process';
     case GOODS_DISTRIBUTION_REQUESTS_DECIDE = 'goods_distribution.requests.decide';
     case GOODS_DISTRIBUTION_REQUESTS_RELEASE = 'goods_distribution.requests.release';
+    case GOODS_DISTRIBUTION_BULK_VIEW = 'goods_distribution.bulk_dispatches.view';
+    case GOODS_DISTRIBUTION_BULK_PREPARE = 'goods_distribution.bulk_dispatches.prepare';
+    case GOODS_DISTRIBUTION_BULK_APPROVE = 'goods_distribution.bulk_dispatches.approve';
+    case GOODS_DISTRIBUTION_BULK_DISPATCH = 'goods_distribution.bulk_dispatches.dispatch';
+    case GOODS_DISTRIBUTION_BULK_RECONCILE = 'goods_distribution.bulk_dispatches.reconcile';
+    case GOODS_DISTRIBUTION_BULK_CORRECT = 'goods_distribution.bulk_dispatches.correct';
 
     // announcement & events
     case BULLETIN_BOARD_ACCESS = 'bulletin_board.access';
@@ -125,6 +131,12 @@ enum EnumPermissions: string
             self::GOODS_DISTRIBUTION_REQUESTS_PROCESS => 'Goods Distribution - Review Requests and Documents',
             self::GOODS_DISTRIBUTION_REQUESTS_DECIDE => 'Goods Distribution - Approve, Return Approved, or Cancel Requests',
             self::GOODS_DISTRIBUTION_REQUESTS_RELEASE => 'Goods Distribution - Record Goods Handover',
+            self::GOODS_DISTRIBUTION_BULK_VIEW => 'Goods Distribution - View Bulk Dispatches',
+            self::GOODS_DISTRIBUTION_BULK_PREPARE => 'Goods Distribution - Prepare Bulk Dispatches',
+            self::GOODS_DISTRIBUTION_BULK_APPROVE => 'Goods Distribution - Approve Bulk Dispatches',
+            self::GOODS_DISTRIBUTION_BULK_DISPATCH => 'Goods Distribution - Dispatch Bulk Goods',
+            self::GOODS_DISTRIBUTION_BULK_RECONCILE => 'Goods Distribution - Reconcile Bulk Goods and Returns',
+            self::GOODS_DISTRIBUTION_BULK_CORRECT => 'Goods Distribution - Correct Bulk Reconciliation',
             self::BULLETIN_BOARD_ACCESS => 'Bulletin Board',
             self::COMMUNITY_REPORT_ACCESS => 'Community Reporting',
             self::SUPPORT_TICKET_ACCESS => 'Support & Help Desk',
@@ -172,7 +184,13 @@ enum EnumPermissions: string
             self::GOODS_DISTRIBUTION_REQUESTS_INTAKE,
             self::GOODS_DISTRIBUTION_REQUESTS_PROCESS,
             self::GOODS_DISTRIBUTION_REQUESTS_DECIDE,
-            self::GOODS_DISTRIBUTION_REQUESTS_RELEASE => EnumPermissionModule::GOODS_DISTRIBUTION,
+            self::GOODS_DISTRIBUTION_REQUESTS_RELEASE,
+            self::GOODS_DISTRIBUTION_BULK_VIEW,
+            self::GOODS_DISTRIBUTION_BULK_PREPARE,
+            self::GOODS_DISTRIBUTION_BULK_APPROVE,
+            self::GOODS_DISTRIBUTION_BULK_DISPATCH,
+            self::GOODS_DISTRIBUTION_BULK_RECONCILE,
+            self::GOODS_DISTRIBUTION_BULK_CORRECT => EnumPermissionModule::GOODS_DISTRIBUTION,
             self::BULLETIN_BOARD_ACCESS => EnumPermissionModule::BULLETIN_BOARD,
             self::COMMUNITY_REPORT_ACCESS => EnumPermissionModule::COMMUNITY_REPORT,
             self::SUPPORT_TICKET_ACCESS => EnumPermissionModule::SUPPORT_TICKET,
@@ -209,6 +227,12 @@ enum EnumPermissions: string
         return match ($this) {
             self::GOODS_DISTRIBUTION_INVENTORY_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
             self::GOODS_DISTRIBUTION_REQUESTS_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
+            self::GOODS_DISTRIBUTION_BULK_VIEW => [self::GOODS_DISTRIBUTION_ACCESS->value],
+            self::GOODS_DISTRIBUTION_BULK_PREPARE,
+            self::GOODS_DISTRIBUTION_BULK_APPROVE,
+            self::GOODS_DISTRIBUTION_BULK_DISPATCH,
+            self::GOODS_DISTRIBUTION_BULK_RECONCILE => [self::GOODS_DISTRIBUTION_ACCESS->value, self::GOODS_DISTRIBUTION_BULK_VIEW->value],
+            self::GOODS_DISTRIBUTION_BULK_CORRECT => [self::GOODS_DISTRIBUTION_ACCESS->value, self::GOODS_DISTRIBUTION_BULK_VIEW->value, self::GOODS_DISTRIBUTION_BULK_RECONCILE->value],
             self::GOODS_DISTRIBUTION_REQUESTS_INTAKE,
             self::GOODS_DISTRIBUTION_REQUESTS_PROCESS,
             self::GOODS_DISTRIBUTION_REQUESTS_DECIDE,

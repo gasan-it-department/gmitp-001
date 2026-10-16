@@ -83,7 +83,7 @@ export default function ProgramDocuments({ programId, settings, canManage }: { p
             <Errors errors={error ? { documents: error } : {}} />
             {!rows.length && <p className="py-8 text-sm text-muted-foreground">No document requirements configured.</p>}
             {rows.map((r, index) => (
-                <div className="grid items-end gap-3 border-b border-[#e8ede9] pb-4 md:grid-cols-[minmax(0,1fr)_180px_180px_110px_40px]" key={index}>
+                <div className="grid items-end gap-3 @min-[520px]/goods:grid-cols-2 border-b border-[#e8ede9] pb-4 @min-[960px]/goods:grid-cols-[minmax(0,1fr)_170px_170px_110px_44px]" key={index}>
                     <Field label="Document">
                         <select
                             required

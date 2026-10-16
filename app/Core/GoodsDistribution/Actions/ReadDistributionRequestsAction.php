@@ -21,7 +21,9 @@ final class ReadDistributionRequestsAction
 
     public function schemaReady(): bool
     {
-        return Schema::hasTable('gd_distribution_stock_allocations') && Schema::hasColumn('gd_stock_movements', 'distribution_stock_allocation_id');
+        return Schema::hasTable('gd_distribution_stock_allocations') && Schema::hasColumn('gd_stock_movements', 'distribution_stock_allocation_id')
+            && Schema::hasColumn('gd_distribution_document_checks', 'is_active') && Schema::hasTable('gd_distribution_cooldowns')
+            && Schema::hasColumn('gd_programs', 'cooldown_enabled') && Schema::hasColumn('gd_distribution_requests', 'cooldown_exception_authorization');
     }
 
     public function listing(string $municipalId, array $filters): mixed

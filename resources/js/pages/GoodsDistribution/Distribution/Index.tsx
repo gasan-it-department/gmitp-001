@@ -6,9 +6,11 @@ import { Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { inputClass, StateBadge, useInventoryContext } from '../Inventory/components';
 import { DirectoryLayout, DirectoryPagination, DirectoryPanel } from '../Inventory/DirectoryLayout';
+import { RequestPersonLink } from '../RecipientProfileLinks';
+import ResponsiveTable from '../ResponsiveTable';
 import type { GoodsRequest, Options, PageData, Permissions, Status } from './types';
 
-const statuses: Status[] = ['pending', 'under_review', 'returned', 'approved', 'released', 'cancelled'];
+const statuses: Status[] = ['draft', 'pending', 'under_review', 'returned', 'approved', 'released', 'cancelled'];
 export default function Index({
     records,
     options,
@@ -102,8 +104,8 @@ export default function Index({
                     </form>
                 }
             >
-                <table className="w-full table-fixed text-left text-sm">
-                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-muted-foreground md:table-header-group">
+                <ResponsiveTable className="w-full table-fixed text-left text-sm">
+                    <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-muted-foreground @min-[800px]/goods:table-header-group">
                         <tr>
                             {['Reference / Program', 'Recipient / Filer', 'Household', 'Status / Date'].map((h) => (
                                 <th className="px-5 py-3 font-medium" key={h}>
@@ -112,9 +114,9 @@ export default function Index({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block md:table-row-group">
+                    <tbody className="block @min-[800px]/goods:table-row-group">
                         {records.data.map((r) => (
-                            <tr key={r.id} className="grid grid-cols-2 border-b border-[#e8ede9] last:border-0 hover:bg-[#fafcfb] md:table-row">
+                            <tr key={r.id} className="grid grid-cols-2 border-b border-[#e8ede9] last:border-0 hover:bg-[#fafcfb] @min-[800px]/goods:table-row">
                                 <td className="min-w-0 px-5 py-4 [overflow-wrap:anywhere]">
                                     <Link
                                         className="font-medium text-[#245e4f] hover:underline"
@@ -125,8 +127,10 @@ export default function Index({
                                     <p className="mt-1 text-xs text-muted-foreground">{r.program_name}</p>
                                 </td>
                                 <td className="min-w-0 px-5 py-4 break-words">
-                                    {r.snapshot.subject.name}
-                                    <p className="mt-1 text-xs text-muted-foreground">Filed by {r.snapshot.filer.name}</p>
+                                    <RequestPersonLink slug={slug} request={r} role="recipient" />
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Filed by <RequestPersonLink slug={slug} request={r} role="filer" />
+                                    </p>
                                 </td>
                                 <td className="min-w-0 px-5 py-4 break-words">
                                     {r.snapshot.household_code}
@@ -139,7 +143,7 @@ export default function Index({
                             </tr>
                         ))}
                     </tbody>
-                </table>
+                </ResponsiveTable>
                 {!records.data.length && <p className="py-12 text-center text-sm text-muted-foreground">No distribution requests found.</p>}
                 <DirectoryPagination records={records} />
             </DirectoryPanel>

@@ -9,9 +9,14 @@ final class DistributionCommandRequest extends FormRequest
     public function authorize(): bool
     {
         $permission = match ($this->route('command')) {
-            'review' => 'process', 'resubmit' => 'intake', 'release' => 'release', 'approve', 'cancel' => 'decide',
+            'submit' => null,
+            'review' => 'process', 'resubmit' => 'intake', 'release' => 'release', 'approve', 'cancel', 'authorize_cooldown' => 'decide',
             'return' => null,
         };
+
+        if ($this->route('command') === 'submit') {
+            return $this->user()->can('goods_distribution.requests.intake') || $this->user()->can('goods_distribution.requests.process');
+        }
 
         return $permission ? $this->user()->can('goods_distribution.requests.'.$permission)
             : ($this->user()->can('goods_distribution.requests.process') || $this->user()->can('goods_distribution.requests.decide'));
@@ -25,7 +30,9 @@ final class DistributionCommandRequest extends FormRequest
             'version' => ['required', 'integer', 'min:1'], 'operation_key' => ['required', 'string', 'max:100'],
             'reason' => [in_array($this->route('command'), ['return', 'cancel']) ? 'required' : 'nullable', 'string', 'min:10', 'max:1000'],
             'recipient_reviewed' => [$this->route('command') === 'approve' ? 'required' : 'exclude', 'accepted'],
-            'actual_release_on' => [$release ? 'required' : 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'actual_release_on' => [$release || $this->route('command') === 'authorize_cooldown' ? 'required' : 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'cooldown_fingerprint' => ['nullable', 'string', 'size:64'],
+            'cooldown_exception_reason' => ['nullable', 'string', 'min:10', 'max:1000'],
             'collector_type' => [$release ? 'required' : 'nullable', 'in:recipient,representative'],
             'collector_name' => ['exclude_unless:collector_type,representative', 'required_if:collector_type,representative', 'nullable', 'string', 'max:255'],
             'collector_relationship' => ['exclude_unless:collector_type,representative', 'required_if:collector_type,representative', 'nullable', 'string', 'max:100'],

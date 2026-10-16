@@ -9,4 +9,6 @@ enum MovementType: string
     case Adjustment = 'adjustment';
     case Reversal = 'reversal';
     case Distribution = 'distribution';
+    case BulkDispatch = 'bulk_dispatch';
+    case BulkReturn = 'bulk_return';
 }

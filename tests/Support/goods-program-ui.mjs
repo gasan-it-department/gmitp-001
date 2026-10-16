@@ -3,6 +3,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import puppeteer from 'puppeteer';
+import { closeGoodsFixture, inspectGoodsPages } from './goods-responsive-checks.mjs';
 
 // Isolated production-asset UI fixture. No application database is accessed.
 const root = process.cwd();
@@ -112,7 +113,7 @@ function pageFor(url) {
     const filters = Object.fromEntries(url.searchParams);
     const props = { ...baseProps, filters, url: url.pathname, canManage: filters.view_only !== '1' };
     let component;
-    if (url.pathname.endsWith('/stock-receipts/receipt-test') && itemOnly) {
+    if (url.pathname.endsWith('/stock-receipts/receipt-test') && (itemOnly || filters.item_details === '1')) {
         component = 'ItemDetails';
         const receipt = {
             id: 'receipt-test',
@@ -400,6 +401,20 @@ try {
         await page.keyboard.type(value);
     };
     await mkdir(path.join(root, 'storage/app'), { recursive: true });
+    if (process.argv.includes('--responsive-only')) {
+        await inspectGoodsPages(page, go, [
+            '/programs', '/programs?search=NO-SUCH-PROGRAM', '/programs/program-a?long_name=1',
+            '/programs/program-a?tab=items&long_name=1', '/programs/program-a?tab=receipts',
+            '/programs/program-a?tab=movements', '/inventory', '/items', '/settings', '/settings?kind=locations',
+            '/stock-receipts', '/stock-receipts/receipt-test', '/stock-receipts/receipt-test?status=posted',
+            '/stock-receipts/receipt-test?item_details=1', '/stock-receipts/create', '/programs/program-a/stock-receipts/create',
+        ], path.join(root, 'storage/app'), [
+            { suffix: '/programs', button: 'Add program' },
+            { suffix: '/items', button: 'Add item' },
+        ]);
+        assert.deepEqual(errors, []);
+        console.log('PASS: inventory, catalog, program, receipt and receiving pages at phone/tablet/desktop sizes.');
+    } else {
     if (detailOnly) {
         for (const width of [1440, 390]) {
             await page.setViewport({ width, height: 1000 });
@@ -774,10 +789,10 @@ try {
             'PASS: desktop/mobile layouts, 105-item pagination, keyboard selection, inline creation, preserved receipt values, 10 x 25 kg packaging, scoped save, validation display, municipality headers.',
         );
     }
+    }
 } catch (error) {
     console.error(JSON.stringify({ errors, requests, text: await activePage?.evaluate(() => document.body.innerText) }, null, 2));
     throw error;
 } finally {
-    await browser?.close();
-    await new Promise((resolve) => server.close(resolve));
+    await closeGoodsFixture(browser, server);
 }
