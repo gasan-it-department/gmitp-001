@@ -99,7 +99,7 @@ export default function Catalog({ kind, records, canManage, filters }: CommonPro
                 countLabel={`${records.meta.total.toLocaleString()} records`}
                 toolbar={<Filters appearance="directory" filters={settings ? { ...filters, kind } : filters} url={url} />}
             >
-                <table className="w-full table-fixed text-left text-sm">
+                <table className="block w-full table-fixed text-left text-sm @min-[960px]/goods:table">
                     <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-[#75827c] @min-[960px]/goods:table-header-group">
                         <tr>
                             {['Name', 'Code', kind === 'items' ? 'Unit' : 'Details', 'Status', ''].map((label, index) => (
@@ -109,11 +109,11 @@ export default function Catalog({ kind, records, canManage, filters }: CommonPro
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="block @min-[960px]/goods:table-row-group">
+                    <tbody className="grid gap-3 bg-[#f8faf9] px-3 py-3 empty:p-0 @min-[960px]/goods:table-row-group @min-[960px]/goods:bg-transparent @min-[960px]/goods:p-0">
                         {records.data.map((record) => (
                             <tr
                                 key={record.id}
-                                className="grid grid-cols-2 border-b border-[#e8ede9] last:border-b-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row"
+                                className="grid grid-cols-2 rounded-md border border-[#dfe6e1] bg-white hover:bg-[#fafcfb] @min-[960px]/goods:table-row @min-[960px]/goods:rounded-none @min-[960px]/goods:border-0 @min-[960px]/goods:border-b @min-[960px]/goods:border-[#e8ede9] @min-[960px]/goods:last:border-b-0"
                             >
                                 <td className="col-span-2 min-w-0 px-5 py-4 font-medium [overflow-wrap:anywhere] @min-[960px]/goods:col-span-1">{record.name}</td>
                                 <td className="min-w-0 px-3 py-4 font-mono text-xs [overflow-wrap:anywhere] text-[#75827c]">

@@ -43,6 +43,7 @@ let recipients = [];
 let additionalIssues = [];
 let extraAllocations = [];
 let previewBatchCount = 1;
+let listRecords;
 const recipientCoverage = () => {
     const recorded = recipients.filter((person) => person.status === 'active').flatMap((person) => person.lines).reduce((sum, line) => sum + Number(line.quantity), 0);
     const reported = Number(allocation.reported_distributed);
@@ -66,7 +67,7 @@ function pageFor(url) {
             'goods_distribution.inventory.view', 'goods_distribution.inventory.manage', 'goods_distribution.requests.view',
         ] }, flash: {}, errors: {} };
     let component = 'GoodsDistribution/BulkDispatch/Index';
-    if (url.pathname.endsWith('/bulk-dispatches')) props.records = pageData([record]);
+    if (url.pathname.endsWith('/bulk-dispatches')) props.records = pageData(listRecords ?? [record]);
     else if (url.pathname.endsWith('/bulk-dispatches/create') || url.pathname.endsWith('/bulk-dispatches/dispatch/edit')) {
         component = 'GoodsDistribution/BulkDispatch/Form'; props.dispatch = url.pathname.endsWith('/edit') ? record : null;
     } else if (url.pathname.endsWith('/bulk-dispatches/dispatch')) {
@@ -207,7 +208,47 @@ try {
                 });
         }), 'batch quantities are clipped or the review footer is obscured');
     };
-    if (process.argv.includes('--downloads-only')) {
+    if (process.argv.includes('--list-cards-only')) {
+        listRecords = [record, { ...record, id: 'second-dispatch', reference: 'BD-2026-000002', status: 'dispatched',
+            program_name: 'MDRRMO Emergency Relief and Community Food Distribution', requester_name: null,
+            custodian_name: 'Distribution team leader with a long recorded name', destination_barangays: ['Uno', 'Pinggan', 'Dili'] },
+        { ...record, id: 'third-dispatch', reference: 'BD-2026-000003', status: 'closed', custodian_name: null, destination_barangays: [] }];
+        for (const width of [320, 390, 768, 1024, 1440]) {
+            await page.setViewport({ width, height: 960 });
+            await go('/bulk-dispatches');
+            await assertGoodsLayout(page, `${width}px bulk dispatch list cards`);
+            const layout = await page.evaluate(() => {
+                const cards = document.querySelector('[data-bulk-dispatch-cards]');
+                const rows = [...cards.children];
+                const table = document.querySelector('table');
+                const container = cards.closest('[class*="@container/goods"]');
+                return {
+                    containerWidth: container.clientWidth,
+                    cardsVisible: !!cards.getClientRects().length,
+                    tableVisible: !!table.getClientRects().length,
+                    count: rows.length,
+                    gap: parseFloat(getComputedStyle(cards).rowGap),
+                    separation: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
+                    styles: rows.map((row) => ({ border: getComputedStyle(row).borderTopWidth, radius: parseFloat(getComputedStyle(row).borderRadius), shadow: getComputedStyle(row).boxShadow })),
+                };
+            });
+            assert.equal(layout.count, 3);
+            assert.equal(layout.cardsVisible, layout.containerWidth < 800);
+            assert.equal(layout.tableVisible, layout.containerWidth >= 800);
+            if (layout.cardsVisible) {
+                assert.equal(layout.gap, 12);
+                assert.ok(layout.separation >= 11 && layout.separation <= 13);
+                assert.ok(layout.styles.every((style) => style.border === '1px' && style.radius > 0 && style.radius <= 8 && style.shadow === 'none'));
+            }
+            await page.screenshot({ path: path.join(out, `list-cards-${width}.png`), fullPage: true });
+        }
+        listRecords = [];
+        await go('/bulk-dispatches');
+        assert.ok(await page.evaluate(() => document.body.textContent.includes('No bulk dispatches found.')));
+        assert.equal(await page.$('[data-bulk-dispatch-cards]'), null);
+        assert.deepEqual(errors, []);
+        console.log('PASS: spaced bulk dispatch cards, long names, missing details, desktop table and empty state at 320/390/768/1024/1440px.');
+    } else if (process.argv.includes('--downloads-only')) {
         const session = await browser.target().createCDPSession();
         for (const width of [1440, 390]) {
             const downloadPath = await mkdtemp(path.join(out, `downloads-${width}-`));

@@ -47,7 +47,25 @@ export default function Index({ records, options, permissions, filters }: {
                 <Input aria-label="Created to" type="date" className="w-full sm:w-40" value={values.to ?? ''} onChange={(event) => setValues({ ...values, to: event.target.value })} />
                 <Button type="submit" variant="outline" size="icon" title="Apply filters" aria-label="Apply filters"><Search className="size-4" /></Button>
             </form>}>
-            <div className="overflow-x-auto">
+            {!!records.data.length && <ul data-bulk-dispatch-cards className="grid gap-3 bg-[#f8faf9] px-3 py-3 @min-[800px]/goods:hidden">{records.data.map((record) =>
+                <li key={record.id} className="min-w-0 rounded-md border border-[#dfe6e1] bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <Link href={routes.show.url({ municipality: slug, dispatchId: record.id })} className="inline-flex min-h-11 max-w-full items-center font-medium text-[#245e4f] [overflow-wrap:anywhere] hover:underline">{record.reference}</Link>
+                            <p className="mt-1 text-xs text-muted-foreground [overflow-wrap:anywhere]">{record.program_name}</p>
+                        </div>
+                        <div className="shrink-0 pt-2"><StateBadge value={record.status} /></div>
+                    </div>
+                    <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                        <div className="min-w-0"><dt className="text-xs text-muted-foreground">Requester</dt><dd className="mt-1 [overflow-wrap:anywhere]">{record.requester_name || 'Not recorded'}</dd></div>
+                        <div className="min-w-0"><dt className="text-xs text-muted-foreground">Custodian</dt><dd className="mt-1 [overflow-wrap:anywhere]">{record.custodian_name || 'Not assigned'}<p className="mt-1 text-xs text-muted-foreground">{record.custodian_type_label}</p></dd></div>
+                        <div className="col-span-2 min-w-0"><dt className="text-xs text-muted-foreground">Destinations</dt><dd className="mt-1 [overflow-wrap:anywhere]">{record.destination_barangays.length ? record.destination_barangays.join(', ') : 'Not specified'}</dd></div>
+                        {record.purpose_label && <div className="col-span-2 min-w-0"><dt className="text-xs text-muted-foreground">Purpose</dt><dd className="mt-1 [overflow-wrap:anywhere]">{record.purpose_label}</dd></div>}
+                    </dl>
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#e8ede9] pt-3 text-xs text-muted-foreground"><span>Created</span><time dateTime={record.created_at}>{record.created_at.slice(0, 10)}</time></div>
+                </li>
+            )}</ul>}
+            <div className="hidden overflow-x-auto @min-[800px]/goods:block">
                 <ResponsiveTable className="w-full table-fixed text-left text-sm">
                     <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-muted-foreground @min-[800px]/goods:table-header-group"><tr>
                         {['Reference / Program', 'Requester / Custodian', 'Destinations', 'Status / Date'].map((label) => <th key={label} className="px-5 py-3 font-medium">{label}</th>)}
@@ -59,8 +77,8 @@ export default function Index({ records, options, permissions, filters }: {
                         <td className="min-w-0 px-5 py-4 text-right @min-[800px]/goods:text-left"><StateBadge value={record.status} /><p className="mt-1 text-xs text-muted-foreground">{record.created_at.slice(0, 10)}</p></td>
                     </tr>)}</tbody>
                 </ResponsiveTable>
-                {!records.data.length && <p className="py-10 text-center text-sm text-muted-foreground">No bulk dispatches found.</p>}
             </div>
+            {!records.data.length && <p className="py-10 text-center text-sm text-muted-foreground">No bulk dispatches found.</p>}
             <DirectoryPagination records={records} />
         </DirectoryPanel>
     </DirectoryLayout>;

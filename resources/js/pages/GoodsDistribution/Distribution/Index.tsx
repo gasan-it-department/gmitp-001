@@ -104,7 +104,7 @@ export default function Index({
                     </form>
                 }
             >
-                <ResponsiveTable className="w-full table-fixed text-left text-sm">
+                <ResponsiveTable className="goods-request-list w-full table-fixed text-left text-sm">
                     <thead className="hidden border-y border-[#e8ede9] bg-[#f8faf9] text-xs text-muted-foreground @min-[800px]/goods:table-header-group">
                         <tr>
                             {['Reference / Program', 'Recipient / Filer', 'Household', 'Status / Date'].map((h) => (

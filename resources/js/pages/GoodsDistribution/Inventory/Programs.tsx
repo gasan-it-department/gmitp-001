@@ -209,7 +209,7 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
                     </>
                 }
             >
-                <table aria-busy={loading} className={`w-full table-fixed text-left text-sm transition-opacity ${loading ? 'opacity-50' : ''}`}>
+                <table aria-busy={loading} className={`block w-full table-fixed text-left text-sm transition-opacity @min-[960px]/goods:table ${loading ? 'opacity-50' : ''}`}>
                     <caption className="sr-only">Goods distribution programs, stock counts, and draft receipts</caption>
                     <thead className="hidden border-y border-[#e8ede9] bg-[#f9fbfa] text-[11px] text-[#748078] @min-[960px]/goods:table-header-group">
                         <tr>
@@ -230,11 +230,11 @@ export default function Programs({ records, filters, canManage }: CommonProps & 
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="block @min-[960px]/goods:table-row-group">
+                    <tbody className="grid gap-3 bg-[#f8faf9] px-3 py-3 @min-[960px]/goods:table-row-group @min-[960px]/goods:bg-transparent @min-[960px]/goods:p-0">
                         {records.data.map((record) => (
                             <tr
                                 key={record.id}
-                                className="group grid grid-cols-2 items-center gap-y-1 border-t border-[#edf0ee] px-2 py-3 transition-colors first:border-t-0 hover:bg-[#fafcfb] @min-[960px]/goods:table-row @min-[960px]/goods:px-0 @min-[960px]/goods:py-0"
+                                className="group grid grid-cols-2 items-center gap-y-1 rounded-md border border-[#dfe6e1] bg-white px-2 py-3 transition-colors hover:bg-[#fafcfb] @min-[960px]/goods:table-row @min-[960px]/goods:rounded-none @min-[960px]/goods:border-0 @min-[960px]/goods:border-t @min-[960px]/goods:border-[#edf0ee] @min-[960px]/goods:px-0 @min-[960px]/goods:py-0 @min-[960px]/goods:first:border-t-0"
                             >
                                 <td className="col-span-2 min-w-0 px-3 py-2 @min-[960px]/goods:px-5 @min-[960px]/goods:py-5">
                                     <div className="flex items-start gap-3">
